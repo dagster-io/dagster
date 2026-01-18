@@ -37,7 +37,12 @@ export type AssetLiveRunLogsSubscription = {
           | {__typename: 'ExecutionStepStartEvent'; stepKey: string | null}
           | {__typename: 'ExecutionStepSuccessEvent'}
           | {__typename: 'ExecutionStepUpForRetryEvent'}
+          | {
+              __typename: 'FailedToMaterializeEvent';
+              assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
+            }
           | {__typename: 'HandledOutputEvent'}
+          | {__typename: 'HealthChangedEvent'}
           | {__typename: 'HookCompletedEvent'}
           | {__typename: 'HookErroredEvent'}
           | {__typename: 'HookSkippedEvent'}
@@ -71,4 +76,4 @@ export type AssetLiveRunLogsSubscription = {
       };
 };
 
-export const AssetLiveRunLogsSubscriptionVersion = '4b78f566975bdd949f6d1fde8de10b6db89a2db3fe678cc5033fedfc16f0ba12';
+export const AssetLiveRunLogsSubscriptionVersion = 'd3ae8fb8b8500d37715da27d84b0840e19a175f27f6e62cc859473345a20f64d';

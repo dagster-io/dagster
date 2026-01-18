@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -7,13 +8,13 @@ from dagster._record import record
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class ResourceRequirement(ABC):
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.definitions.resource_definition import ResourceDefinition
 
         return ResourceDefinition
@@ -73,7 +74,7 @@ class ResourceKeyRequirement(ResourceRequirement, ABC):
         resource_def = resource_defs[self.key]
         if not isinstance(resource_def, self.expected_type):
             raise DagsterInvalidDefinitionError(
-                f"{self.describe_requirement()}, but received" f" {type(resource_def)}."
+                f"{self.describe_requirement()}, but received {type(resource_def)}."
             )
 
 
@@ -87,7 +88,7 @@ class ResourceAddable(ABC):
 
 @record
 class OpDefinitionResourceRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     node_description: str
 
     def describe_requirement(self) -> str:
@@ -96,13 +97,13 @@ class OpDefinitionResourceRequirement(ResourceKeyRequirement):
 
 @record
 class InputManagerRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     node_description: str
     input_name: str
     root_input: bool
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IInputManagerDefinition
 
         return IInputManagerDefinition
@@ -118,11 +119,11 @@ class InputManagerRequirement(ResourceKeyRequirement):
 # `SourceAssetIOManagerRequirement`.
 @record
 class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     asset_key: Optional[str]
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
@@ -136,11 +137,11 @@ class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
 
 @record
 class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     asset_key: Optional[str]
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
@@ -154,12 +155,12 @@ class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
 
 @record
 class OutputManagerRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     node_description: str
     output_name: str
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
@@ -173,7 +174,7 @@ class OutputManagerRequirement(ResourceKeyRequirement):
 
 @record
 class HookResourceRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     attached_to: Optional[str]
     hook_name: str
 
@@ -186,7 +187,7 @@ class HookResourceRequirement(ResourceKeyRequirement):
 
 @record
 class TypeResourceRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     type_display_name: str
 
     def describe_requirement(self) -> str:
@@ -195,7 +196,7 @@ class TypeResourceRequirement(ResourceKeyRequirement):
 
 @record
 class TypeLoaderResourceRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     type_display_name: str
 
     def describe_requirement(self) -> str:
@@ -207,7 +208,7 @@ class TypeLoaderResourceRequirement(ResourceKeyRequirement):
 
 @record
 class ResourceDependencyRequirement(ResourceKeyRequirement):
-    key: str
+    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
     source_key: Optional[str]
 
     def describe_requirement(self) -> str:

@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_docker.docker_executor import docker_executor as docker_executor
 from dagster_docker.docker_run_launcher import DockerRunLauncher as DockerRunLauncher

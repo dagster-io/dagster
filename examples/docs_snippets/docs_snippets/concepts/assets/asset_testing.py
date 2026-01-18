@@ -63,7 +63,7 @@ def test_uses_context():
 # end_test_with_context_asset
 
 
-from typing import Any, Dict
+from typing import Any
 
 import requests
 
@@ -77,7 +77,7 @@ class MyConfig(Config):
 
 
 class MyAPIResource(ConfigurableResource):
-    def query(self, url) -> Dict[str, Any]:
+    def query(self, url) -> dict[str, Any]:
         return requests.get(url).json()
 
 

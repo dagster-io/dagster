@@ -19,11 +19,11 @@ import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetStaleStatusQuery,
   AssetStaleStatusQueryVariables,
 } from './types/CalculateUnsyncedDialog.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
@@ -119,6 +119,7 @@ export const CalculateUnsyncedDialog = React.memo(
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const item = unsynced[index]!;
                   return (
                     <Row
@@ -144,12 +145,7 @@ export const CalculateUnsyncedDialog = React.memo(
                             });
                           }}
                         />
-                        <Box
-                          as="label"
-                          htmlFor={`checkbox-${key}`}
-                          flex={{alignItems: 'center', gap: 4}}
-                          style={{cursor: 'pointer'}}
-                        >
+                        <Box flex={{alignItems: 'center', gap: 4}} style={{cursor: 'pointer'}}>
                           <Box style={{overflow: 'hidden'}}>
                             <MiddleTruncate text={displayNameForAssetKey(item)} />
                           </Box>

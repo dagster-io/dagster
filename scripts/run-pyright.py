@@ -9,13 +9,14 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import reduce
 from itertools import groupby
-from typing import Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from typing import Final, Literal, Optional, cast
 
 import tomli
-from typing_extensions import Final, Literal, NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 parser = argparse.ArgumentParser(
     prog="run-pyright",
@@ -40,12 +41,6 @@ parser.add_argument(
     ),
 )
 
-parser.add_argument(
-    "--unannotated",
-    action="store_true",
-    default=False,
-    help="Analyze unannotated functions. This is not currently used in CI.",
-)
 
 parser.add_argument(
     "--diff",
@@ -124,7 +119,6 @@ parser.add_argument(
 
 
 class Params(TypedDict):
-    unannotated: bool
     mode: Literal["env", "path"]
     targets: Sequence[str]
     json: bool
@@ -188,13 +182,24 @@ PYRIGHT_ENV_ROOT: Final = "pyright"
 DEFAULT_REQUIREMENTS_FILE: Final = "requirements.txt"
 
 
+def get_pyspark_constraints_path():
+    return os.path.abspath(
+        os.path.join(
+            "python_modules",
+            "libraries",
+            "dagster-pyspark",
+            "build-constraints",
+        )
+    )
+
+
 def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
     return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
 
 
 def load_path_file(path: str) -> Sequence[str]:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return [line.strip() for line in f.readlines() if line.strip() and not line.startswith("#")]
 
 
@@ -240,7 +245,6 @@ def get_params(args: argparse.Namespace) -> Params:
         update_pins=args.update_pins,
         json=args.json,
         rebuild=args.rebuild,
-        unannotated=args.unannotated,
         no_cache=args.no_cache,
         venv_python=venv_python,
         skip_typecheck=args.skip_typecheck,
@@ -256,7 +260,7 @@ def match_path(path: str, path_spec: EnvPathSpec) -> bool:
 
 
 def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
-    env_path_specs: List[EnvPathSpec] = []
+    env_path_specs: list[EnvPathSpec] = []
     for env in os.listdir(PYRIGHT_ENV_ROOT):
         include_path = get_env_path(env, "include.txt")
         exclude_path = get_env_path(env, "exclude.txt")
@@ -267,7 +271,7 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
                 exclude=load_path_file(exclude_path) if os.path.exists(exclude_path) else [],
             )
         )
-    env_path_map: Dict[str, List[str]] = {}
+    env_path_map: dict[str, list[str]] = {}
     for path in paths:
         if os.path.isdir(path) or os.path.splitext(path)[1] in [".py", ".pyi"]:
             env = next(
@@ -319,6 +323,8 @@ def normalize_env(
                         "uv",
                         "pip",
                         "install",
+                        "-b",
+                        get_pyspark_constraints_path(),
                         "--python",
                         python_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done
@@ -361,7 +367,7 @@ def extract_package_name_from_editable_requirement(line: str) -> str:
 
 def get_all_editable_packages(env: str) -> Sequence[str]:
     requirements = get_env_path(env, "requirements.txt")
-    with open(requirements, "r") as f:
+    with open(requirements) as f:
         lines = [line.strip() for line in f.readlines()]
     return [
         extract_package_name_from_editable_requirement(line)
@@ -375,7 +381,7 @@ def get_all_editable_packages(env: str) -> Sequence[str]:
 def validate_editable_installs(env: str) -> None:
     venv_path = os.path.join(get_env_path(env), ".venv")
     for pth_file in glob.glob(f"{venv_path}/lib/python*/site-packages/__editable__*.pth"):
-        with open(pth_file, "r") as f:
+        with open(pth_file) as f:
             first_line = f.readlines()[0]
         # Not a legacy pth-- all legacy pth files contain an absolute path on the first line
         if first_line[0] != "/":
@@ -413,11 +419,10 @@ def run_pyright(
     env: str,
     paths: Optional[Sequence[str]],
     rebuild: bool,
-    unannotated: bool,
     pinned_deps: bool,
     venv_python: str,
 ) -> RunResult:
-    with temp_pyright_config_file(env, unannotated) as config_path:
+    with temp_pyright_config_file(env) as config_path:
         base_pyright_cmd = " ".join(
             [
                 "pyright",
@@ -433,18 +438,21 @@ def run_pyright(
         result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True, check=False)
         try:
             json_result = json.loads(result.stdout)
+            from pathlib import Path
+
+            Path(f"/tmp/{env}-pyright.json").write_text(result.stdout)
         except json.JSONDecodeError:
-            output = result.stdout == "" and result.stderr or result.stdout
+            output = (result.stdout == "" and result.stderr) or result.stdout
             raise Exception(f"Pyright output was not valid JSON. Output was:\n\n{output}")
     return {
         "returncode": result.returncode,
-        "output": cast(PyrightOutput, json_result),
+        "output": cast("PyrightOutput", json_result),
     }
 
 
 @contextmanager
-def temp_pyright_config_file(env: str, unannotated: bool) -> Iterator[str]:
-    with open("pyproject.toml", "r", encoding="utf-8") as f:
+def temp_pyright_config_file(env: str) -> Iterator[str]:
+    with open("pyproject.toml", encoding="utf-8") as f:
         toml = tomli.loads(f.read())
     config = toml["tool"]["pyright"]
     config["venvPath"] = f"{PYRIGHT_ENV_ROOT}/{env}"
@@ -453,7 +461,6 @@ def temp_pyright_config_file(env: str, unannotated: bool) -> Iterator[str]:
     config["include"] = load_path_file(include_path)
     if os.path.exists(exclude_path):
         config["exclude"] += load_path_file(exclude_path)
-    config["analyzeUnannotatedFunctions"] = unannotated
     temp_config_path = f"pyrightconfig-{env}.json"
     print("Creating temporary pyright config file at", temp_config_path)
     try:
@@ -476,7 +483,7 @@ def merge_pyright_results(result_1: RunResult, result_2: RunResult) -> RunResult
         "output": {
             "time": output_1["time"],
             "version": output_1["version"],
-            "summary": cast(Summary, summary),
+            "summary": cast("Summary", summary),
             "generalDiagnostics": diagnostics,
         },
     }
@@ -491,7 +498,7 @@ def print_output(result: RunResult, output_json: bool) -> None:
 
 def get_dagster_pyright_version() -> str:
     dagster_setup = os.path.abspath(os.path.join(__file__, "../../python_modules/dagster/setup.py"))
-    with open(dagster_setup, "r", encoding="utf-8") as f:
+    with open(dagster_setup, encoding="utf-8") as f:
         content = f.read()
     m = re.search('"pyright==([^"]+)"', content)
     assert m is not None, "Could not find pyright version in python_modules/dagster/setup.py"
@@ -499,7 +506,7 @@ def get_dagster_pyright_version() -> str:
 
 
 def get_hints(output: PyrightOutput) -> Sequence[str]:
-    hints: List[str] = []
+    hints: list[str] = []
 
     if any(
         "rule" in diag and diag["rule"] == "reportMissingImports"
@@ -528,7 +535,7 @@ def get_hints(output: PyrightOutput) -> Sequence[str]:
     dagster_pyright_version = get_dagster_pyright_version()
     if dagster_pyright_version != output["version"]:
         hints.append(
-            f'Your local version of pyright is {output["version"]}, which does not match Dagster\'s'
+            f"Your local version of pyright is {output['version']}, which does not match Dagster's"
             f" pinned version of {dagster_pyright_version}. Please run `make install_pyright` to"
             " install the correct version."
         )
@@ -587,7 +594,6 @@ if __name__ == "__main__":
                 env,
                 paths=env_path_map[env],
                 rebuild=params["rebuild"],
-                unannotated=params["unannotated"],
                 pinned_deps=params["update_pins"],
                 venv_python=params["venv_python"],
             )

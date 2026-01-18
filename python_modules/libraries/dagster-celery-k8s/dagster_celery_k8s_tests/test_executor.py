@@ -68,7 +68,7 @@ def celery_mock():
                         "execute_step_args_packed",
                     )
                 )
-                args = execute_step_args.get_command_args()
+                args = execute_step_args.get_command_args()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 result = subprocess.run(args, check=True, capture_output=True)
                 raw_logs = result.stdout
 
@@ -136,9 +136,12 @@ def test_per_step_k8s_config(kubeconfig_file):
             }
         }
 
-        with mock.patch("dagster_celery.core_execution_loop.make_app", celery_mock()), mock.patch(
-            "dagster_celery_k8s.executor.DagsterKubernetesClient.production_client",
-            mock_k8s_client_batch_api,
+        with (
+            mock.patch("dagster_celery.core_execution_loop.make_app", celery_mock()),
+            mock.patch(
+                "dagster_celery_k8s.executor.DagsterKubernetesClient.production_client",
+                mock_k8s_client_batch_api,
+            ),
         ):
             result = execute_job(
                 ReconstructableJob.for_file(__file__, "some_job"),

@@ -1,32 +1,37 @@
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
+from collections.abc import Mapping, Sequence
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Optional, cast
 
-from dagster import (
-    Array,
-    Bool,
-    _check as check,
-)
+from dagster_shared.yaml_utils import load_yaml_from_globs
+
+import dagster._check as check
+from dagster._builtins import Bool, String
 from dagster._config import (
+    Array,
     Field,
     IntSource,
+    Noneable,
     Permissive,
     ScalarUnion,
     Selector,
+    Shape,
     StringSource,
     validate_config,
 )
 from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
+from dagster._record import record
 from dagster._serdes import class_from_code_pointer
 from dagster._utils.concurrency import get_max_concurrency_limit_value
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.instance import DagsterInstance
+    from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
     from dagster._core.scheduler.instigation import TickStatus
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
@@ -40,7 +45,7 @@ def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     overrides: Optional[Mapping[str, object]] = None,
-) -> Tuple[Mapping[str, Any], Optional[Type["DagsterInstance"]]]:
+) -> tuple[Mapping[str, Any], Optional[type["DagsterInstance"]]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_mapping_param(overrides, "overrides")
@@ -54,7 +59,7 @@ def dagster_instance_config(
             f" desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
-    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides)
+    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides or {})
 
     if "instance_class" in dagster_config_dict:
         custom_instance_class_data = dagster_config_dict["instance_class"]
@@ -71,9 +76,10 @@ def dagster_instance_config(
             )
 
         custom_instance_class = cast(
-            Type["DagsterInstance"],
+            "type[DagsterInstance]",
             class_from_code_pointer(
-                custom_instance_class_data["module"], custom_instance_class_data["class"]
+                custom_instance_class_data["module"],
+                custom_instance_class_data["class"],
             ),
         )
 
@@ -119,18 +125,7 @@ def dagster_instance_config(
 
     # validate default op concurrency limits
     if "concurrency" in dagster_config_dict:
-        default_concurrency_limit = dagster_config_dict["concurrency"].get(
-            "default_op_concurrency_limit"
-        )
-        if default_concurrency_limit is not None:
-            max_limit = get_max_concurrency_limit_value()
-            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
-                raise DagsterInvalidConfigError(
-                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
-                    f"Expected value between 0-{max_limit}.",
-                    [],
-                    None,
-                )
+        validate_concurrency_config(dagster_config_dict)
 
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
@@ -154,6 +149,100 @@ def run_queue_config_schema() -> Field:
         QueuedRunCoordinator.config_type(),
         is_required=False,
     )
+
+
+def validate_concurrency_config(dagster_config_dict: Mapping[str, Any]):
+    concurrency_config = dagster_config_dict["concurrency"]
+    if "pools" in concurrency_config:
+        if concurrency_config.get("default_op_concurrency_limit") is not None:
+            raise DagsterInvalidConfigError(
+                "Found config for `default_op_concurrency_limit` which is incompatible with `pools` config.  Use `pools > default_limit` instead.",
+                [],
+                None,
+            )
+
+        default_concurrency_limit = check.opt_inst(
+            pluck_config_value(concurrency_config, ["pools", "default_limit"]), int
+        )
+        if default_concurrency_limit is not None:
+            max_limit = get_max_concurrency_limit_value()
+            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `pools > default_limit`, "
+                    f"Expected value between 0-{max_limit}.",
+                    [],
+                    None,
+                )
+
+        granularity = concurrency_config.get("pools").get("granularity")
+        if granularity and granularity not in ["run", "op"]:
+            raise DagsterInvalidConfigError(
+                f"Found value `{granularity}` for `granularity`, Expected value 'run' or 'op'.",
+                [],
+                None,
+            )
+
+    elif "default_op_concurrency_limit" in concurrency_config:
+        default_concurrency_limit = check.opt_inst(
+            pluck_config_value(concurrency_config, ["default_op_concurrency_limit"]),
+            int,
+        )
+        if default_concurrency_limit is not None:
+            max_limit = get_max_concurrency_limit_value()
+            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
+                    f"Expected value between 0-{max_limit}.",
+                    [],
+                    None,
+                )
+
+    using_concurrency_config = "runs" in concurrency_config or "pools" in concurrency_config
+    if using_concurrency_config:
+        conflicting_run_queue_fields = [
+            ["max_concurrent_runs"],
+            ["tag_concurrency_limits"],
+            ["block_op_concurrency_limited_runs", "op_concurrency_slot_buffer"],
+        ]
+        if "run_queue" in dagster_config_dict:
+            for field in conflicting_run_queue_fields:
+                if pluck_config_value(dagster_config_dict, ["run_queue", *field]) is not None:
+                    raise DagsterInvalidConfigError(
+                        f"Found config value for `{field}` in `run_queue` which is incompatible with the `concurrency > runs` config",
+                        [],
+                        None,
+                    )
+
+        if "run_coordinator" in dagster_config_dict:
+            if (
+                pluck_config_value(dagster_config_dict, ["run_coordinator", "class"])
+                == "QueuedRunCoordinator"
+            ):
+                for field in conflicting_run_queue_fields:
+                    if (
+                        pluck_config_value(
+                            dagster_config_dict, ["run_coordinator", "config", *field]
+                        )
+                        is not None
+                    ):
+                        raise DagsterInvalidConfigError(
+                            f"Found config value for `{field}` in `run_coordinator` which is incompatible with the `concurrency > runs` config",
+                            [],
+                            None,
+                        )
+
+
+def pluck_config_value(config: Mapping[str, Any], path: Sequence[str]):
+    value = config
+    for part in path:
+        if not isinstance(value, dict):
+            return None
+
+        value = value.get(part)
+        if value is None:
+            return value
+
+    return value
 
 
 def storage_config_schema() -> Field:
@@ -267,6 +356,28 @@ def get_tick_retention_settings(
         return default_retention_settings
 
 
+def backfills_daemon_config() -> Field:
+    return Field(
+        {
+            "use_threads": Field(Bool, is_required=False, default_value=False),
+            "num_workers": Field(
+                int,
+                is_required=False,
+                description="How many threads to use to process multiple backfills in parallel",
+            ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from backfills. Can be used to"
+                    " decrease latency for backfill run submission."
+                ),
+            ),
+        },
+        is_required=False,
+    )
+
+
 def sensors_daemon_config() -> Field:
     return Field(
         {
@@ -330,6 +441,85 @@ def secrets_loader_config_schema() -> Field:
     )
 
 
+def get_concurrency_config() -> Field:
+    return Field(
+        {
+            "pools": Field(
+                {
+                    "default_limit": Field(
+                        int,
+                        is_required=False,
+                        description="The default maximum number of concurrent operations for an unconfigured pool",
+                    ),
+                    "granularity": Field(
+                        str,
+                        is_required=False,
+                        description="The granularity of the concurrency enforcement of the pool.  One of `run` or `op`.",
+                    ),
+                    "op_granularity_run_buffer": Field(
+                        int,
+                        is_required=False,
+                        description=(
+                            "When the pool scope is set to `op`, this determines the number of runs "
+                            "that can be launched with all of its steps blocked waiting for pool slots "
+                            "to be freed."
+                        ),
+                    ),
+                },
+                is_required=False,
+            ),
+            "runs": Field(
+                {
+                    "max_concurrent_runs": Field(
+                        int,
+                        is_required=False,
+                        description=(
+                            "The maximum number of runs that are allowed to be in progress at once."
+                            " Defaults to 10. Set to -1 to disable the limit. Set to 0 to stop any runs"
+                            " from launching. Any other negative values are disallowed."
+                        ),
+                    ),
+                    "tag_concurrency_limits": Field(
+                        config=Noneable(
+                            Array(
+                                Shape(
+                                    {
+                                        "key": String,
+                                        "value": Field(
+                                            ScalarUnion(
+                                                scalar_type=String,
+                                                non_scalar_schema=Shape(
+                                                    {"applyLimitPerUniqueValue": Bool}
+                                                ),
+                                            ),
+                                            is_required=False,
+                                        ),
+                                        "limit": Field(int),
+                                    }
+                                )
+                            )
+                        ),
+                        is_required=False,
+                        description=(
+                            "A set of limits that are applied to runs with particular tags. If a value is"
+                            " set, the limit is applied to only that key-value pair. If no value is set,"
+                            " the limit is applied across all values of that key. If the value is set to a"
+                            " dict with `applyLimitPerUniqueValue: true`, the limit will apply to the"
+                            " number of unique values for that key."
+                        ),
+                    ),
+                },
+                is_required=False,
+            ),
+            "default_op_concurrency_limit": Field(
+                int,
+                is_required=False,
+                description="[Deprecated] The default maximum number of concurrent operations for an unconfigured concurrency key",
+            ),
+        }
+    )
+
+
 def dagster_instance_config_schema() -> Mapping[str, Field]:
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -388,7 +578,9 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             is_required=False,
         ),
         "secrets": secrets_loader_config_schema(),
+        "defs_state_storage": config_field_for_configurable_class(),
         "retention": retention_config_schema(),
+        "backfills": backfills_daemon_config(),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),
         "auto_materialize": Field(
@@ -416,13 +608,76 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 ),
             }
         ),
-        "concurrency": Field(
-            {
-                "default_op_concurrency_limit": Field(
-                    int,
-                    is_required=False,
-                    description="The default maximum number of concurrent operations for an unconfigured concurrency key",
-                ),
-            }
-        ),
+        "freshness": Field({"enabled": Field(Bool)}, is_required=False),
+        "concurrency": get_concurrency_config(),
     }
+
+
+class PoolGranularity(Enum):
+    OP = "op"
+    RUN = "run"
+
+
+@record
+class PoolConfig:
+    pool_granularity: Optional[PoolGranularity]
+    default_pool_limit: Optional[int]
+    op_granularity_run_buffer: Optional[int]
+
+
+@record
+class ConcurrencyConfig:
+    pool_config: PoolConfig
+    run_queue_config: Optional["RunQueueConfig"]
+
+    @staticmethod
+    def from_concurrency_settings(
+        concurrency_settings: Mapping[str, Any],
+        run_coordinator_run_queue_config: Optional["RunQueueConfig"],
+    ) -> "ConcurrencyConfig":
+        from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
+
+        run_settings = concurrency_settings.get("runs", {})
+        pool_settings = concurrency_settings.get("pools", {})
+        pool_granularity_str = pool_settings.get("granularity")
+        if run_coordinator_run_queue_config:
+            run_queue_config = RunQueueConfig(
+                max_concurrent_runs=run_settings.get(
+                    "max_concurrent_runs", run_coordinator_run_queue_config.max_concurrent_runs
+                ),
+                tag_concurrency_limits=run_settings.get(
+                    "tag_concurrency_limits",
+                    run_coordinator_run_queue_config.tag_concurrency_limits,
+                ),
+                max_user_code_failure_retries=run_coordinator_run_queue_config.max_user_code_failure_retries,
+                user_code_failure_retry_delay=run_coordinator_run_queue_config.user_code_failure_retry_delay,
+                should_block_op_concurrency_limited_runs=run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs,
+                op_concurrency_slot_buffer=pool_settings.get(
+                    "op_granularity_run_buffer",
+                    run_coordinator_run_queue_config.op_concurrency_slot_buffer,
+                ),
+            )
+        else:
+            run_queue_config = None
+
+        pool_granularity = PoolGranularity(pool_granularity_str) if pool_granularity_str else None
+        if (
+            not pool_granularity
+            and run_coordinator_run_queue_config
+            and run_coordinator_run_queue_config.explicitly_enabled_concurrency_run_blocking
+        ):
+            # if this was explicitly configured in the run coordinator config, we should default to op granularity
+            pool_granularity = PoolGranularity.OP
+
+        default_limit = pool_settings.get("default_limit")
+        if default_limit is None:
+            default_limit = concurrency_settings.get("default_op_concurrency_limit")
+
+        return ConcurrencyConfig(
+            pool_config=PoolConfig(
+                pool_granularity=pool_granularity,
+                default_pool_limit=default_limit,
+                op_granularity_run_buffer=pool_settings.get("op_granularity_run_buffer"),
+            ),
+            run_queue_config=run_queue_config,
+        )

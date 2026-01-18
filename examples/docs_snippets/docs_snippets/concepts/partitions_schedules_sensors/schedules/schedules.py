@@ -1,59 +1,51 @@
-from dagster import (
-    DefaultScheduleStatus,
-    OpExecutionContext,
-    RunRequest,
-    ScheduleDefinition,
-    ScheduleEvaluationContext,
-    SkipReason,
-    asset,
-    job,
-    op,
-    schedule,
-)
-
+import dagster as dg
 
 # start_basic_schedule
-@job
-def my_job(): ...
-
-
-basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+basic_schedule = dg.ScheduleDefinition(
+    name="basic_schedule", cron_schedule="0 0 * * *", target="*"
+)
 # end_basic_schedule
 
 
-@asset
+@dg.asset
 def my_asset():
     return 1
 
 
 # start_basic_asset_schedule
-from dagster import AssetSelection, ScheduleDefinition, define_asset_job
+import dagster as dg
 
-asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
-
-basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
+basic_schedule = dg.ScheduleDefinition(
+    name="basic_asset_schedule",
+    cron_schedule="0 0 * * *",
+    target=dg.AssetSelection.groups("some_asset_group"),
+)
 
 # end_basic_asset_schedule
 
 
 # start_run_config_schedule
-@op(config_schema={"scheduled_date": str})
-def configurable_op(context: OpExecutionContext):
-    context.log.info(context.op_config["scheduled_date"])
+import dagster as dg
 
 
-@job
-def configurable_job():
-    configurable_op()
+class AssetConfig(dg.Config):
+    scheduled_date: str
 
 
-@schedule(job=configurable_job, cron_schedule="0 0 * * *")
-def configurable_job_schedule(context: ScheduleEvaluationContext):
+@dg.asset
+def configurable_asset(context: dg.AssetExecutionContext, config: AssetConfig):
+    context.log.info(config.scheduled_date)
+
+
+@dg.schedule(target=configurable_asset, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return RunRequest(
+    return dg.RunRequest(
         run_key=None,
         run_config={
-            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+            "ops": {
+                "configurable_asset": {"config": {"scheduled_date": scheduled_date}}
+            }
         },
         tags={"date": scheduled_date},
     )
@@ -63,25 +55,31 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
 
 
 # start_timezone
-my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+my_timezone_schedule = dg.ScheduleDefinition(
+    name="my_timezone_schedule",
+    target="*",
+    cron_schedule="0 9 * * *",
+    execution_timezone="America/Los_Angeles",
 )
 
 # end_timezone
 
 # start_running_in_code
-my_running_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+my_running_schedule = dg.ScheduleDefinition(
+    name="my_running_schedule",
+    target="*",
+    cron_schedule="0 9 * * *",
+    default_status=dg.DefaultScheduleStatus.RUNNING,
 )
 
 # end_running_in_code
 
 
 # start_schedule_logging
-@schedule(job=my_job, cron_schedule="* * * * *")
+@dg.schedule(target="*", cron_schedule="* * * * *")
 def logs_then_skips(context):
-    context.log.info("Logging from a schedule!")
-    return SkipReason("Nothing to do")
+    context.log.info("Logging from a dg.schedule!")
+    return dg.SkipReason("Nothing to do")
 
 
 # end_schedule_logging

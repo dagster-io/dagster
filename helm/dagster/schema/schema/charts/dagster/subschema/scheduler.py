@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import Extra
-
 from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
@@ -12,24 +10,21 @@ class SchedulerType(str, Enum):
 
 
 class DaemonSchedulerConfig(BaseModel):
-    maxCatchupRuns: Optional[int]
-    maxTickRetries: Optional[int]
+    maxCatchupRuns: Optional[int] = None
+    maxTickRetries: Optional[int] = None
 
 
-class SchedulerConfig(BaseModel):
-    daemonScheduler: Optional[DaemonSchedulerConfig]
-    customScheduler: Optional[ConfigurableClass]
-
-    class Config:
-        extra = Extra.forbid
+class SchedulerConfig(BaseModel, extra="forbid"):
+    daemonScheduler: Optional[DaemonSchedulerConfig] = None
+    customScheduler: Optional[ConfigurableClass] = None
 
 
-class Scheduler(BaseModel):
+class Scheduler(
+    BaseModel,
+    extra="forbid",
+    json_schema_extra={
+        "allOf": create_json_schema_conditionals({SchedulerType.CUSTOM: "customScheduler"})
+    },
+):
     type: SchedulerType
     config: SchedulerConfig
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra = {
-            "allOf": create_json_schema_conditionals({SchedulerType.CUSTOM: "customScheduler"})
-        }

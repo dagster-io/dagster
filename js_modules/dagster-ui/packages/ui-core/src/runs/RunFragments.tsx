@@ -14,9 +14,11 @@ export const RUN_FRAGMENT = gql`
       repositoryName
       repositoryLocationName
     }
+    allPools
     hasReExecutePermission
     hasTerminatePermission
     hasDeletePermission
+    hasRunMetricsEnabled
     status
     mode
     tags {
@@ -41,24 +43,13 @@ export const RUN_FRAGMENT = gql`
     pipelineSnapshotId
     executionPlan {
       artifactsPersisted
+      assetKeys {
+        path
+      }
       ...ExecutionPlanToGraphFragment
     }
     stepKeysToExecute
     updateTime
-    stepStats {
-      stepKey
-      status
-      startTime
-      endTime
-      attempts {
-        startTime
-        endTime
-      }
-      markers {
-        startTime
-        endTime
-      }
-    }
     ...RunTimingFragment
   }
 

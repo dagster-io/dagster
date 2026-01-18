@@ -82,7 +82,7 @@ class AthenaClient:
             raise AthenaTimeout()
 
         if state != "SUCCEEDED":
-            raise AthenaError(execution["Status"]["StateChangeReason"])
+            raise AthenaError(execution["Status"]["StateChangeReason"])  # pyright: ignore[reportPossiblyUnboundVariable]
 
     def _results(self, execution_id):
         execution = self.client.get_query_execution(QueryExecutionId=execution_id)["QueryExecution"]
@@ -254,7 +254,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
                 def example_athena_asset(athena: AthenaClientResource):
                     return athena.get_client().execute_query("SELECT 1", fetch_results=True)
 
-                defs = Definitions(
+                Definitions(
                     assets=[example_athena_asset],
                     resources={"athena": AthenaClientResource()}
                 )

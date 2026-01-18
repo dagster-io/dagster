@@ -35,7 +35,9 @@ function selectionWithSlice(
     selectedKeys: dim.partitionKeys.slice(start, end + 1),
     selectedRanges: [
       {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {idx: start, key: dim.partitionKeys[start]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {idx: end, key: dim.partitionKeys[end]!},
       },
     ],
@@ -396,6 +398,29 @@ describe('usePartitionHealthData', () => {
       // These should safely no-op
       expect(assetHealth.stateForKey(['2022-01-01'])).toEqual(MISSING);
     });
+
+    it('should return MISSING in all cases where the partition key is invalid / not present', () => {
+      const twoStatic = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET_BOTH_STATIC, {
+        path: ['asset'],
+      });
+      expect(twoStatic.stateForKey(['NOPE', 'TN'])).toEqual(MISSING);
+      expect(twoStatic.stateForKeyIdx([10000, 1])).toEqual(MISSING);
+      expect(twoStatic.stateForKey(['CA', 'NOPE'])).toEqual(MISSING);
+      expect(twoStatic.stateForKeyIdx([1, 10000])).toEqual(MISSING);
+      expect(twoStatic.stateForKey(['NOPE', 'NOPE'])).toEqual(MISSING);
+      expect(twoStatic.stateForKeyIdx([10000, 10000])).toEqual(MISSING);
+
+      const twoD = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET_EMPTY, {path: ['asset']});
+      expect(twoD.assetKey).toEqual({path: ['asset']});
+      expect(twoD.stateForKey(['2050-01-01', 'TN'])).toEqual(MISSING);
+      expect(twoD.stateForKeyIdx([10000, 1])).toEqual(MISSING);
+      expect(twoD.stateForKey(['2022-01-01', 'NOPE'])).toEqual(MISSING);
+      expect(twoD.stateForKeyIdx([1, 10000])).toEqual(MISSING);
+
+      const oneD = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
+      expect(oneD.stateForKey(['2050-01-01'])).toEqual(MISSING);
+      expect(oneD.stateForKeyIdx([10000])).toEqual(MISSING);
+    });
   });
 });
 
@@ -593,6 +618,7 @@ describe('usePartitionHealthData utilities', () => {
       const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
 
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0]!, 0, 5)]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -602,6 +628,7 @@ describe('usePartitionHealthData utilities', () => {
       });
 
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0]!, 0, 2)]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -614,7 +641,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[0]!, 0, 5),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[1]!, 0, 4),
         ]),
       ).toEqual({
@@ -626,7 +655,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[0]!, 0, 3),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[1]!, 0, 3),
         ]),
       ).toEqual({
@@ -637,7 +668,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[0]!, 0, 5),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[1]!, 4, 4),
         ]),
       ).toEqual({
@@ -651,7 +684,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(twoEmpty, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(twoEmpty.dimensions[0]!, 0, 5),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(twoEmpty.dimensions[1]!, 0, 4),
         ]),
       ).toEqual({

@@ -9,19 +9,20 @@ setup(
     description="A Dagster integration for test",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-test",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_test_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         "dagster",
-        "pyspark",
         "rich",
     ],
+    extras_require={
+        # Eventually we sholud remove this as an extra and just include it in the main package
+        "pyspark": ["pyspark<4"],
+    },
     zip_safe=False,
 )

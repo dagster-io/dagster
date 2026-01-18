@@ -1,4 +1,4 @@
-import {Box, Heading, PageHeader} from '@dagster-io/ui-components';
+import {Box, PageHeader, Subtitle1} from '@dagster-io/ui-components';
 
 import {JobsPageContent} from './JobsPageContent';
 import {useTrackPageView} from '../app/analytics';
@@ -10,7 +10,7 @@ export const JobsRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Jobs</Heading>} />
+      <PageHeader title={<Subtitle1>Jobs</Subtitle1>} />
       <JobsPageContent />
     </Box>
   );

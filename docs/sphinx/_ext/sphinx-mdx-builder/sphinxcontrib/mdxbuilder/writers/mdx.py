@@ -1,19 +1,22 @@
+import inspect
 import logging
+import os
 import re
 import textwrap
+from collections.abc import Sequence
+from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from docutils import nodes, writers
 from docutils.nodes import Element
 from docutils.utils import column_width
-
 from sphinx import addnodes
 from sphinx.locale import admonitionlabels
 from sphinx.util.docutils import SphinxTranslator
 
 if TYPE_CHECKING:
-    from ..builders.mdx import MdxBuilder
+    from ..builders.mdx import MdxBuilder  # noqa
 
 logger = logging.getLogger(__name__)
 STDINDENT = 4
@@ -41,7 +44,7 @@ class TextWrapper(textwrap.TextWrapper):
         """
         lines: list[str] = []
         if self.width <= 0:
-            raise ValueError("invalid width %r (must be > 0)" % self.width)
+            raise ValueError(f"invalid width {self.width!r} (must be > 0)")
 
         chunks.reverse()
 
@@ -127,7 +130,7 @@ class MdxWriter(writers.Writer):
     settings_defaults = {}
     output: str
 
-    def __init__(self, builder: "MdxBuilder"):
+    def __init__(self, builder: "MdxBuilder") -> None:
         super().__init__()
         self.builder = builder
 
@@ -149,9 +152,15 @@ class MdxTranslator(SphinxTranslator):
         self.context: list[str] = []
         self.list_counter: list[int] = []
         self.in_literal = 0
+        self.in_literal_block = 0
+        self.in_list_item = 0
         self.desc_count = 0
 
         self.max_line_width = self.config.mdx_max_line_width or 120
+        self.github_url = (
+            self.config.mdx_github_url or "https://github.com/dagster-io/dagster/blob/master"
+        )
+        self.show_source_links = getattr(self.config, "mdx_show_source_links", True)
 
         self.special_characters = {
             ord("<"): "&lt;",
@@ -159,11 +168,175 @@ class MdxTranslator(SphinxTranslator):
             ord(">"): "&gt;",
         }
 
+    def _unwrap_function_object(self, obj):
+        """Attempt to unwrap function-like objects to get the underlying callable.
+
+        This method handles various common patterns used by decorators and frameworks
+        that wrap functions in custom objects while preserving access to the original function.
+
+        Args:
+            obj: The object to unwrap
+
+        Returns:
+            The unwrapped function if found, otherwise the original object
+        """
+        # Common patterns for accessing wrapped functions
+        function_attributes = [
+            # Standard functools.wraps pattern (already handled above via __wrapped__)
+            "__wrapped__",
+            # Common patterns in various frameworks:
+            "func",  # Used by many decorators
+            "function",  # Alternative naming
+            "__func__",  # Method objects
+            "fget",  # Property objects
+            "__call__",  # Callable objects (last resort)
+            # Generic function storage patterns:
+            "decorated",  # Generic decorated function access
+            "inner",  # Generic inner function access
+            "wrapped",  # Alternative to __wrapped__
+            "_func",  # Private function storage
+            "_fn",  # Private function storage (short form)
+            "callback",  # Callback-style wrappers
+            "handler",  # Handler-style wrappers
+            "target",  # Target function in wrappers
+            "original",  # Original function reference
+            "impl",  # Implementation function
+            "implementation",  # Full implementation name
+            # Common framework patterns (type_fn suffix pattern):
+            "fn",  # Simple fn suffix
+            "logger_fn",  # Any logger-type function
+            "main_fn",  # Main function reference
+            "exec_fn",  # Execution function
+            "run_fn",  # Run function
+            "call_fn",  # Call function
+        ]
+
+        current_obj = obj
+
+        # Try each attribute pattern
+        for attr_name in function_attributes:
+            if hasattr(current_obj, attr_name):
+                potential_func = getattr(current_obj, attr_name)
+
+                # Verify it's actually a callable and has source code
+                if callable(potential_func):
+                    try:
+                        # Test if we can get source info from this object
+                        if inspect.getsourcefile(potential_func):
+                            current_obj = potential_func
+                            break
+                    except (TypeError, OSError):
+                        # If this attribute doesn't have source info, continue to next
+                        continue
+
+        # Handle callable objects that might contain the function logic
+        # but only if we haven't found a better candidate
+        if current_obj is obj and callable(obj) and not inspect.isfunction(obj):
+            # For callable objects, try to access their __call__ method's source
+            # This is a last resort and might not always work
+            if hasattr(obj, "__call__") and hasattr(obj.__call__, "__func__"):
+                try:
+                    call_method = obj.__call__.__func__
+                    if inspect.getsourcefile(call_method):
+                        current_obj = call_method
+                except (TypeError, OSError):
+                    pass
+
+        return current_obj
+
+    def _find_dagster_repo_root(self, source_file: str) -> Optional[str]:
+        """Find the Dagster repository root by looking for python_modules directory.
+
+        Args:
+            source_file: Path to the source file
+
+        Returns:
+            Path to the repository root or None if not found
+        """
+        current_dir = os.path.dirname(os.path.abspath(source_file))
+
+        while current_dir and current_dir != os.path.dirname(current_dir):
+            # Check if this directory contains python_modules
+            python_modules_path = os.path.join(current_dir, "python_modules")
+            if os.path.isdir(python_modules_path):
+                # Additional validation: check for dagster package within python_modules
+                dagster_path = os.path.join(python_modules_path, "dagster")
+                if os.path.isdir(dagster_path):
+                    return current_dir
+
+            # Move up one directory
+            current_dir = os.path.dirname(current_dir)
+
+        return None
+
     ############################################################
     # Utility and State Methods
     ############################################################
     def add_text(self, text: str) -> None:
         self.states[-1].append((-1, text))
+
+    def get_source_github_url(self, objname: str, modname: str, fullname: str) -> Optional[str]:
+        """Generate a GitHub URL for a Python object.
+
+        Args:
+            objname: Name of the object
+            modname: Module name
+            fullname: Full qualified name
+
+        Returns:
+            A URL to the GitHub source or None if not available
+        """
+        if not self.show_source_links or not modname:
+            return None
+
+        try:
+            module = __import__(modname, fromlist=[""])
+            obj = module
+            parts = fullname.split(".")
+
+            # Navigate to the actual object
+            for part in parts:
+                if hasattr(obj, part):
+                    obj = getattr(obj, part)
+
+            if not obj:
+                logger.warning(f"No object for {fullname}")
+                return None
+
+            # Don't unwrap enum classes as they should point to their definition
+            from enum import Enum
+
+            if not (isinstance(obj, type) and issubclass(obj, Enum)):
+                # unwrap the root function if function is wrapped
+                while hasattr(obj, "__wrapped__"):
+                    obj = obj.__wrapped__
+
+                # Handle various patterns of function-wrapping objects
+                obj = self._unwrap_function_object(obj)
+
+            try:
+                source_file = inspect.getsourcefile(obj)
+                if not source_file:
+                    logger.warning(f"No source file for {fullname}")
+                    return None
+
+                # Find the repository root by looking for python_modules directory
+                repo_root = self._find_dagster_repo_root(source_file)
+                if repo_root:
+                    # Calculate relative path from repository root
+                    repo_path = os.path.relpath(source_file, repo_root)
+                else:
+                    # Fallback to original behavior if repo root not found
+                    repo_path = os.path.relpath(source_file).replace("../", "")
+
+                source_line = inspect.getsourcelines(obj)[1]
+
+                return f"{self.github_url}/{repo_path}#L{source_line}"
+            except (TypeError, OSError):
+                return None
+        except Exception as e:
+            logger.debug(f"Error generating source link for {fullname}: {e}")
+            return None
 
     def new_state(self, indent: int = STDINDENT) -> None:
         self.states.append([])
@@ -237,11 +410,11 @@ class MdxTranslator(SphinxTranslator):
                 # not all have a "href" attribute).
                 if empty or isinstance(node, (nodes.Sequential, nodes.docinfo, nodes.table)):
                     # Insert target right in front of element.
-                    prefix.append('<Link id="%s"></Link>' % id)
+                    prefix.append(f'<Link id="{id}"></Link>')
                 else:
                     # Non-empty tag.  Place the auxiliary <span> tag
                     # *inside* the element, as the first child.
-                    suffix += '<Link id="%s"></Link>' % id
+                    suffix += f'<Link id="{id}"></Link>'
         attlist = sorted(atts.items())
         parts = [tagname]
         for name, value in attlist:
@@ -250,14 +423,14 @@ class MdxTranslator(SphinxTranslator):
             assert value is not None
             if isinstance(value, list):
                 values = [str(v) for v in value]
-                parts.append('%s="%s"' % (name.lower(), self.attval(" ".join(values))))
+                parts.append('{}="{}"'.format(name.lower(), self.attval(" ".join(values))))
             else:
-                parts.append('%s="%s"' % (name.lower(), self.attval(str(value))))
+                parts.append(f'{name.lower()}="{self.attval(str(value))}"')
         if empty:
             infix = " /"
         else:
             infix = ""
-        return "".join(prefix) + "<%s%s>" % (" ".join(parts), infix) + suffix
+        return "".join(prefix) + "<{}{}>".format(" ".join(parts), infix) + suffix
 
     def end_state(
         self,
@@ -291,7 +464,9 @@ class MdxTranslator(SphinxTranslator):
                 do_format()
                 result.append((indent + itemindent, item))  # type: ignore[arg-type]
                 toformat = []
+
         do_format()
+
         if first is not None and result:
             # insert prefix into first line (ex. *, [1], See also, etc.)
             newindent = result[0][0] - indent
@@ -315,22 +490,24 @@ class MdxTranslator(SphinxTranslator):
         raise nodes.SkipNode
 
     def visit_Text(self, node: nodes.Text) -> None:
-        # print("->", type(node.parent), node.parent)
         if isinstance(node.parent, nodes.reference):
             return
 
         content = node.astext()
 
-        # Skip render of messages from `dagster_sphinx` `inject_param_flag`
-        # https://github.com/dagster-io/dagster/blob/colton/inline-flags/docs/sphinx/_ext/dagster-sphinx/dagster_sphinx/docstring_flags.py#L36-L63
-        if "This parameter may break" in content:
-            return
+        # Prevents wrapped lines in list items, for example in parameter descriptions:
+        #
+        # Args:
+        #     group_name (Optional[str], optional): The name of the asset group.
+        #     some_translator (Optional[SomeTranslator], optional): The translator to use
+        #         to convert content into :py:class:`some.Spec`.
+        #         Defaults to :py:class:`SomeTranslator`.
+        if self.in_list_item:
+            content = content.replace("\n", " ")
 
-        if "This parameter will be removed" in content:
-            return
+        if self.in_literal and not self.in_literal_block:
+            content = content.replace("<", "\\<").replace("{", "\\{")
 
-        if self.in_literal:
-            content = node.astext().replace("<", "\\<").replace("{", "\\{")
         self.add_text(content)
 
     def depart_Text(self, node: Element) -> None:
@@ -340,8 +517,50 @@ class MdxTranslator(SphinxTranslator):
         self.new_state(0)
 
     def depart_document(self, node: Element) -> None:
+        title = next(iter(node.nameids.keys()), "Dagster Python API Reference")
+        title_suffix = self.builder.config.mdx_title_suffix
+        title_meta = self.builder.config.mdx_title_meta
+        meta_description = self.builder.config.mdx_description_meta
+        # Display index files at the top of their sections
+        if "index.rst" in node.attributes["source"]:
+            sidebar_position = "sidebar_position: 1\n"
+        else:
+            sidebar_position = "sidebar_position: 1000\n"
+
+        # Escape single quotes in strings
+        title = title.replace("'", "\\'")
+        if title_suffix:
+            title_suffix = title_suffix.replace("'", "\\'")
+        if title_meta:
+            title_meta = title_meta.replace("'", "\\'")
+        if meta_description:
+            meta_description = meta_description.replace("'", "\\'")
+
+        frontmatter = "---\n"
+        frontmatter += f"title: '{title}"
+        if title_suffix:
+            frontmatter += f" {title_suffix}"
+        frontmatter += "'\n"
+        frontmatter += sidebar_position
+        # if sidebar_position:
+        #     frontmatter += "sidebar_position: 1\n"
+
+        if title_meta:
+            frontmatter += f"title_meta: '{title}{title_meta}'\n"
+
+        if meta_description:
+            frontmatter += f"description: '{title}{meta_description}'\n"
+
+        last_update = datetime.now().strftime("%Y-%m-%d")
+        frontmatter += "last_update:\n"
+        frontmatter += f"  date: '{last_update}'\n"
+
+        # prevent API docs from having `Edit this page` link; in the future we may want to configure this to point to the `.rst` file
+        frontmatter += "custom_edit_url: null\n"
+        frontmatter += "---\n\n"
         self.end_state()
-        self.body = self.nl.join(
+        self.body = frontmatter
+        self.body += self.nl.join(
             line and (" " * indent + line) for indent, lines in self.states[0] for line in lines
         )
         if self.messages:
@@ -351,6 +570,9 @@ class MdxTranslator(SphinxTranslator):
             logger.info("---End MDX Translator messages---")
 
     def visit_section(self, node: Element) -> None:
+        self.end_state(wrap=False, end="\n")
+        self.new_state(0)
+
         self.sectionlevel += 1
         self.add_text(self.starttag(node, "div", CLASS="section"))
 
@@ -368,6 +590,8 @@ class MdxTranslator(SphinxTranslator):
     depart_sidebar = depart_topic
 
     def visit_rubric(self, node: Element) -> None:
+        # Add blank line before rubrics to separate sections (e.g., between Returns and Examples)
+        self.add_text(self.nl)
         self.new_state(0)
 
     def depart_rubric(self, node: Element) -> None:
@@ -437,15 +661,30 @@ class MdxTranslator(SphinxTranslator):
         self.in_literal += 1
         self.new_state()
         ids = node.get("ids")
+
         if ids:
-            self.add_text(f"<dt><Link id='{ids[0]}'>")
+            self.add_text(f"<dt><Link class=\"anchor\" id='{ids[0]}'>")
         else:
             self.add_text("<dt>")
 
     def depart_desc_signature(self, node: Element) -> None:
         self.in_literal -= 1
         ids = node.get("ids")
+
+        # Add source link if available
+        module = node.get("module")
+        fullname = node.get("fullname")
+        objname = node.get("objname", "")
+
+        if self.show_source_links and module and fullname:
+            github_url = self.get_source_github_url(objname, module, fullname)
+            if github_url:
+                self.add_text(
+                    f" <a href='{github_url}' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a>"
+                )
+
         if ids:
+            self.add_text(f'<a href="#{ids[0]}" class="hash-link"></a>')
             self.add_text("</Link></dt>")
         else:
             self.add_text("</dt>")
@@ -576,15 +815,35 @@ class MdxTranslator(SphinxTranslator):
             self.end_state(wrap=False)
 
     def visit_reference(self, node: Element) -> None:
-        ref_text = node.astext()
-        if "refuri" in node:
-            self.reference_uri = node["refuri"]
-        elif "refid" in node:
-            self.reference_uri = f"#{node['refid']}"
-        else:
-            self.messages.append('References must have "refuri" or "refid" attribute.')
+        if len(node.children) == 1 and isinstance(
+            node.children[0], (nodes.literal, addnodes.literal_emphasis)
+        ):
+            # For references containing only a literal or literal_emphasis, use the literal text
+            ref_text = node.children[0].astext()
+            if "refuri" in node:
+                self.reference_uri = node["refuri"]
+            elif "refid" in node:
+                self.reference_uri = f"#{node['refid']}"
+            else:
+                self.messages.append('References must have "refuri" or "refid" attribute.')
+                raise nodes.SkipNode
+            # Use _emphasis for literal_emphasis nodes
+            if isinstance(node.children[0], addnodes.literal_emphasis):
+                self.add_text(f"[*{ref_text}*]({self.reference_uri})")
+            else:
+                self.add_text(f"[`{ref_text}`]({self.reference_uri})")
             raise nodes.SkipNode
-        self.add_text(f"[{ref_text}]({self.reference_uri})")
+        else:
+            # Handle regular references
+            ref_text = node.astext()
+            if "refuri" in node:
+                self.reference_uri = node["refuri"]
+            elif "refid" in node:
+                self.reference_uri = f"#{node['refid']}"
+            else:
+                self.messages.append('References must have "refuri" or "refid" attribute.')
+                raise nodes.SkipNode
+            self.add_text(f"[{ref_text}]({self.reference_uri})")
 
     def depart_reference(self, node: Element) -> None:
         self.reference_uri = ""
@@ -667,6 +926,8 @@ class MdxTranslator(SphinxTranslator):
         pass
 
     def visit_list_item(self, node: Element) -> None:
+        self.in_list_item += 1
+
         if self.list_counter[-1] == -1:
             self.new_state(2)
             # bullet list
@@ -679,6 +940,7 @@ class MdxTranslator(SphinxTranslator):
             self.new_state(len(str(self.list_counter[-1])) + 2)
 
     def depart_list_item(self, node: Element) -> None:
+        self.in_list_item -= 1
         if self.list_counter[-1] == -1:
             self.end_state(first="- ", wrap=False)
             self.states[-1].pop()
@@ -776,12 +1038,14 @@ class MdxTranslator(SphinxTranslator):
 
     def visit_literal_block(self, node: Element) -> None:
         self.in_literal += 1
-        lang = node.get("language", "default")
+        self.in_literal_block += 1
+        lang = node.get("language", "python")
         self.new_state()
         self.add_text(f"```{lang}\n")
 
     def depart_literal_block(self, node: Element) -> None:
         self.in_literal -= 1
+        self.in_literal_block -= 1
         self.end_state(wrap=False, end=["```"])
 
     def visit_inline(self, node: Element) -> None:
@@ -803,7 +1067,6 @@ class MdxTranslator(SphinxTranslator):
 
     def visit_transition(self, node: Element) -> None:
         self.new_state(0)
-        self.add_text("-----")
 
     def depart_transition(self, node: Element) -> None:
         self.end_state(wrap=False)
@@ -950,10 +1213,14 @@ class MdxTranslator(SphinxTranslator):
     def _flag_to_level(self, flag_type: str) -> str:
         """Maps flag type to style that will be using in CSS and admonitions."""
         level = "info"
-        if flag_type == "experimental":
+        if flag_type == "preview":
+            level = "info"
+        if flag_type == "beta":
+            level = "info"
+        if flag_type == "superseded":
             level = "warning"
         if flag_type == "deprecated":
-            level = "danger"
+            level = "warning"
         return level
 
     def visit_flag(self, node: Element) -> None:

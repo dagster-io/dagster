@@ -1,7 +1,7 @@
 import abc
 from contextlib import contextmanager
 from logging import Logger
-from typing import Any, Dict, Optional, cast
+from typing import Any, Optional, cast
 
 import psycopg2
 import psycopg2.extensions
@@ -33,7 +33,7 @@ class BaseRedshiftClient(abc.ABC):
 
 
 class RedshiftClient(BaseRedshiftClient):
-    def __init__(self, conn_args: Dict[str, Any], autocommit: Optional[bool], log: Logger):
+    def __init__(self, conn_args: dict[str, Any], autocommit: Optional[bool], log: Logger):
         # Extract parameters from resource config
         self.conn_args = conn_args
 
@@ -97,7 +97,7 @@ class RedshiftClient(BaseRedshiftClient):
                     else:
                         raise
 
-    def execute_queries(
+    def execute_queries(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, queries, fetch_results=False, cursor_factory=None, error_callback=None
     ):
         """Synchronously execute a list of queries against Redshift. Will return a list of list of
@@ -208,7 +208,7 @@ class FakeRedshiftClient(BaseRedshiftClient):
 
         self.log = log
 
-    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
+    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):  # pyright: ignore[reportIncompatibleMethodOverride]
         """Fake for execute_query; returns [self.QUERY_RESULT].
 
         Args:
@@ -239,7 +239,7 @@ class FakeRedshiftClient(BaseRedshiftClient):
         if fetch_results:
             return self.QUERY_RESULT
 
-    def execute_queries(
+    def execute_queries(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, queries, fetch_results=False, cursor_factory=None, error_callback=None
     ):
         """Fake for execute_queries; returns [self.QUERY_RESULT] * 3.
@@ -301,7 +301,7 @@ class RedshiftClientResource(ConfigurableResource):
                 database='dev',
             )
 
-            defs = Definitions(
+            Definitions(
                 assets=[example_redshift_asset],
                 resources={'redshift': redshift_configured},
             )
@@ -354,7 +354,7 @@ class RedshiftClientResource(ConfigurableResource):
 
 
 class FakeRedshiftClientResource(RedshiftClientResource):
-    def get_client(self) -> FakeRedshiftClient:
+    def get_client(self) -> FakeRedshiftClient:  # pyright: ignore[reportIncompatibleMethodOverride]
         return FakeRedshiftClient(get_dagster_logger())
 
 
@@ -402,6 +402,6 @@ def redshift_resource(context) -> RedshiftClient:
 )
 def fake_redshift_resource(context) -> FakeRedshiftClient:
     return cast(
-        FakeRedshiftClient,
+        "FakeRedshiftClient",
         FakeRedshiftClientResource.from_resource_context(context).get_client(),
     )

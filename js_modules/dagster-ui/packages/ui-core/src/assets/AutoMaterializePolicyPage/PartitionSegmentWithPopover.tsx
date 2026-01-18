@@ -8,7 +8,7 @@ interface Props {
   description: string;
   numTrue: number;
   assetKeyPath: string[];
-  evaluationId: number;
+  evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
 }

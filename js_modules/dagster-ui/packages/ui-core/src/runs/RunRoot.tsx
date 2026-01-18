@@ -2,9 +2,10 @@ import {
   Box,
   Colors,
   FontFamily,
-  Heading,
+  Icon,
   NonIdealState,
   PageHeader,
+  Subtitle1,
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -16,12 +17,14 @@ import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
 import {RunStatusTag} from './RunStatusTag';
-import {DagsterTag} from './RunTag';
+import {DagsterTag, RunTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
 import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
-import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {getExternalRunUrl, isExternalRun} from './externalRuns';
 import {gql, useQuery} from '../apollo-client';
+import {RunPageFragment} from './types/RunFragments.types';
+import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
@@ -61,11 +64,6 @@ export const RunRoot = () => {
     [run],
   );
 
-  const backfillTag = useMemo(
-    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
-    [run],
-  );
-
   const tickDetails = useMemo(() => {
     if (repoAddress) {
       const tags = run?.tags || [];
@@ -95,6 +93,8 @@ export const RunRoot = () => {
     return null;
   }, [run, repoAddress]);
 
+  const partitionTag = run?.tags.find((tag) => tag.key === DagsterTag.Partition);
+
   return (
     <div
       style={{
@@ -114,30 +114,7 @@ export const RunRoot = () => {
         }}
       >
         <PageHeader
-          title={
-            backfillTag ? (
-              <Heading>
-                <Link to="/runs" style={{color: Colors.textLight()}}>
-                  All runs
-                </Link>
-                {' / '}
-                <Link
-                  to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
-                  style={{color: Colors.textLight()}}
-                >
-                  {backfillTag.value}
-                </Link>
-                {' / '}
-                {runId.slice(0, 8)}
-              </Heading>
-            ) : (
-              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
-                <Link to="/runs">All Runs</Link>
-                <span>/</span>
-                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
-              </Heading>
-            )
-          }
+          title={<RunHeaderTitle run={run} runId={runId} />}
           tags={
             run ? (
               <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
@@ -161,6 +138,7 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
+                {partitionTag && <RunTag tag={partitionTag} />}
                 <RunAssetTags run={run} />
                 <RunAssetCheckTags run={run} />
                 <RunTimingTags run={run} loading={loading} />
@@ -189,7 +167,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
   const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {
-    return <Run run={undefined} runId={runId} />;
+    return null;
   }
 
   if (data.pipelineRunOrError.__typename !== 'Run') {
@@ -202,6 +180,38 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
         />
       </Box>
     );
+  }
+
+  if (isExternalRun(data.pipelineRunOrError)) {
+    const externalUrl = getExternalRunUrl(data.pipelineRunOrError);
+    if (externalUrl) {
+      return (
+        <Box padding={{vertical: 64}}>
+          <NonIdealState
+            icon="job"
+            title="This run was remotely executed"
+            description={
+              <Box flex={{direction: 'row', alignItems: 'center'}}>
+                <a href={externalUrl} target="_blank" rel="noreferrer">
+                  View the execution logs
+                </a>
+                <Icon name="open_in_new" size={16} style={{marginLeft: 8}} />
+              </Box>
+            }
+          />
+        </Box>
+      );
+    } else {
+      return (
+        <Box padding={{vertical: 64}}>
+          <NonIdealState
+            icon="job"
+            title="No external URL found"
+            description="This run was executed externally, but does not have an external URL."
+          />
+        </Box>
+      );
+    }
   }
 
   return <Run run={data.pipelineRunOrError} runId={runId} />;
@@ -219,3 +229,34 @@ const RUN_ROOT_QUERY = gql`
 
   ${RUN_PAGE_FRAGMENT}
 `;
+
+const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: string}) => {
+  const backfillTag = useMemo(
+    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
+    [run],
+  );
+
+  if (backfillTag) {
+    return (
+      <Subtitle1>
+        <Link to="/runs" style={{color: Colors.textLight()}}>
+          Runs
+        </Link>
+        {' / '}
+        <Link to={getBackfillPath(backfillTag.value, 'runs')} style={{color: Colors.textLight()}}>
+          {backfillTag.value}
+        </Link>
+        {' / '}
+        {runId.slice(0, 8)}
+      </Subtitle1>
+    );
+  }
+
+  return (
+    <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+      <Link to="/runs">Runs</Link>
+      <span>/</span>
+      <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+    </Subtitle1>
+  );
+};

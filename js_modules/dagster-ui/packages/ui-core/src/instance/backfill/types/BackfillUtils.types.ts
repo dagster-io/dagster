@@ -2,27 +2,6 @@
 
 import * as Types from '../../../graphql/types';
 
-export type ResumeBackfillMutationVariables = Types.Exact<{
-  backfillId: Types.Scalars['String']['input'];
-}>;
-
-export type ResumeBackfillMutation = {
-  __typename: 'Mutation';
-  resumePartitionBackfill:
-    | {
-        __typename: 'PythonError';
-        message: string;
-        stack: Array<string>;
-        errorChain: Array<{
-          __typename: 'ErrorChainLink';
-          isExplicitLink: boolean;
-          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-        }>;
-      }
-    | {__typename: 'ResumeBackfillSuccess'; backfillId: string}
-    | {__typename: 'UnauthorizedError'; message: string};
-};
-
 export type LaunchPartitionBackfillMutationVariables = Types.Exact<{
   backfillParams: Types.LaunchBackfillParams;
 }>;
@@ -36,6 +15,7 @@ export type LaunchPartitionBackfillMutation = {
     | {__typename: 'InvalidSubsetError'}
     | {__typename: 'LaunchBackfillSuccess'; backfillId: string}
     | {__typename: 'NoModeProvidedError'}
+    | {__typename: 'PartitionKeysNotFoundError'; message: string}
     | {__typename: 'PartitionSetNotFoundError'; message: string}
     | {__typename: 'PipelineNotFoundError'; message: string}
     | {__typename: 'PresetNotFoundError'; message: string}
@@ -95,4 +75,4 @@ export type LaunchPartitionBackfillMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export const LaunchPartitionBackfillVersion = '12402e3e19e32ede40dbc04673d452c2d4b3e6a09509c80fdd065c92e3640daa';
+export const LaunchPartitionBackfillVersion = '07bf7523e7b8696598d621aad89a48f25e173a3955ab84dd60a745c21aff2d9b';

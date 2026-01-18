@@ -7,12 +7,7 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     graph,
@@ -21,6 +16,13 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_duckdb_polars import DuckDBPolarsIOManager, duckdb_polars_io_manager
 
 
@@ -444,7 +446,7 @@ def test_dynamic_partition(tmp_path, io_managers):
         with instance_for_test() as instance:
             resource_defs = {"io_manager": io_manager}
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
             materialize(
                 [dynamic_partitioned],
@@ -461,7 +463,7 @@ def test_dynamic_partition(tmp_path, io_managers):
             assert out_df["a"].to_list() == ["1", "1", "1"]
             duckdb_conn.close()
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
 
             materialize(
                 [dynamic_partitioned],

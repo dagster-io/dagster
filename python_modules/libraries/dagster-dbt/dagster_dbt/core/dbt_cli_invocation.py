@@ -5,13 +5,16 @@ import shutil
 import signal
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, Final, Literal, NamedTuple, Optional, Union, cast
 
 import orjson
 from dagster import (
+    AssetCheckEvaluation,
     AssetCheckResult,
+    AssetExecutionContext,
     AssetMaterialization,
     AssetObservation,
     OpExecutionContext,
@@ -20,12 +23,17 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
-from dbt.adapters.base.impl import BaseAdapter, BaseColumn, BaseRelation
-from typing_extensions import Final, Literal
+from packaging import version
 
-from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage
+from dagster_dbt.compat import BaseAdapter, BaseColumn, BaseRelation
+from dagster_dbt.core.dbt_cli_event import (
+    DbtCliEventMessage,
+    DbtCoreCliEventMessage,
+    DbtFusionCliEventMessage,
+)
 from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
@@ -54,7 +62,7 @@ class RelationData(NamedTuple):
     """Relation metadata queried from a database."""
 
     name: str
-    columns: List[BaseColumn]
+    columns: list[BaseColumn]
 
 
 def _get_relation_from_adapter(adapter: BaseAdapter, relation_key: RelationKey) -> BaseRelation:
@@ -72,6 +80,7 @@ class DbtCliInvocation:
     Args:
         process (subprocess.Popen): The process running the dbt command.
         manifest (Mapping[str, Any]): The dbt manifest blob.
+        project (Optional[DbtProject]): The dbt project.
         project_dir (Path): The path to the dbt project.
         target_path (Path): The path to the dbt target folder.
         raise_on_error (bool): Whether to raise an exception if the dbt command fails.
@@ -83,7 +92,11 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
-    context: Optional[OpExecutionContext] = field(default=None, repr=False)
+    cli_version: version.Version
+    project: Optional[DbtProject] = field(default=None)
+    context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
+        default=None, repr=False
+    )
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
@@ -91,16 +104,16 @@ class DbtCliInvocation:
     postprocessing_threadpool_num_threads: int = field(
         init=False, default=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
     )
-    _stdout: List[Union[str, Dict[str, Any]]] = field(init=False, default_factory=list)
-    _error_messages: List[str] = field(init=False, default_factory=list)
+    _stdout: list[Union[str, dict[str, Any]]] = field(init=False, default_factory=list)
+    _error_messages: list[str] = field(init=False, default_factory=list)
 
     # Caches fetching relation column metadata to avoid redundant queries to the database.
-    _relation_column_metadata_cache: Dict[RelationKey, RelationData] = field(
+    _relation_column_metadata_cache: dict[RelationKey, RelationData] = field(
         init=False, default_factory=dict
     )
 
     def _get_columns_from_dbt_resource_props(
-        self, adapter: BaseAdapter, dbt_resource_props: Dict[str, Any]
+        self, adapter: BaseAdapter, dbt_resource_props: dict[str, Any]
     ) -> RelationData:
         """Given a dbt resource properties dictionary, fetches the resource's column metadata from
         the database, or returns the cached metadata if it has already been fetched.
@@ -118,7 +131,7 @@ class DbtCliInvocation:
             return self._relation_column_metadata_cache[relation_key]
 
         relation = _get_relation_from_adapter(adapter=adapter, relation_key=relation_key)
-        cols: List = adapter.get_columns_in_relation(relation=relation)
+        cols: list = adapter.get_columns_in_relation(relation=relation)
         return self._relation_column_metadata_cache.setdefault(
             relation_key, RelationData(name=str(relation), columns=cols)
         )
@@ -127,14 +140,16 @@ class DbtCliInvocation:
     def run(
         cls,
         args: Sequence[str],
-        env: Dict[str, str],
+        env: dict[str, str],
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
-        context: Optional[OpExecutionContext],
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
         adapter: Optional[BaseAdapter],
+        cli_version: version.Version,
+        dbt_project: Optional[DbtProject] = None,
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -171,12 +186,14 @@ class DbtCliInvocation:
         dbt_cli_invocation = cls(
             process=process,
             manifest=manifest,
+            project=dbt_project,
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
             adapter=adapter,
+            cli_version=cli_version,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -274,18 +291,17 @@ class DbtCliInvocation:
                 dagster_dbt_translator=self.dagster_dbt_translator,
                 context=self.context,
                 target_path=self.target_path,
+                project=self.project,
             )
 
     @public
     def stream(
         self,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
@@ -294,8 +310,9 @@ class DbtCliInvocation:
                 - AssetObservation for dbt test results that are not enabled as asset checks.
 
                 In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for dbt test results that are not enabled as asset checks.
-                - AssetObservation for dbt test results.
+                - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
 
         Examples:
             .. code-block:: python
@@ -319,27 +336,27 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
-        event_history_metadata_by_unique_id: Dict[str, Dict[str, Any]] = {}
+        event_history_metadata_by_unique_id: dict[str, dict[str, Any]] = {}
 
         for raw_event in self._stdout or self._stream_stdout():
             if isinstance(raw_event, str):
                 # If we can't parse the event, then just emit it as a raw log.
                 sys.stdout.write(raw_event + "\n")
                 sys.stdout.flush()
-
                 continue
 
             unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
-            is_result_event = DbtCliEventMessage.is_result_event(raw_event)
-            event_history_metadata: Dict[str, Any] = {}
-            if unique_id and is_result_event:
+
+            if self.cli_version.major < 2:
+                event = DbtCoreCliEventMessage(raw_event=raw_event, event_history_metadata={})
+            else:
+                event = DbtFusionCliEventMessage(raw_event=raw_event, event_history_metadata={})
+
+            if unique_id and event.is_result_event:
                 event_history_metadata = copy.deepcopy(
                     event_history_metadata_by_unique_id.get(unique_id, {})
                 )
-
-            event = DbtCliEventMessage(
-                raw_event=raw_event, event_history_metadata=event_history_metadata
-            )
+                event = replace(event, event_history_metadata=event_history_metadata)
 
             # Attempt to parse the column level metadata from the event message.
             # If it exists, save it as historical metadata to attach to the NodeFinished event.
@@ -347,7 +364,7 @@ class DbtCliInvocation:
                 with contextlib.suppress(orjson.JSONDecodeError):
                     column_level_metadata = orjson.loads(event.raw_event["info"]["msg"])
 
-                    event_history_metadata_by_unique_id[cast(str, unique_id)] = (
+                    event_history_metadata_by_unique_id[cast("str", unique_id)] = (
                         column_level_metadata
                     )
 
@@ -372,7 +389,7 @@ class DbtCliInvocation:
             Literal["run_results.json"],
             Literal["sources.json"],
         ],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Retrieve a dbt artifact from the target path.
 
         See https://docs.getdbt.com/reference/artifacts/dbt-artifacts for more information.
@@ -402,9 +419,9 @@ class DbtCliInvocation:
     @property
     def dbt_command(self) -> str:
         """The dbt CLI command that was invoked."""
-        return " ".join(cast(Sequence[str], self.process.args))
+        return " ".join(cast("Sequence[str]", self.process.args))
 
-    def _stream_stdout(self) -> Iterator[Union[str, Dict[str, Any]]]:
+    def _stream_stdout(self) -> Iterator[Union[str, dict[str, Any]]]:
         """Stream the stdout from the dbt CLI process."""
         try:
             if not self.process.stdout or self.process.stdout.closed:

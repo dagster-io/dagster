@@ -7,6 +7,7 @@ A package could be a good candidate for vendoring if it is relatively small and 
 Currently vendored packages:
 
 - dateutil is vendored at the 2.9.0post0 release: https://pypi.org/project/python-dateutil/2.9.0.post0/ due to being frequently imported from two different pypi packages, https://pypi.org/project/python-dateutil/ and https://pypi.org/project/py-dateutil/, sometimes simultaneously (including in the default AWS EMR python environment as of June 2024)
+- croniter is vendored at the 6.0.0 release: https://pypi.org/project/croniter/6.0.0/ due to the author planning to remove it from PyPI.
 
 To vendor a package:
 

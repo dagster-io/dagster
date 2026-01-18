@@ -1,16 +1,16 @@
-from dagster import job, op
+import dagster as dg
 
 
-@op
+@dg.op
 def return_five():
     return 5
 
 
-@op
+@dg.op
 def add_one(arg):
     return arg + 1
 
 
-@job
+@dg.job
 def do_stuff():
     add_one(return_five())

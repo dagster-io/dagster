@@ -3,16 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dagster import (
-    AssetIn,
-    ConfigurableIOManager,
-    Definitions,
-    InputContext,
-    IOManager,
-    OutputContext,
-    asset,
-    io_manager,
-)
+import dagster as dg
 
 from .asset_input_managers import (
     load_numpy_array,
@@ -23,8 +14,8 @@ from .asset_input_managers import (
 # start_numpy_example
 
 
-class PandasAssetIOManager(ConfigurableIOManager):
-    def handle_output(self, context: OutputContext, obj):
+class PandasAssetIOManager(dg.ConfigurableIOManager):
+    def handle_output(self, context: dg.OutputContext, obj):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
 
@@ -34,30 +25,30 @@ class PandasAssetIOManager(ConfigurableIOManager):
             f"{context.asset_key.path[-1]}.csv",
         )
 
-    def load_input(self, context: InputContext) -> pd.DataFrame:
+    def load_input(self, context: dg.InputContext) -> pd.DataFrame:
         file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context: InputContext) -> np.ndarray:
+    def load_input(self, context: dg.InputContext) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
 
-@asset(io_manager_key="pandas_manager")
+@dg.asset(io_manager_key="pandas_manager")
 def upstream_asset() -> pd.DataFrame:
     return pd.DataFrame([1, 2, 3])
 
 
-@asset(
-    ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
+@dg.asset(
+    ins={"upstream": dg.AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
 )
 def downstream_asset(upstream: np.ndarray) -> tuple:
     return upstream.shape
 
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
         "pandas_manager": PandasAssetIOManager(),

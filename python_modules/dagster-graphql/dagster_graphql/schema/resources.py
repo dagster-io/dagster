@@ -1,9 +1,7 @@
-from typing import List
-
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import ResourceSelector
-from dagster._core.remote_representation.external import ExternalResource
+from dagster._core.remote_representation.external import RemoteResource
 from dagster._core.remote_representation.external_data import (
     NestedResourceType,
     ResourceConfigEnvVarSnap,
@@ -11,8 +9,8 @@ from dagster._core.remote_representation.external_data import (
     ResourceValueSnap,
 )
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
-from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.config_types import SECRET_MASK_VALUE, GrapheneConfigTypeField
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
@@ -24,6 +22,7 @@ from dagster_graphql.schema.util import ResolveInfo, non_null_list
 class GrapheneConfiguredValueType(graphene.Enum):
     VALUE = "VALUE"
     ENV_VAR = "ENV_VAR"
+    SECRET = "SECRET"
 
     class Meta:
         name = "ConfiguredValueType"
@@ -37,16 +36,19 @@ class GrapheneConfiguredValue(graphene.ObjectType):
     class Meta:
         name = "ConfiguredValue"
 
-    def __init__(self, key: str, external_resource_value: ResourceValueSnap):
+    def __init__(self, key: str, resource_value_snap: ResourceValueSnap, is_secret: bool):
         super().__init__()
 
         self.key = key
-        if isinstance(external_resource_value, ResourceConfigEnvVarSnap):
+        if isinstance(resource_value_snap, ResourceConfigEnvVarSnap):
             self.type = GrapheneConfiguredValueType.ENV_VAR
-            self.value = external_resource_value.name
+            self.value = resource_value_snap.name
+        elif is_secret:
+            self.type = GrapheneConfiguredValueType.SECRET
+            self.value = SECRET_MASK_VALUE
         else:
             self.type = GrapheneConfiguredValueType.VALUE
-            self.value = external_resource_value
+            self.value = resource_value_snap
 
 
 GrapheneNestedResourceType = graphene.Enum.from_enum(NestedResourceType)
@@ -83,7 +85,7 @@ class GrapheneJobAndSpecificOps(graphene.ObjectType):
     def resolve_jobName(self, _) -> str:
         return self._entry.job_name
 
-    def resolve_opHandleIDs(self, _) -> List[str]:
+    def resolve_opHandleIDs(self, _) -> list[str]:
         return [str(handle) for handle in self._entry.node_handles]
 
 
@@ -121,49 +123,61 @@ class GrapheneResourceDetails(graphene.ObjectType):
         name = "ResourceDetails"
 
     def __init__(
-        self, location_name: str, repository_name: str, external_resource: ExternalResource
+        self,
+        location_name: str,
+        repository_name: str,
+        remote_resource: RemoteResource,
     ):
         super().__init__()
 
-        self.id = f"{location_name}-{repository_name}-{external_resource.name}"
+        self.id = f"{location_name}-{repository_name}-{remote_resource.name}"
 
         self._location_name = check.str_param(location_name, "location_name")
         self._repository_name = check.str_param(repository_name, "repository_name")
 
-        self._external_resource = check.inst_param(
-            external_resource, "external_resource", ExternalResource
-        )
-        self.name = external_resource.name
-        self.description = external_resource.description
-        self._config_field_snaps = external_resource.config_field_snaps
-        self._configured_values = external_resource.configured_values
+        self._remote_resource = check.inst_param(remote_resource, "remote_resource", RemoteResource)
+        self.name = remote_resource.name
+        self.description = remote_resource.description
+        self._config_field_snaps = remote_resource.config_field_snaps
+        self._configured_values = remote_resource.configured_values
 
-        self._config_schema_snap = external_resource.config_schema_snap
-        self.isTopLevel = external_resource.is_top_level
-        self._nested_resources = external_resource.nested_resources
-        self._parent_resources = external_resource.parent_resources
-        self.resourceType = external_resource.resource_type
-        self._asset_keys_using = external_resource.asset_keys_using
-        self._job_ops_using = external_resource.job_ops_using
-        self._schedules_using = external_resource.schedules_using
-        self._sensors_using = external_resource.sensors_using
+        self._config_schema_snap = remote_resource.config_schema_snap
+        self.isTopLevel = remote_resource.is_top_level
+        self._nested_resources = remote_resource.nested_resources
+        self._parent_resources = remote_resource.parent_resources
+        self.resourceType = remote_resource.resource_type
+        self._asset_keys_using = remote_resource.asset_keys_using
+        self._job_ops_using = remote_resource.job_ops_using
+        self._schedules_using = remote_resource.schedules_using
+        self._sensors_using = remote_resource.sensors_using
 
-    def resolve_configFields(self, _graphene_info):
+    def resolve_configFields(self, _graphene_info: ResolveInfo):
         return [
             GrapheneConfigTypeField(
-                config_schema_snapshot=self._config_schema_snap,
+                get_config_type=self._config_schema_snap.get_config_snap,
                 field_snap=field_snap,
             )
             for field_snap in self._config_field_snaps
         ]
 
     def resolve_configuredValues(self, _graphene_info):
+        # Build a map of field names to their is_secret flag
+        secret_fields = {
+            field_snap.name: field_snap.is_secret or False
+            for field_snap in self._config_field_snaps
+            if field_snap.name is not None
+        }
+
         return [
-            GrapheneConfiguredValue(key=key, external_resource_value=value)
+            GrapheneConfiguredValue(
+                key=key,
+                resource_value_snap=value,
+                is_secret=secret_fields.get(key, False),
+            )
             for key, value in self._configured_values.items()
         ]
 
-    def resolve_nestedResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+    def resolve_nestedResources(self, graphene_info) -> list[GrapheneNestedResourceEntry]:
         from dagster_graphql.implementation.fetch_resources import get_resource_or_error
 
         return [
@@ -186,7 +200,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for k, v in self._nested_resources.items()
         ]
 
-    def resolve_parentResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+    def resolve_parentResources(self, graphene_info) -> list[GrapheneNestedResourceEntry]:
         from dagster_graphql.implementation.fetch_resources import get_resource_or_error
 
         return [
@@ -205,10 +219,10 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for name, attribute in self._parent_resources.items()
         ]
 
-    def resolve_assetKeysUsing(self, _graphene_info) -> List[GrapheneAssetKey]:
+    def resolve_assetKeysUsing(self, _graphene_info) -> list[GrapheneAssetKey]:
         return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
 
-    def resolve_jobsOpsUsing(self, graphene_info: ResolveInfo) -> List[GrapheneJobAndSpecificOps]:
+    def resolve_jobsOpsUsing(self, graphene_info: ResolveInfo) -> list[GrapheneJobAndSpecificOps]:
         return [
             GrapheneJobAndSpecificOps(
                 entry=entry,
@@ -218,10 +232,10 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for entry in self._job_ops_using
         ]
 
-    def resolve_schedulesUsing(self, _graphene_info) -> List[str]:
+    def resolve_schedulesUsing(self, _graphene_info) -> list[str]:
         return self._schedules_using
 
-    def resolve_sensorsUsing(self, _graphene_info) -> List[str]:
+    def resolve_sensorsUsing(self, _graphene_info) -> list[str]:
         return self._sensors_using
 
 
@@ -241,4 +255,4 @@ class GrapheneResourceDetailsList(graphene.ObjectType):
 class GrapheneResourceDetailsListOrError(graphene.Union):
     class Meta:
         types = (GrapheneResourceDetailsList, GrapheneRepositoryNotFoundError, GraphenePythonError)
-        name = "ResourcesOrError"
+        name = "ResourceDetailsListOrError"

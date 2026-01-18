@@ -16,4 +16,5 @@ RUN python -m uv pip install \
     dagster-celery-k8s \
     dagster-gcp \
     dagster-graphql \
-    dagster-webserver
+    dagster-webserver \
+    grpcio==1.57.0 # https://github.com/grpc/grpc/issues/38327

@@ -21,7 +21,7 @@ from dagster_graphql_tests.graphql.production_query import PRODUCTION_QUERY
 
 @dagster_type_loader(str)
 def df_input_schema(_context, path):
-    with open(path, "r", encoding="utf8") as fd:
+    with open(path, encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
@@ -139,8 +139,8 @@ def define_circular_dependency_job():
             node_defs=[
                 OpDefinition(
                     name="csolid",
-                    ins={"num": In("num", PoorMansDataFrame)},
-                    outs={"result": OutputDefinition(PoorMansDataFrame)},
+                    ins={"num": In("num", PoorMansDataFrame)},  # pyright: ignore[reportArgumentType]
+                    outs={"result": OutputDefinition(PoorMansDataFrame)},  # pyright: ignore[reportArgumentType]
                     compute_fn=lambda *_args: None,
                 )
             ],
@@ -149,8 +149,8 @@ def define_circular_dependency_job():
     )
 
 
-@repository
-def test_repository():
+@repository  # pyright: ignore[reportArgumentType]
+def the_test_repository():
     return {"jobs": {"circular_dependency_job": define_circular_dependency_job}}
 
 
@@ -163,6 +163,7 @@ def test_pipeline_or_error_by_name(graphql_context: WorkspaceRequestContext):
         pipelineOrError(params: $selector) {
             ... on Pipeline {
                 name
+                nodeNames
             }
         }
     }""",
@@ -172,6 +173,7 @@ def test_pipeline_or_error_by_name(graphql_context: WorkspaceRequestContext):
     assert not result.errors
     assert result.data
     assert result.data["pipelineOrError"]["name"] == "csv_hello_world_two"
+    assert result.data["pipelineOrError"]["nodeNames"] == ["sum_op"]
 
 
 def test_pipeline_or_error_by_name_not_found(graphql_context: WorkspaceRequestContext):

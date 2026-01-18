@@ -1,5 +1,3 @@
-# type: ignore
-
 # Backcompat test definitions intended for use with our oldest testest release of Dagster. Does not
 # use `Definitions` because it is not available in our oldest supported releases.
 

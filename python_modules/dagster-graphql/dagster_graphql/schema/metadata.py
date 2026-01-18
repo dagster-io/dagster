@@ -1,6 +1,6 @@
 import graphene
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.table import (
     GrapheneTable,
     GrapheneTableColumnLineageEntry,
@@ -108,6 +108,10 @@ class GraphenePythonArtifactMetadataEntry(graphene.ObjectType):
 
 class GrapheneFloatMetadataEntry(graphene.ObjectType):
     floatValue = graphene.Field(graphene.Float)
+    floatRepr = graphene.NonNull(
+        graphene.String,
+        description="String representation of the float to support nan/inf/-inf",
+    )
 
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
@@ -207,6 +211,14 @@ class GrapheneTimestampMetadataEntry(graphene.ObjectType):
         name = "TimestampMetadataEntry"
 
 
+class GraphenePoolMetadataEntry(graphene.ObjectType):
+    pool = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "PoolMetadataEntry"
+
+
 def types():
     return [
         GrapheneMetadataEntry,
@@ -230,4 +242,5 @@ def types():
         GrapheneCodeReferencesMetadataEntry,
         GrapheneNullMetadataEntry,
         GrapheneTimestampMetadataEntry,
+        GraphenePoolMetadataEntry,
     ]

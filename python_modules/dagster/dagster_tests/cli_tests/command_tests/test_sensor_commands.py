@@ -1,19 +1,20 @@
 import re
+from unittest import mock
 
 import click
-import mock
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.sensor import (
-    check_repo_and_scheduler,
     sensor_cursor_command,
     sensor_list_command,
     sensor_preview_command,
     sensor_start_command,
     sensor_stop_command,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalRepository
+from dagster._cli.utils import validate_dagster_home_is_set, validate_repo_has_defined_sensors
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import environ
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import sensor_command_contexts
@@ -87,24 +88,19 @@ def test_sensors_start_all(gen_sensor_args):
             assert result.output == "Started all sensors for repository bar\n"
 
 
-def test_check_repo_and_sensorr_no_external_sensors():
-    repository = mock.MagicMock(spec=ExternalRepository)
-    repository.get_external_sensors.return_value = []
-    instance = mock.MagicMock(spec=DagsterInstance)
+def test_validate_repo_sensors():
+    repository = mock.MagicMock(spec=RemoteRepository)
+    repository.get_sensors.return_value = []
     with pytest.raises(click.UsageError, match="There are no sensors defined for repository"):
-        check_repo_and_scheduler(repository, instance)
+        validate_repo_has_defined_sensors(repository)
 
 
-def test_check_repo_and_scheduler_dagster_home_not_set():
+def test_validate_no_dagster_home():
     with environ({"DAGSTER_HOME": ""}):
-        repository = mock.MagicMock(spec=ExternalRepository)
-        repository.get_external_sensors.return_value = [mock.MagicMock()]
-        instance = mock.MagicMock(spec=DagsterInstance)
-
         with pytest.raises(
             click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
         ):
-            check_repo_and_scheduler(repository, instance)
+            validate_dagster_home_is_set()
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
@@ -121,6 +117,27 @@ def test_sensor_preview(gen_sensor_args):
 
             assert result.exit_code == 0
             assert result.output == "Sensor returning run requests for 1 run(s):\n\nfoo: FOO\n\n"
+
+            # create a run with the same run key to simulate this getting launched
+            instance._run_storage.add_run(  # noqa
+                dg.DagsterRun(
+                    job_name="baz",
+                    run_id="123",
+                    tags={RUN_KEY_TAG: "the_key", SENSOR_NAME_TAG: "foo_sensor"},
+                )
+            )
+
+            # run again, we'll skip
+            result = runner.invoke(
+                sensor_preview_command,
+                cli_args + ["foo_sensor"],
+            )
+
+            assert result.exit_code == 0
+            assert (
+                result.output
+                == "Skipping run requests for 1 run(s) that already have runs matching their run_keys:\n\nfoo: FOO\n\nSensor returning run requests for 0 run(s):\n\n\n"
+            )
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())

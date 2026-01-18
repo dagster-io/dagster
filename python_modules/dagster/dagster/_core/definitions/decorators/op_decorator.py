@@ -1,22 +1,20 @@
+from collections.abc import Mapping, Sequence
 from functools import lru_cache, update_wrapper
 from inspect import Parameter
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Union,
     cast,
     overload,
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
+from dagster._annotations import deprecated_param, public
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -52,6 +50,7 @@ class _Op:
         retry_policy: Optional[RetryPolicy] = None,
         ins: Optional[Mapping[str, In]] = None,
         out: Optional[Union[Out, Mapping[str, Out]]] = None,
+        pool: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.decorator_takes_context = check.bool_param(
@@ -65,6 +64,7 @@ class _Op:
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
+        self.pool = pool
 
         # config will be checked within OpDefinition
         self.config_schema = config_schema
@@ -132,6 +132,7 @@ class _Op:
             code_version=self.code_version,
             retry_policy=self.retry_policy,
             version=None,  # code_version has replaced version
+            pool=self.pool,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -154,9 +155,11 @@ def op(
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
+    pool: Optional[str] = None,
 ) -> _Op: ...
 
 
+@public
 @deprecated_param(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
 )
@@ -173,6 +176,7 @@ def op(
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    pool: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
     """Create an op with the specified parameters from the decorated function.
 
@@ -212,7 +216,7 @@ def op(
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the op. Frameworks may
             expect and require certain metadata to be attached to a op. Values that are not strings
             will be json encoded and must meet the criteria that `json.loads(json.dumps(value)) == value`.
-        code_version (Optional[str]): (Experimental) Version of the logic encapsulated by the op. If set,
+        code_version (Optional[str]): Version of the logic encapsulated by the op. If set,
             this is used as a default version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
 
@@ -266,6 +270,7 @@ def op(
         retry_policy=retry_policy,
         ins=ins,
         out=out,
+        pool=pool,
     )
 
 
@@ -411,7 +416,7 @@ def resolve_checked_op_fn_inputs(
     inputs_to_infer = set()
     has_kwargs = False
 
-    for param in cast(List[Parameter], input_args):
+    for param in cast("list[Parameter]", input_args):
         if param.kind == Parameter.VAR_KEYWORD:
             has_kwargs = True
         elif param.kind == Parameter.VAR_POSITIONAL:
@@ -446,8 +451,8 @@ def resolve_checked_op_fn_inputs(
         )
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
-            f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
-            f" keyword argument for each of their Ins{nothing_exemption}. Alternatively, they can"
+            f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have an"
+            f" argument for each of their Ins{nothing_exemption}. Alternatively, they can"
             " accept **kwargs."
         )
 

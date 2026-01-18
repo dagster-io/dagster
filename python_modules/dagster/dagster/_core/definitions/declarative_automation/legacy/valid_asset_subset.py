@@ -1,20 +1,20 @@
-import datetime
 import operator
 from dataclasses import replace
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
+from typing import AbstractSet, Any, Callable, Optional  # noqa: UP035
 
-import dagster._check as check
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetSerializer,
     SerializableEntitySubset,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._serdes.serdes import whitelist_for_serdes
-
-if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 
 
 @whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})
@@ -23,22 +23,13 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
     functionality is subsumed by EntitySubset.
     """
 
-    def inverse(
-        self,
-        partitions_def: Optional[PartitionsDefinition],
-        current_time: Optional[datetime.datetime] = None,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-    ) -> "ValidAssetSubset":
+    def inverse(self, partitions_def: Optional[PartitionsDefinition]) -> "ValidAssetSubset":
         """Returns the EntitySubset containing all asset partitions which are not in this EntitySubset."""
         if partitions_def is None:
             return replace(self, value=not self.bool_value)
         else:
             value = partitions_def.subset_with_partition_keys(
-                self.subset_value.get_partition_keys_not_in_subset(
-                    partitions_def,
-                    current_time=current_time,
-                    dynamic_partitions_store=dynamic_partitions_store,
-                )
+                self.subset_value.get_partition_keys_not_in_subset(partitions_def)
             )
             return replace(self, value=value)
 
@@ -74,7 +65,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
             return ValidAssetSubset.empty(subset.key, partitions_def)
 
     def _is_compatible_with_subset(self, other: "SerializableEntitySubset") -> bool:
-        if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
+        if isinstance(other.value, (TimeWindowPartitionsSubset, AllPartitionsSubset)):
             return self.is_compatible_with_partitions_def(other.value.partitions_def)
         else:
             return self.is_partitioned == other.is_partitioned
@@ -97,22 +88,15 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
 
     @staticmethod
     def all(
-        asset_key: AssetKey,
-        partitions_def: Optional[PartitionsDefinition],
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-        current_time: Optional[datetime.datetime] = None,
+        asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
     ) -> "ValidAssetSubset":
         if partitions_def is None:
             return ValidAssetSubset(key=asset_key, value=True)
         else:
-            if dynamic_partitions_store is None or current_time is None:
-                check.failed(
-                    "Must provide dynamic_partitions_store and current_time for partitioned assets."
+            with partition_loading_context() as ctx:
+                return ValidAssetSubset(
+                    key=asset_key, value=AllPartitionsSubset(partitions_def, ctx)
                 )
-            return ValidAssetSubset(
-                key=asset_key,
-                value=AllPartitionsSubset(partitions_def, dynamic_partitions_store, current_time),
-            )
 
     @staticmethod
     def empty(

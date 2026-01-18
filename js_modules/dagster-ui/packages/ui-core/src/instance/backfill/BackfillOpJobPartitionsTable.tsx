@@ -1,12 +1,18 @@
-import {Box, NonIdealState, Table} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, NonIdealState, Table} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
+import {Link} from 'react-router-dom';
 
 import {StatusBar} from './BackfillAssetPartitionsTable';
-import {BackfillTarget} from './BackfillRow';
+import {BackfillTableFragment} from './types/BackfillTable.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
+import {PipelineReference} from '../../pipelines/PipelineReference';
 import {failedStatuses, inProgressStatuses, successStatuses} from '../../runs/RunStatuses';
 import {numberFormatter} from '../../ui/formatters';
+import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
+import {RepoAddress} from '../../workspace/types';
+import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
 
 export const BackfillOpJobPartitionsTable = ({
   backfill,
@@ -59,12 +65,12 @@ export const BackfillOpJobPartitionsTable = ({
       <tbody>
         <tr>
           <td>
-            <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-              <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
+            <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}>
+              <BackfillOpJobTarget backfill={backfill} repoAddress={repoAddress} />
               <StatusBar
                 targeted={results.length}
                 inProgress={inProgress.length}
-                completed={succeeded.length}
+                succeeded={succeeded.length}
                 failed={failed.length}
               />
             </Box>
@@ -76,5 +82,67 @@ export const BackfillOpJobPartitionsTable = ({
         </tr>
       </tbody>
     </Table>
+  );
+};
+
+export const BackfillOpJobTarget = ({
+  backfill,
+  repoAddress,
+}: {
+  backfill: Pick<BackfillTableFragment, 'partitionSet' | 'partitionSetName'>;
+  repoAddress: RepoAddress | null;
+}) => {
+  const repo = useRepository(repoAddress);
+  const {partitionSet, partitionSetName} = backfill;
+
+  const buildHeader = () => {
+    if (partitionSet && repo) {
+      const link = workspacePipelinePath({
+        repoName: partitionSet.repositoryOrigin.repositoryName,
+        repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
+        pipelineName: partitionSet.pipelineName,
+        isJob: isThisThingAJob(repo, partitionSet.pipelineName),
+        path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
+      });
+      return (
+        <Link style={{fontWeight: 500}} to={link}>
+          {partitionSet.name}
+        </Link>
+      );
+    }
+    if (partitionSetName) {
+      return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
+    }
+    return null;
+  };
+
+  const repoLink = repoAddress ? (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
+      <Icon name="repo" color={Colors.textLight()} />
+      <Link to={workspacePathFromAddress(repoAddress)}>
+        {repoAddressAsHumanString(repoAddress)}
+      </Link>
+    </Box>
+  ) : undefined;
+
+  const pipelineLink =
+    partitionSet && repoAddress && repo ? (
+      <PipelineReference
+        showIcon
+        size="small"
+        isJob={isThisThingAJob(repo, partitionSet.pipelineName)}
+        pipelineName={partitionSet.pipelineName}
+        pipelineHrefContext={repoAddress}
+      />
+    ) : null;
+
+  return (
+    <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
+      {buildHeader()}
+      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+        {repoLink}
+        {pipelineLink}
+      </Box>
+    </Box>
   );
 };

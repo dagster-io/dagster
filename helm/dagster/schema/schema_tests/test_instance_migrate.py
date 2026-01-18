@@ -23,7 +23,9 @@ def helm_template() -> HelmTemplate:
 
 def test_job_instance_migrate_does_not_render(template: HelmTemplate, capfd):
     with pytest.raises(subprocess.CalledProcessError):
-        helm_values_migrate_disabled = DagsterHelmValues.construct(migrate=Migrate(enabled=False))
+        helm_values_migrate_disabled = DagsterHelmValues.construct(
+            migrate=Migrate(enabled=False, extraContainers=[], initContainers=[])
+        )
 
         template.render(helm_values_migrate_disabled)
 
@@ -32,7 +34,9 @@ def test_job_instance_migrate_does_not_render(template: HelmTemplate, capfd):
 
 
 def test_job_instance_migrate_renders(template: HelmTemplate):
-    helm_values_migrate_enabled = DagsterHelmValues.construct(migrate=Migrate(enabled=True))
+    helm_values_migrate_enabled = DagsterHelmValues.construct(
+        migrate=Migrate(enabled=True, extraContainers=[], initContainers=[])
+    )
 
     jobs = template.render(helm_values_migrate_enabled)
 
@@ -41,7 +45,9 @@ def test_job_instance_migrate_renders(template: HelmTemplate):
 
 @pytest.mark.parametrize("chart_version", ["0.12.0", "0.12.1"])
 def test_job_instance_migrate_image(template: HelmTemplate, chart_version: str):
-    helm_values_migrate_enabled = DagsterHelmValues.construct(migrate=Migrate(enabled=True))
+    helm_values_migrate_enabled = DagsterHelmValues.construct(
+        migrate=Migrate(enabled=True, extraContainers=[], initContainers=[])
+    )
 
     [job] = template.render(helm_values_migrate_enabled, chart_version=chart_version)
     image = job.spec.template.spec.containers[0].image
@@ -54,7 +60,7 @@ def test_job_instance_migrate_keeps_annotations(template: HelmTemplate):
     annotations = {"annotation_1": "an_annotation_1", "annotation_2": "an_annotation_2"}
 
     helm_values_migrate_enabled = DagsterHelmValues.construct(
-        migrate=Migrate(enabled=True),
+        migrate=Migrate(enabled=True, extraContainers=[], initContainers=[]),
         dagsterWebserver=Webserver.construct(
             annotations=kubernetes.Annotations.parse_obj(annotations),
         ),
@@ -73,7 +79,10 @@ def test_job_instance_migrate_keeps_annotations(template: HelmTemplate):
 def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTemplate):
     volumes = [
         {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
-        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+        {
+            "name": "test-pvc",
+            "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False},
+        },
     ]
 
     volume_mounts = [
@@ -85,7 +94,7 @@ def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTempl
     ]
 
     helm_values_migrate_enabled = DagsterHelmValues.construct(
-        migrate=Migrate(enabled=True),
+        migrate=Migrate(enabled=True, extraContainers=[], initContainers=[]),
         dagsterWebserver=Webserver.construct(volumes=volumes, volumeMounts=volume_mounts),
     )
 
@@ -107,7 +116,8 @@ def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTempl
     job_volumes = job.spec.template.spec.volumes
     assert job_volumes[1:] == [
         k8s_model_from_dict(
-            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+            k8s_client.models.V1Volume,
+            k8s_snake_case_dict(k8s_client.models.V1Volume, volume),
         )
         for volume in volumes
     ]

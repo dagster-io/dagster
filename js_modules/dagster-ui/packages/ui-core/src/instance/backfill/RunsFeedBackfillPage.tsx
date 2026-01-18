@@ -2,10 +2,10 @@ import {
   Alert,
   Box,
   Colors,
-  Heading,
   NonIdealState,
   PageHeader,
   Spinner,
+  Subtitle1,
   Tab,
   Tabs,
 } from '@dagster-io/ui-components';
@@ -30,7 +30,6 @@ import {
   DaemonNotRunningAlert,
   useIsBackfillDaemonHealthy,
 } from '../../partitions/BackfillMessaging';
-import {getRunFeedPath} from '../../runs/RunsFeedUtils';
 import {testId} from '../../testing/testId';
 
 export const RunsFeedBackfillPage = () => {
@@ -95,26 +94,29 @@ export const RunsFeedBackfillPage = () => {
         {error?.graphQLErrors && (
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
-        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
-          {selectedTab === 'overview' && (
-            <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
-              {isDaemonHealthy ? null : (
-                <Box padding={{horizontal: 24, top: 16}}>
-                  <DaemonNotRunningAlert />
-                </Box>
-              )}
-
-              <BackfillOverviewDetails backfill={backfill} />
-              {backfill.isAssetBackfill ? (
-                <BackfillAssetPartitionsTable backfill={backfill} />
-              ) : (
-                <BackfillOpJobPartitionsTable backfill={backfill} />
-              )}
-            </Box>
-          )}
-          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}
-          {selectedTab === 'timeline' && <BackfillRunsTab backfill={backfill} view="timeline" />}
-          {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+        <Box flex={{direction: 'column'}} style={{flex: 1, minHeight: 0}}>
+          <Box border={selectedTab === 'overview' ? null : 'bottom'}>
+            <BackfillOverviewDetails backfill={backfill} />
+            {isDaemonHealthy ? null : (
+              <Box padding={{horizontal: 24, bottom: 16}}>
+                <DaemonNotRunningAlert />
+              </Box>
+            )}
+          </Box>
+          <Box flex={{direction: 'column'}} style={{flex: 1, minHeight: 0, position: 'relative'}}>
+            {selectedTab === 'overview' && (
+              <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
+                {backfill.isAssetBackfill ? (
+                  <BackfillAssetPartitionsTable backfill={backfill} />
+                ) : (
+                  <BackfillOpJobPartitionsTable backfill={backfill} />
+                )}
+              </Box>
+            )}
+            {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}
+            {selectedTab === 'timeline' && <BackfillRunsTab backfill={backfill} view="timeline" />}
+            {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+          </Box>
         </Box>
       </Box>
     );
@@ -124,23 +126,19 @@ export const RunsFeedBackfillPage = () => {
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={
-          <Heading>
-            <Link to={getRunFeedPath()} style={{color: Colors.textLight()}}>
-              All runs
+          <Subtitle1>
+            <Link to="/runs/" style={{color: Colors.textLight()}}>
+              Runs
             </Link>
             {' / '}
             {backfillId}
-          </Heading>
+          </Subtitle1>
         }
         right={
           <Box flex={{gap: 12, alignItems: 'center'}}>
             {isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
             {backfill ? (
-              <BackfillActionsMenu
-                backfill={backfill}
-                refetch={queryResult.refetch}
-                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
-              />
+              <BackfillActionsMenu backfill={backfill} refetch={queryResult.refetch} />
             ) : null}
           </Box>
         }

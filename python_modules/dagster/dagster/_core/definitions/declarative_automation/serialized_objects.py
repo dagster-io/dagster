@@ -1,28 +1,31 @@
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
-    FrozenSet,
     Generic,
-    Iterator,
-    Mapping,
+    Literal,
     NamedTuple,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
+from dagster._core.definitions.partitions.subset import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 
 if TYPE_CHECKING:
@@ -45,15 +48,52 @@ class HistoricalAllPartitionsSubsetSentinel:
     """
 
 
-def get_serializable_candidate_subset(
-    candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel],
-) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
-    """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
-    if isinstance(candidate_subset, SerializableEntitySubset) and isinstance(
-        candidate_subset.value, AllPartitionsSubset
+def _get_maybe_compressed_dynamic_partitions_subset(
+    subset: EntitySubset,
+) -> SerializableEntitySubset:
+    # for DefaultPartitionsSubset on a DynamicPartitionsDefinition, we convert this to a
+    # KeyRangesPartitionsSubset. this is technically a lossy conversion as it's possible
+    # for the set of keys between the start and end of a range to change after serialization
+    # (e.g. if a partition is deleted and then re-added). however, accuracy to that degree
+    # is not necessary given the space savings here.
+
+    internal_value = subset.get_internal_value()
+    if isinstance(internal_value, (DefaultPartitionsSubset, AllPartitionsSubset)) and isinstance(
+        subset.partitions_def, DynamicPartitionsDefinition
     ):
+        snap = PartitionsSnap.from_def(subset.partitions_def)
+        value = KeyRangesPartitionsSubset(
+            partitions_snap=snap,
+            key_ranges=internal_value.get_partition_key_ranges(subset.partitions_def),
+        )
+        return SerializableEntitySubset(key=subset.key, value=value)
+    else:
+        return subset.convert_to_serializable_subset()
+
+
+def get_serializable_candidate_subset(
+    candidate_subset: EntitySubset,
+) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
+    """Do not serialize the candidate subset directly if it is an AllPartitionsSubset, compress
+    DefaultPartitionsSubset on a DynamicPartitionsDefinition to a KeyRangesPartitionsSubset.
+    """
+    internal_value = candidate_subset.get_internal_value()
+    # for AllPartitionsSubset, we convert this to a HistoricalAllPartitionsSubsetSentinel
+    # that will be deserialized as an AllPartitionsSubset. this is a lossy conversion as
+    # we are not recording the partitions that were in the AllPartitionsSubset at the time
+    # of serialization
+    if isinstance(internal_value, AllPartitionsSubset):
         return HistoricalAllPartitionsSubsetSentinel()
-    return candidate_subset
+    else:
+        return _get_maybe_compressed_dynamic_partitions_subset(candidate_subset)
+
+
+def get_serializable_true_subset(true_subset: EntitySubset) -> SerializableEntitySubset:
+    """Compress DefaultPartitionsSubset on a DynamicPartitionsDefinition to a KeyRangesPartitionsSubset."""
+    return _get_maybe_compressed_dynamic_partitions_subset(true_subset)
+
+
+OperatorType: TypeAlias = Union[Literal["and"], Literal["or"], Literal["not"], Literal["identity"]]
 
 
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
@@ -65,6 +105,7 @@ class AutomationConditionNodeSnapshot(NamedTuple):
     unique_id: str
     label: Optional[str] = None
     name: Optional[str] = None
+    operator_type: OperatorType = "identity"
 
 
 @whitelist_for_serdes
@@ -83,7 +124,7 @@ class AssetSubsetWithMetadata(NamedTuple):
     metadata: MetadataMapping
 
     @property
-    def frozen_metadata(self) -> FrozenSet[Tuple[str, MetadataValue]]:
+    def frozen_metadata(self) -> frozenset[tuple[str, MetadataValue]]:
         return frozenset(self.metadata.items())
 
 
@@ -103,6 +144,7 @@ class AutomationConditionEvaluation(Generic[T_EntityKey]):
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
+    metadata: Optional[MetadataMapping] = None
 
     @property
     def key(self) -> T_EntityKey:
@@ -136,7 +178,7 @@ class AutomationConditionEvaluationWithRunIds(Generic[T_EntityKey]):
     """
 
     evaluation: AutomationConditionEvaluation[T_EntityKey]
-    run_ids: FrozenSet[str]
+    run_ids: frozenset[str]
 
     @property
     def key(self) -> T_EntityKey:
@@ -156,9 +198,10 @@ class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
+    metadata: Optional[MetadataMapping] = None
 
     def get_structured_cursor(
-        self, as_type: Type[T_StructuredCursor]
+        self, as_type: type[T_StructuredCursor]
     ) -> Optional[T_StructuredCursor]:
         """Returns the extra_state value if it is of the expected type. Otherwise, returns None."""
         if isinstance(self.extra_state, as_type):
@@ -172,7 +215,7 @@ class AutomationConditionCursor(Generic[T_EntityKey]):
     """Incremental state calculated during the evaluation of a AutomationCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
-    Attributes:
+    Args:
         previous_requested_subset: The subset that was requested for this asset on the previous tick.
         effective_timestamp: The timestamp at which the evaluation was performed.
         last_event_id: The maximum storage ID over all events used in this evaluation.

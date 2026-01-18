@@ -2,8 +2,8 @@ import {Body, Box, Colors, MiddleTruncate, Spinner} from '@dagster-io/ui-compone
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
+import {AssetPartitionMetadataPlots, AssetTimeMetadataPlots} from './AssetEventMetadataPlots';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
-import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
@@ -11,10 +11,10 @@ import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {useGroupedEvents} from './groupByPartition';
 import {RecentAssetEvents} from './useRecentAssetEvents';
 import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
+import {PoolTag} from '../instance/PoolTag';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
 interface Props {
@@ -37,11 +37,10 @@ export const AssetSidebarActivitySummary = ({
   stepKey,
   recentEvents,
 }: Props) => {
-  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
-    recentEvents;
-
-  const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const displayedEvent = isObservable ? observations[0] : materializations[0];
+  const {events, refetch, loading} = recentEvents;
+  const displayedEvent = events[0];
+  const pools = asset.pools || [];
+  const isPartitionedAsset = !!asset?.partitionDefinition;
 
   useEffect(() => {
     refetch();
@@ -60,6 +59,16 @@ export const AssetSidebarActivitySummary = ({
         </>
       )}
 
+      {pools.length ? (
+        <SidebarSection title={pools.length === 1 ? 'Pool' : 'Pools'}>
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 4}}>
+            {pools.map((pool, idx) => (
+              <PoolTag key={idx} pool={pool} />
+            ))}
+          </Box>
+        </SidebarSection>
+      ) : null}
+
       {asset.freshnessPolicy && (
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
@@ -77,7 +86,7 @@ export const AssetSidebarActivitySummary = ({
         </SidebarSection>
       )}
 
-      {loadedPartitionKeys.length > 1 ? null : (
+      {isPartitionedAsset ? null : (
         <>
           <SidebarSection title={!isObservable ? 'Latest materialization' : 'Latest observation'}>
             {displayedEvent ? (
@@ -126,12 +135,21 @@ export const AssetSidebarActivitySummary = ({
         </>
       )}
       <SidebarSection title="Metadata plots">
-        <AssetMaterializationGraphs
-          xAxis={xAxis}
-          asSidebarSection
-          groups={grouped}
-          columnCount={1}
-        />
+        {isPartitionedAsset ? (
+          <AssetPartitionMetadataPlots
+            assetKey={asset.assetKey}
+            limit={120}
+            columnCount={1}
+            asSidebarSection
+          />
+        ) : (
+          <AssetTimeMetadataPlots
+            assetKey={asset.assetKey}
+            limit={100}
+            columnCount={1}
+            asSidebarSection
+          />
+        )}
       </SidebarSection>
       {asset.assetChecksOrError.__typename === 'AssetChecks' &&
         asset.assetChecksOrError.checks.length > 0 && (

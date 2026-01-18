@@ -1,6 +1,7 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from dagster import AssetKey, Config, In, Nothing, Out, Output, op
+from dagster._annotations import deprecated
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
@@ -34,7 +35,7 @@ class SyncConfig(Config):
             "be yielded when the op executes."
         ),
     )
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         default=["fivetran"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "
@@ -55,6 +56,13 @@ class SyncConfig(Config):
         ),
     ),
     tags={COMPUTE_KIND_TAG: "fivetran"},
+)
+@deprecated(
+    breaking_version="0.30",
+    additional_warn_text=(
+        "Fivetran ops are no longer best practice and will soon be removed. "
+        "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
+    ),
 )
 def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
     """Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
@@ -102,7 +110,7 @@ def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
 
 
 class FivetranResyncConfig(SyncConfig):
-    resync_parameters: Optional[Dict[str, Any]] = Field(
+    resync_parameters: Optional[dict[str, Any]] = Field(
         None,
         description=(
             "Optional resync parameters to send in the payload to the Fivetran API. You can"
@@ -124,6 +132,13 @@ class FivetranResyncConfig(SyncConfig):
         ),
     ),
     tags={COMPUTE_KIND_TAG: "fivetran"},
+)
+@deprecated(
+    breaking_version="0.30",
+    additional_warn_text=(
+        "Fivetran ops are no longer best practice and will soon be removed. "
+        "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
+    ),
 )
 def fivetran_resync_op(
     config: FivetranResyncConfig,

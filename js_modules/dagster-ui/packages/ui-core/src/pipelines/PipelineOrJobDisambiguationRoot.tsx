@@ -17,12 +17,13 @@ export const PipelineOrJobDisambiguationRoot = (props: Props) => {
   const location = useLocation();
   const {pipelinePath} = useParams<{pipelinePath: string}>();
 
-  const {loading} = useContext(WorkspaceContext);
+  const {loadingNonAssets: loading} = useContext(WorkspaceContext);
   const {loading: permissionsLoading} = useContext(PermissionsContext);
   const repo = useRepository(repoAddress);
 
-  useBlockTraceUntilTrue('Workspace', loading);
-  useBlockTraceUntilTrue('Permissions', permissionsLoading);
+  useBlockTraceUntilTrue('Workspace', !loading);
+  useBlockTraceUntilTrue('Permissions', !permissionsLoading);
+
   if (loading || permissionsLoading) {
     return null;
   }

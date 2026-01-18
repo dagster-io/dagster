@@ -1,4 +1,4 @@
-from typing import Dict, Optional, cast
+from typing import Optional, cast
 
 import pypd
 from dagster import ConfigurableResource, resource
@@ -145,7 +145,7 @@ class PagerDutyService(ConfigurableResource):
         if dedup_key is not None:
             data["dedup_key"] = dedup_key
 
-        payload: Dict[str, object] = cast(Dict[str, object], data["payload"])
+        payload: dict[str, object] = cast("dict[str, object]", data["payload"])
 
         if timestamp is not None:
             payload["timestamp"] = timestamp
@@ -180,7 +180,7 @@ def pagerduty_resource(context) -> PagerDutyService:
             @op
             def pagerduty_op(pagerduty: PagerDutyService):
                 pagerduty.EventV2_create(
-                    summary='alert from dagster'
+                    summary='alert from dagster',
                     source='localhost',
                     severity='error',
                     event_action='trigger',

@@ -1,17 +1,19 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from typing import Annotated, Any, Optional
 
+import click
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
 from dagster._core.code_pointer import load_python_file
-from dagster._core.definitions.load_assets_from_modules import find_objects_in_module_of_types
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+    find_objects_in_module_of_types,
+)
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
-from typing_extensions import Annotated
 
 from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from dagster_dbt.dbt_project import DbtProject
@@ -110,11 +112,11 @@ def copy_scaffold(
     use_experimental_dbt_state: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
-    dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
+    dbt_project_yaml: dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
     dbt_project_name: str = dbt_project_yaml["name"]
 
     dbt_profiles_path = find_dbt_profiles_path(dbt_project_dir=dbt_project_dir)
-    dbt_profiles_yaml: Dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
+    dbt_profiles_yaml: dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
 
     # Remove config from profiles.yml
     dbt_profiles_yaml.pop("config", None)
@@ -340,11 +342,17 @@ def sync_project_to_packaged_dir(
 @project_app.command(name="prepare-and-package")
 def project_prepare_and_package_command(
     file: Annotated[
-        str,
+        Optional[Path],
         typer.Option(
             help="The file containing DbtProject definitions to prepare.",
         ),
-    ],
+    ] = None,
+    components: Annotated[
+        Optional[Path],
+        typer.Option(
+            help="The path to a dg project directory containing DbtProjectComponents.",
+        ),
+    ] = None,
 ) -> None:
     """This command will invoke ``prepare_and_package`` on :py:class:`DbtProject` found in the target module or file.
     Note that this command runs `dbt deps` and `dbt parse`.
@@ -352,11 +360,21 @@ def project_prepare_and_package_command(
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
+    if file:
+        contents = load_python_file(file, working_directory=None, add_uuid_suffix=True)
+        dbt_projects = find_objects_in_module_of_types(contents, types=DbtProject)
+    elif components:
+        from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
 
-    contents = load_python_file(file, working_directory=None)
-    dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(contents, types=DbtProject)
+        dbt_projects = get_projects_from_dbt_component(components)
+    else:
+        raise click.UsageError("Must specify --file or --components")
+
     for project in dbt_projects:
         prepare_and_package(project)
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)
+
+if __name__ == "__main__":
+    app()

@@ -3,7 +3,6 @@ import time
 
 import pytest
 
-from dagster import StaticPartitionsDefinition
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -13,7 +12,8 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.remote_representation import (
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
@@ -212,7 +212,7 @@ class TestScheduleStorage:
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigatorData(
-                cron_schedule=schedule.instigator_data.cron_schedule,
+                cron_schedule=schedule.instigator_data.cron_schedule,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 start_timestamp=now_time,
             )
         )

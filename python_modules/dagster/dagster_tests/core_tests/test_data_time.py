@@ -1,30 +1,17 @@
 import datetime
 import random
 from collections import defaultdict
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional
+from unittest import mock
 
-import mock
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetOut,
-    AssetSelection,
-    DagsterEventType,
-    DagsterInstance,
-    Output,
-    asset,
-    multi_asset,
-    repository,
-)
+from dagster import AssetSelection, DagsterEventType, DagsterInstance
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.data_version import DataVersion
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.test_utils import create_test_asset_job, freeze_time
 from dagster._time import create_datetime, get_current_datetime
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -73,33 +60,33 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
     B,C,D share an op.
     """
 
-    @asset
+    @dg.asset
     def a():
         return 1
 
-    @multi_asset(
-        deps=[AssetKey("a")],
+    @dg.multi_asset(
+        deps=[dg.AssetKey("a")],
         outs={
-            "b": AssetOut(is_required=False),
-            "c": AssetOut(is_required=False),
-            "d": AssetOut(is_required=False),
+            "b": dg.AssetOut(is_required=False),
+            "c": dg.AssetOut(is_required=False),
+            "d": dg.AssetOut(is_required=False),
         },
         can_subset=True,
         internal_asset_deps={
-            "b": {AssetKey("a")},
-            "c": {AssetKey("a")},
-            "d": {AssetKey("b"), AssetKey("c")},
+            "b": {dg.AssetKey("a")},
+            "c": {dg.AssetKey("a")},
+            "d": {dg.AssetKey("b"), dg.AssetKey("c")},
         },
     )
     def bcd(context):
         for output_name in sorted(context.op_execution_context.selected_output_names):
-            yield Output(output_name, output_name)
+            yield dg.Output(output_name, output_name)
 
-    @asset(deps=[AssetKey("c")])
+    @dg.asset(deps=[dg.AssetKey("c")])
     def e():
         return 1
 
-    @asset(deps=[AssetKey("d")])
+    @dg.asset(deps=[dg.AssetKey("d")])
     def f():
         return 1
 
@@ -117,7 +104,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             # materialize selected assets
             result = create_test_asset_job(
                 all_assets,
-                selection=AssetSelection.assets(*(AssetKey(c) for c in to_materialize)),
+                selection=AssetSelection.assets(*(dg.AssetKey(c) for c in to_materialize)),
             ).execute_in_process(instance=instance)
 
             assert result.success
@@ -131,7 +118,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             for entry in instance.all_logs(
                 result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
             ):
-                asset_key = entry.dagster_event.event_specific_data.materialization.asset_key
+                asset_key = entry.dagster_event.event_specific_data.materialization.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
                 materialization_times_index[asset_key][idx] = datetime.datetime.fromtimestamp(
                     entry.timestamp, tz=datetime.timezone.utc
                 )
@@ -139,7 +126,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
                     latest_asset_record = data_time_queryer.instance_queryer.get_latest_materialization_or_observation_record(
-                        AssetKeyPartitionKey(AssetKey(ak))
+                        AssetKeyPartitionKey(dg.AssetKey(ak))
                     )
                     if ignore_asset_tags:
                         # simulate an environment where materialization tags were not populated
@@ -148,36 +135,36 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
                         ) as tags_property:
                             tags_property.return_value = None
                             upstream_data_times = data_time_queryer.get_data_time_by_key_for_record(
-                                record=latest_asset_record,
+                                record=latest_asset_record,  # pyright: ignore[reportArgumentType]
                             )
                     else:
                         upstream_data_times = data_time_queryer.get_data_time_by_key_for_record(
-                            record=latest_asset_record,
+                            record=latest_asset_record,  # pyright: ignore[reportArgumentType]
                         )
                     assert upstream_data_times == {
-                        AssetKey(k): materialization_times_index[AssetKey(k)][v]
+                        dg.AssetKey(k): materialization_times_index[dg.AssetKey(k)][v]
                         for k, v in expected_data_times.items()
                     }
 
 
-@asset(partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"))
+@dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2023-01-01"))
 def partitioned_asset():
     pass
 
 
-@asset(deps=[AssetKey("partitioned_asset")])
+@dg.asset(deps=[dg.AssetKey("partitioned_asset")])
 def unpartitioned_asset():
     pass
 
 
-@repository
+@dg.repository
 def partition_repo():
     return [partitioned_asset, unpartitioned_asset]
 
 
 def _materialize_partitions(instance, partitions):
     for partition in partitions:
-        result = materialize_to_memory(
+        result = dg.materialize_to_memory(
             assets=[partitioned_asset],
             instance=instance,
             partition_key=partition,
@@ -186,7 +173,7 @@ def _materialize_partitions(instance, partitions):
 
 
 def _get_record(instance):
-    result = materialize_to_memory(
+    result = dg.materialize_to_memory(
         assets=[unpartitioned_asset, *partitioned_asset.to_source_assets()],
         instance=instance,
     )
@@ -194,15 +181,15 @@ def _get_record(instance):
     return next(
         iter(
             instance.fetch_materializations(
-                AssetKey("unpartitioned_asset"), ascending=False, limit=1
+                dg.AssetKey("unpartitioned_asset"), ascending=False, limit=1
             ).records
         )
     )
 
 
 class PartitionedDataTimeScenario(NamedTuple):
-    before_partitions: List[str]
-    after_partitions: List[str]
+    before_partitions: list[str]
+    after_partitions: list[str]
     expected_time: Optional[datetime.datetime]
 
 
@@ -276,42 +263,42 @@ def test_partitioned_data_time(scenario):
         data_time = data_time_queryer.get_data_time_by_key_for_record(record=record)
 
         if scenario.expected_time is None:
-            assert data_time == {} or data_time == {AssetKey("partitioned_asset"): None}
+            assert data_time == {} or data_time == {dg.AssetKey("partitioned_asset"): None}
         else:
-            assert data_time == {AssetKey("partitioned_asset"): scenario.expected_time}
+            assert data_time == {dg.AssetKey("partitioned_asset"): scenario.expected_time}
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def sA():
-    return DataVersion(str(random.random()))
+    return dg.DataVersion(str(random.random()))
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def sB():
-    return DataVersion(str(random.random()))
+    return dg.DataVersion(str(random.random()))
 
 
-@asset(deps=[sA])
+@dg.asset(deps=[sA])
 def A():
     pass
 
 
-@asset(deps=[sB])
+@dg.asset(deps=[sB])
 def B():
     pass
 
 
-@asset(deps=[B])
+@dg.asset(deps=[B])
 def B2():
     pass
 
 
-@asset(deps=[sA, sB])
+@dg.asset(deps=[sA, sB])
 def AB():
     pass
 
 
-@repository
+@dg.repository
 def versioned_repo():
     return [sA, sB, A, B, AB, B2]
 
@@ -329,7 +316,7 @@ def _get_instance_queryer(
 def observe_sources(*args):
     def observe_sources_fn(*, instance, times_by_key, **kwargs):
         for arg in args:
-            key = AssetKey(arg)
+            key = dg.AssetKey(arg)
             observe(assets=[versioned_repo.asset_graph.get(key).assets_def], instance=instance)
             latest_record = instance.get_latest_data_version_record(key, is_source=True)
             latest_timestamp = latest_record.timestamp
@@ -342,8 +329,8 @@ def observe_sources(*args):
 
 def run_assets(*args):
     def run_assets_fn(*, instance, **kwargs):
-        assets = [versioned_repo.asset_graph.get(AssetKey(arg)).assets_def for arg in args]
-        materialize_to_memory(assets=assets, instance=instance)
+        assets = [versioned_repo.asset_graph.get(dg.AssetKey(arg)).assets_def for arg in args]
+        dg.materialize_to_memory(assets=assets, instance=instance)
 
     return run_assets_fn
 
@@ -353,7 +340,9 @@ def assert_has_current_time(key_str):
         resolver = CachingDataTimeResolver(
             instance_queryer=_get_instance_queryer(instance, versioned_repo.asset_graph),
         )
-        data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
+        data_time = resolver.get_current_data_time(
+            dg.AssetKey(key_str), current_time=evaluation_time
+        )
         assert data_time == evaluation_time
 
     return assert_has_current_time_fn
@@ -364,11 +353,13 @@ def assert_has_index_time(key_str, source_key_str, index):
         resolver = CachingDataTimeResolver(
             instance_queryer=_get_instance_queryer(instance, versioned_repo.asset_graph),
         )
-        data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
+        data_time = resolver.get_current_data_time(
+            dg.AssetKey(key_str), current_time=evaluation_time
+        )
         if index is None:
             assert data_time is None
         else:
-            assert data_time == times_by_key[AssetKey(source_key_str)][index]
+            assert data_time == times_by_key[dg.AssetKey(source_key_str)][index]
 
     return assert_has_index_time_fn
 

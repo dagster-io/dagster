@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
@@ -29,14 +29,14 @@ def sync_list_repositories_grpc(api_client: "DagsterGrpcClient") -> "ListReposit
 
 
 async def gen_list_repositories_grpc(
-    api_client: "DagsterGrpcClient",
+    api_client: "DagsterGrpcClient", **kwargs: Any
 ) -> "ListRepositoriesResponse":
     from dagster._grpc.client import DagsterGrpcClient
     from dagster._grpc.types import ListRepositoriesResponse
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     result = deserialize_value(
-        await api_client.gen_list_repositories(),
+        await api_client.gen_list_repositories(**kwargs),
         (ListRepositoriesResponse, SerializableErrorInfo),
     )
     if isinstance(result, SerializableErrorInfo):

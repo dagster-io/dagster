@@ -5,7 +5,7 @@ from dagster._utils.pydantic_yaml import (
     parse_yaml_file_to_pydantic,
     parse_yaml_file_to_pydantic_sequence,
 )
-from dagster._utils.source_position import HasSourcePositionAndKeyPath
+from dagster_shared.yaml_utils.source_position import HasSourcePositionAndKeyPath
 from pydantic import BaseModel, ValidationError
 
 
@@ -37,7 +37,7 @@ def test_parse_yaml_file_to_pydantic() -> None:
 
     rv = parse_yaml_file_to_pydantic(MyModel, "child:\n  name: foo")
     assert rv.child.name == "foo"
-    assert str(rv.child._source_position_and_key_path.source_position) == "<string>:2"  # noqa: SLF001 # type: ignore
+    assert str(rv.child._source_position_and_key_path.source_position) == "<string>:1"  # noqa: SLF001 # type: ignore
 
 
 def test_parse_yaml_file_to_pydantic_sequence_error() -> None:
@@ -72,13 +72,13 @@ def test_parse_yaml_file_to_pydantic_sequence() -> None:
         )
     )
     assert rv[0].child.name == "foo"
-    assert str(rv[0].child._source_position_and_key_path.source_position) == "<string>:2"  # noqa: SLF001 # type: ignore
+    assert str(rv[0].child._source_position_and_key_path.source_position) == "<string>:1"  # noqa: SLF001 # type: ignore
     assert (
         ".".join(str(item) for item in rv[0].child._source_position_and_key_path.key_path)  # noqa: SLF001 # type: ignore
         == "0.child"
     )
     assert rv[1].child.name == "bar"
-    assert str(rv[1].child._source_position_and_key_path.source_position) == "<string>:4"  # noqa: SLF001 # type: ignore
+    assert str(rv[1].child._source_position_and_key_path.source_position) == "<string>:3"  # noqa: SLF001 # type: ignore
     assert (
         ".".join(str(item) for item in rv[1].child._source_position_and_key_path.key_path)  # noqa: SLF001 # type: ignore
         == "1.child"

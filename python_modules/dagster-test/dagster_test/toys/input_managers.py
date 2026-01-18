@@ -10,8 +10,10 @@ class PandasCsvIOManager(IOManager):
         self.base_dir = os.getenv("DAGSTER_HOME") if base_dir is None else base_dir
 
     def _get_path(self, output_context):
-        return os.path.join(
-            self.base_dir, "storage", f"{output_context.step_key}_{output_context.name}.csv"
+        return os.path.join(  # pyright: ignore[reportCallIssue]
+            self.base_dir,  # pyright: ignore[reportArgumentType]
+            "storage",
+            f"{output_context.step_key}_{output_context.name}.csv",
         )
 
     def handle_output(self, context, obj: pd.DataFrame):
@@ -30,7 +32,7 @@ def pandas_io_manager(init_context):
 
 
 class NumpyCsvIOManager(PandasCsvIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
         if context.upstream_output:
             file_path = self._get_path(context.upstream_output)
             df = np.genfromtxt(file_path, delimiter=",", dtype=None)

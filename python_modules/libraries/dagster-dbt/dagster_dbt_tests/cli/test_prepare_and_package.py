@@ -3,15 +3,17 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dbt_project import DbtProject
 from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from dagster_dbt.dbt_project import DbtProject
 
 runner = CliRunner()
 
@@ -174,6 +176,69 @@ def test_prepare_and_package_with_packages(
     assert manifest_path.exists()
 
 
+def test_prepare_and_package_with_file_named_dbt(
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(dbt_project_dir)
+
+    project_name = "jaffle_dagster"
+    dagster_project_dir = dbt_project_dir.joinpath(project_name)
+    dagster_python_package_dir = dagster_project_dir.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    project_file = dagster_python_package_dir.joinpath("project.py")
+    dbt_file = dagster_python_package_dir.joinpath("dbt.py")
+    project_file.rename(dbt_file)
+
+    assets_file = dagster_python_package_dir.joinpath("assets.py")
+    assets_file.write_text(
+        assets_file.read_text().replace(
+            "from .project import dbt_project_project", "from .dbt import dbt_project_project"
+        )
+    )
+
+    definitions_file = dagster_python_package_dir.joinpath("definitions.py")
+    definitions_file.write_text(
+        definitions_file.read_text().replace(
+            "from .project import dbt_project_project", "from .dbt import dbt_project_project"
+        )
+    )
+
+    recorded_projects: list[DbtProject] = []
+
+    def _fake_prepare(project: "DbtProject") -> None:
+        recorded_projects.append(project)
+
+    monkeypatch.setattr("dagster_dbt.cli.app.prepare_and_package", _fake_prepare)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "prepare-and-package",
+            "--file",
+            os.fspath(dbt_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert len(recorded_projects) == 1
+    assert recorded_projects[0].project_dir == dbt_project_dir
+
+
 def test_prepare_and_package_with_state(
     monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:
@@ -206,8 +271,10 @@ def test_prepare_and_package_with_state(
     assert result.exit_code == 0
 
     scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}.definitions")
-    my_dbt_assets = cast(AssetsDefinition, getattr(scaffold_defs_module, "jaffle_shop_dbt_assets"))
-    project = cast(DbtProject, getattr(scaffold_defs_module, "jaffle_shop_project"))
+    my_dbt_assets = cast(
+        "AssetsDefinition", getattr(scaffold_defs_module, "jaffle_shop_dbt_assets")
+    )
+    project = cast("DbtProject", getattr(scaffold_defs_module, "jaffle_shop_project"))
     dbt = DbtCliResource(project_dir=project)
 
     assert project.packaged_project_dir

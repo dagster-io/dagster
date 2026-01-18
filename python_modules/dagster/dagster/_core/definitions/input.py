@@ -1,20 +1,13 @@
 import inspect
-from types import FunctionType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from collections.abc import Callable, Mapping
+from types import UnionType
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+
+from dagster_shared.error import DagsterError
+from dagster_shared.record import IHaveNew, record, record_custom
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param, experimental_param
+from dagster._annotations import PublicAttr, public, superseded
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.inference import InferredInputProps
 from dagster._core.definitions.metadata import (
@@ -24,7 +17,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.utils import NoValueSentinel, check_valid_name
-from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
@@ -59,8 +52,7 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
     return default_value  # type: ignore  # (pyright bug)
 
 
-@experimental_param(param="asset_key")
-@experimental_param(param="asset_partitions")
+@superseded(additional_warn_text="Use `In` instead", emit_runtime_warning=False)
 class InputDefinition:
     """Defines an argument to an op's compute function.
 
@@ -76,13 +68,13 @@ class InputDefinition:
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
-        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this InputDefinition. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): (Experimental) A
+        asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this InputDefinition.
-        input_manager_key (Optional[str]): (Experimental) The resource key for the
+        input_manager_key (Optional[str]): The resource key for the
             :py:class:`InputManager` used for loading this input when it is not connected to an
             upstream output.
     """
@@ -96,7 +88,7 @@ class InputDefinition:
     _raw_metadata: ArbitraryMetadataMapping
     _metadata: Mapping[str, MetadataValue]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
-    _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
+    _asset_partitions_fn: Optional[Callable[["InputContext"], set[str]]]
 
     def __init__(
         self,
@@ -106,7 +98,7 @@ class InputDefinition:
         default_value: object = NoValueSentinel,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
-        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        asset_partitions: Optional[Union[set[str], Callable[["InputContext"], set[str]]]] = None,
         input_manager_key: Optional[str] = None,
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
@@ -196,7 +188,7 @@ class InputDefinition:
         else:
             return self.hardcoded_asset_key
 
-    def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
+    def get_asset_partitions(self, context: "InputContext") -> Optional[set[str]]:
         """Get the set of partitions that this op will read from this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
@@ -318,38 +310,22 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     return resolved_type
 
 
-class InputPointer(NamedTuple("_InputPointer", [("node_name", str), ("input_name", str)])):
-    def __new__(cls, node_name: str, input_name: str):
-        return super(InputPointer, cls).__new__(
-            cls,
-            check.str_param(node_name, "node_name"),
-            check.str_param(input_name, "input_name"),
-        )
+@record(kw_only=False)
+class InputPointer:
+    node_name: str
+    input_name: str
 
 
-class FanInInputPointer(
-    NamedTuple(
-        "_FanInInputPointer", [("node_name", str), ("input_name", str), ("fan_in_index", int)]
-    )
-):
-    def __new__(cls, node_name: str, input_name: str, fan_in_index: int):
-        return super(FanInInputPointer, cls).__new__(
-            cls,
-            check.str_param(node_name, "node_name"),
-            check.str_param(input_name, "input_name"),
-            check.int_param(fan_in_index, "fan_in_index"),
-        )
+@record(kw_only=False)
+class FanInInputPointer:
+    node_name: str
+    input_name: str
+    fan_in_index: int
 
 
-@deprecated_param(
-    param="dagster_type",
-    breaking_version="2.0",
-    additional_warn_text="Any defined `dagster_type` should come from the upstream op `Output`.",
-    # Disabling warning here since we're passing this internally and I'm not sure whether it is
-    # actually used or discarded.
-    emit_runtime_warning=False,
-)
-class InputMapping(NamedTuple):
+@public
+@record
+class InputMapping:
     """Defines an input mapping for a graph.
 
     Args:
@@ -358,8 +334,8 @@ class InputMapping(NamedTuple):
         mapped_node_input_name (str): Name of the input in the node (op/graph) that is being mapped to.
         fan_in_index (Optional[int]): The index in to a fanned input, otherwise None.
         graph_input_description (Optional[str]): A description of the input in the graph being mapped from.
-        dagster_type (Optional[DagsterType]): The dagster type of the graph's input
-            being mapped from.
+        dagster_type (Optional[DagsterType]): DEPRECATED, to be removed in 2.0.
+            The dagster type of the graph's input being mapped from.
 
     Examples:
         .. code-block:: python
@@ -392,6 +368,8 @@ class InputMapping(NamedTuple):
     mapped_node_input_name: str
     fan_in_index: Optional[int] = None
     graph_input_description: Optional[str] = None
+
+    # DEPRECATED: Any defined `dagster_type` should come from the upstream op `Output`.
     dagster_type: Optional[DagsterType] = None
 
     @property
@@ -418,26 +396,9 @@ class InputMapping(NamedTuple):
         )
 
 
-class In(
-    NamedTuple(
-        "_In",
-        [
-            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
-            ("description", PublicAttr[Optional[str]]),
-            ("default_value", PublicAttr[Any]),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
-            (
-                "asset_key",
-                PublicAttr[Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]],
-            ),
-            (
-                "asset_partitions",
-                PublicAttr[Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]],
-            ),
-            ("input_manager_key", PublicAttr[Optional[str]]),
-        ],
-    )
-):
+@public
+@record_custom
+class In(IHaveNew):
     """Defines an argument to an op's compute function.
 
     Inputs may flow from previous op's outputs, or be stubbed using config. They may optionally
@@ -450,40 +411,48 @@ class In(
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
         metadata (Optional[Dict[str, RawMetadataValue]]): A dict of metadata for the input.
-        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this In. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
+        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this In.
-        input_manager_key (Optional[str]): (Experimental) The resource key for the
+        input_manager_key (Optional[str]): The resource key for the
             :py:class:`InputManager` used for loading this input when it is not connected to an
             upstream output.
     """
 
+    dagster_type: PublicAttr[Union[DagsterType, type[NoValueSentinel]]]
+    description: PublicAttr[Optional[str]]
+    default_value: PublicAttr[Any]
+    metadata: PublicAttr[Mapping[str, Any]]
+    asset_key: PublicAttr[Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]]
+    asset_partitions: PublicAttr[Optional[Union[set[str], Callable[["InputContext"], set[str]]]]]
+    input_manager_key: PublicAttr[Optional[str]]
+
     def __new__(
         cls,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, UnionType, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
-        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        asset_partitions: Optional[Union[set[str], Callable[["InputContext"], set[str]]]] = None,
         input_manager_key: Optional[str] = None,
     ):
-        return super(In, cls).__new__(
+        return super().__new__(
             cls,
             dagster_type=(
                 NoValueSentinel
                 if dagster_type is NoValueSentinel
                 else resolve_dagster_type(dagster_type)
             ),
-            description=check.opt_str_param(description, "description"),
+            description=description,
             default_value=default_value,
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
+            metadata={} if metadata is None else metadata,
+            asset_key=asset_key,
             asset_partitions=asset_partitions,
-            input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
+            input_manager_key=input_manager_key,
         )
 
     @staticmethod
@@ -512,15 +481,16 @@ class In(
         )
 
 
-class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
+@public
+@record
+class GraphIn:
     """Represents information about an input that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the input.
     """
 
-    def __new__(cls, description: Optional[str] = None):
-        return super(GraphIn, cls).__new__(cls, description=description)
+    description: PublicAttr[Optional[str]] = None
 
     def to_definition(self, name: str) -> InputDefinition:
         return InputDefinition(name=name, description=self.description)

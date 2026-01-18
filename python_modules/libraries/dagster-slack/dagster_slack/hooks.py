@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import failure_hook, success_hook
@@ -72,7 +73,7 @@ def slack_on_failure(
         if webserver_base_url:
             text += f"\n<{webserver_base_url}/runs/{context.run_id}|View in Dagster UI>"
 
-        context.resources.slack.chat_postMessage(channel=channel, text=text)
+        context.resources.slack.get_client().chat_postMessage(channel=channel, text=text)
 
     return _hook
 
@@ -131,6 +132,6 @@ def slack_on_success(
         if webserver_base_url:
             text += f"\n<{webserver_base_url}/runs/{context.run_id}|View in Dagster UI>"
 
-        context.resources.slack.chat_postMessage(channel=channel, text=text)
+        context.resources.slack.get_client().chat_postMessage(channel=channel, text=text)
 
     return _hook

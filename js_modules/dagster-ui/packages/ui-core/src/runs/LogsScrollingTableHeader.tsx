@@ -2,7 +2,7 @@ import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getJSONForKey} from '../util/getJSONForKey';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';
 const ColumnWidths = Object.assign(
@@ -29,7 +29,9 @@ export class ColumnWidthsProvider extends React.Component<
 
   onWidthsChangedFromContext = (columnWidths: typeof ColumnWidths) => {
     window.localStorage.setItem(ColumnWidthsStorageKey, JSON.stringify(columnWidths));
-    this.props.onWidthsChanged && this.props.onWidthsChanged(columnWidths);
+    if (this.props.onWidthsChanged) {
+      this.props.onWidthsChanged(columnWidths);
+    }
     this.setState(columnWidths);
   };
 
@@ -94,7 +96,9 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 
   onMouseUp = () => {
     const {isDragging} = this.state;
-    isDragging && this.setState({isDragging: false});
+    if (isDragging) {
+      this.setState({isDragging: false});
+    }
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
   };
@@ -160,7 +164,6 @@ export const HeaderContainer = styled.div`
   line-height: 32px;
 `;
 
-// eslint-disable-next-line no-unexpected-multiline
 const HeaderDragHandle = styled.div<{
   side: 'left' | 'right';
   isDraggable: boolean;

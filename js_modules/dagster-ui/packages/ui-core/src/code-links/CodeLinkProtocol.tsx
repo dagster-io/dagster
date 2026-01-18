@@ -16,9 +16,12 @@ export const CodeLinkProtocolKey = 'CodeLinkProtocolPreference';
 
 const POPULAR_PROTOCOLS: {[name: string]: string} = {
   'vscode://file/{FILE}:{LINE}': 'Visual Studio Code',
+  'cursor://file/{FILE}:{LINE}': 'Cursor',
+  'windsurf://file/{FILE}:{LINE}': 'Windsurf',
   '': 'Custom',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const DEFAULT_PROTOCOL = {protocol: Object.keys(POPULAR_PROTOCOLS)[0]!, custom: false};
 
 export type ProtocolData = {
@@ -65,7 +68,7 @@ export const CodeLinkProtocolSelect = ({}) => {
           <MenuItem
             active={props.modifiers.active}
             onClick={props.handleClick}
-            label={protocol}
+            right={protocol}
             key={protocol}
             text={POPULAR_PROTOCOLS[protocol]}
           />

@@ -1,21 +1,19 @@
-import {Meta} from '@storybook/react';
-
-import {Group} from '../Group';
+import {Box} from '../Box';
 import {Tag} from '../Tag';
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'Tag',
   component: Tag,
-} as Meta;
+};
 
 const INTENTS = ['none', 'primary', 'success', 'warning', 'danger'] as any[];
 
 export const Basic = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8}}>
       {INTENTS.map((intent) => (
-        <Group direction="row" spacing={8} key={intent}>
+        <Box flex={{direction: 'row', gap: 8}} key={intent}>
           <Tag intent={intent} icon="info" />
           <Tag intent={intent} icon="alternate_email">
             Lorem
@@ -24,17 +22,17 @@ export const Basic = () => {
             Lorem
           </Tag>
           <Tag intent={intent}>Lorem</Tag>
-        </Group>
+        </Box>
       ))}
-    </Group>
+    </Box>
   );
 };
 
 export const Loading = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8}}>
       {INTENTS.map((intent) => (
-        <Group direction="row" spacing={8} key={intent}>
+        <Box flex={{direction: 'row', gap: 8}} key={intent}>
           <Tag intent={intent} icon="alternate_email" rightIcon="spinner">
             Lorem
           </Tag>
@@ -44,8 +42,8 @@ export const Loading = () => {
           <Tag intent={intent} icon="spinner">
             Lorem
           </Tag>
-        </Group>
+        </Box>
       ))}
-    </Group>
+    </Box>
   );
 };

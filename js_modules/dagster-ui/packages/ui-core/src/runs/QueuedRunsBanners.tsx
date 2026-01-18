@@ -2,26 +2,27 @@ import {Alert, Box} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   QueueDaemonStatusQuery,
   QueueDaemonStatusQueryVariables,
 } from './types/QueuedRunsBanners.types';
-import {gql, useQuery} from '../apollo-client';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 
 export const QueuedRunsBanners = () => {
   const canSeeConfig = useCanSeeConfig();
 
+  if (!canSeeConfig) {
+    return null;
+  }
   return (
     <Box flex={{direction: 'column', gap: 8}} style={{minWidth: '100%'}} border="bottom">
-      {canSeeConfig && (
-        <Alert
-          intent="info"
-          title={<Link to="/config#run_coordinator">View queue configuration</Link>}
-        />
-      )}
-      {canSeeConfig && <QueueDaemonAlert />}
+      <Alert
+        intent="info"
+        title={<Link to="/config#run_coordinator">View queue configuration</Link>}
+      />
+      <QueueDaemonAlert />
     </Box>
   );
 };

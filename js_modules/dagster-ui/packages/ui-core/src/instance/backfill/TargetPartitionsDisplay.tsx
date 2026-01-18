@@ -2,9 +2,18 @@ import {Box, Button, ButtonLink, Dialog, DialogFooter, Tag} from '@dagster-io/ui
 import {useState} from 'react';
 
 import {AssetBackfillTargetPartitions} from '../../graphql/types';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {escapePartitionKey} from '../../partitions/SpanRepresentation';
+import {TruncatedTextWithFullTextOnHover} from '../../ui/TruncatedTextWithFullTextOnHover';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../../ui/formatters';
+
+/**
+ * Format a range for display (without brackets).
+ * Uses proper escaping for partition keys with special characters.
+ */
+function formatRangeForDisplay(start: string, end: string): string {
+  return `${escapePartitionKey(start)}...${escapePartitionKey(end)}`;
+}
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -60,12 +69,9 @@ export const TargetPartitionsDisplay = ({
 
   if (ranges) {
     if (ranges.length === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const {start, end} = ranges[0]!;
-      return (
-        <div>
-          {start}...{end}
-        </div>
-      );
+      return <div>{formatRangeForDisplay(start, end)}</div>;
     }
 
     return (
@@ -82,7 +88,7 @@ export const TargetPartitionsDisplay = ({
             <VirtualizedItemListForDialog
               items={ranges || []}
               renderItem={({start, end}) => {
-                return <div key={`${start}:${end}`}>{`${start}...${end}`}</div>;
+                return <div key={`${start}:${end}`}>{formatRangeForDisplay(start, end)}</div>;
               }}
             />
           </div>
@@ -99,8 +105,8 @@ export const TargetPartitionsDisplay = ({
       {targetPartitionCount === 0
         ? '-'
         : targetPartitionCount === 1
-        ? '1 partition'
-        : `${targetPartitionCount} partitions`}
+          ? '1 partition'
+          : `${targetPartitionCount} partitions`}
     </div>
   );
 };

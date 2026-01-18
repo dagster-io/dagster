@@ -1,15 +1,6 @@
-import {
-  Box,
-  Button,
-  Code,
-  Group,
-  Heading,
-  MetadataTableWIP,
-  PageHeader,
-  Tag,
-} from '@dagster-io/ui-components';
-import {useState} from 'react';
+import {Box, Code, MetadataTableWIP, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
+import {ScheduleAlertDetails} from 'shared/schedules/ScheduleAlertDetails.oss';
 import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
@@ -23,7 +14,8 @@ import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
+import {DefinitionOwners} from '../owners/DefinitionOwners';
+import {EvaluateTickButtonSchedule} from '../ticks/EvaluateTickButtonSchedule';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
 
@@ -42,17 +34,15 @@ export const ScheduleDetails = (props: {
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const running = status === InstigationStatus.RUNNING;
 
-  const [showTestTickDialog, setShowTestTickDialog] = useState(false);
-
   return (
     <>
       <PageHeader
         title={
-          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Heading>
+          </Subtitle1>
         }
         tags={
           <Tag icon="schedule">
@@ -62,25 +52,13 @@ export const ScheduleDetails = (props: {
         right={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <QueryRefreshCountdown refreshState={refreshState} />
-            <Button
-              onClick={() => {
-                setShowTestTickDialog(true);
-              }}
-            >
-              Test Schedule
-            </Button>
+            <EvaluateTickButtonSchedule
+              name={schedule.name}
+              repoAddress={repoAddress}
+              jobName={pipelineName}
+            />
           </Box>
         }
-      />
-      <EvaluateScheduleDialog
-        key={showTestTickDialog ? '1' : '0'} // change key to reset dialog state
-        isOpen={showTestTickDialog}
-        onClose={() => {
-          setShowTestTickDialog(false);
-        }}
-        name={schedule.name}
-        repoAddress={repoAddress}
-        jobName={pipelineName}
       />
       <MetadataTableWIP>
         <tbody>
@@ -90,18 +68,26 @@ export const ScheduleDetails = (props: {
               <td>{schedule.description}</td>
             </tr>
           ) : null}
+          {schedule.owners.length > 0 && (
+            <tr>
+              <td>Owners</td>
+              <td>
+                <DefinitionOwners owners={schedule.owners} />
+              </td>
+            </tr>
+          )}
           <tr>
             <td>Latest tick</td>
             <td>
               {latestTick ? (
-                <Group direction="row" spacing={8} alignItems="center">
+                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <TimestampDisplay
                     timestamp={latestTick.timestamp}
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />
-                  <TickStatusTag tick={latestTick} />
-                </Group>
+                  <TickStatusTag tick={latestTick} tickResultType="runs" />
+                </Box>
               ) : (
                 'Schedule has never run'
               )}
@@ -112,6 +98,7 @@ export const ScheduleDetails = (props: {
               <td>Next tick</td>
               <td>
                 <TimestampDisplay
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
@@ -164,10 +151,14 @@ export const ScheduleDetails = (props: {
             <td>Schedule</td>
             <td>
               {cronSchedule ? (
-                <Group direction="row" spacing={8}>
-                  <span>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</span>
+                <Box flex={{direction: 'row', gap: 8}}>
+                  <span>
+                    {humanCronString(cronSchedule, {
+                      longTimezoneName: executionTimezone || 'UTC',
+                    })}
+                  </span>
                   <Code>({cronSchedule})</Code>
-                </Group>
+                </Box>
               ) : (
                 <div>&mdash;</div>
               )}
@@ -179,6 +170,7 @@ export const ScheduleDetails = (props: {
               <td>{executionTimezone}</td>
             </tr>
           ) : null}
+          <ScheduleAlertDetails repoAddress={repoAddress} scheduleName={name} />
         </tbody>
       </MetadataTableWIP>
     </>

@@ -1,0 +1,12 @@
+*.svg
+.docusaurus
+.svg
+.yarn
+
+.direnv/
+.tox/
+build/
+dist/
+node_modules/
+sphinx/
+docs/partials/_KindsTags.md

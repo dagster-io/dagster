@@ -1,8 +1,9 @@
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, overload
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
@@ -20,6 +21,10 @@ from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.step_dependency_config import (
+    StepDependencyConfig,
+    get_step_dependency_config_field,
+)
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
 
 if TYPE_CHECKING:
@@ -61,6 +66,7 @@ ExecutorCreationFunction: TypeAlias = Callable[["InitExecutorContext"], "Executo
 ExecutorRequirementsFunction: TypeAlias = Callable[[ExecutorConfig], Sequence[ExecutorRequirement]]
 
 
+@public
 class ExecutorDefinition(NamedConfigurableDefinition):
     """An executor is responsible for executing the steps of a job.
 
@@ -207,6 +213,7 @@ def executor(
 ) -> "_ExecutorDecoratorCallable": ...
 
 
+@public
 def executor(
     name: Union[ExecutorCreationFunction, Optional[str]] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -268,6 +275,9 @@ def _core_in_process_executor_creation(config: ExecutorConfig) -> "InProcessExec
         # shouldn't need to .get() here - issue with defaults in config setup
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore  # (possible none)
         marker_to_close=config.get("marker_to_close"),  # type: ignore  # (should be str)
+        step_dependency_config=StepDependencyConfig.from_config(
+            check.opt_nullable_dict_elem(config, "step_dependency_config")
+        ),
     )
 
 
@@ -279,6 +289,7 @@ IN_PROC_CONFIG = Field(
             is_required=False,
             description="[DEPRECATED]",
         ),
+        "step_dependency_config": get_step_dependency_config_field(),
     },
     description="Execute all steps in a single process.",
 )
@@ -326,7 +337,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
 
     # unpack optional selector
     start_method = None
-    start_cfg: Dict[str, object] = {}
+    start_cfg: dict[str, object] = {}
     start_selector = check.opt_dict_elem(config, "start_method")
     if start_selector:
         start_method, start_cfg = next(iter(start_selector.items()))
@@ -337,6 +348,9 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
         explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
+        step_dependency_config=StepDependencyConfig.from_config(
+            check.opt_nullable_dict_elem(config, "step_dependency_config")
+        ),
     )
 
 
@@ -390,6 +404,7 @@ MULTI_PROC_CONFIG = Field(
             ),
         ),
         "retries": get_retries_config(),
+        "step_dependency_config": get_step_dependency_config_field(),
     },
     description="Execute each step in an individual process.",
 )
@@ -458,7 +473,7 @@ def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
             " multiple processes. You can configure your default instance via $DAGSTER_HOME or"
             " ensure a valid one is passed when invoking the python APIs. You can learn more about"
             " setting up a persistent DagsterInstance from the DagsterInstance docs here:"
-            " https://docs.dagster.io/deployment/dagster-instance#default-local-behavior"
+            " https://docs.dagster.io/guides/deploy/dagster-instance-configuration#default-local-behavior"
         )
 
 

@@ -1,0 +1,4 @@
+.userDisplay {
+  border: 1px solid var(--color-background-gray);
+  border-radius: 8px;
+}

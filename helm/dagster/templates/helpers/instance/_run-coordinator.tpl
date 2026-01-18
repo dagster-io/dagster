@@ -23,6 +23,12 @@ config:
   {{- if $queuedRunCoordinatorConfig.dequeueNumWorkers }}
   dequeue_num_workers: {{ $queuedRunCoordinatorConfig.dequeueNumWorkers }}
   {{- end }}
+
+  {{- if $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns }}
+  block_op_concurrency_limited_runs:
+    enabled: {{ $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns.enabled }}
+    op_concurrency_slot_buffer: {{ $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns.opConcurrencySlotBuffer }}
+  {{- end }}
 {{- end }}
 {{- end }}
 

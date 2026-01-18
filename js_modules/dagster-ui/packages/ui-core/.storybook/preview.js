@@ -1,22 +1,19 @@
 import {
+  Colors,
   FontFamily,
+  GlobalDialogStyle,
   GlobalGeist,
   GlobalGeistMono,
-  GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalToasterStyle,
-  GlobalTooltipStyle,
-  Colors,
+  Toaster,
 } from '@dagster-io/ui-components';
-
-import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 import {withThemeByClassName} from '@storybook/addon-themes';
-
+import {MemoryRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components';
 
+import '@dagster-io/ui-components/fonts/Fonts.css';
 import '../src/app/blueprint.css';
 
 const GlobalStyle = createGlobalStyle`
@@ -68,11 +65,10 @@ export const decorators = [
       <GlobalThemeStyle />
       <GlobalGeist />
       <GlobalGeistMono />
-      <GlobalToasterStyle />
-      <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
       <Story />
     </MemoryRouter>
   ),
@@ -81,6 +77,9 @@ export const decorators = [
       light: 'themeLight',
       dark: 'themeDark',
       system: 'themeSystem',
+      lightNoRedGreen: 'themeLightNoRedGreen',
+      darkNoRedGreen: 'themeDarkNoRedGreen',
+      systemNoRedGreen: 'themeSystemNoRedGreen',
     },
     defaultTheme: 'system',
     parentSelector: 'body',

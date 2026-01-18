@@ -1,0 +1,17 @@
+.container {
+  overflow-y: auto;
+  flex: 1;
+  padding: 16px 24px;
+}
+
+.container a {
+  background-color: var(--color-background-light);
+  color: var(--color-text-default);
+  transition: background-color 0.1s ease-in-out;
+}
+
+.container a:hover {
+  background-color: var(--color-background-light-hover);
+  color: var(--color-text-default);
+  text-decoration: none;
+}

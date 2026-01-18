@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Union
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._config import (

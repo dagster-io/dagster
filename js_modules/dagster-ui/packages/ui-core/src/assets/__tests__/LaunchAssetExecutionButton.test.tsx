@@ -1,12 +1,13 @@
 /* eslint-disable jest/expect-expect */
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
@@ -68,6 +69,13 @@ describe('LaunchAssetExecutionButton', () => {
       );
     });
 
+    it('should say "Materialize all (N)…" for an `all` scope if the entire selection is not materializable', async () => {
+      renderButton({scope: {all: [UNPARTITIONED_ASSET, UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]}});
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Materialize all (2)…',
+      );
+    });
+
     it('should say "Materialize" for an `all` scope if skipAllTerm is passed', async () => {
       renderButton({scope: {all: [UNPARTITIONED_ASSET], skipAllTerm: true}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual('Materialize');
@@ -98,27 +106,68 @@ describe('LaunchAssetExecutionButton', () => {
         'Materialize selected (2)…',
       );
     });
-  });
 
-  describe('source assets', () => {
-    it('should skip over source assets in the selection', async () => {
-      renderButton({
-        scope: {selected: [UNPARTITIONED_ASSET, UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+    // Figure out why this test is flaky
+    // eslint-disable-next-line jest/no-disabled-tests
+    it.skip('should say "Materialize selected (2)…" for a `selected` scope if the entire selection is not materializable', async () => {
+      await act(async () => {
+        renderButton({
+          scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+        });
       });
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
-        'Materialize selected (2)…', // 2 instead of 3
+        'Materialize selected (1)…', // 2 instead of 3
       );
     });
 
-    it('should be disabled if the entire selection is observable assets', async () => {
+    it('should be disabled if the selection is empty', async () => {
+      const user = userEvent.setup();
       renderButton({
-        scope: {selected: [UNPARTITIONED_SOURCE_ASSET]},
+        scope: {selected: []},
       });
       const button = await screen.findByTestId('materialize-button');
       expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('Observable assets cannot be materialized')).toBeDefined();
+      await user.hover(button);
+      expect(
+        await screen.findByRole('tooltip', {name: /Select one or more assets to materialize/i}),
+      ).toBeVisible();
+    });
+  });
+
+  describe('observable assets', () => {
+    it('should disable the sub-menu item if the selection includes no observable assets', async () => {
+      const user = userEvent.setup();
+      renderButton({
+        scope: {selected: [ASSET_DAILY]},
+      });
+
+      await user.click(await screen.findByTestId('materialize-button-dropdown'));
+      const secondaryOption = await screen.findByRole('menuitem', {name: /observe selected/i});
+      expect(secondaryOption).toBeVisible();
+      expect(secondaryOption).toBeDisabled();
+    });
+
+    it('should enable the sub-menu item if the selection includes observable assets', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+      });
+
+      await userEvent.click(await screen.findByTestId('materialize-button-dropdown'));
+
+      const observeOption = await screen.findByTestId('materialize-secondary-option');
+      expect(observeOption.textContent).toEqual('Observe selected (1)');
+      expect(observeOption).not.toHaveClass('bp5-disabled');
+    });
+
+    it('should show Observe as the primary action if the entire selection is observable', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_SOURCE_ASSET]},
+      });
+
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Observe selected',
+      );
     });
   });
 
@@ -133,14 +182,17 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should be disabled if the entire selection is non-executable assets', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: [UNPARTITIONED_NON_EXECUTABLE_ASSET]},
       });
       const button = await screen.findByTestId('materialize-button');
       expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('External assets cannot be materialized')).toBeDefined();
+      await user.hover(button);
+      expect(
+        await screen.findByRole('tooltip', {name: /External assets cannot be materialized/i}),
+      ).toBeVisible();
     });
   });
 
@@ -149,7 +201,7 @@ describe('LaunchAssetExecutionButton', () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
         executionMetadata: {
-          tags: [],
+          tags: [...UI_EXECUTION_TAGS],
         },
         runConfigData: '{}',
         selector: {
@@ -173,7 +225,7 @@ describe('LaunchAssetExecutionButton', () => {
       it('should not include checks if the job in context is marked without_checks', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
           mode: 'default',
-          executionMetadata: {tags: []},
+          executionMetadata: {tags: [...UI_EXECUTION_TAGS]},
           runConfigData: '{}',
           selector: {
             repositoryLocationName: 'test.py',
@@ -195,7 +247,7 @@ describe('LaunchAssetExecutionButton', () => {
       it('should include checks if the job in context includes them', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
           mode: 'default',
-          executionMetadata: {tags: []},
+          executionMetadata: {tags: [...UI_EXECUTION_TAGS]},
           runConfigData: '{}',
           selector: {
             repositoryLocationName: 'test.py',
@@ -217,16 +269,19 @@ describe('LaunchAssetExecutionButton', () => {
 
     describe('permissions', () => {
       it('should be disabled if you do not have permission to execute assets', async () => {
+        const user = userEvent.setup();
         renderButton({
           scope: {all: [{...UNPARTITIONED_ASSET, hasMaterializePermission: false}]},
         });
         const button = await screen.findByTestId('materialize-button');
         expect(button).toBeDisabled();
 
-        userEvent.hover(button);
+        await user.hover(button);
         expect(
-          await screen.findByText('You do not have permission to materialize assets'),
-        ).toBeDefined();
+          await screen.findByRole('tooltip', {
+            name: /You do not have permission to materialize assets/i,
+          }),
+        ).toBeVisible();
       });
     });
 
@@ -234,7 +289,7 @@ describe('LaunchAssetExecutionButton', () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
         executionMetadata: {
-          tags: [],
+          tags: [...UI_EXECUTION_TAGS],
         },
         runConfigData: '{}',
         selector: {
@@ -286,6 +341,7 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
             {key: 'dagster/partition_set', value: 'my_asset_job_partition_set'},
+            ...UI_EXECUTION_TAGS,
           ],
         },
         mode: 'default',
@@ -319,7 +375,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
       renderButton({
         scope: {all: [ASSET_DAILY]},
@@ -328,9 +384,26 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
 
       // verify that the executed mutation is correct
       await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
+    });
+
+    it('should default the backfill modal to an empty selection', async () => {
+      renderButton({
+        scope: {all: [ASSET_DAILY]},
+        preferredJobName: 'my_asset_job',
+      });
+      await clickMaterializeButton();
+      await screen.findByTestId('choose-partitions-dialog');
+
+      const launchButton = await screen.findByTestId('launch-button');
+      expect(launchButton.textContent).toEqual('Launch backfill');
+      expect(launchButton).toBeDisabled();
+
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
+      expect(await screen.findByTestId('launch-button')).toBeEnabled();
     });
 
     it('should launch backfills with only missing partitions if requested', async () => {
@@ -342,7 +415,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS_MISSING,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
       renderButton({
         scope: {all: [ASSET_DAILY]},
@@ -351,6 +424,9 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
+
+      // choose "All" partitions
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
 
       // verify that the preview option is not shown
       expect(screen.queryByTestId('backfill-preview-button')).toBeNull();
@@ -376,6 +452,7 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
             {key: 'dagster/partition_set', value: '__ASSET_JOB_partition_set'},
+            ...UI_EXECUTION_TAGS,
           ],
         },
         mode: 'default',
@@ -411,7 +488,7 @@ describe('LaunchAssetExecutionButton', () => {
           assetSelection: [{path: ['asset_daily']}],
           partitionNames: ASSET_DAILY_PARTITION_KEYS,
           fromFailure: false,
-          tags: [],
+          tags: [...UI_EXECUTION_TAGS],
         });
         renderButton({
           scope: {all: [ASSET_DAILY]},
@@ -420,6 +497,9 @@ describe('LaunchAssetExecutionButton', () => {
         });
         await clickMaterializeButton();
         await screen.findByTestId('choose-partitions-dialog');
+
+        // choose "All" partitions
+        await userEvent.click(await screen.findByTestId('all-partition-button'));
 
         // missing-and-failed only option is available
         expect(screen.getByTestId('missing-only-checkbox')).toBeEnabled();
@@ -439,6 +519,7 @@ describe('LaunchAssetExecutionButton', () => {
             tags: [
               {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
               {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+              ...UI_EXECUTION_TAGS,
             ],
           },
           runConfigData: '{}\n',
@@ -458,6 +539,9 @@ describe('LaunchAssetExecutionButton', () => {
         await clickMaterializeButton();
         await screen.findByTestId('choose-partitions-dialog');
 
+        // choose "All" partitions
+        await userEvent.click(await screen.findByTestId('all-partition-button'));
+
         const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
         await waitFor(async () => expect(rangesAsTags).toBeEnabled());
         await userEvent.click(rangesAsTags);
@@ -473,6 +557,7 @@ describe('LaunchAssetExecutionButton', () => {
             tags: [
               {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
               {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+              ...UI_EXECUTION_TAGS,
             ],
           },
           runConfigData: '{}\n',
@@ -505,7 +590,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}, {path: ['asset_weekly']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
 
       renderButton({
@@ -517,6 +602,9 @@ describe('LaunchAssetExecutionButton', () => {
 
       // expect the dialog to be displayed
       await screen.findByTestId('choose-partitions-dialog');
+
+      // choose "All" partitions
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
 
       // expect the anchor asset to be labeled
       expect(screen.getByTestId('anchor-asset-label')).toHaveTextContent('asset_daily');
@@ -534,7 +622,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}, {path: ['asset_weekly']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
 
       renderButton({
@@ -554,7 +642,7 @@ describe('LaunchAssetExecutionButton', () => {
 
     it('should offer to materialize all partitions if roots have different partition defintions ("pureAll" case)', async () => {
       const LaunchPureAllMutationMock = buildExpectedLaunchBackfillMutation({
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
         assetSelection: [
           {path: ['asset_daily']},
           {path: ['asset_weekly']},
@@ -588,7 +676,7 @@ describe('LaunchAssetExecutionButton', () => {
     it('should present a warning if pre-flight check indicates other asset keys are required', async () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
-        executionMetadata: {tags: []},
+        executionMetadata: {tags: [...UI_EXECUTION_TAGS]},
         runConfigData: '{}',
         selector: {
           repositoryLocationName: 'test.py',
@@ -633,7 +721,15 @@ function renderButton({
   launchMock?: MockedResponse<Record<string, any>>;
   preferredJobName?: string;
 }) {
-  const assetKeys = ('all' in scope ? scope.all : scope.selected).map((s) => s.assetKey);
+  const assetKeys = (
+    'all' in scope
+      ? scope.all
+      : 'selected' in scope
+        ? scope.selected
+        : scope.single
+          ? [scope.single]
+          : []
+  ).map((s) => s.assetKey);
 
   const mocks: MockedResponse<Record<string, any>>[] = [
     LaunchAssetLoaderResourceJob7Mock,

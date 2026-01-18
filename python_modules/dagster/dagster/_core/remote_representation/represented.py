@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import AbstractSet, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
 from dagster._core.remote_representation.job_index import JobIndex
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
-from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 
@@ -31,6 +32,10 @@ class RepresentedJob(ABC):
     def description(self) -> Optional[str]:
         return self._job_index.description
 
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._job_index.owners
+
     # Snapshot things
 
     @property
@@ -44,11 +49,11 @@ class RepresentedJob(ABC):
         pass
 
     @property
-    def job_snapshot(self) -> JobSnapshot:
+    def job_snapshot(self) -> JobSnap:
         return self._job_index.job_snapshot
 
     @property
-    def parent_job_snapshot(self) -> Optional[JobSnapshot]:
+    def parent_job_snapshot(self) -> Optional[JobSnap]:
         return self._job_index.parent_job_snapshot
 
     @property
@@ -113,3 +118,8 @@ class RepresentedJob(ABC):
 
     def get_graph_name(self) -> str:
         return self._job_index.job_snapshot.graph_def_name
+
+    # Job properties
+    @abstractmethod
+    def get_external_job_source(self) -> Optional[str]:
+        pass

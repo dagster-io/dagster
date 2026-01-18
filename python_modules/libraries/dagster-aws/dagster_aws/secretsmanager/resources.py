@@ -1,11 +1,12 @@
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Generator, List, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster import (
     Field as LegacyDagsterField,
     resource,
 )
-from dagster._config.field_utils import Shape
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
@@ -20,8 +21,10 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 
 if TYPE_CHECKING:
     import botocore
+    from dagster._config.field_utils import Shape
 
 
+@beta
 class SecretsManagerResource(ResourceWithBoto3Configuration):
     """Resource that gives access to AWS SecretsManager.
 
@@ -45,7 +48,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
             def example_job():
                 example_secretsmanager_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={
                     'secretsmanager': SecretsManagerResource(
@@ -73,6 +76,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
         )
 
 
+@beta
 @dagster_maintained_resource
 @resource(SecretsManagerResource.to_config_schema())
 def secretsmanager_resource(context) -> "botocore.client.SecretsManager":  # pyright: ignore (reportAttributeAccessIssue)
@@ -128,6 +132,7 @@ def secretsmanager_resource(context) -> "botocore.client.SecretsManager":  # pyr
     return SecretsManagerResource.from_resource_context(context).get_client()
 
 
+@beta
 class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     """Resource that provides a dict which maps selected SecretsManager secrets to
     their string values. Also optionally sets chosen secrets as environment variables.
@@ -153,7 +158,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
                 example_secretsmanager_secrets_op()
                 example_secretsmanager_secrets_op_2()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={
                     'secrets': SecretsManagerSecretsResource(
@@ -168,7 +173,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     for the execution of their compute functions.
     """
 
-    secrets: List[str] = Field(
+    secrets: list[str] = Field(
         default=[], description="An array of AWS Secrets Manager secrets arns to fetch."
     )
     secrets_tag: Optional[str] = Field(
@@ -183,9 +188,9 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     @contextmanager
     def secrets_in_environment(
         self,
-        secrets: Optional[List[str]] = None,
+        secrets: Optional[list[str]] = None,
         secrets_tag: Optional[str] = None,
-    ) -> Generator[Dict[str, str], None, None]:
+    ) -> Generator[dict[str, str], None, None]:
         """Yields a dict which maps selected SecretsManager secrets to their string values. Also
         sets chosen secrets as environment variables.
 
@@ -223,9 +228,9 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
 
     def fetch_secrets(
         self,
-        secrets: Optional[List[str]] = None,
+        secrets: Optional[list[str]] = None,
         secrets_tag: Optional[str] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Fetches secrets from AWS Secrets Manager and returns them as a dict.
 
         Args:
@@ -240,7 +245,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
 
 
 LEGACY_SECRETSMANAGER_SECRETS_SCHEMA = {
-    **cast(Shape, SecretsManagerSecretsResource.to_config_schema().as_field().config_type).fields,
+    **cast("Shape", SecretsManagerSecretsResource.to_config_schema().as_field().config_type).fields,
     "add_to_environment": LegacyDagsterField(
         bool,
         default_value=False,
@@ -249,6 +254,7 @@ LEGACY_SECRETSMANAGER_SECRETS_SCHEMA = {
 }
 
 
+@beta
 @dagster_maintained_resource
 @resource(config_schema=LEGACY_SECRETSMANAGER_SECRETS_SCHEMA)
 @contextmanager

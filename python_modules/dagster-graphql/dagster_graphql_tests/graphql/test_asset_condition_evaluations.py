@@ -1,22 +1,29 @@
 import random
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.declarative_automation.operators.since_operator import (
+    SinceConditionData,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
+from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -38,6 +45,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_key import EntityKey
 
 TICKS_QUERY = """
 query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String, $beforeTimestamp: Float, $afterTimestamp: Float) {
@@ -133,7 +143,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["autoMaterializeTicks"]) == 1
         tick = result.data["autoMaterializeTicks"][0]
         assert tick["endTimestamp"] == end_timestamp
-        assert tick["autoMaterializeAssetEvaluationId"] == 3
+        assert tick["autoMaterializeAssetEvaluationId"] == "3"
         assert sorted(tick["requestedAssetKeys"], key=lambda x: x["path"][0]) == [
             {"path": ["bar"]},
             {"path": ["baz"]},
@@ -164,9 +174,8 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         )
         assert len(result.data["autoMaterializeTicks"]) == 1
         tick = result.data["autoMaterializeTicks"][0]
-        assert (
-            tick["autoMaterializeAssetEvaluationId"]
-            == success_2.tick_data.auto_materialize_evaluation_id
+        assert tick["autoMaterializeAssetEvaluationId"] == str(
+            success_2.automation_condition_evaluation_id
         )
 
         result = execute_dagster_graphql(
@@ -184,9 +193,8 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         ticks = result.data["autoMaterializeTicks"]
         assert len(ticks) == 1
         assert ticks[0]["timestamp"] == success_1.timestamp
-        assert (
-            ticks[0]["autoMaterializeAssetEvaluationId"]
-            == success_1.tick_data.auto_materialize_evaluation_id
+        assert ticks[0]["autoMaterializeAssetEvaluationId"] == str(
+            success_1.automation_condition_evaluation_id
         )
 
         cursor = ticks[0]["id"]
@@ -207,7 +215,22 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert ticks[0]["timestamp"] == success_2.timestamp
 
 
-FRAGMENTS = """
+ENTITY_FRAGMENT = """
+fragment entityKeyFragment on EntityKey {
+    ... on AssetKey {
+        path
+    }
+    ... on AssetCheckhandle {
+        name
+        assetKey {
+            path
+        }
+    }
+}
+"""
+FRAGMENTS = (
+    ENTITY_FRAGMENT
+    + """
 fragment evaluationFields on AssetConditionEvaluation {
     rootUniqueId
     evaluationNodes {
@@ -218,6 +241,9 @@ fragment evaluationFields on AssetConditionEvaluation {
             status
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
         ... on PartitionedAssetConditionEvaluationNode {
             description
@@ -226,16 +252,23 @@ fragment evaluationFields on AssetConditionEvaluation {
             numTrue
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
         ... on SpecificPartitionAssetConditionEvaluationNode {
             description
             status
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
     }
 }
 """
+)
 
 AUTO_MATERIALIZE_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
@@ -286,7 +319,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 LEGACY_QUERY_FOR_SPECIFIC_PARTITION = (
     FRAGMENTS
     + """
-query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: Int!) {
+query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: ID!) {
     assetConditionEvaluationForPartition(assetKey: $assetKey, partition: $partition, evaluationId: $evaluationId) {
         ...evaluationFields
     }
@@ -297,7 +330,7 @@ query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!
 LEGACY_QUERY_FOR_EVALUATION_ID = (
     FRAGMENTS
     + """
-query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
+query GetEvaluationsForEvaluationIdQuery($evaluationId: ID!) {
     assetConditionEvaluationsForEvaluationId(evaluationId: $evaluationId) {
         ... on AssetConditionEvaluationRecords {
             records {
@@ -316,7 +349,9 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 """
 )
 
-QUERY = """
+QUERY = (
+    ENTITY_FRAGMENT
+    + """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
@@ -329,6 +364,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 }
                 rootUniqueId
                 evaluationNodes {
+                    operatorType
                     userLabel
                     expandedLabel
                     startTimestamp
@@ -336,18 +372,62 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     numTrue
                     uniqueId
                     childUniqueIds
+                    entityKey {
+                        ...entityKeyFragment
+                    }
                 }
             }
         }
     }
 }
 """
+)
 
 TRUE_PARTITIONS_QUERY = """
-query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUniqueId: String!) {
+query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: ID!, $nodeUniqueId: String!) {
     truePartitionsForAutomationConditionEvaluationNode(assetKey: $assetKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
 }
 """
+
+QUERY_WITH_SINCE_METADATA = (
+    ENTITY_FRAGMENT
+    + """
+query GetEvaluationsWithSinceMetadata($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+        ... on AssetConditionEvaluationRecords {
+            records {
+                evaluationId
+                isLegacy
+                numRequested
+                assetKey {
+                    path
+                }
+                rootUniqueId
+                evaluationNodes {
+                    operatorType
+                    userLabel
+                    expandedLabel
+                    startTimestamp
+                    endTimestamp
+                    numTrue
+                    uniqueId
+                    childUniqueIds
+                    entityKey {
+                        ...entityKeyFragment
+                    }
+                    sinceMetadata {
+                        triggerEvaluationId
+                        triggerTimestamp
+                        resetEvaluationId
+                        resetTimestamp
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+)
 
 
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
@@ -387,7 +467,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                     "assetKey": {"path": ["fresh_diamond_bottom"]},
                 },
             )
-            assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
+            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == "0"
 
         with patch(
             graphql_context.instance.__class__.__module__
@@ -409,7 +489,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 instigator["name"] == "my_auto_materialize_sensor"
                 for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
             )
-            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
+            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == "12345"
 
     def _get_node(
         self, unique_id: str, evaluations: Sequence[Mapping[str, Any]]
@@ -676,7 +756,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert record["numRequested"] == 0
 
         # all nodes in the tree
-        assert len(record["evaluationNodes"]) == 27
+        assert len(record["evaluationNodes"]) == 35
 
         rootNode = record["evaluationNodes"][0]
         assert rootNode["uniqueId"] == record["rootUniqueId"]
@@ -693,7 +773,16 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "(NOT (in_progress))",
         ]
         assert rootNode["numTrue"] == 0
+        assert rootNode["operatorType"] == "and"
         assert len(rootNode["childUniqueIds"]) == 5
+
+        def _get_node(id):
+            return next(n for n in record["evaluationNodes"] if n["uniqueId"] == id)
+
+        not_any_deps_missing_node = _get_node(rootNode["childUniqueIds"][2])
+        any_deps_missing_node = _get_node(not_any_deps_missing_node["childUniqueIds"][0])
+        up_node = _get_node(any_deps_missing_node["childUniqueIds"][0])
+        assert up_node["expandedLabel"] == ["up", "((missing) AND (NOT (will_be_requested)))"]
 
         evaluationId = record["evaluationId"]
         uniqueId = rootNode["uniqueId"]
@@ -732,3 +821,67 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "c",
             "d",
         }
+
+    def test_since_metadata_field(self, graphql_context: WorkspaceRequestContext):
+        """Test that the sinceMetadata field is correctly populated for SinceCondition evaluations."""
+        asset_key = AssetKey("test_asset")
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+        # Create an evaluation with SinceCondition metadata
+        since_metadata = SinceConditionData(
+            trigger_evaluation_id=5,
+            trigger_timestamp=1234567890.0,
+            reset_evaluation_id=3,
+            reset_timestamp=1234567880.0,
+        ).to_metadata()
+
+        evaluation: AutomationConditionEvaluation[EntityKey] = AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionNodeSnapshot(
+                class_name="SinceCondition",
+                description="since_test",
+                unique_id="since_node_123",
+            ),
+            true_subset=SerializableEntitySubset(
+                key=asset_key,
+                value=partitions_def.subset_with_partition_keys(["a"]),
+            ),
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
+            start_timestamp=123.0,
+            end_timestamp=456.0,
+            child_evaluations=[],
+            subsets_with_metadata=[],
+            metadata=since_metadata,
+        )
+
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=200,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(evaluation=evaluation, run_ids=frozenset())
+            ],
+        )
+
+        # Query with the sinceMetadata field
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY_WITH_SINCE_METADATA,
+            variables={"assetKey": {"path": ["test_asset"]}, "limit": 10, "cursor": None},
+        )
+
+        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
+        assert len(records) == 1
+
+        # Find the SinceCondition node
+        evaluation_nodes = records[0]["evaluationNodes"]
+        assert len(evaluation_nodes) == 1
+        since_node = evaluation_nodes[0]
+
+        # Verify sinceMetadata is populated correctly
+        assert since_node["sinceMetadata"] is not None
+        since_metadata_result = since_node["sinceMetadata"]
+
+        assert since_metadata_result["triggerEvaluationId"] == "5"
+        assert since_metadata_result["triggerTimestamp"] == 1234567890.0
+        assert since_metadata_result["resetEvaluationId"] == "3"
+        assert since_metadata_result["resetTimestamp"] == 1234567880.0

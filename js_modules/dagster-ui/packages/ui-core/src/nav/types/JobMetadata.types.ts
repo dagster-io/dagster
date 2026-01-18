@@ -28,6 +28,8 @@ export type JobMetadataQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
           };
         }>;
         sensors: Array<{
@@ -41,6 +43,8 @@ export type JobMetadataQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
             typeSpecificData:
               | {__typename: 'ScheduleData'}
               | {__typename: 'SensorData'; lastCursor: string | null}
@@ -53,7 +57,7 @@ export type JobMetadataQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }>;
   pipelineRunsOrError:
@@ -81,7 +85,7 @@ export type JobMetadataQuery = {
 export type JobMetadataAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
@@ -102,6 +106,8 @@ export type JobMetadataFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
     };
   }>;
   sensors: Array<{
@@ -115,6 +121,8 @@ export type JobMetadataFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
       typeSpecificData:
         | {__typename: 'ScheduleData'}
         | {__typename: 'SensorData'; lastCursor: string | null}
@@ -138,4 +146,4 @@ export type RunMetadataFragment = {
   }>;
 };
 
-export const JobMetadataQueryVersion = 'e44915164a1174b291978e4bee269eb293e3953dc6d5fa5831a731b2533e1bf5';
+export const JobMetadataQueryVersion = '42558b05c2bcdea56a428ab77c2f477601fec1628e24b82841e0eb4199e28067';

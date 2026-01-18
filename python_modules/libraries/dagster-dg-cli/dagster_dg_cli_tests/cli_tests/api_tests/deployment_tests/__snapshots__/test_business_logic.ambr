@@ -1,0 +1,59 @@
+# serializer version: 1
+# name: TestFormatDeployments.test_format_deployments_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'id': 87,
+        'name': 'data-eng-prod',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 190248,
+        'name': 'gtm20',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 213933,
+        'name': 'data-eng-staging',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 217021,
+        'name': 'data-eng-dev',
+        'type': 'PRODUCTION',
+      }),
+    ]),
+    'total': 4,
+  })
+# ---
+# name: TestFormatDeployments.test_format_deployments_text_output[0]
+  '''
+  Name: data-eng-prod
+  ID: 87
+  Type: PRODUCTION
+  
+  Name: gtm20
+  ID: 190248
+  Type: PRODUCTION
+  
+  Name: data-eng-staging
+  ID: 213933
+  Type: PRODUCTION
+  
+  Name: data-eng-dev
+  ID: 217021
+  Type: PRODUCTION
+  '''
+# ---
+# name: TestProcessDeploymentsResponse.test_empty_response_processing[0]
+  DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)
+# ---
+# name: TestProcessDeploymentsResponse.test_missing_full_deployments_key[0]
+  DeploymentList(items=[], total=0)
+# ---
+# name: TestProcessDeploymentsResponse.test_response_processing_with_limit[0]
+  DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)
+# ---
+# name: TestProcessDeploymentsResponse.test_successful_response_processing[0]
+  DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)
+# ---

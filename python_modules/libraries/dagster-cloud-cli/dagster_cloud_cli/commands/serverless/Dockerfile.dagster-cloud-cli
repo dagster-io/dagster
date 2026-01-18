@@ -1,0 +1,20 @@
+# This docker image is used to build user code by `deploy-python-executable`.
+# Using a Linux docker to build allows source-only depedencies to be built for Linux.
+
+# Base image is injected by caller
+
+ARG DAGSTER_CLOUD_DEPENDENCY
+ARG PRE_INSTALL_CODE
+ENV DAGSTER_CLOUD_CLI_IN_DOCKER true
+
+RUN pip install pex dagster
+
+# The following line gets uncommented when running in development
+# dev: COPY dagster-cloud-cli /dagster-cloud-cli
+
+RUN pip install "${DAGSTER_CLOUD_DEPENDENCY}"
+
+# the target directory is mounted when this image is run
+RUN ln -s /root/.dagster_cloud_cli /dot_dagster_cloud_cli
+
+ENTRYPOINT [ "dagster-cloud" ]

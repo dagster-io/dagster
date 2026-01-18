@@ -17,11 +17,12 @@ import tempfile
 import time
 import traceback
 import zipfile
+from collections.abc import Callable
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from queue import Empty, Queue
 from threading import Thread
-from typing import Any, Callable, List, Optional
+from typing import Any, Optional
 
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -38,7 +39,7 @@ if "DATABRICKS_TOKEN" not in os.environ:
 DONE = object()
 
 
-def event_writing_loop(events_queue: Queue, put_events_fn: Callable[[List[Any]], None]) -> None:
+def event_writing_loop(events_queue: Queue, put_events_fn: Callable[[list[Any]], None]) -> None:
     """Periodically check whether the instance has posted any new events to the queue.  If they have,
     write ALL events (not just the new events) to DBFS.
     """
@@ -71,9 +72,13 @@ def main(
     dagster_job_zip: str,
 ) -> None:
     events_queue = None
-    with tempfile.TemporaryDirectory() as tmp, StringIO() as stderr, StringIO() as stdout, redirect_stderr(
-        stderr
-    ), redirect_stdout(stdout):
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        StringIO() as stderr,
+        StringIO() as stdout,
+        redirect_stderr(stderr),
+        redirect_stdout(stdout),
+    ):
         step_run_dir = os.path.dirname(step_run_ref_filepath)
         stdout_filepath = os.path.join(step_run_dir, "stdout")
         stderr_filepath = os.path.join(step_run_dir, "stderr")
@@ -111,8 +116,10 @@ def main(
             )
 
             # create empty files
-            with open(events_filepath, "wb"), open(stdout_filepath, "wb"), open(
-                stderr_filepath, "wb"
+            with (
+                open(events_filepath, "wb"),
+                open(stdout_filepath, "wb"),
+                open(stderr_filepath, "wb"),
             ):
                 pass
 

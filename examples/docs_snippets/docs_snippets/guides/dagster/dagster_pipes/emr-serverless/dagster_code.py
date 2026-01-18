@@ -1,15 +1,11 @@
-# start_asset_marker
-import os
-
-import boto3
 from dagster_aws.pipes import PipesEMRServerlessClient
 
-from dagster import AssetExecutionContext, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def emr_serverless_asset(
-    context: AssetExecutionContext,
+    context: dg.AssetExecutionContext,
     pipes_emr_serverless_client: PipesEMRServerlessClient,
 ):
     return pipes_emr_serverless_client.run(
@@ -25,18 +21,3 @@ def emr_serverless_asset(
             },
         },
     ).get_results()
-
-
-# end_asset_marker
-
-# start_definitions_marker
-
-from dagster import Definitions  # noqa
-
-
-defs = Definitions(
-    assets=[emr_serverless_asset],
-    resources={"pipes_emr_serverless_client": PipesEMRServerlessClient()},
-)
-
-# end_definitions_marker

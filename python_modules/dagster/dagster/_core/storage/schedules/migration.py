@@ -1,4 +1,5 @@
-from typing import Callable, Mapping, Optional
+from collections.abc import Callable, Mapping
+from typing import Optional
 
 import sqlalchemy.exc as db_exc
 from tqdm import tqdm

@@ -39,4 +39,4 @@ class GrapheneRunStatus(graphene.Enum):
         elif self == GrapheneRunStatus.CANCELED:
             return "Runs that have been canceled before completion."
         else:
-            check.assert_never(self)
+            check.failed(f"unhandled type {self}")

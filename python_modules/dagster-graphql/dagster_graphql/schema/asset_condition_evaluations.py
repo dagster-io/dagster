@@ -1,23 +1,25 @@
 import enum
 import itertools
-from typing import Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_automation.operators.since_operator import (
+    SinceConditionData,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
+    AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey, GrapheneEntityKey
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -34,6 +36,7 @@ GrapheneAssetConditionEvaluationStatus = graphene.Enum.from_enum(AssetConditionE
 class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -66,6 +69,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
         )
 
     def resolve_metadataEntries(
@@ -81,6 +85,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -97,6 +102,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
@@ -112,6 +118,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     status = graphene.NonNull(GrapheneAssetConditionEvaluationStatus)
@@ -144,6 +151,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             status=status,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
@@ -211,10 +219,30 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
         )
 
 
+class GrapheneSinceConditionMetadata(graphene.ObjectType):
+    triggerEvaluationId = graphene.Field(graphene.ID)
+    triggerTimestamp = graphene.Field(graphene.Float)
+    resetEvaluationId = graphene.Field(graphene.ID)
+    resetTimestamp = graphene.Field(graphene.Float)
+
+    class Meta:
+        name = "SinceConditionMetadata"
+
+    def __init__(self, since_condition_data: SinceConditionData):
+        self._since_condition_data = since_condition_data
+        super().__init__(
+            triggerEvaluationId=since_condition_data.trigger_evaluation_id,
+            triggerTimestamp=since_condition_data.trigger_timestamp,
+            resetEvaluationId=since_condition_data.reset_evaluation_id,
+            resetTimestamp=since_condition_data.reset_timestamp,
+        )
+
+
 class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     userLabel = graphene.Field(graphene.String)
     expandedLabel = non_null_list(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -225,6 +253,8 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     isPartitioned = graphene.NonNull(graphene.Boolean)
 
     childUniqueIds = non_null_list(graphene.String)
+    operatorType = graphene.NonNull(graphene.String)
+    sinceMetadata = graphene.Field(GrapheneSinceConditionMetadata)
 
     class Meta:
         name = "AutomationConditionEvaluationNode"
@@ -235,6 +265,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             uniqueId=evaluation.condition_snapshot.unique_id,
             expandedLabel=get_expanded_label(evaluation),
             userLabel=evaluation.condition_snapshot.label,
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
@@ -245,18 +276,30 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
+            operatorType=evaluation.condition_snapshot.operator_type,
+        )
+
+    def resolve_sinceMetadata(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneSinceConditionMetadata]:
+        if self._evaluation.condition_snapshot.class_name != "SinceCondition":
+            return None
+
+        return GrapheneSinceConditionMetadata(
+            since_condition_data=SinceConditionData.from_metadata(self._evaluation.metadata)
         )
 
 
 class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
-    evaluationId = graphene.NonNull(graphene.Int)
+    evaluationId = graphene.NonNull(graphene.ID)
     runIds = non_null_list(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
 
-    assetKey = graphene.NonNull(GrapheneAssetKey)
-    numRequested = graphene.NonNull(graphene.Int)
+    assetKey = graphene.Field(GrapheneAssetKey)
 
+    entityKey = graphene.NonNull(GrapheneEntityKey)
+    numRequested = graphene.NonNull(graphene.Int)
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
@@ -274,19 +317,22 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     def __init__(
         self,
         record: AutoMaterializeAssetEvaluationRecord,
-        partitions_def: Optional[PartitionsDefinition],
     ):
         evaluation_with_run_ids = record.get_evaluation_with_run_ids()
         root_evaluation = evaluation_with_run_ids.evaluation
 
         flattened_evaluations = _flatten_evaluation(evaluation_with_run_ids.evaluation)
+        self._record = record
 
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,
             timestamp=record.timestamp,
             runIds=evaluation_with_run_ids.run_ids,
-            assetKey=GrapheneAssetKey(path=record.key.path),
+            assetKey=GrapheneEntityKey.from_entity_key(record.key)
+            if isinstance(record.key, AssetKey)
+            else None,
+            entityKey=GrapheneEntityKey.from_entity_key(record.key),
             numRequested=root_evaluation.true_subset.size,
             startTimestamp=root_evaluation.start_timestamp,
             endTimestamp=root_evaluation.end_timestamp,
@@ -329,13 +375,14 @@ def _flatten_evaluation(
 
 
 def get_expanded_label(
-    item: Union[AutomationConditionEvaluation, AutomationCondition], use_label=False
+    item: Union[AutomationConditionEvaluation, AutomationConditionSnapshot],
+    use_label=False,
 ) -> Sequence[str]:
-    if isinstance(item, AutomationCondition):
+    if isinstance(item, AutomationConditionSnapshot):
         label, name, description, children = (
-            item.get_label(),
-            item.name,
-            item.description,
+            item.node_snapshot.label,
+            item.node_snapshot.name,
+            item.node_snapshot.description,
             item.children,
         )
     else:
@@ -350,7 +397,7 @@ def get_expanded_label(
     if use_label and label is not None:
         return [label]
     node_text = name or description
-    child_labels = [f'({" ".join(get_expanded_label(c, use_label=True))})' for c in children]
+    child_labels = [f"({' '.join(get_expanded_label(c, use_label=True))})" for c in children]
     if len(child_labels) == 0:
         return [node_text]
     elif len(child_labels) == 1:

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dagster import AssetKey, AssetsDefinition, asset
@@ -7,7 +7,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 
 
 @pytest.fixture(name="my_dbt_assets", scope="module")
-def my_dbt_assets_fixture(test_meta_config_manifest: Dict[str, Any]) -> AssetsDefinition:
+def my_dbt_assets_fixture(test_meta_config_manifest: dict[str, Any]) -> AssetsDefinition:
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 

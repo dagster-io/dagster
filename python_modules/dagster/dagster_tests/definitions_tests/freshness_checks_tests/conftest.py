@@ -1,24 +1,20 @@
 # pyright: reportPrivateImportUsage=false
-from typing import Iterator, Optional, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Optional
 
+import dagster as dg
 import pytest
-from dagster import define_asset_job
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.definitions.metadata import TimestampMetadataValue
-from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance_for_test import instance_for_test
 from dagster._time import get_current_timestamp
 
 
 @pytest.fixture(name="instance")
-def instance_fixture() -> Iterator[DagsterInstance]:
-    with instance_for_test() as instance:
+def instance_fixture() -> Iterator[dg.DagsterInstance]:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
@@ -26,21 +22,21 @@ def execute_check_for_asset(
     assets=None,
     asset_checks=None,
     instance=None,
-) -> ExecuteInProcessResult:
-    the_job = define_asset_job(
+) -> dg.ExecuteInProcessResult:
+    the_job = dg.define_asset_job(
         name="test_asset_job",
         selection=AssetSelection.checks(*(asset_checks or [])),
     )
 
-    defs = Definitions(assets=assets, asset_checks=asset_checks, jobs=[the_job])
-    job_def = defs.get_job_def("test_asset_job")
+    defs = dg.Definitions(assets=assets, asset_checks=asset_checks, jobs=[the_job])
+    job_def = defs.resolve_job_def("test_asset_job")
     return job_def.execute_in_process(instance=instance)
 
 
 def assert_check_result(
     the_asset: AssetsDefinition,
     instance: DagsterInstance,
-    freshness_checks: Sequence[AssetChecksDefinition],
+    freshness_checks: Sequence[dg.AssetChecksDefinition],
     severity: AssetCheckSeverity,
     expected_pass: bool,
     description_match: Optional[str] = None,
@@ -73,20 +69,22 @@ def add_new_event(
     override_timestamp: Optional[float] = None,
     include_metadata: bool = True,
 ):
-    klass = AssetMaterialization if is_materialization else AssetObservation
-    metadata = (
-        {
-            "dagster/last_updated_timestamp": TimestampMetadataValue(
-                get_current_timestamp() if not override_timestamp else override_timestamp
-            )
-        }
+    klass = dg.AssetMaterialization if is_materialization else dg.AssetObservation
+    last_updated_timestamp = (
+        override_timestamp
+        if override_timestamp is not None
+        else get_current_timestamp()
         if not is_materialization
         else None
     )
     instance.report_runless_asset_event(
         klass(
             asset_key=asset_key,
-            metadata=metadata if include_metadata else None,
+            metadata={
+                "dagster/last_updated_timestamp": dg.TimestampMetadataValue(last_updated_timestamp)
+            }
+            if last_updated_timestamp and include_metadata
+            else None,
             partition=partition_key,
         )
     )

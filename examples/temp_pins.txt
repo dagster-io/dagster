@@ -14,3 +14,6 @@ responses==0.23.1
 
 # pydantic 2.9.0 release briefly broke dagster
 pydantic<2.9.0
+
+# https://github.com/snowflakedb/snowflake-connector-python/issues/2109
+pyOpenSSL>=22.1.0

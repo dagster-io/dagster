@@ -2,9 +2,16 @@ scheduler:
   module: dagster.core.scheduler
   class: DagsterDaemonScheduler
 
+
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 5
+    tag_concurrency_limits:
+      - key: "operation"
+        value: "example"
+        limit: 5
 
 run_launcher:
   module: dagster_docker

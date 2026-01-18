@@ -2,10 +2,11 @@ import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
-import {weakmapMemoize} from '../app/Util';
+import {flattenOneLevel} from '../util/flattenOneLevel';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
-  const filteredNodes = logs.allNodes.filter((node) => {
+  let filteredNodes = flattenOneLevel(logs.allNodeChunks).filter((node) => {
     // These events are used to determine which assets a run will materialize and are not intended
     // to be displayed in the Dagster UI. Pagination is offset based, so we remove these logs client-side.
     if (
@@ -25,33 +26,29 @@ export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStep
   });
 
   const hasTextFilter = !!(filter.logQuery[0] && filter.logQuery[0].value !== '');
+  if (hasTextFilter) {
+    filteredNodes = filteredNodes.filter((node) => {
+      const nodeTexts = [node.message.toLowerCase(), ...metadataEntryKeyValueStrings(node)];
+      return (
+        filter.logQuery.length > 0 &&
+        filter.logQuery.every((f) => {
+          if (f.token === 'query') {
+            return node.stepKey && filterStepKeys.includes(node.stepKey);
+          }
+          if (f.token === 'step') {
+            return node.stepKey && node.stepKey === f.value;
+          }
+          if (f.token === 'type') {
+            return node.eventType && f.value === eventTypeToDisplayType(node.eventType);
+          }
+          const valueLower = f.value.toLowerCase();
+          return nodeTexts.some((text) => text.toLowerCase().includes(valueLower));
+        })
+      );
+    });
+  }
 
-  const textMatchNodes = hasTextFilter
-    ? filteredNodes.filter((node) => {
-        const nodeTexts = [node.message.toLowerCase(), ...metadataEntryKeyValueStrings(node)];
-        return (
-          filter.logQuery.length > 0 &&
-          filter.logQuery.every((f) => {
-            if (f.token === 'query') {
-              return node.stepKey && filterStepKeys.includes(node.stepKey);
-            }
-            if (f.token === 'step') {
-              return node.stepKey && node.stepKey === f.value;
-            }
-            if (f.token === 'type') {
-              return node.eventType && f.value === eventTypeToDisplayType(node.eventType);
-            }
-            const valueLower = f.value.toLowerCase();
-            return nodeTexts.some((text) => text.toLowerCase().includes(valueLower));
-          })
-        );
-      })
-    : [];
-
-  return {
-    filteredNodes: hasTextFilter && filter.hideNonMatches ? textMatchNodes : filteredNodes,
-    textMatchNodes,
-  };
+  return filteredNodes;
 }
 
 // Given an array of metadata entries, returns searchable text in the format:
@@ -60,7 +57,7 @@ export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStep
 // different top-level keys, such as "intValue", "mdStr" and "tableSchema", and
 // the searchable text is the value of these keys.
 //
-const metadataEntryKeyValueStrings = weakmapMemoize((node: LogNode) => {
+const metadataEntryKeyValueStrings = weakMapMemoize((node: LogNode) => {
   if (!('metadataEntries' in node)) {
     return [];
   }

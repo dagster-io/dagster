@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -9,6 +7,7 @@ import {
   Colors,
   FontFamily,
   Icon,
+  Intent,
   SplitPanelContainer,
   Tag,
   Tooltip,
@@ -17,11 +16,11 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {LaunchpadType} from './types';
+import {gql} from '../apollo-client';
 import {
   RunPreviewValidationErrorsFragment,
   RunPreviewValidationFragment,
 } from './types/RunPreview.types';
-import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -39,7 +38,9 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
   return e && typeof e === 'object' && '__typename' in e ? true : false;
 }
 
-const stateToHint: {[key: string]: {title: string; intent: Intent}} = {
+type State = 'invalid' | 'missing' | 'present' | 'none';
+
+const stateToHint: Record<State, {title: string; intent: Intent}> = {
   invalid: {
     title: `You need to fix this configuration section.`,
     intent: 'danger',
@@ -72,13 +73,16 @@ const RemoveExtraConfigButton = ({
   for (const path of extraNodes) {
     const parts = path.split('.');
 
-    // If the length is 2, the first part of the path is a known key, such as "solids", "resouces",
+    // If the length is 2, the first part of the path is a known key, such as "solids", "resources",
     // or "loggers", and the user has provided extra config for one of those. We will keep track of
     // these in `knownKeyExtraPaths` just so we can display them with an extra description.
     if (parts.length === 2) {
       const [type, name] = parts;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const target = knownKeyExtraPaths[type!] || [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       target.push(name!);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       knownKeyExtraPaths[type!] = target;
     } else {
       otherPaths.push(path);
@@ -375,27 +379,23 @@ export const RunPreview = (props: RunPreviewProps) => {
           isMissing && item.isRequired
             ? 'missing'
             : isInvalid
-            ? 'invalid'
-            : isPresent
-            ? 'present'
-            : 'none';
+              ? 'invalid'
+              : isPresent
+                ? 'present'
+                : 'none';
 
+        const hint = stateToHint[state];
         return (
-          <Tooltip
-            position="bottom"
-            content={stateToHint[state]!.title}
-            intent={stateToHint[state]!.intent}
-            key={item.name}
-          >
-            <Tag
-              key={item.name}
-              intent={stateToHint[state]!.intent}
-              onClick={() => {
-                const first = pathErrors.find(isValidationError);
-                onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
-              }}
-            >
-              {item.name}
+          <Tooltip position="bottom" content={hint.title} key={item.name}>
+            <Tag key={item.name} intent={hint.intent}>
+              <ButtonLink
+                onClick={() => {
+                  const first = pathErrors.find(isValidationError);
+                  onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
+                }}
+              >
+                {item.name}
+              </ButtonLink>
             </Tag>
           </Tooltip>
         );
@@ -691,5 +691,6 @@ function pathExistsInObject(path: string[], object: any): boolean {
     return true;
   }
   const [first, ...rest] = path;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return pathExistsInObject(rest, object[first!]);
 }

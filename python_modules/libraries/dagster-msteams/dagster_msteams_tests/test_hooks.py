@@ -1,9 +1,16 @@
+from typing import Any
+from unittest.mock import patch
+
+import pytest
 from dagster import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster_msteams import MSTeamsResource
 from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
-from mock import patch
+
+from dagster_msteams_tests.conftest import LEGACY_WEBHOOK_URL, WEBHOOK_URL
+
+TEST_RUN_ID = "b6497149-0b91-41ea-8a0f-442cb1704172"
 
 
 class SomeUserException(Exception):
@@ -24,9 +31,15 @@ def fail_op(_):
     raise SomeUserException()
 
 
-@patch("dagster_msteams.client.TeamsClient.post_message")
-def test_failure_hook_with_pythonic_resource(mock_teams_post_message):
-    @job(resource_defs={"msteams": MSTeamsResource(hook_url="https://some_url_here/")})
+@pytest.mark.parametrize(
+    "webhook_url",
+    [
+        LEGACY_WEBHOOK_URL,
+        WEBHOOK_URL,
+    ],
+)
+def test_failure_hook_with_pythonic_resource(webhook_url: str, snapshot: Any, mock_post_method):
+    @job(resource_defs={"msteams": MSTeamsResource(hook_url=webhook_url)})
     def job_def():
         pass_op.with_hooks(hook_defs={teams_on_failure()})()
         pass_op.alias("fail_op_with_hook").with_hooks(hook_defs={teams_on_failure()})()
@@ -39,14 +52,22 @@ def test_failure_hook_with_pythonic_resource(mock_teams_post_message):
 
     result = job_def.execute_in_process(
         raise_on_error=False,
+        run_id=TEST_RUN_ID,  # Ensure that run id is consistent for snapshot testing
     )
     assert not result.success
-    assert mock_teams_post_message.call_count == 1
+    assert mock_post_method.call_count == 1
+    snapshot.assert_match(mock_post_method.call_args_list)
 
 
-@patch("dagster_msteams.client.TeamsClient.post_message")
-def test_success_hook_with_pythonic_resource(mock_teams_post_message):
-    @job(resource_defs={"msteams": MSTeamsResource(hook_url="https://some_url_here/")})
+@pytest.mark.parametrize(
+    "webhook_url",
+    [
+        LEGACY_WEBHOOK_URL,
+        WEBHOOK_URL,
+    ],
+)
+def test_success_hook_with_pythonic_resource(webhook_url: str, snapshot: Any, mock_post_method):
+    @job(resource_defs={"msteams": MSTeamsResource(hook_url=webhook_url)})
     def job_def():
         pass_op.with_hooks(hook_defs={teams_on_success()})()
         pass_op.alias("success_solid_with_hook").with_hooks(hook_defs={teams_on_success()})()
@@ -59,9 +80,11 @@ def test_success_hook_with_pythonic_resource(mock_teams_post_message):
 
     result = job_def.execute_in_process(
         raise_on_error=False,
+        run_id=TEST_RUN_ID,  # Ensure that run id is consistent for snapshot testing
     )
     assert not result.success
-    assert mock_teams_post_message.call_count == 2
+    assert mock_post_method.call_count == 2
+    snapshot.assert_match(mock_post_method.call_args_list)
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")

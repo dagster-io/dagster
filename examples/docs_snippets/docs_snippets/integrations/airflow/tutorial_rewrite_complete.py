@@ -2,51 +2,41 @@
 import time
 from datetime import datetime, timedelta
 
-from dagster import (
-    Definitions,
-    In,
-    Nothing,
-    OpExecutionContext,
-    RetryPolicy,
-    ScheduleDefinition,
-    job,
-    op,
-    schedule,
-)
+import dagster as dg
 
 
-@op
-def print_date(context: OpExecutionContext) -> datetime:
+@dg.op
+def print_date(context: dg.OpExecutionContext) -> datetime:
     ds = datetime.now()
     context.log.info(ds)
     return ds
 
 
-@op(retry_policy=RetryPolicy(max_retries=3), ins={"start": In(Nothing)})
+@dg.op(retry_policy=dg.RetryPolicy(max_retries=3), ins={"start": dg.In(dg.Nothing)})
 def sleep():
     time.sleep(5)
 
 
-@op
-def templated(context: OpExecutionContext, ds: datetime):
+@dg.op
+def templated(context: dg.OpExecutionContext, ds: datetime):
     for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))
 
 
-@job(tags={"dagster/max_retries": 1, "dag_name": "example"})
+@dg.job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
     ds = print_date()
     sleep(ds)
     templated(ds)
 
 
-schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
+dg.schedule = dg.ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 
 
-defs = Definitions(
+defs = dg.Definitions(
     jobs=[tutorial_job],
-    schedules=[schedule],
+    schedules=[dg.schedule],
 )
 
 

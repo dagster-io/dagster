@@ -1,19 +1,11 @@
 import contextlib
 import re
-from typing import Any, Dict, Generator
+from collections.abc import Generator
+from typing import Any
 
+import dagster as dg
 import pytest
-from dagster import (
-    ConfigurableResource,
-    Definitions,
-    EnvVar,
-    RunConfig,
-    build_init_resource_context,
-    job,
-    op,
-)
 from dagster._check import CheckError
-from dagster._core.errors import DagsterResourceFunctionError
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.test_utils import environ
 from pydantic import PrivateAttr
@@ -22,18 +14,18 @@ from pydantic import PrivateAttr
 def test_basic_pre_teardown_after_execution() -> None:
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
 
-    @op
+    @dg.op
     def hello_world_op(res: MyResource):
         log.append("hello_world_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         hello_world_op()
 
@@ -49,7 +41,7 @@ def test_basic_pre_teardown_after_execution() -> None:
 def test_basic_yield() -> None:
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(
             self, context: InitResourceContext
@@ -58,11 +50,11 @@ def test_basic_yield() -> None:
             yield self
             log.append("teardown_after_execution")
 
-    @op
+    @dg.op
     def hello_world_op(res: MyResource):
         log.append("hello_world_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         hello_world_op()
 
@@ -78,22 +70,22 @@ def test_basic_yield() -> None:
 def test_basic_pre_teardown_after_execution_multi_op() -> None:
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
 
-    @op
+    @dg.op
     def hello_world_op(res: MyResource):
         log.append("hello_world_op")
 
-    @op
+    @dg.op
     def another_hello_world_op(res: MyResource, _: Any):
         log.append("another_hello_world_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         another_hello_world_op(hello_world_op())
 
@@ -110,7 +102,7 @@ def test_basic_pre_teardown_after_execution_multi_op() -> None:
 def test_basic_yield_multi_op() -> None:
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(
             self, context: InitResourceContext
@@ -119,15 +111,15 @@ def test_basic_yield_multi_op() -> None:
             yield self
             log.append("teardown_after_execution")
 
-    @op
+    @dg.op
     def hello_world_op(res: MyResource):
         log.append("hello_world_op")
 
-    @op
+    @dg.op
     def another_hello_world_op(res: MyResource, _: Any):
         log.append("another_hello_world_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         another_hello_world_op(hello_world_op())
 
@@ -146,23 +138,23 @@ def test_pre_teardown_after_execution_with_op_execution_error() -> None:
 
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
 
-    @op
+    @dg.op
     def my_erroring_op(res: MyResource):
         log.append("my_erroring_op")
         raise Exception("foo")
 
-    @op
+    @dg.op
     def my_never_run_op(res: MyResource, _: Any):
         log.append("my_never_run_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def erroring_job() -> None:
         my_never_run_op(my_erroring_op())
 
@@ -182,7 +174,7 @@ def test_setup_for_execution_with_error() -> None:
 
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
             raise Exception("my setup function errored!")
@@ -190,16 +182,17 @@ def test_setup_for_execution_with_error() -> None:
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
 
-    @op
+    @dg.op
     def my_never_run_op(res: MyResource):
         log.append("my_never_run_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         my_never_run_op()
 
     with pytest.raises(
-        DagsterResourceFunctionError, match="Error executing resource_fn on ResourceDefinition res"
+        dg.DagsterResourceFunctionError,
+        match="Error executing resource_fn on ResourceDefinition res",
     ):
         hello_world_job.execute_in_process()
 
@@ -214,7 +207,7 @@ def test_teardown_after_execution_with_error() -> None:
 
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
@@ -222,11 +215,11 @@ def test_teardown_after_execution_with_error() -> None:
             log.append("teardown_after_execution")
             raise Exception("my teardown function errored!")
 
-    @op
+    @dg.op
     def my_hello_world_op(res: MyResource):
         log.append("my_hello_world_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         my_hello_world_op()
 
@@ -253,7 +246,7 @@ def test_yield_for_execution_with_error_before_yield() -> None:
 
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(
             self, context: InitResourceContext
@@ -261,16 +254,17 @@ def test_yield_for_execution_with_error_before_yield() -> None:
             log.append("yield_for_execution_start")
             raise Exception("my yield function errored!")
 
-    @op
+    @dg.op
     def my_never_run_op(res: MyResource):
         log.append("my_never_run_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         my_never_run_op()
 
     with pytest.raises(
-        DagsterResourceFunctionError, match="Error executing resource_fn on ResourceDefinition res"
+        dg.DagsterResourceFunctionError,
+        match="Error executing resource_fn on ResourceDefinition res",
     ):
         hello_world_job.execute_in_process()
 
@@ -285,7 +279,7 @@ def test_yield_for_execution_with_error_after_yield() -> None:
 
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(
             self, context: InitResourceContext
@@ -295,11 +289,11 @@ def test_yield_for_execution_with_error_after_yield() -> None:
             log.append("yield_for_execution_post_yield")
             raise Exception("my yield function errored!")
 
-    @op
+    @dg.op
     def my_hello_world_op(res: MyResource):
         log.append("my_hello_world_op")
 
-    @job(resource_defs={"res": MyResource()})
+    @dg.job(resource_defs={"res": MyResource()})
     def hello_world_job() -> None:
         my_hello_world_op()
 
@@ -324,7 +318,7 @@ def test_setup_for_execution_with_error_multi_resource() -> None:
 
     resources_initialized = [0]
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
             resources_initialized[0] += 1
@@ -335,7 +329,7 @@ def test_setup_for_execution_with_error_multi_resource() -> None:
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
 
-    class MySecondResource(ConfigurableResource):
+    class MySecondResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution_second")
             resources_initialized[0] += 1
@@ -346,16 +340,16 @@ def test_setup_for_execution_with_error_multi_resource() -> None:
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution_second")
 
-    @op
+    @dg.op
     def my_never_run_op(first: MyResource, second: MySecondResource):
         log.append("my_never_run_op")
 
-    @job(resource_defs={"first": MyResource(), "second": MySecondResource()})
+    @dg.job(resource_defs={"first": MyResource(), "second": MySecondResource()})
     def hello_world_job() -> None:
         my_never_run_op()
 
     with pytest.raises(
-        DagsterResourceFunctionError,
+        dg.DagsterResourceFunctionError,
         match="Error executing resource_fn on ResourceDefinition second",
     ):
         hello_world_job.execute_in_process()
@@ -379,7 +373,7 @@ def test_multiple_yield_ordering() -> None:
 
     log = []
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(
             self, context: InitResourceContext
@@ -388,7 +382,7 @@ def test_multiple_yield_ordering() -> None:
             yield self
             log.append("yield_end_my_resource")
 
-    class MySecondResource(ConfigurableResource):
+    class MySecondResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(
             self, context: InitResourceContext
@@ -397,19 +391,19 @@ def test_multiple_yield_ordering() -> None:
             yield self
             log.append("yield_end_second_resource")
 
-    @op
+    @dg.op
     def my_hello_world_op(first: MyResource, second: MySecondResource):
         log.append("my_hello_world_op")
 
-    @job
+    @dg.job
     def hello_world_job() -> None:
         my_hello_world_op()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job], resources={"first": MyResource(), "second": MySecondResource()}
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
 
     # order is not deterministic
     assert log == [
@@ -435,7 +429,7 @@ def test_basic_init_with_privateattr() -> None:
             self.username = username
             self.password = password
 
-    class MyDBResource(ConfigurableResource):
+    class MyDBResource(dg.ConfigurableResource):
         username: str
         password: str
 
@@ -445,18 +439,18 @@ def test_basic_init_with_privateattr() -> None:
             log.append(f"setup_for_execution with {self.username} and {self.password}")
             self._connection = Connection(self.username, self.password)
 
-        def query(self, query: str) -> Dict[str, Any]:
+        def query(self, query: str) -> dict[str, Any]:
             log.append(
                 f"query {query} with {self._connection.username} and {self._connection.password}"
             )
             return {"foo": "bar"}
 
-    @op
+    @dg.op
     def hello_world_op(db: MyDBResource):
         res = db.query("select * from table")
         assert res == {"foo": "bar"}
 
-    @job(resource_defs={"db": MyDBResource(username="foo", password="bar")})
+    @dg.job(resource_defs={"db": MyDBResource(username="foo", password="bar")})
     def hello_world_job() -> None:
         hello_world_op()
 
@@ -479,7 +473,7 @@ def test_nested_resources_init_with_privateattr() -> None:
         def __init__(self, jwt: str):
             self.jwt = jwt
 
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         access_key: str
         secret_key: str
 
@@ -492,7 +486,7 @@ def test_nested_resources_init_with_privateattr() -> None:
         def jwt(self) -> str:
             return self._jwt
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(dg.ConfigurableResource):
         credentials: AWSCredentialsResource
 
         _s3_client: Any = PrivateAttr()
@@ -501,18 +495,18 @@ def test_nested_resources_init_with_privateattr() -> None:
             log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
             self._s3_client = S3Client(self.credentials.jwt)
 
-        def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
+        def get_object(self, bucket: str, key: str) -> dict[str, Any]:
             log.append(f"get_object {bucket} {key} with jwt {self.credentials.jwt}")
             return {"foo": "bar"}
 
-    @op
-    def load_from_s3_op(s3: S3Resource) -> Dict[str, Any]:
+    @dg.op
+    def load_from_s3_op(s3: S3Resource) -> dict[str, Any]:
         log.append("load_from_s3_op")
         res = s3.get_object("my-bucket", "my-key")
         assert res == {"foo": "bar"}
         return res
 
-    @job(
+    @dg.job(
         resource_defs={
             "s3": S3Resource(
                 credentials=AWSCredentialsResource(access_key="my_key", secret_key="my_secret")
@@ -543,7 +537,7 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
         def __init__(self, jwt: str):
             self.jwt = jwt
 
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         access_key: str
         secret_key: str
 
@@ -556,7 +550,7 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
         def jwt(self) -> str:
             return self._jwt
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(dg.ConfigurableResource):
         credentials: AWSCredentialsResource
 
         _s3_client: Any = PrivateAttr()
@@ -565,12 +559,12 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
             log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
             self._s3_client = S3Client(self.credentials.jwt)
 
-        def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
+        def get_object(self, bucket: str, key: str) -> dict[str, Any]:
             log.append(f"get_object {bucket} {key} with jwt {self.credentials.jwt}")
             return {"foo": "bar"}
 
-    @op
-    def load_from_s3_op(s3: S3Resource) -> Dict[str, Any]:
+    @dg.op
+    def load_from_s3_op(s3: S3Resource) -> dict[str, Any]:
         log.append("load_from_s3_op")
         res = s3.get_object("my-bucket", "my-key")
         assert res == {"foo": "bar"}
@@ -578,17 +572,17 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
 
     credentials = AWSCredentialsResource.configure_at_launch()
 
-    @job
+    @dg.job
     def load_from_s3_job() -> None:
         load_from_s3_op()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[load_from_s3_job],
         resources={"credentials": credentials, "s3": S3Resource(credentials=credentials)},
     )
 
-    result = defs.get_job_def("load_from_s3_job").execute_in_process(
-        run_config=RunConfig(
+    result = defs.resolve_job_def("load_from_s3_job").execute_in_process(
+        run_config=dg.RunConfig(
             resources={
                 "credentials": AWSCredentialsResource(access_key="my_key", secret_key="my_secret")
             }
@@ -606,7 +600,7 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
 def test_direct_invocation_from_context() -> None:
     log = []
 
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         access_key: str
         secret_key: str
 
@@ -621,7 +615,7 @@ def test_direct_invocation_from_context() -> None:
             return self._jwt
 
     res = AWSCredentialsResource.from_resource_context(
-        build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+        dg.build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
     )
     assert res.jwt == "my_jwt"
     assert log == ["setup_for_execution"]
@@ -629,7 +623,7 @@ def test_direct_invocation_from_context() -> None:
     # no need to use a context manager, but still works
     log.clear()
     with AWSCredentialsResource.from_resource_context_cm(
-        build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+        dg.build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
     ) as res:
         assert res.jwt == "my_jwt"
         assert log == ["setup_for_execution"]
@@ -638,7 +632,7 @@ def test_direct_invocation_from_context() -> None:
 def test_direct_invocation_from_context_cm() -> None:
     log = []
 
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         access_key: str
         secret_key: str
 
@@ -659,12 +653,14 @@ def test_direct_invocation_from_context_cm() -> None:
     # need to use a context manager to ensure teardown is called
     with pytest.raises(CheckError):
         AWSCredentialsResource.from_resource_context(
-            build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+            dg.build_init_resource_context(
+                config={"access_key": "my_key", "secret_key": "my_secret"}
+            )
         )
 
     log.clear()
     with AWSCredentialsResource.from_resource_context_cm(
-        build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+        dg.build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
     ) as res:
         assert res.jwt == "my_jwt"
         assert log == ["setup_for_execution"]
@@ -674,7 +670,7 @@ def test_direct_invocation_from_context_cm() -> None:
 def test_process_config_and_initialize_cm() -> None:
     log = []
 
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         access_key: str
         secret_key: str
 
@@ -695,7 +691,7 @@ def test_process_config_and_initialize_cm() -> None:
     log.clear()
     with environ({"ENV_ACCESS_KEY": "my_key"}):
         with AWSCredentialsResource(
-            access_key=EnvVar("ENV_ACCESS_KEY"), secret_key="my_secret"
+            access_key=dg.EnvVar("ENV_ACCESS_KEY"), secret_key="my_secret"
         ).process_config_and_initialize_cm() as res:
             assert res.access_key == "my_key"
             assert res.jwt == "my_jwt"
@@ -707,7 +703,7 @@ def test_process_config_and_initialize_cm() -> None:
 def test_process_config_and_initialize_cm_nested() -> None:
     log = []
 
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         access_key: str
         secret_key: str
 
@@ -725,7 +721,7 @@ def test_process_config_and_initialize_cm_nested() -> None:
         def jwt(self) -> str:
             return self._jwt
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(dg.ConfigurableResource):
         credentials: AWSCredentialsResource
         label: str
 
@@ -735,9 +731,9 @@ def test_process_config_and_initialize_cm_nested() -> None:
     log.clear()
     with environ({"ENV_ACCESS_KEY": "my_key", "ENV_LABEL": "foo"}):
         with S3Resource(
-            label=EnvVar("ENV_LABEL"),
+            label=dg.EnvVar("ENV_LABEL"),
             credentials=AWSCredentialsResource(
-                access_key=EnvVar("ENV_ACCESS_KEY"), secret_key="my_secret"
+                access_key=dg.EnvVar("ENV_ACCESS_KEY"), secret_key="my_secret"
             ),
         ).process_config_and_initialize_cm() as res:
             assert res.label == "foo"

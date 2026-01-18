@@ -7,23 +7,23 @@ import {
   DialogBody,
   DialogFooter,
   ExternalAnchorButton,
-  Group,
   Icon,
   Menu,
   MenuItem,
   NonIdealState,
   Popover,
   Spinner,
-  StyledRawCodeMirror,
   Subheading,
   Table,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import qs from 'qs';
 import {memo, useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {TimestampDisplay} from './TimestampDisplay';
+import {gql, useLazyQuery} from '../apollo-client';
 import {
   RepositoryForNextTicksFragment,
   ScheduleFutureTickEvaluationResultFragment,
@@ -32,14 +32,12 @@ import {
   ScheduleTickConfigQuery,
   ScheduleTickConfigQueryVariables,
 } from './types/SchedulesNextTicks.types';
-import {gql, useLazyQuery} from '../apollo-client';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useCopyToClipboard} from '../app/browser';
 import {InstigationStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
+import {CopyButton} from '../ui/CopyButton';
 import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,
@@ -86,13 +84,16 @@ export const SchedulesNextTicks = memo(({repos}: Props) => {
     const minMaxTimestamp = Math.min(
       ...futureTickSchedules.map(
         (schedule) =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           schedule.futureTicks.results[schedule.futureTicks.results.length - 1]!.timestamp!,
       ),
     );
 
     futureTickSchedules.forEach((schedule) => {
       schedule.futureTicks.results.forEach((tick) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (tick.timestamp! <= minMaxTimestamp) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           nextTicks.push({schedule, timestamp: tick.timestamp!, repoAddress});
         }
       });
@@ -312,7 +313,6 @@ const NextTickMenuItems = ({
     <MenuItem
       text={`View ${evaluationResult.runRequests.length} run requests...`}
       icon="edit"
-      target="_blank"
       onClick={() => onItemOpen(true)}
     />
   );
@@ -336,11 +336,10 @@ const NextTickDialog = ({
   const [selectedRunRequest, setSelectedRunRequest] =
     useState<ScheduleFutureTickRunRequestFragment | null>(
       evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
-        ? evaluationResult.runRequests[0]!
+        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          evaluationResult.runRequests[0]!
         : null,
     );
-
-  const copy = useCopyToClipboard();
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, schedule.pipelineName);
@@ -351,6 +350,7 @@ const NextTickDialog = ({
       evaluationResult.runRequests &&
       evaluationResult.runRequests.length === 1
     ) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       setSelectedRunRequest(evaluationResult.runRequests[0]!);
     }
   }, [evaluationResult]);
@@ -420,10 +420,10 @@ const NextTickDialog = ({
                         onClick={() => setSelectedRunRequest(runRequest)}
                         underline="never"
                       >
-                        <Group direction="row" spacing={8} alignItems="center">
+                        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                           <Icon name="open_in_new" color={Colors.textLight()} />
                           <span>View config</span>
-                        </Group>
+                        </Box>
                       </ButtonLink>
                     </td>
                     <td>
@@ -476,19 +476,7 @@ const NextTickDialog = ({
       {body}
       <DialogFooter topBorder>
         {selectedRunRequest ? (
-          <Button
-            autoFocus={false}
-            onClick={async () => {
-              copy(selectedRunRequest.runConfigYaml);
-              await showSharedToaster({
-                intent: 'success',
-                icon: 'copy_to_clipboard_done',
-                message: 'Copied!',
-              });
-            }}
-          >
-            Copy config
-          </Button>
+          <CopyButton value={selectedRunRequest.runConfigYaml}>Copy config</CopyButton>
         ) : null}
         <Button intent="primary" autoFocus={true} onClick={() => close()}>
           OK

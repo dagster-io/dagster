@@ -1,10 +1,17 @@
-import {Box, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
-import {forwardRef, useCallback, useMemo} from 'react';
+import {
+  Box,
+  Caption,
+  Checkbox,
+  MiddleTruncate,
+  Tooltip,
+  useDelayedState,
+} from '@dagster-io/ui-components';
+import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
-import {useLazyQuery} from '../apollo-client';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
@@ -20,7 +27,7 @@ import {
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
-import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
+import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 import {RepoAddress} from '../workspace/types';
 import {
   SingleScheduleQuery,
@@ -40,21 +47,25 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
   (props: ScheduleRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
 
-    const [querySchedule, queryResult] = useLazyQuery<
-      SingleScheduleQuery,
-      SingleScheduleQueryVariables
-    >(SINGLE_SCHEDULE_QUERY, {
-      variables: {
-        selector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-          scheduleName: name,
-        },
-      },
-      notifyOnNetworkStatusChange: true,
-    });
+    // Wait 100ms before querying in case we're scrolling the table really fast
+    const shouldQuery = useDelayedState(100);
 
-    const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
+    const queryResult = useQuery<SingleScheduleQuery, SingleScheduleQueryVariables>(
+      SINGLE_SCHEDULE_QUERY,
+      {
+        variables: {
+          selector: {
+            repositoryName: repoAddress.name,
+            repositoryLocationName: repoAddress.location,
+            scheduleName: name,
+          },
+        },
+        skip: !shouldQuery,
+        notifyOnNetworkStatusChange: true,
+      },
+    );
+
+    const scheduleAssetSelectionQueryResult = useQuery<
       ScheduleAssetSelectionQuery,
       ScheduleAssetSelectionQueryVariables
     >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
@@ -65,14 +76,8 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
           scheduleName: name,
         },
       },
+      skip: !shouldQuery,
     });
-
-    useDelayedRowQuery(
-      useCallback(() => {
-        querySchedule();
-        queryScheduleAssetSelection();
-      }, [querySchedule, queryScheduleAssetSelection]),
-    );
 
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
     useQueryRefreshAtInterval(scheduleAssetSelectionQueryResult, FIFTEEN_SECONDS);
@@ -133,22 +138,30 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
             </Tooltip>
           </RowCell>
           <RowCell>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-              {scheduleData ? (
-                <Box flex={{direction: 'column', gap: 4}}>
-                  {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
-                  <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
-                  {errorDisplay(
-                    scheduleData.scheduleState.status,
-                    scheduleData.scheduleState.runningCount,
-                  )}
-                </Box>
-              ) : (
-                <div style={{width: 30}} />
-              )}
-              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
+            <Box
+              flex={{
+                direction: 'row',
+                gap: 8,
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box flex={{grow: 1, gap: 8}}>
+                {scheduleData ? (
+                  <>
+                    <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
+                    {errorDisplay(
+                      scheduleData.scheduleState.status,
+                      scheduleData.scheduleState.runningCount,
+                    )}
+                  </>
+                ) : (
+                  <div style={{width: 30}} />
+                )}
+                <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </Box>
             </Box>
           </RowCell>
           <RowCell>
@@ -171,6 +184,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                     >
                       Next tick:&nbsp;
                       <TimestampDisplay
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         timestamp={scheduleData.scheduleState.nextTick.timestamp!}
                         timezone={scheduleData.executionTimezone}
                         timeFormat={{showSeconds: false, showTimezone: true}}
@@ -196,7 +210,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
           <RowCell>
             {tick ? (
               <div>
-                <TickStatusTag tick={tick} />
+                <TickStatusTag tick={tick} tickResultType="runs" />
               </div>
             ) : (
               <LoadingOrNone queryResult={queryResult} />

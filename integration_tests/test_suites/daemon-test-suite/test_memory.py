@@ -77,11 +77,11 @@ def test_no_memory_leaks():
         },
     ) as instance:
         with get_example_repo(instance) as repo:
-            external_schedule = repo.get_external_schedule("always_run_schedule")
-            external_sensor = repo.get_external_sensor("always_on_sensor")
+            schedule = repo.get_schedule("always_run_schedule")
+            sensor = repo.get_sensor("always_on_sensor")
 
-            instance.start_schedule(external_schedule)
-            instance.start_sensor(external_sensor)
+            instance.start_schedule(schedule)
+            instance.start_sensor(sensor)
 
             with daemon_controller_from_instance(
                 instance,
@@ -92,7 +92,7 @@ def test_no_memory_leaks():
                 growth = objgraph.growth(
                     limit=10,
                     filter=lambda obj: inspect.getmodule(obj)
-                    and "dagster" in inspect.getmodule(obj).__name__,
+                    and "dagster" in inspect.getmodule(obj).__name__,  # pyright: ignore[reportOptionalMemberAccess]
                 )
                 while True:
                     time.sleep(30)
@@ -103,7 +103,7 @@ def test_no_memory_leaks():
                     growth = objgraph.growth(
                         limit=10,
                         filter=lambda obj: inspect.getmodule(obj)
-                        and "dagster" in inspect.getmodule(obj).__name__,
+                        and "dagster" in inspect.getmodule(obj).__name__,  # pyright: ignore[reportOptionalMemberAccess]
                     )
                     if not growth:
                         print(  # noqa: T201

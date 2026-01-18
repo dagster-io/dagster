@@ -18,22 +18,24 @@ returning a `Nothing` `Output`.
 """
 
 import warnings
-from typing import Sequence, cast
+from collections.abc import Sequence
+from typing import cast
 
 from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
+    BetaWarning,
     DataProvenance,
     DataVersion,
     Definitions,
-    ExperimentalWarning,
     In,
     Nothing,
     OpDefinition,
     OpExecutionContext,
     Out,
     Output,
+    PreviewWarning,
     SourceAsset,
     define_asset_job,
 )
@@ -46,7 +48,8 @@ from dagster_test.toys.user_computed_data_versions.external_system import (
     SourceAssetInfo,
 )
 
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 
 def external_asset(asset_spec: AssetInfo):
@@ -92,7 +95,7 @@ def external_asset(asset_spec: AssetInfo):
     keys_by_output_name = {"result": key}
     op_def = OpDefinition(
         name=key.path[-1],
-        ins={k.to_user_string(): In(cast(type, Nothing)) for k in dependencies},
+        ins={k.to_user_string(): In(cast("type", Nothing)) for k in dependencies},
         outs={"result": Out(Nothing)},
         code_version=code_version,
         compute_fn=fn,

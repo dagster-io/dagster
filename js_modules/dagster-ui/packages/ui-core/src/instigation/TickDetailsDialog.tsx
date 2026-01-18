@@ -7,20 +7,20 @@ import {
   DialogFooter,
   DialogHeader,
   MiddleTruncate,
-  Spinner,
+  NonIdealState,
+  SpinnerWithText,
   Subtitle2,
-  Tab,
   Table,
-  Tabs,
   Tag,
 } from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {TickMaterializationsTable} from './TickMaterializationsTable';
+import {gql, useQuery} from '../apollo-client';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -34,44 +34,52 @@ import {
   InstigationTickStatus,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {QueryfulTickLogsTable} from '../ticks/TickLogDialog';
+import {TickResultType} from '../ticks/TickStatusTag';
 
 interface DialogProps extends InnerProps {
   onClose: () => void;
   isOpen: boolean;
 }
 
-export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}: DialogProps) => {
+export const TickDetailsDialog = ({
+  tickId,
+  tickResultType,
+  isOpen,
+  instigationSelector,
+  onClose,
+}: DialogProps) => {
   return (
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
       style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
     >
-      <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
-      {/* The logs table uses z-index for the column lines. Create a new stacking index
-      for the footer so that the lines don't sit above it. */}
-      <div style={{zIndex: 1}}>
-        <DialogFooter topBorder>
-          <Button onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </div>
+      <TickDetailsDialogImpl
+        tickId={tickId}
+        tickResultType={tickResultType}
+        instigationSelector={instigationSelector}
+      />
+      <DialogFooter topBorder>
+        <Button onClick={onClose}>Close</Button>
+      </DialogFooter>
     </Dialog>
   );
 };
 
 interface InnerProps {
   tickId: string | undefined;
+  tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
 }
 
-const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
-  const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
-
-  const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
-    variables: {instigationSelector, tickId: tickId || 0},
-    skip: !tickId,
-  });
+const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: InnerProps) => {
+  const {data, loading} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(
+    JOB_SELECTED_TICK_QUERY,
+    {
+      variables: {instigationSelector, tickId: tickId || ''},
+      skip: !tickId,
+    },
+  );
 
   const tick =
     data?.instigationStateOrError.__typename === 'InstigationState'
@@ -92,11 +100,29 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
+  if (loading) {
+    return (
+      <>
+        <DialogHeader label={`Tick for ${instigationSelector.name}`} />
+        <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+          <SpinnerWithText label="Loading tick details…" />
+        </Box>
+      </>
+    );
+  }
+
   if (!tick) {
     return (
-      <Box style={{padding: 32}} flex={{alignItems: 'center', justifyContent: 'center'}}>
-        <Spinner purpose="section" />
-      </Box>
+      <>
+        <DialogHeader label={`Tick for ${instigationSelector.name}`} />
+        <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+          <NonIdealState
+            icon="no-results"
+            title="Tick details not found"
+            description="Details for this tick could not be found."
+          />
+        </Box>
+      </>
     );
   }
 
@@ -104,27 +130,25 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
     <>
       <DialogHeader
         label={
-          <TimestampDisplay
-            timestamp={tick.timestamp}
-            timeFormat={{showTimezone: false, showSeconds: true}}
-          />
+          <>
+            <span>Tick for {instigationSelector.name}: </span>
+            <TimestampDisplay
+              timestamp={tick.timestamp}
+              timeFormat={{showTimezone: false, showSeconds: true}}
+            />
+          </>
         }
       />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <TickDetailSummary tick={tick} />
+        <TickDetailSummary tick={tick} tickResultType={tickResultType} />
       </Box>
-      <Box padding={{horizontal: 24}} border="bottom">
-        <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
-          <Tab id="result" title="Result" />
-          <Tab id="logs" title="Logs" />
-        </Tabs>
-      </Box>
-      {activeTab === 'result' ? (
+      {tickResultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
+      {tickResultType === 'runs' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
           {tick.runIds.length ? (
             <>
-              <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Requested Runs</Subtitle2>
+              <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+                <Subtitle2>Requested runs</Subtitle2>
               </Box>
               <RunList runIds={tick.runIds} />
             </>
@@ -159,14 +183,17 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
           ) : null}
         </div>
       ) : null}
-      {activeTab === 'logs' ? (
-        <QueryfulTickLogsTable instigationSelector={instigationSelector} tick={tick} />
-      ) : null}
     </>
   );
 };
 
-export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) {
+export function TickDetailSummary({
+  tick,
+  tickResultType,
+}: {
+  tick: HistoryTickFragment | AssetDaemonTickFragment;
+  tickResultType: TickResultType;
+}) {
   const intent = useMemo(() => {
     switch (tick?.status) {
       case InstigationTickStatus.FAILURE:
@@ -179,8 +206,6 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
     return undefined;
   }, [tick]);
 
-  const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
-
   return (
     <>
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12}}>
@@ -192,7 +217,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
                 'Evaluating…'
               ) : (
                 <>
-                  {(isAssetDaemonTick
+                  {(tickResultType === 'materializations' || !('runIds' in tick)
                     ? tick.requestedAssetMaterializationCount
                     : tick.runIds.length) ?? 0}{' '}
                   requested
@@ -204,6 +229,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
                 onClick={() => {
                   showCustomAlert({
                     title: 'Tick error',
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     body: <PythonErrorInfo error={tick.error!} />,
                   });
                 }}
@@ -246,18 +272,17 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
         </tr>
       </thead>
       <tbody>
-        {partitions.flatMap(
-          (partition) =>
-            partition.partitionKeys?.map((key) => (
-              <tr key={key}>
-                <td>
-                  <MiddleTruncate text={partition.partitionsDefName} />
-                </td>
-                <td>
-                  <MiddleTruncate text={key} />
-                </td>
-              </tr>
-            )),
+        {partitions.flatMap((partition) =>
+          partition.partitionKeys?.map((key) => (
+            <tr key={key}>
+              <td>
+                <MiddleTruncate text={partition.partitionsDefName} />
+              </td>
+              <td>
+                <MiddleTruncate text={key} />
+              </td>
+            </tr>
+          )),
         )}
       </tbody>
     </Table>
@@ -265,13 +290,25 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
 }
 
 const JOB_SELECTED_TICK_QUERY = gql`
-  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
+  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: ID!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
         tick(tickId: $tickId) {
           id
           ...HistoryTick
+
+          requestedAssetKeys {
+            path
+          }
+          requestedAssetMaterializationCount
+          autoMaterializeAssetEvaluationId
+          requestedMaterializationsForAssets {
+            assetKey {
+              path
+            }
+            partitionKeys
+          }
         }
       }
     }

@@ -5,10 +5,12 @@ import * as React from 'react';
 import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, getDisplayName, nodePathKey} from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
+import {useFeatureFlags} from '../../app/useFeatureFlags';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
+import {invariant} from '../../util/invariant';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
@@ -44,6 +46,8 @@ export const AssetGraphExplorerSidebar = React.memo(
     onFilterToGroup: (group: AssetGroup) => void;
     loading: boolean;
   }) => {
+    const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
+
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
     const graphData = Object.keys(assetGraphData.nodes).length
@@ -69,9 +73,12 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (!assetGraphData.nodes[id]) {
         try {
           const path = JSON.parse(id);
-          const nextOpsQuery = explorerPath.opsQuery.trim()
-            ? `\"${tokenForAssetKey({path})}\"`
-            : '*';
+          let nextOpsQuery = explorerPath.opsQuery.trim();
+          if (explorerPath.opsQuery.trim()) {
+            nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
+          } else {
+            nextOpsQuery = '*';
+          }
           onChangeExplorerPath(
             {
               ...explorerPath,
@@ -79,7 +86,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             },
             'push',
           );
-        } catch (e) {
+        } catch {
           // Ignore errors. The selected node might be a group or code location so trying to JSON.parse the id will error.
           // For asset nodes the id is always a JSON array
         }
@@ -93,7 +100,11 @@ export const AssetGraphExplorerSidebar = React.memo(
         return {'open-nodes': Array.from(val)};
       },
       decode: (qs) => {
-        return new Set(qs['open-nodes']);
+        const openNodes = qs['open-nodes'];
+        if (Array.isArray(openNodes)) {
+          return new Set(openNodes.map((node) => String(node)));
+        }
+        return new Set();
       },
       isEmptyState: (val) => val.size === 0,
     });
@@ -113,7 +124,9 @@ export const AssetGraphExplorerSidebar = React.memo(
           )
           .sort((a, b) =>
             COLLATOR.compare(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               getDisplayName(graphData.nodes[a]!),
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               getDisplayName(graphData.nodes[b]!),
             ),
           ),
@@ -121,93 +134,10 @@ export const AssetGraphExplorerSidebar = React.memo(
     );
 
     const renderedNodes = React.useMemo(() => {
-      const folderNodes: FolderNodeType[] = [];
-
-      // Map of Code Locations -> Groups -> Assets
-      const codeLocationNodes: Record<
-        string,
-        {
-          locationName: string;
-          groups: Record<
-            string,
-            {
-              groupName: string;
-              assets: GraphNode[];
-              repositoryName: string;
-              repositoryLocationName: string;
-            }
-          >;
-        }
-      > = {};
-
-      let groupsCount = 0;
-      Object.values(graphData.nodes).forEach((node) => {
-        const locationName = node.definition.repository.location.name;
-        const repositoryName = node.definition.repository.name;
-        const groupName = node.definition.groupName || 'default';
-        const groupId = groupIdForNode(node);
-        const codeLocation = buildRepoPathForHuman(repositoryName, locationName);
-        codeLocationNodes[codeLocation] = codeLocationNodes[codeLocation] || {
-          locationName: codeLocation,
-          groups: {},
-        };
-        if (!codeLocationNodes[codeLocation]!.groups[groupId]!) {
-          groupsCount += 1;
-        }
-        codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
-          groupId
-        ] || {
-          groupName,
-          assets: [],
-          repositoryName,
-          repositoryLocationName: locationName,
-        };
-        codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(node);
-      });
-      const codeLocationsCount = Object.keys(codeLocationNodes).length;
-      Object.entries(codeLocationNodes)
-        .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.locationName, b.locationName))
-        .forEach(([locationName, locationNode]) => {
-          folderNodes.push({locationName, id: locationName, level: 1});
-          if (openNodes.has(locationName) || codeLocationsCount === 1) {
-            Object.entries(locationNode.groups)
-              .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
-              .forEach(([id, groupNode]) => {
-                folderNodes.push({
-                  groupNode,
-                  id,
-                  level: 2,
-                });
-                if (openNodes.has(id) || groupsCount === 1) {
-                  groupNode.assets
-                    .sort((a, b) => COLLATOR.compare(a.id, b.id))
-                    .forEach((assetNode) => {
-                      folderNodes.push({
-                        id: assetNode.id,
-                        path: [
-                          locationName,
-                          groupNode.groupName,
-                          tokenForAssetKey(assetNode.assetKey),
-                        ].join(':'),
-                        level: 3,
-                      });
-                    });
-                }
-              });
-          }
-        });
-
-      if (groupsCount === 1) {
-        return folderNodes
-          .filter((node) => node.level === 3)
-          .map((node) => ({
-            ...node,
-            level: 1,
-          }));
-      }
-
-      return folderNodes;
-    }, [graphData.nodes, openNodes]);
+      return flagAssetGraphGroupsPerCodeLocation
+        ? buildRenderedNodesWithCodeLocations(graphData.nodes, openNodes)
+        : buildRenderedNodes(graphData.nodes, openNodes);
+    }, [flagAssetGraphGroupsPerCodeLocation, graphData.nodes, openNodes]);
 
     const {nav} = React.useContext(LayoutContext);
 
@@ -261,25 +191,21 @@ export const AssetGraphExplorerSidebar = React.memo(
         renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
     ]);
 
-    const indexOfLastSelectedNode = React.useMemo(
-      () => {
-        if (!selectedNode) {
-          return -1;
+    const indexOfLastSelectedNode = React.useMemo(() => {
+      if (!selectedNode) {
+        return -1;
+      }
+      return renderedNodes.findIndex((node) => {
+        // If you select a node via the search dropdown or from the graph directly then
+        // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+        // will always have a path so we need to explicitly check if the id's match
+        if (!('path' in selectedNode)) {
+          return node.id === selectedNode.id;
+        } else {
+          return nodePathKey(node) === nodePathKey(selectedNode);
         }
-        return renderedNodes.findIndex((node) => {
-          // If you select a node via the search dropdown or from the graph directly then
-          // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
-          // will always have a path so we need to explicitly check if the id's match
-          if (!('path' in selectedNode)) {
-            return node.id === selectedNode.id;
-          } else {
-            return nodePathKey(node) === nodePathKey(selectedNode);
-          }
-        });
-      },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode],
-    );
+      });
+    }, [renderedNodes, selectedNode]);
     const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
@@ -306,12 +232,12 @@ export const AssetGraphExplorerSidebar = React.memo(
             padding: '12px 24px',
             paddingRight: 12,
           }}
-          border="bottom"
         >
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
                 value: JSON.stringify(key.path),
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 label: key.path[key.path.length - 1]!,
               }));
             }, [allAssetKeys])}
@@ -321,7 +247,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
           </Tooltip>
         </Box>
-        <div>
+        <Box border="top">
           {loading ? (
             <Box flex={{direction: 'column', gap: 9}} padding={12}>
               <Skeleton $height={21} $width="50%" />
@@ -340,6 +266,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   indexOfLastSelectedNodeRef.current = nextIndex;
                   e.preventDefault();
                   const nextNode =
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
                   setSelectedNode(nextNode);
                   selectNode(e, nextNode.id);
@@ -363,52 +290,202 @@ export const AssetGraphExplorerSidebar = React.memo(
             >
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
-                  const node = renderedNodes[index]!;
-                  const isCodelocationNode = 'locationName' in node;
+                  const node = renderedNodes[index];
+                  invariant(node, 'Sidebar node is required');
+
+                  const isCodeLocationNode = 'locationName' in node;
                   const isGroupNode = 'groupNode' in node;
-                  const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                  const row = !isCodeLocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                   const isSelected =
                     selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
+                  invariant(row, 'Row for sidebar node is required');
+
                   return (
-                    <Row $height={size} $start={start} key={key} data-key={key}>
-                      <AssetSidebarNode
-                        isOpen={openNodes.has(nodePathKey(node))}
-                        fullAssetGraphData={fullAssetGraphData}
-                        node={row!}
-                        level={node.level}
-                        isLastSelected={lastSelectedNode?.id === node.id}
-                        isSelected={isSelected}
-                        toggleOpen={() => {
-                          setOpenNodes((nodes) => {
-                            const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodePathKey(node));
-                            if (isOpen) {
-                              openNodes.delete(nodePathKey(node));
-                            } else {
-                              openNodes.add(nodePathKey(node));
-                            }
-                            return openNodes;
-                          });
-                        }}
-                        selectNode={(e, id) => {
-                          selectNode(e, id);
-                        }}
-                        selectThisNode={(e) => {
-                          setSelectedNode(node);
-                          selectNode(e, node.id);
-                        }}
-                        explorerPath={explorerPath}
-                        onChangeExplorerPath={onChangeExplorerPath}
-                        onFilterToGroup={onFilterToGroup}
-                      />
+                    <Row $height={size} $start={start} key={key}>
+                      <div data-index={index} ref={rowVirtualizer.measureElement}>
+                        <AssetSidebarNode
+                          isOpen={openNodes.has(nodePathKey(node))}
+                          fullAssetGraphData={fullAssetGraphData}
+                          node={row}
+                          level={node.level}
+                          isLastSelected={lastSelectedNode?.id === node.id}
+                          isSelected={isSelected}
+                          toggleOpen={() => {
+                            setOpenNodes((nodes) => {
+                              const openNodes = new Set(nodes);
+                              const isOpen = openNodes.has(nodePathKey(node));
+                              if (isOpen) {
+                                openNodes.delete(nodePathKey(node));
+                              } else {
+                                openNodes.add(nodePathKey(node));
+                              }
+                              return openNodes;
+                            });
+                          }}
+                          selectNode={(e, id) => {
+                            selectNode(e, id);
+                          }}
+                          selectThisNode={(e) => {
+                            setSelectedNode(node);
+                            selectNode(e, node.id);
+                          }}
+                          explorerPath={explorerPath}
+                          onChangeExplorerPath={onChangeExplorerPath}
+                          onFilterToGroup={onFilterToGroup}
+                        />
+                      </div>
                     </Row>
                   );
                 })}
               </Inner>
             </Container>
           )}
-        </div>
+        </Box>
       </div>
     );
   },
 );
+
+function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Set<string>) {
+  // Map of Groups -> Assets
+  const groupNodes: Record<string, {groupName: string; assets: GraphNode[]}> = {};
+
+  let groupsCount = 0;
+  Object.values(nodes).forEach((node) => {
+    const groupName = node.definition.groupName || 'default';
+    const groupId = groupIdForNode(node);
+
+    if (!groupNodes[groupId]) {
+      groupsCount += 1;
+    }
+    groupNodes[groupId] = groupNodes[groupId] || {
+      groupName,
+      assets: [],
+    };
+    groupNodes[groupId].assets.push(node);
+  });
+
+  const renderGroupsLayer = groupsCount > 1;
+  const folderNodes: FolderNodeType[] = [];
+
+  Object.entries(groupNodes)
+    .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
+    .forEach(([id, groupNode]) => {
+      if (renderGroupsLayer) {
+        folderNodes.push({groupNode, id, level: 1});
+      }
+      if (openNodes.has(id) || !renderGroupsLayer) {
+        groupNode.assets
+          .sort((a, b) => COLLATOR.compare(a.id, b.id))
+          .forEach((assetNode) => {
+            folderNodes.push({
+              id: assetNode.id,
+              path: [groupNode.groupName, tokenForAssetKey(assetNode.assetKey)].join(':'),
+              level: renderGroupsLayer ? 2 : 1,
+            });
+          });
+      }
+    });
+
+  return folderNodes;
+}
+
+function buildRenderedNodesWithCodeLocations(
+  nodes: {[assetId: string]: GraphNode},
+  openNodes: Set<string>,
+) {
+  const folderNodes: FolderNodeType[] = [];
+
+  // Map of Code Locations -> Groups -> Assets
+  const codeLocationNodes: Record<
+    string,
+    {
+      locationName: string;
+      groups: Record<
+        string,
+        {
+          groupName: string;
+          assets: GraphNode[];
+          repositoryName: string;
+          repositoryLocationName: string;
+        }
+      >;
+    }
+  > = {};
+
+  let groupsCount = 0;
+  Object.values(nodes).forEach((node) => {
+    const locationName = node.definition.repository.location.name;
+    const repositoryName = node.definition.repository.name;
+    const groupName = node.definition.groupName || 'default';
+    const groupId = groupIdForNode(node);
+    const codeLocation = buildRepoPathForHuman(repositoryName, locationName);
+    codeLocationNodes[codeLocation] = codeLocationNodes[codeLocation] || {
+      locationName: codeLocation,
+      groups: {},
+    };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (!codeLocationNodes[codeLocation]!.groups[groupId]!) {
+      groupsCount += 1;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
+      groupId
+    ] || {
+      groupName,
+      assets: [],
+      repositoryName,
+      repositoryLocationName: locationName,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(node);
+  });
+  const codeLocationsCount = Object.keys(codeLocationNodes).length;
+  Object.entries(codeLocationNodes)
+    .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.locationName, b.locationName))
+    .forEach(([locationName, locationNode]) => {
+      folderNodes.push({
+        locationName,
+        id: locationName,
+        level: 1,
+        openAlways: codeLocationsCount === 1,
+      });
+      if (openNodes.has(locationName) || codeLocationsCount === 1) {
+        Object.entries(locationNode.groups)
+          .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
+          .forEach(([id, groupNode]) => {
+            folderNodes.push({
+              groupNode,
+              id,
+              level: 2,
+            });
+            if (openNodes.has(id) || groupsCount === 1) {
+              groupNode.assets
+                .sort((a, b) => COLLATOR.compare(a.id, b.id))
+                .forEach((assetNode) => {
+                  folderNodes.push({
+                    id: assetNode.id,
+                    path: [
+                      locationName,
+                      groupNode.groupName,
+                      tokenForAssetKey(assetNode.assetKey),
+                    ].join(':'),
+                    level: 3,
+                  });
+                });
+            }
+          });
+      }
+    });
+
+  if (groupsCount === 1) {
+    return folderNodes
+      .filter((node) => node.level === 3)
+      .map((node) => ({
+        ...node,
+        level: 1,
+      }));
+  }
+
+  return folderNodes;
+}

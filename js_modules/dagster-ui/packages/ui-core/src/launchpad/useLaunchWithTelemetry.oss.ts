@@ -3,6 +3,7 @@ import {useHistory} from 'react-router-dom';
 
 import {showLaunchError} from './showLaunchError';
 import {useMutation} from '../apollo-client';
+import {paramsWithUIExecutionTags} from './uiExecutionTags';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -25,10 +26,11 @@ export function useLaunchWithTelemetry() {
   const history = useHistory();
 
   return useCallback(
-    async (variables: LaunchPipelineExecutionMutationVariables, behavior: LaunchBehavior) => {
-      const jobName =
-        variables.executionParams.selector.jobName ||
-        variables.executionParams.selector.pipelineName;
+    async (
+      {executionParams, ...rest}: LaunchPipelineExecutionMutationVariables,
+      behavior: LaunchBehavior,
+    ) => {
+      const jobName = executionParams.selector.jobName || executionParams.selector.pipelineName;
 
       if (!jobName) {
         return;
@@ -36,10 +38,11 @@ export function useLaunchWithTelemetry() {
 
       const metadata: {[key: string]: string | null | undefined} = {
         jobName,
-        opSelection: variables.executionParams.selector.solidSelection ? 'provided' : undefined,
+        opSelection: executionParams.selector.solidSelection ? 'provided' : undefined,
       };
 
-      const result = await launchPipelineExecution({variables});
+      const finalized = {executionParams: paramsWithUIExecutionTags(executionParams), ...rest};
+      const result = await launchPipelineExecution({variables: finalized});
       logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
       try {
         handleLaunchResult(jobName, result.data?.launchPipelineExecution, history, {behavior});

@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 import dagstermill.factory as factory  # noqa: F401
 from dagstermill.asset_factory import define_dagstermill_asset as define_dagstermill_asset

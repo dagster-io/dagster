@@ -1,14 +1,16 @@
+from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
-import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
-from dagster._serdes.serdes import (
+from dagster_shared.serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
     UnpackedValue,
     whitelist_for_serdes,
 )
+
+import dagster._check as check
+from dagster._annotations import deprecated, public
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_rule import (
@@ -22,8 +24,8 @@ if TYPE_CHECKING:
 
 class AutoMaterializePolicySerializer(NamedTupleSerializer):
     def before_unpack(
-        self, context: UnpackContext, unpacked_dict: Dict[str, UnpackedValue]
-    ) -> Dict[str, UnpackedValue]:
+        self, context: UnpackContext, unpacked_dict: dict[str, UnpackedValue]
+    ) -> dict[str, UnpackedValue]:
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
         backcompat_map = {
@@ -54,16 +56,16 @@ class AutoMaterializePolicyType(Enum):
     LAZY = "LAZY"
 
 
-@experimental
 @whitelist_for_serdes(
     old_fields={"time_window_partition_scope_minutes": 1e-6},
     serializer=AutoMaterializePolicySerializer,
 )
+@deprecated(breaking_version="1.10.0")
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
         [
-            ("rules", FrozenSet["AutoMaterializeRule"]),
+            ("rules", frozenset["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
             ("asset_condition", Optional["AutomationCondition"]),
         ],
@@ -149,7 +151,7 @@ class AutoMaterializePolicy(
                 "`max_materializations_per_minute` is not supported when using `asset_condition`.",
             )
 
-        return super(AutoMaterializePolicy, cls).__new__(
+        return super().__new__(
             cls,
             rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
             max_materializations_per_minute=max_materializations_per_minute,
@@ -196,7 +198,7 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     @deprecated(
-        breaking_version="1.9",
+        breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.eager()` instead.",
     )
     def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
@@ -228,7 +230,7 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     @deprecated(
-        breaking_version="1.9",
+        breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.any_downstream_conditions()` instead.",
     )
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":

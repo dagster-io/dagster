@@ -1,0 +1,18 @@
+dg check yaml --validate-requirements
+
+/.../ingestion/src/ingestion/defs/ingest_files/defs.yaml:1 - requirements.env Component uses environment variables that are not specified in the component file: SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD, SNOWFLAKE_USER
+     | 
+   1 | type: dagster_sling.SlingReplicationCollectionComponent
+     | ^ Component uses environment variables that are not specified in the component file: SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD, SNOWFLAKE_USER
+   2 | 
+   3 | attributes:
+   4 |   connections:
+   5 |     SNOWFLAKE:
+   6 |       type: snowflake
+   7 |       account: "{{ env.SNOWFLAKE_ACCOUNT }}"
+   8 |       user: "{{ env.SNOWFLAKE_USER }}"
+   9 |       password: "{{ env.SNOWFLAKE_PASSWORD }}"
+  10 |       database: "{{ env.SNOWFLAKE_DATABASE }}"
+  11 |   replications:
+  12 |     - path: replication.yaml
+     |

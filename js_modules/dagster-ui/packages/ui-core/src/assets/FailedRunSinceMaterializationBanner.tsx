@@ -1,4 +1,4 @@
-import {Alert, Box} from '@dagster-io/ui-components';
+import {Alert, Box, Mono} from '@dagster-io/ui-components';
 import {
   BorderSetting,
   BorderSide,
@@ -7,8 +7,10 @@ import {
 import {Link} from 'react-router-dom';
 
 import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetBaseDataProvider.types';
+import {RunStatus} from '../graphql/types';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
+import {AssetPartitionLatestRunFragment} from './types/AssetPartitionDetail.types';
 
 export const FailedRunSinceMaterializationBanner = ({
   run,
@@ -16,12 +18,42 @@ export const FailedRunSinceMaterializationBanner = ({
   border,
   padding = {vertical: 16, left: 24, right: 12},
 }: {
-  run: AssetLatestInfoRunFragment | null;
+  run: AssetLatestInfoRunFragment | AssetPartitionLatestRunFragment | null;
   padding?: DirectionalSpacing;
   border?: BorderSide | BorderSetting;
   stepKey?: string;
 }) => {
   const stepLogs = useStepLogs({runId: run?.id, stepKeys: stepKey ? [stepKey] : []});
+
+  const alertIntent = run?.status === RunStatus.CANCELED ? 'warning' : 'error';
+
+  const content = () => {
+    if (run?.status === RunStatus.CANCELED) {
+      return (
+        <>
+          Run{' '}
+          <Link to={`/runs/${run.id}`}>
+            <Mono style={{fontWeight: 600}}>{titleForRun(run)}</Mono>
+          </Link>{' '}
+          was canceled, and did not materialize this asset.
+        </>
+      );
+    }
+
+    if (run?.status === RunStatus.FAILURE) {
+      return (
+        <>
+          Run{' '}
+          <Link to={`/runs/${run.id}`}>
+            <Mono style={{fontWeight: 600}}>{titleForRun(run)}</Mono>
+          </Link>{' '}
+          failed, and did not materialize this asset.
+        </>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <>
@@ -34,17 +66,7 @@ export const FailedRunSinceMaterializationBanner = ({
           style={{width: '100%'}}
         >
           <div style={{flex: 1}}>
-            <Alert
-              intent="error"
-              title={
-                <Box flex={{justifyContent: 'space-between'}}>
-                  <div style={{fontWeight: 400}}>
-                    Run <Link to={`/runs/${run.id}`}>{titleForRun(run)}</Link> failed to materialize
-                    this asset.
-                  </div>
-                </Box>
-              }
-            />
+            <Alert intent={alertIntent} title={content()} />
           </div>
           {stepLogs.button}
         </Box>

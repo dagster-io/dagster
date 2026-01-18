@@ -1,4 +1,5 @@
-from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Optional, TypeVar, cast
 
 from dagster import _check as check
 from dagster._config import Shape
@@ -102,8 +103,8 @@ def with_resources(
                 )
             resource_defs[key] = resource_defs[key].configured(resource_config["config"])
 
-    transformed_defs: List[T] = []
+    transformed_defs: list[T] = []
     for definition in definitions:
-        transformed_defs.append(cast(T, definition.with_resources(resource_defs)))
+        transformed_defs.append(cast("T", definition.with_resources(resource_defs)))
 
     return transformed_defs

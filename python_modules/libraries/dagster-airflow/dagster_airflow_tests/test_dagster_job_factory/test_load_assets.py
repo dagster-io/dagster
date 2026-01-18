@@ -8,8 +8,6 @@ from dagster import AssetKey, asset, materialize
 from dagster._check import CheckError
 from dagster_airflow import load_assets_from_airflow_dag, make_ephemeral_airflow_db_resource
 
-from dagster_airflow_tests.marks import requires_local_db
-
 ASSET_DAG = """
 from airflow import models
 
@@ -39,7 +37,7 @@ with models.DAG(
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
-@requires_local_db
+@pytest.mark.requires_local_db
 def test_load_assets_from_airflow_dag():
     with tempfile.TemporaryDirectory(suffix="assets") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
@@ -56,7 +54,7 @@ def test_load_assets_from_airflow_dag():
             return 1
 
         assets = load_assets_from_airflow_dag(
-            dag=asset_dag,
+            dag=asset_dag,  # pyright: ignore[reportArgumentType]
             task_ids_by_asset_key={
                 AssetKey("foo_asset"): {"foo"},
                 AssetKey("biz_asset"): {"biz"},
@@ -70,7 +68,7 @@ def test_load_assets_from_airflow_dag():
 
         other_dag = dag_bag.get_dag(dag_id="other_dag")
         other_assets = load_assets_from_airflow_dag(
-            dag=other_dag,
+            dag=other_dag,  # pyright: ignore[reportArgumentType]
         )
 
         result = materialize(
@@ -82,7 +80,7 @@ def test_load_assets_from_airflow_dag():
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
-@requires_local_db
+@pytest.mark.requires_local_db
 def test_load_assets_from_airflow_dag_multiple_tasks_per_asset():
     with tempfile.TemporaryDirectory(suffix="assets") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
@@ -100,7 +98,7 @@ def test_load_assets_from_airflow_dag_multiple_tasks_per_asset():
 
         with pytest.raises(CheckError, match="Each asset key must have no more than one task ID"):
             load_assets_from_airflow_dag(
-                dag=asset_dag,
+                dag=asset_dag,  # pyright: ignore[reportArgumentType]
                 task_ids_by_asset_key={
                     AssetKey("foo_asset"): {"foo", "biz"},
                 },

@@ -1,56 +1,21 @@
-import {
-  Body,
-  Box,
-  Colors,
-  Group,
-  Icon,
-  NonIdealState,
-  Spinner,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, NonIdealState, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
-import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
-import {gql, useQuery} from '../apollo-client';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunTable} from '../runs/RunTable';
-import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {
-  const queryResult = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
-    LAUNCHED_RUN_LIST_QUERY,
-    {
-      variables: {
-        filter: {
-          runIds,
-        },
-      },
-    },
+  const filter = useMemo(
+    () => ({
+      runIds,
+    }),
+    [runIds],
   );
-  const {data, loading} = queryResult;
-
-  if (loading || !data) {
-    return (
-      <Box padding={32}>
-        <Spinner purpose="section" />
-      </Box>
-    );
-  }
-
-  if (data.pipelineRunsOrError.__typename !== 'Runs') {
-    return (
-      <Box padding={32}>
-        <NonIdealState
-          icon="error"
-          title="An error occurred"
-          description={data.pipelineRunsOrError.message}
-        />
-      </Box>
-    );
-  }
 
   return (
     <Box padding={{bottom: 8}}>
-      <RunTable runs={data.pipelineRunsOrError.results} />
+      <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills />
     </Box>
   );
 };
@@ -60,7 +25,7 @@ export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
     return null;
   }
   return (
-    <Group direction="column" spacing={16}>
+    <Box flex={{direction: 'column', gap: 16}}>
       <Box padding={12} border={{side: 'bottom', color: Colors.textLighter()}}>
         <Body>
           Targeted Runs
@@ -83,7 +48,7 @@ export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
           description="This sensor does not target a pipeline or job."
         />
       </Box>
-    </Group>
+    </Box>
   );
 };
 
@@ -100,25 +65,5 @@ export const TICK_TAG_FRAGMENT = gql`
     }
   }
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const LAUNCHED_RUN_LIST_QUERY = gql`
-  query LaunchedRunListQuery($filter: RunsFilter!) {
-    pipelineRunsOrError(filter: $filter, limit: 500) {
-      ... on PipelineRuns {
-        results {
-          ...RunTableRunFragment
-          id
-        }
-      }
-      ... on InvalidPipelineRunsFilterError {
-        message
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${RUN_TABLE_RUN_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

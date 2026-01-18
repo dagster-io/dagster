@@ -1,14 +1,8 @@
-import {NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
-import {
-  PartitionRunListQuery,
-  PartitionRunListQueryVariables,
-} from './types/PartitionRunList.types';
-import {gql, useQuery} from '../apollo-client';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunTable} from '../runs/RunTable';
-import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 
 interface PartitionRunListProps {
   pipelineName: string;
@@ -16,56 +10,17 @@ interface PartitionRunListProps {
 }
 
 export const PartitionRunList = (props: PartitionRunListProps) => {
-  const queryResult = useQuery<PartitionRunListQuery, PartitionRunListQueryVariables>(
-    PARTITION_RUN_LIST_QUERY,
-    {
-      variables: {
-        filter: {
-          pipelineName: props.pipelineName,
-          tags: [{key: DagsterTag.Partition, value: props.partitionName}],
-        },
-      },
-    },
+  const filter = useMemo(
+    () => ({
+      pipelineName: props.pipelineName,
+      tags: [{key: DagsterTag.Partition, value: props.partitionName}],
+    }),
+    [props.pipelineName, props.partitionName],
   );
 
-  const {data, loading} = queryResult;
-
-  if (loading || !data) {
-    return <Spinner purpose="section" />;
-  }
-
-  if (data.pipelineRunsOrError.__typename !== 'Runs') {
-    return (
-      <NonIdealState
-        icon="error"
-        title="Query Error"
-        description={data.pipelineRunsOrError.message}
-      />
-    );
-  }
   return (
-    <div>
-      <RunTable runs={data.pipelineRunsOrError.results} />
-    </div>
+    <Box flex={{direction: 'column'}} style={{minHeight: 0, maxHeight: '60vh'}}>
+      <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills scroll />
+    </Box>
   );
 };
-
-const PARTITION_RUN_LIST_QUERY = gql`
-  query PartitionRunListQuery($filter: RunsFilter!) {
-    pipelineRunsOrError(filter: $filter, limit: 500) {
-      ... on PipelineRuns {
-        results {
-          ...RunTableRunFragment
-          id
-        }
-      }
-      ... on InvalidPipelineRunsFilterError {
-        message
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${RUN_TABLE_RUN_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;

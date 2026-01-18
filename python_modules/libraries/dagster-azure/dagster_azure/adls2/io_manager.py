@@ -1,6 +1,7 @@
 import pickle
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator, Union
+from typing import Any, Union
 
 from dagster import (
     InputContext,
@@ -11,6 +12,7 @@ from dagster import (
 )
 from dagster._annotations import deprecated
 from dagster._config.pythonic_config import ConfigurableIOManager
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
@@ -19,16 +21,21 @@ from pydantic import Field
 from upath import UPath
 
 from dagster_azure.adls2.resources import ADLS2Resource
-from dagster_azure.adls2.utils import ResourceNotFoundError
+from dagster_azure.adls2.utils import (
+    DataLakeLeaseClient,
+    DataLakeServiceClient,
+    ResourceNotFoundError,
+)
+from dagster_azure.blob.utils import BlobLeaseClient, BlobServiceClient
 
 
 class PickledObjectADLS2IOManager(UPathIOManager):
     def __init__(
         self,
-        file_system: Any,
-        adls2_client: Any,
-        blob_client: Any,
-        lease_client_constructor: Any,
+        file_system: str,
+        adls2_client: DataLakeServiceClient,
+        blob_client: BlobServiceClient,
+        lease_client_constructor: Union[type[DataLakeLeaseClient], type[BlobLeaseClient]],
         prefix: str = "dagster",
         lease_duration: int = 60,
     ):
@@ -82,6 +89,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
     def _acquire_lease(self, client: Any, is_rm: bool = False) -> Iterator[str]:
         lease_client = self.lease_client_constructor(client=client)
         try:
+            # Unclear why this needs to be type-ignored
             lease_client.acquire(lease_duration=self.lease_duration)
             yield lease_client.id
         finally:
@@ -97,10 +105,6 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return pickle.loads(stream.readall())
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        if self.path_exists(path):
-            context.log.warning(f"Removing existing ADLS2 key: {path}")
-            self.unlink(path)
-
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         file = self.file_system_client.create_file(path.as_posix())
         with self._acquire_lease(file) as lease:
@@ -131,7 +135,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import Definitions, asset
-        from dagster_azure.adls2 import ADLS2PickleIOManager, adls2_resource
+        from dagster_azure.adls2 import ADLS2PickleIOManager, ADLS2Resource, ADLS2SASToken
 
         @asset
         def asset1():
@@ -142,14 +146,17 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
         def asset2(asset1):
             return df[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": ADLS2PickleIOManager(
                     adls2_file_system="my-cool-fs",
-                    adls2_prefix="my-cool-prefix"
+                    adls2_prefix="my-cool-prefix",
+                    adls2=ADLS2Resource(
+                        storage_account="my-storage-account",
+                        credential=ADLS2SASToken(token="my-sas-token"),
+                    ),
                 ),
-                "adls2": adls2_resource,
             },
         )
 
@@ -159,15 +166,18 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import job
-        from dagster_azure.adls2 import ADLS2PickleIOManager, adls2_resource
+        from dagster_azure.adls2 import ADLS2PickleIOManager, ADLS2Resource, ADLS2SASToken
 
         @job(
             resource_defs={
                 "io_manager": ADLS2PickleIOManager(
                     adls2_file_system="my-cool-fs",
-                    adls2_prefix="my-cool-prefix"
+                    adls2_prefix="my-cool-prefix",
+                    adls2=ADLS2Resource(
+                        storage_account="my-storage-account",
+                        credential=ADLS2SASToken(token="my-sas-token"),
+                    ),
                 ),
-                "adls2": adls2_resource,
             },
         )
         def my_job():
@@ -222,7 +232,7 @@ class ConfigurablePickledObjectADLS2IOManager(ADLS2PickleIOManager):
     config_schema=ADLS2PickleIOManager.to_config_schema(),
     required_resource_keys={"adls2"},
 )
-def adls2_pickle_io_manager(init_context):
+def adls2_pickle_io_manager(init_context: InitResourceContext) -> PickledObjectADLS2IOManager:
     """Persistent IO manager using Azure Data Lake Storage Gen2 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -241,7 +251,7 @@ def adls2_pickle_io_manager(init_context):
 
     Example usage:
 
-    1. Attach this IO manager to a set of assets.
+    Attach this IO manager to a set of assets.
 
     .. code-block:: python
 
@@ -257,7 +267,7 @@ def adls2_pickle_io_manager(init_context):
         def asset2(asset1):
             return df[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": adls2_pickle_io_manager.configured(
@@ -268,7 +278,7 @@ def adls2_pickle_io_manager(init_context):
         )
 
 
-    2. Attach this IO manager to your job to make it available to your ops.
+    Attach this IO manager to your job to make it available to your ops.
 
     .. code-block:: python
 
@@ -290,7 +300,7 @@ def adls2_pickle_io_manager(init_context):
     adls2_client = adls_resource.adls2_client
     blob_client = adls_resource.blob_client
     lease_client = adls_resource.lease_client_constructor
-    pickled_io_manager = PickledObjectADLS2IOManager(
+    return PickledObjectADLS2IOManager(
         init_context.resource_config["adls2_file_system"],
         adls2_client,
         blob_client,
@@ -298,4 +308,3 @@ def adls2_pickle_io_manager(init_context):
         init_context.resource_config.get("adls2_prefix"),
         init_context.resource_config.get("lease_duration"),
     )
-    return pickled_io_manager

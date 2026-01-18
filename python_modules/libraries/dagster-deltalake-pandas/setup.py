@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_deltalake_pandas/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -24,18 +23,17 @@ setup(
     description="Package for storing Pandas DataFrames in Delta tables.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-deltalake-pandas",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_deltalake_pandas_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
         f"dagster-deltalake{pin}",

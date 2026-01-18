@@ -1,0 +1,117 @@
+---
+description: Configure Microsoft Entra ID (formerly Azure Active Directory) to use SSO with your Dagster+ organization.
+title: Setting up Microsoft Entra ID (formerly Azure Active Directory) SSO for Dagster+
+sidebar_label: Microsoft Entra ID (formerly Azure Active Directory)
+sidebar_position: 8220
+tags: [dagster-plus-feature]
+---
+
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
+
+In this guide, you'll configure Microsoft Entra ID (formerly Azure Active Directory) to use single sign-on (SSO) with your Dagster+ organization.
+
+<details>
+  <summary>Prerequisites</summary>
+
+To complete the steps in this guide, you'll need:
+
+- **An existing Azure Active Directory account**
+- **To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)**
+- **The following in Dagster+:**
+  - A Pro plan
+  - [Access to a user token](/deployment/dagster-plus/management/tokens/user-tokens)
+  - [Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in your organization
+
+</details>
+
+## Step 1: add the Dagster Cloud app in Azure AD \{#dagster-app}
+
+In this step, you'll add the Dagster Cloud app to your list of managed SaaS apps in Azure AD.
+
+1. Sign in to the Azure portal.
+2. On the left navigation pane, click the **Azure Active Directory** service.
+3. Navigate to **Enterprise Applications** and then **All Applications**.
+4. Click **New application**.
+5. In the **Add from the gallery** section, type **Dagster Cloud** in the search box.
+6. Select **Dagster Cloud** from the results panel and then add the app. Wait a few seconds while the app is added to your tenant.
+
+## Step 2: configure SSO in Azure AD \{#configure-sso}
+
+In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
+
+1.  On the **Dagster Cloud** application integration page, locate the **Manage** section and select **single sign-on**.
+2.  On the **Select a single sign-on method** page, select **SAML**.
+3.  On the **Set up single sign-on with SAML** page, click the pencil icon for **Basic SAML Configuration** to edit the settings.
+
+    ![Settings Dropdown](/images/dagster-plus/features/authentication-and-access-control/azure/set-up-single-sign-on.png)
+
+4.  In the **Basic SAML Configuration** section, fill in the **Identifier** and **Reply URL** fields as follows:
+
+    Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+
+    ```shell
+    https://<organization_name>.dagster.cloud/auth/saml/consume
+    ```
+
+    :::info
+
+    For EU region customers, the URL will be `https://<organization_name>.eu.dagster.cloud/auth/saml/consume`
+
+    :::
+
+5.  Click **Set additional URLs**.
+6.  In the **Sign-on URL** field, copy and paste the URL you entered in the **Identifier** and **Reply URL** fields.
+7.  Next, you'll configure the SAML assertions. In addition to the default attributes, Dagster+ requires the following:
+
+    - `FirstName` - `user.givenname`
+    - `LastName` - `user.surname`
+    - `Email` - `user.userprincipalname`
+
+    Add these attribute mappings to the SAML assertion.
+
+8.  On the **Set up single sign-on with SAML** page:
+
+    1. Locate the **SAML Signing Certificate** section.
+    2. Next to **Federation Metadata XML**, click **Download**:
+
+       ![Download SAML Certificate](/images/dagster-plus/features/authentication-and-access-control/azure/download.png)
+
+    When prompted, save the SAML metadata file to your computer.
+
+## Step 3: upload the SAML metadata to Dagster+ \{#upload-saml}
+
+After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
+
+<Tabs groupId="region">
+<TabItem value="us" label="US">
+```shell
+dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+   --api-token=<user_token> \
+   --url https://<organization_name>.dagster.cloud
+```
+</TabItem>
+<TabItem value="eu" label="EU">
+```shell
+dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+   --api-token=<user_token> \
+   --url https://<organization_name>.eu.dagster.cloud
+```
+</TabItem>
+</Tabs>
+
+## Step 4: create a test user \{#test-user}
+
+In this section, you'll create a test user in the Azure portal.
+
+1. From the left pane in the Azure portal, click **Azure Active Directory**.
+2. Click **Users > All users**.
+3. Click **New user** at the top of the screen.
+4. In **User** properties, fill in the following fields:
+   - **Name**: Enter `B.Simon`.
+   - **User name**: Enter `B.Simon@contoso.com`.
+   - Select the **Show password** checkbox and write down the value displayed in the **Password** box.
+5. Click **Create**.
+
+<TestSSO />
+
+Click **Test this application** in the Azure portal. If successful, you'll be automatically signed into your Dagster+ organization.

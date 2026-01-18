@@ -4,6 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type AssetMaterializationUpstreamTableFragment = {
   __typename: 'AssetNode';
+  id: string;
   assetMaterializationUsedData: Array<{
     __typename: 'MaterializationUpstreamDataVersion';
     timestamp: string;
@@ -40,4 +41,4 @@ export type AssetMaterializationUpstreamQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetMaterializationUpstreamQueryVersion = '754bab88738acc8d310c71f577ac3cf06dc57950bb1f98a18844e6e00bae756d';
+export const AssetMaterializationUpstreamQueryVersion = '6d185ba2c901fddec7845a056cd1be84f2e00e3284d4570da09ca9c552383e9b';

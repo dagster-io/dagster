@@ -7,8 +7,8 @@ import {OpIOBox, metadataForIO} from './OpIOBox';
 import {IOpTag, OpTags} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
-import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {gql} from '../apollo-client';
+import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
@@ -27,6 +27,7 @@ interface IOpNodeProps {
   onDoubleClick: () => void;
   onEnterComposite: () => void;
   onHighlightEdges: (edges: Edge[]) => void;
+  isExternal?: boolean;
 }
 
 const TOOLTIP_STYLE = JSON.stringify({
@@ -87,7 +88,8 @@ export class OpNode extends React.Component<IOpNodeProps> {
   };
 
   public render() {
-    const {definition, invocation, layout, dim, focused, selected, minified} = this.props;
+    const {definition, invocation, layout, dim, focused, selected, minified, isExternal} =
+      this.props;
     const {metadata} = definition;
     if (!layout) {
       throw new Error(`Layout is missing for ${definition.name}`);
@@ -137,18 +139,20 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {minified ? 'C' : 'Config'}
           </div>
         )}
-        <div>
-          {definition.inputDefinitions.map((item, idx) => (
-            <OpIOBox
-              {...this.props}
-              {...metadataForIO(item, invocation)}
-              key={idx}
-              item={item}
-              layoutInfo={layout.inputs[item.name]}
-              colorKey="input"
-            />
-          ))}
-        </div>
+        {!isExternal && (
+          <div>
+            {definition.inputDefinitions.map((item, idx) => (
+              <OpIOBox
+                {...this.props}
+                {...metadataForIO(item, invocation)}
+                key={idx}
+                item={item}
+                layoutInfo={layout.inputs[item.name]}
+                colorKey="input"
+              />
+            ))}
+          </div>
+        )}
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
             {!minified && <Icon name="op" size={16} />}
@@ -174,18 +178,20 @@ export class OpNode extends React.Component<IOpNodeProps> {
             }}
           />
         )}
-        <div>
-          {definition.outputDefinitions.map((item, idx) => (
-            <OpIOBox
-              {...this.props}
-              {...metadataForIO(item, invocation)}
-              key={idx}
-              item={item}
-              layoutInfo={layout.outputs[item.name]}
-              colorKey="output"
-            />
-          ))}
-        </div>
+        {!isExternal && (
+          <div>
+            {definition.outputDefinitions.map((item, idx) => (
+              <OpIOBox
+                {...this.props}
+                {...metadataForIO(item, invocation)}
+                key={idx}
+                item={item}
+                layoutInfo={layout.outputs[item.name]}
+                colorKey="output"
+              />
+            ))}
+          </div>
+        )}
       </NodeContainer>
     );
   }
@@ -196,6 +202,7 @@ const OpNodeAssociatedAssets = ({nodes}: {nodes: {assetKey: AssetKey}[]}) => {
   return (
     <div className="assets">
       <Icon name="asset" size={16} />
+      {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
       {withMiddleTruncation(displayNameForAssetKey(nodes[0]!.assetKey), {
         maxLength: 48 - more.length,
       })}
@@ -344,8 +351,8 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${Colors.accentBlue()}55`
-        : `2px solid ${Colors.keylineDefault()}`};
+          ? `2px solid ${Colors.accentBlue()}55`
+          : `2px solid ${Colors.keylineDefault()}`};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 8px;

@@ -1,9 +1,10 @@
 import base64
 import sys
 import warnings
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import closing, contextmanager
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -17,9 +18,17 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, validator
+from dagster.components.lib.sql_component.sql_client import SQLClient
+from pydantic import Field, model_validator, validator
+from snowflake import snowpark
+from snowflake.core import Root
+from snowflake.core.database import Database
+from snowflake.core.pipe import Pipe
+from snowflake.core.schema import Schema
+from snowflake.core.stage import Stage
+from snowflake.core.table import Table
+from snowflake.core.view import View
 
 from dagster_snowflake.constants import (
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
@@ -40,7 +49,7 @@ except ImportError:
     raise
 
 
-class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext, SQLClient):
     """A resource for connecting to the Snowflake data warehouse.
 
     If connector configuration is not set, SnowflakeResource.get_connection() will return a
@@ -132,8 +141,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Raw private key to use. See the `Snowflake documentation"
             " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
             " Alternately, set private_key_path and private_key_password. To avoid issues with"
-            " newlines in the keys, you can base64 encode the key. You can retrieve the base64"
-            " encoded key with this shell command: ``cat rsa_key.p8 | base64``"
+            " newlines in the keys, you can optionally base64 encode the key. You can retrieve"
+            " the base64 encoded key with this shell command: ``cat rsa_key.p8 | base64``"
         ),
     )
 
@@ -235,7 +244,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Indicate alternative database connection engine. Permissible option is "
             "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
         ),
-        is_required=False,
+        is_required=False,  # type: ignore
     )
 
     cache_column_metadata: Optional[str] = Field(
@@ -259,6 +268,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
+    additional_snowflake_connection_args: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
+            " available arguments, see the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect>`__."
+            " This config will be ignored if using the sqlalchemy connector."
+        ),
+    )
 
     @validator("paramstyle")
     def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
@@ -272,13 +290,13 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
     @validator("connector")
     def validate_connector(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v != "sqlalchemy":
+        if v is not None and v not in ["sqlalchemy", "adbc"]:
             raise ValueError(
-                "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy."
+                "Snowflake Resource: 'connector' configuration value must be None, sqlalchemy or adbc."
             )
         return v
 
-    @compat_model_validator(mode="before")
+    @model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0
@@ -339,12 +357,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             conn_args["private_key"] = self._snowflake_private_key(self._resolved_config_dict)
 
         conn_args["application"] = SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+
+        if self._resolved_config_dict.get("additional_snowflake_connection_args") is not None:
+            conn_args.update(self._resolved_config_dict["additional_snowflake_connection_args"])
         return conn_args
 
     @property
     @cached_method
     def _sqlalchemy_connection_args(self) -> Mapping[str, Any]:
-        conn_args: Dict[str, Any] = {
+        conn_args: dict[str, Any] = {
             k: self._resolved_config_dict.get(k)
             for k in (
                 "account",
@@ -379,6 +400,81 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
         return sqlalchemy_engine_args
 
+    @property
+    @cached_method
+    def _adbc_connection_args(self) -> Mapping[str, Any]:
+        config = self._resolved_config_dict
+        adbc_engine_args = {}
+
+        if config.get("account"):
+            adbc_engine_args["adbc.snowflake.sql.account"] = config["account"]
+        if config.get("user"):
+            adbc_engine_args["username"] = config["user"]
+        if config.get("password"):
+            adbc_engine_args["password"] = config["password"]
+        if config.get("database"):
+            adbc_engine_args["adbc.snowflake.sql.db"] = config["database"]
+        if config.get("schema"):
+            adbc_engine_args["adbc.snowflake.sql.schema"] = config["schema"]
+        if config.get("role"):
+            adbc_engine_args["adbc.snowflake.sql.role"] = config["role"]
+        if config.get("warehouse"):
+            adbc_engine_args["adbc.snowflake.sql.warehouse"] = config["warehouse"]
+
+        if config.get("authenticator"):
+            auth_mapping = {
+                "snowflake": "auth_snowflake",
+                "oauth": "auth_oauth",
+                "externalbrowser": "auth_ext_browser",
+                "okta": "auth_okta",
+                "jwt": "auth_jwt",
+                "snowflake_jwt": "auth_jwt",
+            }
+            auth_type = auth_mapping.get(config["authenticator"].lower(), config["authenticator"])
+            adbc_engine_args["adbc.snowflake.sql.auth_type"] = auth_type
+
+        if config.get("private_key") or config.get("private_key_path"):
+            # ADBC expects the raw private key value as bytes for jwt_private_key_pkcs8_value
+            adbc_engine_args["adbc.snowflake.sql.auth_type"] = "auth_jwt"
+            if config.get("private_key"):
+                adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_value"] = (
+                    config["private_key"]
+                )
+            elif config.get("private_key_path"):
+                adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key"] = config[
+                    "private_key_path"
+                ]
+
+            if config.get("private_key_password"):
+                adbc_engine_args[
+                    "adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_password"
+                ] = config["private_key_password"]
+
+        if config.get("login_timeout"):
+            adbc_engine_args["adbc.snowflake.sql.client_option.login_timeout"] = (
+                f"{config['login_timeout']}s"
+            )
+        if config.get("network_timeout"):
+            adbc_engine_args["adbc.snowflake.sql.client_option.request_timeout"] = (
+                f"{config['network_timeout']}s"
+            )
+        if config.get("client_session_keep_alive") is not None:
+            adbc_engine_args["adbc.snowflake.sql.client_option.keep_session_alive"] = str(
+                config["client_session_keep_alive"]
+            ).lower()
+
+        adbc_engine_args["adbc.snowflake.sql.client_option.app_name"] = (
+            SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+        )
+
+        if config.get("additional_snowflake_connection_args"):
+            for key, value in config["additional_snowflake_connection_args"].items():
+                # Allow direct ADBC option names to be passed through
+                if key.startswith("adbc.snowflake."):
+                    adbc_engine_args[key] = value  # noqa: PERF403
+
+        return adbc_engine_args
+
     def _snowflake_private_key(self, config) -> bytes:
         # If the user has defined a path to a private key, we will use that.
         if config.get("private_key_path", None) is not None:
@@ -386,7 +482,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
         else:
-            private_key = config.get("private_key", None)
+            private_key = config.get("private_key", None).encode()
 
         kwargs = {}
         if config.get("private_key_password", None) is not None:
@@ -398,7 +494,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             p_key = serialization.load_pem_private_key(
                 private_key, backend=default_backend(), **kwargs
             )
-        except TypeError:
+
+        # key fails to load, possibly indicating key is base64 encoded
+        except ValueError:
             try:
                 private_key = base64.b64decode(private_key)
                 p_key = serialization.load_pem_private_key(
@@ -462,6 +560,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             yield conn
             conn.close()
             engine.dispose()
+        elif self.connector == "adbc":
+            import adbc_driver_snowflake.dbapi
+
+            conn = adbc_driver_snowflake.dbapi.connect(
+                db_kwargs=self._adbc_connection_args,  # pyright: ignore[reportArgumentType]
+            )
+
+            yield conn
+            conn.close()
         else:
             conn = snowflake.connector.connect(**self._connection_args)
 
@@ -478,6 +585,281 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             log=get_dagster_logger(),
             snowflake_connection_resource=self,
         )
+
+    def connect_and_execute(self, sql: str) -> None:
+        with self.get_connection() as conn:
+            conn.cursor().execute(sql)
+
+    @contextmanager
+    def create_snowpark_session(self) -> Iterator[snowpark.Session]:
+        """Create a Snowpark session as a context manager.
+
+        This method creates a Snowpark session using the connection parameters configured
+        in the SnowflakeResource. The session is automatically closed when exiting the
+        context manager.
+
+        Yields:
+            snowpark.Session: A Snowpark session object that can be used to interact with
+                Snowflake using the Snowpark API.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def process_data(snowflake: SnowflakeResource):
+                    with snowflake.create_snowpark_session() as session:
+                        df = session.table("my_table")
+                        result = df.filter(df["amount"] > 100).collect()
+                        return result
+        """
+        session = snowpark.Session.builder.configs(cast("dict", self._connection_args)).create()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    def get_databases(self, database_like: str) -> list[Database]:
+        """Get a list of databases in Snowflake that match the specified pattern.
+
+        Retrieves Database objects from Snowflake that match the provided LIKE pattern.
+        Uses SQL wildcard characters (% and _) for pattern matching.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names. Use '%' for any
+                sequence of characters and '_' for any single character. Case-insensitive.
+
+        Returns:
+            list[Database]: List of Database objects that match the pattern.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def list_test_databases(snowflake: SnowflakeResource):
+                    # Get all databases starting with 'TEST'
+                    databases = snowflake.get_databases("TEST%")
+
+                    for db in databases:
+                        print(f"Found database: {db.name}")
+
+                    return [db.name for db in databases]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Database] = []
+
+            for db in dbs.iter(like=database_like):
+                result.append(db)
+
+            return result
+
+    def get_schemas(
+        self,
+        database_like: str,
+        schema_like: str,
+    ) -> list[Schema]:
+        """Get a list of schemas in Snowflake databases that match the specified patterns.
+
+        Retrieves Schema objects from Snowflake databases that match the provided LIKE patterns.
+        Searches across all matching databases and returns all matching schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names within matching databases.
+
+        Returns:
+            list[Schema]: List of Schema objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def list_public_schemas(snowflake: SnowflakeResource):
+                    # Get all PUBLIC schemas in databases starting with 'PROD'
+                    schemas = snowflake.get_schemas("PROD%", "PUBLIC")
+
+                    for schema in schemas:
+                        print(f"Found schema: {schema.name}")
+
+                    return [schema.name for schema in schemas]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Schema] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    result.append(schema)
+
+            return result
+
+    def get_tables(
+        self,
+        database_like: str,
+        schema_like: str,
+        name_like: str,
+    ) -> list[Table]:
+        """Get a list of tables in Snowflake that match the specified patterns.
+
+        Retrieves Table objects from Snowflake that match the provided LIKE patterns.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter table names.
+
+        Returns:
+            list[Table]: List of Table objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_customer_tables(snowflake: SnowflakeResource):
+                    # Get all tables with 'CUSTOMER' in the name
+                    tables = snowflake.get_tables("PROD%", "%", "%CUSTOMER%")
+
+                    for table in tables:
+                        print(f"Found table: {table.name}")
+
+                    return [table.name for table in tables]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Table] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    tables = schemas[schema.name].tables
+                    for table in tables.iter(like=name_like):
+                        result.append(table)
+
+            return result
+
+    def get_views(self, database_like: str, schema_like: str, name_like: str) -> list[View]:
+        """Get a list of views in Snowflake that match the specified patterns.
+
+        Retrieves View objects from Snowflake that match the provided LIKE patterns.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter view names.
+
+        Returns:
+            list[View]: List of View objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_reporting_views(snowflake: SnowflakeResource):
+                    # Get all views with 'REPORT' in the name
+                    views = snowflake.get_views("DW%", "REPORTING", "%REPORT%")
+
+                    for view in views:
+                        print(f"Found view: {view.name}")
+
+                    return [view.name for view in views]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[View] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    views = schemas[schema.name].views
+                    for view in views.iter(like=name_like):
+                        result.append(view)
+
+            return result
+
+    def get_pipes(self, database_like: str, schema_like: str, name_like: str) -> list[Pipe]:
+        """Get a list of pipes in Snowflake that match the specified patterns.
+
+        Retrieves Pipe objects from Snowflake that match the provided LIKE patterns.
+        Pipes are used for continuous data loading from external stages.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter pipe names.
+
+        Returns:
+            list[Pipe]: List of Pipe objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_data_pipes(snowflake: SnowflakeResource):
+                    # Get all pipes used for S3 data loading
+                    pipes = snowflake.get_pipes("PROD%", "ETL", "%S3%")
+
+                    for pipe in pipes:
+                        print(f"Found pipe: {pipe.name}")
+
+                    return [pipe.name for pipe in pipes]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Pipe] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    pipes = schemas[schema.name].pipes
+                    for pipe in pipes.iter(like=name_like):
+                        result.append(pipe)
+
+            return result
+
+    def get_stages(self, database_like: str, schema_like: str, name_like: str) -> list[Stage]:
+        """Get a list of stages in Snowflake that match the specified patterns.
+
+        Retrieves Stage objects from Snowflake that match the provided LIKE patterns.
+        Stages are used for storing data files for loading and unloading operations.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter stage names.
+
+        Returns:
+            list[Stage]: List of Stage objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_loading_stages(snowflake: SnowflakeResource):
+                    # Get all stages used for data loading
+                    stages = snowflake.get_stages("DW%", "STAGING", "%LOAD%")
+
+                    for stage in stages:
+                        print(f"Found stage: {stage.name}")
+
+                    return [stage.name for stage in stages]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Stage] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    stages = schemas[schema.name].stages
+                    for stage in stages.iter(like=name_like):
+                        result.append(stage)
+
+            return result
 
 
 class SnowflakeConnection:
@@ -567,9 +949,6 @@ class SnowflakeConnection:
 
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
-                if sys.version_info[0] < 3:
-                    sql = sql.encode("utf-8")
-
                 self.log.info("Executing query: " + sql)
                 parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                 cursor.execute(sql, parameters)
@@ -620,7 +999,7 @@ class SnowflakeConnection:
         if not fetch_results and use_pandas_result:
             check.failed("If use_pandas_result is True, fetch_results must also be True.")
 
-        results: List[Any] = []
+        results: list[Any] = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 for raw_sql in sql_queries:
@@ -729,6 +1108,7 @@ def fetch_last_updated_timestamps(
     schema: str,
     tables: Sequence[str],
     database: Optional[str] = None,
+    ignore_missing_tables: Optional[bool] = False,
 ) -> Mapping[str, datetime]:
     """Fetch the last updated times of a list of tables in Snowflake.
 
@@ -742,6 +1122,8 @@ def fetch_last_updated_timestamps(
         tables (Sequence[str]): A list of table names to fetch the last updated time for.
         database (Optional[str]): The database of the table. Only required if the connection
             has not been set with a database.
+        ignore_missing_tables (Optional[bool]): If True, tables not found in Snowflake
+            will be excluded from the result.
 
     Returns:
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
@@ -755,7 +1137,7 @@ def fetch_last_updated_timestamps(
     )
 
     query = f"""
-    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
+    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered
     FROM {fully_qualified_table_name}
     WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
     """
@@ -767,6 +1149,8 @@ def fetch_last_updated_timestamps(
     result_correct_case = {}
     for table_name in tables:
         if table_name.upper() not in result_mapping:
+            if ignore_missing_tables:
+                continue
             raise ValueError(f"Table {table_name} could not be found.")
         last_altered = result_mapping[table_name.upper()]
         check.invariant(

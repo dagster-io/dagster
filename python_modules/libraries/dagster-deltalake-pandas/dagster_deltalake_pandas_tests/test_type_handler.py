@@ -7,12 +7,7 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     graph,
@@ -21,6 +16,13 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
 from dagster_deltalake_pandas import DeltaLakePandasIOManager
 from deltalake import DeltaTable
@@ -411,7 +413,7 @@ def test_dynamic_partition(tmp_path, io_manager):
     with instance_for_test() as instance:
         resource_defs = {"io_manager": io_manager}
 
-        instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
+        instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
         materialize(
             [dynamic_partitioned],
@@ -425,7 +427,7 @@ def test_dynamic_partition(tmp_path, io_manager):
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == ["1", "1", "1"]
 
-        instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
+        instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
 
         materialize(
             [dynamic_partitioned],
@@ -475,8 +477,8 @@ def test_self_dependent_asset(tmp_path, io_manager):
     ) -> pd.DataFrame:
         key = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
 
-        if self_dependent_asset.num_rows > 0:
-            assert self_dependent_asset.num_rows == 3
+        if self_dependent_asset.num_rows > 0:  # type: ignore
+            assert self_dependent_asset.num_rows == 3  # type: ignore
             # assert (self_dependent_asset["key"] == context.op_execution_context.op_config["last_partition_key"]).all()
         else:
             assert context.op_execution_context.op_config["last_partition_key"] == "NA"

@@ -1,60 +1,49 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    Definitions,
-    SkipReason,
-    asset,
-    observable_source_asset,
-    sensor,
-)
+from dagster import AutoMaterializePolicy
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    AutomationConditionSensorDefinition,
-)
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.test_utils import instance_for_test
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@dg.asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def auto_materialize_asset():
     pass
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@dg.asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def other_auto_materialize_asset():
     pass
 
 
-@observable_source_asset(auto_observe_interval_minutes=1)
+@dg.observable_source_asset(auto_observe_interval_minutes=1)
 def auto_observe_asset():
     pass
 
 
-@observable_source_asset(auto_observe_interval_minutes=1)
+@dg.observable_source_asset(auto_observe_interval_minutes=1)
 def other_auto_observe_asset():
     pass
 
 
-@asset
+@dg.asset
 def boring_asset():
     pass
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def boring_observable_asset():
     pass
 
 
-@sensor(asset_selection=[auto_materialize_asset])
+@dg.sensor(asset_selection=[auto_materialize_asset])
 def normal_sensor():
-    yield SkipReason("OOPS")
+    yield dg.SkipReason("OOPS")
 
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[
         auto_materialize_asset,
         other_auto_materialize_asset,
@@ -66,7 +55,7 @@ defs = Definitions(
     sensors=[normal_sensor],
 )
 
-defs_without_observables = Definitions(
+defs_without_observables = dg.Definitions(
     assets=[
         auto_materialize_asset,
         other_auto_materialize_asset,
@@ -77,105 +66,99 @@ defs_without_observables = Definitions(
 
 @pytest.fixture
 def instance_with_auto_materialize_sensors():
-    with instance_for_test() as the_instance:
+    with dg.instance_for_test() as the_instance:
         yield the_instance
 
 
 @pytest.fixture
 def instance_without_auto_materialize_sensors():
-    with instance_for_test({"auto_materialize": {"use_sensors": False}}) as the_instance:
+    with dg.instance_for_test({"auto_materialize": {"use_sensors": False}}) as the_instance:
         yield the_instance
 
 
-def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors):
-    instance = instance_with_auto_materialize_sensors
+def test_default_auto_materialize_sensors():
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
     )
-    external_repo = ExternalRepository(
-        external_repository_data_from_def(
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance,
+        auto_materialize_use_sensors=True,
     )
 
-    sensors = external_repo.get_external_sensors()
+    sensors = remote_repo.get_sensors()
 
     assert len(sensors) == 2
 
-    assert external_repo.has_external_sensor("normal_sensor")
+    assert remote_repo.has_sensor("normal_sensor")
 
-    auto_materialize_sensors = [
-        sensor for sensor in sensors if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
-    ]
+    auto_materialize_sensors = [s for s in sensors if s.sensor_type == SensorType.AUTO_MATERIALIZE]
     assert len(auto_materialize_sensors) == 1
 
     auto_materialize_sensor = auto_materialize_sensors[0]
 
     assert auto_materialize_sensor.name == "default_automation_condition_sensor"
-    assert external_repo.has_external_sensor(auto_materialize_sensor.name)
+    assert remote_repo.has_sensor(auto_materialize_sensor.name)
 
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=True)
 
 
-def test_default_auto_materialize_sensors_without_observable(
-    instance_with_auto_materialize_sensors,
-):
-    instance = instance_with_auto_materialize_sensors
-
+def test_default_auto_materialize_sensors_without_observable():
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
     )
 
-    external_repo = ExternalRepository(
-        external_repository_data_from_def(
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(
             defs_without_observables.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance,
+        auto_materialize_use_sensors=True,
     )
 
-    sensors = external_repo.get_external_sensors()
+    sensors = remote_repo.get_sensors()
 
     assert len(sensors) == 1
 
     auto_materialize_sensor = sensors[0]
 
     assert auto_materialize_sensor.name == "default_automation_condition_sensor"
-    assert external_repo.has_external_sensor(auto_materialize_sensor.name)
+    assert remote_repo.has_sensor(auto_materialize_sensor.name)
 
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=False)
 
 
-def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
+def test_opt_out_default_auto_materialize_sensors():
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
     )
 
-    # If not opted in, no default sensors are created
-    external_repo = ExternalRepository(
-        external_repository_data_from_def(
+    # If opted out, we still do create default auto materialize sensors
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_without_auto_materialize_sensors,
+        auto_materialize_use_sensors=True,
     )
-    sensors = external_repo.get_external_sensors()
-    assert len(sensors) == 1
-    assert sensors[0].name == "normal_sensor"
+    sensors = remote_repo.get_sensors()
+    assert len(sensors) == 2
+    assert sensors[0].name == "default_automation_condition_sensor"
+    assert sensors[1].name == "normal_sensor"
 
 
-def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):
-    auto_materialize_sensor = AutomationConditionSensorDefinition(
+def test_combine_default_sensors_with_non_default_sensors():
+    auto_materialize_sensor = dg.AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
-        asset_selection=[auto_materialize_asset, auto_observe_asset],
+        target=[auto_materialize_asset, auto_observe_asset],
     )
 
-    defs_with_auto_materialize_sensor = Definitions(
+    defs_with_auto_materialize_sensor = dg.Definitions(
         assets=[
             auto_materialize_asset,
             other_auto_materialize_asset,
@@ -191,52 +174,52 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
         repository_name="bar_repo",
     )
 
-    external_repo = ExternalRepository(
-        external_repository_data_from_def(
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(
             defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_with_auto_materialize_sensors,
+        auto_materialize_use_sensors=True,
     )
 
-    sensors = external_repo.get_external_sensors()
+    sensors = remote_repo.get_sensors()
 
     assert len(sensors) == 3
 
-    assert external_repo.has_external_sensor("normal_sensor")
-    assert external_repo.has_external_sensor("default_automation_condition_sensor")
-    assert external_repo.has_external_sensor("my_custom_policy_sensor")
+    assert remote_repo.has_sensor("normal_sensor")
+    assert remote_repo.has_sensor("default_automation_condition_sensor")
+    assert remote_repo.has_sensor("my_custom_policy_sensor")
 
-    asset_graph = external_repo.asset_graph
+    asset_graph = remote_repo.asset_graph
 
     # default sensor includes all assets that weren't covered by the custom one
 
-    default_sensor = external_repo.get_external_sensor("default_automation_condition_sensor")
+    default_sensor = remote_repo.get_sensor("default_automation_condition_sensor")
 
     assert (
         str(default_sensor.asset_selection)
-        == "all materializable assets and source assets - (auto_materialize_asset or auto_observe_asset)"
+        == 'not key:"auto_materialize_asset" or key:"auto_observe_asset"'
     )
 
-    assert default_sensor.asset_selection.resolve(asset_graph) == {
-        AssetKey(["other_auto_materialize_asset"]),
-        AssetKey(["other_auto_observe_asset"]),
-        AssetKey(["boring_asset"]),
-        AssetKey(["boring_observable_asset"]),
+    assert default_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
+        dg.AssetKey(["other_auto_materialize_asset"]),
+        dg.AssetKey(["other_auto_observe_asset"]),
+        dg.AssetKey(["boring_asset"]),
+        dg.AssetKey(["boring_observable_asset"]),
     }
 
-    custom_sensor = external_repo.get_external_sensor("my_custom_policy_sensor")
+    custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
-    assert custom_sensor.asset_selection.resolve(asset_graph) == {
-        AssetKey(["auto_materialize_asset"]),
-        AssetKey(["auto_observe_asset"]),
+    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
+        dg.AssetKey(["auto_materialize_asset"]),
+        dg.AssetKey(["auto_observe_asset"]),
     }
 
 
-def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
-    auto_materialize_sensor = AutomationConditionSensorDefinition(
+def test_custom_sensors_cover_all():
+    auto_materialize_sensor = dg.AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
-        asset_selection=[
+        target=[
             auto_materialize_asset,
             auto_observe_asset,
             other_auto_materialize_asset,
@@ -244,7 +227,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
         ],
     )
 
-    defs_with_auto_materialize_sensor = Definitions(
+    defs_with_auto_materialize_sensor = dg.Definitions(
         assets=[
             auto_materialize_asset,
             other_auto_materialize_asset,
@@ -261,29 +244,29 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
         repository_name="bar_repo",
     )
 
-    external_repo = ExternalRepository(
-        external_repository_data_from_def(
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(
             defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_with_auto_materialize_sensors,
+        auto_materialize_use_sensors=True,
     )
 
-    sensors = external_repo.get_external_sensors()
+    sensors = remote_repo.get_sensors()
 
     assert len(sensors) == 2
 
-    assert external_repo.has_external_sensor("normal_sensor")
-    assert external_repo.has_external_sensor("my_custom_policy_sensor")
+    assert remote_repo.has_sensor("normal_sensor")
+    assert remote_repo.has_sensor("my_custom_policy_sensor")
 
-    asset_graph = external_repo.asset_graph
+    asset_graph = remote_repo.asset_graph
 
     # Custom sensor covered all the valid assets
-    custom_sensor = external_repo.get_external_sensor("my_custom_policy_sensor")
+    custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
-    assert custom_sensor.asset_selection.resolve(asset_graph) == {
-        AssetKey(["auto_materialize_asset"]),
-        AssetKey(["auto_observe_asset"]),
-        AssetKey(["other_auto_materialize_asset"]),
-        AssetKey(["other_auto_observe_asset"]),
+    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
+        dg.AssetKey(["auto_materialize_asset"]),
+        dg.AssetKey(["auto_observe_asset"]),
+        dg.AssetKey(["other_auto_materialize_asset"]),
+        dg.AssetKey(["other_auto_observe_asset"]),
     }

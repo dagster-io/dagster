@@ -13,8 +13,9 @@ class Flower(BaseModel):
     tolerations: kubernetes.Tolerations
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
+    checkDbReadyInitContainer: Optional[bool] = None
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
-    annotations: Optional[kubernetes.Annotations]
-    schedulerName: Optional[str]
+    annotations: Optional[kubernetes.Annotations] = None
+    schedulerName: Optional[str] = None

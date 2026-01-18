@@ -1,4 +1,5 @@
-import {Button, Dialog, DialogFooter, Icon, StyledRawCodeMirror} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useEffect, useState} from 'react';
 
 import {IPluginSidebarProps} from '../plugins';

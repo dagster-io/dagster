@@ -1,66 +1,86 @@
-import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
-import {useMemo} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useState} from 'react';
+import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
-import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
-import {
-  AssetGraphQuery,
-  AssetGraphQueryVariables,
-  AssetGraphQueryVersion,
-  AssetNodeForGraphQueryFragment,
-} from './types/useAssetGraphData.types';
-import {gql} from '../apollo-client';
-import {usePrefixedCacheKey} from '../app/AppProvider';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {computeGraphData} from './ComputeGraphData';
+import {GraphData, buildGraphData, tokenForAssetKey} from './Utils';
+import {AssetGraphQueryItem, AssetNode} from './types';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {useShowAssetsWithoutDefinitions} from '../app/UserSettingsDialog/useShowAssetsWithoutDefinitions';
+import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
 import {AssetKey} from '../assets/types';
+import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
-import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
-import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {weakMapMemoize} from '../util/weakMapMemoize';
+import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
-  hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
-  pipelineSelector?: PipelineSelector;
-  groupSelector?: AssetGroupSelector;
+  hideNodesMatching?: (node: WorkspaceAssetFragment) => boolean;
+  pipelineSelector?: Pick<
+    PipelineSelector,
+    'pipelineName' | 'repositoryName' | 'repositoryLocationName'
+  >;
+  groupSelector?: Pick<
+    AssetGroupSelector,
+    'groupName' | 'repositoryName' | 'repositoryLocationName'
+  >;
   kinds?: string[];
+
+  externalAssets?: {id: string; key: {path: Array<string>}}[];
+
+  // This is used to indicate we shouldn't start handling any input.
+  // This is used by pages where `hideNodesMatching` is only available asynchronously.
+  loading?: boolean;
+  skip?: boolean;
 }
 
-export type AssetGraphQueryItem = GraphQueryItem & {
-  node: AssetNode;
+export function useFullAssetGraphData(
+  options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
+) {
+  const {assets, loading} = useAllAssetsNodes();
+
+  const {showStubAssets} = useShowStubAssets();
+  const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
+
+  const allNodes = useMemo(
+    () =>
+      getAllAssets(
+        assets,
+        showAssetsWithoutDefinitions ? (options.externalAssets ?? []) : [],
+        showStubAssets,
+      ),
+    [assets, showStubAssets, showAssetsWithoutDefinitions, options.externalAssets],
+  );
+
+  const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
+  useBlockTraceUntilTrue('FullAssetGraphData', !!fullAssetGraphData);
+
+  useEffect(() => {
+    if (options.loading) {
+      return;
+    }
+    const data = buildGraphData(allNodes);
+    setFullAssetGraphData(data);
+  }, [allNodes, options.loading]);
+
+  return {fullAssetGraphData, loading: loading || !!options.loading};
+}
+
+export type GraphDataState = {
+  graphAssetKeys: AssetKey[];
+  allAssetKeys: AssetKey[];
+  assetGraphData: GraphData | null;
+};
+const INITIAL_STATE: GraphDataState = {
+  graphAssetKeys: [],
+  allAssetKeys: [],
+  assetGraphData: null,
 };
 
-export function useFullAssetGraphData(options: AssetGraphFetchScope) {
-  const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
-    query: ASSET_GRAPH_QUERY,
-    variables: useMemo(
-      () => ({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      }),
-      [options.pipelineSelector, options.groupSelector],
-    ),
-    key: usePrefixedCacheKey(
-      `AssetGraphQuery/${JSON.stringify({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      })}`,
-    ),
-    version: AssetGraphQueryVersion,
-  });
-
-  const nodes = fetchResult.data?.assetNodes;
-  const queryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
-
-  const fullAssetGraphData = useMemo(
-    () => (queryItems ? buildGraphData(queryItems.map((n) => n.node)) : null),
-    [queryItems],
-  );
-  return fullAssetGraphData;
-}
-
-/** Fetches data for rendering an asset graph:
+/** Fetches data for doing asset selection filtering in the asset catalog and asset graph:
  *
  * @param pipelineSelector: Optionally scope to an asset job, or pass null for the global graph
  *
@@ -70,96 +90,103 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
-  const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
-    query: ASSET_GRAPH_QUERY,
-    variables: useMemo(
-      () => ({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      }),
-      [options.pipelineSelector, options.groupSelector],
-    ),
-    key: usePrefixedCacheKey(
-      `AssetGraphQuery/${JSON.stringify({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      })}`,
-    ),
-    version: AssetGraphQueryVersion,
-  });
+  const {showStubAssets} = useShowStubAssets();
+  const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
+  const {assets, loading: assetsLoading} = useAllAssetsNodes();
 
-  const nodes = fetchResult.data?.assetNodes;
+  const allNodes = useMemo(
+    () =>
+      getAllAssets(
+        assets,
+        showAssetsWithoutDefinitions ? (options.externalAssets ?? []) : [],
+        showStubAssets,
+      ),
+    [assets, options.externalAssets, showAssetsWithoutDefinitions, showStubAssets],
+  );
+
+  const {pipelineSelector, groupSelector, hideNodesMatching} = options;
 
   const repoFilteredNodes = useMemo(() => {
-    // Apply any filters provided by the caller. This is where we do repo filtering
-    let matching = nodes;
-    if (options.hideNodesMatching) {
-      matching = reject(matching, options.hideNodesMatching);
+    let matching = allNodes;
+    if (pipelineSelector) {
+      matching = matching.filter((node) => {
+        return (
+          node.jobNames.includes(pipelineSelector.pipelineName) &&
+          node.repository.name === pipelineSelector.repositoryName &&
+          node.repository.location.name === pipelineSelector.repositoryLocationName
+        );
+      });
+    }
+    if (groupSelector) {
+      matching = matching.filter((node) => {
+        return (
+          node.groupName === groupSelector.groupName &&
+          node.repository.name === groupSelector.repositoryName &&
+          node.repository.location.name === groupSelector.repositoryLocationName
+        );
+      });
+    }
+    if (hideNodesMatching) {
+      matching = reject(matching, hideNodesMatching);
     }
     return matching;
-  }, [nodes, options.hideNodesMatching]);
+  }, [allNodes, pipelineSelector, groupSelector, hideNodesMatching]);
 
   const graphQueryItems = useMemo(
-    () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
+    () => buildGraphQueryItems(repoFilteredNodes),
     [repoFilteredNodes],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {
+  const [state, setState] = useState<GraphDataState>(INITIAL_STATE);
+
+  const {kinds, hideEdgesToNodesOutsideQuery} = options;
+
+  const {loading: supplementaryDataLoading, data: supplementaryData} =
+    useAssetGraphSupplementaryData(opsQuery, allNodes);
+
+  useLayoutEffect(() => {
+    if (options.loading || supplementaryDataLoading || assetsLoading || options.skip) {
+      return;
+    }
+
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
-      return {
-        graphAssetKeys: [],
-        graphQueryItems: [],
-        assetGraphData: null,
-      };
+      setState({allAssetKeys: [], graphAssetKeys: [], assetGraphData: null});
+      return;
     }
 
-    // Filter the set of all AssetNodes down to those matching the `opsQuery`.
-    // In the future it might be ideal to move this server-side, but we currently
-    // get to leverage the useQuery cache almost 100% of the time above, making this
-    // super fast after the first load vs a network fetch on every page view.
-    const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
-    const kinds = options.kinds?.map((c) => c.toLowerCase());
-    const all = kinds?.length
-      ? allFilteredByOpQuery.filter(
-          ({node}) =>
-            node.kinds &&
-            doesFilterArrayMatchValueArray(
-              kinds,
-              node.kinds.map((k) => k.toLowerCase()),
-            ),
-        )
-      : allFilteredByOpQuery;
-
-    // Assemble the response into the data structure used for layout, traversal, etc.
-    const assetGraphData = buildGraphData(all.map((n) => n.node));
-    if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
-    }
-
-    return {
-      allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
-      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
-      assetGraphData,
+    const data = computeGraphData({
+      repoFilteredNodes,
       graphQueryItems,
-    };
+      opsQuery,
+      kinds,
+      hideEdgesToNodesOutsideQuery,
+      supplementaryData,
+    });
+    setState(data);
   }, [
     repoFilteredNodes,
     graphQueryItems,
     opsQuery,
-    options.kinds,
-    options.hideEdgesToNodesOutsideQuery,
+    kinds,
+    hideEdgesToNodesOutsideQuery,
+    options.loading,
+    supplementaryData,
+    supplementaryDataLoading,
+    options.skip,
+    assetsLoading,
   ]);
 
+  const loading =
+    !options.skip && (assetsLoading || !!supplementaryDataLoading || !!options.loading);
+  useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
-    fetchResult,
-    assetGraphData,
+    loading,
+    assetGraphData: state.assetGraphData,
     graphQueryItems,
-    graphAssetKeys,
-    allAssetKeys,
+    graphAssetKeys: state.graphAssetKeys,
+    allAssetKeys: state.allAssetKeys,
   };
 }
-
-type AssetNode = AssetNodeForGraphQueryFragment;
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -180,29 +207,6 @@ const buildGraphQueryItems = (nodes: AssetNode[]) => {
   return Object.values(items);
 };
 
-const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: AssetNode[]) => {
-  const allNodesById = groupBy(allNodes, (n) => toGraphId(n.assetKey));
-  const notSourceAsset = (id: string) => !!allNodesById[id];
-
-  for (const node of Object.keys(graphData.upstream)) {
-    for (const edge of Object.keys(graphData.upstream[node]!)) {
-      if (!graphData.nodes[edge] && notSourceAsset(node)) {
-        delete graphData.upstream[node]![edge];
-        delete graphData.downstream[edge]![node];
-      }
-    }
-  }
-
-  for (const node of Object.keys(graphData.downstream)) {
-    for (const edge of Object.keys(graphData.downstream[node]!)) {
-      if (!graphData.nodes[edge] && notSourceAsset(node)) {
-        delete graphData.upstream[edge]![node];
-        delete graphData.downstream[node]![edge];
-      }
-    }
-  }
-};
-
 export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: AssetKey) => {
   const map = keyBy(items, (g) => g.name);
   const start = map[tokenForAssetKey(assetKey)];
@@ -218,7 +222,8 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     upstreamDepth += 1;
 
     candidates.forEach((candidate) => {
-      map[candidate]!.inputs.flatMap((i) =>
+      const inputs = map[candidate]?.inputs ?? [];
+      inputs.flatMap((i) =>
         i.dependsOn.forEach((d) => {
           if (!candidates.has(d.solid.name)) {
             nextCandidates.add(d.solid.name);
@@ -237,7 +242,8 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     downstreamDepth += 1;
 
     candidates.forEach((candidate) => {
-      map[candidate]!.outputs.flatMap((i) =>
+      const outputs = map[candidate]?.outputs ?? [];
+      outputs.flatMap((i) =>
         i.dependedBy.forEach((d) => {
           if (!candidates.has(d.solid.name)) {
             nextCandidates.add(d.solid.name);
@@ -254,52 +260,64 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
   };
 };
 
-export const ASSET_GRAPH_QUERY = gql`
-  query AssetGraphQuery($pipelineSelector: PipelineSelector, $groupSelector: AssetGroupSelector) {
-    assetNodes(pipeline: $pipelineSelector, group: $groupSelector) {
-      id
-      ...AssetNodeForGraphQuery
-    }
-  }
+const buildExternalAssetQueryItem = (asset: {
+  id: string;
+  key: {path: string[]};
+}): WorkspaceAssetFragment => {
+  return {
+    __typename: 'AssetNode',
+    changedReasons: [],
+    kinds: [],
+    hasMaterializePermission: false,
+    graphName: '',
+    opVersion: null,
+    hasAssetChecks: false,
+    hasReportRunlessAssetEventPermission: false,
+    pools: [],
+    internalFreshnessPolicy: null,
+    partitionDefinition: null,
+    automationCondition: null,
+    isMaterializable: false,
+    isAutoCreatedStub: true,
+    tags: [],
+    owners: [],
+    id: asset.id,
+    groupName: '',
+    isExecutable: false,
+    isPartitioned: false,
+    opNames: [],
+    jobNames: [],
+    computeKind: null,
+    isObservable: false,
+    description: null,
+    repository: {
+      __typename: 'Repository',
+      id: '',
+      name: '',
+      location: {
+        __typename: 'RepositoryLocation',
+        id: '',
+        name: '',
+      },
+    },
+    assetKey: {
+      __typename: 'AssetKey',
+      ...asset.key,
+    },
+    dependencyKeys: [],
+    dependedByKeys: [],
+  };
+};
 
-  fragment AssetNodeForGraphQuery on AssetNode {
-    id
-    groupName
-    isExecutable
-    changedReasons
-    tags {
-      key
-      value
-    }
-    owners {
-      ... on TeamAssetOwner {
-        team
-      }
-      ... on UserAssetOwner {
-        email
-      }
-    }
-    tags {
-      key
-      value
-    }
-    hasMaterializePermission
-    repository {
-      id
-      name
-      location {
-        id
-        name
-      }
-    }
-    dependencyKeys {
-      path
-    }
-    dependedByKeys {
-      path
-    }
-    ...AssetNodeFragment
-  }
-
-  ${ASSET_NODE_FRAGMENT}
-`;
+const getAllAssets = weakMapMemoize(
+  (
+    sdas: ReturnType<typeof useAllAssetsNodes>['assets'],
+    externalAssets: {id: string; key: {path: Array<string>}}[],
+    showStubAssets: boolean,
+  ) => {
+    return [
+      ...sdas.map((sda) => sda.definition).filter((d) => showStubAssets || !d?.isAutoCreatedStub),
+      ...externalAssets.map((a) => buildExternalAssetQueryItem(a)),
+    ];
+  },
+);

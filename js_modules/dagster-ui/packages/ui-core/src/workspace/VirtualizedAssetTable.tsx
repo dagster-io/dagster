@@ -9,7 +9,7 @@ import {
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 type Row =
@@ -26,8 +26,8 @@ interface Props {
   onRefresh: () => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
-  kindFilter?: StaticSetFilter<string>;
   isLoading?: boolean;
+  onChangeAssetSelection?: (selection: string) => void;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -40,21 +40,23 @@ export const VirtualizedAssetTable = (props: Props) => {
     onRefresh,
     showRepoColumn,
     view = 'flat',
-    kindFilter,
     isLoading,
+    onChangeAssetSelection,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rows: Row[] = React.useMemo(() => {
-    if (isLoading) {
+    if (isLoading && !Object.keys(groups).length) {
       return new Array(5).fill({type: 'shimmer'});
     }
     return Object.entries(groups).map(([displayKey, assets]) => {
       const path = [...prefixPath, ...JSON.parse(displayKey)];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
       return isFolder
         ? {type: 'folder', path, displayKey, assets}
-        : {type: 'asset', path, displayKey, asset: assets[0]!};
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          {type: 'asset', path, displayKey, asset: assets[0]!};
     });
   }, [prefixPath, groups, isLoading]);
 
@@ -70,10 +72,12 @@ export const VirtualizedAssetTable = (props: Props) => {
 
   return (
     <div style={{overflow: 'hidden'}}>
+      <IndeterminateLoadingBar $loading={isLoading} />
       <Container ref={parentRef}>
         <VirtualizedAssetCatalogHeader headerCheckbox={headerCheckbox} view={view} />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: Row = rows[index]!;
             if (row.type === 'shimmer') {
               return (
@@ -116,7 +120,7 @@ export const VirtualizedAssetTable = (props: Props) => {
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
-                kindFilter={kindFilter}
+                onChangeAssetSelection={onChangeAssetSelection}
               />
             );
           })}

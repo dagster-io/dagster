@@ -1,18 +1,10 @@
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    Definitions,
-    ExecuteInProcessResult,
-    InputContext,
-    IOManager,
-    OutputContext,
-)
-from dagster._config.pythonic_config.io_manager import ConfigurableIOManager
+import dagster as dg
+from dagster import AssetKey, DagsterInstance, Definitions, InputContext, OutputContext
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.event_api import EventLogRecord
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
 
@@ -32,17 +24,19 @@ class DefinitionsRunner:
         with DagsterInstance.ephemeral() as instance:
             yield DefinitionsRunner(defs, instance)
 
-    def materialize_all_assets(self, partition_key: Optional[str] = None) -> ExecuteInProcessResult:
-        all_keys = list(self.defs.get_repository_def().asset_graph.all_asset_keys)
-        job_def = self.defs.get_implicit_job_def_for_assets(all_keys)
+    def materialize_all_assets(
+        self, partition_key: Optional[str] = None
+    ) -> dg.ExecuteInProcessResult:
+        all_keys = list(self.defs.get_repository_def().asset_graph.get_all_asset_keys())
+        job_def = self.defs.resolve_implicit_job_def_def_for_assets(all_keys)
         assert job_def
         return job_def.execute_in_process(instance=self.instance, partition_key=partition_key)
 
     def materialize_assets(
         self, asset_selection: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
-    ) -> ExecuteInProcessResult:
+    ) -> dg.ExecuteInProcessResult:
         asset_keys = [AssetKey.from_coercible(asset_key) for asset_key in asset_selection]
-        job_def = self.defs.get_implicit_job_def_for_assets(asset_keys)
+        job_def = self.defs.resolve_implicit_job_def_def_for_assets(asset_keys)
         assert job_def
         return job_def.execute_in_process(
             instance=self.instance,
@@ -52,7 +46,7 @@ class DefinitionsRunner:
 
     def materialize_asset(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
-    ) -> ExecuteInProcessResult:
+    ) -> dg.ExecuteInProcessResult:
         return self.materialize_assets([asset_key], partition_key)
 
     def load_asset_value(
@@ -64,7 +58,7 @@ class DefinitionsRunner:
 
     def get_last_5000_asset_materialization_event_records(
         self, asset_key: CoercibleToAssetKey
-    ) -> List[EventLogRecord]:
+    ) -> list[dg.EventLogRecord]:
         return [
             *self.instance.fetch_materializations(
                 AssetKey.from_coercible(asset_key), limit=5000
@@ -72,7 +66,7 @@ class DefinitionsRunner:
         ]
 
 
-class AssetBasedInMemoryIOManager(IOManager):
+class AssetBasedInMemoryIOManager(dg.IOManager):
     """In memory I/O manager for testing asset-based jobs and workflows. Can handle both
     partitioned and unpartitioned assets.
     """
@@ -108,8 +102,8 @@ class AssetBasedInMemoryIOManager(IOManager):
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _keys_from_context(
-        self, context: Union[InputContext, OutputContext]
-    ) -> Optional[Sequence[Tuple[str, ...]]]:
+        self, context: Union[dg.InputContext, dg.OutputContext]
+    ) -> Optional[Sequence[tuple[str, ...]]]:
         if not context.has_asset_key:
             return None
 
@@ -123,13 +117,13 @@ class AssetBasedInMemoryIOManager(IOManager):
 LOG = []
 
 
-class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
+class ConfigurableAssetBasedInMemoryIOManager(dg.ConfigurableIOManager):
     """ConfigurableResource version of the above. This is useful for testing
     that the config system is working correctly & to test the setup/teardown logic.
     """
 
     name: str
-    _values: Dict = PrivateAttr(default={})
+    _values: dict = PrivateAttr(default={})
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._values = {}
@@ -166,8 +160,8 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
         return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _keys_from_context(
-        self, context: Union[InputContext, OutputContext]
-    ) -> Optional[Sequence[Tuple[str, ...]]]:
+        self, context: Union[dg.InputContext, dg.OutputContext]
+    ) -> Optional[Sequence[tuple[str, ...]]]:
         if not context.has_asset_key:
             return None
 

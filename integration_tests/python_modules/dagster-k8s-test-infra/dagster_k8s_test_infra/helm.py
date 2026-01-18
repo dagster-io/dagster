@@ -24,7 +24,6 @@ from dagster_k8s_test_infra.integration_utils import (
 )
 
 ensure_dagster_aws_tests_import()
-from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
 TEST_AWS_CONFIGMAP_NAME = "test-aws-env-configmap"
 TEST_CONFIGMAP_NAME = "test-env-configmap"
@@ -57,13 +56,13 @@ def _create_namespace(should_cleanup, existing_helm_namespace=None, prefix="dags
     # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
     namespace = get_test_namespace(prefix)
 
-    print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
+    print(f"--- \033[32m:k8s: Creating test namespace {namespace}\033[0m")
     kube_api = kubernetes.client.CoreV1Api()
 
     if existing_helm_namespace:
         namespace = existing_helm_namespace
     else:
-        print("Creating namespace %s" % namespace)
+        print(f"Creating namespace {namespace}")
         kube_namespace = kubernetes.client.V1Namespace(
             metadata=kubernetes.client.V1ObjectMeta(name=namespace)
         )
@@ -72,7 +71,7 @@ def _create_namespace(should_cleanup, existing_helm_namespace=None, prefix="dags
     yield namespace
 
     if should_cleanup:
-        print("Deleting namespace %s" % namespace)
+        print(f"Deleting namespace {namespace}")
         kube_api.delete_namespace(name=namespace)
 
 
@@ -108,10 +107,10 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
         # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
         namespace = get_test_namespace()
 
-        print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
+        print(f"--- \033[32m:k8s: Creating test namespace {namespace}\033[0m")
         kube_api = kubernetes.client.CoreV1Api()
 
-        print("Creating namespace %s" % namespace)
+        print(f"Creating namespace {namespace}")
         kube_namespace = kubernetes.client.V1Namespace(
             metadata=kubernetes.client.V1ObjectMeta(name=namespace)
         )
@@ -122,8 +121,19 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
     # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
     # w/ a kind cluster
     if should_cleanup:
-        print("Deleting namespace %s" % namespace)
-        kube_api.delete_namespace(name=namespace)
+        print(f"Deleting namespace {namespace}")
+        kube_api.delete_namespace(name=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
+
+
+@contextmanager
+def ignore_k8s_object_does_not_exist():
+    try:
+        yield
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            pass
+        else:
+            raise
 
 
 @pytest.fixture(scope="session")
@@ -162,9 +172,16 @@ def configmaps(namespace, should_cleanup):
     yield
 
     if should_cleanup:
-        kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
-        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
-        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
+        with ignore_k8s_object_does_not_exist():
+            kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
+        with ignore_k8s_object_does_not_exist():
+            kube_api.delete_namespaced_config_map(
+                name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace
+            )
+        with ignore_k8s_object_does_not_exist():
+            kube_api.delete_namespaced_config_map(
+                name=TEST_VOLUME_CONFIGMAP_NAME, namespace=namespace
+            )
 
 
 @pytest.fixture(scope="session")
@@ -172,15 +189,13 @@ def aws_configmap(namespace, should_cleanup):
     if not IS_BUILDKITE:
         kube_api = kubernetes.client.CoreV1Api()
 
-        creds = get_aws_creds()
-
         aws_data = {
-            "AWS_ACCOUNT_ID": creds.get("aws_account_id"),
-            "AWS_ACCESS_KEY_ID": creds.get("aws_access_key_id"),
-            "AWS_SECRET_ACCESS_KEY": creds.get("aws_secret_access_key"),
+            "AWS_ENDPOINT_URL": f"http://s3.{namespace}.svc.cluster.local:4566",
+            "AWS_ACCESS_KEY_ID": "fake",
+            "AWS_SECRET_ACCESS_KEY": "fake",
         }
 
-        print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
+        print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
         aws_configmap = kubernetes.client.V1ConfigMap(
             api_version="v1",
             kind="ConfigMap",
@@ -192,7 +207,7 @@ def aws_configmap(namespace, should_cleanup):
     yield TEST_AWS_CONFIGMAP_NAME
 
     if should_cleanup and not IS_BUILDKITE:
-        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)
+        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @pytest.fixture(scope="session")
@@ -529,7 +544,7 @@ def _helm_chart_helper(
 
                 print("Waiting for celery workers")
                 for pod_name in pod_names:
-                    print("Waiting for Celery worker pod %s" % pod_name)
+                    print(f"Waiting for Celery worker pod {pod_name}")
                     api_client.wait_for_pod(pod_name, namespace=namespace)
 
                 rabbitmq_enabled = "rabbitmq" in helm_config and helm_config["rabbitmq"].get(
@@ -575,16 +590,15 @@ def _helm_chart_helper(
                         time.sleep(5)
 
             else:
-                assert (
-                    len(pod_names) == 0
-                ), f"celery-worker pods {pod_names} exists when celery is not enabled."
+                assert len(pod_names) == 0, (
+                    f"celery-worker pods {pod_names} exists when celery is not enabled."
+                )
 
         dagster_user_deployments_values = helm_config.get("dagster-user-deployments", {})
         if (
             dagster_user_deployments_values.get("enabled")
             and dagster_user_deployments_values.get("enableSubchart")
-            or release_name == "dagster"
-        ):
+        ) or release_name == "dagster":
             # Wait for user code deployments to be ready
             print("Waiting for user code deployments")
             pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
@@ -592,10 +606,10 @@ def _helm_chart_helper(
                 p.metadata.name for p in pods.items if "user-code-deployment" in p.metadata.name
             ]
             for pod_name in pod_names:
-                print("Waiting for user code deployment pod %s" % pod_name)
+                print(f"Waiting for user code deployment pod {pod_name}")
                 api_client.wait_for_pod(pod_name, namespace=namespace)
 
-        print("Helm chart successfully installed in namespace %s" % namespace)
+        print(f"Helm chart successfully installed in namespace {namespace}")
         yield
 
     finally:
@@ -604,7 +618,7 @@ def _helm_chart_helper(
         if should_cleanup:
             print("Uninstalling helm chart")
             check_output(
-                ["helm", "uninstall", release_name, "--namespace", namespace],
+                ["helm", "uninstall", release_name, "--namespace", namespace],  # pyright: ignore[reportPossiblyUnboundVariable]
                 cwd=git_repository_root(),
             )
 
@@ -636,6 +650,10 @@ def helm_chart(namespace, docker_image, celery_backend, should_cleanup=True):
     additional_config = {**additional_config, **{"pythonLogs": {"pythonLogLevel": "INFO"}}}
 
     helm_config = merge_dicts(_base_helm_config(namespace, docker_image), additional_config)
+
+    # Enable includeInstance to mount instance config in user code pods
+    # Set this AFTER merge to avoid overwriting the deployments list
+    helm_config["dagster-user-deployments"]["includeInstance"] = True
 
     with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
         yield
@@ -912,6 +930,62 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
         # Used to set the environment variables in dagster.shared_env that determine the run config
         "pipelineRun": {"image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy}},
         "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
+        "extraManifests": [
+            {
+                "apiVersion": "v1",
+                "kind": "Service",
+                "metadata": {"name": "s3", "namespace": system_namespace},
+                "spec": {
+                    "ports": [{"port": 4566, "targetPort": 4566}],
+                    "selector": {"app": "s3"},
+                },
+            },
+            {
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": {"name": "localstack-init-scripts", "namespace": system_namespace},
+                "data": {"init-s3.sh": "#!/bin/bash\nawslocal s3 mb s3://dagster-scratch-80542c2"},
+            },
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": "s3", "namespace": system_namespace},
+                "spec": {
+                    "replicas": 1,
+                    "selector": {"matchLabels": {"app": "s3"}},
+                    "template": {
+                        "metadata": {"labels": {"app": "s3"}},
+                        "spec": {
+                            "volumes": [
+                                {
+                                    "name": "init-scripts",
+                                    "configMap": {
+                                        "name": "localstack-init-scripts",
+                                        "defaultMode": 493,
+                                    },
+                                }
+                            ],
+                            "containers": [
+                                {
+                                    "name": "s3",
+                                    "image": "localstack/localstack:latest",
+                                    "ports": [{"containerPort": 4566}],
+                                    "env": [
+                                        {"name": "SERVICES", "value": "s3"},
+                                    ],
+                                    "volumeMounts": [
+                                        {
+                                            "name": "init-scripts",
+                                            "mountPath": "/etc/localstack/init/ready.d",
+                                        }
+                                    ],
+                                }
+                            ],
+                        },
+                    },
+                },
+            },
+        ],
     }
 
 
@@ -970,7 +1044,7 @@ def _port_forward_dagster_webserver(namespace):
                 raise Exception("Timed out while waiting for dagster-webserver port forwarding")
 
             print(
-                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be available..."
+                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be available..."  # noqa: UP031
                 % (webserver_pod_name, forward_port)
             )
             try:

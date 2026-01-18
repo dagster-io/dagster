@@ -1,8 +1,8 @@
-import {FontFamily, Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
+import {FontFamily, PageHeader, Subtitle1, Tabs, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {gql, useQuery} from '../apollo-client';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext/util';
@@ -43,11 +43,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
 
   const tag = () => {
     if (loading) {
-      return (
-        <Tag intent="none" minimal>
-          ...
-        </Tag>
-      );
+      return <Tag intent="none">...</Tag>;
     }
 
     if (
@@ -56,18 +52,10 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&
         data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
     ) {
-      return (
-        <Tag intent="warning" minimal>
-          Snapshot
-        </Tag>
-      );
+      return <Tag intent="warning">Snapshot</Tag>;
     }
 
-    return (
-      <Tag intent="success" minimal>
-        Current
-      </Tag>
-    );
+    return <Tag intent="success">Current</Tag>;
   };
 
   const tabs = [
@@ -86,9 +74,9 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   return (
     <PageHeader
       title={
-        <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+        <Subtitle1 style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
           {explorerPath.snapshotId?.slice(0, 8)}
-        </Heading>
+        </Subtitle1>
       }
       tags={
         <>

@@ -6,10 +6,10 @@ action:
   name: replace
 # swap maps tokens in form of bad: good
 swap:
-  "IO [Mm]anager": "I/O manager"
+  'IO [Mm]anager': 'I/O manager'
   dagster cloud: Dagster+
   dagster plus: Dagster+
-  '[Dd]agit': "Dagster UI"
+  '[Dd]agit': 'Dagster UI'
   '[Ss]oftware-defined [Aa]sset': &asset-def asset definition|asset
   '[Ss][Dd][Aa]': *asset-def
   '[Rr][Ee][Ss][Tt]\s*[Aa][Pp][Ii]': REST API

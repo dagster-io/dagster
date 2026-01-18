@@ -1,0 +1,9 @@
+directory_type = "workspace"
+
+[workspace]
+
+[[workspace.projects]]
+path = "projects/databricks-delta"
+
+[[workspace.projects]]
+path = "projects/snowflake-medallion"

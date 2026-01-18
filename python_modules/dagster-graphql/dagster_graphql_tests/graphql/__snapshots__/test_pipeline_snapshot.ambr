@@ -1,4 +1,51 @@
 # serializer version: 1
+# name: test_external_job_retrieval[0]
+  '''
+  {
+    "pipelineSnapshotOrError": {
+      "__typename": "PipelineSnapshot",
+      "dagsterTypes": [
+        {
+          "key": "Any"
+        },
+        {
+          "key": "Bool"
+        },
+        {
+          "key": "Float"
+        },
+        {
+          "key": "Int"
+        },
+        {
+          "key": "Nothing"
+        },
+        {
+          "key": "String"
+        }
+      ],
+      "description": null,
+      "externalJobSource": "airflow",
+      "modes": [
+        {
+          "name": "default"
+        }
+      ],
+      "name": "some_external_job",
+      "pipelineSnapshotId": "104d8b266375c6fc64d4f4757d4525e70a8ca503",
+      "runTags": [],
+      "solidHandles": [],
+      "solids": [],
+      "tags": [
+        {
+          "key": "dagster/external_job_source",
+          "value": "airflow"
+        }
+      ]
+    }
+  }
+  '''
+# ---
 # name: test_fetch_snapshot_or_error_by_active_pipeline_name_not_found[0]
   '''
   {
@@ -34,13 +81,14 @@
         }
       ],
       "description": null,
+      "externalJobSource": null,
       "modes": [
         {
           "name": "default"
         }
       ],
       "name": "tagged_job",
-      "pipelineSnapshotId": "c3320c44d5fa6c508dfda564e67bc67747b9891c",
+      "pipelineSnapshotId": "914adff8702faf5150d5383dcd65e48aff70e65f",
       "runTags": [
         {
           "key": "baz",
@@ -109,6 +157,7 @@
         }
       ],
       "name": "noop_job",
+      "owners": [],
       "pipelineSnapshotId": "dbc0d71fefa48d56ff94e517235980f1bbf0d8e8",
       "runTags": [],
       "solidHandles": [

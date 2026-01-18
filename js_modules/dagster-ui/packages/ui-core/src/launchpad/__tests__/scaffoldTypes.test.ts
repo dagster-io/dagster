@@ -1,8 +1,7 @@
-import {AllConfigTypesForEditorFragment} from '../../configeditor/types/ConfigEditorUtils.types';
-import {createTypeLookup, scaffoldType} from '../scaffoldType';
+import {AllConfigTypes, createTypeLookup, scaffoldType} from '../scaffoldType';
 
 // prettier-ignore
-const allConfigTypes: AllConfigTypesForEditorFragment[] = [
+const allConfigTypes: AllConfigTypes[] = [
   {"__typename":"RegularConfigType","key":"Any","description":null,"isSelector":false,"typeParamKeys":[],"givenName":"Any"},
   {"__typename":"ArrayConfigType","key":"Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b","description":"List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b","isSelector":false,"typeParamKeys":["Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"]},
   {"__typename":"ArrayConfigType","key":"Array.String","description":"List of Array.String","isSelector":false,"typeParamKeys":["String"]},

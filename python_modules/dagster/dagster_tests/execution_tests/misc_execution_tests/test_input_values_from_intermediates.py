@@ -1,20 +1,20 @@
-from dagster import In, List, Optional, job, op
+import dagster as dg
 
 
 def test_from_intermediates_from_multiple_outputs() -> None:
-    @op
+    @dg.op
     def x():
         return "x"
 
-    @op
+    @dg.op
     def y():
         return "y"
 
-    @op(ins={"stuff": In(Optional[List[str]])})
+    @dg.op(ins={"stuff": dg.In(dg.Optional[dg.List[str]])})
     def gather(stuff):
         return "{} and {}".format(*stuff)
 
-    @job
+    @dg.job
     def pipe():
         gather([x(), y()])
 
@@ -23,11 +23,9 @@ def test_from_intermediates_from_multiple_outputs() -> None:
     assert result
     assert result.success
     step_input_data = next(
-        (
-            evt.step_input_data
-            for evt in result.events_for_node("gather")
-            if evt.event_type_value == "STEP_INPUT"
-        )
+        evt.step_input_data
+        for evt in result.events_for_node("gather")
+        if evt.event_type_value == "STEP_INPUT"
     )
     assert step_input_data.input_name == "stuff"
     assert step_input_data.type_check_data.label == "stuff"
@@ -37,11 +35,11 @@ def test_from_intermediates_from_multiple_outputs() -> None:
 def test_from_intermediates_from_config() -> None:
     run_config = {"ops": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}}
 
-    @op
+    @dg.op
     def x(string_input):
         return string_input
 
-    @job
+    @dg.job
     def pipe():
         x()
 
@@ -50,11 +48,9 @@ def test_from_intermediates_from_config() -> None:
     assert result
     assert result.success
     step_input_data = next(
-        (
-            evt.step_input_data
-            for evt in result.events_for_node("x")
-            if evt.event_type_value == "STEP_INPUT"
-        )
+        evt.step_input_data
+        for evt in result.events_for_node("x")
+        if evt.event_type_value == "STEP_INPUT"
     )
     assert step_input_data.input_name == "string_input"
     assert step_input_data.type_check_data.label == "string_input"

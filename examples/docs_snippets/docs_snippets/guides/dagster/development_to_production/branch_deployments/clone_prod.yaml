@@ -1,5 +1,3 @@
-# .github/workflows/branch_deployments.yml
-
 name: Dagster Branch Deployments
   on:
     pull_request:

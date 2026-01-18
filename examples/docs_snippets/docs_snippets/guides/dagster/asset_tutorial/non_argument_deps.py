@@ -46,7 +46,7 @@ import urllib.request
 @asset
 def cereal_ratings_zip() -> None:
     urllib.request.urlretrieve(
-        "https://dagster-git-tutorial-nothing-elementl.vercel.app/assets/cereal-ratings.csv.zip",
+        "https://docs.dagster.io/assets/cereal-ratings.csv.zip",
         "cereal-ratings.csv.zip",
     )
 
@@ -69,7 +69,7 @@ def cereal_ratings_csv() -> None:
 # nabisco_cereal_ratings_start
 @asset(deps=[cereal_ratings_csv])
 def nabisco_cereal_ratings(nabisco_cereals):
-    with open("cereal-ratings.csv", "r") as f:
+    with open("cereal-ratings.csv") as f:
         cereal_ratings = {
             row["name"]: row["rating"] for row in csv.DictReader(f.readlines())
         }

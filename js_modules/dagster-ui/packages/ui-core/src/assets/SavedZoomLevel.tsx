@@ -1,7 +1,7 @@
 import {MutableRefObject, useEffect} from 'react';
 
-import {SVGViewport} from '../graph/SVGViewport';
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {SVGViewportRef} from '../graph/SVGViewport';
+import {getJSONForKey} from '../util/getJSONForKey';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
@@ -9,7 +9,7 @@ export const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
   useEffect(() => {
     try {
       window.localStorage.setItem(LINEAGE_GRAPH_ZOOM_LEVEL, JSON.stringify(scale));
-    } catch (err) {
+    } catch {
       // no-op
     }
   }, [scale]);
@@ -17,7 +17,7 @@ export const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
 };
 
 export function useLastSavedZoomLevel(
-  viewportEl: MutableRefObject<SVGViewport | undefined>,
+  viewportEl: MutableRefObject<SVGViewportRef | undefined>,
   layout: import('../asset-graph/layout').AssetGraphLayout | null,
   graphFocusChangeKey: string,
 ) {

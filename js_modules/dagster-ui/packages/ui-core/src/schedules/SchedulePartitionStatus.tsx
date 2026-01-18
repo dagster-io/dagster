@@ -1,8 +1,9 @@
-import {ButtonLink, Caption, Colors, Group} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Caption, Colors} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {memo, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
+import {gql, useLazyQuery} from '../apollo-client';
 import {
   SchedulePartitionStatusFragment,
   SchedulePartitionStatusQuery,
@@ -10,7 +11,6 @@ import {
   SchedulePartitionStatusResultFragment,
 } from './types/SchedulePartitionStatus.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
-import {gql, useLazyQuery} from '../apollo-client';
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../graphql/types';
 import {StatusTable} from '../instigation/InstigationUtils';
@@ -110,10 +110,10 @@ export const SchedulePartitionStatus = memo((props: Props) => {
   };
 
   return (
-    <Group direction="column" spacing={4}>
+    <Box flex={{direction: 'column', gap: 4}}>
       <Link to={partitionURL}>{partitionSetName}</Link>
       {loadable()}
-    </Group>
+    </Box>
   );
 });
 

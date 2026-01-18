@@ -2,7 +2,6 @@ import {
   Box,
   Colors,
   Icon,
-  IconWrapper,
   NonIdealState,
   SpinnerWithText,
   Tag,
@@ -120,6 +119,7 @@ export const CodeLocationAssetsList = ({repoAddress}: Props) => {
         </HeaderRow>
         <Inner $totalHeight={totalHeight}>
           {virtualItems.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const item = flattened[index]!;
             if (item.type === 'group') {
               return (
@@ -224,7 +224,7 @@ const ClickableRow = styled(Row)<{$open: boolean}>`
     outline: none;
   }
 
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
+  .iconGlobal[aria-label='arrow_drop_down'] {
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }

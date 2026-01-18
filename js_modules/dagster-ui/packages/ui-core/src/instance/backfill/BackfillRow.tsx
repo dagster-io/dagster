@@ -1,23 +1,22 @@
-import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Mono, Tag, useDelayedState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
+import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
-import {QueryResult, gql, useLazyQuery} from '../../apollo-client';
+import {QueryResult, gql, useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {RunStatus} from '../../graphql/types';
+import {PartitionBackfill, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
-import {PipelineReference} from '../../pipelines/PipelineReference';
+import {PipelineReference, PipelineTag} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
@@ -28,7 +27,7 @@ interface BackfillRowProps {
   backfill: BackfillTableFragment;
   allPartitions?: string[];
   showBackfillTarget: boolean;
-  onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
+  onShowPartitionsRequested: (backfillId: string) => void;
   refetch: () => void;
 }
 
@@ -39,7 +38,7 @@ export const BackfillRow = (props: BackfillRowProps) => {
     props.backfill.isAssetBackfill;
 
   if (statusUnsupported) {
-    return <BackfillRowContent {...props} hasCancelableRuns={false} statusQueryResult={null} />;
+    return <BackfillRowContent {...props} statusQueryResult={null} />;
   }
   return (
     <BackfillRowLoader backfillId={props.backfill.id}>
@@ -49,7 +48,6 @@ export const BackfillRow = (props: BackfillRowProps) => {
 };
 
 interface LoadResult {
-  hasCancelableRuns: boolean;
   statusQueryResult: QueryResult<any, any> | null;
 }
 
@@ -59,28 +57,21 @@ export const BackfillRowLoader = (props: {
 }) => {
   const {backfillId} = props;
 
-  const cancelableRuns = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
+
+  const statusQueryResult = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
       variables: {backfillId},
       notifyOnNetworkStatusChange: true,
+      skip: !shouldQuery,
     },
   );
 
-  const [statusQueryFn, statusQueryResult] = cancelableRuns;
-
-  useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = statusQueryResult;
-  const {hasCancelableRuns} = React.useMemo(() => {
-    if (data?.partitionBackfillOrError.__typename === 'PartitionBackfill') {
-      return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
-    }
-    return {hasCancelableRuns: false};
-  }, [data]);
-
-  return props.children({hasCancelableRuns, statusQueryResult});
+  return props.children({statusQueryResult});
 };
 
 export const BackfillRowContent = ({
@@ -89,7 +80,6 @@ export const BackfillRowContent = ({
   showBackfillTarget,
   onShowPartitionsRequested,
   refetch,
-  hasCancelableRuns,
   statusQueryResult,
 }: BackfillRowProps & LoadResult) => {
   const repoAddress = backfill.partitionSet
@@ -110,7 +100,7 @@ export const BackfillRowContent = ({
     <tr>
       <td style={{width: 120}}>
         <Mono>
-          <Link to={getBackfillPath(backfill.id, backfill.isAssetBackfill)}>{backfill.id}</Link>
+          <Link to={getBackfillPath(backfill.id)}>{backfill.id}</Link>
         </Mono>
       </td>
       <td style={{width: 220}}>
@@ -118,14 +108,14 @@ export const BackfillRowContent = ({
       </td>
       {showBackfillTarget ? (
         <td style={{width: '20%'}}>
-          <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
+          <BackfillTarget backfill={backfill} repoAddress={repoAddress} useTags={false} />
         </td>
       ) : null}
       <td style={{width: allPartitions ? 300 : 140}}>
         <BackfillRequestedRange
           backfill={backfill}
           allPartitions={allPartitions}
-          onExpand={() => onShowPartitionsRequested(backfill)}
+          onExpand={() => onShowPartitionsRequested(backfill.id)}
         />
       </td>
       <td style={{width: 160}}>
@@ -133,11 +123,7 @@ export const BackfillRowContent = ({
       </td>
       <td style={{width: 140}}>{renderBackfillStatus()}</td>
       <td>
-        <BackfillActionsMenu
-          backfill={backfill}
-          canCancelRuns={backfillCanCancelRuns(backfill, hasCancelableRuns)}
-          refetch={refetch}
-        />
+        <BackfillActionsMenu backfill={backfill} refetch={refetch} />
       </td>
     </tr>
   );
@@ -146,9 +132,21 @@ export const BackfillRowContent = ({
 export const BackfillTarget = ({
   backfill,
   repoAddress,
+  useTags,
+  onShowPartitions,
 }: {
-  backfill: Pick<BackfillTableFragment, 'assetSelection' | 'partitionSet' | 'partitionSetName'>;
+  backfill: Pick<
+    BackfillTableFragment,
+    | 'id'
+    | 'partitionNames'
+    | 'assetSelection'
+    | 'partitionSet'
+    | 'partitionSetName'
+    | 'numPartitions'
+  >;
   repoAddress: RepoAddress | null;
+  useTags: boolean;
+  onShowPartitions?: () => void;
 }) => {
   const repo = useRepository(repoAddress);
   const {assetSelection, partitionSet, partitionSetName} = backfill;
@@ -160,22 +158,30 @@ export const BackfillTarget = ({
       return null;
     }
     if (partitionSet && repo) {
+      const link = workspacePipelinePath({
+        repoName: partitionSet.repositoryOrigin.repositoryName,
+        repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
+        pipelineName: partitionSet.pipelineName,
+        isJob: isThisThingAJob(repo, partitionSet.pipelineName),
+        path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
+      });
+      if (useTags) {
+        return (
+          <Tag icon="partition_set">
+            <Link to={link}>{partitionSet.name}</Link>
+          </Tag>
+        );
+      }
       return (
-        <Link
-          style={{fontWeight: 500}}
-          to={workspacePipelinePath({
-            repoName: partitionSet.repositoryOrigin.repositoryName,
-            repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
-            pipelineName: partitionSet.pipelineName,
-            isJob: isThisThingAJob(repo, partitionSet.pipelineName),
-            path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
-          })}
-        >
+        <Link style={{fontWeight: 500}} to={link}>
           {partitionSet.name}
         </Link>
       );
     }
     if (partitionSetName) {
+      if (useTags) {
+        return <Tag icon="partition_set">{partitionSetName}</Tag>;
+      }
       return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
     }
     return null;
@@ -193,10 +199,28 @@ export const BackfillTarget = ({
 
   const buildPipelineOrAssets = () => {
     if (assetSelection?.length) {
-      return <AssetKeyTagCollection assetKeys={assetSelection} dialogTitle="Assets in backfill" />;
+      return (
+        <AssetKeyTagCollection
+          assetKeys={assetSelection}
+          dialogTitle="Assets in backfill"
+          useTags={useTags}
+          maxRows={2}
+        />
+      );
     }
     if (partitionSet && repo) {
-      return (
+      return useTags ? (
+        <PipelineTag
+          showIcon
+          size="small"
+          pipelineName={partitionSet.pipelineName}
+          pipelineHrefContext={{
+            name: partitionSet.repositoryOrigin.repositoryName,
+            location: partitionSet.repositoryOrigin.repositoryLocationName,
+          }}
+          isJob={isThisThingAJob(repo, partitionSet.pipelineName)}
+        />
+      ) : (
         <PipelineReference
           showIcon
           size="small"
@@ -212,14 +236,24 @@ export const BackfillTarget = ({
     return null;
   };
 
+  const buildPartitionTag = () => {
+    if (!useTags || !onShowPartitions) {
+      return null;
+    }
+    return <BackfillRequestedRange backfill={backfill} onExpand={onShowPartitions} />;
+  };
+
   const repoLink = buildRepoLink();
   const pipelineOrAssets = buildPipelineOrAssets();
   return (
-    <Box flex={{direction: 'column', gap: 8}}>
-      {buildHeader()}
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'start'}}>
+      <Box flex={{direction: 'row', gap: 4}}>
+        {buildPartitionTag()}
+        {buildHeader()}
+      </Box>
       {(pipelineOrAssets || repoLink) && (
         <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-          {repoLink}
+          {repoLink && useTags ? <Tag>{repoLink}</Tag> : repoLink}
           {pipelineOrAssets}
         </Box>
       )}
@@ -232,13 +266,13 @@ const BackfillRequestedRange = ({
   backfill,
   onExpand,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: Pick<PartitionBackfill, 'numPartitions' | 'partitionNames'>;
   allPartitions?: string[];
   onExpand: () => void;
 }) => {
   const {partitionNames, numPartitions} = backfill;
 
-  if (numPartitions === null) {
+  if (numPartitions === null || numPartitions === 0) {
     return <span />;
   }
 
@@ -266,13 +300,13 @@ const BackfillRequestedRange = ({
 };
 
 const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
-  const health: PartitionStatusHealthSourceOps = React.useMemo(
-    () => ({
+  const health: PartitionStatusHealthSourceOps = React.useMemo(() => {
+    const requestedSet = new Set(requested);
+    return {
       runStatusForPartitionKey: (key: string) =>
-        requested && requested.includes(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
-    }),
-    [requested],
-  );
+        requestedSet.has(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
+    };
+  }, [requested]);
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 

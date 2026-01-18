@@ -1,21 +1,22 @@
-from typing import AbstractSet, Any, Iterator, Mapping, Optional, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.dependency import Node, NodeHandle
-from dagster._core.definitions.events import AssetKey, UserEvent
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, UserEvent
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
@@ -82,7 +83,8 @@ def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
     return deprecation_kwargs
 
 
-class AssetExecutionContext(OpExecutionContext):
+@public
+class AssetExecutionContext:
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
@@ -383,6 +385,12 @@ class AssetExecutionContext(OpExecutionContext):
     def partition_keys(self) -> Sequence[str]:
         return self.op_execution_context.partition_keys
 
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_partition_key_range(self) -> bool:
+        return self.op_execution_context.has_partition_key_range
+
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
@@ -453,15 +461,91 @@ class AssetExecutionContext(OpExecutionContext):
         mapping_key: Optional[str] = None,
     ) -> None:
         return self.op_execution_context.add_output_metadata(
-            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+            metadata=metadata,
+            output_name=output_name,
+            mapping_key=mapping_key,
+        )
+
+    @public
+    def add_asset_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        partition_key: Optional[str] = None,
+    ) -> None:
+        """Add metadata to an asset materialization event. This metadata will be
+        available in the Dagster UI.
+
+        Args:
+            metadata (Mapping[str, Any]): The metadata to add to the asset
+                materialization event.
+            asset_key (Optional[CoercibleToAssetKey]): The asset key to add metadata to.
+                Does not need to be provided if only one asset is currently being
+                materialized.
+            partition_key (Optional[str]): The partition key to add metadata to, if
+                applicable. Should not be provided on non-partitioned assets. If not
+                provided on a partitioned asset, the metadata will be added to all
+                partitions of the asset currently being materialized.
+
+        Examples:
+            Adding metadata to the asset materialization event for a single asset:
+
+            .. code-block:: python
+
+                import dagster as dg
+
+                @dg.asset
+                def my_asset(context):
+                    # Add metadata
+                    context.add_asset_metadata({"key": "value"})
+
+            Adding metadata to the asset materialization event for a particular partition of a partitioned asset:
+
+            .. code-block:: python
+
+                import dagster as dg
+
+                @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b"]))
+                def my_asset(context):
+                    # Adds metadata to all partitions currently being materialized, since no
+                    # partition is specified.
+                    context.add_asset_metadata({"key": "value"})
+
+                    for partition_key in context.partition_keys:
+                        # Add metadata only to the event for partition "a"
+                        if partition_key == "a":
+                            context.add_asset_metadata({"key": "value"}, partition_key=partition_key)
+
+            Adding metadata to the asset materialization event for a particular asset in a multi-asset.
+
+            .. code-block:: python
+
+                import dagster as dg
+
+                @dg.multi_asset(specs=[dg.AssetSpec("asset1"), dg.AssetSpec("asset2")])
+                def my_multi_asset(context):
+                    # Add metadata to the materialization event for "asset1"
+                    context.add_asset_metadata({"key": "value"}, asset_key="asset1")
+
+                    # THIS line will fail since asset key is not specified:
+                    context.add_asset_metadata({"key": "value"})
+
+        """
+        self._step_execution_context.add_asset_metadata(
+            metadata=metadata,
+            asset_key=asset_key,
+            partition_key=partition_key,
         )
 
     @_copy_docs_from_op_execution_context
     def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
+        self,
+        output_name: str,
+        mapping_key: Optional[str] = None,
     ) -> Optional[Mapping[str, Any]]:
         return self.op_execution_context.get_output_metadata(
-            output_name=output_name, mapping_key=mapping_key
+            output_name=output_name,
+            mapping_key=mapping_key,
         )
 
     #### asset check related
@@ -475,7 +559,6 @@ class AssetExecutionContext(OpExecutionContext):
     #### data lineage related
 
     @public
-    @experimental
     @_copy_docs_from_op_execution_context
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         return self.op_execution_context.get_asset_provenance(asset_key=asset_key)
@@ -514,3 +597,17 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
+
+    @_copy_docs_from_op_execution_context
+    def load_asset_value(
+        self,
+        asset_key: AssetKey,
+        *,
+        python_type: Optional[type] = None,
+        partition_key: Optional[str] = None,
+    ) -> Any:
+        return self.op_execution_context.load_asset_value(
+            asset_key=asset_key,
+            python_type=python_type,
+            partition_key=partition_key,
+        )

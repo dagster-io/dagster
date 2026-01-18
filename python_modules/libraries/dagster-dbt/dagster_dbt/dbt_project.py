@@ -1,7 +1,8 @@
 import logging
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Optional, Union
 
 import yaml
 from dagster._annotations import public
@@ -10,6 +11,7 @@ from dagster._utils import run_with_concurrent_update_guard
 
 from dagster_dbt.errors import (
     DagsterDbtManifestNotFoundError,
+    DagsterDbtProfilesDirectoryNotFoundError,
     DagsterDbtProjectNotFoundError,
     DagsterDbtProjectYmlFileNotFoundError,
 )
@@ -130,6 +132,42 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             .wait()
         )
 
+        # Remove seed entries from partial_parse to force re-parsing at runtime.
+        # This ensures seeds get correct root_path based on current project location.
+        self._invalidate_seeds_in_partial_parse(project)
+
+    def _invalidate_seeds_in_partial_parse(self, project: "DbtProject") -> None:
+        """Remove seed entries from partial_parse.msgpack to force re-parsing.
+
+        Seeds contain root_path which is an absolute path from build time. When state
+        is generated in one environment (e.g., CI/CD) and used in another (e.g., deployed
+        container), the root_path points to the wrong location and seed loading fails.
+
+        By removing seed entries from the cache, dbt will re-parse them at runtime with
+        the correct current project path. Models keep their cached data for fast loading.
+        """
+        import msgpack
+
+        partial_parse_path = project.project_dir / project.target_path / "partial_parse.msgpack"
+        if not partial_parse_path.exists():
+            return
+
+        with open(partial_parse_path, "rb") as f:
+            data = msgpack.unpack(f, raw=False, strict_map_key=False)
+
+        # Remove seed nodes
+        seed_node_ids = [k for k in data.get("nodes", {}).keys() if k.startswith("seed.")]
+        for seed_id in seed_node_ids:
+            del data["nodes"][seed_id]
+
+        # Remove seed file entries (CSVs)
+        seed_file_ids = [k for k in data.get("files", {}).keys() if k.lower().endswith(".csv")]
+        for file_id in seed_file_ids:
+            del data["files"][file_id]
+
+        with open(partial_parse_path, "wb") as f:
+            msgpack.pack(data, f)
+
 
 @record_custom
 class DbtProject(IHaveNew):
@@ -152,6 +190,11 @@ class DbtProject(IHaveNew):
             The path, relative to the project directory, to output artifacts.
             It corresponds to the target path in dbt.
             Default: "target"
+        profiles_dir (Union[str, Path]):
+            The path to the directory containing your dbt `profiles.yml`.
+            By default, the current working directory is used, which is the dbt project directory.
+        profile (Optional[str]):
+            The profile from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
         target (Optional[str]):
             The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
         packaged_project_dir (Optional[Union[str, Path]]):
@@ -199,8 +242,11 @@ class DbtProject(IHaveNew):
 
     """
 
+    name: str
     project_dir: Path
     target_path: Path
+    profiles_dir: Path
+    profile: Optional[str]
     target: Optional[str]
     manifest_path: Path
     packaged_project_dir: Optional[Path]
@@ -213,6 +259,8 @@ class DbtProject(IHaveNew):
         project_dir: Union[Path, str],
         *,
         target_path: Union[Path, str] = Path("target"),
+        profiles_dir: Optional[Union[Path, str]] = None,
+        profile: Optional[str] = None,
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
@@ -224,6 +272,13 @@ class DbtProject(IHaveNew):
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
+
+        # Handling the profiles_dir must be done after the packaged_project_dir is handled
+        profiles_dir = Path(profiles_dir) if profiles_dir else project_dir
+        if not profiles_dir.exists():
+            raise DagsterDbtProfilesDirectoryNotFoundError(
+                f"profiles {profiles_dir} does not exist."
+            )
 
         preparer = DagsterDbtProjectPreparer()
 
@@ -248,13 +303,21 @@ class DbtProject(IHaveNew):
             dependencies_path.exists() or packages_path.exists()
         ) and not packages_install_path.exists()
 
+        if state_path:
+            state_path = Path(state_path)
+            if not state_path.is_absolute():
+                state_path = project_dir.joinpath(state_path)
+
         return super().__new__(
             cls,
+            name=dbt_project_yml["name"],
             project_dir=project_dir,
             target_path=target_path,
+            profiles_dir=profiles_dir,
+            profile=profile,
             target=target,
             manifest_path=manifest_path,
-            state_path=project_dir.joinpath(state_path) if state_path else None,
+            state_path=state_path,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
             preparer=preparer,
@@ -284,7 +347,7 @@ class DbtProject(IHaveNew):
                 my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
                 my_project.prepare_if_dev()
 
-                defs = Definitions(
+                Definitions(
                     resources={
                         "dbt": DbtCliResource(project_dir=my_project),
                     },

@@ -7,7 +7,9 @@ import {
   buildErrorChainLink,
   buildPartitionBackfill,
   buildPartitionSet,
+  buildPipelineTag,
   buildPythonError,
+  buildQuery,
   buildRepositoryOrigin,
   buildRun,
 } from '../../../graphql/types';
@@ -37,7 +39,6 @@ export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment
     partitionSetName: null,
     partitionSet: null,
     error: null,
-    numCancelable: 0,
     partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 2000),
     assetSelection: [
       buildAssetKey({
@@ -68,7 +69,6 @@ export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFrag
       }),
     }),
     error: null,
-    numCancelable: 0,
     partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 5000),
     assetSelection: [
       buildAssetKey({
@@ -79,11 +79,10 @@ export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFrag
       }),
     ],
     tags: [
-      {
-        __typename: 'PipelineTag',
+      buildPipelineTag({
         key: DagsterTag.SensorName,
         value: 'MySensor',
-      },
+      }),
     ],
   });
 
@@ -103,7 +102,6 @@ export const BackfillTableFragmentFailedError: BackfillTableFragment = buildPart
     stack: ['OMITTED FROM MOCKS'],
     errorChain: [],
   }),
-  numCancelable: 0,
   partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 100),
   assetSelection: [
     buildAssetKey({
@@ -120,67 +118,62 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'sjqzcfhe',
         cancelableRuns: [],
       }),
-    },
+    }),
   },
 };
 
-export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = buildPartitionBackfill(
-  {
-    id: 'pwgcpiwc',
-    status: BulkActionStatus.COMPLETED,
-    isValidSerialization: true,
-    numPartitions: 11,
-    hasCancelPermission: true,
-    hasResumePermission: true,
-    timestamp: 1674660450.942305,
-    isAssetBackfill: true,
-    partitionSetName: 'asset_job_partition_set',
-    partitionSet: buildPartitionSet({
-      id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
-      name: 'asset_job_partition_set',
-      mode: 'default',
-      pipelineName: 'asset_job',
-      repositoryOrigin: buildRepositoryOrigin({
-        id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-        repositoryName: 'repo',
-        repositoryLocationName: 'test.py',
-      }),
+export const BackfillTableFragmentCompletedAssetJob = buildPartitionBackfill({
+  id: 'pwgcpiwc',
+  status: BulkActionStatus.COMPLETED,
+  isValidSerialization: true,
+  numPartitions: 11,
+  hasCancelPermission: true,
+  hasResumePermission: true,
+  timestamp: 1674660450.942305,
+  isAssetBackfill: true,
+  partitionSetName: 'asset_job_partition_set',
+  partitionSet: buildPartitionSet({
+    id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
+    name: 'asset_job_partition_set',
+    mode: 'default',
+    pipelineName: 'asset_job',
+    repositoryOrigin: buildRepositoryOrigin({
+      id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
+      repositoryName: 'repo',
+      repositoryLocationName: 'test.py',
     }),
-    error: null,
-    numCancelable: 0,
-    partitionNames: [
-      'TN|2023-01-24',
-      'VA|2023-01-24',
-      'GA|2023-01-24',
-      'KY|2023-01-24',
-      'PA|2023-01-24',
-      'NC|2023-01-24',
-      'SC|2023-01-24',
-      'FL|2023-01-24',
-      'OH|2023-01-24',
-      'IL|2023-01-24',
-      'WV|2023-01-24',
-    ],
-    assetSelection: [
-      buildAssetKey({
-        path: ['multipartitioned_asset'],
-      }),
-    ],
-    tags: [
-      {
-        __typename: 'PipelineTag',
-        key: DagsterTag.User,
-        value: 'user@dagsterlabs.com',
-      },
-    ],
-  },
-);
+  }),
+  error: null,
+  partitionNames: [
+    'TN|2023-01-24',
+    'VA|2023-01-24',
+    'GA|2023-01-24',
+    'KY|2023-01-24',
+    'PA|2023-01-24',
+    'NC|2023-01-24',
+    'SC|2023-01-24',
+    'FL|2023-01-24',
+    'OH|2023-01-24',
+    'IL|2023-01-24',
+    'WV|2023-01-24',
+  ],
+  assetSelection: [
+    buildAssetKey({
+      path: ['multipartitioned_asset'],
+    }),
+  ],
+  tags: [
+    buildPipelineTag({
+      key: DagsterTag.User,
+      value: 'user@dagsterlabs.com',
+    }),
+  ],
+});
 
 export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<SingleBackfillQuery> = {
   request: {
@@ -190,14 +183,12 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
-      partitionBackfillOrError: {
+    data: buildQuery({
+      partitionBackfillOrError: buildPartitionBackfill({
         id: 'pwgcpiwc',
         cancelableRuns: [],
-        __typename: 'PartitionBackfill',
-      },
-    },
+      }),
+    }),
   },
 };
 
@@ -222,7 +213,6 @@ export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = buildP
     }),
   }),
   error: null,
-  numCancelable: 0,
   partitionNames: ['2022-07-01', '2022-08-01', '2022-09-01', '2022-10-01'],
   assetSelection: null,
 });
@@ -235,8 +225,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,
@@ -244,7 +233,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
           buildRun({runId: '1baeadb4-7e7d-47e5-aeac-8a5f921cf27c', status: RunStatus.QUEUED}),
         ],
       }),
-    },
+    }),
   },
 };
 
@@ -260,17 +249,14 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment =
     partitionSetName: null,
     partitionSet: null,
     error: null,
-    numCancelable: 0,
     partitionNames: [],
     isAssetBackfill: true,
     assetSelection: [
       buildAssetKey({
         path: ['asset1'],
-        __typename: 'AssetKey',
       }),
       buildAssetKey({
         path: ['asset2'],
-        __typename: 'AssetKey',
       }),
     ],
   });
@@ -301,7 +287,6 @@ export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPart
       }),
     ],
   }),
-  numCancelable: 0,
   partitionNames: null,
   assetSelection: [
     buildAssetKey({
@@ -331,7 +316,6 @@ const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment =
       stack: ['OMITTED FROM MOCKS'],
       errorChain: [],
     }),
-    numCancelable: 0,
     partitionNames: null,
     assetSelection: [
       buildAssetKey({

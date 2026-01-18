@@ -6,15 +6,14 @@ import threading
 import time
 from typing import Any
 
+import dagster as dg
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepositoryOrigin
-from dagster._core.remote_representation.origin import GrpcServerCodeLocationOrigin
-from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_origin import GrpcServerCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import METRICS_RETRIEVAL_FUNCTIONS, DagsterApiServer, wait_for_grpc_server
 from dagster._grpc.types import SensorExecutionArgs
-from dagster._utils import file_relative_path, find_free_port
+from dagster._utils import find_free_port
 
 
 def is_grpc_method(attr_name: str, obj: Any) -> bool:
@@ -57,7 +56,7 @@ def _launch_sensor_execution(
 @pytest.mark.parametrize("provide_flag", [True, False], ids=["flag-provided", "flag-not-provided"])
 def test_ping_metrics_retrieval(provide_flag: bool):
     port = find_free_port()
-    python_file = file_relative_path(__file__, "grpc_repo_sensor_eval.py")
+    python_file = dg.file_relative_path(__file__, "grpc_repo_sensor_eval.py")
 
     subprocess_args = [
         "dagster",
@@ -79,7 +78,7 @@ def test_ping_metrics_retrieval(provide_flag: bool):
         )
         client = DagsterGrpcClient(port=port)
 
-        with instance_for_test() as instance:
+        with dg.instance_for_test() as instance:
             repo_origin = RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
                 repository_name="the_repo",

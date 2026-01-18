@@ -1,7 +1,8 @@
 import os
 import re
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Optional
 
 import dagster._check as check
 import pytest
@@ -10,13 +11,15 @@ from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks._test_utils import (
     databricks_client,  # noqa: F401
     temp_dbfs_script,
+    temp_workspace_notebook,
     upload_dagster_pipes_whl,
 )
-from dagster_databricks.pipes import PipesDatabricksClient
+from dagster_databricks.pipes import PipesDatabricksClient, PipesDbfsMessageReader
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+IS_WORKSPACE = os.getenv("DATABRICKS_HOST") is not None
 
 
 def script_fn():
@@ -26,6 +29,7 @@ def script_fn():
     from dagster_pipes import (
         DAGSTER_PIPES_CONTEXT_ENV_VAR,
         PipesCliArgsParamsLoader,
+        PipesDatabricksNotebookWidgetsParamsLoader,
         PipesDbfsContextLoader,
         PipesDbfsMessageWriter,
         PipesEnvVarParamsLoader,
@@ -33,17 +37,29 @@ def script_fn():
     )
 
     # To facilitate using the same script for testing in both the new cluster and existing cluster
-    # instances, , we dynamically configure the PipesParamsLoader here by checking for the presence
-    # of pipes-specific env vars. If these are set, we know we are in the new cluster case and load
-    # params via the env vars.
-    params_loader = (
-        PipesEnvVarParamsLoader()
-        if DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ
-        else PipesCliArgsParamsLoader()
-    )
+    # instances and python_script and notebook_task execution we dynamically configure the
+    # PipesParamsLoader here by checking for the presence of pipes-specific env vars. If these
+    # are set, we know we are in the new cluster case and load params via the env vars.
+    def is_notebook():
+        try:
+            from pyspark.dbutils import DBUtils  # pyright: ignore[reportMissingImports]
+
+            dbutils = DBUtils(spark)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+            dbutils.widgets.get(DAGSTER_PIPES_CONTEXT_ENV_VAR)
+            return True
+        except Exception:
+            return False
+
+    def get_params_loader():
+        if is_notebook():
+            return PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+        elif DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ:
+            return PipesEnvVarParamsLoader()
+        else:
+            return PipesCliArgsParamsLoader()
 
     with open_dagster_pipes(
-        params_loader=params_loader,
+        params_loader=get_params_loader(),
         context_loader=PipesDbfsContextLoader(),
         message_writer=PipesDbfsMessageWriter(),
     ) as context:
@@ -59,7 +75,6 @@ def script_fn():
 
 CLUSTER_DEFAULTS = {
     "spark_version": "12.2.x-scala2.12",
-    "node_type_id": "i3.xlarge",
     "num_workers": 0,
 }
 
@@ -86,18 +101,20 @@ def temp_databricks_cluster(client: WorkspaceClient, forward_logs: bool) -> Iter
 
 
 def make_submit_task_dict(
-    script_path: str,
+    file_path: str,
     dagster_pipes_whl_path: str,
     forward_logs: bool,
+    task_type: str,
+    file_path_key: str,
     cluster_id: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     submit_spec = {
         "libraries": [
             {"whl": dagster_pipes_whl_path},
         ],
         "task_key": TASK_KEY,
-        "spark_python_task": {
-            "python_file": f"dbfs:{script_path}",
+        task_type: {
+            file_path_key: file_path,
             "source": jobs.Source.WORKSPACE,
         },
     }
@@ -110,6 +127,11 @@ def make_submit_task_dict(
 
 def make_new_cluster_spec(forward_logs: bool, use_inner_objects: bool = False) -> Any:
     cluster_spec = CLUSTER_DEFAULTS.copy()
+    databricks_host = os.getenv("DATABRICKS_HOST", "")
+    if "azuredatabricks.net" in databricks_host:
+        cluster_spec["node_type_id"] = "Standard_DS3_v2"
+    else:  # Assume AWS
+        cluster_spec["node_type_id"] = "i3.xlarge"
     if forward_logs:
         log_conf = {"dbfs": {"destination": "dbfs:/cluster-logs"}}
         cluster_spec["cluster_log_conf"] = (
@@ -119,16 +141,20 @@ def make_new_cluster_spec(forward_logs: bool, use_inner_objects: bool = False) -
 
 
 def make_submit_task(
-    script_path: str,
+    file_path: str,
     dagster_pipes_whl_path: str,
     forward_logs: bool,
+    task_type: str,
+    file_path_key: str,
     cluster_id: Optional[str] = None,
 ) -> jobs.SubmitTask:
     return jobs.SubmitTask.from_dict(
         make_submit_task_dict(
-            script_path=script_path,
+            file_path=file_path,
             dagster_pipes_whl_path=dagster_pipes_whl_path,
             forward_logs=forward_logs,
+            task_type=task_type,
+            file_path_key=file_path_key,
             cluster_id=cluster_id,
         )
     )
@@ -137,21 +163,34 @@ def make_submit_task(
 # Test both with and without log forwarding. This is important because the PipesClient spins up log
 # readers before it knows the task specification
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
+@pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
 @pytest.mark.parametrize("forward_logs", [True, False])
 @pytest.mark.parametrize("use_existing_cluster", [True, False])
+@pytest.mark.parametrize(
+    "task_type, file_path_key",
+    [("spark_python_task", "python_file"), ("notebook_task", "notebook_path")],
+)
 def test_pipes_client(
     capsys,
     databricks_client: WorkspaceClient,  # noqa: F811
     forward_logs: bool,
     use_existing_cluster: bool,
+    task_type: str,
+    file_path_key: str,
 ):
     if use_existing_cluster and forward_logs:
-        # Two reasons for this: (a) logs are flushed every 5 minutes or on cluster termination.
+        # Log forwarding from existing clusters requires using Pipes messages as log transport. This has to be done because:
+        # (a) logs are flushed every 5 minutes or on cluster termination.
         # If cluster termination is not tied to the end of the launched job, there is no mechanism
         # to wait for logs to be flushed. (b) The logs reader functions by forwarding stdout/stderr,
         # which is shared across all jobs on the cluster-- so there is no way to scope the
         # forwarding to just the target job.
-        pytest.skip("Testing existing cluster with log forwarding currently does not work.")
+        #
+        message_reader = PipesDbfsMessageReader(
+            client=databricks_client, include_stdio_in_messages=True
+        )
+    else:
+        message_reader = None
 
     @asset
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
@@ -159,18 +198,36 @@ def test_pipes_client(
             dagster_pipes_whl_path = stack.enter_context(
                 upload_dagster_pipes_whl(databricks_client)
             )
-            script_path = stack.enter_context(
-                temp_dbfs_script(databricks_client, script_fn=script_fn)
-            )
+
+            if task_type == "spark_python_task":
+                file_path = stack.enter_context(
+                    temp_dbfs_script(databricks_client, script_fn=script_fn)
+                )
+                file_path = f"dbfs:{file_path}"
+            else:
+                file_path = stack.enter_context(
+                    temp_workspace_notebook(
+                        databricks_client,
+                        workspace_path="/Shared/dagster-pipes-test",
+                        script_fn=script_fn,
+                    )
+                )
             if use_existing_cluster:
                 cluster_id = stack.enter_context(
                     temp_databricks_cluster(databricks_client, forward_logs)
                 )
                 task = make_submit_task(
-                    script_path, dagster_pipes_whl_path, forward_logs, cluster_id
+                    file_path,
+                    dagster_pipes_whl_path,
+                    forward_logs,
+                    task_type,
+                    file_path_key,
+                    cluster_id,
                 )
             else:
-                task = make_submit_task(script_path, dagster_pipes_whl_path, forward_logs)
+                task = make_submit_task(
+                    file_path, dagster_pipes_whl_path, forward_logs, task_type, file_path_key
+                )
             return pipes_client.run(
                 task=task,
                 context=context,
@@ -180,9 +237,7 @@ def test_pipes_client(
     result = materialize(
         [number_x],
         resources={
-            "pipes_client": PipesDatabricksClient(
-                databricks_client,
-            )
+            "pipes_client": PipesDatabricksClient(databricks_client, message_reader=message_reader)
         },
         raise_on_error=False,
     )
@@ -194,12 +249,28 @@ def test_pipes_client(
         assert re.search(r"hello from databricks stdout\n", captured.out, re.MULTILINE)
         assert re.search(r"hello from databricks stderr\n", captured.err, re.MULTILINE)
 
+    # check Databricks metadata automatically added to materialization
+    assert "Databricks Job Run ID" in mats[0].metadata
+    assert "Databricks Job Run URL" in mats[0].metadata
+
 
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
-def test_nonexistent_entry_point(databricks_client: WorkspaceClient):  # noqa: F811
+@pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
+@pytest.mark.parametrize("task_type, file_path_key", [("spark_python_task", "python_file")])
+def test_nonexistent_entry_point(
+    databricks_client: WorkspaceClient,  # noqa: F811
+    task_type: str,
+    file_path_key: str,
+):
     @asset
     def fake(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
-        task = make_submit_task("/fake/fake", "/fake/fake", forward_logs=False)
+        task = make_submit_task(
+            "/fake/fake",
+            "/fake/fake",
+            forward_logs=False,
+            task_type=task_type,
+            file_path_key=file_path_key,
+        )
         return pipes_client.run(task=task, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):

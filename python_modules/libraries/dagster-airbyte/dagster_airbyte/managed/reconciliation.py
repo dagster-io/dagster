@@ -1,23 +1,14 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._annotations import beta, deprecated, public
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
@@ -36,8 +27,8 @@ from dagster_managed_elements.utils import UNSET, diff_dicts
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
     AirbyteInstanceCacheableAssetsDefinition,
-    _clean_name,
 )
+from dagster_airbyte.legacy_resources import AirbyteResource
 from dagster_airbyte.managed.types import (
     MANAGED_ELEMENTS_DEPRECATION_MSG,
     AirbyteConnection,
@@ -49,8 +40,7 @@ from dagster_airbyte.managed.types import (
     InitializedAirbyteDestination,
     InitializedAirbyteSource,
 )
-from dagster_airbyte.resources import AirbyteResource
-from dagster_airbyte.utils import is_basic_normalization_operation
+from dagster_airbyte.utils import clean_name, is_basic_normalization_operation
 
 
 def gen_configured_stream_json(
@@ -170,13 +160,13 @@ def reconcile_sources(
     dry_run: bool,
     should_delete: bool,
     ignore_secrets: bool,
-) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
+) -> tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
     """Generates a diff of the configured and existing sources and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
 
-    initialized_sources: Dict[str, InitializedAirbyteSource] = {}
+    initialized_sources: dict[str, InitializedAirbyteSource] = {}
     for source_name in set(config_sources.keys()).union(existing_sources.keys()):
         configured_source = config_sources.get(source_name)
         existing_source = existing_sources.get(source_name)
@@ -224,7 +214,7 @@ def reconcile_sources(
             else:
                 if not dry_run:
                     create_result = cast(
-                        Dict[str, str],
+                        "dict[str, str]",
                         check.not_none(
                             res.make_request(
                                 endpoint="/sources/create",
@@ -257,13 +247,13 @@ def reconcile_destinations(
     dry_run: bool,
     should_delete: bool,
     ignore_secrets: bool,
-) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
+) -> tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
     """Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
 
-    initialized_destinations: Dict[str, InitializedAirbyteDestination] = {}
+    initialized_destinations: dict[str, InitializedAirbyteDestination] = {}
     for destination_name in set(config_destinations.keys()).union(existing_destinations.keys()):
         configured_destination = config_destinations.get(destination_name)
         existing_destination = existing_destinations.get(destination_name)
@@ -312,7 +302,7 @@ def reconcile_destinations(
             else:
                 if not dry_run:
                     create_result = cast(
-                        Dict[str, str],
+                        "dict[str, str]",
                         check.not_none(
                             res.make_request(
                                 endpoint="/destinations/create",
@@ -358,23 +348,23 @@ def reconcile_config(
         workspace_id = res.get_default_workspace()
 
         existing_sources_raw = cast(
-            Dict[str, List[Dict[str, Any]]],
+            "dict[str, list[dict[str, Any]]]",
             check.not_none(
                 res.make_request(endpoint="/sources/list", data={"workspaceId": workspace_id})
             ),
         )
         existing_dests_raw = cast(
-            Dict[str, List[Dict[str, Any]]],
+            "dict[str, list[dict[str, Any]]]",
             check.not_none(
                 res.make_request(endpoint="/destinations/list", data={"workspaceId": workspace_id})
             ),
         )
 
-        existing_sources: Dict[str, InitializedAirbyteSource] = {
+        existing_sources: dict[str, InitializedAirbyteSource] = {
             source_json["name"]: InitializedAirbyteSource.from_api_json(source_json)
             for source_json in existing_sources_raw.get("sources", [])
         }
-        existing_dests: Dict[str, InitializedAirbyteDestination] = {
+        existing_dests: dict[str, InitializedAirbyteDestination] = {
             destination_json["name"]: InitializedAirbyteDestination.from_api_json(destination_json)
             for destination_json in existing_dests_raw.get("destinations", [])
         }
@@ -434,7 +424,7 @@ def reconcile_normalization(
     existing_basic_norm_op_id = None
     if existing_connection_id:
         operations = cast(
-            Dict[str, List[Dict[str, str]]],
+            "dict[str, list[dict[str, str]]]",
             check.not_none(
                 res.make_request(
                     endpoint="/operations/list",
@@ -462,7 +452,7 @@ def reconcile_normalization(
                 return existing_basic_norm_op_id
             else:
                 return cast(
-                    Dict[str, str],
+                    "dict[str, str]",
                     check.not_none(
                         res.make_request(
                             endpoint="/operations/create",
@@ -504,12 +494,12 @@ def reconcile_connections_pre(
     diff = ManagedElementDiff()
 
     existing_connections_raw = cast(
-        Dict[str, List[Dict[str, Any]]],
+        "dict[str, list[dict[str, Any]]]",
         check.not_none(
             res.make_request(endpoint="/connections/list", data={"workspaceId": workspace_id})
         ),
     )
-    existing_connections: Dict[str, InitializedAirbyteConnection] = {
+    existing_connections: dict[str, InitializedAirbyteConnection] = {
         connection_json["name"]: InitializedAirbyteConnection.from_api_json(
             connection_json, existing_sources, existing_destinations
         )
@@ -549,7 +539,7 @@ def reconcile_connections_post(
 ) -> None:
     """Creates new and modifies existing connections based on the config if dry_run is False."""
     existing_connections_raw = cast(
-        Dict[str, List[Dict[str, Any]]],
+        "dict[str, list[dict[str, Any]]]",
         check.not_none(
             res.make_request(endpoint="/connections/list", data={"workspaceId": workspace_id})
         ),
@@ -604,7 +594,7 @@ def reconcile_connections_post(
             connection_base_json["namespaceDefinition"] = config_conn.destination_namespace.value
         else:
             connection_base_json["namespaceDefinition"] = "customformat"
-            connection_base_json["namespaceFormat"] = cast(str, config_conn.destination_namespace)
+            connection_base_json["namespaceFormat"] = cast("str", config_conn.destination_namespace)
 
         if config_conn.prefix:
             connection_base_json["prefix"] = config_conn.prefix
@@ -636,7 +626,7 @@ def reconcile_connections_post(
                 )
 
 
-@experimental
+@beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
     """Reconciles Python-specified Airbyte connections with an Airbyte instance.
@@ -645,7 +635,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
     CLI will allow you to check the state of your Python-code-specified Airbyte connections
     against an Airbyte instance, and reconcile them if necessary.
 
-    This functionality is experimental and subject to change.
+    This functionality is in beta and subject to change.
     """
 
     @public
@@ -710,7 +700,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
     ):
         defined_conn_names = {conn.name for conn in connections}
@@ -725,9 +715,9 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
-        self._connections: List[AirbyteConnection] = list(connections)
+        self._connections: list[AirbyteConnection] = list(connections)
 
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         diff = reconcile_config(self._airbyte_instance, self._connections, dry_run=True)
         if isinstance(diff, ManagedElementDiff) and not diff.is_empty():
             raise ValueError(
@@ -739,14 +729,14 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         return super()._get_connections()
 
 
-@experimental
+@beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     connections: Iterable[AirbyteConnection],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
     connection_meta_to_group_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[str]]
     ] = None,
@@ -756,7 +746,7 @@ def load_assets_from_connections(
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
     connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
@@ -821,7 +811,7 @@ def load_assets_from_connections(
     check.invariant(
         not connection_meta_to_group_fn
         or not connection_to_group_fn
-        or connection_to_group_fn == _clean_name,
+        or connection_to_group_fn == clean_name,
         "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
     )
 

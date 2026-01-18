@@ -1,4 +1,4 @@
-import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
@@ -9,11 +9,14 @@ import {GraphNode} from '../Utils';
 export type FolderNodeGroupType = {
   id: string;
   level: number;
+  openAlways?: boolean;
   groupNode: {
     groupName: string;
     assets: GraphNode[];
-    repositoryName: string;
-    repositoryLocationName: string;
+
+    // remove when groups-outside-code-location feature flag is shipped
+    repositoryName?: string;
+    repositoryLocationName?: string;
   };
 };
 
@@ -30,6 +33,7 @@ export function nodePathKey(node: {path: string; id: string} | {id: string}) {
 }
 
 export function getDisplayName(node: {assetKey: AssetKeyInput}) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return node.assetKey.path[node.assetKey.path.length - 1]!;
 }
 
@@ -71,19 +75,19 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
-          <Dot style={{border: `2px solid ${Colors.accentGray()}`}} />
+          <Icon name="missing" color={Colors.accentGray()} />
         </Tooltip>
       );
     case 'failed':
       return (
         <Tooltip content="Failed" position="top">
-          <Dot style={{backgroundColor: Colors.accentRed()}} />
+          <Icon name="check_failed" color={Colors.accentRed()} />
         </Tooltip>
       );
     case 'inprogress':
       return <Spinner purpose="caption-text" />;
     case 'successful':
-      return <Dot style={{backgroundColor: Colors.accentGreen()}} />;
+      return <Icon name="run_success" color={Colors.accentGreen()} />;
   }
 }
 

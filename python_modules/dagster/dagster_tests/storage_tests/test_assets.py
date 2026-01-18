@@ -1,19 +1,17 @@
+import dagster as dg
 import pytest
-from dagster import AssetKey, AssetMaterialization, Output, job, op
 from dagster._core.definitions.events import parse_asset_key_string
-from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
 
 def test_structured_asset_key():
-    asset_parsed = AssetKey(parse_asset_key_string("(Hello)"))
+    asset_parsed = dg.AssetKey(parse_asset_key_string("(Hello)"))
     assert len(asset_parsed.path) == 1
     assert asset_parsed.path[0] == "Hello"
 
-    asset_structured = AssetKey(["(Hello)"])
+    asset_structured = dg.AssetKey(["(Hello)"])
     assert len(asset_structured.path) == 1
     assert asset_structured.path[0] == "(Hello)"
 
@@ -23,44 +21,44 @@ def test_parse_asset_key_string():
 
 
 def test_backcompat_asset_read():
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    src_dir = dg.file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
 
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
     def _validate_instance_assets(instance):
         assert instance.all_asset_keys() == [
-            AssetKey("b"),
-            AssetKey("c"),
-            AssetKey("d"),
-            AssetKey("e"),
-            AssetKey("f"),
+            dg.AssetKey("b"),
+            dg.AssetKey("c"),
+            dg.AssetKey("d"),
+            dg.AssetKey("e"),
+            dg.AssetKey("f"),
         ]
         assert instance.get_asset_keys() == [
-            AssetKey("b"),
-            AssetKey("c"),
-            AssetKey("d"),
-            AssetKey("e"),
-            AssetKey("f"),
+            dg.AssetKey("b"),
+            dg.AssetKey("c"),
+            dg.AssetKey("d"),
+            dg.AssetKey("e"),
+            dg.AssetKey("f"),
         ]
-        assert instance.get_asset_keys(prefix=["d"]) == [AssetKey("d")]
+        assert instance.get_asset_keys(prefix=["d"]) == [dg.AssetKey("d")]
         assert instance.get_asset_keys(limit=3) == [
-            AssetKey("b"),
-            AssetKey("c"),
-            AssetKey("d"),
+            dg.AssetKey("b"),
+            dg.AssetKey("c"),
+            dg.AssetKey("d"),
         ]
         assert instance.get_asset_keys(cursor='["b"]', limit=3) == [
-            AssetKey("c"),
-            AssetKey("d"),
-            AssetKey("e"),
+            dg.AssetKey("c"),
+            dg.AssetKey("d"),
+            dg.AssetKey("e"),
         ]
 
-    @op
+    @dg.op
     def materialize():
-        yield AssetMaterialization(AssetKey("e"))
-        yield AssetMaterialization(AssetKey("f"))
-        yield Output(None)
+        yield dg.AssetMaterialization(dg.AssetKey("e"))
+        yield dg.AssetMaterialization(dg.AssetKey("f"))
+        yield dg.Output(None)
 
-    @job
+    @dg.job
     def my_job():
         materialize()
 
@@ -83,28 +81,28 @@ def test_backcompat_asset_read():
     "snapshot", ["snapshot_0_11_0_asset_materialization", "snapshot_1_1_14_asset_materialization"]
 )
 def test_backcompat_asset_materializations(snapshot):
-    src_dir = file_relative_path(__file__, f"compat_tests/{snapshot}")
+    src_dir = dg.file_relative_path(__file__, f"compat_tests/{snapshot}")
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
 
-    @op
+    @dg.op
     def materialize():
-        yield AssetMaterialization(AssetKey("c"))
-        yield Output(None)
+        yield dg.AssetMaterialization(dg.AssetKey("c"))
+        yield dg.Output(None)
 
-    @job
+    @dg.job
     def my_job():
         materialize()
 
     def _validate_materialization(asset_key, event):
-        assert isinstance(event, EventLogEntry)
+        assert isinstance(event, dg.EventLogEntry)
         assert event.dagster_event
         assert event.dagster_event.is_step_materialization
         assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
 
-    a = AssetKey("a")
-    b = AssetKey("b")
-    c = AssetKey("c")
+    a = dg.AssetKey("a")
+    b = dg.AssetKey("b")
+    c = dg.AssetKey("c")
 
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
@@ -151,17 +149,17 @@ def test_backcompat_asset_materializations(snapshot):
     "snapshot", ["snapshot_0_11_0_asset_materialization", "snapshot_1_1_14_asset_materialization"]
 )
 def test_backcompat_get_asset_records(snapshot):
-    src_dir = file_relative_path(__file__, f"compat_tests/{snapshot}")
+    src_dir = dg.file_relative_path(__file__, f"compat_tests/{snapshot}")
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
 
     def _validate_materialization(asset_key, event):
-        assert isinstance(event, EventLogEntry)
+        assert isinstance(event, dg.EventLogEntry)
         assert event.dagster_event
         assert event.dagster_event.is_step_materialization
         assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
 
-    b = AssetKey("b")
+    b = dg.AssetKey("b")
 
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
@@ -182,57 +180,57 @@ def test_backcompat_get_asset_records(snapshot):
 
 
 def test_asset_lazy_migration():
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    src_dir = dg.file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
 
-    @op
+    @dg.op
     def materialize():
-        yield AssetMaterialization(AssetKey("a"))
-        yield AssetMaterialization(AssetKey("b"))
-        yield AssetMaterialization(AssetKey("c"))
-        yield AssetMaterialization(AssetKey("d"))
-        yield AssetMaterialization(AssetKey("e"))
-        yield AssetMaterialization(AssetKey("f"))
-        yield Output(None)
+        yield dg.AssetMaterialization(dg.AssetKey("a"))
+        yield dg.AssetMaterialization(dg.AssetKey("b"))
+        yield dg.AssetMaterialization(dg.AssetKey("c"))
+        yield dg.AssetMaterialization(dg.AssetKey("d"))
+        yield dg.AssetMaterialization(dg.AssetKey("e"))
+        yield dg.AssetMaterialization(dg.AssetKey("f"))
+        yield dg.Output(None)
 
-    @job
+    @dg.job
     def my_job():
         materialize()
 
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             storage = instance.event_log_storage
-            assert not storage.has_asset_key_index_cols()
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+            assert not storage.has_asset_key_index_cols()  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
 
             # run the schema migration without reindexing the asset keys
             storage.upgrade()
-            assert storage.has_asset_key_index_cols()
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+            assert storage.has_asset_key_index_cols()  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
 
             # fetch all asset keys
             instance.all_asset_keys()
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
 
             # wipe a, b in order to populate wipe_timestamp
-            storage.wipe_asset(AssetKey("a"))
-            storage.wipe_asset(AssetKey("b"))
+            storage.wipe_asset(dg.AssetKey("a"))
+            storage.wipe_asset(dg.AssetKey("b"))
 
             # materialize all the assets to populate materialization_timestamp
             my_job.execute_in_process(instance=instance)
 
             # still should not be migrated (on write)
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
 
             # fetching partial results should not trigger migration
             instance.get_asset_keys(prefix=["b"])
-            instance.get_asset_keys(cursor=str(AssetKey("b")))
-            instance.get_latest_materialization_events(asset_keys=[AssetKey("b")])
+            instance.get_asset_keys(cursor=str(dg.AssetKey("b")))
+            instance.get_latest_materialization_events(asset_keys=[dg.AssetKey("b")])
 
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
 
             # on read, we should see that all the data has already been migrated and we can now mark
             # the asset key index as migrated
             instance.all_asset_keys()
-            assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+            assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]

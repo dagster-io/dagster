@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Colors,
-  Group,
   Heading,
   Icon,
   MiddleTruncate,
@@ -30,11 +29,15 @@ import {
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
 import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
-import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
+import {
+  ASSET_FAILED_TO_MATERIALIZE_FRAGMENT,
+  ASSET_OBSERVATION_FRAGMENT,
+  ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT,
+} from './useRecentAssetEvents';
 import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
-import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -53,28 +56,28 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
 
-  const {materializations, observations, hasLineage, latestRunForPartition} = useMemo(() => {
-    if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+  const {allEvents, hasLineage, latestRunForPartition, latestMaterialization} = useMemo(() => {
+    if (result.data?.assetOrError?.__typename !== 'Asset') {
       return {
-        materializations: [],
-        observations: [],
+        allEvents: [],
         hasLineage: false,
         latestRunForPartition: null,
+        latestMaterialization: null,
       };
     }
 
+    const events = [...(result.data.assetOrError.assetEventHistory?.results || [])].sort(
+      (a, b) => Number(b.timestamp) - Number(a.timestamp),
+    );
+
+    const materializations = events.filter((e) => e.__typename === 'MaterializationEvent');
+    const hasLineage = materializations.some((m) => m.assetLineage.length > 0);
+
     return {
-      stepKey: stepKeyForAsset(result.data.assetNodeOrError),
-      latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
-      materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
-        (a, b) => Number(b.timestamp) - Number(a.timestamp),
-      ),
-      observations: [...result.data.assetNodeOrError.assetObservations].sort(
-        (a, b) => Number(b.timestamp) - Number(a.timestamp),
-      ),
-      hasLineage: result.data.assetNodeOrError.assetMaterializations.some(
-        (m) => m.assetLineage.length > 0,
-      ),
+      latestRunForPartition: result.data.assetOrError.definition?.latestRunForPartition ?? null,
+      allEvents: events,
+      hasLineage,
+      latestMaterialization: materializations[0] ?? null,
     };
   }, [result.data]);
 
@@ -91,8 +94,6 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     };
   }, [stale.data]);
 
-  const latest = materializations[0];
-
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
@@ -106,12 +107,10 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
       staleCauses={staleCauses}
       assetKey={props.assetKey}
       group={{
-        latest: latest || null,
-        timestamp: latest?.timestamp,
+        latest: latestMaterialization,
+        timestamp: latestMaterialization?.timestamp,
         partition: props.partitionKey,
-        all: [...materializations, ...observations].sort(
-          (a, b) => Number(b.timestamp) - Number(a.timestamp),
-        ),
+        all: allEvents,
       }}
     />
   );
@@ -119,24 +118,35 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
 
 export const ASSET_PARTITION_DETAIL_QUERY = gql`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
+    assetOrError(assetKey: $assetKey) {
+      ... on Asset {
         id
-        opNames
-        latestRunForPartition(partition: $partitionKey) {
+        definition {
           id
-          ...AssetPartitionLatestRunFragment
-        }
-        assetMaterializations(partitions: [$partitionKey]) {
-          ... on MaterializationEvent {
-            runId
-            ...AssetMaterializationFragment
+          opNames
+          latestRunForPartition(partition: $partitionKey) {
+            id
+            ...AssetPartitionLatestRunFragment
           }
         }
-        assetObservations(partitions: [$partitionKey]) {
-          ... on ObservationEvent {
-            runId
-            ...AssetObservationFragment
+        assetEventHistory(
+          partitions: [$partitionKey]
+          limit: 1000
+          eventTypeSelectors: [MATERIALIZATION, OBSERVATION, FAILED_TO_MATERIALIZE]
+        ) {
+          results {
+            ... on MaterializationEvent {
+              runId
+              ...AssetSuccessfulMaterializationFragment
+            }
+            ... on ObservationEvent {
+              runId
+              ...AssetObservationFragment
+            }
+            ... on FailedToMaterializeEvent {
+              runId
+              ...AssetFailedToMaterializeFragment
+            }
           }
         }
       }
@@ -148,8 +158,9 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
     endTime
   }
 
-  ${ASSET_MATERIALIZATION_FRAGMENT}
+  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
   ${ASSET_OBSERVATION_FRAGMENT}
+  ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
 `;
 
 export const ASSET_PARTITION_STALE_QUERY = gql`
@@ -208,10 +219,10 @@ export const AssetPartitionDetail = ({
     currentRun?.status === RunStatus.STARTED
       ? 'that targets this partition has started .'
       : currentRun?.status === RunStatus.STARTING
-      ? 'that targets this partition is starting.'
-      : currentRun?.status === RunStatus.QUEUED
-      ? 'that targets this partition is queued.'
-      : undefined;
+        ? 'that targets this partition is starting.'
+        : currentRun?.status === RunStatus.QUEUED
+          ? 'that targets this partition is queued.'
+          : undefined;
 
   const repositoryOrigin = latestEventRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -266,14 +277,14 @@ export const AssetPartitionDetail = ({
         )}
         <div style={{flex: 1}} />
       </Box>
-      {currentRun?.status === RunStatus.FAILURE && (
+      {currentRun?.status === RunStatus.FAILURE || currentRun?.status === RunStatus.CANCELED ? (
         <FailedRunSinceMaterializationBanner
           run={currentRun}
           stepKey={stepKey}
           padding={{horizontal: 0, vertical: 16}}
           border="bottom"
         />
-      )}
+      ) : null}
       {currentRun && currentRunStatusMessage && (
         <Alert
           intent="info"
@@ -286,7 +297,6 @@ export const AssetPartitionDetail = ({
           }
         />
       )}
-
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
         border="bottom"
@@ -343,10 +353,10 @@ export const AssetPartitionDetail = ({
                   isJob={isThisThingAJob(repo, latestEventRun.pipelineName)}
                 />
               </Box>
-              <Group direction="row" spacing={8} alignItems="center">
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <Icon name="linear_scale" color={Colors.accentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
-              </Group>
+              </Box>
             </Box>
           ) : (
             'None'

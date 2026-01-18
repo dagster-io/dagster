@@ -1,5 +1,5 @@
 extends: existence
-message: "Use only one space between words and sentences (not two)."
+message: 'Use only one space between words and sentences (not two).'
 link: 'https://developers.google.com/style/sentence-spacing'
 level: error
 nonword: true

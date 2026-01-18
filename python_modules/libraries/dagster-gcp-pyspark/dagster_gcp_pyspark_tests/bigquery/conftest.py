@@ -25,7 +25,7 @@ def gcs_jar_path(tmp_path_factory):
 @pytest.fixture(scope="module")
 def spark(gcs_jar_path):
     spark = (
-        SparkSession.builder.config(
+        SparkSession.builder.config(  # pyright: ignore[reportAttributeAccessIssue]
             key="spark.jars.packages",
             value=BIGQUERY_JARS,
         )

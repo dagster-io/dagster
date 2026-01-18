@@ -3,7 +3,8 @@ import os
 from datetime import datetime
 
 import pytest
-from dagster import InputContext, OutputContext, TimeWindow, asset, materialize
+from dagster import InputContext, OutputContext, asset, materialize
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from dagster_gcp.bigquery.io_manager import (
     BigQueryClient,
@@ -222,7 +223,7 @@ def test_authenticate_via_config():
         passed = False
 
         try:
-            with open(old_gcp_creds_file, "r") as f:
+            with open(old_gcp_creds_file) as f:
                 gcp_creds = f.read()
 
             bq_io_manager = build_bigquery_io_manager([FakeHandler()]).configured(

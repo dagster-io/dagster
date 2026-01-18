@@ -9,20 +9,32 @@ query ResourceQuery($selector: PipelineSelector!) {
       modes {
         name
         resources {
+          ...ResourceInfo
+        }
+      }
+    }
+  }
+  resourcesOrError(pipelineSelector: $selector) {
+    __typename
+    ... on ResourceConnection {
+      resources {
+        ...ResourceInfo
+      }
+    }
+  }
+}
+
+fragment ResourceInfo on Resource {
+  name
+  description
+  configField {
+    configType {
+      key
+      ... on CompositeConfigType {
+        fields {
           name
-          description
-          configField {
-            configType {
-              key
-              ... on CompositeConfigType {
-                fields {
-                  name
-                  configType {
-                    key
-                  }
-                }
-              }
-            }
+          configType {
+            key
           }
         }
       }
@@ -62,9 +74,12 @@ def test_mode_fetch_resources(graphql_context: WorkspaceRequestContext, snapshot
     assert not result.errors
     assert result.data
     assert result.data["pipelineOrError"]
-    assert result.data["pipelineOrError"]["modes"]
-    for mode_data in result.data["pipelineOrError"]["modes"]:
-        assert mode_data["resources"]
+    assert len(result.data["pipelineOrError"]["modes"]) == 1
+    assert result.data["pipelineOrError"]["modes"][0]["resources"]
+    assert (
+        result.data["pipelineOrError"]["modes"][0]["resources"]
+        == result.data["resourcesOrError"]["resources"]
+    )
 
     snapshot.assert_match(result.data)
 

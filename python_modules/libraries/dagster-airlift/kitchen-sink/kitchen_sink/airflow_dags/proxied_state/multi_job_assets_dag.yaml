@@ -1,0 +1,3 @@
+tasks:
+  - id: print_task
+    proxied: True

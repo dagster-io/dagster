@@ -4,11 +4,11 @@ import uniq from 'lodash/uniq';
 import {useMemo, useState} from 'react';
 
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
-import {AssetMaterializationFragment} from './types/useRecentAssetEvents.types';
+import {AssetEventFragment} from './useRecentAssetEvents';
 
 type GraphedEvent = {
   timestamp?: string;
-  metadataEntries: AssetMaterializationFragment['metadataEntries'];
+  metadataEntries: AssetEventFragment['metadataEntries'];
 };
 
 type GraphedGroup = {
@@ -65,6 +65,7 @@ export const AssetMaterializationGraphs = (props: {
                 <AssetValueGraph
                   label={label}
                   width="100%"
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   data={graphDataByMetadataLabel[label]!}
                   xHover={xHover}
                   onHoverX={(x) => x !== xHover && setXHover(x)}

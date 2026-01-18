@@ -4,7 +4,7 @@ import {PipelineExplorerSnapshotRoot} from 'shared/pipelines/PipelineExplorerRoo
 import {SnapshotNav} from './SnapshotNav';
 import {Route} from '../app/Route';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {PipelineRunsRoot} from '../pipelines/PipelineRunsRoot';
+import {PipelineRunsFeedRoot} from '../pipelines/PipelineRunsFeedRoot';
 
 export const SnapshotRoot = () => {
   const {pipelinePath, tab} = useParams<{
@@ -26,7 +26,7 @@ export const SnapshotRoot = () => {
       <SnapshotNav activeTab={tab} explorerPath={explorerPath} />
       <Switch>
         <Route path="/snapshots/:pipelinePath/runs">
-          <PipelineRunsRoot />
+          <PipelineRunsFeedRoot />
         </Route>
         <Route path="/snapshots/(/?.*)">
           <PipelineExplorerSnapshotRoot />

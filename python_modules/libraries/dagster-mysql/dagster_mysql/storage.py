@@ -50,7 +50,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
         return mysql_config()
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "DagsterMySQLStorage":
         return DagsterMySQLStorage(

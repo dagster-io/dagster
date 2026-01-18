@@ -1,22 +1,21 @@
 import asyncio
 import inspect
 from abc import abstractmethod
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
-
-from fsspec import AbstractFileSystem
-from fsspec.implementations.local import LocalFileSystem
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster import (
     InputContext,
     MetadataValue,
-    MultiPartitionKey,
     OutputContext,
     _check as check,
 )
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.storage.io_manager import IOManager
 
 if TYPE_CHECKING:
+    from fsspec import AbstractFileSystem
     from upath import UPath
 
 
@@ -90,13 +89,15 @@ class UPathIOManager(IOManager):
             return objs
 
     @property
-    def fs(self) -> AbstractFileSystem:
+    def fs(self) -> "AbstractFileSystem":
         """Utility function to get the IOManager filesystem.
 
         Returns:
             AbstractFileSystem: fsspec filesystem.
 
         """
+        # Deferred for import perf
+        from fsspec.implementations.local import LocalFileSystem
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
@@ -107,7 +108,7 @@ class UPathIOManager(IOManager):
             raise ValueError(f"Unsupported base_path type: {type(self._base_path)}")
 
     @property
-    def storage_options(self) -> Dict[str, Any]:
+    def storage_options(self) -> dict[str, Any]:
         """Utility function to get the fsspec storage_options which are often consumed by various I/O functions.
 
         Returns:
@@ -116,7 +117,7 @@ class UPathIOManager(IOManager):
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
-            return self._base_path._kwargs.copy()  # noqa
+            return self._base_path._kwargs.copy()  # noqa  # pyright: ignore[reportAttributeAccessIssue]
         elif isinstance(self._base_path, Path):
             return {}
         else:
@@ -126,7 +127,7 @@ class UPathIOManager(IOManager):
         self,
         context: OutputContext,
         obj: Any,
-    ) -> Dict[str, MetadataValue]:
+    ) -> dict[str, MetadataValue]:
         """Child classes should override this method to add custom metadata to the outputs."""
         return {}
 
@@ -217,7 +218,7 @@ class UPathIOManager(IOManager):
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
-    ) -> Dict[str, "UPath"]:
+    ) -> dict[str, "UPath"]:
         """Returns a dict of partition_keys into I/O paths for a given context."""
         if not context.has_asset_partitions:
             raise TypeError(
@@ -382,7 +383,7 @@ class UPathIOManager(IOManager):
 
             return results_without_errors
 
-        awaited_objects = asyncio.get_event_loop().run_until_complete(collect())
+        awaited_objects = asyncio.run(collect())
 
         return {
             partition_key: awaited_object
@@ -390,7 +391,7 @@ class UPathIOManager(IOManager):
             if awaited_object is not None
         }
 
-    def _load_partitions(self, context: InputContext) -> Dict[str, Any]:
+    def _load_partitions(self, context: InputContext) -> dict[str, Any]:
         # load multiple partitions
         if not inspect.iscoroutinefunction(self.load_from_path):
             return self.load_partitions(context)
@@ -398,7 +399,7 @@ class UPathIOManager(IOManager):
             # load_from_path returns a coroutine, so we need to await the results
             return self.load_partitions_async(context)
 
-    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+    def load_input(self, context: InputContext) -> Union[Any, dict[str, Any]]:
         # If no asset key, we are dealing with an op output which is always non-partitioned
         if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)
@@ -434,7 +435,8 @@ class UPathIOManager(IOManager):
                 f"The current IO manager {type(self)} does not support persisting an output"
                 " associated with multiple partitions. This error is likely occurring because a"
                 " backfill was launched using the 'single run' option. Instead, launch the"
-                " backfill with the 'multiple runs' option.",
+                " backfill with a multi-run backfill policy. You can also avoid this error by"
+                " opting out of IO managers entirely by setting the return type of your asset/op to `None`.",
             )
 
             path = next(iter(paths.values()))
@@ -462,7 +464,7 @@ def is_dict_type(type_obj) -> bool:
     if type_obj == dict:
         return True
 
-    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, Dict, Mapping):
+    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, dict, Mapping):
         return True
 
     return False

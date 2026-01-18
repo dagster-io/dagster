@@ -47,7 +47,7 @@ def ints_dynamic_partitions_job_sensor():
 
 @sensor(asset_selection=AssetSelection.assets(upstream_daily_partitioned_asset))
 def upstream_daily_partitioned_asset_sensor(context):
-    latest_partition = upstream_daily_partitioned_asset.partitions_def.get_partition_keys()[-1]
+    latest_partition = upstream_daily_partitioned_asset.partitions_def.get_partition_keys()[-1]  # pyright: ignore[reportOptionalMemberAccess]
     yield RunRequest(partition_key=latest_partition)
     yield define_asset_job(
         "upstream_daily_partitioned_asset_job",

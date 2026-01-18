@@ -1,17 +1,7 @@
 import datetime
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster import (
     AssetKey,
@@ -26,8 +16,10 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
+from dagster._utils.warnings import disable_dagster_warnings
 
-from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
+from dagster_graphql.implementation.external import ensure_valid_config, get_remote_job_or_raise
+from dagster_graphql.implementation.utils import get_query_limit_with_default
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
@@ -38,7 +30,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
     from dagster_graphql.schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
-    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection, GrapheneRunsFeedView
     from dagster_graphql.schema.util import ResolveInfo
 
 
@@ -72,7 +64,7 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
 
 def get_run_tags(
     graphene_info: "ResolveInfo",
-    tag_keys: List[str],
+    tag_keys: list[str],
     value_prefix: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneRunTags":
@@ -165,7 +157,7 @@ IN_PROGRESS_STATUSES = [
 
 
 def _get_latest_planned_run_id(instance: DagsterInstance, asset_record: AssetRecord):
-    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+    if instance.event_log_storage.asset_records_have_last_planned_and_failed_materializations:
         return asset_record.asset_entry.last_planned_materialization_run_id
     else:
         planned_info = instance.get_latest_planned_materialization_info(
@@ -175,7 +167,7 @@ def _get_latest_planned_run_id(instance: DagsterInstance, asset_record: AssetRec
 
 
 def get_assets_latest_info(
-    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+    graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
     from dagster_graphql.schema.logs.events import GrapheneMaterializationEvent
@@ -183,24 +175,20 @@ def get_assets_latest_info(
 
     instance = graphene_info.context.instance
 
-    asset_keys = list(step_keys_by_asset.keys())
-
     if not asset_keys:
         return []
 
-    asset_nodes = {
-        asset_key: graphene_info.context.get_asset_node(asset_key) for asset_key in asset_keys
-    }
-
-    # asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
-
-    asset_records = AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
+    asset_records = [
+        record
+        for record in AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
+        if record is not None
+    ]
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: (
             GrapheneMaterializationEvent(event=asset_record.asset_entry.last_materialization)
             if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            and asset_record.asset_entry.asset_key in asset_keys
             else None
         )
         for asset_record in asset_records
@@ -209,11 +197,11 @@ def get_assets_latest_info(
     # Build a lookup table of asset keys to last materialization run IDs. We will filter these
     # run IDs out of the "in progress" run lists that are generated below since they have already
     # emitted an output for the run.
-    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]] = {
+    latest_materialization_run_id_by_asset: dict[AssetKey, Optional[str]] = {
         asset_record.asset_entry.asset_key: (
             asset_record.asset_entry.last_materialization.run_id
             if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            and asset_record.asset_entry.asset_key in asset_keys
             else None
         )
         for asset_record in asset_records
@@ -252,16 +240,8 @@ def get_assets_latest_info(
     from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
     latest_infos = []
-    for asset_key in step_keys_by_asset.keys():
-        asset_node = asset_nodes[asset_key]
-        if asset_node:
-            node_id = get_unique_asset_id(
-                asset_key,
-                asset_node.priority_repository_selector.repository_name,
-                asset_node.priority_repository_selector.location_name,
-            )
-        else:
-            node_id = get_unique_asset_id(asset_key)
+    for asset_key in asset_keys:
+        node_id = get_unique_asset_id(asset_key)
 
         latest_infos.append(
             GrapheneAssetLatestInfo(
@@ -286,9 +266,9 @@ def get_assets_latest_info(
 
 def _get_in_progress_runs_for_assets(
     run_records_by_run_id: Mapping[str, RunRecord],
-    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]],
-    latest_run_ids_by_asset: Dict[AssetKey, str],
-) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
+    latest_materialization_run_id_by_asset: dict[AssetKey, Optional[str]],
+    latest_run_ids_by_asset: dict[AssetKey, str],
+) -> tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
     in_progress_run_ids_by_asset = defaultdict(set)
     unstarted_run_ids_by_asset = defaultdict(set)
 
@@ -317,7 +297,7 @@ def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) 
     return graphene_info.context.instance.get_runs_count(filters)
 
 
-def validate_pipeline_config(
+async def validate_pipeline_config(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
     run_config: Union[str, Mapping[str, object]],
@@ -326,12 +306,12 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
+    remote_job = await get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=remote_job.name)
 
 
-def get_execution_plan(
+async def get_execution_plan(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
     run_config: Mapping[str, Any],
@@ -340,11 +320,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
+    remote_job = await get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
     return GrapheneExecutionPlan(
-        graphene_info.context.get_external_execution_plan(
-            external_job=external_job,
+        graphene_info.context.get_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
@@ -375,7 +355,7 @@ def get_logs_for_run(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Union["GrapheneRunNotFoundError", "GrapheneEventConnection"]:
-    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.implementation.events import get_graphene_events_from_records_connection
     from dagster_graphql.schema.errors import GrapheneRunNotFoundError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection
 
@@ -384,9 +364,14 @@ def get_logs_for_run(
     if not run:
         return GrapheneRunNotFoundError(run_id)
 
+    default_limit = graphene_info.context.records_for_run_default_limit
+    if default_limit:
+        limit = get_query_limit_with_default(limit, default_limit)
+
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
+
     return GrapheneEventConnection(
-        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
+        events=get_graphene_events_from_records_connection(instance, conn, run.job_name),
         cursor=conn.cursor,
         hasMore=conn.has_more,
     )
@@ -496,7 +481,7 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
         _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
     )
     backfill_ids = None
-    if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
+    if filters.tags.get(BACKFILL_ID_TAG) is not None:
         backfill_ids = filters.tags[BACKFILL_ID_TAG]
         if isinstance(backfill_ids, str):
             backfill_ids = [backfill_ids]
@@ -539,6 +524,7 @@ def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     limit: int,
     filters: Optional[RunsFilter],
+    view: "GrapheneRunsFeedView",
     cursor: Optional[str] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
@@ -550,10 +536,11 @@ def get_runs_feed_entries(
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
         filters (Optional[RunsFilter]): Filters to apply to the runs. If None, no filters are applied.
+        view (RunsFeedView): If True, include runs that are part of a backfill in the results and exclude backfill objects
     """
     from dagster_graphql.schema.backfill import GraphenePartitionBackfill
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
-    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection, GrapheneRunsFeedView
 
     check.opt_str_param(cursor, "cursor")
     check.int_param(limit, "limit")
@@ -561,9 +548,9 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
-    exclude_subruns = (
-        filters.exclude_subruns if filters and filters.exclude_subruns is not None else True
-    )
+    # In the default "ROOTS" run feed, we exclude runs that are part of backfills. If
+    # the user chooses the "RUNS" view, we want to flatten backfills into their runs.
+    exclude_subruns = view == GrapheneRunsFeedView.ROOTS
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1
@@ -573,19 +560,25 @@ def get_runs_feed_entries(
         datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
     )
 
-    should_fetch_backfills = exclude_subruns and (
-        _filters_apply_to_backfills(filters) if filters else True
-    )
+    should_fetch_backfills = (
+        view == GrapheneRunsFeedView.ROOTS or view == GrapheneRunsFeedView.BACKFILLS
+    ) and (_filters_apply_to_backfills(filters) if filters else True)
     if filters:
-        run_filters = copy(filters, exclude_subruns=exclude_subruns)
-        run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
+        check.invariant(
+            filters.exclude_subruns is None,
+            "filters.exclude_subruns must be None when fetching the runs feed. Use include_runs_from_backfills instead.",
+        )
+        with disable_dagster_warnings():
+            run_filters = copy(filters, exclude_subruns=exclude_subruns)
+            run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(
-            created_before=created_before_cursor, exclude_subruns=exclude_subruns
-        )
+        with disable_dagster_warnings():
+            run_filters = RunsFilter(
+                created_before=created_before_cursor, exclude_subruns=exclude_subruns
+            )
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
@@ -600,12 +593,20 @@ def get_runs_feed_entries(
     else:
         backfills = []
 
-    runs = [
-        GrapheneRun(run)
-        for run in instance.get_run_records(
-            limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters
-        )
-    ]
+    # if we are not showing runs within backfills and the backfill_id filter is set, we know
+    # there will be no results, so we can skip fetching runs
+    should_fetch_runs = (
+        view == GrapheneRunsFeedView.ROOTS or view == GrapheneRunsFeedView.RUNS
+    ) and not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
+    if should_fetch_runs:
+        runs = [
+            GrapheneRun(run)
+            for run in instance.get_run_records(
+                limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters
+            )
+        ]
+    else:
+        runs = []
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
     # to fetch on the next call since we will return limit results for this call. Additionally,
@@ -630,13 +631,13 @@ def get_runs_feed_entries(
 
     new_run_cursor = None
     new_backfill_cursor = None
-    for run in reversed(to_return):
+    for entry in reversed(to_return):
         if new_run_cursor is not None and new_backfill_cursor is not None:
             break
-        if new_backfill_cursor is None and isinstance(run, GraphenePartitionBackfill):
-            new_backfill_cursor = run.id
-        if new_run_cursor is None and isinstance(run, GrapheneRun):
-            new_run_cursor = run.runId
+        if new_backfill_cursor is None and isinstance(entry, GraphenePartitionBackfill):
+            new_backfill_cursor = entry.id
+        if new_run_cursor is None and isinstance(entry, GrapheneRun):
+            new_run_cursor = entry.runId
 
     new_timestamp = to_return[-1].creation_timestamp if to_return else None
 
@@ -655,15 +656,33 @@ def get_runs_feed_entries(
     )
 
 
-def get_runs_feed_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
-    should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
-    run_filters = (
-        copy(filters, exclude_subruns=True) if filters else RunsFilter(exclude_subruns=True)
-    )
+def get_runs_feed_count(
+    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], view: "GrapheneRunsFeedView"
+) -> int:
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedView
+
+    # In the default "ROOTS" run feed, we exclude runs that are part of backfills. If
+    # the user chooses the "RUNS" view, we want to flatten backfills into their runs.
+    exclude_subruns = view == GrapheneRunsFeedView.ROOTS
+    should_fetch_runs = view == GrapheneRunsFeedView.RUNS or view == GrapheneRunsFeedView.ROOTS
+    should_fetch_backfills = (
+        view == GrapheneRunsFeedView.BACKFILLS or view == GrapheneRunsFeedView.ROOTS
+    ) and (_filters_apply_to_backfills(filters) if filters else True)
+    with disable_dagster_warnings():
+        run_filters = (
+            copy(filters, exclude_subruns=exclude_subruns)
+            if filters
+            else RunsFilter(exclude_subruns=exclude_subruns)
+        )
     if should_fetch_backfills:
         backfill_filters = _bulk_action_filters_from_run_filters(run_filters)
         backfills_count = graphene_info.context.instance.get_backfills_count(backfill_filters)
     else:
         backfills_count = 0
 
-    return graphene_info.context.instance.get_runs_count(run_filters) + backfills_count
+    if should_fetch_runs:
+        runs_count = graphene_info.context.instance.get_runs_count(run_filters)
+    else:
+        runs_count = 0
+
+    return runs_count + backfills_count

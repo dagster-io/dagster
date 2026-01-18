@@ -1,25 +1,17 @@
 from abc import abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
     from dagster._core.definitions.input import InputDefinition
@@ -46,12 +38,12 @@ class NodeDefinition(NamedConfigurableDefinition):
         input_defs: Sequence["InputDefinition"],
         output_defs: Sequence["OutputDefinition"],
         description: Optional[str] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         positional_inputs: Optional[Sequence[str]] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._tags = normalize_tags(tags).tags
+        self._tags = normalize_tags(tags)
         self._input_defs = input_defs
         self._input_dict = {input_def.name: input_def for input_def in input_defs}
         check.invariant(len(self._input_defs) == len(self._input_dict), "Duplicate input def names")
@@ -159,7 +151,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         self,
         output_name: str,
         handle: Optional["NodeHandle"],
-    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]: ...
+    ) -> tuple["OutputDefinition", Optional["NodeHandle"]]: ...
 
     @abstractmethod
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition": ...
@@ -202,7 +194,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         return PendingNodeInvocation(
             node_def=self,
             given_alias=given_alias,
-            tags=normalize_tags(tags).tags if tags else None,
+            tags=normalize_tags(tags) if tags else None,
             hook_defs=hook_defs,
             retry_policy=retry_policy,
         )
@@ -240,3 +232,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def get_op_output_handles(
         self, parent: Optional["NodeHandle"]
     ) -> AbstractSet["NodeOutputHandle"]: ...
+
+    @property
+    @abstractmethod
+    def pools(self) -> Set[str]: ...

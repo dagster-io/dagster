@@ -1,32 +1,24 @@
 import logging
 import time
 from collections import defaultdict
-from typing import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 
-from dagster import DagsterEvent, execute_job, job, op
-from dagster._core.definitions.events import DynamicOutput
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
+import dagster as dg
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.output import DynamicOut
-from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.events import DagsterEventType
-from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._core.test_utils import instance_for_test
-from dagster._loggers import colored_console_logger
-from dagster._serdes import deserialize_value
+from dagster._core.events.log import construct_event_logger
 
 
 def get_loggers(event_callback):
     return {
         "callback": construct_event_logger(event_callback),
-        "console": colored_console_logger,
+        "console": dg.colored_console_logger,
     }
 
 
 def single_dagster_event(
-    events: Mapping[DagsterEventType, Sequence[DagsterEvent]], event_type: DagsterEventType
-) -> DagsterEvent:
+    events: Mapping[dg.DagsterEventType, Sequence[dg.DagsterEvent]], event_type: DagsterEventType
+) -> dg.DagsterEvent:
     assert event_type in events
     return events[event_type][0]
 
@@ -34,11 +26,11 @@ def single_dagster_event(
 def define_event_logging_job(
     name: str,
     node_defs: Sequence[NodeDefinition],
-    event_callback: Callable[[EventLogEntry], None],
+    event_callback: Callable[[dg.EventLogEntry], None],
     deps=None,
-) -> JobDefinition:
-    return JobDefinition(
-        graph_def=GraphDefinition(
+) -> dg.JobDefinition:
+    return dg.JobDefinition(
+        graph_def=dg.GraphDefinition(
             name=name,
             node_defs=node_defs,
             dependencies=deps,
@@ -51,12 +43,12 @@ def test_empty_job():
     events = defaultdict(list)
 
     def _event_callback(record):
-        assert isinstance(record, EventLogEntry)
+        assert isinstance(record, dg.EventLogEntry)
         if record.is_dagster_event:
-            events[record.dagster_event.event_type].append(record)
+            events[record.dagster_event.event_type].append(record)  # pyright: ignore[reportOptionalMemberAccess]
 
-    job_def = JobDefinition(
-        graph_def=GraphDefinition(
+    job_def = dg.JobDefinition(
+        graph_def=dg.GraphDefinition(
             name="empty_job",
             node_defs=[],
         ),
@@ -74,7 +66,7 @@ def test_empty_job():
 def test_single_op_job_success():
     events = defaultdict(list)
 
-    @op
+    @dg.op
     def op_one():
         return 1
 
@@ -82,8 +74,8 @@ def test_single_op_job_success():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    job_def = JobDefinition(
-        graph_def=GraphDefinition(
+    job_def = dg.JobDefinition(
+        graph_def=dg.GraphDefinition(
             name="single_op_job",
             node_defs=[op_one],
         ),
@@ -97,28 +89,28 @@ def test_single_op_job_success():
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.job_name == "single_op_job"
-    assert start_event.dagster_event.node_name == "op_one"
+    assert start_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
 
     # persisted logging tags contain pipeline_name but not pipeline_tags
-    assert start_event.dagster_event.logging_tags["job_name"] == "single_op_job"
-    assert "pipeline_tags" not in start_event.dagster_event.logging_tags
+    assert start_event.dagster_event.logging_tags["job_name"] == "single_op_job"  # pyright: ignore[reportAttributeAccessIssue]
+    assert "pipeline_tags" not in start_event.dagster_event.logging_tags  # pyright: ignore[reportAttributeAccessIssue]
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
     assert output_event
-    assert output_event.dagster_event.step_output_data.output_name == "result"
+    assert output_event.dagster_event.step_output_data.output_name == "result"  # pyright: ignore[reportAttributeAccessIssue]
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
     assert success_event.job_name == "single_op_job"
-    assert success_event.dagster_event.node_name == "op_one"
+    assert success_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)
-    assert success_event.dagster_event.step_success_data.duration_ms > 0.0
+    assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)  # pyright: ignore[reportAttributeAccessIssue]
+    assert success_event.dagster_event.step_success_data.duration_ms > 0.0  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_single_op_job_failure():
     events = defaultdict(list)
 
-    @op
+    @dg.op
     def op_one():
         raise Exception("nope")
 
@@ -126,8 +118,8 @@ def test_single_op_job_failure():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    single_op_job = JobDefinition(
-        graph_def=GraphDefinition(
+    single_op_job = dg.JobDefinition(
+        graph_def=dg.GraphDefinition(
             name="single_op_job",
             node_defs=[op_one],
         ),
@@ -140,22 +132,22 @@ def test_single_op_job_failure():
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.job_name == "single_op_job"
 
-    assert start_event.dagster_event.node_name == "op_one"
-    assert start_event.level == logging.DEBUG
+    assert start_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
+    assert start_event.level == logging.DEBUG  # pyright: ignore[reportAttributeAccessIssue]
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
     assert failure_event.job_name == "single_op_job"
 
-    assert failure_event.dagster_event.node_name == "op_one"
-    assert failure_event.level == logging.ERROR
+    assert failure_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
+    assert failure_event.level == logging.ERROR  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def define_simple():
-    @op
+    @dg.op
     def yes():
         return "yes"
 
-    @job
+    @dg.job
     def simple():
         yes()
 
@@ -183,8 +175,8 @@ SERIALIZED_EVENT_FROM_THE_FUTURE_WITHOUT_EVENT_SPECIFIC_DATA = (
 
 
 def test_event_forward_compat_with_event_specific_data():
-    result = deserialize_value(
-        SERIALIZED_EVENT_FROM_THE_FUTURE_WITH_EVENT_SPECIFIC_DATA, DagsterEvent
+    result = dg.deserialize_value(
+        SERIALIZED_EVENT_FROM_THE_FUTURE_WITH_EVENT_SPECIFIC_DATA, dg.DagsterEvent
     )
 
     assert (
@@ -197,13 +189,13 @@ def test_event_forward_compat_with_event_specific_data():
     assert result.step_key == "future_step"
     assert (
         'Attempted to deserialize class "FutureEventData" which is not in the whitelist.'
-        in result.event_specific_data.error.message
+        in result.event_specific_data.error.message  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     )
 
 
 def test_event_forward_compat_without_event_specific_data():
-    result = deserialize_value(
-        SERIALIZED_EVENT_FROM_THE_FUTURE_WITHOUT_EVENT_SPECIFIC_DATA, DagsterEvent
+    result = dg.deserialize_value(
+        SERIALIZED_EVENT_FROM_THE_FUTURE_WITHOUT_EVENT_SPECIFIC_DATA, dg.DagsterEvent
     )
 
     assert (
@@ -216,24 +208,24 @@ def test_event_forward_compat_without_event_specific_data():
     assert result.step_key == "future_step"
     assert (
         "'EVENT_TYPE_FROM_THE_FUTURE' is not a valid DagsterEventType"
-        in result.event_specific_data.error.message
+        in result.event_specific_data.error.message  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     )
 
 
 def failing_job_concurrent_events():
     """This job fails, with a specific step consistently failing last."""
 
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def dynamic_op(context):
         for i in range(3):
-            yield DynamicOutput(value=i, mapping_key=str(i))
+            yield dg.DynamicOutput(value=i, mapping_key=str(i))
 
-    @op
+    @dg.op
     def mapped_op(context, i: int):
         time.sleep(i)
         raise Exception("oof")
 
-    @job
+    @dg.job
     def failing_job():
         dynamic_op().map(mapped_op)
 
@@ -242,12 +234,12 @@ def failing_job_concurrent_events():
 
 def test_earliest_step_failure_on_failed_job():
     """Test that the earliest step failure is the one that is logged on the job failure event."""
-    with instance_for_test() as instance:
-        result = execute_job(
-            job=reconstructable(failing_job_concurrent_events),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            job=dg.reconstructable(failing_job_concurrent_events),
             instance=instance,
         )
-        failure_event = result.get_job_failure_event()
+        failure_event = result.get_run_failure_event()
         step_failure = failure_event.job_failure_data.first_step_failure_event
         assert step_failure
         assert step_failure.step_key == "mapped_op[0]"

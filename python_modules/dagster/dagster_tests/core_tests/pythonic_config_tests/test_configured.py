@@ -1,32 +1,32 @@
-from typing import Any, Dict
+from typing import Any
 
+import dagster as dg
 import pytest
-from dagster import Config, RunConfig, configured, job, op
 from dagster._check import CheckError
 
 
 def test_config_mapping_return_config_dict() -> None:
-    class DoSomethingConfig(Config):
+    class DoSomethingConfig(dg.Config):
         config_param: str
 
-    @op
+    @dg.op
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    class DoSomethingSimplifiedConfig(Config):
+    class DoSomethingSimplifiedConfig(dg.Config):
         simplified_param: str
 
     # New, fancy config mapping takes in a Pythonic config object but returns normal config dict
-    @configured(do_something)
-    def do_something_simplified(config_in: DoSomethingSimplifiedConfig) -> Dict[str, Any]:
+    @dg.configured(do_something)
+    def do_something_simplified(config_in: DoSomethingSimplifiedConfig) -> dict[str, Any]:
         return {"config_param": config_in.simplified_param}
 
-    @job
+    @dg.job
     def do_it_all_with_simplified_config() -> None:
         do_something_simplified()
 
     result = do_it_all_with_simplified_config.execute_in_process(
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             ops={"do_something_simplified": DoSomethingSimplifiedConfig(simplified_param="foo")}
         )
     )
@@ -35,27 +35,27 @@ def test_config_mapping_return_config_dict() -> None:
 
 
 def test_config_mapping_return_config_object() -> None:
-    class DoSomethingConfig(Config):
+    class DoSomethingConfig(dg.Config):
         config_param: str
 
-    @op
+    @dg.op
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    class DoSomethingSimplifiedConfig(Config):
+    class DoSomethingSimplifiedConfig(dg.Config):
         simplified_param: str
 
     # New, fancy config mapping takes in a Pythonic config object and returns a config class
-    @configured(do_something)
+    @dg.configured(do_something)
     def do_something_simplified(config_in: DoSomethingSimplifiedConfig) -> DoSomethingConfig:
         return DoSomethingConfig(config_param=config_in.simplified_param)
 
-    @job
+    @dg.job
     def do_it_all_with_simplified_config() -> None:
         do_something_simplified()
 
     result = do_it_all_with_simplified_config.execute_in_process(
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             ops={"do_something_simplified": DoSomethingSimplifiedConfig(simplified_param="foo")}
         )
     )
@@ -64,14 +64,14 @@ def test_config_mapping_return_config_object() -> None:
 
 
 def test_config_annotation_no_config_schema_err() -> None:
-    class DoSomethingConfig(Config):
+    class DoSomethingConfig(dg.Config):
         config_param: str
 
-    @op
+    @dg.op
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    class DoSomethingSimplifiedConfig(Config):
+    class DoSomethingSimplifiedConfig(dg.Config):
         simplified_param: str
 
     # Ensure that we error if we try to provide a config_schema to a @configured function
@@ -81,19 +81,19 @@ def test_config_annotation_no_config_schema_err() -> None:
         match="Cannot provide config_schema to @configured function with Config-annotated param",
     ):
 
-        @configured(do_something, config_schema={"simplified_param": str})
+        @dg.configured(do_something, config_schema={"simplified_param": str})
         def do_something_simplified(config_in: DoSomethingSimplifiedConfig): ...
 
 
 def test_config_annotation_extra_param_err() -> None:
-    class DoSomethingConfig(Config):
+    class DoSomethingConfig(dg.Config):
         config_param: str
 
-    @op
+    @dg.op
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    class DoSomethingSimplifiedConfig(Config):
+    class DoSomethingSimplifiedConfig(dg.Config):
         simplified_param: str
 
     # Ensure that we error if the @configured function has an extra param
@@ -102,5 +102,5 @@ def test_config_annotation_extra_param_err() -> None:
         match="@configured function should have exactly one parameter",
     ):
 
-        @configured(do_something)
+        @dg.configured(do_something)
         def do_something_simplified(config_in: DoSomethingSimplifiedConfig, useless_param: str): ...

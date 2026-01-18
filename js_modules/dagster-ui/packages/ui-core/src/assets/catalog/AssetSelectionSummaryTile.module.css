@@ -1,0 +1,87 @@
+.tile {
+  flex: 1;
+  border-radius: 12px;
+  padding: 16px;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  transition: background-color 0.1s ease-in-out;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--color-background-default-hover);
+  }
+}
+
+.tileLoading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+
+.tileLink,
+.tileLink:hover {
+  text-decoration: none;
+  color: var(--color-text-default);
+  flex: 1;
+  display: flex;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+}
+
+.assetCount {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-light);
+  font-size: 12px;
+}
+
+.statusCounts {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.statusCountListWrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusCountItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+} 

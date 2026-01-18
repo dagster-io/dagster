@@ -4,20 +4,20 @@ import {
   Box,
   Code,
   Colors,
-  Heading,
   PageHeader,
   Spinner,
-  StyledRawCodeMirror,
   Subheading,
+  Subtitle1,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import CodeMirror from 'codemirror';
 import {memo, useContext, useMemo} from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 import {gql, useQuery} from '../apollo-client';
+import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -109,7 +109,7 @@ export const InstanceConfigRoot = () => {
   const {pageTitle} = useContext(InstancePageContext);
   return (
     <>
-      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <PageHeader title={<Subtitle1>{pageTitle}</Subtitle1>} tabs={<InstanceTabs tab="config" />} />
       <InstanceConfigContent />
     </>
   );

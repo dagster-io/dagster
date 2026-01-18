@@ -1,31 +1,24 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import React from 'react';
 
 import {Colors} from './Color';
+import styles from './Skeleton.module.css';
 
-export const Skeleton = styled.div<{$height?: string | number; $width?: string | number}>`
-  width: ${(p) => (Number(p.$width) ? `${p.$width}px` : p.$width ? p.$width : `100%`)};
-  height: ${(p) => (Number(p.$height) ? `${p.$height}px` : p.$height ? p.$height : `100%`)};
-  display: block;
-  min-height: 1.5em;
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    ${Colors.backgroundLight()} 25%,
-    ${Colors.backgroundLightHover()} 37%,
-    ${Colors.backgroundLight()} 63%
-  );
-  background-size: 400% 100%;
-  animation-name: skeleton-loading;
-  animation-duration: 1.4s;
-  animation-timing-function: ease;
-  animation-iteration-count: infinite;
+type Props = {
+  $height?: string | number;
+  $width?: string | number;
+  $animate?: boolean;
+  style?: React.CSSProperties;
+};
 
-  @keyframes skeleton-loading {
-    0% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0 50%;
-    }
-  }
-`;
+export const Skeleton = ({$height, $width, $animate = true, style}: Props) => {
+  const allStyles = {
+    height: Number($height) ? `${$height}px` : ($height ?? '100%'),
+    width: Number($width) ? `${$width}px` : ($width ?? '100%'),
+    '--skeleton-bg': Colors.backgroundLight(),
+    '--skeleton-bg-hover': Colors.backgroundLightHover(),
+    ...style,
+  } as React.CSSProperties;
+
+  return <div className={clsx(styles.skeleton, $animate && styles.animated)} style={allStyles} />;
+};

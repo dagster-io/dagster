@@ -1,24 +1,23 @@
 import inspect
-from typing import (
+import re
+from collections.abc import Iterator, Mapping, Sequence, Set
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Iterator,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
+    TypeAlias,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
-
-from typing_extensions import TypeAlias, get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
@@ -44,21 +43,24 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
+@public
 @deprecated_param(
-    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead."
+    param="version",
+    breaking_version="2.0",
+    additional_warn_text="Use `code_version` instead.",
 )
 class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
@@ -89,9 +91,10 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this op.
-        code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
+        code_version (Optional[str]): Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        pool (Optional[str]): A string that identifies the pool that governs this op's execution.
 
 
     Examples:
@@ -113,6 +116,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
     _retry_policy: Optional[RetryPolicy]
+    _pool: Optional[str]
 
     def __init__(
         self,
@@ -127,6 +131,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
+        pool: Optional[str] = None,
     ):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
@@ -135,14 +140,15 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
-            inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda inp: inp[0])
+            inp if isinstance(inp, InputDefinition) else inp.to_definition(name)
+            for name, inp in sorted(ins.items(), key=lambda inp: inp[0])
         ]  # sort so that input definition order is deterministic
 
         if isinstance(compute_fn, DecoratedOpFunction):
             resolved_input_defs: Sequence[InputDefinition] = resolve_checked_op_fn_inputs(
                 decorator_name="@op",
                 fn_name=name,
-                compute_fn=cast(DecoratedOpFunction, compute_fn),
+                compute_fn=cast("DecoratedOpFunction", compute_fn),
                 explicit_input_defs=input_defs,
                 exclude_nothing=True,
             )
@@ -171,6 +177,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
+        self._pool = pool
+        pool = _validate_pool(pool, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -178,12 +186,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             else None
         )
 
-        super(OpDefinition, self).__init__(
+        super().__init__(
             name=name,
             input_defs=check.sequence_param(resolved_input_defs, "input_defs", InputDefinition),
             output_defs=check.sequence_param(output_defs, "output_defs", OutputDefinition),
             description=description,
-            tags=_normalize_op_tags(check.opt_mapping_param(tags, "tags", key_type=str)),
+            tags=(check.opt_mapping_param(tags, "tags", key_type=str)),
             positional_inputs=positional_inputs,
         )
 
@@ -200,6 +208,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str],
         retry_policy: Optional[RetryPolicy],
         code_version: Optional[str],
+        pool: Optional[str],
     ) -> "OpDefinition":
         return OpDefinition(
             compute_fn=compute_fn,
@@ -213,6 +222,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             version=version,
             retry_policy=retry_policy,
             code_version=code_version,
+            pool=pool,
         )
 
     @property
@@ -227,7 +237,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def name(self) -> str:
         """str: The name of this op."""
-        return super(OpDefinition, self).name
+        return super().name
 
     @public
     @property
@@ -276,27 +286,37 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for this op."""
-        return super(OpDefinition, self).tags
+        return super().tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given name."""
-        return super(OpDefinition, self).alias(name)
+        return super().alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given tags."""
-        return super(OpDefinition, self).tag(tags)
+        return super().tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given hook definitions."""
-        return super(OpDefinition, self).with_hooks(hook_defs)
+        return super().with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given retry policy."""
-        return super(OpDefinition, self).with_retry_policy(retry_policy)
+        return super().with_retry_policy(retry_policy)
+
+    @property
+    def pool(self) -> Optional[str]:
+        """Optional[str]: The concurrency pool for this op."""
+        return self._pool
+
+    @property
+    def pools(self) -> Set[str]:
+        """Optional[str]: The concurrency pools for this op node."""
+        return {self._pool} if self._pool else set()
 
     def is_from_decorator(self) -> bool:
         from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -322,7 +342,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
+    ) -> tuple[OutputDefinition, Optional[NodeHandle]]:
         return self.output_def_named(output_name), handle
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -331,7 +351,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
     ) -> Sequence[InputDefinition]:
-        handle = cast(NodeHandle, check.inst_param(handle, "handle", NodeHandle))
+        handle = cast("NodeHandle", check.inst_param(handle, "handle", NodeHandle))
         unresolveable_input_defs = []
         for input_def in self.input_defs:
             if (
@@ -340,7 +360,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                 and not input_def.has_default_value
                 and not input_def.input_manager_key
             ):
-                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                input_asset_key = asset_layer.get_asset_key_for_node_input(handle, input_def.name)
                 # If input_asset_key is present, this input can be resolved
                 # by a source asset, so input does not need to be resolved
                 # at the top level.
@@ -368,12 +388,14 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     ) -> "OpDefinition":
         return OpDefinition.dagster_internal_init(
             name=name,
-            ins=ins
-            or {input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
-            outs=outs
-            or {
+            ins={input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
+            if ins is None
+            else ins,
+            outs={
                 output_def.name: Out.from_definition(output_def) for output_def in self.output_defs
-            },
+            }
+            if outs is None
+            else outs,
             compute_fn=self.compute_fn,
             config_schema=config_schema or self.config_schema,
             description=description or self.description,
@@ -382,6 +404,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             code_version=self._version,
             retry_policy=self.retry_policy,
             version=None,  # code_version replaces version
+            pool=self.pool,
         )
 
     def copy_for_configured(
@@ -415,7 +438,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                     root_input=False,
                 )
             elif asset_layer and handle:
-                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                input_asset_key = asset_layer.get_asset_key_for_node_input(handle, input_def.name)
                 if input_asset_key:
                     io_manager_key = (
                         asset_layer.get(input_asset_key).io_manager_key
@@ -450,7 +473,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         from dagster._core.definitions.composition import is_in_composition
 
         if is_in_composition():
-            return super(OpDefinition, self).__call__(*args, **kwargs)
+            return super().__call__(*args, **kwargs)
 
         return direct_invocation_result(self, *args, **kwargs)
 
@@ -585,18 +608,30 @@ def _validate_context_type_hint(fn):
             )
 
 
-def _normalize_op_tags(tags: Mapping[str, str]) -> Mapping[str, str]:
-    if LEGACY_COMPUTE_KIND_TAG in tags:
-        deprecation_warning(
-            "Legacy compute kind tag '{LEGACY_COMPUTE_KIND_TAG}'",
-            breaking_version="1.9.0",
-            additional_warn_text="Please set the compute kind using the `compute_kind` argument on asset/op definition APIs.",
-        )
-        return {COMPUTE_KIND_TAG: tags[LEGACY_COMPUTE_KIND_TAG], **tags}
-    else:
-        return tags
-
-
 def _is_result_object_type(ttype):
     # Is this type special result object type
     return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
+
+
+VALID_POOL_NAME_REGEX_STR = r"^[A-Za-z0-9_\/]+$"  # standard name regex with slashes
+VALID_POOL_NAME_REGEX = re.compile(VALID_POOL_NAME_REGEX_STR)
+
+
+def _validate_pool(pool, tags):
+    check.opt_str_param(pool, "pool")
+    if not pool:
+        return None
+
+    if not VALID_POOL_NAME_REGEX.match(pool):
+        raise DagsterInvalidDefinitionError(
+            f'Pool "{pool}" is not a valid pool name. It must match the regex {VALID_POOL_NAME_REGEX_STR}.'
+        )
+
+    tags = check.opt_mapping_param(tags, "tags")
+    tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
+    if tag_concurrency_key and pool != tag_concurrency_key:
+        raise DagsterInvalidDefinitionError(
+            f'Pool "{pool}" conflicts with the concurrency key tag "{tag_concurrency_key}".'
+        )
+
+    return pool

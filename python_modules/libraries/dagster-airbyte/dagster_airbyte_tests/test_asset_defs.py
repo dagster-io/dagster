@@ -3,7 +3,7 @@ import responses
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     TableColumn,
     TableSchema,
     asset,
@@ -83,7 +83,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
     )
 
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -108,10 +108,12 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
 @pytest.mark.parametrize("source_asset", [None, "my_source_asset_key"])
-@pytest.mark.parametrize("freshness_policy", [None, FreshnessPolicy(maximum_lag_minutes=60)])
+@pytest.mark.parametrize(
+    "legacy_freshness_policy", [None, LegacyFreshnessPolicy(maximum_lag_minutes=60)]
+)
 @pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
 def test_assets_with_normalization(
-    schema_prefix, source_asset, freshness_policy, auto_materialize_policy
+    schema_prefix, source_asset, legacy_freshness_policy, auto_materialize_policy
 ):
     ab_resource = airbyte_resource(
         build_init_resource_context(
@@ -134,12 +136,14 @@ def test_assets_with_normalization(
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
         deps=[AssetKey(source_asset)] if source_asset else None,
-        freshness_policy=freshness_policy,
+        legacy_freshness_policy=legacy_freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
     )
     ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
-    assert all(spec.freshness_policy == freshness_policy for spec in ab_assets[0].specs)
+    assert all(
+        spec.legacy_freshness_policy == legacy_freshness_policy for spec in ab_assets[0].specs
+    )
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables} | {
         AssetKey(["some", "prefix", t]) for t in bar_normalization_tables
@@ -185,7 +189,7 @@ def test_assets_with_normalization(
     )
 
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -288,9 +292,9 @@ def test_built_airbyte_asset_with_downstream_asset_via_definition():
     def downstream_of_ab():
         return None
 
-    assert len(downstream_of_ab.input_names) == 2
-    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
-    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+    assert len(downstream_of_ab.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_built_airbyte_asset_with_downstream_asset():
@@ -305,12 +309,12 @@ def test_built_airbyte_asset_with_downstream_asset():
     def downstream_of_ab():
         return None
 
-    assert len(downstream_of_ab.input_names) == 2
-    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
-    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+    assert len(downstream_of_ab.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
 
-def test_built_airbyte_asset_relation_identifier():
+def test_built_airbyte_asset_table_name():
     destination_tables = ["foo", "bar"]
 
     ab_assets = build_airbyte_assets(
@@ -322,7 +326,7 @@ def test_built_airbyte_asset_relation_identifier():
     # Check relation identifier metadata is added correctly to asset def
     assets_def = ab_assets[0]
     for metadata in assets_def.metadata_by_key.values():
-        assert metadata.get("dagster/relation_identifier") is None
+        assert metadata.get("dagster/table_name") is None
 
     ab_assets = build_airbyte_assets(
         "12345",
@@ -331,15 +335,15 @@ def test_built_airbyte_asset_relation_identifier():
         destination_schema="test_schema",
     )
 
-    relation_identifiers = {"test_database.test_schema.foo", "test_database.test_schema.bar"}
+    table_names = {"test_database.test_schema.foo", "test_database.test_schema.bar"}
 
     # Check relation identifier metadata is added correctly to asset def
     assets_def = ab_assets[0]
     for key, metadata in assets_def.metadata_by_key.items():
         # Extract the table name from the asset key
         table_name = key.path[-1]
-        assert metadata["dagster/relation_identifier"] in relation_identifiers
-        assert table_name in metadata["dagster/relation_identifier"]
+        assert metadata["dagster/table_name"] in table_names
+        assert table_name in metadata["dagster/table_name"]
 
     ab_assets = build_airbyte_assets(
         "12345",
@@ -349,12 +353,12 @@ def test_built_airbyte_asset_relation_identifier():
         normalization_tables={"foo": {"baz"}},
     )
 
-    relation_identifiers.add("test_database.test_schema.foo.baz")
+    table_names.add("test_database.test_schema.foo.baz")
 
     # Check relation identifier metadata is added correctly to asset def
     assets_def = ab_assets[0]
     for key, metadata in assets_def.metadata_by_key.items():
         # Extract the table name from the asset key
         table_name = key.path[-1]
-        assert metadata["dagster/relation_identifier"] in relation_identifiers
-        assert table_name in metadata["dagster/relation_identifier"]
+        assert metadata["dagster/table_name"] in table_names
+        assert table_name in metadata["dagster/table_name"]

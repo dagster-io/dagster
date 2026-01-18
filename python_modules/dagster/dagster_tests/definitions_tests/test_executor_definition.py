@@ -1,41 +1,34 @@
 import multiprocessing
 from os import path
 
+import dagster as dg
 import pytest
 from dagster import (
     DagsterInstance,
     ExecutorRequirement,
     _check as check,
-    execute_job,
-    job,
     multiprocess_executor,
-    op,
-    reconstructable,
 )
 from dagster._core.definitions.executor_definition import (
     _core_multiprocess_executor_creation,
     executor,
 )
-from dagster._core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvariantViolationError,
-    DagsterUnmetExecutorRequirementsError,
-)
 from dagster._core.events import DagsterEventType, RunFailureReason
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.multiprocess import MultiprocessExecutor
 from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 
 
 def get_job_for_executor(executor_def, execution_config=None):
     it = {}
 
-    @op
+    @dg.op
     def a_op(_):
         it["ran"] = True
 
-    @job(
+    @dg.job(
         name="testing_job",
         executor_def=(
             executor_def.configured(execution_config) if execution_config else executor_def
@@ -59,7 +52,7 @@ def primitive_config_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
             marker_to_close=None,
         )
 
@@ -67,10 +60,10 @@ def primitive_config_executor_job():
 
 
 def test_in_process_executor_primitive_config():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with pytest.raises(check.ParameterCheckError):
-            execute_job(
-                reconstructable(primitive_config_executor_job),
+            dg.execute_job(
+                dg.reconstructable(primitive_config_executor_job),
                 instance=instance,
                 run_config={"execution": {"config": "secret testing value!!"}},
             )
@@ -88,7 +81,7 @@ def dict_config_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
             marker_to_close=None,
         )
 
@@ -96,9 +89,9 @@ def dict_config_executor_job():
 
 
 def test_in_process_executor_dict_config():
-    with instance_for_test() as instance:
-        assert execute_job(
-            reconstructable(dict_config_executor_job),
+    with dg.instance_for_test() as instance:
+        assert dg.execute_job(
+            dg.reconstructable(dict_config_executor_job),
             instance=instance,
             run_config={"execution": {"config": {"value": "secret testing value!!"}}},
         ).success
@@ -117,7 +110,7 @@ def requirement_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
             marker_to_close=None,
         )
 
@@ -126,17 +119,17 @@ def requirement_executor_job():
 
 def test_in_process_executor_with_requirement():
     with DagsterInstance.ephemeral() as instance:
-        with pytest.raises(DagsterUnmetExecutorRequirementsError):
-            execute_job(
-                reconstructable(requirement_executor_job),
+        with pytest.raises(dg.DagsterUnmetExecutorRequirementsError):
+            dg.execute_job(
+                dg.reconstructable(requirement_executor_job),
                 instance,
                 raise_on_error=True,
                 run_config={"execution": {"config": {"value": "secret testing value!!"}}},
             )
 
-    with instance_for_test() as instance:
-        assert execute_job(
-            reconstructable(requirement_executor_job),
+    with dg.instance_for_test() as instance:
+        assert dg.execute_job(
+            dg.reconstructable(requirement_executor_job),
             instance,
             raise_on_error=True,
             run_config={"execution": {"config": {"value": "secret testing value!!"}}},
@@ -156,7 +149,7 @@ def executor_dict_config_configured_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
             marker_to_close=None,
         )
 
@@ -164,7 +157,7 @@ def executor_dict_config_configured_job():
         {"value": "secret testing value!!"}, "configured_test_executor"
     )
 
-    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)
+    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)  # pyright: ignore[reportArgumentType]
 
     return get_job_for_executor(test_executor_configured)
 
@@ -182,37 +175,39 @@ def configured_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
             marker_to_close=None,
         )
 
     test_executor_configured = test_executor.configured(
         {"value": "secret testing value!!"}, "configured_test_executor"
     )
-    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)
+    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)  # pyright: ignore[reportArgumentType]
 
     return get_job_for_executor(test_executor_configured)
 
 
 def test_in_process_executor_dict_config_configured():
-    with instance_for_test() as instance:
-        assert execute_job(reconstructable(configured_executor_job), instance=instance).success
+    with dg.instance_for_test() as instance:
+        assert dg.execute_job(
+            dg.reconstructable(configured_executor_job), instance=instance
+        ).success
 
 
-@op
+@dg.op
 def emit_one(_):
     return 1
 
 
-@job(executor_def=multiprocess_executor.configured({"max_concurrent": 1}))
+@dg.job(executor_def=multiprocess_executor.configured({"max_concurrent": 1}))
 def multiproc_test():
     emit_one()
 
 
 def test_multiproc():
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(multiproc_test),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(multiproc_test),
             run_config={
                 "resources": {
                     "io_manager": {
@@ -230,36 +225,36 @@ def needs_config(_):
     from dagster._core.executor.in_process import InProcessExecutor
 
     return InProcessExecutor(
-        retries=RetryMode.from_config({"enabled": {}}),
+        retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
         marker_to_close=None,
     )
 
 
-@job(executor_def=needs_config)
+@dg.job(executor_def=needs_config)
 def one_but_needs_config():
     pass
 
 
 def test_defaulting_behavior():
-    with instance_for_test() as instance:
-        with pytest.raises(DagsterInvalidConfigError):
-            execute_job(reconstructable(one_but_needs_config), instance=instance)
+    with dg.instance_for_test() as instance:
+        with pytest.raises(dg.DagsterInvalidConfigError):
+            dg.execute_job(dg.reconstructable(one_but_needs_config), instance=instance)
 
 
 @executor
 def executor_failing(_):
-    raise DagsterInvariantViolationError()
+    raise dg.DagsterInvariantViolationError()
 
 
-@job(executor_def=executor_failing)
+@dg.job(executor_def=executor_failing)
 def job_executor_failing():
     pass
 
 
 def test_failing_executor_initialization():
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(job_executor_failing), instance=instance, raise_on_error=False
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(job_executor_failing), instance=instance, raise_on_error=False
         )
         assert not result.success
         assert result.all_events[-1].event_type == DagsterEventType.RUN_FAILURE
@@ -270,7 +265,7 @@ def test_failing_executor_initialization():
         assert event_records[0].dagster_event_type == DagsterEventType.RUN_FAILURE
 
         run = instance.get_run_by_id(result.run_id)
-        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.JOB_INITIALIZATION_FAILURE.value
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.JOB_INITIALIZATION_FAILURE.value  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_multiprocess_executor_default():
@@ -312,6 +307,7 @@ def test_multiprocess_executor_config():
     assert executor._retries == RetryMode.DISABLED  # noqa: SLF001
     assert executor._max_concurrent == 2  # noqa: SLF001
     assert executor._tag_concurrency_limits == tag_concurrency_limits  # noqa: SLF001
+    assert executor._step_dependency_config == StepDependencyConfig.default()  # noqa: SLF001
 
 
 def test_multiprocess_executor_config_none_is_sentinel() -> None:
@@ -324,6 +320,7 @@ def test_multiprocess_executor_config_none_is_sentinel() -> None:
         }
     )
     assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
+    assert executor._step_dependency_config == StepDependencyConfig.default()  # noqa: SLF001
 
 
 def test_multiprocess_executor_config_zero_is_sentinel() -> None:
@@ -336,3 +333,4 @@ def test_multiprocess_executor_config_zero_is_sentinel() -> None:
         }
     )
     assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
+    assert executor._step_dependency_config == StepDependencyConfig.default()  # noqa: SLF001

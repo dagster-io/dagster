@@ -1,10 +1,12 @@
 import React from 'react';
 
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
+  AssetsFreshnessInfoQuery,
+  AssetsFreshnessInfoQueryVariables,
 } from './types/AssetBaseDataProvider.types';
-import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {
   LiveDataForNode,
   buildLiveDataForNode,
@@ -22,16 +24,33 @@ function init() {
       return useApolloClient();
     },
     async (keys, client: ApolloClient<any>) => {
-      const {data} = await client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
-        query: ASSETS_GRAPH_LIVE_QUERY,
-        fetchPolicy: 'no-cache',
-        variables: {
-          assetKeys: keys.map(tokenToAssetKey),
-        },
-      });
+      const assetKeys = keys.map(tokenToAssetKey);
+      const [graphResponse, freshnessResponse] = await Promise.all([
+        client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
+          query: ASSETS_GRAPH_LIVE_QUERY,
+          fetchPolicy: 'no-cache',
+          variables: {
+            assetKeys,
+          },
+        }),
+        client.query<AssetsFreshnessInfoQuery, AssetsFreshnessInfoQueryVariables>({
+          query: ASSETS_FRESHNESS_INFO_QUERY,
+          fetchPolicy: 'no-cache',
+          variables: {
+            assetKeys,
+          },
+        }),
+      ]);
+
+      const {data} = graphResponse;
+      const {data: freshnessData} = freshnessResponse;
 
       const nodesByKey = Object.fromEntries(
         data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
+      );
+
+      const freshnessInfoByKey = Object.fromEntries(
+        freshnessData.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
       );
 
       return Object.fromEntries(
@@ -39,7 +58,21 @@ function init() {
           .map((assetLatestInfo) => {
             const id = tokenForAssetKey(assetLatestInfo.assetKey);
             const node = nodesByKey[id];
-            return node ? [id, buildLiveDataForNode(node, assetLatestInfo)] : null;
+            const freshnessInfo = freshnessInfoByKey[id];
+            return node
+              ? [
+                  id,
+                  buildLiveDataForNode(
+                    {
+                      ...node,
+                      ...(freshnessInfo ?? {
+                        freshnessInfo: null,
+                      }),
+                    },
+                    assetLatestInfo,
+                  ),
+                ]
+              : null;
           })
           .filter((entry): entry is [string, LiveDataForNode] => !!entry),
       );
@@ -89,6 +122,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
 
   fragment AssetLatestInfoRun on Run {
     status
+    startTime
     endTime
     id
   }
@@ -117,9 +151,6 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         }
       }
     }
-    freshnessInfo {
-      ...AssetNodeLiveFreshnessInfo
-    }
     partitionStats {
       numMaterialized
       numMaterializing
@@ -128,18 +159,16 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
   }
 
-  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
-    currentMinutesLate
-  }
-
   fragment AssetNodeLiveMaterialization on MaterializationEvent {
     timestamp
     runId
+    stepKey
   }
 
   fragment AssetNodeLiveObservation on ObservationEvent {
     timestamp
     runId
+    stepKey
   }
 
   fragment AssetCheckLiveFragment on AssetCheck {
@@ -172,6 +201,24 @@ export const ASSETS_GRAPH_LIVE_QUERY = gql`
 
   ${ASSET_NODE_LIVE_FRAGMENT}
   ${ASSET_LATEST_INFO_FRAGMENT}
+`;
+
+export const ASSETS_FRESHNESS_INFO_QUERY = gql`
+  query AssetsFreshnessInfoQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      assetKey {
+        path
+      }
+      freshnessInfo {
+        ...AssetNodeLiveFreshnessInfoFragment
+      }
+    }
+  }
+
+  fragment AssetNodeLiveFreshnessInfoFragment on AssetFreshnessInfo {
+    currentMinutesLate
+  }
 `;
 
 // For tests

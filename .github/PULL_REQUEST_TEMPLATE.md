@@ -4,8 +4,4 @@
 
 ## Changelog
 
-Insert changelog entry or "NOCHANGELOG" here.
-
-- [ ] `NEW` _(added new feature or capability)_
-- [ ] `BUGFIX` _(fixed a bug)_
-- [ ] `DOCS` _(added or updated documentation)_
+> Insert changelog entry or delete this section.

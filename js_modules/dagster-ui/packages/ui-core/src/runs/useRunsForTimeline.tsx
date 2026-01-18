@@ -1,12 +1,13 @@
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
-import {doneStatuses} from './RunStatuses';
+import {doneStatuses, inProgressStatuses} from './RunStatuses';
 import {TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
 import {getAutomationForRun} from './getAutomationForRun';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
@@ -17,13 +18,13 @@ import {
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
-import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
+import {InstigationStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {assertExists} from '../util/invariant';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -86,7 +87,9 @@ export const useRunsForTimeline = ({
       setCompletedRuns(
         runs.filter(
           (run) =>
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             (run.startTime! <= endSec && run.updateTime! >= endSec) ||
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             (run.updateTime! >= startSec && run.updateTime! <= endSec),
         ),
       );
@@ -201,7 +204,9 @@ export const useRunsForTimeline = ({
         const runs: RunTimelineFragment[] = data.completed.results;
 
         const hasMoreData = runs.length === batchLimit;
-        const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+        const nextCursor = hasMoreData
+          ? assertExists(runs[runs.length - 1], 'Expected runs to be non-empty').id
+          : undefined;
 
         const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
         dataToCommitToCacheByBucket.set(bucket, accumulatedData);
@@ -255,7 +260,7 @@ export const useRunsForTimeline = ({
             variables: {
               inProgressFilter: {
                 ...runsFilter,
-                statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+                statuses: Array.from(inProgressStatuses),
               },
               cursor,
               limit: batchLimit,
@@ -272,7 +277,9 @@ export const useRunsForTimeline = ({
           }
           const runs = data.ongoing.results;
           const hasMoreData = runs.length === batchLimit;
-          const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+          const nextCursor = hasMoreData
+            ? assertExists(runs[runs.length - 1], 'Expected runs to be non-empty').id
+            : undefined;
           return {
             data: runs,
             cursor: nextCursor,
@@ -375,12 +382,13 @@ export const useRunsForTimeline = ({
       const runJobKey = makeJobKey(repoAddress, run.pipelineName);
 
       map[runJobKey] = map[runJobKey] || {};
-      map[runJobKey]![run.id] = {
+      assertExists(map[runJobKey], 'Expected job key to exist in map')[run.id] = {
         id: run.id,
         status: run.status,
         startTime: run.startTime * 1000,
         endTime: run.endTime ? run.endTime * 1000 : now,
         automation: getAutomationForRun(repoAddress, run),
+        externalJobSource: run.externalJobSource,
       };
 
       if (!jobInfo[runJobKey]) {
@@ -442,10 +450,16 @@ export const useRunsForTimeline = ({
     return Object.values(jobsWithCompletedRunsAndOngoingRuns);
   }, [jobsWithCompletedRunsAndOngoingRuns]);
 
+  const allKeys = useMemo(
+    () => Object.keys(jobsWithCompletedRunsAndOngoingRuns),
+    [jobsWithCompletedRunsAndOngoingRuns],
+  );
+
   const unsortedJobs: TimelineRow[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename === 'PythonError' || _end < Date.now()) {
       return jobsWithCompletedRunsAndOngoingRunsValues;
     }
+    const addedJobKeys = new Set();
     const addedAdHocJobs = new Set();
     const jobs: TimelineRow[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
@@ -472,7 +486,8 @@ export const useRunsForTimeline = ({
           for (const schedule of schedules) {
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
-                const startTime = timestamp! * 1000;
+                const startTime =
+                  assertExists(timestamp, 'Expected timestamp on future tick') * 1000;
                 if (
                   startTime > now &&
                   overlap({start, end: _end}, {start: startTime, end: startTime})
@@ -483,6 +498,7 @@ export const useRunsForTimeline = ({
                     startTime,
                     endTime: startTime + 5 * 1000,
                     automation: {type: 'schedule', repoAddress, name: schedule.name},
+                    externalJobSource: null,
                   });
                 }
               });
@@ -501,6 +517,7 @@ export const useRunsForTimeline = ({
 
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
+          addedJobKeys.add(jobKey);
           const jobRuns = Object.values(runsByJobKey[jobKey] || {});
           if (!jobTicks.length && !jobRuns.length) {
             continue;
@@ -531,6 +548,13 @@ export const useRunsForTimeline = ({
         }
       }
     }
+    allKeys.forEach((key) => {
+      if (!addedJobKeys.has(key)) {
+        jobs.push(
+          assertExists(jobsWithCompletedRunsAndOngoingRuns[key], `Expected job for key ${key}`),
+        );
+      }
+    });
     return jobs;
     // Don't add start/end time as a dependency here since it changes often.
     // Instead rely on the underlying runs changing in response to start/end changing
@@ -540,6 +564,7 @@ export const useRunsForTimeline = ({
     jobsWithCompletedRunsAndOngoingRunsValues,
     runsByJobKey,
     jobsWithCompletedRunsAndOngoingRuns,
+    allKeys,
   ]);
 
   const jobsWithRuns = useMemo(() => {
@@ -552,7 +577,11 @@ export const useRunsForTimeline = ({
       {} as {[jobKey: string]: number},
     );
 
-    return unsortedJobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
+    return unsortedJobs.sort(
+      (a, b) =>
+        assertExists(earliest[a.key], `Expected earliest time for ${a.key}`) -
+        assertExists(earliest[b.key], `Expected earliest time for ${b.key}`),
+    );
   }, [unsortedJobs]);
 
   const lastFetchRef = useRef({ongoing: 0, future: 0});
@@ -607,6 +636,7 @@ const RUN_TIMELINE_FRAGMENT = gql`
   fragment RunTimelineFragment on Run {
     id
     pipelineName
+    externalJobSource
     tags {
       key
       value

@@ -2,13 +2,13 @@
 
 extends: existence
 message: "Don't use plurals in parentheses such as in '%s'."
-link: "https://developers.google.com/style/plurals-parentheses"
+link: 'https://developers.google.com/style/plurals-parentheses'
 level: error
 nonword: true
 action:
   name: edit
   params:
     - trim_right
-    - "(s)"
+    - '(s)'
 tokens:
   - '\b\w+\(s\)'

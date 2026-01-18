@@ -1,6 +1,6 @@
 import os
 
-os.mkdir("/data")
+os.makedirs("/tmp/data", exist_ok=True)
 # start
 
 # code_location_1.py
@@ -11,7 +11,7 @@ from dagster import Definitions, asset
 
 @asset
 def code_location_1_asset():
-    with open("/data/code_location_1_asset.json", "w+") as f:
+    with open("/tmp/data/code_location_1_asset.json", "w+") as f:
         json.dump(5, f)
 
 

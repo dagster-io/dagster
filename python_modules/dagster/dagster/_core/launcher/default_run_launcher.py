@@ -1,10 +1,12 @@
 import time
-from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
-import dagster._seven as seven
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (
     DagsterInvariantViolationError,
@@ -24,6 +26,7 @@ if TYPE_CHECKING:
 
 
 # note: this class is a top level export, so we defer many imports til use for performance
+@public
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
@@ -78,7 +81,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalJobArgs(
-                    job_origin=run.external_job_origin,  # type: ignore  # (possible none)
+                    job_origin=run.remote_job_origin,  # type: ignore  # (possible none)
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
@@ -105,9 +108,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
             )
 
-        external_job_origin = check.not_none(run.external_job_origin)
+        remote_job_origin = check.not_none(run.remote_job_origin)
         code_location = context.workspace.get_code_location(
-            external_job_origin.repository_origin.code_location_origin.location_name
+            remote_job_origin.repository_origin.code_location_origin.location_name
         )
 
         check.inst(
@@ -117,7 +120,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, cast(GrpcServerCodeLocation, code_location).client
+            self._instance, run, cast("GrpcServerCodeLocation", code_location).client
         )
 
         self._run_ids.add(run.run_id)
@@ -138,7 +141,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if GRPC_INFO_TAG not in tags:
             return None
 
-        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
+        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))  # pyright: ignore[reportArgumentType]
 
         return DagsterGrpcClient(
             port=grpc_info.get("port"),
@@ -194,7 +197,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 for run_id in self._run_ids
                 if (
                     self._instance.get_run_by_id(run_id)
-                    and not self._instance.get_run_by_id(run_id).is_finished
+                    and not self._instance.get_run_by_id(run_id).is_finished  # pyright: ignore[reportOptionalMemberAccess]
                 )
             ]
 

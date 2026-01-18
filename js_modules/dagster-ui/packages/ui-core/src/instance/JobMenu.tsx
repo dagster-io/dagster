@@ -1,21 +1,21 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useCallback} from 'react';
 
-import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {gql, useLazyQuery} from '../apollo-client';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {useLazyJobPermissions} from '../app/useJobPermissions';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 import {ReexecutionStrategy} from '../graphql/types';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
-import {RunTimeFragment} from '../runs/types/RunUtils.types';
 import {useJobReexecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 interface Props {
-  job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
+  job: {isJob: boolean; name: string; runs: {id: string}[]};
   repoAddress: RepoAddress;
   isAssetJob: boolean | 'loading';
 }
@@ -34,13 +34,10 @@ export const JobMenu = (props: Props) => {
   };
 
   const materialize = useMaterializationAction(job.name);
-  const onReexecute = useJobReexecution();
+  const reexecute = useJobReexecution();
 
-  const {
-    permissions: {canLaunchPipelineReexecution, canLaunchPipelineExecution},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
-
+  const [fetchHasJobPermissions, {hasLaunchExecutionPermission, hasLaunchReexecutionPermission}] =
+    useLazyJobPermissions(pipelineSelector, repoAddress.location);
   const [fetchHasExecutionPlan, queryResult] = useLazyQuery<
     RunReExecutionQuery,
     RunReExecutionQueryVariables
@@ -52,7 +49,8 @@ export const JobMenu = (props: Props) => {
     if (lastRun?.id) {
       fetchHasExecutionPlan({variables: {runId: lastRun.id}});
     }
-  }, [lastRun, fetchHasExecutionPlan]);
+    fetchHasJobPermissions();
+  }, [lastRun, fetchHasExecutionPlan, fetchHasJobPermissions]);
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const executeItem =
@@ -62,14 +60,14 @@ export const JobMenu = (props: Props) => {
       <MenuItem
         icon={materialize.loading ? <Spinner purpose="caption-text" /> : 'execute'}
         text="Launch new run"
-        disabled={!canLaunchPipelineExecution}
+        disabled={!hasLaunchExecutionPermission}
         onClick={(e) => materialize.onClick(pipelineSelector, e)}
       />
     ) : (
       <MenuLink
         icon="execute"
         text="Launch new run"
-        disabled={!canLaunchPipelineExecution}
+        disabled={!hasLaunchExecutionPermission}
         to={workspacePipelinePath({
           repoName: repoAddress.name,
           repoLocation: repoAddress.location,
@@ -84,8 +82,10 @@ export const JobMenu = (props: Props) => {
     <MenuItem
       icon="replay"
       text="Re-execute latest run"
-      onClick={() => (run ? onReexecute(run, ReexecutionStrategy.ALL_STEPS) : undefined)}
-      disabled={!canLaunchPipelineReexecution || !run || !canRunAllSteps(run)}
+      disabled={!hasLaunchReexecutionPermission || !run || !canRunAllSteps(run)}
+      onClick={(e) =>
+        run ? reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey) : undefined
+      }
     />
   );
 
@@ -93,14 +93,17 @@ export const JobMenu = (props: Props) => {
     <MenuItem
       icon="sync_problem"
       text="Re-execute latest run from failure"
-      onClick={() => (run ? onReexecute(run, ReexecutionStrategy.FROM_FAILURE) : undefined)}
-      disabled={!canLaunchPipelineReexecution || !run || !canRunFromFailure(run)}
+      disabled={!hasLaunchReexecutionPermission || !run || !canRunFromFailure(run)}
+      onClick={(e) =>
+        run ? reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey) : undefined
+      }
     />
   );
 
   return (
     <>
       {materialize.launchpadElement}
+      {reexecute.launchpadElement}
       <Popover
         onOpened={() => fetchIfPossible()}
         content={
@@ -126,24 +129,24 @@ export const JobMenu = (props: Props) => {
               icon="checklist"
               text="View all recent runs"
             />
-            {canLaunchPipelineExecution ? (
+            {hasLaunchExecutionPermission ? (
               executeItem
             ) : (
-              <Tooltip content={disabledReasons.canLaunchPipelineExecution} display="block">
+              <Tooltip content={DEFAULT_DISABLED_REASON} display="block">
                 {executeItem}
               </Tooltip>
             )}
-            {canLaunchPipelineReexecution ? (
+            {hasLaunchReexecutionPermission ? (
               reExecuteAllItem
             ) : (
-              <Tooltip content={disabledReasons.canLaunchPipelineReexecution} display="block">
+              <Tooltip content={DEFAULT_DISABLED_REASON} display="block">
                 {reExecuteAllItem}
               </Tooltip>
             )}
-            {canLaunchPipelineReexecution ? (
+            {hasLaunchReexecutionPermission ? (
               reExecuteFromFailureItem
             ) : (
-              <Tooltip content={disabledReasons.canLaunchPipelineReexecution} display="block">
+              <Tooltip content={DEFAULT_DISABLED_REASON} display="block">
                 {reExecuteFromFailureItem}
               </Tooltip>
             )}
@@ -151,7 +154,7 @@ export const JobMenu = (props: Props) => {
         }
         position="bottom-left"
       >
-        <Button icon={<Icon name="expand_more" />} />
+        <Button icon={<Icon name="more_horiz" />} intent="none" />
       </Popover>
     </>
   );
@@ -164,8 +167,15 @@ const RUN_RE_EXECUTION_QUERY = gql`
         id
         status
         pipelineName
+        tags {
+          key
+          value
+        }
         executionPlan {
           artifactsPersisted
+          assetKeys {
+            path
+          }
           ...ExecutionPlanToGraphFragment
         }
       }

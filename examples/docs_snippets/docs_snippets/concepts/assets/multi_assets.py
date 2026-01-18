@@ -47,7 +47,7 @@ def split_actions(context: AssetExecutionContext):
 # end_subsettable_multi_asset
 
 # start_asset_deps_multi_asset
-from dagster import AssetKey, AssetSpec, asset, multi_asset
+from dagster import AssetSpec, asset, multi_asset
 
 
 @asset

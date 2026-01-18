@@ -1,4 +1,5 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, cast
 
 import pytest
 from dagster import DefaultScheduleStatus, RunConfig
@@ -13,6 +14,7 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
         "cron_schedule",
         "dbt_select",
         "dbt_exclude",
+        "dbt_selector",
         "schedule_name",
         "tags",
         "config",
@@ -24,7 +26,8 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             "test_job",
             "0 0 * * *",
             "fqn:*",
-            None,
+            "",
+            "",
             None,
             None,
             None,
@@ -36,6 +39,19 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             "0 * * * *",
             "fqn:*",
             "fqn:staging.*",
+            "",
+            "my_custom_schedule",
+            {"my": "tag"},
+            RunConfig(ops={"my_op": {"config": "value"}}),
+            "America/Vancouver",
+            DefaultScheduleStatus.RUNNING,
+        ),
+        (
+            "test_job",
+            "0 * * * *",
+            "fqn:*",
+            "",
+            "raw_customer_child_models",
             "my_custom_schedule",
             {"my": "tag"},
             RunConfig(ops={"my_op": {"config": "value"}}),
@@ -45,11 +61,12 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
     ],
 )
 def test_dbt_build_schedule(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     job_name: str,
     cron_schedule: str,
     dbt_select: str,
-    dbt_exclude: Optional[str],
+    dbt_exclude: str,
+    dbt_selector: str,
     schedule_name: Optional[str],
     tags: Optional[Mapping[str, str]],
     config: Optional[RunConfig],
@@ -66,6 +83,7 @@ def test_dbt_build_schedule(
         dbt_select=dbt_select,
         schedule_name=schedule_name,
         dbt_exclude=dbt_exclude,
+        dbt_selector=dbt_selector,
         tags=tags,
         config=config,
         execution_timezone=execution_timezone,
@@ -87,9 +105,11 @@ def test_dbt_build_schedule(
     assert len(job.selection.operands) == 2
 
     [dbt_assets_selection, job_selection] = cast(
-        Sequence[DbtManifestAssetSelection], job.selection.operands
+        "Sequence[DbtManifestAssetSelection]", job.selection.operands
     )
     assert dbt_assets_selection.select == "fqn:*"
     assert dbt_assets_selection.exclude == ""
+    assert dbt_assets_selection.selector == ""
     assert job_selection.select == (dbt_select or "fqn:*")
     assert job_selection.exclude == (dbt_exclude or "")
+    assert job_selection.selector == (dbt_selector or "")

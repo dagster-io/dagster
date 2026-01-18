@@ -4,14 +4,13 @@
 import os
 import time
 from datetime import datetime
-from typing import cast
+from typing import TYPE_CHECKING, cast
+from unittest import mock
 
-import mock
 import pytest
 import requests
 import requests_mock
 from dagster import AssetKey, materialize
-from dagster._core.events import StepMaterializationData
 from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
 from dagster_airbyte import airbyte_resource, load_assets_from_connections
@@ -20,6 +19,9 @@ from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
 
 from dagster_airbyte_tests.integration.example_stacks import example_airbyte_stack
+
+if TYPE_CHECKING:
+    from dagster._core.events import StepMaterializationData
 
 TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
 
@@ -102,7 +104,7 @@ def airbyte_source_files_fixture():
     FILES = ["sample_file.json", "different_sample_file.json"]
 
     for file in FILES:
-        with open(file_relative_path(__file__, file), "r", encoding="utf8") as f:
+        with open(file_relative_path(__file__, file), encoding="utf8") as f:
             contents = f.read()
         with open(os.path.join("/tmp/airbyte_local", file), "w", encoding="utf8") as f:
             f.write(contents)
@@ -189,7 +191,7 @@ def test_basic_integration(
     res = materialize(ab_assets)
 
     materializations = [
-        cast(StepMaterializationData, event.event_specific_data).materialization
+        cast("StepMaterializationData", event.event_specific_data).materialization
         for event in res.all_events
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -346,7 +348,7 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
         assert ManagedElementDiff() != check_result
 
 
-@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(max_runs=1)
 def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")

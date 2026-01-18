@@ -17,6 +17,7 @@ export type SidebarOpFragment_CompositeSolidDefinition = {
             id: string;
             name: string;
             description: string | null;
+            pools: Array<string>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -95,6 +96,7 @@ export type SidebarOpFragment_CompositeSolidDefinition = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            pools: Array<string>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -791,6 +793,7 @@ export type SidebarOpFragment_Graph = {
             id: string;
             name: string;
             description: string | null;
+            pools: Array<string>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -869,6 +872,7 @@ export type SidebarOpFragment_Graph = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            pools: Array<string>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -1565,6 +1569,7 @@ export type SidebarOpFragment_Job = {
             id: string;
             name: string;
             description: string | null;
+            pools: Array<string>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -1643,6 +1648,7 @@ export type SidebarOpFragment_Job = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            pools: Array<string>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -2339,6 +2345,7 @@ export type SidebarOpFragment_Pipeline = {
             id: string;
             name: string;
             description: string | null;
+            pools: Array<string>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -2417,6 +2424,7 @@ export type SidebarOpFragment_Pipeline = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            pools: Array<string>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -3113,6 +3121,7 @@ export type SidebarOpFragment_PipelineSnapshot = {
             id: string;
             name: string;
             description: string | null;
+            pools: Array<string>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -3191,6 +3200,7 @@ export type SidebarOpFragment_PipelineSnapshot = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            pools: Array<string>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -3903,6 +3913,7 @@ export type SidebarPipelineOpQuery = {
                   id: string;
                   name: string;
                   description: string | null;
+                  pools: Array<string>;
                   inputMappings: Array<{
                     __typename: 'InputMapping';
                     definition: {__typename: 'InputDefinition'; name: string};
@@ -3985,6 +3996,7 @@ export type SidebarPipelineOpQuery = {
                   __typename: 'SolidDefinition';
                   name: string;
                   description: string | null;
+                  pools: Array<string>;
                   requiredResources: Array<{
                     __typename: 'ResourceRequirement';
                     resourceKey: string;
@@ -4699,6 +4711,7 @@ export type SidebarGraphOpQuery = {
                   id: string;
                   name: string;
                   description: string | null;
+                  pools: Array<string>;
                   inputMappings: Array<{
                     __typename: 'InputMapping';
                     definition: {__typename: 'InputDefinition'; name: string};
@@ -4781,6 +4794,7 @@ export type SidebarGraphOpQuery = {
                   __typename: 'SolidDefinition';
                   name: string;
                   description: string | null;
+                  pools: Array<string>;
                   requiredResources: Array<{
                     __typename: 'ResourceRequirement';
                     resourceKey: string;
@@ -5472,6 +5486,6 @@ export type SidebarGraphOpQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SidebarPipelineOpQueryVersion = 'e7c81b4abaefc0eeea9128b4e39c74a1c68d7b28f154ac5ad9cd2d5182d48d5f';
+export const SidebarPipelineOpQueryVersion = 'f2f757259ed45d1f13782138866817a5d8e6dd27e4e64253940a72cb60a345f4';
 
-export const SidebarGraphOpQueryVersion = 'c53856856bea89e1eb944ab02f6e175a8dbccc99ee4c8600f0df96e05535be89';
+export const SidebarGraphOpQueryVersion = 'd990aa216ec9ca839d65d14e400e00b57acdebfd96399b4daada499381296d34';

@@ -1,41 +1,28 @@
 import hashlib
 import inspect
 import os
-import re
 from abc import abstractmethod
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial
 from itertools import chain
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, NamedTuple, Optional, Union, cast
 
 import yaml
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     Nothing,
     Output,
     ResourceDefinition,
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import deprecated
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, superseded
 from dagster._core.definitions import AssetsDefinition, multi_asset
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
@@ -46,9 +33,21 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidIn
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
-from dagster_airbyte.resources import AirbyteCloudResource, AirbyteResource, BaseAirbyteResource
+from dagster_airbyte.asset_decorator import airbyte_assets
+from dagster_airbyte.legacy_resources import (
+    AirbyteCloudResource,
+    AirbyteResource,
+    BaseAirbyteResource,
+)
+from dagster_airbyte.resources import AirbyteCloudWorkspace, AirbyteWorkspace, BaseAirbyteWorkspace
+from dagster_airbyte.translator import (
+    AirbyteConnection,
+    AirbyteMetadataSet,
+    DagsterAirbyteTranslator,
+)
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
+    clean_name,
     generate_materializations,
     generate_table_schema,
     is_basic_normalization_operation,
@@ -67,13 +66,13 @@ def _build_airbyte_asset_defn_metadata(
     destination_schema: Optional[str],
     table_to_asset_key_fn: Callable[[str], AssetKey],
     asset_key_prefix: Optional[Sequence[str]] = None,
-    normalization_tables: Optional[Mapping[str, Set[str]]] = None,
+    normalization_tables: Optional[Mapping[str, set[str]]] = None,
     normalization_raw_table_names_by_table: Optional[Mapping[str, str]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
@@ -97,7 +96,7 @@ def _build_airbyte_asset_defn_metadata(
         for table in tables
     }
 
-    internal_deps: Dict[str, Set[AssetKey]] = {}
+    internal_deps: dict[str, set[AssetKey]] = {}
 
     metadata_encodable_normalization_tables = (
         {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
@@ -116,11 +115,11 @@ def _build_airbyte_asset_defn_metadata(
     for table in destination_tables:
         internal_deps[table] = set(upstream_assets or [])
 
-    relation_identifiers: Dict[str, str] = {}
+    table_names: dict[str, str] = {}
     for table in destination_tables:
         if destination_database and destination_schema and table:
-            # Use the destination raw table name to create the relation identifier
-            relation_identifiers[table] = ".".join(
+            # Use the destination raw table name to create the table name
+            table_names[table] = ".".join(
                 [
                     destination_database,
                     destination_schema,
@@ -129,7 +128,7 @@ def _build_airbyte_asset_defn_metadata(
             )
             if normalization_tables and normalization_raw_table_names_by_table:
                 for normalization_table in normalization_tables.get(table, set()):
-                    relation_identifiers[normalization_table] = ".".join(
+                    table_names[normalization_table] = ".".join(
                         [
                             destination_database,
                             destination_schema,
@@ -156,14 +155,16 @@ def _build_airbyte_asset_defn_metadata(
                 table: {
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
-                        relation_identifier=relation_identifiers.get(table),
+                        table_name=table_names.get(table),
                     ),
                 }
                 for table in tables
             }
         ),
-        freshness_policies_by_output_name=(
-            {output: freshness_policy for output in outputs} if freshness_policy else None
+        legacy_freshness_policies_by_output_name=(
+            {output: legacy_freshness_policy for output in outputs}
+            if legacy_freshness_policy
+            else None
         ),
         auto_materialize_policies_by_output_name=(
             {output: auto_materialize_policy for output in outputs}
@@ -184,12 +185,12 @@ def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
 ) -> AssetsDefinition:
-    metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
-    connection_id = cast(str, metadata["connection_id"])
-    group_name = cast(Optional[str], metadata["group_name"])
-    destination_tables = cast(List[str], metadata["destination_tables"])
-    normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
-    io_manager_key = cast(Optional[str], metadata["io_manager_key"])
+    metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
+    connection_id = cast("str", metadata["connection_id"])
+    group_name = cast("Optional[str]", metadata["group_name"])
+    destination_tables = cast("list[str]", metadata["destination_tables"])
+    normalization_tables = cast("Mapping[str, list[str]]", metadata["normalization_tables"])
+    io_manager_key = cast("Optional[str]", metadata["io_manager_key"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id.replace('-', '_')}",
@@ -203,9 +204,9 @@ def _build_airbyte_assets_from_metadata(
                     else None
                 ),
                 io_manager_key=io_manager_key,
-                freshness_policy=(
-                    assets_defn_meta.freshness_policies_by_output_name.get(k)
-                    if assets_defn_meta.freshness_policies_by_output_name
+                legacy_freshness_policy=(
+                    assets_defn_meta.legacy_freshness_policies_by_output_name.get(k)
+                    if assets_defn_meta.legacy_freshness_policies_by_output_name
                     else None
                 ),
                 dagster_type=Nothing,
@@ -250,6 +251,14 @@ def _build_airbyte_assets_from_metadata(
     return _assets
 
 
+@hidden_param(
+    param="legacy_freshness_policy",
+    breaking_version="1.13.0",
+)
+@hidden_param(
+    param="auto_materialize_policy",
+    breaking_version="1.10.0",
+)
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],
@@ -257,13 +266,12 @@ def build_airbyte_assets(
     destination_schema: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
     group_name: Optional[str] = None,
-    normalization_tables: Optional[Mapping[str, Set[str]]] = None,
+    normalization_tables: Optional[Mapping[str, set[str]]] = None,
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
-    upstream_assets: Optional[Set[AssetKey]] = None,
+    upstream_assets: Optional[set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    **kwargs,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -283,11 +291,13 @@ def build_airbyte_assets(
         deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, str, AssetKey]]]):
             A list of assets to add as sources.
         upstream_assets (Optional[Set[AssetKey]]): Deprecated, use deps instead. A list of assets to add as sources.
-        freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
         stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
             This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): An auto materialization policy to apply to the assets.
     """
+    only_allow_hidden_params_in_kwargs(build_airbyte_assets, kwargs)
+    legacy_freshness_policy = kwargs.get("legacy_freshness_policy")
+    auto_materialize_policy = kwargs.get("auto_materialize_policy")
+
     if upstream_assets is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
             "Cannot specify both deps and upstream_assets to build_airbyte_assets. Use only deps"
@@ -302,15 +312,13 @@ def build_airbyte_assets(
         chain([destination_tables], normalization_tables.values() if normalization_tables else [])
     )
 
-    relation_identifiers: Dict[str, str] = {}
+    table_names: dict[str, str] = {}
     for table in destination_tables:
         if destination_database and destination_schema and table:
-            relation_identifiers[table] = ".".join(
-                [destination_database, destination_schema, table]
-            )
+            table_names[table] = ".".join([destination_database, destination_schema, table])
             if normalization_tables:
                 for normalization_table in normalization_tables.get(table, set()):
-                    relation_identifiers[normalization_table] = ".".join(
+                    table_names[normalization_table] = ".".join(
                         [
                             destination_database,
                             destination_schema,
@@ -328,11 +336,11 @@ def build_airbyte_assets(
                 {
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
-                        relation_identifier=relation_identifiers.get(table),
+                        table_name=table_names.get(table),
                     ),
                 }
             ),
-            freshness_policy=freshness_policy,
+            legacy_freshness_policy=legacy_freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
         )
         for table in tables
@@ -432,7 +440,7 @@ def _get_normalization_tables_for_schema(
     For more information on Airbyte's normalization process, see:
     https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting
     """
-    out: Dict[str, AirbyteTableMetadata] = {}
+    out: dict[str, AirbyteTableMetadata] = {}
     # Object types are broken into a new table, as long as they have children
 
     sub_schemas = _get_sub_schemas(schema)
@@ -465,11 +473,6 @@ def _get_normalization_tables_for_schema(
     return out
 
 
-def _clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
-
-
 class AirbyteConnectionMetadata(
     NamedTuple(
         "_AirbyteConnectionMetadata",
@@ -477,14 +480,14 @@ class AirbyteConnectionMetadata(
             ("name", str),
             ("stream_prefix", str),
             ("has_basic_normalization", bool),
-            ("stream_data", List[Mapping[str, Any]]),
+            ("stream_data", list[Mapping[str, Any]]),
             ("destination", Mapping[str, Any]),
         ],
     )
 ):
     """Contains information about an Airbyte connection.
 
-    Attributes:
+    Args:
         name (str): The name of the connection.
         stream_prefix (str): A prefix to add to all stream names.
         has_basic_normalization (bool): Whether or not the connection has basic normalization enabled.
@@ -513,7 +516,7 @@ class AirbyteConnectionMetadata(
     def from_config(
         cls, contents: Mapping[str, Any], destination: Mapping[str, Any]
     ) -> "AirbyteConnectionMetadata":
-        config_contents = cast(Mapping[str, Any], contents.get("configuration"))
+        config_contents = cast("Mapping[str, Any]", contents.get("configuration"))
         check.invariant(
             config_contents is not None, "Airbyte connection config is missing 'configuration' key"
         )
@@ -536,14 +539,14 @@ class AirbyteConnectionMetadata(
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
-        tables: Dict[str, AirbyteTableMetadata] = {}
+        tables: dict[str, AirbyteTableMetadata] = {}
 
         enabled_streams = [
             stream for stream in self.stream_data if stream.get("config", {}).get("selected", False)
         ]
 
         for stream in enabled_streams:
-            name = cast(str, stream.get("stream", {}).get("name"))
+            name = cast("str", stream.get("stream", {}).get("name"))
             prefixed_name = f"{self.stream_prefix}{name}"
 
             schema = (
@@ -551,7 +554,7 @@ class AirbyteConnectionMetadata(
                 if "json_schema" in stream["stream"]
                 else stream["stream"]["jsonSchema"]
             )
-            normalization_tables: Dict[str, AirbyteTableMetadata] = {}
+            normalization_tables: dict[str, AirbyteTableMetadata] = {}
             schema_props = schema.get("properties", schema.get("items", {}).get("properties", {}))
             if self.has_basic_normalization and return_normalization_tables:
                 for k, v in schema_props.items():
@@ -579,7 +582,7 @@ def _get_schema_by_table_name(
                 [
                     (k, v.schema)
                     for k, v in cast(
-                        Dict[str, AirbyteTableMetadata], meta.normalization_tables
+                        "dict[str, AirbyteTableMetadata]", meta.normalization_tables
                     ).items()
                 ]
                 for meta in stream_table_metadata.values()
@@ -600,7 +603,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -630,11 +633,11 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=f"airbyte-{contents.hexdigest()}")
 
     @abstractmethod
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         pass
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        asset_defn_data: List[AssetsDefinitionCacheableData] = []
+        asset_defn_data: list[AssetsDefinitionCacheableData] = []
         for connection_id, connection in self._get_connections():
             stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
@@ -683,7 +686,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 ),
                 schema_by_table_name=schema_by_table_name,
                 table_to_asset_key_fn=table_to_asset_key,
-                freshness_policy=self._connection_to_freshness_policy_fn(connection),
+                legacy_freshness_policy=self._connection_to_freshness_policy_fn(connection),
                 auto_materialize_policy=self._connection_to_auto_materialize_policy_fn(connection),
             )
 
@@ -716,7 +719,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -748,11 +751,11 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             )
             self._airbyte_instance: AirbyteResource = self._partially_initialized_airbyte_instance
 
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         workspace_id = self._workspace_id
         if not workspace_id:
             workspaces = cast(
-                List[Dict[str, Any]],
+                "list[dict[str, Any]]",
                 check.not_none(
                     self._airbyte_instance.make_request(endpoint="/workspaces/list", data={})
                 ).get("workspaces", []),
@@ -764,7 +767,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             workspace_id = workspaces[0].get("workspaceId")
 
         connections = cast(
-            List[Dict[str, Any]],
+            "list[dict[str, Any]]",
             check.not_none(
                 self._airbyte_instance.make_request(
                     endpoint="/connections/list", data={"workspaceId": workspace_id}
@@ -772,12 +775,12 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             ).get("connections", []),
         )
 
-        output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
+        output_connections: list[tuple[str, AirbyteConnectionMetadata]] = []
         for connection_json in connections:
-            connection_id = cast(str, connection_json.get("connectionId"))
+            connection_id = cast("str", connection_json.get("connectionId"))
 
             operations_json = cast(
-                Dict[str, Any],
+                "dict[str, Any]",
                 check.not_none(
                     self._airbyte_instance.make_request(
                         endpoint="/operations/list",
@@ -786,9 +789,9 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
                 ),
             )
 
-            destination_id = cast(str, connection_json.get("destinationId"))
+            destination_id = cast("str", connection_json.get("destinationId"))
             destination_json = cast(
-                Dict[str, Any],
+                "dict[str, Any]",
                 check.not_none(
                     self._airbyte_instance.make_request(
                         endpoint="/destinations/get",
@@ -830,7 +833,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         connection_directories: Optional[Sequence[str]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -850,10 +853,10 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         self._project_dir = project_dir
         self._connection_directories = connection_directories
 
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         connections_dir = os.path.join(self._project_dir, "connections")
 
-        output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
+        output_connections: list[tuple[str, AirbyteConnectionMetadata]] = []
 
         connection_directories = self._connection_directories or os.listdir(connections_dir)
         for connection_name in connection_directories:
@@ -862,7 +865,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 connection_data = yaml.safe_load(f.read())
 
             destination_configuration_path = cast(
-                str, connection_data.get("destination_configuration_path")
+                "str", connection_data.get("destination_configuration_path")
             )
             with open(
                 os.path.join(self._project_dir, destination_configuration_path), encoding="utf-8"
@@ -898,7 +901,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 state_file = state_files[0]
 
-            with open(os.path.join(connection_dir, cast(str, state_file)), encoding="utf-8") as f:
+            with open(os.path.join(connection_dir, cast("str", state_file)), encoding="utf-8") as f:
                 state = yaml.safe_load(f.read())
                 connection_id = state.get("resource_id")
 
@@ -906,12 +909,17 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         return output_connections
 
 
+@superseded(
+    additional_warn_text=(
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
+    )
+)
 def load_assets_from_airbyte_instance(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
     connection_meta_to_group_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[str]]
     ] = None,
@@ -922,7 +930,7 @@ def load_assets_from_airbyte_instance(
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
     connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
     ] = None,
     connection_to_auto_materialize_policy_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -1016,7 +1024,7 @@ def load_assets_from_airbyte_instance(
     check.invariant(
         not connection_meta_to_group_fn
         or not connection_to_group_fn
-        or connection_to_group_fn == _clean_name,
+        or connection_to_group_fn == clean_name,
         "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
     )
 
@@ -1037,127 +1045,141 @@ def load_assets_from_airbyte_instance(
     )
 
 
-@deprecated(
-    breaking_version="1.9",
-    additional_warn_text="The Airbyte Octavia CLI has been deprecated. Consider using load_assets_from_airbyte_instance instead.",
-)
-def load_assets_from_airbyte_project(
-    project_dir: str,
-    workspace_id: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-    connection_meta_to_group_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[str]]
-    ] = None,
-    io_manager_key: Optional[str] = None,
-    connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
-    connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
-    connection_directories: Optional[Sequence[str]] = None,
-    connection_to_asset_key_fn: Optional[
-        Callable[[AirbyteConnectionMetadata, str], AssetKey]
-    ] = None,
-    connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
-    ] = None,
-    connection_to_auto_materialize_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
-    ] = None,
-) -> CacheableAssetsDefinition:
-    """Loads an Airbyte project into a set of Dagster assets.
+# -----------------------
+# Reworked assets factory
+# -----------------------
 
-    Point to the root folder of an Airbyte project synced using the Octavia CLI. For
-    more information, see https://airbyte.com/tutorials/version-control-airbyte-configurations.
+
+@beta
+def build_airbyte_assets_definitions(
+    *,
+    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
+) -> Sequence[AssetsDefinition]:
+    """The list of AssetsDefinition for all connections in the Airbyte workspace.
 
     Args:
-        project_dir (str): The path to the root of your Airbyte project, containing sources, destinations,
-            and connections folders.
-        workspace_id (Optional[str]): The ID of the Airbyte workspace to load connections from. Only
-            required if multiple workspace state YAMLfiles exist in the project.
-        key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
-        create_assets_for_normalization_tables (bool): If True, assets will be created for tables
-            created by Airbyte's normalization feature. If False, only the destination tables
-            will be created. Defaults to True.
-        connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
-            group name for a given Airbyte connection name. If None, no groups will be created. Defaults
-            to a basic sanitization function.
-        connection_meta_to_group_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]]): Function
-            which returns an asset group name for a given Airbyte connection metadata. If None and connection_to_group_fn
-            is None, no groups will be created. Defaults to None.
-        io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
-            Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
-        connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
-            I/O manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
-            the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
-        connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which
-            takes in connection metadata and returns False if the connection should be excluded from the output assets.
-        connection_directories (Optional[List[str]]): Optional list of connection directories to load assets from.
-            If omitted, all connections in the Airbyte project are loaded. May be faster than connection_filter
-            if the project has many connections or if the connection yaml files are large.
-        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
-            takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
-            key is based on the table name. Any asset key prefix will be applied to the output of this function.
-        connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]):
-            Optional function which takes in connection metadata and returns a freshness policy for the connection's assets.
-            If None, no freshness policies will be applied to the assets.
-        connection_to_auto_materialize_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]]):
-            Optional function which takes in connection metadata and returns an auto materialization policy for the connection's assets.
-            If None, no auto materialization policies will be applied to the assets.
+        workspace (Union[AirbyteWorkspace, AirbyteCloudWorkspace]): The Airbyte workspace to fetch assets from.
+        dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
+            to convert Airbyte content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterAirbyteTranslator`.
+        connection_selector_fn (Optional[Callable[[AirbyteConnection], bool]]): A function that allows for filtering
+            which Airbyte connection assets are created for.
 
-    **Examples:**
+    Returns:
+        List[AssetsDefinition]: The list of AssetsDefinition for all connections in the Airbyte workspace.
 
-    Loading all Airbyte connections as assets:
+    Examples:
+        Sync the tables of a Airbyte connection:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster_airbyte import load_assets_from_airbyte_project
+            from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
 
-        airbyte_assets = load_assets_from_airbyte_project(
-            project_dir="path/to/airbyte/project",
-        )
+            import dagster as dg
 
-    Filtering the set of loaded connections:
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
 
-    .. code-block:: python
+            airbyte_assets = build_airbyte_assets_definitions(workspace=workspace)
 
-        from dagster_airbyte import load_assets_from_airbyte_project
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
 
-        airbyte_assets = load_assets_from_airbyte_project(
-            project_dir="path/to/airbyte/project",
-            connection_filter=lambda meta: "snowflake" in meta.name,
-        )
+        Sync the tables of a Airbyte connection with a custom translator:
+
+        .. code-block:: python
+
+            from dagster_airbyte import (
+                DagsterAirbyteTranslator,
+                AirbyteConnectionTableProps,
+                AirbyteCloudWorkspace,
+                build_airbyte_assets_definitions
+            )
+
+            import dagster as dg
+
+            class CustomDagsterAirbyteTranslator(DagsterAirbyteTranslator):
+                def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
+                    default_spec = super().get_asset_spec(props)
+                    return default_spec.merge_attributes(
+                        metadata={"custom": "metadata"},
+                    )
+
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_assets = build_airbyte_assets_definitions(
+                workspace=workspace,
+                dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
+            )
+
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
+
+        Filter connections by name:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+            import dagster as dg
+
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_assets = build_airbyte_assets_definitions(
+                workspace=workspace,
+                connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+            )
+
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
     """
-    if isinstance(key_prefix, str):
-        key_prefix = [key_prefix]
-    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+    dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+    connection_selector_fn = connection_selector_fn or (lambda connection: True)
 
-    check.invariant(
-        not io_manager_key or not connection_to_io_manager_key_fn,
-        "Cannot specify both io_manager_key and connection_to_io_manager_key_fn",
-    )
-    if not connection_to_io_manager_key_fn:
-        connection_to_io_manager_key_fn = lambda _: io_manager_key
-
-    check.invariant(
-        not connection_meta_to_group_fn
-        or not connection_to_group_fn
-        or connection_to_group_fn == _clean_name,
-        "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
+    all_asset_specs = workspace.load_asset_specs(
+        dagster_airbyte_translator=dagster_airbyte_translator,
+        connection_selector_fn=connection_selector_fn,
     )
 
-    if not connection_meta_to_group_fn and connection_to_group_fn:
-        connection_meta_to_group_fn = lambda meta: connection_to_group_fn(meta.name)
+    connections = {
+        (
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_id),
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_name),
+        )
+        for spec in all_asset_specs
+    }
 
-    return AirbyteYAMLCacheableAssetsDefinition(
-        project_dir=project_dir,
-        workspace_id=workspace_id,
-        key_prefix=key_prefix,
-        create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-        connection_meta_to_group_fn=connection_meta_to_group_fn,
-        connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
-        connection_filter=connection_filter,
-        connection_directories=connection_directories,
-        connection_to_asset_key_fn=connection_to_asset_key_fn,
-        connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
-        connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
-    )
+    _asset_fns = []
+    for connection_id, connection_name in connections:
+
+        @airbyte_assets(
+            connection_id=connection_id,
+            workspace=workspace,
+            name=f"airbyte_{clean_name(connection_name)}",
+            dagster_airbyte_translator=dagster_airbyte_translator,
+        )
+        def _asset_fn(context: AssetExecutionContext, airbyte: BaseAirbyteWorkspace):
+            yield from airbyte.sync_and_poll(context=context)
+
+        _asset_fns.append(_asset_fn)
+
+    return _asset_fns

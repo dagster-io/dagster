@@ -1,9 +1,8 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._model.pydantic_compat_layer import compat_model_validator
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from dagster_databricks.databricks import DatabricksClient
 
@@ -61,8 +60,8 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         ),
     )
 
-    @compat_model_validator(mode="before")
-    def has_token_or_oauth_credentials(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    def has_token_or_oauth_credentials(cls, values: dict[str, Any]) -> dict[str, Any]:
         token = values.get("token")
         oauth_credentials = values.get("oauth_credentials")
         azure_credentials = values.get("azure_credentials")

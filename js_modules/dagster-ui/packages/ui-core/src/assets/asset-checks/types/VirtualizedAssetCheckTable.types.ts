@@ -7,6 +7,13 @@ export type AssetCheckTableFragment = {
   name: string;
   description: string | null;
   canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+  blocking: boolean;
+  jobNames: Array<string>;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   executionForLatestMaterialization: {
     __typename: 'AssetCheckExecution';
     id: string;
@@ -98,6 +105,7 @@ export type AssetCheckTableFragment = {
             label: string;
             description: string | null;
           }
+        | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
         | {
             __typename: 'PythonArtifactMetadataEntry';
             module: string;
@@ -133,6 +141,7 @@ export type AssetCheckTableFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -155,6 +164,7 @@ export type AssetCheckTableFragment = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;

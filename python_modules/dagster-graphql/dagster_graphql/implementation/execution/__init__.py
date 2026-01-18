@@ -1,28 +1,21 @@
 import asyncio
 import os
 import sys
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import AsyncIterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union  # noqa: F401, UP035
 
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.events import (
     AssetMaterialization,
     AssetObservation,
     DagsterEventType,
     EngineEventData,
 )
+from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
@@ -32,15 +25,25 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
+    from dagster_graphql.schema.errors import (
+        GrapheneAssetNotFoundError,
+        GrapheneUnauthorizedError,
+        GrapheneUnsupportedOperationError,
+    )
     from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+
 
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
     resume_partition_backfill as resume_partition_backfill,
+    retry_partition_backfill as retry_partition_backfill,
 )
-from dagster_graphql.implementation.utils import assert_permission, assert_permission_for_location
+from dagster_graphql.implementation.utils import (
+    assert_permission,
+    assert_permission_for_run,
+    has_permission_for_run,
+)
 
 if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import CapturedLogData
@@ -85,8 +88,10 @@ def terminate_pipeline_execution(
     graphene_info: "ResolveInfo",
     run_id: str,
     terminate_policy: "GrapheneTerminateRunPolicy",
-) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
-    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+) -> Union[
+    "GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure", "GrapheneUnauthorizedError"
+]:
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError, GrapheneUnauthorizedError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.roots.mutation import (
         GrapheneTerminateRunFailure,
@@ -105,28 +110,18 @@ def terminate_pipeline_execution(
     )
 
     if not record:
-        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
+        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
+            return GrapheneUnauthorizedError()
         return GrapheneRunNotFoundError(run_id)
 
     run = record.dagster_run
     graphene_run = GrapheneRun(record)
 
-    location_name = run.external_job_origin.location_name if run.external_job_origin else None
-
-    if location_name:
-        if not graphene_info.context.has_permission_for_location(
-            Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
-        ):
-            return GrapheneTerminateRunFailure(
-                run=graphene_run,
-                message="You do not have permission to terminate this run",
-            )
-    else:
-        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
-            return GrapheneTerminateRunFailure(
-                run=graphene_run,
-                message="You do not have permission to terminate this run",
-            )
+    if not has_permission_for_run(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, run):
+        return GrapheneTerminateRunFailure(
+            run=graphene_run,
+            message="You do not have permission to terminate this run",
+        )
 
     can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
@@ -197,13 +192,7 @@ def delete_pipeline_run(
         assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
         return GrapheneRunNotFoundError(run_id)
 
-    location_name = run.external_job_origin.location_name if run.external_job_origin else None
-    if location_name:
-        assert_permission_for_location(
-            graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
-        )
-    else:
-        assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
+    assert_permission_for_run(graphene_info, Permissions.DELETE_PIPELINE_RUN, run)
 
     instance.delete_run(run_id)
 
@@ -233,7 +222,10 @@ async def gen_events_for_run(
         "GraphenePipelineRunLogsSubscriptionSuccess",
     ]
 ]:
-    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.implementation.events import (
+        from_event_record,
+        get_graphene_events_from_records_connection,
+    )
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -271,13 +263,13 @@ async def gen_events_for_run(
             cursor=after_cursor,
             limit=chunk_size,
         )
+
         if not dont_send_past_records:
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
-                messages=[
-                    from_event_record(record.event_log_entry, run.job_name)
-                    for record in connection.records
-                ],
+                messages=get_graphene_events_from_records_connection(
+                    instance, connection, run.job_name
+                ),
                 hasMorePastEvents=connection.has_more,
                 cursor=connection.cursor,
             )
@@ -285,22 +277,27 @@ async def gen_events_for_run(
         after_cursor = connection.cursor
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[Tuple[Any, Any]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[EventLogEntry, str]] = asyncio.Queue()
 
-    def _enqueue(event, cursor):
+    def _enqueue(event: EventLogEntry, cursor: str):
         loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
 
     # watch for live events
     instance.watch_event_logs(run_id, after_cursor, _enqueue)
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
     try:
         while True:
             event, cursor = await queue.get()
-            yield GraphenePipelineRunLogsSubscriptionSuccess(
-                run=GrapheneRun(record),
-                messages=[from_event_record(event, run.job_name)],
-                hasMorePastEvents=False,
-                cursor=cursor,
-            )
+            if (
+                show_failed_to_materialize
+                or event.dagster_event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            ):
+                yield GraphenePipelineRunLogsSubscriptionSuccess(
+                    run=GrapheneRun(record),
+                    messages=[from_event_record(event, run.job_name)],
+                    hasMorePastEvents=False,
+                    cursor=cursor,
+                )
     finally:
         instance.end_watch_event_logs(run_id, _enqueue)
 
@@ -316,38 +313,49 @@ async def gen_captured_log_data(
     subscription = compute_log_manager.subscribe(log_key, cursor)
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue["CapturedLogData"] = asyncio.Queue()
+    queue: asyncio.Queue[CapturedLogData] = asyncio.Queue()
 
     def _enqueue(new_event):
         loop.call_soon_threadsafe(queue.put_nowait, new_event)
 
-    subscription(_enqueue)
+    # subscription object will attempt to fetch when started, so move off main thread
+    await run_in_threadpool(subscription, _enqueue)
+
     is_complete = False
     try:
         while not is_complete:
             update = await queue.get()
             yield from_captured_log_data(update)
-            is_complete = subscription.is_complete
+            is_complete = subscription.is_complete and queue.empty()
     finally:
         subscription.dispose()
 
 
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_partition_ranges: Sequence[AssetPartitionWipeRange]
-) -> Union["GrapheneAssetWipeSuccess", "GrapheneUnsupportedOperationError"]:
+) -> Union[
+    "GrapheneAssetWipeSuccess", "GrapheneUnsupportedOperationError", "GrapheneAssetNotFoundError"
+]:
     from dagster_graphql.schema.backfill import GrapheneAssetPartitionRange
-    from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
+    from dagster_graphql.schema.errors import (
+        GrapheneAssetNotFoundError,
+        GrapheneUnsupportedOperationError,
+    )
     from dagster_graphql.schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
-    whole_assets_to_wipe: List[AssetKey] = []
+    whole_assets_to_wipe: list[AssetKey] = []
     for apr in asset_partition_ranges:
         if apr.partition_range is None:
             whole_assets_to_wipe.append(apr.asset_key)
         else:
+            if apr.asset_key not in graphene_info.context.asset_graph.asset_node_snaps_by_key:
+                return GrapheneAssetNotFoundError(asset_key=apr.asset_key)
+
             node = graphene_info.context.asset_graph.asset_node_snaps_by_key[apr.asset_key]
             partitions_def = check.not_none(node.partitions).get_partitions_definition()
-            partition_keys = partitions_def.get_partition_keys_in_range(apr.partition_range)
+            with partition_loading_context(dynamic_partitions_store=instance):
+                partition_keys = partitions_def.get_partition_keys_in_range(apr.partition_range)
             try:
                 instance.wipe_asset_partitions(apr.asset_key, partition_keys)
 

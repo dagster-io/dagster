@@ -1,10 +1,9 @@
 import re
-from typing import List, Union
+from typing import Union
 
 import dagster._check as check
 import docutils.nodes as nodes
-from dagster._annotations import DeprecatedInfo, ExperimentalInfo
-
+from dagster._annotations import BetaInfo, DeprecatedInfo, PreviewInfo, SupersededInfo
 from sphinx.util.docutils import SphinxDirective
 
 # ########################
@@ -15,17 +14,31 @@ from sphinx.util.docutils import SphinxDirective
 
 
 def inject_object_flag(
-    obj: object, info: Union[DeprecatedInfo, ExperimentalInfo], docstring: List[str]
+    obj: object,
+    info: Union[SupersededInfo, DeprecatedInfo, PreviewInfo, BetaInfo],
+    docstring: list[str],
 ) -> None:
     if isinstance(info, DeprecatedInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "deprecated"
         message = f"This API will be removed in version {info.breaking_version}.\n{additional_text}"
-    elif isinstance(info, ExperimentalInfo):
+    elif isinstance(info, SupersededInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
-        flag_type = "experimental"
+        flag_type = "superseded"
+        message = f"This API has been superseded.\n{additional_text}"
+    elif isinstance(info, PreviewInfo):
+        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
+        flag_type = "preview"
         message = (
-            f"This API may break in future versions, even between dot releases.\n{additional_text}"
+            f"This API is currently in preview, and may have breaking changes in patch version releases. "
+            f"This API is not considered ready for production use.\n{additional_text}"
+        )
+    elif isinstance(info, BetaInfo):
+        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
+        flag_type = "beta"
+        message = (
+            f"This API is currently in beta, and may have breaking changes in minor version releases, "
+            f"with behavior changes in patch releases.\n{additional_text}"
         )
     else:
         check.failed(f"Unexpected info type {type(info)}")
@@ -34,27 +47,19 @@ def inject_object_flag(
 
 
 def inject_param_flag(
-    lines: List[str],
+    lines: list[str],
     param: str,
-    info: Union[DeprecatedInfo, ExperimentalInfo],
+    info: Union[BetaInfo, DeprecatedInfo],
 ):
-    additional_text = f" {info.additional_warn_text}" if info.additional_warn_text else ""
     if isinstance(info, DeprecatedInfo):
         flag = ":inline-flag:`deprecated`"
-        message = (
-            f"(This parameter will be removed in version {info.breaking_version}.{additional_text})"
-        )
-    elif isinstance(info, ExperimentalInfo):
-        flag = ":inline-flag:`experimental`"
-        message = (
-            "(This parameter may break in future versions, even between dot"
-            f" releases.{additional_text})"
-        )
+    elif isinstance(info, BetaInfo):
+        flag = ":inline-flag:`beta`"
     else:
         check.failed(f"Unexpected info type {type(info)}")
     index = next((i for i in range(len(lines)) if re.search(f"^:param {param}", lines[i])), None)
     modified_line = (
-        re.sub(rf"^:param {param}:", f":param {param}: {flag} {message}", lines[index])
+        re.sub(rf"^:param {param}:", f":param {param}: {flag} ", lines[index])
         if index is not None
         else None
     )

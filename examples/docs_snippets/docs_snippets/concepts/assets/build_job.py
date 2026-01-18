@@ -14,9 +14,4 @@ sugary_cereals_job = define_asset_job(
     name="sugary_cereals_job", selection="sugary_cereals"
 )
 
-defs = Definitions(
-    assets=[sugary_cereals, shopping_list],
-    jobs=[all_assets_job, sugary_cereals_job],
-)
-
 # end_marker

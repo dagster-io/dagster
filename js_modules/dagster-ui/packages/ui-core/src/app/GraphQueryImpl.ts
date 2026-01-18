@@ -20,12 +20,8 @@ export interface GraphQueryItem {
 
 type TraverseStepFunction<T> = (item: T, callback: (nextItem: T) => void) => void;
 
-class GraphTraverser<T extends GraphQueryItem> {
+export class GraphTraverser<T extends GraphQueryItem> {
   itemNameMap: {[name: string]: T} = {};
-
-  // TODO: One reason doing DFS on the client side is sub optimal.
-  // javascript is tail end recursive tho so we could go for ever without worrying about
-  // stack overflow problems?
 
   constructor(items: T[]) {
     items.forEach((item) => (this.itemNameMap[item.name] = item));
@@ -35,21 +31,30 @@ class GraphTraverser<T extends GraphQueryItem> {
     return this.itemNameMap[name];
   }
 
-  traverse(
-    item: T,
-    step: TraverseStepFunction<T>,
-    depth: number,
-    results: {[key: string]: T} = {},
-  ) {
-    results[item.name] = item;
+  traverse(rootItem: T, nextItemsForItem: TraverseStepFunction<T>, maxDepth: number) {
+    const results: {[key: string]: T} = {};
+    const queue: [T, number][] = [[rootItem, 0]];
 
-    if (depth > 0) {
-      step(item, (next) => {
-        if (!(next.name in results)) {
-          this.traverse(next, step, depth - 1, results);
-        }
-      });
+    /** This code performs a breadth-first search, putting all the items discovered at depth 1
+     * onto the queue before visiting any items at depth 2. This is important because graphs
+     * can look like this:
+     *
+     *  /---------\
+     * A --> B --> C
+     */
+    while (queue.length) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const [item, depth] = queue.shift()!;
+      results[item.name] = item;
+      if (depth < maxDepth) {
+        nextItemsForItem(item, (next) => {
+          if (!(next.name in results)) {
+            queue.push([next, depth + 1]);
+          }
+        });
+      }
     }
+
     return Object.values(results);
   }
 
@@ -58,7 +63,9 @@ class GraphTraverser<T extends GraphQueryItem> {
       item.inputs.forEach((input) =>
         input.dependsOn.forEach((d) => {
           const item = this.itemNamed(d.solid.name);
-          item && callback(item);
+          if (item) {
+            callback(item);
+          }
         }),
       );
 
@@ -70,7 +77,9 @@ class GraphTraverser<T extends GraphQueryItem> {
       item.outputs.forEach((output) =>
         output.dependedBy.forEach((d) => {
           const item = this.itemNamed(d.solid.name);
-          item && callback(item);
+          if (item) {
+            callback(item);
+          }
         }),
       );
 
@@ -89,7 +98,7 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
 
   const traverser = new GraphTraverser<T>(items);
   const results = new Set<T>();
-  const clauses = query.split(/(,| AND | and | )/g);
+  const clauses = query.toLowerCase().split(/(,| AND | and | )/g);
   const focus = new Set<T>();
 
   for (const clause of clauses) {
@@ -100,13 +109,14 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
     const [, parentsClause = '', itemName = '', descendentsClause = ''] = parts;
 
     const itemsMatching = items.filter((s) => {
+      const name = s.name.toLowerCase();
       if (isPlannedDynamicStep(itemName.replace(/\"/g, ''))) {
         // When unresolved dynamic step (i.e ends with `[?]`) is selected, match all dynamic steps
-        return s.name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
+        return name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
       } else {
         return /\".*\"/.test(itemName)
-          ? s.name === itemName.replace(/\"/g, '')
-          : s.name.includes(itemName);
+          ? name === itemName.replace(/\"/g, '')
+          : name.includes(itemName);
       }
     });
 

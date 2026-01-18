@@ -1,8 +1,9 @@
 import dagster._check as check
 import graphene
-from dagster._core.remote_representation import ExternalExecutionPlan
+from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.metadata import GrapheneMetadataItemDefinition
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -30,13 +31,15 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
     class Meta:
         name = "ExecutionStepInput"
 
-    def __init__(self, step_input_snap, external_execution_plan):
+    def __init__(
+        self, step_input_snap: ExecutionStepInputSnap, remote_execution_plan: RemoteExecutionPlan
+    ):
         super().__init__()
         self._step_input_snap = check.inst_param(
             step_input_snap, "step_input_snap", ExecutionStepInputSnap
         )
-        self._external_execution_plan = check.inst_param(
-            external_execution_plan, "external_execution_plan", ExternalExecutionPlan
+        self._remote_execution_plan = check.inst_param(
+            remote_execution_plan, "remote_execution_plan", RemoteExecutionPlan
         )
 
     def resolve_name(self, _graphene_info: ResolveInfo):
@@ -45,13 +48,13 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
     def resolve_dependsOn(self, _graphene_info: ResolveInfo):
         return [
             GrapheneExecutionStep(
-                self._external_execution_plan,
-                self._external_execution_plan.get_step_by_key(key),
+                self._remote_execution_plan,
+                self._remote_execution_plan.get_step_by_key(key),
             )
             # We filter at this layer to ensure that we do not return outputs that
             # do not exist in the execution plan
             for key in filter(
-                self._external_execution_plan.key_in_plan,
+                self._remote_execution_plan.key_in_plan,
                 self._step_input_snap.upstream_step_keys,
             )
         ]
@@ -88,12 +91,14 @@ class GrapheneExecutionStep(graphene.ObjectType):
     class Meta:
         name = "ExecutionStep"
 
-    def __init__(self, external_execution_plan, execution_step_snap):
+    def __init__(
+        self, remote_execution_plan: RemoteExecutionPlan, execution_step_snap: ExecutionStepSnap
+    ):
         super().__init__()
-        self._external_execution_plan = check.inst_param(
-            external_execution_plan, "external_execution_plan", ExternalExecutionPlan
+        self._remote_execution_plan = check.inst_param(
+            remote_execution_plan, "remote_execution_plan", RemoteExecutionPlan
         )
-        self._plan_snapshot = external_execution_plan.execution_plan_snapshot
+        self._plan_snapshot = remote_execution_plan.execution_plan_snapshot
         self._step_snap = check.inst_param(
             execution_step_snap, "execution_step_snap", ExecutionStepSnap
         )
@@ -106,7 +111,7 @@ class GrapheneExecutionStep(graphene.ObjectType):
 
     def resolve_inputs(self, _graphene_info: ResolveInfo):
         return [
-            GrapheneExecutionStepInput(inp, self._external_execution_plan)
+            GrapheneExecutionStepInput(inp, self._remote_execution_plan)
             for inp in self._step_snap.inputs
         ]
 
@@ -126,27 +131,40 @@ class GrapheneExecutionStep(graphene.ObjectType):
 class GrapheneExecutionPlan(graphene.ObjectType):
     steps = non_null_list(GrapheneExecutionStep)
     artifactsPersisted = graphene.NonNull(graphene.Boolean)
+    # TODO: remove this, as we should be using assetKeys instead
+    assetSelection = non_null_list(graphene.String)
+    assetKeys = non_null_list(GrapheneAssetKey)
 
     class Meta:
         name = "ExecutionPlan"
 
-    def __init__(self, external_execution_plan):
+    def __init__(self, remote_execution_plan: RemoteExecutionPlan):
         super().__init__()
-        self._external_execution_plan = check.inst_param(
-            external_execution_plan, external_execution_plan, ExternalExecutionPlan
+        self._remote_execution_plan = check.inst_param(
+            remote_execution_plan, "remote_execution_plan", RemoteExecutionPlan
         )
 
     def resolve_steps(self, _graphene_info: ResolveInfo):
         return [
             GrapheneExecutionStep(
-                self._external_execution_plan,
-                self._external_execution_plan.get_step_by_key(step.key),
+                self._remote_execution_plan,
+                self._remote_execution_plan.get_step_by_key(step.key),
             )
-            for step in self._external_execution_plan.get_steps_in_plan()
+            for step in self._remote_execution_plan.get_steps_in_plan()
         ]
 
     def resolve_artifactsPersisted(self, _graphene_info: ResolveInfo):
-        return self._external_execution_plan.execution_plan_snapshot.artifacts_persisted
+        return self._remote_execution_plan.execution_plan_snapshot.artifacts_persisted
+
+    def resolve_assetSelection(self, _graphene_info: ResolveInfo):
+        # TODO: remove this, as we should be using assetKeys instead
+        return list(self._remote_execution_plan.execution_plan_snapshot.asset_selection)
+
+    def resolve_assetKeys(self, _graphene_info: ResolveInfo) -> list[GrapheneAssetKey]:
+        return [
+            GrapheneAssetKey(path=asset_key.path)
+            for asset_key in self._remote_execution_plan.execution_plan_snapshot.asset_selection
+        ]
 
 
 types = [

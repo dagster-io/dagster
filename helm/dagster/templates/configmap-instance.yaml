@@ -55,6 +55,10 @@ data:
       {{- else if eq $runCoordinatorType "CustomRunCoordinator" }}
         {{- include "dagsterYaml.runCoordinator.custom" . | indent 6 -}}
       {{- end }}
+    {{- else if (.Values.dagsterDaemon.enabled) }}
+    run_coordinator:
+      module: dagster._core.run_coordinator.sync_in_memory_run_coordinator
+      class: SyncInMemoryRunCoordinator
     {{- end }}
 
     {{- $computeLogManagerType := .Values.computeLogManager.type }}
@@ -67,6 +71,8 @@ data:
         {{- include "dagsterYaml.computeLogManager.gcs" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "S3ComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.s3" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "LocalComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.local" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
       {{- end }}
@@ -92,6 +98,9 @@ data:
       start_timeout_seconds:  {{ $runMonitoring.startTimeoutSeconds }}
       {{- if not (kindIs "invalid" $runMonitoring.cancelTimeoutSeconds) }}
       cancel_timeout_seconds:  {{ $runMonitoring.cancelTimeoutSeconds }}
+      {{- end }}
+      {{- if not (kindIs "invalid" $runMonitoring.maxRuntimeSeconds) }}
+      max_runtime_seconds:  {{ $runMonitoring.maxRuntimeSeconds }}
       {{- end }}
       {{- if not (kindIs "invalid" $runMonitoring.maxResumeRunAttempts) }}
       max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
@@ -135,6 +144,18 @@ data:
       num_submit_workers: {{ $schedules.numSubmitWorkers }}
       {{- end }}
     {{- end }}
+    
+    {{- $backfills := .Values.dagsterDaemon.backfills }}
+    {{- if and (.Values.dagsterDaemon.enabled) ($backfills) }}
+    backfills:
+      use_threads: {{ $backfills.useThreads }}
+      {{- if $backfills.numWorkers }}
+      num_workers: {{ $backfills.numWorkers }}
+      {{- end }}
+      {{- if $backfills.numSubmitWorkers }}
+      num_submit_workers: {{ $backfills.numSubmitWorkers }}
+      {{- end }}
+    {{- end }}
 
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
@@ -153,6 +174,11 @@ data:
       auto_materialize:
         purge_after_days: {{ .Values.retention.autoMaterialize.purgeAfterDays | toYaml | nindent 12 }}
       {{- end }}
+    {{- end }}
+
+    {{- if .Values.concurrency.enabled }}
+    concurrency:
+      {{- include "dagsterYaml.concurrency" . | indent 6 }}
     {{- end }}
 
     {{- if .Values.additionalInstanceConfig }}

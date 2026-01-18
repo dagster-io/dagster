@@ -1,7 +1,7 @@
 import gc
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 from unittest import mock
 
 import objgraph
@@ -138,9 +138,10 @@ def test_event_log_subscription(asgi_client, run_id) -> None:
     reason="Inconsistent GC on the async_generator in 3.7",
 )
 def test_event_log_subscription_chunked(asgi_client, run_id):
-    with environ({"DAGSTER_WEBSERVER_EVENT_LOAD_CHUNK_SIZE": "2"}), asgi_client.websocket_connect(
-        "/graphql", GraphQLWS.PROTOCOL
-    ) as ws:
+    with (
+        environ({"DAGSTER_WEBSERVER_EVENT_LOAD_CHUNK_SIZE": "2"}),
+        asgi_client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws,
+    ):
         start_connection(ws)
         start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run_id})
         rx = ws.receive_json()

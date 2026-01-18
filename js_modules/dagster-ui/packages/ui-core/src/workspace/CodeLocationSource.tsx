@@ -47,6 +47,9 @@ type RepoURLType =
   | {type: 'gitlab-url'; url: URL}
   | {type: 'unknown-url'; url: URL};
 
+const GITHUB_HOSTNAMES = new Set(['github.com', 'www.github.com']);
+const GITLAB_HOSTNAMES = new Set(['gitlab.com', 'www.gitlab.com']);
+
 export const extractRepoURL = (metadata: Metadata[]): RepoURLType => {
   const metadataWithURL = metadata.find(({key}) => key === 'url');
   if (!metadataWithURL) {
@@ -57,7 +60,7 @@ export const extractRepoURL = (metadata: Metadata[]): RepoURLType => {
   let url = null;
   try {
     url = new URL(metadataWithURL.value);
-  } catch (e) {
+  } catch {
     // Not a URL. Just show the string, don't try to link it.
   }
 
@@ -65,13 +68,12 @@ export const extractRepoURL = (metadata: Metadata[]): RepoURLType => {
     return {type: 'non-url', value};
   }
 
-  const isGithub = url.hostname.includes('github.com');
-  const isGitlab = url.hostname.includes('gitlab.com');
-
+  const isGithub = GITHUB_HOSTNAMES.has(url.hostname);
   if (isGithub) {
     return {type: 'github-url', url};
   }
 
+  const isGitlab = GITLAB_HOSTNAMES.has(url.hostname);
   if (isGitlab) {
     return {type: 'gitlab-url', url};
   }

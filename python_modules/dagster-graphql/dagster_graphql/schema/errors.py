@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -96,7 +96,7 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_cause(self, _graphene_info):
         return GraphenePythonError(self._cause) if self._cause else None
 
-    def resolve_context(self, _graphene_info):
+    def resolution_context(self, _graphene_info):
         return GraphenePythonError(self._context) if self._context else None
 
     def resolve_className(self, _graphene_info):
@@ -109,7 +109,7 @@ class GraphenePythonError(graphene.ObjectType):
         return self._className
 
     def resolve_causes(self, _graphene_info: ResolveInfo):
-        causes: List[GraphenePythonError] = []
+        causes: list[GraphenePythonError] = []
         current_error = self._cause
         while current_error and len(causes) < 10:  # Sanity check the depth of the causes
             causes.append(GraphenePythonError(current_error))
@@ -449,6 +449,21 @@ class GraphenePartitionSetNotFoundError(graphene.ObjectType):
         super().__init__()
         self.partition_set_name = check.str_param(partition_set_name, "partition_set_name")
         self.message = f"Partition set {self.partition_set_name} could not be found."
+
+
+class GraphenePartitionKeysNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "PartitionKeysNotFoundError"
+
+    partition_keys = non_null_list(graphene.String)
+
+    def __init__(self, partition_keys: set[str]):
+        super().__init__()
+        self.partition_keys = check.list_param(
+            sorted(partition_keys), "partition_keys", of_type=str
+        )
+        self.message = f"Partition keys `{self.partition_keys}` could not be found."
 
 
 class GrapheneRepositoryNotFoundError(graphene.ObjectType):

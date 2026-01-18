@@ -1,10 +1,9 @@
-import {Box, Row, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {VirtualizedAutomationHeader} from './VirtualizedAutomationRow';
-import {VirtualizedAutomationScheduleRow} from './VirtualizedAutomationScheduleRow';
-import {VirtualizedAutomationSensorRow} from './VirtualizedAutomationSensorRow';
+import {ObserveAutomationScheduleRow} from './ObserveAutomationScheduleRow';
+import {ObserveAutomationSensorRow} from './ObserveAutomationSensorRow';
 import {COMMON_COLLATOR} from '../app/Util';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
@@ -33,12 +32,7 @@ type RowType =
   | {type: 'sensor'; repoAddress: RepoAddress; sensor: string}
   | {type: 'schedule'; repoAddress: RepoAddress; schedule: string};
 
-export const AutomationsTable = ({
-  repos,
-  headerCheckbox,
-  checkedKeys,
-  onToggleCheckFactory,
-}: Props) => {
+export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
@@ -86,7 +80,7 @@ export const AutomationsTable = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (ii: number) => {
       const row = flattened[ii];
-      return row?.type === 'header' ? 32 : 64;
+      return row?.type === 'header' ? 32 : 62;
     },
     overscan: 15,
   });
@@ -97,45 +91,24 @@ export const AutomationsTable = ({
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
-        <VirtualizedAutomationHeader checkbox={headerCheckbox} />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: RowType = flattened[index]!;
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const type = row!.type;
             if (type === 'header') {
               return (
                 <Row $height={size} $start={start} key={key}>
                   <DynamicRepoRow
                     repoAddress={row.repoAddress}
-                    key={key}
                     ref={rowVirtualizer.measureElement}
                     index={index}
                     onToggle={onToggle}
                     onToggleAll={onToggleAll}
                     expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
                     showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                    rightElement={
-                      <Box flex={{direction: 'row', gap: 4}}>
-                        <Tooltip
-                          content={
-                            row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`
-                          }
-                          placement="top"
-                        >
-                          <Tag icon="sensors">{row.sensorCount}</Tag>
-                        </Tooltip>
-                        <Tooltip
-                          content={
-                            row.scheduleCount === 1
-                              ? '1 schedule'
-                              : `${row.scheduleCount} schedules`
-                          }
-                          placement="top"
-                        >
-                          <Tag icon="schedule">{row.scheduleCount}</Tag>
-                        </Tooltip>
-                      </Box>
-                    }
+                    rightElement={<></>}
                   />
                 </Row>
               );
@@ -145,7 +118,7 @@ export const AutomationsTable = ({
               const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
               return (
                 <Row $height={size} $start={start} key={key}>
-                  <VirtualizedAutomationSensorRow
+                  <ObserveAutomationSensorRow
                     key={key}
                     index={index}
                     ref={rowVirtualizer.measureElement}
@@ -160,9 +133,10 @@ export const AutomationsTable = ({
 
             if (type === 'schedule') {
               const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
+
               return (
                 <Row $height={size} $start={start} key={key}>
-                  <VirtualizedAutomationScheduleRow
+                  <ObserveAutomationScheduleRow
                     key={key}
                     index={index}
                     ref={rowVirtualizer.measureElement}

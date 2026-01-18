@@ -2,13 +2,17 @@ import groupBy from 'lodash/groupBy';
 import {useMemo} from 'react';
 
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 
 const NO_PARTITION_KEY = '__NO_PARTITION__';
 
-type Event = AssetMaterializationFragment | AssetObservationFragment;
+type Event =
+  | AssetSuccessfulMaterializationFragment
+  | AssetFailedToMaterializeFragment
+  | AssetObservationFragment;
 
 export type AssetEventGroup = {
   latest: Event | null;
@@ -49,14 +53,10 @@ const groupByPartition = (events: Event[], definedPartitionKeys: string[]): Asse
  */
 export function useGroupedEvents(
   xAxis: 'partition' | 'time',
-  materializations: Event[],
-  observations: Event[],
+  events: Event[],
   loadedPartitionKeys: string[] | undefined,
 ) {
   return useMemo<AssetEventGroup[]>(() => {
-    const events = [...materializations, ...observations].sort(
-      (b, a) => Number(a.timestamp) - Number(b.timestamp),
-    );
     if (xAxis === 'partition' && loadedPartitionKeys) {
       return groupByPartition(events, loadedPartitionKeys);
     } else {
@@ -68,5 +68,5 @@ export function useGroupedEvents(
         all: [],
       }));
     }
-  }, [loadedPartitionKeys, materializations, observations, xAxis]);
+  }, [loadedPartitionKeys, events, xAxis]);
 }

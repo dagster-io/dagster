@@ -21,7 +21,24 @@ def setup(app: Sphinx):
     # Link transform function for links, by default returns docname + mdx_link_suffix
     app.add_config_value("mdx_link_transform", None, "env")
 
+    # Maximum line width for text wrapping
     app.add_config_value("mdx_max_line_width", 120, "env")
+
+    # Title suffix to append to document titles
+    app.add_config_value("mdx_title_suffix", "", "env")
+
+    # Title meta to append to document titles
+    app.add_config_value("mdx_title_meta", "", "env")
+
+    app.add_config_value("mdx_description_meta", "", "env")
+
+    app.add_config_value("mdx_sidebar_position", None, "env")
+
+    app.add_config_value(
+        "mdx_github_url", "https://github.com/dagster-io/dagster/blob/master", "env"
+    )
+
+    app.add_config_value("mdx_show_source_links", True, "env")
 
     return {
         "version": __version__,

@@ -45,10 +45,13 @@ enum DagsterEventType {
   STEP_RESTARTED
   ASSET_MATERIALIZATION
   ASSET_MATERIALIZATION_PLANNED
+  ASSET_FAILED_TO_MATERIALIZE
   ASSET_OBSERVATION
   STEP_EXPECTATION_RESULT
   ASSET_CHECK_EVALUATION_PLANNED
   ASSET_CHECK_EVALUATION
+  ASSET_HEALTH_CHANGED
+  ASSET_WIPED
   RUN_ENQUEUED
   RUN_DEQUEUED
   RUN_STARTING
@@ -77,6 +80,9 @@ enum DagsterEventType {
   ALERT_SUCCESS
   ALERT_FAILURE
   LOGS_CAPTURED
+  FRESHNESS_STATE_EVALUATION
+  FRESHNESS_STATE_CHANGE
+  CODE_LOCATION_UPDATED
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
@@ -603,19 +609,76 @@ type Asset {
   key: AssetKey!
   assetMaterializations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  assetEventHistory(
+    partitions: [String!]
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int!
+    eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    cursor: String
+  ): AssetResultEventHistoryConnection!
   definition: AssetNode
+  latestEventSortKey: ID
+  assetHealth: AssetHealth
+  latestMaterializationTimestamp: Float
+  hasDefinitionOrRecord: Boolean!
+  latestFailedToMaterializeTimestamp: Float
+  freshnessStatusChangedTimestamp: Float
+}
+
+type AssetResultEventHistoryConnection {
+  results: [AssetResultEventType!]!
+  cursor: String!
+}
+
+union AssetResultEventType = FailedToMaterializeEvent | MaterializationEvent | ObservationEvent
+
+type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+  materializationFailureReason: AssetMaterializationFailureReason!
+  materializationFailureType: AssetMaterializationFailureType!
+}
+
+enum AssetMaterializationFailureReason {
+  FAILED_TO_MATERIALIZE
+  UPSTREAM_FAILED_TO_MATERIALIZE
+  RUN_TERMINATED
+  UNKNOWN
+}
+
+enum AssetMaterializationFailureType {
+  FAILED
+  SKIPPED
+}
+
+enum AssetEventHistoryEventTypeSelector {
+  MATERIALIZATION
+  FAILED_TO_MATERIALIZE
+  OBSERVATION
 }
 
 type AssetNode {
@@ -631,6 +694,10 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  assetsForSameStorageAddress: [AssetNode!]!
+  lastAutoMaterializationEvaluationRecord(
+    asOfEvaluationId: ID
+  ): AutoMaterializeAssetEvaluationRecord
   backfillPolicy: BackfillPolicy
   changedReasons: [ChangeReason!]!
   computeKind: String
@@ -644,6 +711,8 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  freshnessStatusInfo: FreshnessStatusInfo
+  internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
   graphName: String
@@ -654,6 +723,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
@@ -669,7 +739,9 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
+  partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  pools: [String!]!
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   staleStatus(partition: String): StaleStatus
@@ -678,10 +750,11 @@ type AssetNode {
   staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
+  hasWipePermission: Boolean!
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
-  currentAutoMaterializeEvaluationId: Int
+  currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
 }
 
@@ -689,6 +762,69 @@ type MaterializationUpstreamDataVersion {
   assetKey: AssetKey!
   downstreamAssetKey: AssetKey!
   timestamp: String!
+}
+
+type AutoMaterializeAssetEvaluationRecord {
+  id: ID!
+  evaluationId: ID!
+  numRequested: Int!
+  numSkipped: Int!
+  numDiscarded: Int!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
+  timestamp: Float!
+  runIds: [String!]!
+  rules: [AutoMaterializeRule!]
+  assetKey: AssetKey!
+}
+
+type AutoMaterializeRuleWithRuleEvaluations {
+  rule: AutoMaterializeRule!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
+}
+
+type AutoMaterializeRule {
+  description: String!
+  decisionType: AutoMaterializeDecisionType!
+  className: String!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
+}
+
+type AutoMaterializeRuleEvaluation {
+  partitionKeysOrError: PartitionKeysOrError
+  evaluationData: AutoMaterializeRuleEvaluationData
+}
+
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
+union AutoMaterializeRuleEvaluationData =
+  | TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
+}
+
+type ParentMaterializedRuleEvaluationData {
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
+}
+
+type WaitingOnKeysRuleEvaluationData {
+  waitingOnAssetKeys: [AssetKey!]
 }
 
 type BackfillPolicy {
@@ -714,7 +850,6 @@ enum ChangeReason {
 
 type AssetDependency {
   asset: AssetNode!
-  inputName: String!
   partitionMapping: PartitionMapping
 }
 
@@ -736,6 +871,36 @@ type FreshnessPolicy {
   lastEvaluationTimestamp: String
 }
 
+type FreshnessStatusInfo {
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
+}
+
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
+
+type TimeWindowFreshnessPolicy {
+  failWindowSeconds: Int!
+  warnWindowSeconds: Int
+}
+
+type CronFreshnessPolicy {
+  deadlineCron: String!
+  lowerBoundDeltaSeconds: Int!
+  timezone: String!
+}
+
 type AutoMaterializePolicy {
   policyType: AutoMaterializePolicyType!
   maxMaterializationsPerMinute: Int
@@ -745,18 +910,6 @@ type AutoMaterializePolicy {
 enum AutoMaterializePolicyType {
   EAGER
   LAZY
-}
-
-type AutoMaterializeRule {
-  description: String!
-  decisionType: AutoMaterializeDecisionType!
-  className: String!
-}
-
-enum AutoMaterializeDecisionType {
-  MATERIALIZE
-  SKIP
-  DISCARD
 }
 
 type AutomationCondition {
@@ -775,7 +928,7 @@ type TeamAssetOwner {
 }
 
 union AssetPartitionStatuses =
-    DefaultPartitionStatuses
+  | DefaultPartitionStatuses
   | MultiPartitionStatuses
   | TimePartitionStatuses
 
@@ -836,6 +989,7 @@ type PartitionDefinition {
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
   name: String
+  fmt: String
 }
 
 enum PartitionDefinitionType {
@@ -851,6 +1005,12 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
+}
+
+type PartitionKeyConnection {
+  results: [String!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 type DimensionPartitionKeys {
@@ -881,7 +1041,7 @@ enum StaleCauseCategory {
 }
 
 union AssetChecksOrError =
-    AssetChecks
+  | AssetChecks
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetCheckNeedsAgentUpgradeError
@@ -899,6 +1059,7 @@ type AssetCheck {
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
+  automationCondition: AutomationCondition
 }
 
 type AssetCheckExecution {
@@ -930,7 +1091,7 @@ type AssetCheckEvaluation {
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
-  storageId: Int!
+  storageId: ID!
   runId: String!
   timestamp: Float!
 }
@@ -960,6 +1121,60 @@ type AssetCheckNeedsAgentUpgradeError implements Error {
 
 union Instigator = Schedule | Sensor
 
+type AssetHealth {
+  assetHealth: AssetHealthStatus!
+  materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
+  assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+  latestRunId: String
+  latestFailedRunId: String
+}
+
+type AssetHealthMaterializationHealthyPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+  latestRunId: String
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
+}
+
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH
   MISSING_REQUIRED_FIELD
@@ -974,7 +1189,7 @@ type EvaluationStack {
 }
 
 union EvaluationStackEntry =
-    EvaluationStackListItemEntry
+  | EvaluationStackListItemEntry
   | EvaluationStackPathEntry
   | EvaluationStackMapKeyEntry
   | EvaluationStackMapValueEntry
@@ -1016,6 +1231,7 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
 interface IPipelineSnapshot {
   name: String!
   description: String
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1030,6 +1246,16 @@ interface IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+}
+
+union DefinitionOwner = UserDefinitionOwner | TeamDefinitionOwner
+
+type UserDefinitionOwner {
+  email: String!
+}
+
+type TeamDefinitionOwner {
+  team: String!
 }
 
 type Logger {
@@ -1070,6 +1296,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1081,6 +1308,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1092,10 +1320,9 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
-}
-
-type PartitionKeys {
-  partitionKeys: [String!]!
+  hasLaunchExecutionPermission: Boolean!
+  hasLaunchReexecutionPermission: Boolean!
+  nodeNames: [String!]!
 }
 
 type PartitionTagsAndConfig {
@@ -1123,7 +1350,7 @@ type RunConfigValidationInvalid implements PipelineConfigValidationInvalid {
 }
 
 union PipelineConfigValidationResult =
-    InvalidSubsetError
+  | InvalidSubsetError
   | PipelineConfigValidationValid
   | RunConfigValidationInvalid
   | PipelineNotFoundError
@@ -1186,7 +1413,7 @@ type EventConnection {
 }
 
 union DagsterRunEvent =
-    ExecutionStepFailureEvent
+  | ExecutionStepFailureEvent
   | ExecutionStepInputEvent
   | ExecutionStepOutputEvent
   | ExecutionStepSkippedEvent
@@ -1194,6 +1421,7 @@ union DagsterRunEvent =
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
   | ExecutionStepRestartEvent
+  | HealthChangedEvent
   | LogMessageEvent
   | ResourceInitFailureEvent
   | ResourceInitStartedEvent
@@ -1215,6 +1443,7 @@ union DagsterRunEvent =
   | StepExpectationResultEvent
   | MaterializationEvent
   | ObservationEvent
+  | FailedToMaterializeEvent
   | EngineEvent
   | HookCompletedEvent
   | HookSkippedEvent
@@ -1225,6 +1454,24 @@ union DagsterRunEvent =
   | AssetMaterializationPlannedEvent
   | AssetCheckEvaluationPlannedEvent
   | AssetCheckEvaluationEvent
+
+type HealthChangedEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+}
 
 type LogsCapturedEvent implements MessageEvent {
   runId: String!
@@ -1239,8 +1486,14 @@ type LogsCapturedEvent implements MessageEvent {
   externalUrl: String
   externalStdoutUrl: String
   externalStderrUrl: String
+  shellCmd: LogRetrievalShellCommand
   pid: Int
   logKey: String!
+}
+
+type LogRetrievalShellCommand {
+  stdout: String
+  stderr: String
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
@@ -1305,7 +1558,7 @@ type PipelineRunLogsSubscriptionFailure {
 }
 
 union PipelineRunLogsSubscriptionPayload =
-    PipelineRunLogsSubscriptionSuccess
+  | PipelineRunLogsSubscriptionSuccess
   | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
@@ -1365,6 +1618,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1377,10 +1631,11 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
+  externalJobSource: String
 }
 
 union PipelineSnapshotOrError =
-    PipelineNotFoundError
+  | PipelineNotFoundError
   | PipelineSnapshot
   | PipelineSnapshotNotFoundError
   | PythonError
@@ -1439,7 +1694,10 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
+  allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
+  hasRunMetricsEnabled: Boolean!
+  externalJobSource: String
 }
 
 interface RunsFeedEntry {
@@ -1482,7 +1740,7 @@ union AssetOrError = Asset | AssetNotFoundError
 union AssetsOrError = AssetConnection | PythonError
 
 union DeletePipelineRunResult =
-    DeletePipelineRunSuccess
+  | DeletePipelineRunSuccess
   | UnauthorizedError
   | PythonError
   | RunNotFoundError
@@ -1496,7 +1754,7 @@ type DeleteRunMutation {
 }
 
 union ExecutionPlanOrError =
-    ExecutionPlan
+  | ExecutionPlan
   | RunConfigValidationInvalid
   | PipelineNotFoundError
   | InvalidSubsetError
@@ -1510,6 +1768,12 @@ type LaunchRunMutation {
   Output: LaunchRunResult!
 }
 
+type LaunchMultipleRunsMutation {
+  Output: LaunchMultipleRunsResultOrError!
+}
+
+union LaunchMultipleRunsResultOrError = LaunchMultipleRunsResult | PythonError
+
 type LaunchRunReexecutionMutation {
   Output: LaunchRunReexecutionResult!
 }
@@ -1521,7 +1785,7 @@ type ReloadRepositoryLocationMutation {
 }
 
 union ReloadRepositoryLocationMutationResult =
-    WorkspaceLocationEntry
+  | WorkspaceLocationEntry
   | ReloadNotSupported
   | RepositoryLocationNotFound
   | UnauthorizedError
@@ -1535,8 +1799,10 @@ type WorkspaceLocationEntry {
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
   versionKey: String!
+  defsStateInfo: DefsStateInfo
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
+  definitionsSource: DefinitionsSource!
 }
 
 union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
@@ -1557,6 +1823,11 @@ type FeatureFlag {
   enabled: Boolean!
 }
 
+enum DefinitionsSource {
+  CODE_SERVER
+  CONNECTION
+}
+
 type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
 }
@@ -1573,7 +1844,7 @@ type ShutdownRepositoryLocationMutation {
 }
 
 union ShutdownRepositoryLocationMutationResult =
-    ShutdownRepositoryLocationSuccess
+  | ShutdownRepositoryLocationSuccess
   | RepositoryLocationNotFound
   | UnauthorizedError
   | PythonError
@@ -1601,7 +1872,7 @@ type TerminateRunMutation {
 }
 
 union TerminateRunResult =
-    TerminateRunSuccess
+  | TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
   | UnauthorizedError
@@ -1640,6 +1911,7 @@ type Schedule {
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
@@ -1652,11 +1924,16 @@ enum InstigationStatus {
 type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
+  assetChecks: [AssetCheckhandle!]!
   assets: [Asset!]!
   assetsOrError: AssetsOrError!
 }
 
-union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
+union ScheduleMutationResult =
+  | PythonError
+  | UnauthorizedError
+  | ScheduleStateResult
+  | ScheduleNotFoundError
 
 union ScheduleOrError = Schedule | ScheduleNotFoundError | PythonError
 
@@ -1716,8 +1993,9 @@ type AssetKey {
 }
 
 union LaunchBackfillResult =
-    LaunchBackfillSuccess
+  | LaunchBackfillSuccess
   | PartitionSetNotFoundError
+  | PartitionKeysNotFoundError
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -1730,13 +2008,18 @@ union LaunchBackfillResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
+type PartitionKeysNotFoundError implements Error {
+  message: String!
+  partitionKeys: [String!]!
+}
+
 type LaunchBackfillSuccess {
   backfillId: String!
   launchedRunIds: [String]
 }
 
 union ConfigTypeOrError =
-    EnumConfigType
+  | EnumConfigType
   | CompositeConfigType
   | RegularConfigType
   | PipelineNotFoundError
@@ -1775,6 +2058,7 @@ type ConfigTypeField {
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+  isSecret: Boolean!
   defaultValueAsJson: String
 }
 
@@ -1854,7 +2138,7 @@ interface DagsterType {
 }
 
 union DagsterTypeOrError =
-    RegularDagsterType
+  | RegularDagsterType
   | PipelineNotFoundError
   | DagsterTypeNotFoundError
   | PythonError
@@ -2071,6 +2355,8 @@ type DuplicateDynamicPartitionError implements Error {
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
+  assetSelection: [String!]!
+  assetKeys: [AssetKey!]!
 }
 
 type ExecutionStep {
@@ -2133,6 +2419,8 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
+  hasLocationDocs: Boolean!
+  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2143,6 +2431,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -2154,6 +2443,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -2165,6 +2455,9 @@ type Job implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+  hasLaunchExecutionPermission: Boolean!
+  hasLaunchReexecutionPermission: Boolean!
+  nodeNames: [String!]!
 }
 
 enum SensorType {
@@ -2209,6 +2502,7 @@ type ConfiguredValue {
 enum ConfiguredValueType {
   VALUE
   ENV_VAR
+  SECRET
 }
 
 type NestedResourceEntry {
@@ -2226,6 +2520,14 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!
@@ -2249,6 +2551,27 @@ type DagsterLibraryVersion {
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
+
+type DefsStateInfo {
+  keyStateInfo: [DefsStateInfoEntry!]!
+}
+
+type DefsKeyStateInfo {
+  version: String!
+  createTimestamp: Float!
+  managementType: DefsStateManagementType!
+}
+
+type DefsStateInfoEntry {
+  name: String!
+  info: DefsKeyStateInfo
+}
+
+enum DefsStateManagementType {
+  VERSIONED_STATE_STORAGE
+  LOCAL_FILESYSTEM
+  LEGACY_CODE_SERVER_SNAPSHOTS
+}
 
 input AssetKeyInput {
   path: [String!]!
@@ -2317,6 +2640,7 @@ input LaunchBackfillParams {
   forceSynchronousSubmission: Boolean
   title: String
   description: String
+  runConfigData: RunConfigData
 }
 
 input PartitionSetSelector {
@@ -2350,7 +2674,6 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
-  excludeSubruns: Boolean
 }
 
 input PipelineSelector {
@@ -2427,6 +2750,7 @@ enum BulkActionStatus {
   CANCELING
   COMPLETED_SUCCESS
   COMPLETED_FAILED
+  FAILING
 }
 
 type DaemonHealth {
@@ -2460,6 +2784,8 @@ type Instance {
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
+  poolConfig: PoolConfig
+  freshnessEvaluationEnabled: Boolean!
 }
 
 type RunQueueConfig {
@@ -2479,6 +2805,8 @@ type ConcurrencyKeyInfo {
   pendingStepRunIds: [String!]!
   assignedStepCount: Int!
   assignedStepRunIds: [String!]!
+  limit: Int
+  usingDefaultLimit: Boolean
 }
 
 type ClaimedConcurrencySlot {
@@ -2492,6 +2820,12 @@ type PendingConcurrencyStep {
   enqueuedTimestamp: Float!
   assignedTimestamp: Float
   priority: Int
+}
+
+type PoolConfig {
+  poolGranularity: String
+  defaultPoolLimit: Int
+  opGranularityRunBuffer: Int
 }
 
 type RunLauncher {
@@ -2527,6 +2861,7 @@ type RunRequest {
   tags: [PipelineTag!]!
   runConfigYaml: String!
   assetSelection: [AssetKey!]
+  assetChecks: [AssetCheckhandle!]
   jobName: String
 }
 
@@ -2549,7 +2884,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
-  tick(tickId: BigInt!): InstigationTick!
+  tick(tickId: ID!): InstigationTick!
   ticks(
     dayRange: Int
     dayOffset: Int
@@ -2570,8 +2905,6 @@ enum InstigationType {
   SENSOR
   AUTO_MATERIALIZE
 }
-
-scalar BigInt
 
 type InstigationStateNotFoundError implements Error {
   message: String!
@@ -2605,7 +2938,7 @@ type InstigationTick {
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
-  autoMaterializeAssetEvaluationId: Int
+  autoMaterializeAssetEvaluationId: ID
   instigationType: InstigationType!
 }
 
@@ -2671,6 +3004,7 @@ type FloatMetadataEntry implements MetadataEntry {
   label: String!
   description: String
   floatValue: Float
+  floatRepr: String!
 }
 
 type IntMetadataEntry implements MetadataEntry {
@@ -2784,7 +3118,11 @@ type TimestampMetadataEntry implements MetadataEntry {
   timestamp: Float!
 }
 
-scalar Cursor
+type PoolMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  pool: String!
+}
 
 type Partition {
   name: String!
@@ -2818,6 +3156,8 @@ type PartitionSet {
   partitionStatusesOrError: PartitionStatusesOrError!
   partitionRuns: [PartitionRun!]!
   repositoryOrigin: RepositoryOrigin!
+  hasLaunchBackfillPermission: Boolean!
+  hasCancelBackfillPermission: Boolean!
   backfills(cursor: String, limit: Int): [PartitionBackfill!]!
 }
 
@@ -2952,14 +3292,14 @@ type RunConfigSchema {
 }
 
 union RunConfigSchemaOrError =
-    RunConfigSchema
+  | RunConfigSchema
   | PipelineNotFoundError
   | InvalidSubsetError
   | ModeNotFoundError
   | PythonError
 
 union LaunchRunResult =
-    LaunchRunSuccess
+  | LaunchRunSuccess
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -2972,8 +3312,12 @@ union LaunchRunResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
+type LaunchMultipleRunsResult {
+  launchMultipleRunsResult: [LaunchRunResult!]!
+}
+
 union LaunchRunReexecutionResult =
-    LaunchRunSuccess
+  | LaunchRunSuccess
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -3026,6 +3370,7 @@ type Sensor {
   targets: [Target!]
   defaultStatus: InstigationStatus!
   canReset: Boolean!
+  hasCursorUpdatePermissions: Boolean!
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
@@ -3033,6 +3378,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
@@ -3080,6 +3426,7 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
   id: ID!
   solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
@@ -3115,6 +3462,7 @@ interface ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
 }
 
 type Output {
@@ -3165,8 +3513,10 @@ type SolidDefinition implements ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
   configField: ConfigTypeField
   requiredResources: [ResourceRequirement!]!
+  pool: String
 }
 
 type SolidHandle {
@@ -3201,6 +3551,7 @@ type TableColumn {
   type: String!
   description: String
   constraints: TableColumnConstraints!
+  tags: [DefinitionTag!]!
 }
 
 type TableColumnConstraints {
@@ -3251,6 +3602,7 @@ type Query {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
   workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  resourcesOrError(pipelineSelector: PipelineSelector!): ResourcesOrError!
   pipelineSnapshotOrError(
     snapshotId: String
     activePipelineSelector: PipelineSelector
@@ -3263,7 +3615,9 @@ type Query {
     scheduleStatus: InstigationStatus
   ): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
-  allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
+  allTopLevelResourceDetailsOrError(
+    repositorySelector: RepositorySelector!
+  ): ResourceDetailsListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(
@@ -3287,8 +3641,13 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedConnectionOrError!
-  runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
+  runsFeedOrError(
+    limit: Int!
+    cursor: String
+    view: RunsFeedView!
+    filter: RunsFilter
+  ): RunsFeedConnectionOrError!
+  runsFeedCountOrError(view: RunsFeedView!, filter: RunsFilter): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3305,7 +3664,13 @@ type Query {
   ): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetsOrError(
+    prefix: [String!]
+    assetKeys: [AssetKeyInput!]
+    cursor: String
+    limit: Int
+  ): AssetsOrError!
+  assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
     group: AssetGroupSelector
@@ -3338,25 +3703,26 @@ type Query {
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
   truePartitionsForAutomationConditionEvaluationNode(
-    assetKey: AssetKeyInput!
-    evaluationId: Int!
+    assetKey: AssetKeyInput
+    evaluationId: ID!
     nodeUniqueId: String
   ): [String!]!
   autoMaterializeEvaluationsForEvaluationId(
-    evaluationId: Int!
+    evaluationId: ID!
   ): AutoMaterializeAssetEvaluationRecordsOrError
   assetConditionEvaluationForPartition(
-    assetKey: AssetKeyInput!
-    evaluationId: Int!
+    assetKey: AssetKeyInput
+    evaluationId: ID!
     partition: String!
   ): AssetConditionEvaluation
   assetConditionEvaluationRecordsOrError(
-    assetKey: AssetKeyInput!
+    assetKey: AssetKeyInput
+    assetCheckKey: AssetCheckHandleInput
     limit: Int!
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
   assetConditionEvaluationsForEvaluationId(
-    evaluationId: Int!
+    evaluationId: ID!
   ): AssetConditionEvaluationRecordsOrError
   autoMaterializeTicks(
     dayRange: Int
@@ -3373,6 +3739,7 @@ type Query {
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
+  latestDefsStateInfo: DefsStateInfo
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3390,6 +3757,16 @@ type WorkspaceLocationStatusEntry {
   updateTimestamp: Float!
   versionKey: String!
   permissions: [Permission!]!
+}
+
+union ResourcesOrError =
+  | ResourceConnection
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | PythonError
+
+type ResourceConnection {
+  resources: [Resource!]!
 }
 
 union GraphOrError = Graph | GraphNotFoundError | PythonError
@@ -3419,7 +3796,7 @@ input GraphSelector {
 
 union ResourceDetailsOrError = ResourceDetails | ResourceNotFoundError | PythonError
 
-union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
+union ResourceDetailsListOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!
@@ -3453,6 +3830,12 @@ type RunsFeedConnection {
   hasMore: Boolean!
 }
 
+enum RunsFeedView {
+  ROOTS
+  RUNS
+  BACKFILLS
+}
+
 union RunsFeedCountOrError = RunsFeedCount | PythonError
 
 type RunsFeedCount {
@@ -3475,6 +3858,18 @@ union RunIdsOrError = RunIds | InvalidPipelineRunsFilterError | PythonError
 
 type RunIds {
   results: [String!]!
+}
+
+union AssetRecordsOrError = AssetRecordConnection | PythonError
+
+type AssetRecordConnection {
+  assets: [AssetRecord!]!
+  cursor: String
+}
+
+type AssetRecord {
+  id: String!
+  key: AssetKey!
 }
 
 input AssetGroupSelector {
@@ -3537,58 +3932,11 @@ type TestFields {
 }
 
 union AutoMaterializeAssetEvaluationRecordsOrError =
-    AutoMaterializeAssetEvaluationRecords
+  | AutoMaterializeAssetEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
 
 type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
-}
-
-type AutoMaterializeAssetEvaluationRecord {
-  id: ID!
-  evaluationId: Int!
-  numRequested: Int!
-  numSkipped: Int!
-  numDiscarded: Int!
-  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
-  timestamp: Float!
-  runIds: [String!]!
-  rules: [AutoMaterializeRule!]
-  assetKey: AssetKey!
-}
-
-type AutoMaterializeRuleWithRuleEvaluations {
-  rule: AutoMaterializeRule!
-  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
-}
-
-type AutoMaterializeRuleEvaluation {
-  partitionKeysOrError: PartitionKeysOrError
-  evaluationData: AutoMaterializeRuleEvaluationData
-}
-
-union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
-
-type PartitionSubsetDeserializationError implements Error {
-  message: String!
-}
-
-union AutoMaterializeRuleEvaluationData =
-    TextRuleEvaluationData
-  | ParentMaterializedRuleEvaluationData
-  | WaitingOnKeysRuleEvaluationData
-
-type TextRuleEvaluationData {
-  text: String
-}
-
-type ParentMaterializedRuleEvaluationData {
-  updatedAssetKeys: [AssetKey!]
-  willUpdateAssetKeys: [AssetKey!]
-}
-
-type WaitingOnKeysRuleEvaluationData {
-  waitingOnAssetKeys: [AssetKey!]
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
@@ -3601,19 +3949,22 @@ type AssetConditionEvaluation {
 }
 
 union AssetConditionEvaluationNode =
-    UnpartitionedAssetConditionEvaluationNode
+  | UnpartitionedAssetConditionEvaluationNode
   | PartitionedAssetConditionEvaluationNode
   | SpecificPartitionAssetConditionEvaluationNode
 
 type UnpartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
 }
+
+union EntityKey = AssetKey | AssetCheckhandle
 
 enum AssetConditionEvaluationStatus {
   TRUE
@@ -3624,6 +3975,7 @@ enum AssetConditionEvaluationStatus {
 type PartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
@@ -3634,13 +3986,14 @@ type PartitionedAssetConditionEvaluationNode {
 type SpecificPartitionAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
 }
 
 union AssetConditionEvaluationRecordsOrError =
-    AssetConditionEvaluationRecords
+  | AssetConditionEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
 
 type AssetConditionEvaluationRecords {
@@ -3649,10 +4002,11 @@ type AssetConditionEvaluationRecords {
 
 type AssetConditionEvaluationRecord {
   id: ID!
-  evaluationId: Int!
+  evaluationId: ID!
   runIds: [String!]!
   timestamp: Float!
-  assetKey: AssetKey!
+  assetKey: AssetKey
+  entityKey: EntityKey!
   numRequested: Int!
   startTimestamp: Float
   endTimestamp: Float
@@ -3666,17 +4020,28 @@ type AutomationConditionEvaluationNode {
   uniqueId: String!
   userLabel: String
   expandedLabel: [String!]!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
   numCandidates: Int
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
+  operatorType: String!
+  sinceMetadata: SinceConditionMetadata
+}
+
+type SinceConditionMetadata {
+  triggerEvaluationId: ID
+  triggerTimestamp: Float
+  resetEvaluationId: ID
+  resetTimestamp: Float
 }
 
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
+  launchMultipleRuns(executionParamsList: [ExecutionParams!]!): LaunchMultipleRunsResultOrError!
   launchPipelineReexecution(
     executionParams: ExecutionParams
     reexecutionParams: ReexecutionParams
@@ -3724,6 +4089,7 @@ type Mutation {
   ): ReportRunlessAssetEventsResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
+  reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
   logTelemetry(
     action: String!
@@ -3752,9 +4118,12 @@ type Mutation {
 input ReexecutionParams {
   parentRunId: String!
   strategy: ReexecutionStrategy!
+  extraTags: [ExecutionTag!]
+  useParentRunTags: Boolean
 }
 
 enum ReexecutionStrategy {
+  FROM_ASSET_FAILURE
   FROM_FAILURE
   ALL_STEPS
 }
@@ -3770,7 +4139,7 @@ type TerminateRunsResult {
 }
 
 union AssetWipeMutationResult =
-    AssetNotFoundError
+  | AssetNotFoundError
   | UnauthorizedError
   | PythonError
   | UnsupportedOperationError
@@ -3791,7 +4160,7 @@ type PartitionRange {
 }
 
 union ReportRunlessAssetEventsResult =
-    UnauthorizedError
+  | UnauthorizedError
   | PythonError
   | ReportRunlessAssetEventsSuccess
 
@@ -3818,7 +4187,7 @@ type LogTelemetrySuccess {
 }
 
 union AddDynamicPartitionResult =
-    AddDynamicPartitionSuccess
+  | AddDynamicPartitionSuccess
   | UnauthorizedError
   | PythonError
   | DuplicateDynamicPartitionError
@@ -3829,7 +4198,7 @@ type AddDynamicPartitionSuccess {
 }
 
 union DeleteDynamicPartitionsResult =
-    DeleteDynamicPartitionsSuccess
+  | DeleteDynamicPartitionsSuccess
   | UnauthorizedError
   | PythonError
 

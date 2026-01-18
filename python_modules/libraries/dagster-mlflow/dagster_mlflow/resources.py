@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.backoff import backoff
 from mlflow.entities.run_status import RunStatus
@@ -54,7 +55,7 @@ class MlflowMeta(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        class_cls = super(MlflowMeta, cls).__new__(cls, name, bases, attrs)
+        class_cls = super().__new__(cls, name, bases, attrs)
         for attr in (attr for attr in dir(mlflow) if attr not in dir(class_cls)):
             mlflow_attribute = getattr(mlflow, attr)
             if callable(mlflow_attribute):
@@ -64,6 +65,7 @@ class MlflowMeta(type):
         return class_cls
 
 
+@beta
 class MlFlow(metaclass=MlflowMeta):
     """Class for setting up an mlflow resource for dagster runs.
     This takes care of all the configuration required to use mlflow tracking and the complexities of
@@ -153,8 +155,8 @@ class MlFlow(metaclass=MlflowMeta):
                 },
                 max_retries=3,
             )
-            if not current_run_df.empty:
-                return current_run_df.run_id.values[0]
+            if not current_run_df.empty:  # type: ignore
+                return current_run_df.run_id.values[0]  # type: ignore
 
     def _set_active_run(self, run_id=None):
         """This method sets the active run to be that of the specified
@@ -184,7 +186,7 @@ class MlFlow(metaclass=MlflowMeta):
             run = mlflow.active_run()
             if "is already active" not in str(ex):
                 raise (ex)
-            self.log.info(f"Run with id {run.info.run_id} is already active.")
+            self.log.info(f"Run with id {run.info.run_id} is already active.")  # type: ignore
 
     def _set_all_tags(self):
         """Method collects dagster_run_id plus all env variables/tags that have been
@@ -242,6 +244,7 @@ class MlFlow(metaclass=MlflowMeta):
             yield {k: params[k] for k in islice(it, size)}
 
 
+@beta
 @dagster_maintained_resource
 @resource(config_schema=CONFIG_SCHEMA)
 def mlflow_tracking(context):

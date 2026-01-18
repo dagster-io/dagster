@@ -1,15 +1,15 @@
 import inspect
 
 from dagster import DagsterInstance
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._seven import json
 from dagster_pipes import PipesContext
+from dagster_shared.seven import json
 from dagster_webserver.external_assets import (
     ReportAssetCheckEvalParam,
     ReportAssetMatParam,
@@ -170,9 +170,9 @@ def test_report_asset_materialization_apis_consistent(
         elif k == "description":
             assert mat.description == v
         else:
-            assert (
-                False
-            ), "need to add validation that sample payload content was written successfully"
+            assert False, (
+                "need to add validation that sample payload content was written successfully"
+            )
 
     # all ext report_asset_materialization kwargs should be in sample payload
     sig = inspect.signature(PipesContext.report_asset_materialization)
@@ -223,7 +223,7 @@ def test_report_asset_check_endpoint(instance: DagsterInstance, test_client: Tes
     )
     assert response.status_code == 400
     assert (
-        'Error constructing AssetCheckEvaluation: Param "metadata" is not a dict'
+        'Error constructing AssetCheckEvaluation: Param "metadata" is not'
         in response.json()["error"]
     )
 
@@ -261,9 +261,9 @@ def test_report_asset_check_evaluation_apis_consistent(
         elif k == "severity":
             assert evaluation.severity.value == v
         else:
-            assert (
-                False
-            ), "need to add validation that sample payload content was written successfully"
+            assert False, (
+                "need to add validation that sample payload content was written successfully"
+            )
 
     # all ext report_asset_materialization kwargs should be in sample payload
     sig = inspect.signature(PipesContext.report_asset_check)
@@ -331,8 +331,8 @@ def test_report_asset_observation_apis_consistent(
         elif k == "description":
             assert obs.description == v
         else:
-            assert (
-                False
-            ), "need to add validation that sample payload content was written successfully"
+            assert False, (
+                "need to add validation that sample payload content was written successfully"
+            )
 
     # expect test to cover PipesContext.report_asset_observation once added

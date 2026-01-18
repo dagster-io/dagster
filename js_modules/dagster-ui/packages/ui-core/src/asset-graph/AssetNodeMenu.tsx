@@ -1,5 +1,6 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
@@ -23,6 +24,7 @@ export type AssetNodeMenuNode = {
     isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
+    isPartitioned: boolean;
     hasMaterializePermission: boolean;
   };
 };
@@ -45,10 +47,11 @@ export const useAssetNodeMenu = ({
   const upstream = graphData ? Object.keys(graphData.upstream[node.id] ?? {}) : [];
   const downstream = graphData ? Object.keys(graphData.downstream[node.id] ?? {}) : [];
 
-  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(
-    node.assetKey.path,
-    node.definition,
+  const asset = React.useMemo(
+    () => ({assetKey: node.assetKey, ...node.definition}),
+    [node.definition, node.assetKey],
   );
+  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(asset);
 
   const [showParents, setShowParents] = React.useState(false);
 
@@ -71,6 +74,7 @@ export const useAssetNodeMenu = ({
   return {
     menu: (
       <Menu>
+        <AddToFavoritesMenuItem assetKey={node.assetKey} />
         <MenuLink
           to={assetDetailsPathForKey(node.assetKey)}
           text="View asset details"
@@ -101,18 +105,18 @@ export const useAssetNodeMenu = ({
             }}
           />
         ) : null}
-        {upstream.length || !graphData ? (
+        {(upstream.length || !graphData) && onChangeExplorerPath ? (
           <MenuItem
             text="Show upstream graph"
             icon="arrow_back"
-            onClick={() => showGraph(`*\"${tokenForAssetKey(node.assetKey)}\"`)}
+            onClick={() => showGraph(upstreamGraphQuery(node.assetKey))}
           />
         ) : null}
-        {downstream.length || !graphData ? (
+        {(downstream.length || !graphData) && onChangeExplorerPath ? (
           <MenuItem
             text="Show downstream graph"
             icon="arrow_forward"
-            onClick={() => showGraph(`\"${tokenForAssetKey(node.assetKey)}\"*`)}
+            onClick={() => showGraph(downstreamGraphQuery(node.assetKey))}
           />
         ) : null}
       </Menu>
@@ -217,3 +221,11 @@ const UpstreamDownstreamDialog = ({
     />
   );
 };
+
+function upstreamGraphQuery(assetKey: AssetKeyInput) {
+  return `+key:"${tokenForAssetKey(assetKey)}"`;
+}
+
+function downstreamGraphQuery(assetKey: AssetKeyInput) {
+  return `key:"${tokenForAssetKey(assetKey)}"+`;
+}

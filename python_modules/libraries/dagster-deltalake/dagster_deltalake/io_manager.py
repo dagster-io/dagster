@@ -1,13 +1,14 @@
 import sys
 from abc import abstractmethod
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
+from typing import Optional, TypedDict, Union, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -16,11 +17,6 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from pydantic import Field
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 if sys.version_info >= (3, 11):
     from typing import NotRequired
@@ -36,15 +32,15 @@ DELTA_DATE_FORMAT = "%Y-%m-%d"
 @dataclass(frozen=True)
 class TableConnection:
     table_uri: str
-    storage_options: Dict[str, str]
-    table_config: Optional[Dict[str, str]]
+    storage_options: dict[str, str]
+    table_config: Optional[dict[str, str]]
 
 
 class _StorageOptionsConfig(TypedDict, total=False):
-    local: Dict[str, str]
-    s3: Dict[str, str]
-    azure: Dict[str, str]
-    gcs: Dict[str, str]
+    local: dict[str, str]
+    s3: dict[str, str]
+    azure: dict[str, str]
+    gcs: dict[str, str]
 
 
 class WriteMode(str, Enum):
@@ -65,10 +61,10 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
     overwrite_schema: bool
     writer_engine: WriterEngine
     storage_options: _StorageOptionsConfig
-    client_options: NotRequired[Dict[str, str]]
-    table_config: NotRequired[Dict[str, str]]
-    custom_metadata: NotRequired[Dict[str, str]]
-    writer_properties: NotRequired[Dict[str, str]]
+    client_options: NotRequired[dict[str, str]]
+    table_config: NotRequired[dict[str, str]]
+    custom_metadata: NotRequired[dict[str, str]]
+    writer_properties: NotRequired[dict[str, str]]
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
@@ -91,7 +87,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDeltaLakeIOManager()}
             )
@@ -125,11 +121,13 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
 
     root_uri: str = Field(description="Storage location where Delta tables are stored.")
     mode: WriteMode = Field(
-        default=WriteMode.overwrite.value, description="The write mode passed to save the output."
+        default=WriteMode.overwrite.value,  # type: ignore
+        description="The write mode passed to save the output.",
     )
     overwrite_schema: bool = Field(default=False)
     writer_engine: WriterEngine = Field(
-        default=WriterEngine.pyarrow.value, description="Engine passed to write_deltalake."
+        default=WriterEngine.pyarrow.value,  # type: ignore
+        description="Engine passed to write_deltalake.",
     )
 
     storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
@@ -141,7 +139,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         default=None, description="Additional configuration passed to http client."
     )
 
-    table_config: Optional[Dict[str, str]] = Field(
+    table_config: Optional[dict[str, str]] = Field(
         default=None,
         description="Additional config and metadata added to table on creation.",
     )
@@ -150,10 +148,10 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
 
-    custom_metadata: Optional[Dict[str, str]] = Field(
+    custom_metadata: Optional[dict[str, str]] = Field(
         default=None, description="Custom metadata that is added to transaction commit."
     )
-    writer_properties: Optional[Dict[str, str]] = Field(
+    writer_properties: Optional[dict[str, str]] = Field(
         default=None, description="Writer properties passed to the rust engine writer."
     )
 
@@ -162,7 +160,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:
@@ -200,7 +198,7 @@ class DeltaLakeDbClient(DbClient):
         # the operation being executed.
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
             return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
@@ -209,7 +207,7 @@ class DeltaLakeDbClient(DbClient):
     @staticmethod
     @contextmanager
     def connect(context, table_slice: TableSlice) -> Iterator[TableConnection]:
-        resource_config = cast(_DeltaTableIOManagerResourceConfig, context.resource_config)
+        resource_config = cast("_DeltaTableIOManagerResourceConfig", context.resource_config)
         root_uri = resource_config["root_uri"].rstrip("/")
         storage_options = resource_config["storage_options"]
 
@@ -257,7 +255,7 @@ def _partition_where_clause(
 
 
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
-    partition = cast(TimeWindow, table_partition.partitions)
+    partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DELTA_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DELTA_DATETIME_FORMAT)

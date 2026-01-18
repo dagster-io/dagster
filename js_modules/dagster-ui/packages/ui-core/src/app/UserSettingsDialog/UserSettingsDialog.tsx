@@ -17,7 +17,11 @@ import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {showCustomAlert} from '../CustomAlertProvider';
-import {getFeatureFlags, setFeatureFlags} from '../Flags';
+import {
+  getFeatureFlagDefaults,
+  getFeatureFlagsWithoutDefaultValues,
+  setFeatureFlags,
+} from '../Flags';
 import {useTrackEvent} from '../analytics';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
@@ -53,30 +57,29 @@ interface DialogContentProps {
  */
 const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
   const trackEvent = useTrackEvent();
-  const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
+  const [flags, setFlags] = React.useState(() => getFeatureFlagsWithoutDefaultValues());
   const [reloading, setReloading] = React.useState(false);
 
-  const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
+  const initialFlagState = React.useRef(JSON.stringify(getFeatureFlagsWithoutDefaultValues()));
+
+  const defaultValues = getFeatureFlagDefaults();
 
   React.useEffect(() => {
     setFeatureFlags(flags);
   });
 
   const toggleFlag = (flag: FeatureFlag) => {
-    const flagSet = new Set(flags);
-    trackEvent('feature-flag', {flag, enabled: !flagSet.has(flag)});
-    if (flagSet.has(flag)) {
-      flagSet.delete(flag);
-    } else {
-      flagSet.add(flag);
-    }
-    setFlags(Array.from(flagSet));
+    setFlags((flags) => {
+      trackEvent('feature-flag', {flag, enabled: !flags[flag]});
+      const copy = {...flags};
+      copy[flag] = !copy[flag];
+      return copy;
+    });
   };
 
   const [arePreferencesChanged, setAreaPreferencesChanged] = React.useState(false);
 
-  const anyChange =
-    initialFlagState.current !== JSON.stringify([...flags.sort()]) || arePreferencesChanged;
+  const anyChange = initialFlagState.current !== JSON.stringify(flags) || arePreferencesChanged;
 
   const handleClose = (event: React.SyntheticEvent<HTMLElement>) => {
     if (anyChange) {
@@ -96,7 +99,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
       <div>{label || key}</div>
       <Checkbox
         format="switch"
-        checked={flags.includes(flagType)}
+        checked={flags[flagType] === undefined ? !!defaultValues[flagType] : !!flags[flagType]}
         onChange={() => toggleFlag(flagType)}
       />
     </Box>
@@ -150,7 +153,9 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
             onClick={() => {
               indexedDB.databases().then((databases) => {
                 databases.forEach((db) => {
-                  db.name && indexedDB.deleteDatabase(db.name);
+                  if (db.name) {
+                    indexedDB.deleteDatabase(db.name);
+                  }
                 });
               });
               showCustomAlert({
@@ -171,7 +176,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
             }}
           >
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Reset IndexedDB cache
+              Reset IndexedDB cache (Close all other tabs first!)
               <Tooltip content="If you're seeing stale definitions or experiencing client side bugs then this may fix it">
                 <Icon name="info" />
               </Tooltip>

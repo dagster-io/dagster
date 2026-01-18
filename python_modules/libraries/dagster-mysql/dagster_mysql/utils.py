@@ -1,8 +1,9 @@
 import logging
 import re
 import time
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union, cast
+from typing import Optional, TypeAlias, TypeVar, Union, cast
 from urllib.parse import (
     quote_plus as urlquote,
     urlparse,
@@ -18,7 +19,6 @@ from dagster._core.storage.config import MySqlStorageConfig
 from dagster._core.storage.sql import get_alembic_config
 from mysql.connector.pooling import PooledMySQLConnection
 from sqlalchemy.engine import Connection
-from typing_extensions import TypeAlias
 
 T = TypeVar("T")
 
@@ -35,7 +35,7 @@ class DagsterMySQLException(Exception):
 def get_conn(conn_string: str) -> MySQLConnectionUnion:
     parsed = urlparse(conn_string)
     conn = cast(
-        MySQLConnectionUnion,
+        "MySQLConnectionUnion",
         mysql.connect(
             user=parsed.username,
             passwd=parsed.password,
@@ -61,7 +61,7 @@ def get_conn_string(
     return f"mysql+mysqlconnector://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
 
-def parse_mysql_version(version: str) -> Tuple[int, ...]:
+def parse_mysql_version(version: str) -> tuple[int, ...]:
     """Parse MySQL version into a tuple of ints.
 
     Args:
@@ -153,7 +153,7 @@ def wait_for_connection(conn_string: str, retry_limit: int = 5, retry_wait: floa
     parsed = urlparse(conn_string)
     retry_mysql_connection_fn(
         lambda: cast(
-            Union[mysql.MySQLConnection, PooledMySQLConnection],
+            "Union[mysql.MySQLConnection, PooledMySQLConnection]",
             mysql.connect(
                 user=parsed.username,
                 passwd=parsed.password,

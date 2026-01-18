@@ -1,11 +1,8 @@
-import {App} from '@dagster-io/ui-core/app/App';
 import {createAppCache} from '@dagster-io/ui-core/app/AppCache';
 import {createErrorLink, setupErrorToasts} from '@dagster-io/ui-core/app/AppError';
+import {AppLayout} from '@dagster-io/ui-core/app/AppLayout';
 import {AppProvider} from '@dagster-io/ui-core/app/AppProvider';
-import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav/AppTopNav';
 import {ContentRoot} from '@dagster-io/ui-core/app/ContentRoot';
-import {HelpMenu} from '@dagster-io/ui-core/app/HelpMenu';
-import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';
 import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
 import {LiveDataPollRateContext} from '@dagster-io/ui-core/live-data-provider/LiveDataProvider';
@@ -33,6 +30,7 @@ const config = {
   origin: process.env.NEXT_PUBLIC_BACKEND_ORIGIN || document.location.origin,
   telemetryEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
+  idempotentMutations: false,
 };
 
 const appCache = createAppCache();
@@ -43,16 +41,12 @@ export default function AppPage() {
     <RecoilRoot>
       <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
         <AppProvider appCache={appCache} config={config} localCacheIdPrefix={instanceId}>
-          <AppTopNav allowGlobalReload>
-            <HelpMenu showContactSales={false} />
-            <UserSettingsButton />
-          </AppTopNav>
-          <App>
+          <AppLayout>
             <ContentRoot />
             <Suspense>
               <CommunityNux />
             </Suspense>
-          </App>
+          </AppLayout>
         </AppProvider>
       </LiveDataPollRateContext.Provider>
     </RecoilRoot>

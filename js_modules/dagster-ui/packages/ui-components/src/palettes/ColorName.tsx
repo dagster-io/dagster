@@ -72,6 +72,9 @@ export enum ColorName {
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
   ShadowDefault = 'ShadowDefault',
+  CheckboxUnchecked = 'CheckboxUnchecked',
+  CheckboxChecked = 'CheckboxChecked',
+  CheckboxDisabled = 'CheckboxDisabled',
 
   // Header
   NavBackground = 'NavBackground',

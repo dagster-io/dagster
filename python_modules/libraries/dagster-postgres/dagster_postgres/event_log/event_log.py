@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, ContextManager, Iterator, Mapping, Optional, Sequence, cast
+from typing import Any, ContextManager, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -111,12 +112,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
         kwargs = {
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
+            "max_overflow": max_overflow,
         }
         existing_options = self._engine.url.query.get("options")
         if existing_options:
@@ -172,7 +176,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event (EventLogEntry): The event to store.
         """
         check.inst_param(event, "event", EventLogEntry)
-
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
             result = conn.execute(
@@ -208,25 +211,45 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.store_asset_check_event(event, event_id)
 
     def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
+        from dagster import DagsterEventType
+
         check.sequence_param(events, "event", of_type=EventLogEntry)
 
+        event_types = {event.get_dagster_event().event_type for event in events}
+
         check.invariant(
-            all(event.get_dagster_event().event_type in BATCH_WRITABLE_EVENTS for event in events),
+            all(event_type in BATCH_WRITABLE_EVENTS for event_type in event_types),
             f"{BATCH_WRITABLE_EVENTS} are the only currently supported events for batch writes.",
         )
+        events = [
+            event
+            for event in events
+            if not event.get_dagster_event().is_asset_failed_to_materialize
+        ]
+        if len(events) == 0:
+            return
 
-        insert_event_statement = self.prepare_insert_event_batch(events)
-        with self._connect() as conn:
-            result = conn.execute(insert_event_statement.returning(SqlEventLogStorageTable.c.id))
-            event_ids = [cast(int, row[0]) for row in result.fetchall()]
+        if event_types == {DagsterEventType.ASSET_MATERIALIZATION} or event_types == {
+            DagsterEventType.ASSET_OBSERVATION
+        }:
+            insert_event_statement = self.prepare_insert_event_batch(events)
+            with self._connect() as conn:
+                result = conn.execute(
+                    insert_event_statement.returning(SqlEventLogStorageTable.c.id)
+                )
+                event_ids = [cast("int", row[0]) for row in result.fetchall()]
 
-        # We only update the asset table with the last event
-        self.store_asset_event(events[-1], event_ids[-1])
+            # We only update the asset table with the last event
+            self.store_asset_event(events[-1], event_ids[-1])
 
-        if any((event_id is None for event_id in event_ids)):
-            raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
+            if any(event_id is None for event_id in event_ids):
+                raise DagsterInvariantViolationError(
+                    "Cannot store asset event tags for null event id."
+                )
 
-        self.store_asset_event_tags(events, event_ids)
+            self.store_asset_event_tags(events, event_ids)
+        else:
+            return super().store_event_batch(events)
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
@@ -325,13 +348,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
-            self._secondary_index_cache[name] = super(
-                PostgresEventLogStorage, self
-            ).has_secondary_index(name)
+            self._secondary_index_cache[name] = super().has_secondary_index(name)
         return self._secondary_index_cache[name]
 
     def enable_secondary_index(self, name: str) -> None:
-        super(PostgresEventLogStorage, self).enable_secondary_index(name)
+        super().enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 

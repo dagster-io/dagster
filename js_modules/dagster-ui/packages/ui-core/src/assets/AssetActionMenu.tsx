@@ -1,48 +1,68 @@
-import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import {useContext} from 'react';
-
 import {
-  executionDisabledMessageForAssets,
-  useMaterializationAction,
-} from './LaunchAssetExecutionButton';
-import {useObserveAction} from './LaunchAssetObservationButton';
+  Button,
+  HoverButton,
+  Icon,
+  Menu,
+  MenuDivider,
+  MenuItem,
+  Popover,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui-components';
+import {memo, useContext, useMemo} from 'react';
+import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
+
+import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from './globalAssetGraphPathToString';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
-import {useReportEventsModal} from './useReportEventsModal';
-import {useWipeModal} from './useWipeModal';
+import {useObserveAction} from './useObserveAction';
+import {useReportEventsDialog} from './useReportEventsDialog';
+import {useWipeDialog} from './useWipeDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
+import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
   repoAddress: RepoAddress | null;
   onRefresh?: () => void;
+  unstyledButton?: boolean;
 }
 
-export const AssetActionMenu = (props: Props) => {
-  const {repoAddress, path, definition, onRefresh} = props;
+export const AssetActionMenu = memo((props: Props) => {
+  const {repoAddress, path, definition, onRefresh, unstyledButton} = props;
   const {
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
 
-  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(path, definition);
+  // Because the asset catalog loads a list of keys, and then definitions for SDAs,
+  // we don't re-fetch the key inside the definition of each asset. Re-attach the
+  // assetKey to the definition for the hook below.
+  const asset = useMemo(
+    () =>
+      definition
+        ? {...definition, isPartitioned: !!definition?.partitionDefinition, assetKey: {path}}
+        : null,
+    [path, definition],
+  );
+  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(asset);
 
   const deletePartitions = useDeleteDynamicPartitionsDialog(
     repoAddress && definition ? {repoAddress, assetKey: {path}, definition} : null,
     onRefresh,
   );
 
-  const wipe = useWipeModal(
-    repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
+  const wipe = useWipeDialog(
+    {repository: definition ? definition.repository : null, assetKey: {path}},
     onRefresh,
   );
 
-  const reportEvents = useReportEventsModal(
+  const reportEvents = useReportEventsDialog(
     repoAddress
       ? {
           assetKey: {path},
@@ -52,6 +72,9 @@ export const AssetActionMenu = (props: Props) => {
         }
       : null,
   );
+
+  const additionalMenuItems = [...wipe.dropdownOptions, ...deletePartitions.dropdownOptions];
+
   return (
     <>
       {launchpadElement}
@@ -60,16 +83,23 @@ export const AssetActionMenu = (props: Props) => {
       {deletePartitions.element}
       <Popover
         position="bottom-right"
+        targetTagName="div"
+        targetProps={{
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+          },
+        }}
         content={
           <Menu>
             {executeItem}
-
+            <AddToFavoritesMenuItem assetKey={{path}} />
             <MenuLink
               text="Show in group"
               to={
-                repoAddress && definition?.groupName
-                  ? workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)
-                  : ''
+                definition
+                  ? globalAssetGraphPathForGroup(definition.groupName, definition.assetKey)
+                  : '/asset-groups'
               }
               disabled={!definition}
               icon="asset_group"
@@ -108,28 +138,40 @@ export const AssetActionMenu = (props: Props) => {
                   />
                 ))
               : undefined}
-            {wipe.dropdownOptions}
-            {deletePartitions.dropdownOptions}
+            {additionalMenuItems.length && (
+              <>
+                <MenuDivider />
+                {additionalMenuItems}
+              </>
+            )}
           </Menu>
         }
       >
-        <Button icon={<Icon name="expand_more" />} />
+        {unstyledButton ? (
+          <HoverButton style={{padding: 8}}>
+            <Icon name="more_horiz" />
+          </HoverButton>
+        ) : (
+          <Button icon={<Icon name="more_horiz" />} />
+        )}
       </Popover>
     </>
   );
-};
+});
 
 export const useExecuteAssetMenuItem = (
-  path: string[],
   definition: {
+    assetKey: AssetKeyInput;
     isObservable: boolean;
     isExecutable: boolean;
+    isPartitioned: boolean;
     hasMaterializePermission: boolean;
   } | null,
 ) => {
-  const disabledMessage = definition
-    ? executionDisabledMessageForAssets([definition])
-    : 'Asset definition not found in a code location';
+  const {materializeOption, observeOption} = optionsForExecuteButton(
+    definition ? [definition] : [],
+    {skipAllTerm: true},
+  );
 
   const {
     featureContext: {canSeeMaterializeAction},
@@ -137,30 +179,19 @@ export const useExecuteAssetMenuItem = (
 
   const materialize = useMaterializationAction();
   const observe = useObserveAction();
+  const loading = materialize.loading || observe.loading;
+
+  const [option, action] =
+    materializeOption.disabledReason && !observeOption.disabledReason
+      ? [observeOption, observe.onClick]
+      : [materializeOption, materialize.onClick];
+
+  const disabledMessage = definition
+    ? option.disabledReason
+    : 'Asset definition not found in a code location';
 
   if (!canSeeMaterializeAction) {
     return {executeItem: null, launchpadElement: null};
-  }
-
-  if (definition?.isExecutable && definition.isObservable && definition.hasMaterializePermission) {
-    return {
-      launchpadElement: null,
-      executeItem: (
-        <MenuItem
-          text="Observe"
-          icon={observe.loading ? <Spinner purpose="body-text" /> : 'observation'}
-          disabled={observe.loading}
-          onClick={(e) => {
-            void showSharedToaster({
-              intent: 'primary',
-              message: 'Initiating observation',
-              icon: 'observation',
-            });
-            observe.onClick([{path}], e);
-          }}
-        />
-      ),
-    };
   }
 
   return {
@@ -170,23 +201,21 @@ export const useExecuteAssetMenuItem = (
         content={disabledMessage || 'Shift+click to add configuration'}
         placement="left"
         display="block"
-        useDisabledButtonTooltipFix
       >
         <MenuItem
-          text="Materialize"
-          icon={materialize.loading ? <Spinner purpose="body-text" /> : 'materialization'}
-          disabled={!!disabledMessage || materialize.loading}
+          text={option.label}
+          icon={loading ? <Spinner purpose="body-text" /> : option.icon}
+          disabled={!!disabledMessage || loading}
           onClick={(e) => {
             if (!definition) {
               return;
             }
             void showSharedToaster({
               intent: 'primary',
-              message: 'Initiating materialization',
-              icon: 'materialization',
+              message: `Initiating...`,
             });
 
-            materialize.onClick([{path}], e);
+            action([definition.assetKey], e);
           }}
         />
       </Tooltip>

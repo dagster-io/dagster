@@ -1,8 +1,7 @@
-/* eslint-disable no-restricted-globals */
+import {createWorkerThread} from 'shared/workers/WorkerThread.oss';
 
 import {layoutAssetGraph} from '../asset-graph/layout';
 import {layoutOpGraph} from '../graph/layout';
-
 /**
  * NOTE: Please avoid adding React as a transitive dependency to this file, as it can break
  * the development workflow. https://github.com/pmmmwh/react-refresh-webpack-plugin/issues/24
@@ -12,18 +11,21 @@ import {layoutOpGraph} from '../graph/layout';
  * try to remove it.
  */
 
-self.addEventListener('message', (event) => {
-  const {data} = event;
-
-  switch (data.type) {
-    case 'layoutOpGraph': {
-      const {ops, opts} = data;
-      self.postMessage(layoutOpGraph(ops, opts));
-      break;
+createWorkerThread(
+  async (postMessage: (message: any) => void, data: any) => {
+    switch (data.type) {
+      case 'layoutOpGraph': {
+        const {ops, opts} = data;
+        postMessage(layoutOpGraph(ops, opts));
+        break;
+      }
+      case 'layoutAssetGraph': {
+        const {graphData, opts} = data;
+        postMessage(layoutAssetGraph(graphData, opts));
+      }
     }
-    case 'layoutAssetGraph': {
-      const {graphData, opts} = data;
-      self.postMessage(layoutAssetGraph(graphData, opts));
-    }
-  }
-});
+  },
+  (_postMessage: (message: any) => void, error: Error) => {
+    console.error(error);
+  },
+);

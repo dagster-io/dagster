@@ -1,31 +1,19 @@
+import dagster as dg
 import pytest
-from dagster import (
-    Any,
-    DagsterInvariantViolationError,
-    DagsterStepOutputNotFoundError,
-    In,
-    Out,
-    Output,
-    execute_job,
-    job,
-    op,
-    reconstructable,
-)
-from dagster._core.test_utils import instance_for_test
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_multiple_outputs():
-    @op(
+    @dg.op(
         name="multiple_outputs",
         ins={},
-        out={"output_one": Out(), "output_two": Out()},
+        out={"output_one": dg.Out(), "output_two": dg.Out()},
     )
     def multiple_outputs(_):
-        yield Output(output_name="output_one", value="foo")
-        yield Output(output_name="output_two", value="bar")
+        yield dg.Output(output_name="output_one", value="foo")
+        yield dg.Output(output_name="output_two", value="bar")
 
-    @job
+    @dg.job
     def multiple_outputs_job():
         multiple_outputs()
 
@@ -33,66 +21,66 @@ def test_multiple_outputs():
     assert result.output_for_node("multiple_outputs", output_name="output_one") == "foo"
     assert result.output_for_node("multiple_outputs", output_name="output_two") == "bar"
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         result.output_for_node("multiple_outputs", "not_defined")
 
 
 def test_wrong_multiple_output():
-    @op(
+    @dg.op(
         name="multiple_outputs",
         ins={},
-        out={"output_one": Out()},
+        out={"output_one": dg.Out()},
     )
     def multiple_outputs(_):
-        yield Output(output_name="mismatch", value="foo")
+        yield dg.Output(output_name="mismatch", value="foo")
 
-    @job
+    @dg.job
     def wrong_multiple_outputs_job():
         multiple_outputs()
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         wrong_multiple_outputs_job.execute_in_process()
 
 
 def test_multiple_outputs_of_same_name_disallowed():
     # make this illegal until it is supported
 
-    @op(name="multiple_outputs", out={"output_one": Out()})
+    @dg.op(name="multiple_outputs", out={"output_one": dg.Out()})
     def multiple_outputs(_):
-        yield Output(output_name="output_one", value="foo")
-        yield Output(output_name="output_one", value="foo")
+        yield dg.Output(output_name="output_one", value="foo")
+        yield dg.Output(output_name="output_one", value="foo")
 
-    @job
+    @dg.job
     def muptiple_outputs_job():
         multiple_outputs()
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         muptiple_outputs_job.execute_in_process()
 
 
 def define_multi_out():
-    @op(
+    @dg.op(
         name="multiple_outputs",
         ins={},
-        out={"output_one": Out(), "output_two": Out(is_required=False)},
+        out={"output_one": dg.Out(), "output_two": dg.Out(is_required=False)},
     )
     def multiple_outputs(_):
-        yield Output(output_name="output_one", value="foo")
+        yield dg.Output(output_name="output_one", value="foo")
 
-    @op(
+    @dg.op(
         name="downstream_one",
-        ins={"some_input": In()},
+        ins={"some_input": dg.In()},
         out={},
     )
     def downstream_one(_, some_input):
         del some_input
 
-    @op
+    @dg.op
     def downstream_two(_, some_input):
         del some_input
         raise Exception("do not call me")
 
-    @job
+    @dg.job
     def multiple_outputs_only_emit_one_job():
         output_one, output_two = multiple_outputs()
         downstream_one(output_one)
@@ -110,9 +98,9 @@ def test_multiple_outputs_only_emit_one():
     )
     assert len(output_events) == 1
 
-    assert output_events[0].event_specific_data.step_output_handle.output_name == "output_one"
+    assert output_events[0].event_specific_data.step_output_handle.output_name == "output_one"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         result.output_for_node("not_present")
 
     step_skipped_events = result.filter_events(lambda evt: evt.is_step_skipped)
@@ -121,8 +109,8 @@ def test_multiple_outputs_only_emit_one():
 
 
 def test_multiple_outputs_only_emit_one_multiproc():
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(define_multi_out), instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(define_multi_out), instance)
         assert result.success
 
         output_events = result.filter_events(
@@ -130,7 +118,7 @@ def test_multiple_outputs_only_emit_one_multiproc():
         )
         assert len(output_events) == 1
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(dg.DagsterInvariantViolationError):
             result.output_for_node("not_present")
 
         assert (
@@ -144,28 +132,28 @@ def test_multiple_outputs_only_emit_one_multiproc():
 
 
 def test_missing_non_optional_output_fails():
-    @op(
+    @dg.op(
         name="multiple_outputs",
         out={
-            "output_one": Out(),
-            "output_two": Out(),
+            "output_one": dg.Out(),
+            "output_two": dg.Out(),
         },
     )
     def multiple_outputs(_):
-        yield Output(output_name="output_one", value="foo")
+        yield dg.Output(output_name="output_one", value="foo")
 
-    @job
+    @dg.job
     def missing_non_optional_job():
         multiple_outputs()
 
-    with pytest.raises(DagsterStepOutputNotFoundError):
+    with pytest.raises(dg.DagsterStepOutputNotFoundError):
         missing_non_optional_job.execute_in_process()
 
 
 def test_warning_for_conditional_output(capsys):
-    @op(
+    @dg.op(
         config_schema={"return": bool},
-        out=Out(Any, is_required=False),
+        out=dg.Out(dg.Any, is_required=False),  # pyright: ignore[reportArgumentType]
     )
     def maybe(context):
         if context.op_config["return"]:

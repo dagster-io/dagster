@@ -1,4 +1,5 @@
-from typing import Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -47,7 +48,9 @@ def _convert_timestamp_to_string(
                     " store_timestamps_as_strings=False in the Snowflake I/O manager configuration"
                     " to store time data as TIMESTAMP types."
                 )
-        return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+        # Type error introduced by pandas-stubs 2.3.3.251201 (transitive dep from gql>=4 pin bump)
+        # where .dt accessor is incorrectly typed as Properties without strftime method
+        return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")  # type: ignore
     else:
         return s
 
@@ -85,12 +88,12 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                     return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": MySnowflakeIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
@@ -186,18 +189,17 @@ Examples:
         from dagster import asset, Definitions
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            key_prefix=["my_schema"],  # will be used as the schema in snowflake
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                 "io_manager": snowflake_pandas_io_manager.configured({
                     "database": "my_database",
-                    "account" : {"env": "SNOWFLAKE_ACCOUNT"}
-                    ...
+                    "account": {"env": "SNOWFLAKE_ACCOUNT"}
                 })
             }
         )
@@ -207,10 +209,10 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
-            assets=[my_table]
-            resources={"io_manager" snowflake_pandas_io_manager.configured(
-                {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
+        Definitions(
+            assets=[my_table],
+            resources={"io_manager": snowflake_pandas_io_manager.configured(
+                {"database": "my_database", "schema": "my_schema"} # will be used as the schema
             )}
         )
 
@@ -222,7 +224,7 @@ Examples:
     .. code-block:: python
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            key_prefix=["my_schema"],  # will be used as the schema in snowflake
         )
         def my_table() -> pd.DataFrame:
             ...
@@ -276,15 +278,15 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
             from dagster import asset, Definitions, EnvVar
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": SnowflakePandasIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
+                    "io_manager": SnowflakePandasIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"))
                 }
             )
 
@@ -293,10 +295,10 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
-                assets=[my_table]
+            Definitions(
+                assets=[my_table],
                 resources={
-                    "io_manager" SnowflakePandasIOManager(database="my_database", schema="my_schema", ...)
+                    "io_manager": SnowflakePandasIOManager(database="my_database", schema="my_schema")
                 }
             )
 
@@ -308,7 +310,7 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         .. code-block:: python
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:
                 ...
@@ -354,5 +356,5 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         return [SnowflakePandasTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pd.DataFrame

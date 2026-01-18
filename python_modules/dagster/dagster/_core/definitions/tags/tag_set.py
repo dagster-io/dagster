@@ -1,10 +1,10 @@
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, get_args, get_origin
 
-from typing_extensions import TypeVar, get_args, get_origin
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from typing_extensions import TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.metadata.metadata_set import NamespacedKVSet
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import is_closed_python_optional_type
 
 T_NamespacedTagSet = TypeVar("T_NamespacedTagSet", bound="NamespacedTagSet")
@@ -27,7 +27,7 @@ class NamespacedTagSet(NamespacedKVSet):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        for field_name, field in model_fields(self).items():
+        for field_name, field in model_fields(self.__class__).items():
             annotation_type = field.annotation
 
             is_optional = is_closed_python_optional_type(annotation_type)
@@ -50,4 +50,4 @@ class NamespacedTagSet(NamespacedKVSet):
     @classmethod
     def _extract_value(cls, field_name: str, value: Any) -> str:
         """Since all tag values are strings, we don't need to do any type coercion."""
-        return cast(str, value)
+        return cast("str", value)

@@ -2,8 +2,9 @@ import copy
 import json
 import random
 import string
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
 import kubernetes
@@ -63,7 +64,7 @@ class K8sConfigMergeBehavior(Enum):
 
 
 USER_DEFINED_K8S_CONFIG_KEY = "dagster-k8s/config"
-USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
+USER_DEFINED_K8S_JOB_CONFIG_SCHEMA = Shape(
     {
         "container_config": Permissive(),
         "pod_template_spec_metadata": Permissive(),
@@ -84,6 +85,20 @@ DEFAULT_JOB_SPEC_CONFIG = {
 }
 
 
+class OwnerReference(NamedTuple):
+    kind: str
+    name: str
+    uid: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "api_version": "batch/v1" if self.kind == "Job" else "v1",
+            "kind": self.kind,
+            "name": self.name,
+            "uid": self.uid,
+        }
+
+
 class UserDefinedDagsterK8sConfig(
     NamedTuple(
         "_UserDefinedDagsterK8sConfig",
@@ -94,18 +109,23 @@ class UserDefinedDagsterK8sConfig(
             ("job_config", Mapping[str, Any]),
             ("job_metadata", Mapping[str, Any]),
             ("job_spec_config", Mapping[str, Any]),
+            ("deployment_metadata", Mapping[str, Any]),
+            ("service_metadata", Mapping[str, Any]),
             ("merge_behavior", K8sConfigMergeBehavior),
         ],
     )
 ):
     def __new__(
         cls,
+        *,
         container_config: Optional[Mapping[str, Any]] = None,
         pod_template_spec_metadata: Optional[Mapping[str, Any]] = None,
         pod_spec_config: Optional[Mapping[str, Any]] = None,
         job_config: Optional[Mapping[str, Any]] = None,
         job_metadata: Optional[Mapping[str, Any]] = None,
         job_spec_config: Optional[Mapping[str, Any]] = None,
+        deployment_metadata: Optional[Mapping[str, Any]] = None,
+        service_metadata: Optional[Mapping[str, Any]] = None,
         merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
     ):
         container_config = check.opt_mapping_param(
@@ -118,6 +138,13 @@ class UserDefinedDagsterK8sConfig(
         job_config = check.opt_mapping_param(job_config, "job_config", key_type=str)
         job_metadata = check.opt_mapping_param(job_metadata, "job_metadata", key_type=str)
         job_spec_config = check.opt_mapping_param(job_spec_config, "job_spec_config", key_type=str)
+
+        deployment_metadata = check.opt_mapping_param(
+            deployment_metadata, "deployment_metadata", key_type=str
+        )
+        service_metadata = check.opt_mapping_param(
+            service_metadata, "service_metadata", key_type=str
+        )
 
         if container_config:
             container_config = k8s_snake_case_dict(kubernetes.client.V1Container, container_config)
@@ -139,7 +166,15 @@ class UserDefinedDagsterK8sConfig(
         if job_spec_config:
             job_spec_config = k8s_snake_case_dict(kubernetes.client.V1JobSpec, job_spec_config)
 
-        return super(UserDefinedDagsterK8sConfig, cls).__new__(
+        if deployment_metadata:
+            deployment_metadata = k8s_snake_case_dict(
+                kubernetes.client.V1ObjectMeta, deployment_metadata
+            )
+
+        if service_metadata:
+            service_metadata = k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, service_metadata)
+
+        return super().__new__(
             cls,
             container_config=container_config,
             pod_template_spec_metadata=pod_template_spec_metadata,
@@ -147,6 +182,8 @@ class UserDefinedDagsterK8sConfig(
             job_config=job_config,
             job_metadata=job_metadata,
             job_spec_config=job_spec_config,
+            deployment_metadata=deployment_metadata,
+            service_metadata=service_metadata,
             merge_behavior=check.inst_param(
                 merge_behavior, "merge_behavior", K8sConfigMergeBehavior
             ),
@@ -160,6 +197,8 @@ class UserDefinedDagsterK8sConfig(
             "job_config": self.job_config,
             "job_metadata": self.job_metadata,
             "job_spec_config": self.job_spec_config,
+            "deployment_metadata": self.deployment_metadata,
+            "service_metadata": self.service_metadata,
             "merge_behavior": self.merge_behavior.value,
         }
 
@@ -172,6 +211,8 @@ class UserDefinedDagsterK8sConfig(
             job_config=config_dict.get("job_config"),
             job_metadata=config_dict.get("job_metadata"),
             job_spec_config=config_dict.get("job_spec_config"),
+            deployment_metadata=config_dict.get("deployment_metadata"),
+            service_metadata=config_dict.get("service_metadata"),
             merge_behavior=K8sConfigMergeBehavior(
                 config_dict.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
             ),
@@ -205,7 +246,7 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
 
     if USER_DEFINED_K8S_CONFIG_KEY in tags:
         user_defined_k8s_config_value = json.loads(tags[USER_DEFINED_K8S_CONFIG_KEY])
-        result = validate_config(USER_DEFINED_K8S_CONFIG_SCHEMA, user_defined_k8s_config_value)
+        result = validate_config(USER_DEFINED_K8S_JOB_CONFIG_SCHEMA, user_defined_k8s_config_value)
 
         if not result.success:
             raise DagsterInvalidConfigError(
@@ -232,6 +273,8 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
         job_config=user_defined_k8s_config.get("job_config"),
         job_metadata=user_defined_k8s_config.get("job_metadata"),
         job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        deployment_metadata=user_defined_k8s_config.get("deployment_metadata"),
+        service_metadata=user_defined_k8s_config.get("service_metadata"),
         merge_behavior=K8sConfigMergeBehavior(
             user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
         ),
@@ -465,6 +508,7 @@ class DagsterK8sJobConfig(
                             "job_spec_config": Field(
                                 Map(key_type=str, inner_type=bool), is_required=False
                             ),
+                            "namespace": Field(BoolSource, is_required=False),
                         }
                     ),
                     is_required=False,
@@ -647,7 +691,7 @@ class DagsterK8sJobConfig(
                     ),
                 ),
                 "run_k8s_config": Field(
-                    USER_DEFINED_K8S_CONFIG_SCHEMA,
+                    USER_DEFINED_K8S_JOB_CONFIG_SCHEMA,
                     is_required=False,
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
@@ -661,6 +705,8 @@ class DagsterK8sJobConfig(
                                 DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
                                 is_required=False,
                             ),
+                            "deployment_metadata": Permissive(),
+                            "service_metadata": Permissive(),
                         }
                     ),
                     is_required=False,
@@ -722,6 +768,7 @@ def construct_dagster_k8s_job(
     component: Optional[str] = None,
     labels: Optional[Mapping[str, str]] = None,
     env_vars: Optional[Sequence[Mapping[str, Any]]] = None,
+    owner_references: Optional[Sequence[OwnerReference]] = None,
 ) -> kubernetes.client.V1Job:
     """Constructs a Kubernetes Job object.
 
@@ -759,13 +806,13 @@ def construct_dagster_k8s_job(
 
     check.invariant(
         len(job_name) <= MAX_K8S_NAME_LEN,
-        "job_name is %d in length; Kubernetes Jobs cannot be longer than %d characters."
+        "job_name is %d in length; Kubernetes Jobs cannot be longer than %d characters."  # noqa: UP031
         % (len(job_name), MAX_K8S_NAME_LEN),
     )
 
     check.invariant(
         len(pod_name) <= MAX_K8S_NAME_LEN,
-        "job_name is %d in length; Kubernetes Pods cannot be longer than %d characters."
+        "job_name is %d in length; Kubernetes Pods cannot be longer than %d characters."  # noqa: UP031
         % (len(pod_name), MAX_K8S_NAME_LEN),
     )
 
@@ -777,7 +824,7 @@ def construct_dagster_k8s_job(
     additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
-    env: List[Mapping[str, Any]] = []
+    env: list[Mapping[str, Any]] = []
     if env_vars:
         env.extend(env_vars)
 
@@ -897,6 +944,16 @@ def construct_dagster_k8s_job(
     user_defined_job_metadata = copy.deepcopy(dict(user_defined_k8s_config.job_metadata))
     user_defined_job_labels = user_defined_job_metadata.pop("labels", {})
 
+    owner_reference_dicts = (
+        [owner_reference.to_dict() for owner_reference in owner_references]
+        if owner_references
+        else []
+    )
+    if "owner_references" in user_defined_job_metadata:
+        user_defined_job_metadata["owner_references"] = (
+            owner_reference_dicts + user_defined_job_metadata["owner_references"]
+        )
+
     job = k8s_model_from_dict(
         kubernetes.client.V1Job,
         merge_dicts(
@@ -912,6 +969,7 @@ def construct_dagster_k8s_job(
                             dagster_labels, user_defined_job_labels, job_config.labels
                         ),
                     },
+                    {"owner_references": owner_reference_dicts} if owner_reference_dicts else {},
                 ),
                 "spec": job_spec_config,
             },

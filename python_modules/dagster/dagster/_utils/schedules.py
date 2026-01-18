@@ -3,15 +3,17 @@ import datetime
 import functools
 import math
 import re
-from typing import Iterator, Optional, Sequence, Union
-
-from croniter import croniter as _croniter
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
-from dagster._core.definitions.partition import ScheduleType
-from dagster._time import get_timezone
+from dagster._time import get_current_datetime, get_timezone
+from dagster._vendored.croniter import croniter as _croniter
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster._vendored.dateutil.tz import datetime_ambiguous, datetime_exists
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.schedule_type import ScheduleType
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
@@ -29,7 +31,7 @@ class CroniterShim(_croniter):
 
     @classmethod
     @functools.lru_cache(maxsize=128)
-    def expand(cls, *args, **kwargs):
+    def expand(cls, *args, **kwargs):  # pyright: ignore[reportIncompatibleMethodOverride]
         return super().expand(*args, **kwargs)
 
 
@@ -53,11 +55,20 @@ def _is_simple_cron(
 def is_valid_cron_string(cron_string: str) -> bool:
     if not CroniterShim.is_valid(cron_string):
         return False
+
     # Croniter < 1.4 returns 2 items
     # Croniter >= 1.4 returns 3 items
     expanded, *_ = CroniterShim.expand(cron_string)
+
     # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
-    return len(expanded) == 5
+    if len(expanded) != 5:
+        return False
+
+    if len(expanded[3]) == 1 and expanded[3][0] == 2:  # February
+        if len(expanded[2]) == 1 and expanded[2][0] in {30, 31}:  # 30th or 31st of February
+            return False
+
+    return True
 
 
 def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
@@ -83,7 +94,7 @@ def apply_fold_and_post_transition(date: datetime.datetime) -> datetime.datetime
 def _apply_fold(date: datetime.datetime) -> datetime.datetime:
     """For consistency, always choose the latter of the two possible times during a fall DST
     transition when there are two possibilities - match behavior described in the docs:
-    https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#execution-time-and-daylight-savings-time)
+    https://docs.dagster.io/guides/automate/schedules/customizing-execution-timezone#execution-times-and-daylight-savings-time)
 
     Never call this with datetimes that could be non-existant. datetime_ambiguous will return true
     but folding them will leave them non-existant.
@@ -99,7 +110,7 @@ def apply_post_transition(
     if date.hour in DAYLIGHT_SAVINGS_HOURS and not datetime_exists(date):
         # If we fall on a non-existant time (e.g. between 2 and 3AM during a DST transition)
         # advance to the end of the window, which does exist - match behavior described in the docs:
-        # https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#execution-time-and-daylight-savings-time)
+        # https://docs.dagster.io/guides/automate/schedules/customizing-execution-timezone#execution-times-and-daylight-savings-time)
 
         # This assumes that all dst offsets are <= to an hour, which is true at time of writing.
         # The date passed to dst needs to be in DST to get the offset for the timezone.
@@ -216,40 +227,54 @@ def _find_hourly_schedule_time(
 def _find_daily_schedule_time(
     minute: int,
     hour: int,
+    days_of_week: Optional[Sequence[int]],
     date: datetime.datetime,
     ascending: bool,
     already_on_boundary: bool,
 ) -> datetime.datetime:
-    # First move to the correct time of day today (ignoring whether it is the correct day)
-    if not already_on_boundary or (
-        date.hour != hour or date.minute != minute or date.second != 0 or date.microsecond != 0
-    ):
-        new_time = _replace_date_fields(
-            date,
-            hour,
-            minute,
-            date.day,
+    num_iterations = 0
+    while True:  # until the day of week matches if needed
+        check.invariant(
+            num_iterations < 10,  # 1 week plus a buffer
+            "Computing next schedule daily schedule time should eventually reach an intended day of week",
         )
-    else:
-        new_time = date
+        # First move to the correct time of day today (ignoring whether it is the correct day)
+        if not already_on_boundary or (
+            date.hour != hour or date.minute != minute or date.second != 0 or date.microsecond != 0
+        ):
+            new_time = _replace_date_fields(
+                date,
+                hour,
+                minute,
+                date.day,
+            )
+        else:
+            new_time = date
 
-    if ascending:
-        if already_on_boundary or new_time.timestamp() <= date.timestamp():
-            new_time = new_time + datetime.timedelta(days=1)
-    else:
-        if already_on_boundary or new_time.timestamp() >= date.timestamp():
-            new_time = new_time - datetime.timedelta(days=1)
+        if ascending:
+            if already_on_boundary or new_time.timestamp() <= date.timestamp():
+                new_time = new_time + datetime.timedelta(days=1)
+        else:
+            if already_on_boundary or new_time.timestamp() >= date.timestamp():
+                new_time = new_time - datetime.timedelta(days=1)
 
-    # If the hour or minute has changed the schedule in cronstring,
-    # double-check that it's still correct in case we crossed a DST boundary
-    if new_time.hour != hour or new_time.minute != minute:
-        new_time = _replace_date_fields(
-            new_time,
-            hour,
-            minute,
-            new_time.day,
-        )
-    return apply_fold_and_post_transition(new_time)
+        # If the hour or minute has changed the schedule in cronstring,
+        # double-check that it's still correct in case we crossed a DST boundary
+        if new_time.hour != hour or new_time.minute != minute:
+            new_time = _replace_date_fields(
+                new_time,
+                hour,
+                minute,
+                new_time.day,
+            )
+        date = apply_fold_and_post_transition(new_time)
+
+        if (not days_of_week) or (_get_crontab_day_of_week(date) in days_of_week):
+            return date
+
+        # otherwise, repeat and keep moving until the day of the week matches
+        already_on_boundary = True
+        num_iterations += 1
 
 
 def _get_crontab_day_of_week(dt: datetime.datetime) -> int:
@@ -350,14 +375,16 @@ def _find_schedule_time(
     minutes: Optional[Sequence[int]],
     hour: Optional[int],
     day_of_month: Optional[int],
-    day_of_week: Optional[int],
-    schedule_type: ScheduleType,
+    days_of_week: Optional[Sequence[int]],
+    schedule_type: "ScheduleType",
     date: datetime.datetime,
     ascending: bool,
     # lets us skip slow work to find the starting point if we know that
     # we are already on the boundary of the cron interval
     already_on_boundary: bool,
 ) -> datetime.datetime:
+    from dagster._core.definitions.partitions.schedule_type import ScheduleType
+
     if schedule_type == ScheduleType.HOURLY:
         return _find_hourly_schedule_time(
             check.not_none(minutes), date, ascending, already_on_boundary
@@ -368,6 +395,7 @@ def _find_schedule_time(
         return _find_daily_schedule_time(
             minutes[0],
             check.not_none(hour),
+            days_of_week,
             date,
             ascending,
             already_on_boundary,
@@ -375,10 +403,13 @@ def _find_schedule_time(
     elif schedule_type == ScheduleType.WEEKLY:
         minutes = check.not_none(minutes)
         check.invariant(len(minutes) == 1)
+        check.invariant(
+            days_of_week is not None and len(days_of_week) == 1
+        )  # must be a single numeric day of week to be WEEKLY
         return _find_weekly_schedule_time(
             minutes[0],
             check.not_none(hour),
-            check.not_none(day_of_week),
+            check.not_none(days_of_week)[0],
             date,
             ascending,
             already_on_boundary,
@@ -570,12 +601,14 @@ def _has_out_of_range_cron_interval_str(cron_string: str):
             while len(expr_parts) > 0:
                 expr = expr_parts.pop()
                 t = re.sub(
-                    r"^\*(\/.+)$", r"%d-%d\1" % (CRON_RANGES[i][0], CRON_RANGES[i][1]), str(expr)
+                    r"^\*(\/.+)$",
+                    r"%d-%d\1" % (CRON_RANGES[i][0], CRON_RANGES[i][1]),  # noqa: UP031
+                    str(expr),
                 )
                 m = CRON_STEP_SEARCH_REGEX.search(t)
                 if not m:
                     # try normalizing "{start}/{step}" to "{start}-{max}/{step}".
-                    t = re.sub(r"^(.+)\/(.+)$", r"\1-%d/\2" % (CRON_RANGES[i][1]), str(expr))
+                    t = re.sub(r"^(.+)\/(.+)$", r"\1-%d/\2" % (CRON_RANGES[i][1]), str(expr))  # noqa: UP031
                     m = CRON_STEP_SEARCH_REGEX.search(t)
                 if m:
                     (low, high, step) = m.group(1), m.group(2), m.group(4) or 1
@@ -613,6 +646,8 @@ def cron_string_iterator(
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
+    from dagster._core.definitions.partitions.schedule_type import ScheduleType
+
     # leap day special casing
     if cron_string.endswith(" 29 2 *"):
         min_hour, _ = cron_string.split(" 29 2 *")
@@ -637,11 +672,15 @@ def cron_string_iterator(
     # Croniter >= 1.4 returns 3 items
     cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
 
-    is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
+    is_numeric = [len(part) == 1 and isinstance(part[0], int) for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
     all_numeric_minutes = len(cron_parts[0]) > 0 and all(
         cron_part != "*" for cron_part in cron_parts[0]
+    )
+
+    all_numeric_days_of_week = len(cron_parts[4]) > 0 and all(
+        isinstance(cron_part, int) for cron_part in cron_parts[4]
     )
 
     known_schedule_type: Optional[ScheduleType] = None
@@ -649,7 +688,7 @@ def cron_string_iterator(
     expected_hour = None
     expected_minutes = None
     expected_day = None
-    expected_day_of_week = None
+    expected_days_of_week = None
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower and has correctness issues on DST boundaries
@@ -657,27 +696,31 @@ def cron_string_iterator(
         if (
             all(is_numeric[0:3])
             and all(is_wildcard[3:])
-            and int(cron_parts[2][0]) <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL
+            and cron_parts[2][0] <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL  # pyright: ignore[reportOperatorIssue]
         ):  # monthly
             known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
             known_schedule_type = ScheduleType.WEEKLY
-        elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
+        elif (
+            all(is_numeric[0:2])
+            and all(is_wildcard[2:4])
+            and (is_wildcard[4] or all_numeric_days_of_week)
+        ):  # daily
             known_schedule_type = ScheduleType.DAILY
         elif all_numeric_minutes and all(is_wildcard[1:]):  # hourly
             known_schedule_type = ScheduleType.HOURLY
 
     if is_numeric[1]:
-        expected_hour = int(cron_parts[1][0])
+        expected_hour = cron_parts[1][0]
 
     if all_numeric_minutes:
-        expected_minutes = [int(cron_part) for cron_part in cron_parts[0]]
+        expected_minutes = [cron_part for cron_part in cron_parts[0]]
 
     if is_numeric[2]:
-        expected_day = int(cron_parts[2][0])
+        expected_day = cron_parts[2][0]
 
-    if is_numeric[4]:
-        expected_day_of_week = int(cron_parts[4][0])
+    if all_numeric_days_of_week:
+        expected_days_of_week = cron_parts[4]
 
     if known_schedule_type:
         start_datetime = datetime.datetime.fromtimestamp(
@@ -692,10 +735,10 @@ def cron_string_iterator(
             yield start_datetime
         else:
             next_date = _find_schedule_time(
-                expected_minutes,
-                expected_hour,
-                expected_day,
-                expected_day_of_week,
+                expected_minutes,  # pyright: ignore[reportArgumentType]
+                expected_hour,  # pyright: ignore[reportArgumentType]
+                expected_day,  # pyright: ignore[reportArgumentType]
+                expected_days_of_week,  # pyright: ignore[reportArgumentType]
                 known_schedule_type,
                 start_datetime,
                 ascending=not ascending,  # Going in the reverse direction
@@ -704,10 +747,10 @@ def cron_string_iterator(
             check.invariant(start_offset <= 0)
             for _ in range(-start_offset):
                 next_date = _find_schedule_time(
-                    expected_minutes,
-                    expected_hour,
-                    expected_day,
-                    expected_day_of_week,
+                    expected_minutes,  # pyright: ignore[reportArgumentType]
+                    expected_hour,  # pyright: ignore[reportArgumentType]
+                    expected_day,  # pyright: ignore[reportArgumentType]
+                    expected_days_of_week,  # pyright: ignore[reportArgumentType]
                     known_schedule_type,
                     next_date,
                     ascending=not ascending,  # Going in the reverse direction
@@ -716,10 +759,10 @@ def cron_string_iterator(
 
         while True:
             next_date = _find_schedule_time(
-                expected_minutes,
-                expected_hour,
-                expected_day,
-                expected_day_of_week,
+                expected_minutes,  # pyright: ignore[reportArgumentType]
+                expected_hour,  # pyright: ignore[reportArgumentType]
+                expected_day,  # pyright: ignore[reportArgumentType]
+                expected_days_of_week,  # pyright: ignore[reportArgumentType]
                 known_schedule_type,
                 next_date,
                 ascending=ascending,
@@ -810,12 +853,12 @@ def schedule_execution_time_iterator(
         ]
         next_dates = [next(it) for it in iterators]
         while True:
-            # Choose earliest out of all subsequent datetimes.
-            earliest_next_date = min(next_dates)
-            yield earliest_next_date
-            # Increment all iterators that generated the earliest subsequent datetime.
+            # Choose earliest (ascending) or latest (descending) out of all subsequent datetimes.
+            selected_date = min(next_dates) if ascending else max(next_dates)
+            yield selected_date
+            # Increment all iterators that generated the selected datetime.
             for i, next_date in enumerate(next_dates):
-                if next_date == earliest_next_date:
+                if next_date == selected_date:
                     next_dates[i] = next(iterators[i])
 
 
@@ -843,3 +886,101 @@ def get_next_cron_tick(
         execution_timezone=timezone,
     )
     return next(cron_iter)
+
+
+def get_smallest_cron_interval(
+    cron_string: str,
+    execution_timezone: Optional[str] = None,
+) -> datetime.timedelta:
+    """Find the smallest interval between cron ticks for a given cron schedule.
+
+    Uses a sampling-based approach to find the minimum interval by generating
+    consecutive cron ticks and measuring the gaps between them. Sampling stops
+    early if either of these limits is reached:
+      - A maximum of 1000 generated ticks
+      - A time horizon of 20 years past the sampling start
+
+    Args:
+        cron_string: A cron string
+        execution_timezone: Timezone to use for cron evaluation (defaults to UTC)
+
+    Returns:
+        The smallest timedelta between any two consecutive cron ticks
+
+    Raises:
+        CheckError: If the cron string is invalid or not recognized by Dagster
+    """
+    check.invariant(
+        is_valid_cron_string(cron_string), desc=f"{cron_string} must be a valid cron string"
+    )
+
+    execution_timezone = execution_timezone or "UTC"
+
+    # Always start at current time in the specified timezone
+    start_time = get_current_datetime(tz=execution_timezone)
+
+    # Start sampling from a year ago to capture seasonal variations (DST, leap years)
+    sampling_start = start_time - datetime.timedelta(days=365)
+    # Cap the lookahead horizon to avoid extremely distant datetimes (e.g., year ~3000 on Windows)
+    horizon_deadline = sampling_start + relativedelta(years=20)
+
+    # Generate consecutive cron ticks
+    cron_iter = schedule_execution_time_iterator(
+        start_timestamp=sampling_start.timestamp(),
+        cron_schedule=cron_string,
+        execution_timezone=execution_timezone,
+        ascending=True,
+    )
+
+    # Collect the first tick
+    prev_tick = next(cron_iter)
+    min_interval = None
+
+    # Sample up to 1000 ticks, but also stop at the 20-year horizon
+    for _ in range(999):
+        try:
+            current_tick = next(cron_iter)
+            # Stop if we've gone beyond our lookahead horizon
+            if current_tick > horizon_deadline:
+                break
+            interval = current_tick - prev_tick
+
+            # Handle DST transitions where two ticks can have the same wall clock time
+            # but different fold values (indicating they're actually different points in time)
+            if interval == datetime.timedelta(seconds=0):
+                # Check if this is a DST ambiguous time scenario where both ticks
+                # represent the same local time but different actual moments
+                if (
+                    current_tick.hour == prev_tick.hour
+                    and current_tick.minute == prev_tick.minute
+                    and current_tick.second == prev_tick.second
+                    and current_tick.fold != prev_tick.fold
+                ):
+                    # This is a DST fall-back transition - skip this zero interval
+                    # as it's not representative of the true minimum cron interval
+                    prev_tick = current_tick
+                    continue
+                # We've encountered a genuine zero interval (which shouldn't happen)
+                raise Exception("Encountered a genuine zero interval")
+
+            if interval < datetime.timedelta(seconds=0):
+                # This happens when the sampling encounters a daylight savings transition where the clocks roll back
+                # Just skip this interval and continue sampling
+                prev_tick = current_tick
+                continue
+
+            # Update minimum interval
+            if min_interval is None or interval < min_interval:
+                min_interval = interval
+
+            prev_tick = current_tick
+
+        except StopIteration:
+            # This shouldn't happen with cron iterators, but handle gracefully
+            break
+
+    if min_interval is None:
+        # Fallback - should not happen with valid cron schedules
+        raise ValueError("Could not determine minimum interval from cron schedule")
+
+    return min_interval

@@ -7,10 +7,16 @@ import {
   buildWorkspaceLocationStatusEntry,
 } from '../../../graphql/types';
 import {buildQueryMock} from '../../../testing/mocking';
-import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from '../WorkspaceQueries';
+import {
+  CODE_LOCATION_STATUS_QUERY,
+  LOCATION_WORKSPACE_ASSETS_QUERY,
+  LOCATION_WORKSPACE_QUERY,
+} from '../WorkspaceQueries';
 import {
   CodeLocationStatusQuery,
   CodeLocationStatusQueryVariables,
+  LocationWorkspaceAssetsQuery,
+  LocationWorkspaceAssetsQueryVariables,
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables,
 } from '../types/WorkspaceQueries.types';
@@ -33,20 +39,23 @@ export const buildCodeLocationsStatusQuery = (
 
 export const buildWorkspaceMocks = (
   entries: WorkspaceLocationEntry[],
-  options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> = {},
+  options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> & {
+    cascadingUpdates?: boolean;
+  } = {},
 ) => {
   return [
     buildCodeLocationsStatusQuery(
       entries.map((entry) =>
         buildWorkspaceLocationStatusEntry({
           ...entry,
-          updateTimestamp: entry.updatedTimestamp,
           __typename: 'WorkspaceLocationStatusEntry',
+          updateTimestamp: entry.updatedTimestamp,
+          versionKey: '' + entry.updatedTimestamp,
         }),
       ),
       options,
     ),
-    ...entries.map((entry) =>
+    ...entries.map((entry, index) =>
       buildQueryMock<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
         query: LOCATION_WORKSPACE_QUERY,
         variables: {
@@ -56,6 +65,28 @@ export const buildWorkspaceMocks = (
           workspaceLocationEntryOrError: entry,
         },
         ...options,
+        ...(options.cascadingUpdates
+          ? {
+              delay: 100 * (1 + index),
+            }
+          : {}),
+      }),
+    ),
+    ...entries.map((entry, index) =>
+      buildQueryMock<LocationWorkspaceAssetsQuery, LocationWorkspaceAssetsQueryVariables>({
+        query: LOCATION_WORKSPACE_ASSETS_QUERY,
+        variables: {
+          name: entry.name,
+        },
+        data: {
+          workspaceLocationEntryOrError: entry,
+        },
+        ...options,
+        ...(options.cascadingUpdates
+          ? {
+              delay: 100 * (1 + index),
+            }
+          : {}),
       }),
     ),
   ];

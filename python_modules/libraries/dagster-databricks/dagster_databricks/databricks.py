@@ -2,9 +2,10 @@ import base64
 import logging
 import os
 import time
+from collections.abc import Mapping
 from enum import Enum
 from importlib.metadata import version
-from typing import IO, Any, Mapping, Optional, Tuple
+from typing import IO, Any, Final, Optional
 
 import dagster
 import dagster._check as check
@@ -20,7 +21,6 @@ from databricks.sdk.core import (
     pat_auth,
 )
 from databricks.sdk.service import jobs
-from typing_extensions import Final
 
 import dagster_databricks
 from dagster_databricks.types import DatabricksRunState
@@ -94,12 +94,17 @@ class WorkspaceClientFactory:
                 host=host,
                 client_id=oauth_client_id,
                 client_secret=oauth_client_secret,
-                credentials_provider=oauth_service_principal,
-                **product_info,
+                credentials_strategy=oauth_service_principal,
+                **product_info,  # pyright: ignore[reportArgumentType]
             )
         elif auth_type == AuthTypeEnum.PAT:
             host = self._resolve_host(host)
-            c = Config(host=host, token=token, credentials_provider=pat_auth, **product_info)
+            c = Config(
+                host=host,
+                token=token,
+                credentials_strategy=pat_auth,
+                **product_info,  # pyright: ignore[reportArgumentType]
+            )
         elif auth_type == AuthTypeEnum.AZURE_CLIENT_SECRET:
             host = self._resolve_host(host)
             c = Config(
@@ -107,8 +112,8 @@ class WorkspaceClientFactory:
                 azure_client_id=azure_client_id,
                 azure_client_secret=azure_client_secret,
                 azure_tenant_id=azure_tenant_id,
-                credentials_provider=azure_service_principal,
-                **product_info,
+                credentials_strategy=azure_service_principal,
+                **product_info,  # pyright: ignore[reportArgumentType]
             )
         elif auth_type == AuthTypeEnum.DEFAULT:
             # Can be used to automatically read credentials from environment or ~/.databrickscfg file. This is common
@@ -116,11 +121,19 @@ class WorkspaceClientFactory:
             if host is not None:
                 # This allows for explicit override of the host, while letting other credentials be read from the
                 # environment or ~/.databrickscfg file
-                c = Config(host=host, credentials_provider=DefaultCredentials(), **product_info)  # type: ignore  # (bad stubs)
+                c = Config(
+                    host=host,
+                    credentials_strategy=DefaultCredentials(),  # type: ignore
+                    **product_info,  # pyright: ignore[reportArgumentType]
+                )
             else:
                 # The initialization machinery in the Config object will look for the host and other auth info in the
                 # environment, as long as no values are provided for those attributes (including None)
-                c = Config(credentials_provider=DefaultCredentials(), **product_info)  # type: ignore  # (bad stubs)
+                c = Config(
+                    host=host,
+                    credentials_strategy=DefaultCredentials(),  # type: ignore
+                    **product_info,  # pyright: ignore[reportArgumentType]
+                )
         else:
             raise ValueError(f"Unexpected auth type {auth_type}")
         self.config = c
@@ -182,11 +195,8 @@ class WorkspaceClientFactory:
         azure_tenant_id: Optional[str] = None,
     ):
         """Ensure that all required credentials are provided for the given auth type."""
-        if (
-            oauth_client_id
-            and not oauth_client_secret
-            or oauth_client_secret
-            and not oauth_client_id
+        if (oauth_client_id and not oauth_client_secret) or (
+            oauth_client_secret and not oauth_client_id
         ):
             raise ValueError(
                 "If using databricks service principal oauth credentials, both oauth_client_id and"
@@ -374,7 +384,7 @@ class DatabricksClient:
         logger: logging.Logger,
         databricks_run_id: int,
         poll_interval_sec: float,
-        max_wait_time_sec: int,
+        max_wait_time_sec: float,
         verbose_logs: bool = True,
     ) -> None:
         logger.info(f"Waiting for Databricks run `{databricks_run_id}` to complete...")
@@ -396,7 +406,7 @@ class DatabricksClient:
 class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress.
 
-    Attributes:
+    Args:
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net.
         token (str): Databricks authentication token.
         poll_interval_sec (float): How often to poll Databricks for run status.
@@ -413,7 +423,7 @@ class DatabricksJobRunner:
         azure_client_secret: Optional[str] = None,
         azure_tenant_id: Optional[str] = None,
         poll_interval_sec: float = 5,
-        max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+        max_wait_time_sec: float = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
         self.host = check.opt_str_param(host, "host")
         self.token = check.opt_str_param(token, "token")
@@ -569,7 +579,7 @@ class DatabricksJobRunner:
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
-    ) -> Optional[Tuple[Optional[str], Optional[str]]]:
+    ) -> Optional[tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
         # Run.cluster_instance can be None. In that case, fall back to cluster instance on first

@@ -1,8 +1,11 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon, Mono, Table, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useMemo} from 'react';
+import styled from 'styled-components';
 
 import {RawLogContent} from './RawLogContent';
 import {ILogCaptureInfo} from './RunMetadataProvider';
+import {gql, useQuery, useSubscription} from '../apollo-client';
 import {
   CapturedLogFragment,
   CapturedLogsMetadataQuery,
@@ -12,9 +15,10 @@ import {
   CapturedLogsSubscription,
   CapturedLogsSubscriptionVariables,
 } from './types/CapturedLogPanel.types';
-import {gql, useQuery, useSubscription} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
+import {showSharedToaster} from '../app/DomUtils';
 import {WebSocketContext} from '../app/WebSocketProvider';
+import {useCopyToClipboard} from '../app/browser';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -26,36 +30,77 @@ interface CapturedOrExternalLogPanelProps extends CapturedLogProps {
   logCaptureInfo?: ILogCaptureInfo;
 }
 
+const CapturedLogDataTable = styled(Table)`
+  & tr td:first-child {
+    white-space: nowrap;
+  }
+`;
+
+const ClickToCopyButton = styled(UnstyledButton)`
+  white-space: normal;
+`;
+
 export const CapturedOrExternalLogPanel = React.memo(
   ({logCaptureInfo, ...props}: CapturedOrExternalLogPanelProps) => {
+    const ioType = props.visibleIOType;
     const externalUrl =
       logCaptureInfo &&
-      (props.visibleIOType === 'stdout'
-        ? logCaptureInfo.externalStdoutUrl
-        : logCaptureInfo.externalStderrUrl);
-    if (externalUrl) {
+      (ioType === 'stdout' ? logCaptureInfo.externalStdoutUrl : logCaptureInfo.externalStderrUrl);
+
+    const shellCmd = logCaptureInfo?.shellCmd;
+    const shellCommand = useMemo(() => {
+      if (shellCmd) {
+        return ioType === 'stdout' ? shellCmd.stdout : shellCmd.stderr;
+      }
+      return '';
+    }, [ioType, shellCmd]);
+
+    const copy = useCopyToClipboard();
+    const onClickFn = async (key: string, value: string) => {
+      if (!value) {
+        return;
+      }
+      copy(value);
+      await showSharedToaster({
+        intent: 'success',
+        icon: 'done',
+        message: `${key} copied!`,
+      });
+    };
+    const onClickShellCmd = async () => onClickFn('Shell command', shellCommand ?? '');
+
+    if (externalUrl || shellCmd) {
       return (
-        <Box
-          flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 1}}
-          background={Colors.tooltipBackground()}
-          style={{color: Colors.tooltipText(), flex: 1, minHeight: 0}}
-        >
-          View logs at
-          <a
-            href={externalUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: Colors.tooltipText(),
-              textDecoration: 'underline',
-              marginLeft: 4,
-              marginRight: 4,
-            }}
-          >
-            {externalUrl}
-          </a>
-          <Icon name="open_in_new" color={Colors.tooltipText()} size={20} style={{marginTop: 2}} />
-        </Box>
+        <CapturedLogDataTable>
+          <tbody>
+            {externalUrl ? (
+              <tr>
+                <td>View logs</td>
+                <td>
+                  <a href={externalUrl} target="_blank" rel="noreferrer">
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                      <span>{externalUrl}</span>
+                      <Icon name="open_in_new" />
+                    </Box>
+                  </a>
+                </td>
+              </tr>
+            ) : undefined}
+
+            {shellCmd ? (
+              <tr>
+                <td>Shell command</td>
+                <td>
+                  <Tooltip content="Click to copy this shell command" placement="top">
+                    <ClickToCopyButton onClick={onClickShellCmd}>
+                      <Mono>{shellCommand}</Mono>
+                    </ClickToCopyButton>
+                  </Tooltip>
+                </td>
+              </tr>
+            ) : undefined}
+          </tbody>
+        </CapturedLogDataTable>
       );
     }
     return props.logKey.length ? <CapturedLogPanel {...props} /> : null;
@@ -171,7 +216,7 @@ const CAPTURED_LOGS_METADATA_QUERY = gql`
   }
 `;
 
-const QUERY_LOG_LIMIT = 100000;
+const QUERY_LOG_LIMIT = 1048576; // 1MB
 const POLL_INTERVAL = 5000;
 
 const CapturedLogsSubscriptionProvider = ({
@@ -272,6 +317,9 @@ const CapturedLogPanel = React.memo(
 
     const stdoutLocation = queryResult.data?.capturedLogsMetadata.stdoutLocation || undefined;
     const stderrLocation = queryResult.data?.capturedLogsMetadata.stderrLocation || undefined;
+    const stdoutDownloadUrl = queryResult.data?.capturedLogsMetadata.stdoutDownloadUrl;
+    const stderrDownloadUrl = queryResult.data?.capturedLogsMetadata.stderrDownloadUrl;
+
     const websocketsUnavailabile = availability === 'unavailable' || disabled;
     const Component = websocketsUnavailabile
       ? CapturedLogsQueryProvider
@@ -286,12 +334,14 @@ const CapturedLogPanel = React.memo(
                 isLoading={_state.isLoading}
                 location={stdoutLocation}
                 isVisible={visibleIOType === 'stdout'}
+                downloadUrl={stdoutDownloadUrl}
               />
               <RawLogContent
                 logData={_state.stderr}
                 isLoading={_state.isLoading}
                 location={stderrLocation}
                 isVisible={visibleIOType === 'stderr'}
+                downloadUrl={stderrDownloadUrl}
               />
             </>
           )}

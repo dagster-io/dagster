@@ -1,15 +1,15 @@
 import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
+import {gql, useQuery} from '../apollo-client';
 import {
   SingleNonSdaAssetQuery,
   SingleNonSdaAssetQueryVariables,
 } from './types/VirtualizedAssetRow.types';
-import {workspacePathFromAddress} from './workspacePath';
-import {gql, useQuery} from '../apollo-client';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
@@ -19,14 +19,13 @@ import {AssetLink} from '../assets/AssetLink';
 import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {testId} from '../testing/testId';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
@@ -46,7 +45,7 @@ interface AssetRowProps {
   height: number;
   start: number;
   onRefresh: () => void;
-  kindFilter?: StaticSetFilter<string>;
+  onChangeAssetSelection?: (selection: string) => void;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {
@@ -63,14 +62,17 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showCheckboxColumn = false,
     showRepoColumn,
     view = 'flat',
-    kindFilter,
+    onChangeAssetSelection,
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
+  const assetSelection = getAssetSelectionQueryString();
   const linkUrl = assetDetailsPathForKey(
     {path},
     {
       view: type === 'folder' ? 'folder' : undefined,
+      // Forward asset selection if visiting a folder
+      'asset-selection': type === 'folder' ? assetSelection : undefined,
     },
   );
 
@@ -85,11 +87,15 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   const kinds = definition?.kinds;
 
   return (
-    <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
+    <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
         {showCheckboxColumn ? (
           <RowCell>
-            <Checkbox checked={checked} onChange={onChange} />
+            <Checkbox
+              checked={checked}
+              onChange={onChange}
+              data-testid={`checkbox-${tokenForAssetKey({path})}`}
+            />
           </RowCell>
         ) : null}
         <RowCell>
@@ -112,7 +118,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     reduceText
                     kind={kind}
                     style={{position: 'relative'}}
-                    currentPageFilter={kindFilter}
+                    onChangeAssetSelection={onChangeAssetSelection}
                   />
                 ))}
               </>
@@ -140,10 +146,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 <RepositoryLink repoAddress={repoAddress} showIcon showRefresh={false} />
                 {definition && definition.groupName ? (
                   <Link
-                    to={workspacePathFromAddress(
-                      repoAddress,
-                      `/asset-groups/${definition.groupName}`,
-                    )}
+                    to={globalAssetGraphPathForGroup(definition.groupName, definition.assetKey)}
                   >
                     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                       <Icon color={Colors.accentGray()} name="asset_group" />
@@ -288,6 +291,8 @@ const LIVE_QUERY_DELAY = 250;
  * as the user scans past rows. (The best way to skip the AssetLiveDataProvider work is
  * to pass it an empty array of asset keys.)
  */
+
+const emptyArray: AssetKeyInput[] = [];
 export function useLiveDataOrLatestMaterializationDebounced(
   path: string[],
   type: 'folder' | 'asset' | 'asset_non_sda',
@@ -295,7 +300,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
   const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
-  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
+  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : emptyArray);
 
   const skip = type !== 'asset_non_sda' || !debouncedKey;
   const queryResult = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
@@ -318,6 +323,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return liveDataByNode[tokenForAssetKey({path})]!;
   }
 
@@ -342,6 +348,7 @@ export const SINGLE_NON_SDA_ASSET_QUERY = gql`
         id
         assetMaterializations(limit: 1) {
           runId
+          stepKey
           timestamp
         }
       }

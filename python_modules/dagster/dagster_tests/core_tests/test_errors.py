@@ -25,3 +25,33 @@ foo = bar
 SyntaxError: invalid syntax
 """
     )
+
+
+def test_from_none():
+    def _raise():
+        raise Exception("yaho")
+
+    def _wrap(from_none):
+        try:
+            _raise()
+        except:
+            if from_none:
+                raise Exception("wrapped") from None
+            else:
+                raise Exception("wrapped")
+
+    try:
+        _wrap(from_none=False)
+    except:
+        err = serializable_error_info_from_exc_info(sys.exc_info())
+
+    assert err  # pyright: ignore[reportPossiblyUnboundVariable]
+    assert err.context
+
+    try:
+        _wrap(from_none=True)
+    except:
+        err = serializable_error_info_from_exc_info(sys.exc_info())
+
+    assert err
+    assert err.context is None

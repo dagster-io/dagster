@@ -11,18 +11,18 @@ import {useCallback, useMemo} from 'react';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
+import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
+import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
-import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {RunStatus, RunsFilter} from '../graphql/types';
+import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -31,6 +31,7 @@ import {
   useSuggestionFilter,
 } from '../ui/BaseFilters/useSuggestionFilter';
 import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
+import {TruncatedTextWithFullTextOnHover} from '../ui/TruncatedTextWithFullTextOnHover';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 
 export interface RunsFilterInputProps {
@@ -50,8 +51,7 @@ export type RunFilterTokenType =
   | 'tag'
   | 'backfill'
   | 'created_date_before'
-  | 'created_date_after'
-  | 'show_runs_within_backfills';
+  | 'created_date_after';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -91,10 +91,6 @@ const RUN_PROVIDERS_EMPTY = [
     token: 'created_date_after',
     values: () => [],
   },
-  {
-    token: 'show_runs_within_backfills',
-    values: () => [],
-  },
 ];
 
 /**
@@ -109,21 +105,31 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
-        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
-        decode: ({q = []}) =>
-          tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
+        encode: (tokens) => ({
+          q: tokensAsStringArray(tokens),
+          cursor: undefined,
+          [RUNS_FEED_CURSOR_KEY]: undefined,
+        }),
+        decode: ({q}) => {
+          const values = (Array.isArray(q) ? q : []).map(String);
+          return tokenizedValuesFromStringArray(values, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-          ) as RunFilterToken[],
+          ) as RunFilterToken[];
+        },
       }),
       [enabledFilters],
     ),
   );
 }
 
-export function runsPathWithFilters(filterTokens: RunFilterToken[], basePath: string = '/runs') {
+export function runsPathWithFilters(
+  filterTokens: RunFilterToken[],
+  basePath: string = '/runs',
+  view?: RunsFeedView,
+) {
   return `${basePath}?${qs.stringify(
-    {q: tokensAsStringArray(filterTokens)},
+    {q: tokensAsStringArray(filterTokens), view: view?.toLowerCase()},
     {arrayFormat: 'brackets'},
   )}`;
 }
@@ -153,15 +159,12 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'tag') {
       const [key, value = ''] = item.value.split('=');
       if (obj.tags) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         obj.tags.push({key: key!, value});
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         obj.tags = [{key: key!, value}];
       }
-    } else if (item.token === 'show_runs_within_backfills') {
-      // the Runs filter expects a boolen on whether to **exclude** runs that are within
-      // backfills. The UI checkbox is whether to **show** runs within backfills, so we
-      // negate the value when creating the filter
-      obj.excludeSubruns = item.value === 'false';
     }
   }
 
@@ -263,7 +266,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const createdByValues = useMemo(
     () => [
-      tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+      {
+        ...tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+        final: true,
+      },
       ...[...sensorValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
       ...[...scheduleValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
       ...[...userValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
@@ -429,6 +435,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="id" />
         <TruncatedTextWithFullTextOnHover text={value.value} />
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         {value.value!}
       </Box>
     ),
@@ -440,7 +447,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     name: 'Partition',
     icon: 'partition',
     initialSuggestions: partitionValues,
-    getNoSuggestionsPlaceholder: (query) => (query ? 'Invalid ID' : 'Type or paste a backfill ID'),
+    getNoSuggestionsPlaceholder: (query) =>
+      query ? 'Invalid partition' : 'Type or paste a partition',
 
     state: useMemo(() => {
       return tokens
@@ -483,6 +491,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="partition" />
         <TruncatedTextWithFullTextOnHover text={value.value} />
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         {value.value!}
       </Box>
     ),
@@ -490,11 +499,11 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     matchType: 'any-of',
   });
 
-  const launchedByFilter = useStaticSetFilter({
+  const launchedByFilter = useSuggestionFilter({
     name: 'Launched by',
-    allowMultipleSelections: false,
     icon: 'add_circle',
-    allValues: createdByValues,
+    initialSuggestions: createdByValues,
+    allowMultipleSelections: false,
     renderLabel: ({value}) => {
       let icon;
       let labelValue = value.value;
@@ -503,35 +512,60 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       } else if (value.type === DagsterTag.ScheduleName) {
         icon = <Icon name="schedule" />;
       } else if (value.type === DagsterTag.User) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return <UserDisplay email={value.value!} isFilter />;
       } else if (value.type === DagsterTag.Automaterialize) {
-        icon = <Icon name="auto_materialize_policy" />;
-        labelValue = 'Auto-materialize policy';
+        icon = <Icon name="automation_condition" />;
+        labelValue = 'Automation condition';
       }
       return (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           {icon}
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <TruncatedTextWithFullTextOnHover text={labelValue!} />
         </Box>
       );
     },
     getStringValue: (x) => {
       if (x.type === DagsterTag.Automaterialize) {
-        return 'Auto-materialize policy';
+        return 'Automation condition';
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return x.value!;
     },
     state: useMemo(() => {
-      return new Set(
-        tokens
-          .filter(
-            ({token, value}) =>
-              token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
-          )
-          .map(({value}) => tagValueToFilterObject(value)),
-      );
+      return tokens
+        .filter(
+          ({token, value}) =>
+            token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
+        )
+        .map(({value}) => tagValueToFilterObject(value));
     }, [tokens]),
-    onStateChanged: (values) => {
+    freeformSearchResult(query, suggestionPath) {
+      if (suggestionPath.length === 0) {
+        return [
+          {
+            value: {
+              key: `${DagsterTag.ScheduleName}-freeform`,
+              type: DagsterTag.ScheduleName,
+              value: query,
+            },
+            final: true,
+          },
+          {
+            value: {
+              key: `${DagsterTag.SensorName}-freeform`,
+              type: DagsterTag.SensorName,
+              value: query,
+            },
+            final: true,
+          },
+        ];
+      }
+      return null;
+    },
+    freeformResultPosition: 'end',
+    setState: (values) => {
       onChange([
         ...tokens.filter((token) => {
           if (token.token !== 'tag') {
@@ -544,6 +578,12 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           value: `${value.type}=${value.value}`,
         })),
       ]);
+    },
+    getKey: ({value}) => value,
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'any-of',
+    onSuggestionClicked: async (value) => {
+      return [{value}];
     },
   });
 
@@ -603,6 +643,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         })
         .map((token) => {
           const [key, value] = token.value.split('=');
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           return tagSuggestionValueObject(key!, value!).value;
         });
     }, [tokens]),
@@ -739,6 +780,7 @@ function tagToFilterValue(key: string, value: string) {
 export const tagValueToFilterObject = memoize((value: string) => ({
   key: value,
   type: value.split('=')[0] as DagsterTag,
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   value: value.split('=')[1]!,
 }));
 

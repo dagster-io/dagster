@@ -59,7 +59,6 @@ export type BackfillDetailsQuery = {
         partitionSetName: string | null;
         hasCancelPermission: boolean;
         hasResumePermission: boolean;
-        numCancelable: number;
         partitionNames: Array<string> | null;
         assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         error: {
@@ -145,7 +144,6 @@ export type BackfillDetailsBackfillFragment = {
   partitionSetName: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
-  numCancelable: number;
   partitionNames: Array<string> | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   error: {
@@ -209,4 +207,4 @@ export type BackfillDetailsBackfillFragment = {
   } | null;
 };
 
-export const BackfillDetailsQueryVersion = 'b2e50b372c779a994a7fdcdbef873890bf39716520774315b9e880ae59375217';
+export const BackfillDetailsQueryVersion = 'c0c5cc85d99dff8397bbc7bdd3bce9d5edda6704c0ddeba5a6498fab0919fd14';

@@ -7,12 +7,13 @@ import {
   Popover,
   Spinner,
   Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import React, {useContext} from 'react';
+import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -37,7 +38,9 @@ import {
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {useObserveAction} from './useObserveAction';
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
+import {useWipeMaterializations} from './useWipeMaterializations';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -53,7 +56,7 @@ import {PipelineSelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {numberFormatter} from '../ui/formatters';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -85,30 +88,40 @@ type LaunchAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
-const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
+const countIfPluralOrNotAll = (k: unknown[], all: unknown[]) =>
+  k.length > 1 || (k.length > 0 && k.length !== all.length)
+    ? ` (${numberFormatter.format(k.length)})`
+    : '';
+
+const countIfNotAll = (k: unknown[], all: unknown[]) =>
+  k.length > 0 && k.length !== all.length ? ` (${numberFormatter.format(k.length)})` : '';
 
 type Asset =
   | {
       assetKey: AssetKey;
-      hasMaterializePermission: boolean;
-      partitionDefinition: {__typename: string} | null;
-      isExecutable: boolean;
-      isObservable: boolean;
+      hasMaterializePermission?: boolean;
+      partitionDefinition?: {__typename: string} | null;
+      isExecutable?: boolean;
+      isObservable?: boolean;
     }
   | {
       assetKey: AssetKey;
-      hasMaterializePermission: boolean;
-      isPartitioned: boolean;
-      isExecutable: boolean;
-      isObservable: boolean;
+      hasMaterializePermission?: boolean;
+      isPartitioned?: boolean;
+      isExecutable?: boolean;
+      isObservable?: boolean;
     };
 
-export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
+export type AssetsInScope =
+  | {all: Asset[]; skipAllTerm?: boolean}
+  | {selected: Asset[]}
+  | {single: Asset | null};
 
 type LaunchOption = {
   assetKeys: AssetKey[];
   label: string;
-  icon?: JSX.Element;
+  disabledReason: string | null;
+  icon: JSX.Element;
 };
 
 const isAnyPartitioned = (assets: Asset[]) =>
@@ -123,53 +136,80 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function optionsForButton(scope: AssetsInScope): LaunchOption[] {
-  // If you pass a set of selected assets, we always show just one option
-  // to materialize that selection.
-  if ('selected' in scope) {
-    const executable = scope.selected.filter((a) => !a.isObservable && a.isExecutable);
-
-    return [
-      {
-        assetKeys: executable.map((a) => a.assetKey),
-        label: `Materialize selected${countOrBlank(executable)}${
-          isAnyPartitioned(executable) ? '…' : ''
-        }`,
-      },
-    ];
+function materializationDisabledReason(all: Asset[], materializable: Asset[], isSingle?: boolean) {
+  if (!all.length) {
+    if (isSingle) {
+      return 'Asset does not have a definition';
+    }
+    return 'Select one or more assets to materialize';
   }
-
-  const options: LaunchOption[] = [];
-  const executable = scope.all.filter((a) => !a.isObservable && a.isExecutable);
-
-  options.push({
-    assetKeys: executable.map((a) => a.assetKey),
-    label:
-      executable.length > 1 && !scope.skipAllTerm
-        ? `Materialize all${isAnyPartitioned(executable) ? '…' : ''}`
-        : `Materialize${isAnyPartitioned(executable) ? '…' : ''}`,
-  });
-
-  return options;
+  if (all.some((a) => 'hasMaterializePermission' in a && !a.hasMaterializePermission)) {
+    return 'You do not have permission to materialize assets';
+  }
+  if (all.every((a) => !a.isExecutable)) {
+    return 'External assets cannot be materialized';
+  }
+  if (all.every((a) => a.isObservable)) {
+    return 'Observable assets cannot be materialized';
+  }
+  if (materializable.length === 0) {
+    return 'No executable assets selected.';
+  }
+  return null;
 }
 
-export function executionDisabledMessageForAssets(
-  assets: {
-    isObservable: boolean;
-    isExecutable: boolean;
-    hasMaterializePermission: boolean;
-  }[],
-) {
-  if (!assets.length) {
-    return null;
+function observationDisabledReason(all: Asset[], observable: Asset[], isSingle?: boolean) {
+  if (!all.length) {
+    if (isSingle) {
+      return 'Asset does not have a definition';
+    }
+    return 'Select one or more assets to observe';
   }
-  return assets.some((a) => !a.hasMaterializePermission)
-    ? 'You do not have permission to materialize assets'
-    : assets.every((a) => a.isObservable)
-    ? 'Observable assets cannot be materialized'
-    : assets.every((a) => !a.isExecutable)
-    ? 'External assets cannot be materialized'
-    : null;
+  if (all.some((a) => !a.hasMaterializePermission)) {
+    return 'You do not have permission to observe assets';
+  }
+  if (observable.length === 0) {
+    return 'Assets do not have observation functions';
+  }
+  return null;
+}
+
+export function optionsForExecuteButton(
+  assets: Asset[],
+  {
+    skipAllTerm,
+    isSelection,
+    isSingle,
+  }: {skipAllTerm?: boolean; isSelection?: boolean; isSingle?: boolean},
+): {materializeOption: LaunchOption; observeOption: LaunchOption} {
+  const materializable = assets.filter(
+    (a) => 'isExecutable' in a && !a.isObservable && a.isExecutable,
+  );
+  const observable = assets.filter((a) => 'isObservable' in a && a.isObservable && a.isExecutable);
+  const ellipsis = isAnyPartitioned(materializable) ? '…' : '';
+
+  return {
+    materializeOption: {
+      assetKeys: materializable.map((a) => a.assetKey),
+      disabledReason: materializationDisabledReason(assets, materializable, isSingle),
+      icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
+      label: isSelection
+        ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
+        : materializable.length > 1 && !skipAllTerm
+          ? `Materialize all${countIfNotAll(materializable, assets)}${ellipsis}`
+          : `Materialize${countIfNotAll(materializable, assets)}${ellipsis}`,
+    },
+    observeOption: {
+      assetKeys: observable.map((a) => a.assetKey),
+      disabledReason: observationDisabledReason(assets, observable, isSingle),
+      icon: <Icon name="observation" />,
+      label: isSelection
+        ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
+        : observable.length > 1 && !skipAllTerm
+          ? `Observe all${countIfNotAll(observable, assets)}`
+          : `Observe${countIfNotAll(observable, assets)}`,
+    },
+  };
 }
 
 export const LaunchAssetExecutionButton = ({
@@ -178,6 +218,7 @@ export const LaunchAssetExecutionButton = ({
   additionalDropdownOptions,
   primary = true,
   showChangedAndMissingOption = true,
+  iconOnly = false,
 }: {
   scope: AssetsInScope;
   showChangedAndMissingOption?: boolean;
@@ -192,144 +233,191 @@ export const LaunchAssetExecutionButton = ({
         disabled?: boolean;
       }
   )[];
+  iconOnly?: boolean;
 }) => {
-  const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
-  const [isOpen, setIsOpen] = React.useState(false);
+  const materialize = useMaterializationAction(preferredJobName);
+  const observe = useObserveAction(preferredJobName);
+  const loading = materialize.loading || observe.loading;
 
-  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
-    React.useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] = useState(false);
 
   const {
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
 
+  const [assets, {materializeOption, observeOption}] =
+    'selected' in scope
+      ? [scope.selected, optionsForExecuteButton(scope.selected, {isSelection: true})]
+      : 'single' in scope
+        ? [
+            scope.single ? [scope.single] : [],
+            optionsForExecuteButton(scope.single ? [scope.single] : [], {isSingle: true}),
+          ]
+        : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
+
+  const {menuItem: wipeMenuItem, dialog: wipeDialog} = useWipeMaterializations({
+    selected: useMemo(() => assets.map((asset) => ({key: asset.assetKey})), [assets]),
+  });
+
   if (!canSeeMaterializeAction) {
     return null;
   }
 
-  const options = optionsForButton(scope);
-  const firstOption = options[0]!;
-  if (!firstOption) {
-    return <span />;
-  }
+  const [firstOption, firstAction, secondOption, secondAction] =
+    materializeOption.disabledReason && !observeOption.disabledReason
+      ? [observeOption, observe.onClick, materializeOption, materialize.onClick]
+      : [materializeOption, materialize.onClick, observeOption, observe.onClick];
 
-  const inScope = 'selected' in scope ? scope.selected : scope.all;
-  const disabledMessage = executionDisabledMessageForAssets(inScope);
-
-  if (disabledMessage) {
+  if (
+    firstOption.disabledReason &&
+    (!additionalDropdownOptions ||
+      !additionalDropdownOptions.some((option) => !('disabled' in option) || !option.disabled))
+  ) {
+    // If all options are disabled, just show the button with no dropdown.
     return (
-      <Tooltip content={disabledMessage} position="bottom-right">
+      <Tooltip content={firstOption.disabledReason} position="bottom-end">
         <Button
           intent={primary ? 'primary' : undefined}
-          icon={<Icon name="materialization" />}
+          icon={firstOption.icon}
           data-testid={testId('materialize-button')}
           disabled
         >
-          {firstOption.label}
+          {iconOnly ? null : firstOption.label}
         </Button>
       </Tooltip>
     );
   }
 
+  const canLaunch = firstOption.assetKeys.length > 0 && !firstOption.disabledReason;
+
   return (
     <>
       <CalculateUnsyncedDialog
+        assets={assets}
         isOpen={showCalculatingUnsyncedDialog}
-        onClose={() => {
-          setShowCalculatingUnsyncedDialog(false);
-        }}
-        assets={inScope}
-        onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
-          onClick(assets, e);
-        }}
+        onClose={() => setShowCalculatingUnsyncedDialog(false)}
+        onMaterializeAssets={materialize.onClick}
       />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
-          content="Shift+click to add configuration"
-          position="bottom-right"
-          useDisabledButtonTooltipFix
+          content={
+            firstOption.disabledReason
+              ? firstOption.disabledReason
+              : 'Shift+click to add configuration'
+          }
+          placement="left"
         >
-          <MaterializeButton
-            intent={primary ? 'primary' : undefined}
-            data-testid={testId('materialize-button')}
-            onClick={(e) => onClick(firstOption.assetKeys, e)}
-            style={{
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
-              borderRight: `1px solid rgba(255,255,255,0.2)`,
-            }}
-            disabled={!firstOption.assetKeys.length}
-            icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
-          >
-            {firstOption.label}
-          </MaterializeButton>
+          {iconOnly ? (
+            <UnstyledButton
+              style={{padding: 4}}
+              onClick={(e) => firstAction(firstOption.assetKeys, e)}
+              disabled={!canLaunch}
+            >
+              {firstOption.icon}
+            </UnstyledButton>
+          ) : (
+            <Button
+              intent={primary ? 'primary' : undefined}
+              data-testid={testId('materialize-button')}
+              onClick={(e) => firstAction(firstOption.assetKeys, e)}
+              style={{
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+                borderRight: `1px solid rgba(255,255,255,0.2)`,
+              }}
+              disabled={!canLaunch}
+              icon={
+                loading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <Icon name={observeEnabled() ? 'execute' : 'materialization'} />
+                )
+              }
+            >
+              {firstOption.label}
+            </Button>
+          )}
         </Tooltip>
 
-        <Popover
-          isOpen={isOpen}
-          onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-          position="bottom-right"
-          content={
-            <Menu>
-              {options.slice(1).map((option) => (
-                <MenuItem
-                  key={option.label}
-                  text={option.label}
-                  icon={option.icon || 'materialization'}
-                  disabled={option.assetKeys.length === 0}
-                  onClick={(e) => onClick(option.assetKeys, e)}
-                />
-              ))}
-              {showChangedAndMissingOption ? (
-                <MenuItem
-                  text="Materialize unsynced"
-                  icon="changes_present"
-                  onClick={() => setShowCalculatingUnsyncedDialog(true)}
-                />
-              ) : null}
-              <MenuItem
-                text="Open launchpad"
-                icon="open_in_new"
-                onClick={(e: React.MouseEvent<any>) => {
-                  onClick(firstOption.assetKeys, e, true);
-                }}
-              />
-              {additionalDropdownOptions?.map((option) => {
-                if (!('label' in option)) {
-                  return option;
-                }
-
-                const item = (
+        {iconOnly ? null : (
+          <Popover
+            isOpen={isOpen}
+            onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+            position="bottom-right"
+            content={
+              <Menu>
+                <Tooltip
+                  canShow={!!secondOption.disabledReason}
+                  content={secondOption.disabledReason || ''}
+                  position="left"
+                >
                   <MenuItem
-                    key={option.label}
-                    text={option.label}
-                    icon={option.icon}
-                    onClick={option.onClick}
-                    disabled={option.disabled}
+                    key={secondOption.label}
+                    text={secondOption.label}
+                    icon={secondOption.icon}
+                    data-testid={testId('materialize-secondary-option')}
+                    disabled={secondOption.assetKeys.length === 0}
+                    onClick={(e) => secondAction(secondOption.assetKeys, e)}
                   />
-                );
+                </Tooltip>
+                {showChangedAndMissingOption ? (
+                  <MenuItem
+                    text="Materialize unsynced"
+                    icon="changes_present"
+                    disabled={!!materializeOption.disabledReason}
+                    onClick={() => setShowCalculatingUnsyncedDialog(true)}
+                  />
+                ) : null}
+                {canLaunch ? (
+                  <MenuItem
+                    text="Open launchpad"
+                    icon="open_in_new"
+                    onClick={(e: React.MouseEvent<any>) => {
+                      materialize.onClick(firstOption.assetKeys, e, true);
+                    }}
+                  />
+                ) : null}
+                {wipeMenuItem}
+                {additionalDropdownOptions?.map((option) => {
+                  if (!('label' in option)) {
+                    return option;
+                  }
 
-                return option.disabled ? (
-                  <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
-                    {item}
-                  </Tooltip>
-                ) : (
-                  item
-                );
-              })}
-            </Menu>
-          }
-        >
-          <Button
-            role="button"
-            style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
-            icon={<Icon name="arrow_drop_down" />}
-            disabled={!firstOption.assetKeys.length}
-            intent={primary ? 'primary' : undefined}
-          />
-        </Popover>
+                  const item = (
+                    <MenuItem
+                      key={option.label}
+                      text={option.label}
+                      icon={option.icon}
+                      onClick={option.onClick}
+                      disabled={option.disabled}
+                    />
+                  );
+
+                  return option.disabled ? (
+                    <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
+                      {item}
+                    </Tooltip>
+                  ) : (
+                    item
+                  );
+                })}
+              </Menu>
+            }
+          >
+            <Button
+              role="button"
+              data-testid={testId('materialize-button-dropdown')}
+              style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
+              icon={<Icon name="arrow_drop_down" />}
+              disabled={false}
+              intent={primary ? 'primary' : undefined}
+            />
+          </Popover>
+        )}
       </Box>
-      {launchpadElement}
+      {materialize.launchpadElement}
+      {wipeDialog}
     </>
   );
 };
@@ -521,35 +609,36 @@ async function stateForLaunchingAssets(
     };
   }
 
-  const resourceResult = await client.query<
-    LaunchAssetLoaderResourceQuery,
-    LaunchAssetLoaderResourceQueryVariables
-  >({
-    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
-    variables: {
-      pipelineName: jobName,
-      repositoryName: assets[0]!.repository.name,
-      repositoryLocationName: assets[0]!.repository.location.name,
-    },
-  });
-  const pipeline = resourceResult.data.pipelineOrError;
-  if (pipeline.__typename !== 'Pipeline') {
-    return {type: 'error', error: pipeline.message};
-  }
-  const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
-  const resources = pipeline.modes[0]!.resources.filter((r) =>
-    requiredResourceKeys.includes(r.name),
-  );
-  const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
-  const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
-
   // Note: If a partition definition is present and we're launching a user-defined job,
   // we assume that any required config will be provided by a PartitionedConfig function
   // attached to the job. Otherwise backfills won't work and you'll know to add one!
-  const assumeConfigPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
+  const configAssumedPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
+  const configRequired = assets.some((a) => a.configField?.isRequired);
+  let needLaunchpad = false;
 
-  const needLaunchpad =
-    !assumeConfigPresent && (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig);
+  if (configAssumedPresent) {
+    needLaunchpad = false;
+  } else if (configRequired) {
+    needLaunchpad = true;
+  } else {
+    const requiredResourceKeys = assets.flatMap((a) =>
+      a.requiredResources.map((r) => r.resourceKey),
+    );
+    if (requiredResourceKeys.length) {
+      const {error, requiredConfigPresent} = await checkIfResourcesRequireConfig({
+        client,
+        jobName,
+        repoAddress,
+        requiredResourceKeys,
+      });
+      if (error) {
+        return {type: 'error', error};
+      }
+      if (requiredConfigPresent) {
+        needLaunchpad = true;
+      }
+    }
+  }
 
   if (needLaunchpad || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
@@ -626,6 +715,7 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
   if (
     first &&
     !partitionedRoots.every((r) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partitionDefinitionsEqual(first.partitionDefinition!, r.partitionDefinition!),
     )
   ) {
@@ -871,8 +961,8 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
     $repositoryLocationName: String!
     $repositoryName: String!
   ) {
-    pipelineOrError(
-      params: {
+    resourcesOrError(
+      pipelineSelector: {
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
@@ -887,30 +977,16 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on Pipeline {
-        id
-        modes {
-          id
-          resources {
-            name
-            description
-            configField {
-              name
-              isRequired
-              configType {
-                ...ConfigTypeSchemaFragment
-                recursiveConfigTypes {
-                  ...ConfigTypeSchemaFragment
-                }
-              }
-            }
+      ... on ResourceConnection {
+        resources {
+          name
+          configField {
+            isRequired
           }
         }
       }
     }
   }
-
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
@@ -929,3 +1005,41 @@ export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
     }
   }
 `;
+
+async function checkIfResourcesRequireConfig({
+  client,
+  jobName,
+  repoAddress,
+  requiredResourceKeys,
+}: {
+  client: ApolloClient<any>;
+  jobName: string;
+  repoAddress: RepoAddress;
+  requiredResourceKeys: string[];
+}) {
+  const resourceResult = await client.query<
+    LaunchAssetLoaderResourceQuery,
+    LaunchAssetLoaderResourceQueryVariables
+  >({
+    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+    variables: {
+      pipelineName: jobName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    },
+  });
+  const resourceConnection = resourceResult.data.resourcesOrError;
+  if (resourceConnection.__typename !== 'ResourceConnection') {
+    return {
+      error: resourceConnection.message,
+      requiredConfigPresent: false,
+    };
+  }
+  const resources = resourceConnection.resources.filter((r) =>
+    requiredResourceKeys.includes(r.name),
+  );
+  return {
+    error: null,
+    requiredConfigPresent: resources.some((r) => r.configField?.isRequired),
+  };
+}

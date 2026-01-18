@@ -12,7 +12,6 @@ from dagster import (
     Int,
     Out,
     ResourceDefinition,
-    StaticPartitionsDefinition,
     asset,
     build_input_context,
     build_output_context,
@@ -24,6 +23,7 @@ from dagster import (
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
@@ -207,9 +207,12 @@ def test_asset_io_manager(gcs_bucket):
     def graph_asset(downstream):
         return second_op(first_op(downstream))
 
+    shared_counter = {"counter": 0}
+
     @asset(partitions_def=StaticPartitionsDefinition(["apple", "orange"]))
     def partitioned():
-        return 8
+        shared_counter["counter"] = shared_counter["counter"] + 1
+        return shared_counter["counter"]
 
     defs = Definitions(
         assets=[
@@ -227,7 +230,7 @@ def test_asset_io_manager(gcs_bucket):
         },
         jobs=[define_asset_job("my_asset_job")],
     )
-    asset_job = defs.get_job_def("my_asset_job")
+    asset_job = defs.resolve_job_def("my_asset_job")
 
     result = asset_job.execute_in_process(partition_key="apple")
     assert result.success
@@ -240,6 +243,27 @@ def test_asset_io_manager(gcs_bucket):
         f"{gcs_bucket}/assets/source1/foo",
         f"{gcs_bucket}/assets/source1/bar",
     }
+
+    # Verify that partitioned/apple has value 1 after first execution
+    path = UPath("assets", "partitioned", "apple")
+    assert pickle.loads(fake_gcs_client.bucket(gcs_bucket).blob(str(path)).download_as_bytes()) == 1
+
+    # re-execution does not cause issues, overwrites the buckets
+    result2 = asset_job.execute_in_process(partition_key="apple")
+    assert fake_gcs_client.get_all_blob_paths() == {
+        f"{gcs_bucket}/assets/upstream",
+        f"{gcs_bucket}/assets/downstream",
+        f"{gcs_bucket}/assets/partitioned/apple",
+        f"{gcs_bucket}/assets/asset3",
+        f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
+        f"{gcs_bucket}/assets/storage/{result2.run_id}/files/graph_asset.first_op/result",
+        f"{gcs_bucket}/assets/source1/foo",
+        f"{gcs_bucket}/assets/source1/bar",
+    }
+
+    # Verify that partitioned/apple has value 2 after second execution
+    path = UPath("assets", "partitioned", "apple")
+    assert pickle.loads(fake_gcs_client.bucket(gcs_bucket).blob(str(path)).download_as_bytes()) == 2
 
 
 def test_asset_pythonic_io_manager(gcs_bucket):

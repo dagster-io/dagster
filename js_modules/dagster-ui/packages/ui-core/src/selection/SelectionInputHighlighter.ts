@@ -1,0 +1,347 @@
+import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {AbstractParseTreeVisitor, ParserRuleContext} from 'antlr4ng';
+import CodeMirror from 'codemirror';
+import {css} from 'styled-components';
+
+import {SyntaxError} from './CustomErrorListener';
+import {parseInput} from './SelectionInputParser';
+import {
+  AllExpressionContext,
+  AttributeExpressionContext,
+  AttributeNameContext,
+  AttributeValueContext,
+  DownTraversalContext,
+  FunctionNameContext,
+  IncompleteAttributeExpressionMissingKeyContext,
+  IncompleteAttributeExpressionMissingValueContext,
+  IncompletePlusTraversalExpressionContext,
+  NullStringValueContext,
+  ParenthesizedExpressionContext,
+  PostAttributeValueWhitespaceContext,
+  QuotedStringValueContext,
+  StartContext,
+  UnquotedStringValueContext,
+  UpTraversalContext,
+} from './generated/SelectionAutoCompleteParser';
+import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
+
+export class SyntaxHighlightingVisitor
+  extends AbstractParseTreeVisitor<void>
+  implements SelectionAutoCompleteVisitor<void>
+{
+  private cm: CodeMirror.Editor;
+  private startOffset: number;
+  private cursorIndex: number;
+
+  constructor(cm: CodeMirror.Editor, startOffSet: number, cursorIndex: number) {
+    super();
+    this.cm = cm;
+    this.startOffset = startOffSet;
+    this.cursorIndex = cursorIndex;
+  }
+
+  protected defaultResult() {}
+
+  private addClass(ctx: ParserRuleContext, klass: string) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const from = this.cm.posFromIndex(this.startOffset + ctx.start!.start);
+    const to = this.cm.posFromIndex(from.ch + ctx.getText().length);
+    this.cm.markText(from, to, {className: klass});
+  }
+
+  private addClassPos(fromIndex: number, toIndex: number, klass: string) {
+    const from = this.cm.posFromIndex(this.startOffset + fromIndex);
+    const to = this.cm.posFromIndex(this.startOffset + toIndex + 1);
+    this.cm.markText(from, to, {className: klass});
+  }
+
+  private addActiveClass(ctx: ParserRuleContext, klass: string = 'active') {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (ctx.start!.start < this.cursorIndex && (ctx.stop?.stop ?? 0) < this.cursorIndex) {
+      this.addClass(ctx, klass);
+    }
+  }
+
+  // Visit methods
+  visitStart(ctx: StartContext) {
+    const exprCtx = ctx.expr();
+    if (exprCtx) {
+      this.visit(exprCtx);
+    }
+  }
+
+  visitIncompleteAttributeExpressionMissingValue(
+    ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) {
+    this.addClass(ctx, 'expression attribute-expression');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteAttributeExpressionMissingKey(
+    ctx: IncompleteAttributeExpressionMissingKeyContext,
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const start = ctx.start!.start;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let end = ctx.stop!.stop;
+    const wsCtx = ctx.postExpressionWhitespace();
+    if (wsCtx) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      end = wsCtx.start!.start;
+    }
+    this.addClassPos(start, end, 'expression attribute-expression');
+    this.visitChildren(ctx);
+  }
+
+  visitAttributeExpression(ctx: AttributeExpressionContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const start = ctx.start!.start;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let end = ctx.stop!.stop;
+    const wsCtx = ctx.postAttributeValueWhitespace();
+    if (wsCtx) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      end = wsCtx.start!.start;
+    }
+    this.addClassPos(start, end, 'expression attribute-expression');
+    this.visitChildren(ctx);
+  }
+
+  visitAttributeName(ctx: AttributeNameContext) {
+    this.addClass(ctx, `attribute-name attribute-${ctx.getText()}`);
+    this.visitChildren(ctx);
+  }
+
+  visitAttributeValue(ctx: AttributeValueContext) {
+    this.addClass(ctx, `attribute-value`);
+    this.visitChildren(ctx);
+  }
+
+  visitFunctionName(ctx: FunctionNameContext) {
+    this.addClass(ctx, `function-name function-${ctx.getText()}`);
+    this.visitChildren(ctx);
+  }
+
+  visitQuotedStringValue(ctx: QuotedStringValueContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+
+  visitUnquotedStringValue(ctx: UnquotedStringValueContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+
+  visitNullStringValue(ctx: NullStringValueContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+
+  visitAllExpression(ctx: AllExpressionContext) {
+    this.addClass(ctx, 'expression value');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteLeftQuotedStringValue(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteRightQuotedStringValue(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+  visitTraversalAllowedExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitUpAndDownTraversalExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitUpTraversalExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitUpTraversal(ctx: UpTraversalContext) {
+    this.addClass(ctx, 'traversal');
+  }
+  visitDownTraversal(ctx: DownTraversalContext) {
+    this.addClass(ctx, 'traversal');
+  }
+  visitIncompletePlusTraversalExpression(ctx: IncompletePlusTraversalExpressionContext) {
+    this.addClass(ctx, 'traversal');
+    this.visitChildren(ctx);
+  }
+  visitNotExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitOrExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitAndExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteAttributeExpressionMissingSecondValue(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteNotExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteOrExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteAndExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
+    this.addActiveClass(ctx, 'active-parenthesis');
+    this.visitChildren(ctx);
+  }
+  visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
+    this.addClass(ctx, 'attribute-value-ws');
+  }
+}
+
+export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor, errors: SyntaxError[]): void {
+  const value = cm.getValue();
+
+  // Clear existing marks to avoid duplication
+  cm.getAllMarks().forEach((mark) => {
+    mark.clear();
+  });
+
+  errors.forEach((error, idx) => {
+    cm.markText(cm.posFromIndex(error.from), cm.posFromIndex(error.to), {
+      className: `selection-input-error selection-input-error-${idx}`,
+    });
+  });
+
+  const cursorIndex = cm.getCursor().ch;
+  const {parseTrees} = parseInput(value);
+  let start = 0;
+
+  for (const {tree, line} of parseTrees) {
+    const visitor = new SyntaxHighlightingVisitor(cm, start, cursorIndex - start);
+    visitor.visit(tree);
+    start += line.length;
+  }
+  cm.markText(cm.posFromIndex(0), cm.posFromIndex(value.length), {className: 'selection'});
+
+  requestAnimationFrame(() => {
+    // Force CodeMirror to re-measure widths after applying CSS changes
+    cm.refresh();
+  });
+}
+
+export const SelectionAutoCompleteInputCSS = css`
+  .CodeMirror:not(.CodeMirror-focused) {
+    .CodeMirror-sizer,
+    .CodeMirror-lines {
+      height: 20px !important;
+    }
+  }
+  .CodeMirror-sizer,
+  .CodeMirror-lines {
+    padding: 0;
+  }
+  width: 100%;
+
+  /* Inline TextInputStyles */
+  background-color: ${Colors.backgroundDefault()};
+  border: none;
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: ${Colors.textDefault()};
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+
+  ::placeholder {
+    color: ${Colors.textLighter()};
+  }
+
+  :disabled {
+    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDisabled()};
+  }
+
+  :disabled::placeholder {
+    color: ${Colors.textDisabled()};
+  }
+
+  :focus {
+    box-shadow:
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.keylineDefault()} inset 2px 2px 1.5px,
+      ${Colors.focusRing()} 0 0 0 2px;
+    outline: none;
+  }
+
+  flex-shrink: 1;
+  overflow: auto;
+
+  .CodeMirror-placeholder.CodeMirror-placeholder.CodeMirror-placeholder {
+    color: ${Colors.textLighter()};
+  }
+  .CodeMirror-line > span {
+    align-items: center;
+  }
+
+  .CodeMirror-scrollbar-filler,
+  .CodeMirror-vscrollbar,
+  .CodeMirror-hscrollbar {
+    display: none !important;
+  }
+
+  .CodeMirror-cursor.CodeMirror-cursor {
+    border-color: ${Colors.textLight()};
+  }
+
+  .CodeMirror {
+    background: transparent;
+    color: ${Colors.textDefault()};
+    font-family: ${FontFamily.monospace};
+  }
+
+  .selection-input-error {
+    background: unset;
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: ${Colors.accentRed()};
+  }
+
+  .expression {
+    color: ${Colors.textGreen()};
+  }
+
+  .attribute-expression {
+    color: ${Colors.textDefault()};
+  }
+
+  .attribute-name {
+    color: ${Colors.textLighter()};
+  }
+
+  .value {
+    color: ${Colors.textBlue()};
+  }
+
+  .function-name {
+    color: ${Colors.textCyan()};
+    font-style: italic;
+  }
+
+  .traversal {
+    color: ${Colors.textRed()};
+  }
+`;

@@ -1,20 +1,10 @@
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ContextManager,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -26,8 +16,9 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     RawMetadataValue,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 from dagster._utils.warnings import normalize_renamed_param
@@ -47,6 +38,7 @@ if TYPE_CHECKING:
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",
@@ -90,8 +82,8 @@ class OutputContext:
     _resources_cm: Optional[ContextManager["Resources"]]
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
-    _events: List["DagsterEvent"]
-    _user_events: List[Union[AssetMaterialization, AssetObservation]]
+    _events: list["DagsterEvent"]
+    _user_events: list[Union[AssetMaterialization, AssetObservation]]
 
     def __init__(
         self,
@@ -244,8 +236,8 @@ class OutputContext:
         """A dict of the metadata that is assigned to the output at execution time."""
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.output_metadata."
-                "Output metadata is not available when accessed from the InputContext."
+                "You are using InputContext.upstream_output.output_metadata. "
+                "Output metadata is not available when accessed from the InputContext. "
                 "https://github.com/dagster-io/dagster/issues/20094"
             )
             return {}
@@ -268,15 +260,13 @@ class OutputContext:
     @property
     def op_def(self) -> "OpDefinition":
         """The definition of the op that produced the output."""
-        from dagster._core.definitions import OpDefinition
-
         if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return cast(OpDefinition, self._op_def)
+        return cast("OpDefinition", self._op_def)
 
     @public
     @property
@@ -305,7 +295,7 @@ class OutputContext:
     @public
     @property
     def version(self) -> Optional[str]:
-        """(Experimental) The version of the output."""
+        """The version of the output."""
         return self._version
 
     @public
@@ -379,9 +369,9 @@ class OutputContext:
     def step_context(self) -> "StepExecutionContext":
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.step_context"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.step_context. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -399,9 +389,9 @@ class OutputContext:
         """Whether the current run is a partitioned run."""
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.has_partition_key"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.has_partition_key. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -416,9 +406,9 @@ class OutputContext:
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.partition_key"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.partition_key. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -435,9 +425,9 @@ class OutputContext:
         """Returns True if the asset being stored is partitioned."""
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.has_asset_partitions"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.has_asset_partitions. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -456,9 +446,9 @@ class OutputContext:
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_key"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.asset_partition_key. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -473,9 +463,9 @@ class OutputContext:
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_key_range"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.asset_partition_key_range. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -490,16 +480,16 @@ class OutputContext:
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_keys"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.asset_partition_keys. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.asset_partitions_def.get_partition_keys_in_range(
-            self.step_context.asset_partition_key_range_for_output(self.name),
-            dynamic_partitions_store=self.step_context.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.step_context.instance):
+            return self.asset_partitions_def.get_partition_keys_in_range(
+                self.step_context.asset_partition_key_range_for_output(self.name),
+            )
 
     @public
     @property
@@ -513,9 +503,9 @@ class OutputContext:
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partitions_time_window"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
+                "You are using InputContext.upstream_output.asset_partitions_time_window. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
@@ -554,9 +544,9 @@ class OutputContext:
             self.name is not None,
             "Unable to find the run scoped output identifier: name is None on OutputContext.",
         )
-        run_id = cast(str, self.run_id)
-        step_key = cast(str, self.step_key)
-        name = cast(str, self.name)
+        run_id = cast("str", self.run_id)
+        step_key = cast("str", self.step_key)
+        name = cast("str", self.name)
 
         if self.mapping_key:
             return [run_id, step_key, name, self.mapping_key]
@@ -786,7 +776,7 @@ def get_output_context(
     resource_config = resolved_run_config.resources[io_manager_key].config
 
     node_handle = execution_plan.get_step_by_key(step.key).node_handle
-    asset_key = job_def.asset_layer.asset_key_for_output(
+    asset_key = job_def.asset_layer.get_asset_key_for_node_output(
         node_handle=node_handle, output_name=step_output.name
     )
     if asset_key is not None:
@@ -824,6 +814,7 @@ def get_output_context(
     )
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",
@@ -845,6 +836,7 @@ def build_output_context(
     partition_key: Optional[str] = None,
     # deprecated
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -860,7 +852,7 @@ def build_output_context(
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
         dagster_type (Optional[DagsterType]): The type of this output.
-        version (Optional[str]): (Experimental) The version of the output.
+        version (Optional[str]): The version of the output.
         resource_config (Optional[Mapping[str, Any]]): The resource config to make available from the
             input context. This usually corresponds to the config provided to the resource that
             loads the output manager.
@@ -872,6 +864,8 @@ def build_output_context(
             output.
         partition_key: Optional[str]: String value representing partition key to execute with.
         metadata (Optional[Mapping[str, Any]]): Deprecated. Use definition_metadata instead.
+        output_metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
+            output at execution time.
 
     Examples:
         .. code-block:: python
@@ -905,6 +899,7 @@ def build_output_context(
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
+    output_metadata = check.opt_mapping_param(output_metadata, "output_metadata", key_type=str)
 
     return OutputContext(
         step_key=step_key,
@@ -923,4 +918,5 @@ def build_output_context(
         op_def=op_def,
         asset_key=asset_key,
         partition_key=partition_key,
+        output_metadata=output_metadata,
     )

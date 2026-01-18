@@ -1,13 +1,15 @@
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -18,7 +20,7 @@ from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster._utils.merger import deep_merge_dicts
 
-from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
+from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
     from mypy_boto3_emr_serverless.client import EMRServerlessClient
@@ -26,14 +28,14 @@ if TYPE_CHECKING:
     from mypy_boto3_emr_serverless.type_defs import (
         GetJobRunResponseTypeDef,
         MonitoringConfigurationTypeDef,
-        StartJobRunRequestRequestTypeDef,
+        StartJobRunRequestTypeDef,
         StartJobRunResponseTypeDef,
     )
 
 AWS_SERVICE_NAME = "EMR Serverless"
 
 
-@experimental
+@public
 class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running workloads on AWS EMR Serverless.
 
@@ -51,13 +53,15 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client=None,
+        client: Optional["EMRServerlessClient"] = None,
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
-        self._client = client or boto3.client("emr-serverless")
+        self._client: EMRServerlessClient = cast(
+            "EMRServerlessClient", client or boto3.client("emr-serverless")
+        )
         self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
@@ -80,19 +84,19 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: OpExecutionContext,
-        start_job_run_params: "StartJobRunRequestRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        start_job_run_params: "StartJobRunRequestTypeDef",
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
 
         Args:
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             params (dict): Parameters for the ``start_job_run`` boto3 AWS EMR Serverless client call.
-                See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
+                See `Boto3 EMR Serverless API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:
@@ -110,8 +114,10 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             try:
                 completion_response = self._wait_for_completion(context, start_response)
                 context.log.info(f"[pipes] {self.AWS_SERVICE_NAME} workload is complete!")
-                self._read_messages(context, completion_response)
-                return PipesClientCompletedInvocation(session)
+                self._read_messages(context, session, completion_response)
+                return PipesClientCompletedInvocation(
+                    session, metadata=self._extract_dagster_metadata(completion_response)
+                )
 
             except DagsterExecutionInterruptedError:
                 if self.forward_termination:
@@ -123,20 +129,15 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _enrich_start_params(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        params: "StartJobRunRequestRequestTypeDef",
-    ) -> "StartJobRunRequestRequestTypeDef":
+        params: "StartJobRunRequestTypeDef",
+    ) -> "StartJobRunRequestTypeDef":
         # inject Dagster tags
         tags = params.get("tags", {})
-        tags = {
-            **tags,
-            "dagster/run_id": context.run_id,
-        }
+        params["tags"] = {**tags, **session.default_remote_invocation_info}
 
-        params["tags"] = tags
         # inject env variables via --conf spark.executorEnv.env.<key>=<value>
-
         dagster_env_vars = {}
 
         dagster_env_vars.update(session.get_bootstrap_env_vars())
@@ -156,29 +157,57 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             ]
         )
 
-        return cast("StartJobRunRequestRequestTypeDef", params)
+        return cast("StartJobRunRequestTypeDef", params)
 
     def _start(
-        self, context: OpExecutionContext, params: "StartJobRunRequestRequestTypeDef"
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        params: "StartJobRunRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
         job_run_id = response["jobRunId"]
+
         context.log.info(
-            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}"
+            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}."
         )
+
         return response
 
     def _wait_for_completion(
-        self, context: OpExecutionContext, start_response: "StartJobRunResponseTypeDef"
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        start_response: "StartJobRunResponseTypeDef",
     ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
         job_run_id = start_response["jobRunId"]
+        application_id = start_response["applicationId"]
+
+        running_dashboard_url = None
+        completed_dashboard_url = None
 
         while response := self.client.get_job_run(
             applicationId=start_response["applicationId"],
             jobRunId=job_run_id,
         ):
-            state: "JobRunStateType" = response["jobRun"]["state"]
+            state: JobRunStateType = response["jobRun"]["state"]
 
+            # get dashboard url when it's ready (but only once)
+            if state == "RUNNING" and running_dashboard_url is None:
+                running_dashboard_url = self.client.get_dashboard_for_job_run(
+                    applicationId=application_id, jobRunId=job_run_id
+                )
+                context.log.info(
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {running_dashboard_url}"
+                )
+            # completed jobs have a different dashboard url
+            elif state in ["SUCCEEDED", "FAILED", "CANCELLED"] and completed_dashboard_url is None:
+                completed_dashboard_url = self.client.get_dashboard_for_job_run(
+                    applicationId=application_id, jobRunId=job_run_id
+                )
+                context.log.info(
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {completed_dashboard_url}"
+                )
+
+            # check if the job is in a terminal state
             if state in ["FAILED", "CANCELLED", "CANCELLING"]:
                 context.log.error(
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} terminated with state: {state}. Details:\n{response['jobRun'].get('stateDetails')}"
@@ -191,7 +220,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} completed with state: {state}"
                 )
                 return response
-            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING"]:
+            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING", "QUEUED"]:
                 time.sleep(self.poll_interval)
                 continue
             else:
@@ -199,7 +228,12 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     f"Unexpected state for AWS EMR Serverless job {job_run_id}: {state}"
                 )
 
-    def _read_messages(self, context: OpExecutionContext, response: "GetJobRunResponseTypeDef"):
+    def _read_messages(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
+        response: "GetJobRunResponseTypeDef",
+    ):
         application_id = response["jobRun"]["applicationId"]
         job_id = response["jobRun"]["jobRunId"]
 
@@ -279,25 +313,54 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             "stderr": sys.stderr,
         }
 
-        # TODO: do this in a background thread in real-time once https://github.com/dagster-io/dagster/pull/24098 is merged
-        for output_stream in output_streams:
-            output_file = output_files[output_stream]
-            context.log.debug(
-                f"[pipes] Reading AWS CloudWatch logs from group {log_group} stream {log_stream}/{output_stream}"
-            )
-            self.message_reader.consume_cloudwatch_logs(
-                log_group,
-                f"{log_stream}/{output_stream}",
-                start_time=int(
-                    response["jobRun"]
-                    .get("attemptCreatedAt", response["jobRun"]["createdAt"])
-                    .timestamp()
-                    * 1000
-                ),
-                output_file=output_file,
+        # update MessageReader params so it can start receiving messages
+        if isinstance(self.message_reader, PipesCloudWatchMessageReader):
+            session.report_launched(
+                {
+                    "extras": {
+                        "log_group": log_group,
+                        "log_stream": f"{log_stream}/stdout",
+                    }
+                }
             )
 
-    def _terminate(self, context: OpExecutionContext, start_response: "StartJobRunResponseTypeDef"):
+            # now add LogReaders for stdout and stderr logs
+            for output_stream in output_streams:
+                output_file = output_files[output_stream]
+                context.log.debug(
+                    f"[pipes] Adding PipesCloudWatchLogReader for group {log_group} stream {log_stream}/{output_stream}"
+                )
+                self.message_reader.add_log_reader(
+                    PipesCloudWatchLogReader(
+                        client=self.message_reader.client,
+                        log_group=log_group,
+                        log_stream=f"{log_stream}/{output_stream}",
+                        target_stream=output_file,
+                        start_time=int(session.created_at.timestamp() * 1000),
+                        debug_info=output_stream,
+                    ),
+                )
+
+    def _extract_dagster_metadata(self, response: "GetJobRunResponseTypeDef") -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        job_run = response["jobRun"]
+
+        metadata["AWS EMR Serverless Application ID"] = job_run["applicationId"]
+        metadata["AWS EMR Serverless Job Run ID"] = job_run["jobRunId"]
+
+        # TODO: it would be great to add a url to EMR Studio page for this run
+        # such urls look like: https://es-638xhdetxum2td9nc3a45evmn.emrstudio-prod.eu-north-1.amazonaws.com/#/serverless-applications/00fm4oe0607u5a1d
+        # but we need to get the Studio ID from the application_id
+        # which is not possible with the current AWS API
+
+        return metadata
+
+    def _terminate(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        start_response: "StartJobRunResponseTypeDef",
+    ):
         job_run_id = start_response["jobRunId"]
         application_id = start_response["applicationId"]
         context.log.info(f"[pipes] Terminating {self.AWS_SERVICE_NAME} job run {job_run_id}")

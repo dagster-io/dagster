@@ -1,24 +1,15 @@
 import importlib
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, cast, overload
 
+import dagster_shared.check as check
+from dagster_shared.serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster_shared.yaml_utils import load_run_config_yaml
 from typing_extensions import Self
 
-import dagster._check as check
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._annotations import public
 from dagster._utils import convert_dagster_submodule_name
-from dagster._utils.yaml_utils import load_run_config_yaml
 
 if TYPE_CHECKING:
     from dagster._config.config_schema import UserConfigSchema
@@ -34,12 +25,13 @@ class ConfigurableClassDataSerializer(NamedTupleSerializer["ConfigurableClassDat
     def pack_items(self, *args, **kwargs):
         for k, v in super().pack_items(*args, **kwargs):
             if k == "module_name":
-                yield k, convert_dagster_submodule_name(v, "public")
+                yield k, convert_dagster_submodule_name(v, "public")  # pyright: ignore[reportArgumentType]
             else:
                 yield k, v
 
 
 @whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
+@public
 class ConfigurableClassData(
     NamedTuple(
         "_ConfigurableClassData",
@@ -60,7 +52,7 @@ class ConfigurableClassData(
     """
 
     def __new__(cls, module_name: str, class_name: str, config_yaml: str):
-        return super(ConfigurableClassData, cls).__new__(
+        return super().__new__(
             cls,
             convert_dagster_submodule_name(check.str_param(module_name, "module_name"), "private"),
             check.str_param(class_name, "class_name"),
@@ -82,10 +74,10 @@ class ConfigurableClassData(
     def rehydrate(self, as_type: None = ...) -> "ConfigurableClass": ...
 
     @overload
-    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass: ...
+    def rehydrate(self, as_type: type[T_ConfigurableClass]) -> T_ConfigurableClass: ...
 
     def rehydrate(
-        self, as_type: Optional[Type[T_ConfigurableClass]] = None
+        self, as_type: Optional[type[T_ConfigurableClass]] = None
     ) -> Union["ConfigurableClass", T_ConfigurableClass]:
         from dagster._config import process_config, resolve_to_config_type
         from dagster._core.errors import DagsterInvalidConfigError
@@ -103,7 +95,7 @@ class ConfigurableClassData(
             # they do not. However, not all rehydrated classes actually have `ConfigurableClass` as
             # an ancestor due to some subtleties around multiple abstract classes that cause an
             # error when `ConfigurableClass` is added as an ancestor to storage classes.
-            klass = cast(Type[ConfigurableClass], getattr(module, self.class_name))
+            klass = cast("type[ConfigurableClass]", getattr(module, self.class_name))
         except AttributeError:
             check.failed(
                 f"Couldn't find class {self.class_name} in module when attempting to load the "
@@ -128,6 +120,7 @@ class ConfigurableClassData(
         return klass.from_config_value(self, check.not_none(result.value))
 
 
+@public
 class ConfigurableClass(ABC):
     """Abstract mixin for classes that can be loaded from config.
 
@@ -212,7 +205,7 @@ class ConfigurableClass(ABC):
         """
 
 
-def class_from_code_pointer(module_name: str, class_name: str) -> Type[object]:
+def class_from_code_pointer(module_name: str, class_name: str) -> type[object]:
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:

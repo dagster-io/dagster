@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import codecs
 import errno
 import os
@@ -119,9 +117,10 @@ class fashion(data.Dataset):
             file_path = os.path.join(self.root, self.raw_folder, filename)
             with open(file_path, "wb") as f:
                 f.write(data.read())
-            with open(file_path.replace(".gz", ""), "wb") as out_f, gzip.GzipFile(
-                file_path
-            ) as zip_f:
+            with (
+                open(file_path.replace(".gz", ""), "wb") as out_f,
+                gzip.GzipFile(file_path) as zip_f,
+            ):
                 out_f.write(zip_f.read())
             os.unlink(file_path)
 

@@ -4,35 +4,26 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from dagster import (
-    ConfigurableIOManager,
-    In,
-    InputContext,
-    InputManager,
-    OutputContext,
-    input_manager,
-    job,
-    op,
-)
+import dagster as dg
 
 
-class PandasIOManager(ConfigurableIOManager):
-    def handle_output(self, context: OutputContext, obj):
+class PandasIOManager(dg.ConfigurableIOManager):
+    def handle_output(self, context: dg.OutputContext, obj):
         pass
 
-    def load_input(self, context: InputContext):
+    def load_input(self, context: dg.InputContext):
         pass
 
 
-class TableIOManager(ConfigurableIOManager):
-    def handle_output(self, context: OutputContext, obj):
+class TableIOManager(dg.ConfigurableIOManager):
+    def handle_output(self, context: dg.OutputContext, obj):
         pass
 
-    def load_input(self, context: InputContext):
+    def load_input(self, context: dg.InputContext):
         pass
 
 
-@op
+@dg.op
 def produce_pandas_output():
     return 1
 
@@ -50,40 +41,41 @@ pd_series_io_manager: Any = None
 # start_different_input_managers
 
 
-@op
+@dg.op
 def op_1():
     return [1, 2, 3]
 
 
-@op(ins={"a": In(input_manager_key="pandas_series")})
+@dg.op(ins={"a": dg.In(input_manager_key="pandas_series")})
 def op_2(a):
     return pd.concat([a, pd.Series([4, 5, 6])])
 
 
-@job(resource_defs={"pandas_series": pd_series_io_manager})
+@dg.job(resource_defs={"pandas_series": pd_series_io_manager})
 def a_job():
     op_2(op_1())
 
 
 # end_different_input_managers
 
+
 # start_plain_input_manager
-
-
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context: InputContext) -> np.ndarray:
+    def load_input(self, context: dg.InputContext) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
 
 
-@op(ins={"np_array_input": In(input_manager_key="numpy_manager")})
+@dg.op(ins={"np_array_input": dg.In(input_manager_key="numpy_manager")})
 def analyze_as_numpy(np_array_input: np.ndarray):
     assert isinstance(np_array_input, np.ndarray)
 
 
-@job(resource_defs={"numpy_manager": MyNumpyLoader(), "io_manager": PandasIOManager()})
+@dg.job(
+    resource_defs={"numpy_manager": MyNumpyLoader(), "io_manager": PandasIOManager()}
+)
 def my_job():
     df = produce_pandas_output()
     analyze_as_numpy(df)
@@ -93,10 +85,8 @@ def my_job():
 
 
 # start_better_input_manager
-
-
 # this IO Manager is owned by a different team
-class BetterPandasIOManager(ConfigurableIOManager):
+class BetterPandasIOManager(dg.ConfigurableIOManager):
     def _get_path(self, output_context):
         return os.path.join(
             self.base_dir,
@@ -104,30 +94,30 @@ class BetterPandasIOManager(ConfigurableIOManager):
             f"{output_context.step_key}_{output_context.name}.csv",
         )
 
-    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
+    def handle_output(self, context: dg.OutputContext, obj: pd.DataFrame):
         file_path = self._get_path(context)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         if obj is not None:
             obj.to_csv(file_path, index=False)
 
-    def load_input(self, context: InputContext) -> pd.DataFrame:
+    def load_input(self, context: dg.InputContext) -> pd.DataFrame:
         return pd.read_csv(self._get_path(context.upstream_output))
 
 
 # write a subclass that uses _get_path for your custom loading logic
 class MyBetterNumpyLoader(BetterPandasIOManager):
-    def load_input(self, context: InputContext) -> np.ndarray:
+    def load_input(self, context: dg.InputContext) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
 
 
-@op(ins={"np_array_input": In(input_manager_key="better_numpy_manager")})
+@dg.op(ins={"np_array_input": dg.In(input_manager_key="better_numpy_manager")})
 def better_analyze_as_numpy(np_array_input: np.ndarray):
     assert isinstance(np_array_input, np.ndarray)
 
 
-@job(
+@dg.job(
     resource_defs={
         "numpy_manager": MyBetterNumpyLoader(),
         "io_manager": BetterPandasIOManager(),
@@ -143,18 +133,18 @@ def my_better_job():
 # start_load_unconnected_via_fn
 
 
-@input_manager
+@dg.input_manager
 def simple_table_1_manager():
     return read_dataframe_from_table(name="table_1")
 
 
-@op(ins={"dataframe": In(input_manager_key="simple_load_input_manager")})
+@dg.op(ins={"dataframe": dg.In(input_manager_key="simple_load_input_manager")})
 def my_op(dataframe):
     """Do some stuff."""
     dataframe.head()
 
 
-@job(resource_defs={"simple_load_input_manager": simple_table_1_manager})
+@dg.job(resource_defs={"simple_load_input_manager": simple_table_1_manager})
 def simple_load_table_job():
     my_op()
 
@@ -164,17 +154,17 @@ def simple_load_table_job():
 # start_load_unconnected_input
 
 
-class Table1InputManager(InputManager):
-    def load_input(self, context: InputContext):
+class Table1InputManager(dg.InputManager):
+    def load_input(self, context: dg.InputContext):
         return read_dataframe_from_table(name="table_1")
 
 
-@input_manager
+@dg.input_manager
 def table_1_manager():
     return Table1InputManager()
 
 
-@job(resource_defs={"load_input_manager": table_1_manager})
+@dg.job(resource_defs={"load_input_manager": table_1_manager})
 def load_table_job():
     my_op()
 
@@ -185,11 +175,11 @@ def load_table_job():
 # start_load_unconnected_io
 # in this example, TableIOManager is defined elsewhere and we just want to override load_input
 class Table1IOManager(TableIOManager):
-    def load_input(self, context: InputContext):
+    def load_input(self, context: dg.InputContext):
         return read_dataframe_from_table(name="table_1")
 
 
-@job(resource_defs={"load_input_manager": Table1IOManager()})
+@dg.job(resource_defs={"load_input_manager": Table1IOManager()})
 def io_load_table_job():
     my_op()
 
@@ -199,33 +189,33 @@ def io_load_table_job():
 # start_load_input_subset
 
 
-class MyIOManager(ConfigurableIOManager):
-    def handle_output(self, context: OutputContext, obj):
+class MyIOManager(dg.ConfigurableIOManager):
+    def handle_output(self, context: dg.OutputContext, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-    def load_input(self, context: InputContext):
+    def load_input(self, context: dg.InputContext):
         if context.upstream_output:
             return read_dataframe_from_table(name=context.upstream_output.name)
 
 
-@input_manager
+@dg.input_manager
 def my_subselection_input_manager():
     return read_dataframe_from_table(name="table_1")
 
 
-@op
+@dg.op
 def op1():
     """Do stuff."""
 
 
-@op(ins={"dataframe": In(input_manager_key="my_input_manager")})
+@dg.op(ins={"dataframe": dg.In(input_manager_key="my_input_manager")})
 def op2(dataframe):
     """Do stuff."""
     dataframe.head()
 
 
-@job(
+@dg.job(
     resource_defs={
         "io_manager": MyIOManager(),
         "my_input_manager": my_subselection_input_manager,
@@ -241,7 +231,7 @@ def my_subselection_job():
 
 
 class MyNewInputLoader(MyIOManager):
-    def load_input(self, context: InputContext):
+    def load_input(self, context: dg.InputContext):
         if context.upstream_output is None:
             # load input from table since there is no upstream output
             return read_dataframe_from_table(name="table_1")
@@ -262,12 +252,12 @@ my_subselection_job.execute_in_process(
 # start_per_input_config
 
 
-class MyConfigurableInputLoader(InputManager):
-    def load_input(self, context: InputContext):
+class MyConfigurableInputLoader(dg.InputManager):
+    def load_input(self, context: dg.InputContext):
         return read_dataframe_from_table(name=context.config["table"])
 
 
-@input_manager(input_config_schema={"table": str})
+@dg.input_manager(input_config_schema={"table": str})
 def my_configurable_input_loader():
     return MyConfigurableInputLoader()
 
@@ -275,7 +265,7 @@ def my_configurable_input_loader():
 # or
 
 
-@input_manager(input_config_schema={"table": str})
+@dg.input_manager(input_config_schema={"table": str})
 def my_other_configurable_input_loader(context):
     return read_dataframe_from_table(name=context.config["table"])
 

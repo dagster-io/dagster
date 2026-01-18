@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
@@ -57,7 +58,7 @@ def observe(
             resources=resources,
         )
 
-        return defs.get_job_def("in_process_observation_job").execute_in_process(
+        return defs.resolve_job_def("in_process_observation_job").execute_in_process(
             run_config=run_config,
             instance=instance,
             partition_key=partition_key,

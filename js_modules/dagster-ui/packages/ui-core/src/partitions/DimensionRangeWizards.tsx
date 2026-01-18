@@ -38,9 +38,9 @@ export const DimensionRangeWizards = ({
           border={idx < selections.length - 1 ? 'bottom' : undefined}
           padding={{vertical: 12, horizontal: 20}}
         >
-          <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
+          <Box flex={{alignItems: 'center', gap: 8}}>
             <Icon name="partition" />
-            {range.dimension.name}
+            <Subheading>{range.dimension.name}</Subheading>
           </Box>
           <Box>
             Select partitions to materialize.{' '}
@@ -55,6 +55,7 @@ export const DimensionRangeWizards = ({
             health={{
               ranges: displayedHealth.rangesForSingleDimension(
                 idx,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
               ),
             }}
@@ -70,6 +71,7 @@ export const DimensionRangeWizards = ({
                 (d) => d.name === range.dimension.name,
               )?.dynamicPartitionsDefinitionName
             }
+            showQuickSelectOptionsForStatuses={selections.length === 1}
           />
         </Box>
       ))}

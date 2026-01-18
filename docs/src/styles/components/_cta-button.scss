@@ -1,0 +1,52 @@
+// Static SCSS implementation of design system button
+
+.cta-button {
+  // Reset and base styles
+  box-sizing: border-box;
+  text-decoration: none;
+  border: none !important;
+  cursor: pointer;
+  user-select: none;
+
+  // Layout
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row;
+
+  // Spacing
+  padding: 6px 12px !important;
+
+  // Typography
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+
+  // Appearance
+  background-color: var(--theme-color-accent-primary);
+  color: var(--theme-color-text-reversed);
+  border-radius: 8px;
+  box-shadow: transparent 0px 0px 0px 1px inset;
+
+  // Transitions
+  transition:
+    background 100ms ease,
+    box-shadow 150ms ease,
+    filter 100ms ease,
+    opacity 150ms ease;
+
+  // Hover state
+  &:hover {
+    color: var(--theme-color-text-reversed) !important;
+    background-color: var(--theme-color-accent-primary-hover);
+    box-shadow: var(--theme-color-accent-blue-hover) 0px 0px 0px 2px;
+  }
+
+  // Focus state
+  &:focus {
+    outline: none;
+    box-shadow: var(--theme-color-accent-blue-hover) 0px 0px 0px 2px;
+  }
+}

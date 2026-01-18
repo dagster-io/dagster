@@ -1,13 +1,9 @@
-from datetime import datetime
-from importlib import resources
+from unittest import mock
+from unittest.mock import MagicMock
 
-import mock
 import pytest
-from dagster_tests.cli_tests.command_tests.assets import fail_asset
-from mock import MagicMock
 
-from dagster import Definitions
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (
     defs as asset_with_check_defs,
@@ -102,9 +98,13 @@ def mock_fetch_last_updated_timestamps():
 
 
 def test_source_data_freshness(mock_fetch_last_updated_timestamps: None):
-    job_def = source_data_freshness_in_pieces_defs.get_implicit_global_asset_job_def()
+    job_def = (
+        source_data_freshness_in_pieces_defs.resolve_implicit_global_asset_job_def()
+    )
     result = job_def.execute_in_process(resources={"snowflake": MagicMock()})
     assert result.success
-    job_def = source_data_freshness_complete_defs.get_implicit_global_asset_job_def()
+    job_def = (
+        source_data_freshness_complete_defs.resolve_implicit_global_asset_job_def()
+    )
     result = job_def.execute_in_process(resources={"snowflake": MagicMock()})
     assert result.success

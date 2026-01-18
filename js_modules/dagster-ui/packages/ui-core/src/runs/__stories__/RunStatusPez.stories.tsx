@@ -1,5 +1,4 @@
 import {Box, MetadataTable} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useCallback, useMemo} from 'react';
 
@@ -13,7 +12,7 @@ import {RunTimeFragment} from '../types/RunUtils.types';
 export default {
   title: 'RunStatusPez',
   component: RunStatusPez,
-} as Meta;
+};
 
 const mocks = {
   RunStatsSnapshot: () => ({
@@ -65,6 +64,12 @@ export const List = () => {
           jobName={fakeRepo}
           fade
           runs={wrapToFragment(generateRunMocks(10, [tenDaysAgo, now]))}
+        />
+        <RunStatusPezList
+          jobName={fakeRepo}
+          fade
+          runs={wrapToFragment(generateRunMocks(4, [tenDaysAgo, now]))}
+          forceCount={10}
         />
         <RunStatusPezList
           jobName={fakeRepo}

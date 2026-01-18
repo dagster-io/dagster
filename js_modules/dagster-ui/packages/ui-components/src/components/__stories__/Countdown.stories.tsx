@@ -1,16 +1,15 @@
-import {Meta} from '@storybook/react';
 import {useCallback, useState} from 'react';
 
+import {Box} from '../Box';
 import {Button} from '../Button';
 import {Countdown, useCountdown} from '../Countdown';
-import {Group} from '../Group';
 import {secondsToCountdownTime} from '../secondsToCountdownTime';
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'useCountdown',
   component: Countdown,
-} as Meta;
+};
 
 export const FiveSeconds = () => {
   const [status, setStatus] = useState<'counting' | 'idle'>('idle');
@@ -32,12 +31,12 @@ export const FiveSeconds = () => {
   };
 
   return (
-    <Group direction="column" spacing={12}>
-      <Group direction="row" spacing={8}>
+    <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
+      <Box flex={{direction: 'row', gap: 8}}>
         <Button onClick={() => setStatus('counting')}>Set counting</Button>
         <Button onClick={() => setStatus('idle')}>Set idle</Button>
-      </Group>
+      </Box>
       {message(timeRemaining)}
-    </Group>
+    </Box>
   );
 };

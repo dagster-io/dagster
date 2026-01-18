@@ -1,5 +1,4 @@
 import packaging.version
-import pytest
 import requests
 from dagster_k8s.version import __version__
 
@@ -13,9 +12,9 @@ from dagster_k8s.kubernetes_version import KUBERNETES_VERSION_UPPER_BOUND
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
-    assert isinstance(
-        parsed_version, packaging.version.Version
-    ), f"Found LegacyVersion: {version_str}"
+    assert isinstance(parsed_version, packaging.version.Version), (
+        f"Found LegacyVersion: {version_str}"
+    )
     return parsed_version
 
 
@@ -35,7 +34,6 @@ def _get_latest_published_k8s_version() -> packaging.version.Version:
     raise Exception("Could not find any latest published kubernetes version")
 
 
-@pytest.mark.nightly
 def test_latest_version_pin():
     latest_version = _get_latest_published_k8s_version()
     assert latest_version.major < packaging.version.parse(KUBERNETES_VERSION_UPPER_BOUND).major, (

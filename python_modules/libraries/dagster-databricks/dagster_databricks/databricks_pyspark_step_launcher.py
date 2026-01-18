@@ -6,7 +6,8 @@ import sys
 import tempfile
 import time
 import zlib
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Optional, cast
 
 from dagster import (
     Bool,
@@ -19,8 +20,12 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
-from dagster._core.errors import raise_execution_interrupts
+from dagster._core.definitions.step_launcher import (
+    StepLauncher,
+    StepRunRef,
+    _step_launcher_supersession,
+)
+from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.init import InitResourceContext
@@ -35,7 +40,7 @@ from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
 from databricks.sdk.core import DatabricksError
-from databricks.sdk.service import iam, jobs
+from databricks.sdk.service import iam
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.configs import (
@@ -169,6 +174,7 @@ DAGSTER_SYSTEM_ENV_VARS = {
         ),
     }
 )
+@_step_launcher_supersession
 def databricks_pyspark_step_launcher(
     context: InitResourceContext,
 ) -> "DatabricksPySparkStepLauncher":
@@ -188,6 +194,7 @@ def databricks_pyspark_step_launcher(
     return DatabricksPySparkStepLauncher(**context.resource_config)
 
 
+@_step_launcher_supersession
 class DatabricksPySparkStepLauncher(StepLauncher):
     def __init__(
         self,
@@ -325,7 +332,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
     def get_databricks_run_dagster_event(
         self, context: StepExecutionContext, databricks_run_id: int
     ) -> DagsterEvent:
-        metadata: Dict[str, RawMetadataValue] = {"step_key": context.node_handle.name}
+        metadata: dict[str, RawMetadataValue] = {"step_key": context.node_handle.name}
         run = self.databricks_runner.client.workspace_client.jobs.get_run(
             databricks_run_id
         ).as_dict()
@@ -334,7 +341,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             metadata["databricks_run_url"] = MetadataValue.url(run_page_url)
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ENGINE_EVENT,
-            message="Waiting for Databricks run %s to complete..." % databricks_run_id,
+            message=f"Waiting for Databricks run {databricks_run_id} to complete...",
             step_context=context,
             event_specific_data=EngineEventData(
                 metadata=metadata,
@@ -398,7 +405,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             if not serialized_records:
                 return []
             return cast(
-                Sequence[EventLogEntry],
+                "Sequence[EventLogEntry]",
                 deserialize_value(pickle.loads(gzip.decompress(serialized_records))),
             )
 
@@ -418,25 +425,28 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             raise
 
     def _grant_permissions(
-        self, log: DagsterLogManager, databricks_run_id: int, request_retries: int = 3
+        self, log: DagsterLogManager, databricks_run_id: int, request_retries: int = 6
     ) -> None:
         client = self.databricks_runner.client.workspace_client
         # Retrieve run info
         cluster_id = None
         for i in range(1, request_retries + 1):
             run_info = client.jobs.get_run(databricks_run_id)
-            if run_info.cluster_instance is None:
-                check.failed("Databricks run {databricks_run_id} has null cluster_instance")
             # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
             try:
-                cluster_id = run_info.cluster_instance.cluster_id
+                if run_info.tasks is not None and run_info.tasks[0].cluster_instance is not None:
+                    cluster_id = run_info.tasks[0].cluster_instance.cluster_id
+                else:
+                    raise DagsterInvariantViolationError(
+                        f"run_info {run_info} doesn't contain cluster_id"
+                    )
                 break
             except:
                 log.warning(
                     f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id}. "
                     f"Retrying {i} of {request_retries} times."
                 )
-                time.sleep(5)
+                time.sleep(10)
         if not cluster_id:
             log.warning(
                 f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id} "
@@ -448,7 +458,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         if "job_permissions" in self.permissions:
             job_permissions = self._format_permissions(self.permissions["job_permissions"])
             job_id = check.not_none(
-                run_info.job_id, f"Databricks run {databricks_run_id} has null job_id"
+                run_info.job_id,  # pyright: ignore[reportPossiblyUnboundVariable]
+                f"Databricks run {databricks_run_id} has null job_id",
             )
             log.debug(f"Updating job permissions with following json: {job_permissions}")
             client.permissions.update("jobs", str(job_id), access_control_list=job_permissions)
@@ -470,14 +481,12 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def _format_permissions(
         self, input_permissions: Mapping[str, Sequence[Mapping[str, str]]]
-    ) -> List[iam.AccessControlRequest]:
+    ) -> list[iam.AccessControlRequest]:
         access_control_list = []
         for permission, accessors in input_permissions.items():
             access_control_list.extend(
                 [
-                    jobs.JobAccessControlRequest.from_dict(
-                        {"permission_level": permission, **accessor}
-                    )
+                    iam.AccessControlRequest.from_dict({"permission_level": permission, **accessor})
                     for accessor in accessors
                 ]
             )
@@ -543,7 +552,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             overwrite=True,
         )
 
-    def get_dagster_env_variables(self) -> Dict[str, str]:
+    def get_dagster_env_variables(self) -> dict[str, str]:
         out = {}
         if self.add_dagster_env_variables:
             for var in DAGSTER_SYSTEM_ENV_VARS:

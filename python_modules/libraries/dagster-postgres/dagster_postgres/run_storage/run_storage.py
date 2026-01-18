@@ -1,5 +1,6 @@
 import zlib
-from typing import ContextManager, Mapping, Optional
+from collections.abc import Mapping
+from typing import ContextManager, Optional  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -107,12 +108,15 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
         kwargs = {
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
+            "max_overflow": max_overflow,
         }
         existing_options = self._engine.url.query.get("options")
         if existing_options:
@@ -133,7 +137,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         return pg_config()
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ):
         return PostgresRunStorage(
@@ -164,13 +168,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def has_built_index(self, migration_name: str) -> bool:
         if migration_name not in self._index_migration_cache:
-            self._index_migration_cache[migration_name] = super(
-                PostgresRunStorage, self
-            ).has_built_index(migration_name)
+            self._index_migration_cache[migration_name] = super().has_built_index(migration_name)
         return self._index_migration_cache[migration_name]
 
     def mark_index_built(self, migration_name: str) -> None:
-        super(PostgresRunStorage, self).mark_index_built(migration_name)
+        super().mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
 

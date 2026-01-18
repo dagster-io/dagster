@@ -15,6 +15,7 @@ export type AssetGraphSidebarQuery = {
         id: string;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        externalJobSource: string | null;
         name: string;
         description: string | null;
         metadataEntries: Array<
@@ -97,6 +98,12 @@ export type AssetGraphSidebarQuery = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -131,6 +138,7 @@ export type AssetGraphSidebarQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -153,6 +161,7 @@ export type AssetGraphSidebarQuery = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -176,6 +185,11 @@ export type AssetGraphSidebarQuery = {
               description: string | null;
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
+        >;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
         >;
         modes: Array<{
           __typename: 'Mode';
@@ -1315,4 +1329,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = '326a86f91db2f640d45b58bc2d2e3dd23b4c7fd4aff3286ec1b9655791f75345';
+export const AssetGraphSidebarQueryVersion = '423d6b155cc63752472fa9bde2ff75a6e872fa1c230473394bdf6057789ad9e8';

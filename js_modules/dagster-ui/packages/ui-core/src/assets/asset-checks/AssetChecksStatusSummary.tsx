@@ -2,11 +2,11 @@ import {
   Box,
   Colors,
   Icon,
+  Intent,
   Popover,
   Spinner,
   Subtitle2,
   Tag,
-  TagIntent,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
@@ -33,7 +33,7 @@ type AssetCheckIconType =
 const AssetCheckIconsOrdered: {
   type: AssetCheckIconType;
   content: React.ReactNode;
-  intent: TagIntent;
+  intent: Intent;
 }[] = [
   {
     type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
@@ -112,12 +112,12 @@ function iconTypeFromCheck(check: AssetCheckLiveFragment): AssetCheckIconType {
   return status === undefined
     ? 'NOT_EVALUATED'
     : status === AssetCheckExecutionResolvedStatus.FAILED
-    ? check.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
-      ? 'WARN'
-      : 'ERROR'
-    : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-    ? 'ERROR'
-    : status;
+      ? check.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
+        ? 'WARN'
+        : 'ERROR'
+      : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+        ? 'ERROR'
+        : status;
 }
 
 export const AssetChecksStatusSummary = ({
@@ -126,21 +126,49 @@ export const AssetChecksStatusSummary = ({
   assetKey,
 }: {
   liveData: LiveDataForNode;
-  rendering: 'dag' | 'tags';
+  rendering: 'dag2025' | 'dag' | 'tags';
   assetKey: AssetKeyInput;
 }) => {
   const byIconType = countBy(liveData.assetChecks, iconTypeFromCheck);
 
-  return rendering === 'dag' ? (
-    <Box flex={{gap: 6, alignItems: 'center'}}>
-      {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map(({content, type}) => (
-        <Box flex={{gap: 2, alignItems: 'center'}} key={type}>
-          {content}
-          {byIconType[type]}
-        </Box>
-      ))}
-    </Box>
-  ) : (
+  if (rendering === 'dag2025') {
+    const icon = () => {
+      if (byIconType['ERROR']) {
+        return <Icon name="close" color={Colors.accentRed()} />;
+      }
+      if (byIconType['WARN']) {
+        return <Icon name="warning_outline" color={Colors.accentYellow()} />;
+      }
+      if (byIconType['SKIPPED']) {
+        return <Icon name="dot" color={Colors.accentGray()} />;
+      }
+      return <Icon name="done" color={Colors.accentGreen()} />;
+    };
+
+    const succeeded = byIconType[AssetCheckExecutionResolvedStatus.SUCCEEDED] ?? 0;
+    const total = liveData.assetChecks.length;
+    return (
+      <Box flex={{gap: 4, alignItems: 'center'}}>
+        {icon()}
+        <span>
+          {succeeded} / {total} Passed
+        </span>
+      </Box>
+    );
+  }
+  if (rendering === 'dag') {
+    return (
+      <Box flex={{gap: 6, alignItems: 'center'}}>
+        {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map(({content, type}) => (
+          <Box flex={{gap: 2, alignItems: 'center'}} key={type}>
+            {content}
+            {byIconType[type]}
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+  return (
     <Box flex={{gap: 2, alignItems: 'center'}}>
       {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map(({content, type, intent}) => (
         <Popover

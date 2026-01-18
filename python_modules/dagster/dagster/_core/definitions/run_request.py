@@ -1,26 +1,15 @@
-from collections import defaultdict
-from datetime import datetime
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+
+from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
@@ -29,23 +18,22 @@ from dagster._core.definitions.dynamic_partitions_request import (
     DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.utils import NormalizedTags, normalize_tags
-from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
-from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils.cached_method import cached_method
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.instance.types import DynamicPartitionsStore
 
 
 @whitelist_for_serdes(old_storage_names={"JobType"})
@@ -60,34 +48,26 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
     """Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
     why no runs were requested.
 
-    Attributes:
+    Args:
         skip_message (Optional[str]): A message displayed in the Dagster UI for why this evaluation resulted
             in no requested runs.
     """
 
     def __new__(cls, skip_message: Optional[str] = None):
-        return super(SkipReason, cls).__new__(
+        return super().__new__(
             cls,
             skip_message=check.opt_str_param(skip_message, "skip_message"),
         )
 
 
+@public
 @whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
-    run_key: Optional[str]
-    run_config: Mapping[str, Any]
-    tags: Mapping[str, str]
-    job_name: Optional[str]
-    asset_selection: Optional[Sequence[AssetKey]]
-    stale_assets_only: bool
-    partition_key: Optional[str]
-    asset_check_keys: Optional[Sequence[AssetCheckKey]]
-    asset_graph_subset: Optional[AssetGraphSubset]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
-    Attributes:
+    Args:
         run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
             only one run is created per run key across all sensor evaluations.  For schedules,
             ensures that one run is created per tick, across failure recoveries. Passing in a `None`
@@ -97,7 +77,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             provided by it.
         tags (Optional[Dict[str, Any]]): A dictionary of tags (string key-value pairs) to attach
             to the launched run.
-        job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
+        job_name (Optional[str]): The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
         asset_selection (Optional[Sequence[AssetKey]]): A subselection of assets that should be
             launched with this run. If the sensor or schedule targets a job, then by default a
@@ -105,24 +85,33 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             targets an asset selection, then by default a RunRequest returned from it will launch
             all the assets in the selection. This argument is used to specify that only a subset of
             these assets should be launched, instead of all of them.
-        asset_check_keys (Optional[Sequence[AssetCheckKey]]): (Experimental) A subselection of asset checks that
-            should be launched with this run. This is currently only supported on sensors. If the
-            sensor targets a job, then by default a RunRequest returned from it will launch all of
-            the asset checks in the job. If the sensor targets an asset selection, then by default a
-            RunRequest returned from it will launch all the asset checks in the selection. This
-            argument is used to specify that only a subset of these asset checks should be launched,
-            instead of all of them.
+        asset_check_keys (Optional[Sequence[AssetCheckKey]]): A subselection of asset checks that
+            should be launched with this run. If the sensor/schedule targets a job, then by default a
+            RunRequest returned from it will launch all of the asset checks in the job. If the
+            sensor/schedule targets an asset selection, then by default a RunRequest returned from it
+            will launch all the asset checks in the selection. This argument is used to specify that
+            only a subset of these asset checks should be launched, instead of all of them.
         stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
         partition_key (Optional[str]): The partition key for this run request.
     """
 
+    run_key: Optional[str]
+    run_config: Mapping[str, Any]
+    tags: Mapping[str, str]
+    job_name: Optional[str]
+    asset_selection: Optional[Sequence[AssetKey]]
+    stale_assets_only: bool
+    partition_key: Optional[str]
+    asset_check_keys: Optional[Sequence[AssetCheckKey]]
+    asset_graph_subset: Optional[AssetGraphSubset]
+
     def __new__(
         cls,
         run_key: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
@@ -139,7 +128,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
                 cls,
                 run_key=None,
                 run_config={},
-                tags=normalize_tags(tags).tags,
+                tags=normalize_tags(tags),
                 job_name=None,
                 asset_selection=None,
                 stale_assets_only=False,
@@ -154,7 +143,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             cls,
             run_key=run_key,
             run_config=convert_config_input(run_config) or {},
-            tags=normalize_tags(tags).tags,
+            tags=normalize_tags(tags),
             job_name=job_name,
             asset_selection=asset_selection,
             stale_assets_only=stale_assets_only,
@@ -180,7 +169,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         fields = self._asdict()
         for k in fields.keys():
             if k in kwargs:
-                fields[k] = kwargs[k]
+                fields[k] = kwargs[k]  # pyright: ignore[reportIndexIssue]
         return RunRequest(**fields)
 
     def with_resolved_tags_and_config(
@@ -189,9 +178,10 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         dynamic_partitions_requests: Sequence[
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
     ) -> "RunRequest":
+        from dagster._core.instance.types import DynamicPartitionsStoreAfterRequests
+
         if self.partition_key is None:
             check.failed(
                 "Cannot resolve partition for run request without partition key",
@@ -204,10 +194,13 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             if dynamic_partitions_store
             else None
         )
+        with partition_loading_context(
+            dynamic_partitions_store=dynamic_partitions_store_after_requests
+        ) as ctx:
+            context = ctx
+
         target_definition.validate_partition_key(
-            self.partition_key,
-            dynamic_partitions_store=dynamic_partitions_store_after_requests,
-            selected_asset_keys=self.asset_selection,
+            self.partition_key, selected_asset_keys=self.asset_selection, context=context
         )
 
         tags = {
@@ -255,66 +248,6 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         return self.asset_graph_subset is not None
 
 
-@record
-class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
-    """Represents the dynamic partitions that will be in the contained DynamicPartitionsStore
-    after the contained requests are satisfied.
-    """
-
-    wrapped_dynamic_partitions_store: DynamicPartitionsStore
-    added_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
-    deleted_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
-
-    @staticmethod
-    def from_requests(
-        wrapped_dynamic_partitions_store: DynamicPartitionsStore,
-        dynamic_partitions_requests: Sequence[
-            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
-        ],
-    ) -> "DynamicPartitionsStoreAfterRequests":
-        added_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
-        deleted_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
-
-        for req in dynamic_partitions_requests:
-            name = req.partitions_def_name
-            if isinstance(req, AddDynamicPartitionsRequest):
-                added_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
-            elif isinstance(req, DeleteDynamicPartitionsRequest):
-                deleted_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
-            else:
-                check.failed(f"Unexpected request type: {req}")
-
-        return DynamicPartitionsStoreAfterRequests(
-            wrapped_dynamic_partitions_store=wrapped_dynamic_partitions_store,
-            added_partition_keys_by_partitions_def_name=added_partition_keys_by_partitions_def_name,
-            deleted_partition_keys_by_partitions_def_name=deleted_partition_keys_by_partitions_def_name,
-        )
-
-    @cached_method
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        partition_keys = set(
-            self.wrapped_dynamic_partitions_store.get_dynamic_partitions(partitions_def_name)
-        )
-        added_partition_keys = self.added_partition_keys_by_partitions_def_name.get(
-            partitions_def_name, set()
-        )
-        deleted_partition_keys = self.deleted_partition_keys_by_partitions_def_name.get(
-            partitions_def_name, set()
-        )
-        return list((partition_keys | added_partition_keys) - deleted_partition_keys)
-
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(
-            partitions_def_name, set()
-        ) and (
-            partition_key
-            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
-            or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
-                partitions_def_name, partition_key
-            )
-        )
-
-
 @whitelist_for_serdes(
     storage_name="PipelineRunReaction",
     storage_field_names={
@@ -334,7 +267,7 @@ class DagsterRunReaction(
     """Represents a request that reacts to an existing dagster run. If success, it will report logs
     back to the run.
 
-    Attributes:
+    Args:
         dagster_run (Optional[DagsterRun]): The dagster run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
         run_status: (Optional[DagsterRunStatus]): The run status that triggered the reaction.
@@ -346,7 +279,7 @@ class DagsterRunReaction(
         error: Optional[SerializableErrorInfo] = None,
         run_status: Optional[DagsterRunStatus] = None,
     ):
-        return super(DagsterRunReaction, cls).__new__(
+        return super().__new__(
             cls,
             dagster_run=check.opt_inst_param(dagster_run, "dagster_run", DagsterRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -354,9 +287,7 @@ class DagsterRunReaction(
         )
 
 
-@experimental_param(
-    param="asset_events", additional_warn_text="Runless asset events are experimental"
-)
+@public
 class SensorResult(
     NamedTuple(
         "_SensorResult",
@@ -372,7 +303,7 @@ class SensorResult(
             ),
             (
                 "asset_events",
-                List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
+                list[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
             (
                 "automation_condition_evaluations",
@@ -383,20 +314,18 @@ class SensorResult(
 ):
     """The result of a sensor evaluation.
 
-    Attributes:
-        run_requests (Optional[Sequence[RunRequest]]): A list
-            of run requests to be executed.
+    Args:
+        run_requests (Optional[Sequence[RunRequest]]): A list of run requests to be executed.
         skip_reason (Optional[Union[str, SkipReason]]): A skip message indicating why sensor
             evaluation was skipped.
         cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
             context for the next sensor evaluation.
-        dynamic_partitions_requests (Optional[Sequence[Union[DeleteDynamicPartitionsRequest,
-            AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
+        dynamic_partitions_requests (Optional[Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
             partition addition and deletion. Run requests will be evaluated using the state of the
             partitions with these changes applied. We recommend limiting partition additions
             and deletions to a maximum of 25K partitions per sensor evaluation, as this is the maximum
             recommended partition limit per asset.
-        asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]):  (Experimental) A
+        asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]): A
             list of materializations, observations, and asset check evaluations that the system
             will persist on your behalf at the end of sensor evaluation. These events will be not
             be associated with any particular run, but will be queryable and viewable in the asset catalog.
@@ -427,7 +356,7 @@ class SensorResult(
         if isinstance(skip_reason, str):
             skip_reason = SkipReason(skip_reason)
 
-        return super(SensorResult, cls).__new__(
+        return super().__new__(
             cls,
             run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
             skip_reason=skip_reason,

@@ -1,7 +1,8 @@
 import os
 import uuid
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -9,16 +10,11 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
     EnvVar,
     IOManagerDefinition,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
     TimeWindowPartitionMapping,
@@ -31,6 +27,13 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeResource
@@ -89,7 +92,7 @@ def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
 
 
 def test_handle_output(spark):
-    with patch("pyspark.sql.DataFrame.write") as mock_write:
+    with patch("pyspark.sql.readwriter.DataFrameWriter.save") as mock_save:
         handler = SnowflakePySparkTypeHandler()
         columns = ["col1", "col2"]
         data = [("a", "b")]
@@ -116,11 +119,11 @@ def test_handle_output(spark):
             ),
         }
 
-        assert len(mock_write.method_calls) == 1
+        assert mock_save.call_count == 1
 
 
 def test_load_input(spark):
-    with patch("pyspark.sql.DataFrameReader.load") as mock_read:
+    with patch("pyspark.sql.readwriter.DataFrameReader.load") as mock_read:
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -204,14 +207,14 @@ def test_io_manager_asset_metadata(spark) -> None:
             assets=[my_spark_df], resources={"io_manager": pythonic_snowflake_io_manager}
         )
 
-        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        res = defs.resolve_implicit_global_asset_job_def().execute_in_process()
         assert res.success
 
         mats = res.get_asset_materialization_events()
         assert len(mats) == 1
         mat = mats[0]
 
-        assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+        assert mat.materialization.metadata["dagster/table_name"] == MetadataValue.text(
             f"{DATABASE}.{SCHEMA}.{table_name}"
         )
 
@@ -286,7 +289,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -303,7 +306,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -320,7 +323,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -388,7 +391,7 @@ def test_static_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -405,7 +408,7 @@ def test_static_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -422,7 +425,7 @@ def test_static_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -502,7 +505,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -519,7 +522,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -536,7 +539,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
@@ -553,7 +556,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
@@ -613,7 +616,7 @@ def test_dynamic_partitions(spark, io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -629,11 +632,11 @@ def test_dynamic_partitions(spark, io_manager):
                     .execute(
                         f"SELECT * FROM {snowflake_table_path}",
                     )
-                    .fetch_pandas_all()
+                    .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
                 )
                 assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -649,7 +652,7 @@ def test_dynamic_partitions(spark, io_manager):
                     .execute(
                         f"SELECT * FROM {snowflake_table_path}",
                     )
-                    .fetch_pandas_all()
+                    .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
                 )
                 assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -667,7 +670,7 @@ def test_dynamic_partitions(spark, io_manager):
                     .execute(
                         f"SELECT * FROM {snowflake_table_path}",
                     )
-                    .fetch_pandas_all()
+                    .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
                 )
                 assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -750,7 +753,7 @@ def test_self_dependent_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
 
@@ -771,6 +774,6 @@ def test_self_dependent_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()
+                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

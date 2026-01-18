@@ -1,32 +1,25 @@
-from dagster import (
-    OpExecutionContext,
-    RunRequest,
-    ScheduleEvaluationContext,
-    job,
-    op,
-    schedule,
-)
+import dagster as dg
 
 
-@op(config_schema={"activity_selection": str})
-def configurable_op(context: OpExecutionContext):
+@dg.op(config_schema={"activity_selection": str})
+def configurable_op(context: dg.OpExecutionContext):
     pass
 
 
-@job
+@dg.job
 def configurable_job():
     configurable_op()
 
 
 # config_schedule_start
-# sets the schedule to be updated everyday at 9:00 AM
-@schedule(job=configurable_job, cron_schedule="0 9 * * *")
-def configurable_job_schedule(context: ScheduleEvaluationContext):
+# sets the dg.schedule to be updated everyday at 9:00 AM
+@dg.schedule(job=configurable_job, cron_schedule="0 9 * * *")
+def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
     if context.scheduled_execution_time.weekday() < 5:
         activity_selection = "grind"
     else:
         activity_selection = "party"
-    return RunRequest(
+    return dg.RunRequest(
         run_config={
             "ops": {"configurable_op": {"config": {"activity": activity_selection}}}
         }

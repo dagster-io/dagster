@@ -1,35 +1,35 @@
-from typing import (
+from collections.abc import Iterator, Mapping
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    Mapping,
     Optional,
+    TypeAlias,
     cast,
 )
 
-from typing_extensions import TypeAlias
-
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._annotations import PublicAttr, beta_param, deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
     DataVersionsByPartition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataMapping,
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -45,7 +45,6 @@ from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
     normalize_group_name,
-    validate_tags_strict,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -54,6 +53,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._utils.internal_init import IHasInternalInit
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -164,26 +164,26 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
     return DecoratedOpFunction(fn)
 
 
-@experimental_param(param="resource_defs")
-@experimental_param(param="io_manager_def")
-@experimental_param(param="freshness_policy")
-@experimental_param(param="tags")
+@beta_param(param="resource_defs")
+@beta_param(param="io_manager_def")
+@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 @deprecated(
     breaking_version="2.0.0",
     additional_warn_text="Use AssetSpec instead. If using the SourceAsset io_manager_key property, "
     "use AssetSpec(...).with_io_manager_key(...).",
 )
+@public
 class SourceAsset(ResourceAddable, IHasInternalInit):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
-    Attributes:
+    Args:
         key (Union[AssetKey, Sequence[str], str]): The key of the asset.
         metadata (Mapping[str, MetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
+        io_manager_def (Optional[IOManagerDefinition]): (Beta) The definition of the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Beta) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
         description (Optional[str]): The description of the asset.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
@@ -209,13 +209,14 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     description: PublicAttr[Optional[str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
     group_name: PublicAttr[str]
-    resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
+    resource_defs: PublicAttr[dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     op_tags: Optional[Mapping[str, Any]]
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
-    freshness_policy: Optional[FreshnessPolicy]
-    tags: Optional[Mapping[str, str]]
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
+    automation_condition: Optional[AutomationCondition]
+    tags: Mapping[str, str]
 
     def __init__(
         self,
@@ -231,7 +232,8 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         op_tags: Optional[Mapping[str, Any]] = None,
         *,
         auto_observe_interval_minutes: Optional[float] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         tags: Optional[Mapping[str, str]] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
@@ -247,7 +249,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.tags = validate_tags_strict(tags) or {}
+        self.tags = normalize_tags(tags or {}, strict=True)
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:
@@ -282,8 +284,11 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         self.auto_observe_interval_minutes = check.opt_numeric_param(
             auto_observe_interval_minutes, "auto_observe_interval_minutes"
         )
-        self.freshness_policy = check.opt_inst_param(
-            freshness_policy, "freshness_policy", FreshnessPolicy
+        self.legacy_freshness_policy = check.opt_inst_param(
+            legacy_freshness_policy, "legacy_freshness_policy", LegacyFreshnessPolicy
+        )
+        self.automation_condition = check.opt_inst_param(
+            automation_condition, "automation_condition", AutomationCondition
         )
 
     @staticmethod
@@ -300,7 +305,8 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         observe_fn: Optional[SourceAssetObserveFunction],
         op_tags: Optional[Mapping[str, Any]],
         auto_observe_interval_minutes: Optional[float],
-        freshness_policy: Optional[FreshnessPolicy],
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
+        automation_condition: Optional[AutomationCondition],
         tags: Optional[Mapping[str, str]],
         _required_resource_keys: Optional[AbstractSet[str]],
     ) -> "SourceAsset":
@@ -316,7 +322,8 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             observe_fn=observe_fn,
             op_tags=op_tags,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
-            freshness_policy=freshness_policy,
+            legacy_freshness_policy=legacy_freshness_policy,
+            automation_condition=automation_condition,
             tags=tags,
             _required_resource_keys=_required_resource_keys,
         )
@@ -328,7 +335,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def io_manager_def(self) -> Optional[IOManagerDefinition]:
         io_manager_key = self.get_io_manager_key()
         return cast(
-            Optional[IOManagerDefinition],
+            "Optional[IOManagerDefinition]",
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
 
@@ -344,7 +351,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             isinstance(self.node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
         )
-        return cast(OpDefinition, self.node_def)
+        return cast("OpDefinition", self.node_def)
 
     @property
     def execution_type(self) -> AssetExecutionType:
@@ -441,18 +448,23 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
-                freshness_policy=self.freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
                 tags=self.tags,
                 op_tags=self.op_tags,
+                automation_condition=self.automation_condition,
                 _required_resource_keys=self._required_resource_keys,
             )
 
     def with_attributes(
         self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
     ) -> "SourceAsset":
-        if group_name is not None and self.group_name != DEFAULT_GROUP_NAME:
+        if (
+            group_name is not None
+            and self.group_name != DEFAULT_GROUP_NAME
+            and self.group_name != group_name
+        ):
             raise DagsterInvalidDefinitionError(
-                "A group name has already been provided to source asset"
+                f"Attempted to override group name to {group_name} for SourceAsset {self.key.to_user_string()}, which already has group name {self.group_name}."
                 f" {self.key.to_user_string()}"
             )
 
@@ -469,8 +481,9 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 tags=self.tags,
-                freshness_policy=self.freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
                 op_tags=self.op_tags,
+                automation_condition=self.automation_condition,
                 _required_resource_keys=self._required_resource_keys,
             )
 

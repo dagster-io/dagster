@@ -1,17 +1,15 @@
 import os
 import sys
+from contextlib import ExitStack
 from typing import Optional
 
 import click
+from dagster_shared.cli import WorkspaceOpts, workspace_options
+from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
 
 from dagster import __version__ as dagster_version
-from dagster._cli.utils import get_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    ClickArgMapping,
-    ClickArgValue,
-    get_workspace_load_target,
-    workspace_target_argument,
-)
+from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
+from dagster._cli.workspace.cli_target import workspace_opts_to_load_target
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
@@ -24,7 +22,7 @@ from dagster._daemon.controller import (
 )
 from dagster._daemon.daemon import get_telemetry_daemon_session_id
 from dagster._serdes import deserialize_value
-from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 
 
 def _get_heartbeat_tolerance():
@@ -67,20 +65,39 @@ def _get_heartbeat_tolerance():
     required=False,
     hidden=True,
 )
-@workspace_target_argument
+@click.option(
+    "--shutdown-pipe",
+    type=click.INT,
+    required=False,
+    hidden=True,
+    help="Internal use only. Pass a readable pipe file descriptor to the daemon process that will be monitored for a shutdown signal.",
+)
+@workspace_options
 def run_command(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
     instance_ref: Optional[str],
-    **kwargs: ClickArgValue,
+    shutdown_pipe: Optional[int],
+    **other_opts: object,
 ) -> None:
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    # Essential on windows-- will set up windows interrupt signals to raise KeyboardInterrupt
+    setup_interrupt_handlers()
+
     try:
-        with capture_interrupts():
+        with ExitStack() as stack:
+            if shutdown_pipe:
+                stack.enter_context(interrupt_on_ipc_shutdown_message(shutdown_pipe))
+            stack.enter_context(capture_interrupts())
             with get_instance_for_cli(
                 instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None
             ) as instance:
-                _daemon_run_command(instance, log_level, code_server_log_level, log_format, kwargs)
+                _daemon_run_command(
+                    instance, log_level, code_server_log_level, log_format, workspace_opts
+                )
     except KeyboardInterrupt:
         return  # Exit cleanly on interrupt
 
@@ -91,13 +108,11 @@ def _daemon_run_command(
     log_level: str,
     code_server_log_level: str,
     log_format: str,
-    kwargs: ClickArgMapping,
+    workspace_opts: WorkspaceOpts,
 ) -> None:
-    workspace_load_target = get_workspace_load_target(kwargs)
-
     with daemon_controller_from_instance(
         instance,
-        workspace_load_target=workspace_load_target,
+        workspace_load_target=workspace_opts_to_load_target(workspace_opts),
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
         log_level=log_level,
         code_server_log_level=code_server_log_level,

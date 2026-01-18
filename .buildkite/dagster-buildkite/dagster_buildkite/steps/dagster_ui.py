@@ -1,11 +1,14 @@
 from pathlib import Path
-from typing import List
 
-from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.package_spec import PackageSpec
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import CommandStepBuilder
-from dagster_buildkite.utils import CommandStep, is_feature_branch
+from buildkite_shared.environment import is_feature_branch
+from buildkite_shared.git import ChangedFiles
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import (
+    CommandStepBuilder,
+    CommandStepConfiguration,
+)
+from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.steps.packages import PackageSpec
 
 
 def skip_if_no_dagster_ui_components_changes():
@@ -22,16 +25,18 @@ def skip_if_no_dagster_ui_components_changes():
     return "No changes that affect the ui-components JS library"
 
 
-def build_dagster_ui_components_steps() -> List[CommandStep]:
+def build_dagster_ui_components_steps() -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":typescript: dagster-ui-components")
+        add_test_image(
+            CommandStepBuilder(":typescript: dagster-ui-components"),
+            AvailablePythonVersion.get_default(),
+        )
         .run(
             "cd js_modules/dagster-ui/packages/ui-components",
             "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_dagster_ui_components_changes())
+        .skip_if(skip_if_no_dagster_ui_components_changes())
         .build(),
     ]
 
@@ -52,16 +57,18 @@ def skip_if_no_dagster_ui_core_changes():
     return "No changes that affect the JS webapp"
 
 
-def build_dagster_ui_core_steps() -> List[CommandStep]:
+def build_dagster_ui_core_steps() -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":typescript: dagster-ui-core")
+        add_test_image(
+            CommandStepBuilder(":typescript: dagster-ui-core"),
+            AvailablePythonVersion.get_default(),
+        )
         .run(
             "cd js_modules/dagster-ui",
             "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_dagster_ui_core_changes())
+        .skip_if(skip_if_no_dagster_ui_core_changes())
         .build(),
     ]
 

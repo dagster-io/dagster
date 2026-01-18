@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, TypeVar, cast
 
 import dagster._check as check
 from dagster._config.config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
@@ -26,7 +27,7 @@ from dagster._config.evaluate_value_result import EvaluateValueResult
 from dagster._config.field import resolve_to_config_type
 from dagster._config.post_process import post_process_config
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
-from dagster._config.stack import EvaluationStack
+from dagster._config.stack import EvaluationStackRoot
 from dagster._config.traversal_context import ValidationContext
 from dagster._utils import ensure_single_item
 
@@ -57,7 +58,7 @@ def validate_config(config_schema: object, config_value: T) -> EvaluateValueResu
     config_type = check.inst(resolve_to_config_type(config_schema), ConfigType)
 
     return validate_config_from_snap(
-        config_schema_snapshot=config_type.get_schema_snapshot(),
+        config_schema_snapshot=config_type.schema_snapshot,
         config_type_key=config_type.key,
         config_value=config_value,
     )
@@ -72,7 +73,7 @@ def validate_config_from_snap(
         ValidationContext(
             config_schema_snapshot=config_schema_snapshot,
             config_type_snap=config_schema_snapshot.get_config_snap(config_type_key),
-            stack=EvaluationStack(entries=[]),
+            stack=EvaluationStackRoot(),
         ),
         config_value,
     )
@@ -137,7 +138,7 @@ def _validate_scalar_union_config(
     if isinstance(config_value, (dict, list)):
         return _validate_config(
             context.for_new_config_type_key(context.config_type_snap.non_scalar_type_key),
-            cast(T, config_value),
+            cast("T", config_value),
         )
     else:
         return _validate_config(
@@ -160,7 +161,7 @@ def _validate_empty_selector_config(
     if defined_field_snap.is_required:
         return EvaluateValueResult.for_error(create_selector_unspecified_value_error(context))
 
-    return EvaluateValueResult.for_value(cast(Mapping[str, object], {}))
+    return EvaluateValueResult.for_value(cast("Mapping[str, object]", {}))
 
 
 def validate_selector_config(
@@ -183,7 +184,7 @@ def validate_selector_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_selector_type_error(context, config_value))
-    config_value = cast(Mapping[str, object], config_value)
+    config_value = cast("Mapping[str, object]", config_value)
 
     if len(config_value) > 1:
         return EvaluateValueResult.for_error(
@@ -232,7 +233,7 @@ def _validate_shape_config(
     check.bool_param(check_for_extra_incoming_fields, "check_for_extra_incoming_fields")
 
     field_aliases = check.opt_dict_param(
-        cast(Dict[str, str], context.config_type_snap.field_aliases),
+        cast("dict[str, str]", context.config_type_snap.field_aliases),
         "field_aliases",
         key_type=str,
         value_type=str,
@@ -240,15 +241,15 @@ def _validate_shape_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
-    config_value = cast(Dict[str, object], config_value)
+    config_value = cast("dict[str, object]", config_value)
 
     field_snaps = check.not_none(context.config_type_snap.fields)
-    defined_field_names = {cast(str, fs.name) for fs in field_snaps}
+    defined_field_names = cast("set[str]", {fs.name for fs in field_snaps})
     defined_field_names = defined_field_names.union(set(field_aliases.values()))
 
     incoming_field_names = set(config_value.keys())
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
 
     if check_for_extra_incoming_fields:
         _append_if_error(
@@ -319,7 +320,7 @@ def validate_map_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_map_error(context, config_value))
-    config_value = cast(Dict[object, object], config_value)
+    config_value = cast("dict[object, object]", config_value)
 
     evaluation_results = [
         _validate_config(context.for_map_key(key), key) for key in config_value.keys()
@@ -331,9 +332,13 @@ def validate_map_config(
     errors = []
     for result in evaluation_results:
         if not result.success:
-            errors += cast(List, result.errors)
+            errors += cast("list", result.errors)
 
-    return EvaluateValueResult(not bool(errors), config_value, errors)
+    return EvaluateValueResult(
+        success=not bool(errors),
+        value=config_value,
+        errors=errors,
+    )
 
 
 def validate_shape_config(
@@ -346,13 +351,13 @@ def validate_shape_config(
     return _validate_shape_config(context, config_value, check_for_extra_incoming_fields=True)
 
 
-def _append_if_error(errors: List[EvaluationError], maybe_error: Optional[EvaluationError]) -> None:
+def _append_if_error(errors: list[EvaluationError], maybe_error: Optional[EvaluationError]) -> None:
     if maybe_error:
         errors.append(maybe_error)
 
 
 def _check_for_extra_incoming_fields(
-    context: ValidationContext, defined_field_names: Set[str], incoming_field_names: Set[str]
+    context: ValidationContext, defined_field_names: set[str], incoming_field_names: set[str]
 ) -> Optional[EvaluationError]:
     extra_fields = list(incoming_field_names - defined_field_names)
 
@@ -367,16 +372,16 @@ def _check_for_extra_incoming_fields(
 def _compute_missing_fields_error(
     context: ValidationContext,
     field_snaps: Sequence[ConfigFieldSnap],
-    incoming_fields: Set[str],
+    incoming_fields: set[str],
     field_aliases: Mapping[str, str],
 ) -> Optional[EvaluationError]:
-    missing_fields: List[str] = []
+    missing_fields: list[str] = []
 
     for field_snap in field_snaps:
-        field_alias = field_aliases.get(cast(str, field_snap.name))
+        field_alias = field_aliases.get(cast("str", field_snap.name))
         if field_snap.is_required and field_snap.name not in incoming_fields:
             if field_alias is None or field_alias not in incoming_fields:
-                missing_fields.append(cast(str, field_snap.name))
+                missing_fields.append(cast("str", field_snap.name))
 
     if missing_fields:
         if len(missing_fields) == 1:
@@ -398,18 +403,22 @@ def validate_array_config(
 
     evaluation_results = [
         _validate_config(context.for_array(index), config_item)
-        for index, config_item in enumerate(cast(List[object], config_value))
+        for index, config_item in enumerate(cast("list[object]", config_value))
     ]
 
-    values: List[object] = []
-    errors: List[EvaluationError] = []
+    values: list[object] = []
+    errors: list[EvaluationError] = []
     for result in evaluation_results:
         if result.success:
             values.append(result.value)
         else:
             errors.extend(check.not_none(result.errors))
 
-    return EvaluateValueResult(not bool(errors), values, errors)
+    return EvaluateValueResult(
+        success=not bool(errors),
+        value=values,
+        errors=errors,
+    )
 
 
 def validate_enum_config(
@@ -432,7 +441,7 @@ def process_config(
     config_type: object, config_dict: Mapping[str, object]
 ) -> EvaluateValueResult[Mapping[str, Any]]:
     config_type = resolve_to_config_type(config_type)
-    config_type = check.inst(cast(ConfigType, config_type), ConfigType)
+    config_type = check.inst(cast("ConfigType", config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)
     if not validate_evr.success:
         return validate_evr

@@ -4,9 +4,7 @@ import {
   Colors,
   Dialog,
   DialogFooter,
-  Group,
   Icon,
-  IconWrapper,
   Mono,
   Table,
 } from '@dagster-io/ui-components';
@@ -18,8 +16,9 @@ import styled from 'styled-components';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -215,16 +214,16 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
     <>
       {hasPartitions && (
         <td style={{whiteSpace: 'nowrap', ...focusCss}}>
-          <Group direction="row" spacing={2}>
+          <Box flex={{direction: 'row', gap: 2}}>
             <DisclosureTriangle open={isFocused} />
             {partition || <NoneSpan />}
-          </Group>
+          </Box>
         </td>
       )}
       <td style={hasPartitions ? {} : focusCss}>
-        <Group direction="row" spacing={4}>
+        <Box flex={{direction: 'row', gap: 4}}>
           {!hasPartitions && <DisclosureTriangle open={isFocused} />}
-          <Group direction="column" spacing={4}>
+          <Box flex={{direction: 'column', gap: 4}}>
             <Timestamp timestamp={{ms: Number(timestamp)}} />
             {all?.length > 1 ? (
               <AllIndividualEventsButton
@@ -237,13 +236,18 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 <Icon name="materialization" size={16} color={Colors.textLight()} />
                 Materialization
               </Box>
+            ) : latest.__typename === 'FailedToMaterializeEvent' ? (
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.textLight()}}>
+                <Icon name="run_failed" size={16} color={Colors.textLight()} />
+                Failed to Materialize
+              </Box>
             ) : (
               <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.textLight()}}>
                 <Icon name="observation" size={16} color={Colors.textLight()} /> Observation
               </Box>
             )}
-          </Group>
-        </Group>
+          </Box>
+        </Box>
       </td>
       <td>
         {!isHiddenAssetGroupJob(run.pipelineName) && (
@@ -257,10 +261,10 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 isJob={isThisThingAJob(repo, run.pipelineName)}
               />
             </Box>
-            <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} padding={{left: 8}}>
               <Icon name="linear_scale" color={Colors.textLight()} />
               <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
-            </Group>
+            </Box>
           </Box>
         )}
       </td>
@@ -293,7 +297,11 @@ const DetailsTable = styled.table`
 interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
-  events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  events: (
+    | AssetSuccessfulMaterializationFragment
+    | AssetObservationFragment
+    | AssetFailedToMaterializeFragment
+  )[];
 }
 
 export const AllIndividualEventsButton = ({
@@ -306,10 +314,10 @@ export const AllIndividualEventsButton = ({
   children: React.ReactNode;
   disabled?: boolean;
 }) => {
-  const [_open, setOpen] = useQueryPersistedState({
+  const [_open, setOpen] = useQueryPersistedState<boolean>({
     queryKey: 'showAllEvents',
-    decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
-    encode: (b) => ({showAllEvents: b || undefined}),
+    decode: (qs) => typeof qs.showAllEvents === 'string' && qs.showAllEvents === 'true',
+    encode: (b) => ({showAllEvents: b ? 'true' : undefined}),
   });
   const [focusedTimestamp, setFocusedTimestamp] = React.useState<string | undefined>();
   const groups = React.useMemo(
@@ -327,10 +335,10 @@ export const AllIndividualEventsButton = ({
     if (hasPartitions && events[0]) {
       const partition = events[0].partition;
       if (partition) {
-        return `Materialization and observation events for ${partition}`;
+        return `Historical events for ${partition}`;
       }
     }
-    return `Materialization and observation events`;
+    return `Historical events`;
   };
 
   const open = _open && !disabled;
@@ -383,7 +391,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
   background: transparent;
   outline: none;
 
-  ${IconWrapper} {
+  .iconGlobal {
     margin: -2px -5px;
     transform: ${({$open}) => ($open ? 'rotate(0deg)' : 'rotate(-90deg)')};
     opacity: 0.25;
@@ -392,7 +400,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
   :focus {
     outline: none;
 
-    ${IconWrapper} {
+    .iconGlobal {
       background: ${Colors.textDefault()};
       opacity: 0.5;
     }

@@ -2,8 +2,9 @@
 
 import os
 import string
+from collections.abc import Iterator
 from random import random
-from typing import Iterator, Optional
+from typing import Optional
 
 import cloud_service  # type: ignore
 from dagster_pipes import PipesParams
@@ -12,9 +13,9 @@ from dagster import PipesBlobStoreMessageReader
 
 
 class MyCustomCloudServiceMessageReader(PipesBlobStoreMessageReader):
-    def get_params(self) -> Iterator[PipesParams]:
+    def get_params(self) -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         # generate a random key prefix to write message chunks under on the cloud service
-        key_prefix = "".join(random.choices(string.ascii_letters, k=30))
+        key_prefix = "".join(random.choices(string.ascii_letters, k=30))  # pyright: ignore[reportFunctionMemberAccess]
         yield {"key_prefix": key_prefix}
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:

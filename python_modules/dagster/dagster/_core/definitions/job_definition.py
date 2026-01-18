@@ -1,32 +1,19 @@
 import importlib
 import os
 import warnings
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import cached_property, update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035,
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import beta_param, deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.dependency import (
@@ -50,11 +37,15 @@ from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, 
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
-    PartitionedConfig,
     PartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -62,12 +53,10 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
-from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
-    NormalizedTags,
     check_valid_name,
-    normalize_tags,
+    validate_definition_owner,
 )
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -87,21 +76,25 @@ from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.run_config_schema import RunConfigSchema
+    from dagster._core.definitions.run_request import RunRequest
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.remote_representation.job_index import JobIndex
-    from dagster._core.snap import JobSnapshot
+    from dagster._core.snap import JobSnap
 
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
+@public
+@beta_param(param="owners")
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -117,9 +110,10 @@ class JobDefinition(IHasInternalInit):
     _asset_layer: AssetLayer
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
-    _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
+    _cached_run_config_schemas: dict[str, "RunConfigSchema"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
+    _owners: Optional[Sequence[str]]
 
     def __init__(
         self,
@@ -134,8 +128,8 @@ class JobDefinition(IHasInternalInit):
         ] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
-        run_tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        run_tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
@@ -143,12 +137,13 @@ class JobDefinition(IHasInternalInit):
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _was_explicitly_provided_resources: Optional[bool] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
         self._graph_def = graph_def
         self._current_level_node_defs = self._graph_def.node_defs
-        # Recursively explore all nodes in the this job
+        # Recursively explore all nodes in this job
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
         self._asset_layer = check.opt_inst_param(
             asset_layer, "asset_layer", AssetLayer
@@ -171,15 +166,17 @@ class JobDefinition(IHasInternalInit):
         )
         config = convert_config_input(config)
 
-        partitions_def = check.opt_inst_param(
+        self._original_partitions_def_argument = check.opt_inst_param(
             partitions_def, "partitions_def", PartitionsDefinition
         )
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
 
-        self._tags = tags.tags if isinstance(tags, NormalizedTags) else normalize_tags(tags).tags
-        self._run_tags = run_tags.tags if isinstance(run_tags, NormalizedTags) else run_tags
+        self._tags = normalize_tags(
+            tags, warning_stacklevel=5
+        )  # reset once owners is out of beta_param
+        self._run_tags = run_tags  # don't normalize to preserve None
 
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -200,7 +197,7 @@ class JobDefinition(IHasInternalInit):
         for key in resource_defs.keys():
             if not key.isidentifier():
                 check.failed(f"Resource key '{key}' must be a valid Python identifier.")
-        was_provided_resources = (
+        self._was_provided_resources = (
             bool(resource_defs)
             if _was_explicitly_provided_resources is None
             else _was_explicitly_provided_resources
@@ -209,57 +206,19 @@ class JobDefinition(IHasInternalInit):
             DEFAULT_IO_MANAGER_KEY: default_job_io_manager,
             **resource_defs,
         }
-        self._required_resource_keys = self._get_required_resource_keys(was_provided_resources)
+        self._required_resource_keys = self._get_required_resource_keys(
+            self._was_provided_resources
+        )
 
-        self._config_mapping = None
-        self._partitioned_config = None
-        self._run_config = None
         self._run_config_schema = None
         self._original_config_argument = config
 
-        if partitions_def:
-            self._partitioned_config = PartitionedConfig.from_flexible_config(
-                config, partitions_def
-            )
-        else:
-            if isinstance(config, ConfigMapping):
-                self._config_mapping = config
-            elif isinstance(config, PartitionedConfig):
-                self._partitioned_config = config
-                if asset_layer:
-                    for asset_key in asset_layer.asset_keys_by_node_output_handle.values():
-                        asset_partitions_def = asset_layer.get(asset_key).partitions_def
-                        check.invariant(
-                            asset_partitions_def is None
-                            or asset_partitions_def == config.partitions_def,
-                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
-                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
-                        )
-
-            elif isinstance(config, dict):
-                self._run_config = config
-                # Using config mapping here is a trick to make it so that the preset will be used even
-                # when no config is supplied for the job.
-                self._config_mapping = _config_mapping_with_default_value(
-                    get_run_config_schema_for_job(
-                        graph_def,
-                        self.resource_defs,
-                        self.executor_def,
-                        self.loggers,
-                        asset_layer,
-                        was_explicitly_provided_resources=was_provided_resources,
-                    ),
-                    config,
-                    self.name,
-                )
-            elif config is not None:
-                check.failed(
-                    "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
-                    f" but is an object of type {type(config)}"
-                )
-
         self._subset_selection_data = _subset_selection_data
         self.input_values = input_values
+        if owners:
+            for owner in owners:
+                validate_definition_owner(owner, "job", self._name)
+        self._owners = owners
         for input_name in sorted(list(self.input_values.keys())):
             if not graph_def.has_input(input_name):
                 raise DagsterInvalidDefinitionError(
@@ -279,8 +238,8 @@ class JobDefinition(IHasInternalInit):
         ],
         description: Optional[str],
         partitions_def: Optional[PartitionsDefinition],
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
-        run_tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
+        tags: Optional[Mapping[str, Any]],
+        run_tags: Optional[Mapping[str, Any]],
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
@@ -288,6 +247,7 @@ class JobDefinition(IHasInternalInit):
         asset_layer: Optional[AssetLayer],
         input_values: Optional[Mapping[str, object]],
         _was_explicitly_provided_resources: Optional[bool],
+        owners: Optional[Sequence[str]],
     ) -> "JobDefinition":
         return JobDefinition(
             graph_def=graph_def,
@@ -307,6 +267,32 @@ class JobDefinition(IHasInternalInit):
             asset_layer=asset_layer,
             input_values=input_values,
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
+            owners=owners,
+        )
+
+    @staticmethod
+    def for_external_job(
+        asset_keys: Iterable[AssetKey],
+        name: str,
+        metadata: Optional[Mapping[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+    ) -> "JobDefinition":
+        from dagster._core.definitions import op
+
+        # We need to create a dummy op in order for the asset graph to be rendered in the UI. It's worth investigating whether
+        # we can avoid this.
+
+        @op(name=f"{name}_op_inner")
+        def _op():
+            pass
+
+        return JobDefinition(
+            graph_def=GraphDefinition(name=name, node_defs=[_op]),
+            resource_defs={},
+            executor_def=None,
+            asset_layer=AssetLayer.for_external_job(asset_keys),
+            metadata=metadata,
+            tags=tags,
         )
 
     @property
@@ -333,7 +319,9 @@ class JobDefinition(IHasInternalInit):
         if self._run_tags is None:
             return self.tags
         else:
-            return normalize_tags({**self._graph_def.tags, **self._run_tags}).tags
+            return normalize_tags(
+                {**self._graph_def.tags, **self._run_tags}, warning_stacklevel=5
+            )  # reset once owners is out of beta_param
 
     # This property exists for backcompat purposes. If it is False, then we omit run_tags when
     # generating a job snapshot. This lets host processes distinguish between None and {} `run_tags`
@@ -352,6 +340,10 @@ class JobDefinition(IHasInternalInit):
     @property
     def description(self) -> Optional[str]:
         return self._description
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._owners
 
     @property
     def graph(self) -> GraphDefinition:
@@ -401,7 +393,7 @@ class JobDefinition(IHasInternalInit):
 
         A partitioned config defines a way to map partition keys to run config for the job.
         """
-        return self._partitioned_config
+        return self._resolve_configs()[0]
 
     @public
     @property
@@ -410,7 +402,7 @@ class JobDefinition(IHasInternalInit):
 
         A config mapping defines a way to map a top-level config schema to run config for the job.
         """
-        return self._config_mapping
+        return self._resolve_configs()[1]
 
     @public
     @property
@@ -440,12 +432,12 @@ class JobDefinition(IHasInternalInit):
 
     @property
     def run_config(self) -> Optional[Mapping[str, Any]]:
-        return self._run_config
+        return self._resolve_configs()[2]
 
     @property
     def run_config_schema(self) -> "RunConfigSchema":
         if self._run_config_schema is None:
-            self._run_config_schema = _create_run_config_schema(self, self.required_resource_keys)
+            self._run_config_schema = _create_run_config_schema(self)
         return self._run_config_schema
 
     @public
@@ -485,6 +477,58 @@ class JobDefinition(IHasInternalInit):
     def op_retry_policy(self) -> Optional[RetryPolicy]:
         return self._op_retry_policy
 
+    @cached_method
+    def _resolve_configs(
+        self,
+    ) -> tuple[Optional[PartitionedConfig], Optional[ConfigMapping], Optional[Mapping[str, Any]]]:
+        config = self._original_config_argument
+        partition_def = self._original_partitions_def_argument
+
+        partitioned_config = None
+        config_mapping = None
+        run_config = None
+
+        if partition_def:
+            partitioned_config = PartitionedConfig.from_flexible_config(config, partition_def)
+        else:
+            if isinstance(config, ConfigMapping):
+                config_mapping = config
+            elif isinstance(config, PartitionedConfig):
+                partitioned_config = config
+                if self.asset_layer:
+                    for asset_key in self._asset_layer.selected_asset_keys:
+                        asset_partitions_def = self._asset_layer.get(asset_key).partitions_def
+                        check.invariant(
+                            asset_partitions_def is None
+                            or asset_partitions_def == config.partitions_def,
+                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
+                        )
+
+            elif isinstance(config, dict):
+                run_config = config
+                # Using config mapping here is a trick to make it so that the preset will be used even
+                # when no config is supplied for the job.
+                config_mapping = _config_mapping_with_default_value(
+                    get_run_config_schema_for_job(
+                        self._graph_def,
+                        self.resource_defs,
+                        self.executor_def,
+                        self.loggers,
+                        self._asset_layer,
+                        was_explicitly_provided_resources=self._was_provided_resources,
+                    ),
+                    config,
+                    self.name,
+                )
+            elif config is not None:
+                check.failed(
+                    "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
+                    f" but is an object of type {type(config)}"
+                )
+
+        return partitioned_config, config_mapping, run_config
+
     def node_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
 
@@ -500,9 +544,9 @@ class JobDefinition(IHasInternalInit):
 
     def get_op(self, handle: NodeHandle) -> OpNode:
         node = self.get_node(handle)
-        assert isinstance(
-            node, OpNode
-        ), f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        assert isinstance(node, OpNode), (
+            f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        )
         return node
 
     def has_node_named(self, name: str) -> bool:
@@ -560,6 +604,14 @@ class JobDefinition(IHasInternalInit):
                 for hook_def in self._hook_defs
                 for req in hook_def.get_resource_requirements(attached_to=f"job '{self._name}'")
             ],
+            *[
+                req
+                for assets_def in self.asset_layer.asset_graph.assets_defs
+                for hook_def in assets_def.hook_defs
+                for req in hook_def.get_resource_requirements(
+                    attached_to=f"asset '{assets_def.node_def.name}'"
+                )
+            ],
         ]
 
     def validate_resource_requirements_satisfied(self) -> None:
@@ -578,6 +630,7 @@ class JobDefinition(IHasInternalInit):
 
         A hook can be attached to any of the following objects
         * Node (node invocation)
+        * AssetsDefinition
         * JobDefinition
 
         Args:
@@ -587,7 +640,8 @@ class JobDefinition(IHasInternalInit):
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: Set[HookDefinition] = set()
+        assets_def = self.asset_layer.get_assets_def_for_node(handle)
+        hook_defs = set(assets_def.hook_defs) if assets_def else set()
 
         current = handle
         lineage = []
@@ -604,7 +658,7 @@ class JobDefinition(IHasInternalInit):
         while lineage:
             name = lineage.pop()
             # While lineage is non-empty, definition is guaranteed to be a graph
-            definition = cast(GraphDefinition, node.definition)
+            definition = cast("GraphDefinition", node.definition)
             node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 
@@ -654,11 +708,11 @@ class JobDefinition(IHasInternalInit):
 
 
         Args:
-            run_config (Optional[Mapping[str, Any]]:
+            run_config (Optional[Mapping[str, Any]]):
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
-            partition_key: (Optional[str])
+            partition_key (Optional[str]):
                 The string partition key that specifies the run config to execute. Can only be used
                 to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -683,34 +737,74 @@ class JobDefinition(IHasInternalInit):
             :py:class:`~dagster.ExecuteInProcessResult`
 
         """
-        from dagster._core.definitions.executor_definition import execute_in_process_executor
-        from dagster._core.definitions.run_config import convert_config_input
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
-        from dagster._core.execution.execute_in_process import core_execute_in_process
-
-        run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
-        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
-        asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
-        resources = check.opt_mapping_param(resources, "resources", key_type=str)
-
-        resource_defs = wrap_resources_for_execution(resources)
-
-        check.invariant(
-            not (op_selection and asset_selection),
-            "op_selection and asset_selection cannot both be provided as args to"
-            " execute_in_process",
+        from dagster._core.definitions.job_base import InMemoryJob
+        from dagster._core.execution.execute_in_process import (
+            core_execute_in_process,
+            merge_run_tags,
+            type_check_and_normalize_args,
         )
 
-        partition_key = check.opt_str_param(partition_key, "partition_key")
-        input_values = check.opt_mapping_param(input_values, "input_values")
+        run_config, op_selection, asset_selection, resource_defs, partition_key, input_values = (
+            type_check_and_normalize_args(
+                run_config=run_config,
+                partition_key=partition_key,
+                op_selection=op_selection,
+                asset_selection=asset_selection,
+                input_values=input_values,
+                resources=resources,
+            )
+        )
 
-        # Combine provided input values at execute_in_process with input values
-        # provided to the definition. Input values provided at
-        # execute_in_process will override those provided on the definition.
-        input_values = merge_dicts(self.input_values, input_values)
+        ephemeral_job = self.as_ephemeral_job(
+            resource_defs=resource_defs,
+            input_values=input_values,
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+        )
+        if partition_key and ephemeral_job.partitions_def:
+            with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+                ephemeral_job.validate_partition_key(
+                    partition_key=partition_key,
+                    selected_asset_keys=set(asset_selection),
+                    context=ctx,
+                )
+
+        wrapped_job = InMemoryJob(job_def=ephemeral_job)
+
+        if not run_config and ephemeral_job.partitioned_config and partition_key:
+            run_config = ephemeral_job.partitioned_config.get_run_config_for_partition_key(
+                partition_key
+            )
+
+        return core_execute_in_process(
+            job=wrapped_job,
+            run_config=run_config,
+            instance=instance,
+            output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
+            run_tags=merge_run_tags(
+                job_def=self,
+                partition_key=partition_key,
+                tags=tags,
+                asset_selection=asset_selection,
+                instance=instance,
+                run_config=run_config,
+            ),
+            run_id=run_id,
+            asset_selection=frozenset(asset_selection),
+        )
+
+    def as_ephemeral_job(
+        self,
+        resource_defs: Mapping[str, ResourceDefinition],
+        input_values: Mapping[str, object],
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
+    ) -> "JobDefinition":
+        from dagster._core.definitions.executor_definition import execute_in_process_executor
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition.dagster_internal_init(
+        return JobDefinition.dagster_internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
@@ -722,53 +816,21 @@ class JobDefinition(IHasInternalInit):
             run_tags=self._run_tags,
             op_retry_policy=self._op_retry_policy,
             asset_layer=self.asset_layer,
-            input_values=input_values,
+            input_values=merge_dicts(self.input_values, input_values),
             description=self.description,
             partitions_def=self.partitions_def,
             metadata=self.metadata,
             _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
-        )
-
-        ephemeral_job = ephemeral_job.get_subset(
+            owners=self._owners,
+        ).get_subset(
             op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
 
-        merged_run_tags = merge_dicts(self.run_tags, tags or {})
-        if partition_key:
-            ephemeral_job.validate_partition_key(
-                partition_key,
-                selected_asset_keys=asset_selection,
-                dynamic_partitions_store=instance,
-            )
-            tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
-                partition_key,
-                selected_asset_keys=asset_selection,
-            )
-
-            if not run_config and self.partitioned_config:
-                run_config = self.partitioned_config.get_run_config_for_partition_key(partition_key)
-
-            if self.partitioned_config:
-                merged_run_tags.update(
-                    self.partitioned_config.get_tags_for_partition_key(
-                        partition_key, job_name=self.name
-                    )
-                )
-            else:
-                merged_run_tags.update(tags_for_partition_key)
-
-        return core_execute_in_process(
-            ephemeral_job=ephemeral_job,
-            run_config=run_config,
-            instance=instance,
-            output_capturing_enabled=True,
-            raise_on_error=raise_on_error,
-            run_tags=merged_run_tags,
-            run_id=run_id,
-            asset_selection=frozenset(asset_selection),
-        )
+    @property
+    def is_asset_job(self) -> bool:
+        return bool(self.asset_layer and self.asset_layer.selected_asset_keys)
 
     def _get_partitions_def(
         self, selected_asset_keys: Optional[Iterable[AssetKey]]
@@ -781,11 +843,9 @@ class JobDefinition(IHasInternalInit):
             elif self.asset_selection:
                 resolved_selected_asset_keys = self.asset_selection
             else:
-                resolved_selected_asset_keys = [
-                    key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
-                ]
+                resolved_selected_asset_keys = self.asset_layer.selected_asset_keys
 
-            unique_partitions_defs: Set[PartitionsDefinition] = set()
+            unique_partitions_defs: set[PartitionsDefinition] = set()
             for asset_key in resolved_selected_asset_keys:
                 partitions_def = self.asset_layer.get(asset_key).partitions_def
                 if partitions_def is not None:
@@ -808,30 +868,28 @@ class JobDefinition(IHasInternalInit):
     def validate_partition_key(
         self,
         partition_key: str,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
         selected_asset_keys: Optional[Iterable[AssetKey]],
+        context: PartitionLoadingContext,
     ) -> None:
         """Ensures that the given partition_key is a member of the PartitionsDefinition
         corresponding to every asset in the selection.
         """
         partitions_def = self._get_partitions_def(selected_asset_keys)
-        partitions_def.validate_partition_key(
-            partition_key, dynamic_partitions_store=dynamic_partitions_store
-        )
+        partitions_def.validate_partition_key(partition_key, context=context)
 
     def get_tags_for_partition_key(
         self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
     ) -> Mapping[str, str]:
         """Gets tags for the given partition key."""
-        if self._partitioned_config is not None:
-            return self._partitioned_config.get_tags_for_partition_key(partition_key, self.name)
+        if self.partitioned_config is not None:
+            return self.partitioned_config.get_tags_for_partition_key(partition_key, self.name)
 
         partitions_def = self._get_partitions_def(selected_asset_keys)
         return partitions_def.get_tags_for_partition_key(partition_key)
 
     def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
-        if self._partitioned_config:
-            return self._partitioned_config.get_run_config_for_partition_key(partition_key)
+        if self.partitioned_config:
+            return self.partitioned_config.get_run_config_for_partition_key(partition_key)
         else:
             return {}
 
@@ -883,7 +941,10 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
+        from dagster._core.definitions.assets.job.asset_job import (
+            build_asset_job,
+            get_asset_graph_for_job,
+        )
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
@@ -894,7 +955,9 @@ class JobDefinition(IHasInternalInit):
             )
 
         job_asset_graph = get_asset_graph_for_job(
-            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+            self.asset_layer.asset_graph.source_asset_graph,
+            selection,
+            allow_different_partitions_defs=True,
         )
 
         return build_asset_job(
@@ -957,7 +1020,7 @@ class JobDefinition(IHasInternalInit):
         run_config: Optional[Mapping[str, Any]] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-    ) -> RunRequest:
+    ) -> "RunRequest":
         """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
@@ -982,6 +1045,8 @@ class JobDefinition(IHasInternalInit):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        from dagster._core.definitions.run_request import RunRequest
+
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -997,11 +1062,8 @@ class JobDefinition(IHasInternalInit):
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(
-            partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            self.partitions_def.validate_partition_key(partition_key, context=ctx)
 
         run_config = (
             run_config
@@ -1028,20 +1090,20 @@ class JobDefinition(IHasInternalInit):
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_job_snapshot().config_schema_snapshot
 
-    def get_job_snapshot(self) -> "JobSnapshot":
+    def get_job_snapshot(self) -> "JobSnap":
         return self.get_job_index().job_snapshot
 
     @cached_method
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.remote_representation import JobIndex
-        from dagster._core.snap import JobSnapshot
+        from dagster._core.remote_representation.job_index import JobIndex
+        from dagster._core.snap import JobSnap
 
-        return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
+        return JobIndex(JobSnap.from_job_def(self), self.get_parent_job_snapshot())
 
     def get_job_snapshot_id(self) -> str:
         return self.get_job_index().job_snapshot_id
 
-    def get_parent_job_snapshot(self) -> Optional["JobSnapshot"]:
+    def get_parent_job_snapshot(self) -> Optional["JobSnap"]:
         if self.op_selection_data:
             return self.op_selection_data.parent_job_def.get_job_snapshot()
         elif self.asset_selection_data:
@@ -1079,8 +1141,11 @@ class JobDefinition(IHasInternalInit):
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
-            partitions_def=self.partitions_def,
-            _was_explicitly_provided_resources=None,
+            partitions_def=self._original_partitions_def_argument,
+            _was_explicitly_provided_resources=(
+                "resource_defs" in kwargs or self._was_provided_resources
+            ),
+            owners=self._owners,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
         job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
@@ -1106,6 +1171,9 @@ class JobDefinition(IHasInternalInit):
 
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
         return self._copy(logger_defs=logger_defs)
+
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "JobDefinition":
+        return self._copy(metadata=normalize_metadata(metadata))
 
     @property
     def op_selection(self) -> Optional[AbstractSet[str]]:
@@ -1295,50 +1363,55 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """For non-asset jobs that have some inputs that are fed from assets, constructs an
     AssetLayer that includes these assets as loadables.
     """
-    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 
-    asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
-    all_input_assets: List[AssetsDefinition] = []
-    input_asset_keys: Set[AssetKey] = set()
+    keys_by_input_handle: dict[NodeInputHandle, AssetKey] = {}
+    assets_defs_by_key: dict[AssetKey, AssetsDefinition] = {}
 
     # each entry is a graph definition and its handle relative to the job root
-    stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
+    stack: list[tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
 
     while stack:
         graph_def, parent_node_handle = stack.pop()
 
+        # iterate through the input_assets mapping on the graph definition, which
+        # maps from node name to the set of assets definitions associated with each
+        # input of that node
         for node_name, input_assets in graph_def.input_assets.items():
             node_handle = NodeHandle(node_name, parent_node_handle)
             for input_name, assets_def in input_assets.items():
-                if assets_def.key not in input_asset_keys:
-                    input_asset_keys.add(assets_def.key)
-                    all_input_assets.append(assets_def)
+                key = assets_def.key
+                assets_defs_by_key[key] = assets_def
 
-                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
-                asset_keys_by_node_input_handle[input_handle] = assets_def.key
-                for resolved_input_handle in graph_def.node_dict[
-                    node_name
-                ].definition.resolve_input_to_destinations(input_handle):
-                    asset_keys_by_node_input_handle[resolved_input_handle] = assets_def.key
+                # we know what key is associated with the outer input handle, so we
+                # store that in the mapping and then calculate which inner input handles
+                # this outer input handle is connected to, storing those as well
+                outer_input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
+                keys_by_input_handle[outer_input_handle] = key
+                inner_node_def = graph_def.node_dict[node_name].definition
+                for inner_input_handle in inner_node_def.resolve_input_to_destinations(
+                    outer_input_handle
+                ):
+                    keys_by_input_handle[inner_input_handle] = key
 
-        for node_name, node in graph_def.node_dict.items():
-            if isinstance(node.definition, GraphDefinition):
-                stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
+        # add all subgraphs to the stack
+        for node_def in graph_def.node_defs:
+            if isinstance(node_def, GraphDefinition):
+                stack.append((node_def, NodeHandle(node_def.name, parent_node_handle)))
 
     return AssetLayer(
-        asset_graph=AssetGraph.from_assets(all_input_assets),
-        assets_defs_by_node_handle={},
-        asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
-        asset_keys_by_node_output_handle={},
-        node_output_handles_by_asset_check_key={},
-        check_names_by_asset_key_by_node_handle={},
-        check_key_by_node_output_handle={},
-        outer_node_names_by_asset_key={},
+        asset_graph=AssetGraph.from_assets(list(assets_defs_by_key.values())),
+        # the AssetsDefinitions we have do not have any NodeDefinition explicitly
+        # associated with them (they are not part of the actual execution, they're
+        # just markers), so we don't pass them in through the data field and instead
+        # pass this mapping information directly
+        data=[],
+        mapped_source_asset_keys_by_input_handle=keys_by_input_handle,
     )
 
 
 def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, NodeDefinition]:
-    all_defs: Dict[str, NodeDefinition] = {}
+    all_defs: dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():
             if node_def.name in all_defs:
@@ -1354,7 +1427,6 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
 
 def _create_run_config_schema(
     job_def: JobDefinition,
-    required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":
     from dagster._core.definitions.run_config import (
         RunConfigSchemaCreationData,
@@ -1362,12 +1434,19 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from dagster._core.definitions.run_config_schema import RunConfigSchema
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 
-    # When executing with a subset job, include the missing nodes
+    # When executing with a subset job that is not an implicit asset job, include the missing nodes
     # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset:
+
+    if job_def.is_subset and is_implicit_asset_job_name(job_def.name):
+        included_resource_defs = job_def.get_required_resource_defs()
+    else:
+        included_resource_defs = job_def.resource_defs
+
+    if job_def.is_subset and not is_implicit_asset_job_name(job_def.name):
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:
@@ -1388,10 +1467,10 @@ def _create_run_config_schema(
             graph_def=job_def.graph,
             dependency_structure=job_def.graph.dependency_structure,
             executor_def=job_def.executor_def,
-            resource_defs=job_def.resource_defs,
+            resource_defs=included_resource_defs,
             logger_defs=job_def.loggers,
             ignored_nodes=ignored_nodes,
-            required_resources=required_resources,
+            required_resources=job_def.required_resource_keys,
             direct_inputs=job_def.input_values,
             asset_layer=job_def.asset_layer,
         )

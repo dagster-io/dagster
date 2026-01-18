@@ -1,5 +1,8 @@
-set -eu
+set -euo pipefail
 
-. ./.buildkite/scripts/docker_prune.sh
+if [ -z "${PYTEST_CURRENT_TEST:-}" ]; then
+  . ./.buildkite/buildkite-shared/buildkite_shared/scripts/docker_prune.sh
+fi
 
-export BUILDKITE_ANALYTICS_TOKEN=$DAGSTER_BUILDKITE_ANALYTICS_TOKEN
+export COMMAND_START_TIME="$(date +%s)"
+export STEP_SPAN_ID="$(echo $BUILDKITE_LABEL | sum | cut -f 1 -d \  )"

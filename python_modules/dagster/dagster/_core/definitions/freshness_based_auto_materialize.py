@@ -9,14 +9,15 @@
 """
 
 import datetime
-from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 
 
 def get_execution_period_for_policy(
-    freshness_policy: FreshnessPolicy,
+    freshness_policy: LegacyFreshnessPolicy,
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
 ) -> TimeWindow:
@@ -66,11 +67,11 @@ def get_execution_period_for_policy(
 
 
 def get_execution_period_and_evaluation_data_for_policies(
-    local_policy: Optional[FreshnessPolicy],
-    policies: AbstractSet[FreshnessPolicy],
+    local_policy: Optional[LegacyFreshnessPolicy],
+    policies: AbstractSet[LegacyFreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
+) -> tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
@@ -122,14 +123,14 @@ def get_expected_data_time_for_asset_key(
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 
     asset_key = context.asset_key
     asset_graph = context.asset_graph
     current_time = context.evaluation_time
 
     # don't bother calculating if no downstream assets have freshness policies
-    if not asset_graph.get_downstream_freshness_policies(asset_key=asset_key):
+    if not asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key):
         return None
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
@@ -139,11 +140,11 @@ def get_expected_data_time_for_asset_key(
         for parent_key in asset_graph.get(asset_key).parent_keys:
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
-            if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
-                AssetKeyPartitionKey(parent_key)
-            ):
-                parent_repo = asset_graph.get_repository_selector(parent_key)
-                if parent_repo != asset_graph.get_repository_selector(asset_key):
+            if isinstance(
+                asset_graph, RemoteWorkspaceAssetGraph
+            ) and context.will_update_asset_partition(AssetKeyPartitionKey(parent_key)):
+                parent_repo = asset_graph.get_repository_handle(parent_key)
+                if parent_repo != asset_graph.get_repository_handle(asset_key):
                     return context.data_time_resolver.get_current_data_time(asset_key, current_time)
             # find the minimum non-None data time of your parents
             parent_expected_data_time = context.expected_data_time_mapping.get(
@@ -161,7 +162,7 @@ def get_expected_data_time_for_asset_key(
 
 def freshness_evaluation_results_for_asset_key(
     context: "LegacyRuleEvaluationContext",
-) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+) -> tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
@@ -175,7 +176,7 @@ def freshness_evaluation_results_for_asset_key(
     current_time = context.evaluation_time
 
     if (
-        not context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+        not context.asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key)
         or context.asset_graph.get(asset_key).is_partitioned
     ):
         return context.empty_subset(), []
@@ -215,8 +216,8 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.get(asset_key).freshness_policy,
-        policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
+        local_policy=context.asset_graph.get(asset_key).legacy_freshness_policy,
+        policies=context.asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,
     )

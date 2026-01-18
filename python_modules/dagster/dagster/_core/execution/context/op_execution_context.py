@@ -1,10 +1,12 @@
-from abc import ABC, ABCMeta, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from abc import ABC, abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
     DataVersion,
@@ -20,13 +22,14 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import StepExecutionContext
@@ -34,15 +37,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-from dagster._utils.warnings import deprecation_warning
 
 
-# This metaclass has to exist for OpExecutionContext to have a metaclass
-class AbstractComputeMetaclass(ABCMeta):
-    pass
-
-
-class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
+class AbstractComputeExecutionContext(ABC):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -94,27 +91,8 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContextMetaClass(AbstractComputeMetaclass):
-    def __instancecheck__(cls, instance) -> bool:
-        from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-
-        # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
-        # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
-        # has been split into it's own class in 1.9.0
-        if type(instance) is AssetExecutionContext and cls is not AssetExecutionContext:
-            deprecation_warning(
-                subject="AssetExecutionContext",
-                additional_warn_text=(
-                    "Starting in version 1.9.0 AssetExecutionContext will no longer be a subclass"
-                    " of OpExecutionContext."
-                ),
-                breaking_version="1.9.0",
-                stacklevel=1,
-            )
-        return super().__instancecheck__(instance)
-
-
-class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
+@public
+class OpExecutionContext(AbstractComputeExecutionContext):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -141,8 +119,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
-        self._events: List[DagsterEvent] = []
-        self._output_metadata: Dict[str, Any] = {}
+        self._events: list[DagsterEvent] = []
+        self._output_metadata: dict[str, Any] = {}
 
     @property
     def op_execution_context(self) -> "OpExecutionContext":
@@ -207,6 +185,20 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @public
     @property
+    def location_name(self) -> Optional[str]:
+        """Optional[str]: The name of the code location for this run.
+
+        This is the name of the code location (repository location) from which
+        the job/pipeline was loaded. Returns None if the job was not loaded from
+        a remote code location (e.g., in tests or when running locally without
+        a code location).
+        """
+        if self.dagster_run and self.dagster_run.remote_job_origin:
+            return self.dagster_run.remote_job_origin.location_name
+        return None
+
+    @public
+    @property
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
@@ -263,12 +255,18 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
-        return cast(OpDefinition, self.op.definition)
+        return cast("OpDefinition", self.op.definition)
+
+    @public
+    @property
+    def has_partitions(self) -> bool:
+        """Whether the current run is a partitioned run."""
+        return self._step_execution_context.has_partitions
 
     @public
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run."""
+        """Whether the current run targets a single partition."""
         return self._step_execution_context.has_partition_key
 
     @public
@@ -318,16 +316,14 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
         key_range = self.partition_key_range
-        partitions_def = self.assets_def.partitions_def
+        partitions_def = self._step_execution_context.run_partitions_def
         if partitions_def is None:
             raise DagsterInvariantViolationError(
                 "Cannot access partition_keys for a non-partitioned run"
             )
 
-        return partitions_def.get_partition_keys_in_range(
-            key_range,
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            return partitions_def.get_partition_keys_in_range(key_range)
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
@@ -343,7 +339,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def has_partition_key_range(self) -> bool:
-        """Whether the current run is a partitioned run."""
+        """Whether the current run targets a range of partitions."""
         return self._step_execution_context.has_partition_key_range
 
     @public
@@ -458,6 +454,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             self._events.append(
                 DagsterEvent.asset_materialization(self._step_execution_context, event)
             )
+        elif isinstance(event, AssetCheckEvaluation):
+            self._events.append(
+                DagsterEvent.asset_check_evaluation(self._step_execution_context, event)
+            )
         elif isinstance(event, AssetObservation):
             self._events.append(DagsterEvent.asset_observation(self._step_execution_context, event))
         elif isinstance(event, ExpectationResult):
@@ -564,14 +564,14 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
         return assets_def is not None
 
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
         """The backing AssetsDefinition for what is currently executing, errors if not available."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op '{self.op.name}' does not have an assets definition."
@@ -610,7 +610,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         """Return the AssetKey for the corresponding output."""
-        asset_key = self.job_def.asset_layer.asset_key_for_output(
+        asset_key = self.job_def.asset_layer.get_asset_key_for_node_output(
             node_handle=self.op_handle, output_name=output_name
         )
         if asset_key is None:
@@ -621,7 +621,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     def output_for_asset_key(self, asset_key: AssetKey) -> str:
         """Return the output name for the corresponding asset key."""
-        node_output_handle = self.job_def.asset_layer.node_output_handle_for_asset(asset_key)
+        node_output_handle = self.job_def.asset_layer.get_op_output_handle(asset_key)
         if node_output_handle is None:
             check.failed(f"Asset key '{asset_key}' has no output")
         else:
@@ -630,8 +630,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         """Return the AssetKey for the corresponding input."""
-        key = self.job_def.asset_layer.asset_key_for_input(
-            node_handle=self.op_handle, input_name=input_name
+        key = self.job_def.asset_layer.get_asset_key_for_node_input(
+            inner_node_handle=self.op_handle, input_name=input_name
         )
         if key is None:
             check.failed(f"Input '{input_name}' has no asset")
@@ -667,8 +667,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -684,7 +684,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -737,8 +737,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -757,7 +757,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -807,8 +807,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -824,7 +824,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -871,8 +871,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
                 @asset(
                     ins={
-                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
+                    },
                     partitions_def=partitions_def,
                 )
                 def another_asset(context: AssetExecutionContext, upstream_asset):
@@ -886,7 +886,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -930,7 +930,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -969,8 +969,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -1063,8 +1063,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -1080,7 +1080,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -1089,10 +1089,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
-        return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name),
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
+                self._step_execution_context.asset_partition_key_range_for_output(output_name),
+            )
 
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
@@ -1129,8 +1129,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
                 @asset(
                     ins={
-                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
+                    },
                     partitions_def=partitions_def,
                 )
                 def another_asset(context: AssetExecutionContext, upstream_asset):
@@ -1144,7 +1144,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -1202,8 +1202,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
                 @asset(
                     ins={
-                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
+                    },
                     partitions_def=partitions_def,
                 )
                 def another_asset(context: AssetExecutionContext, upstream_asset):
@@ -1220,7 +1220,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -1236,7 +1236,6 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
-    @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         """Return the provenance information for the most recent materialization of an asset.
 
@@ -1286,3 +1285,41 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
         return ctx.op_execution_context
+
+    def load_asset_value(
+        self,
+        asset_key: AssetKey,
+        *,
+        python_type: Optional[type] = None,
+        partition_key: Optional[str] = None,
+    ) -> Any:
+        """Loads the value of an asset by key.
+
+        Args:
+            asset_key (AssetKey): The key of the asset to load.
+            python_type (Optional[type]): The python type to load the asset as. This is what will
+                be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
+
+        Example:
+            .. code-block:: python
+
+                @dg.asset(deps=[dg.AssetKey("upstream_asset")])
+                def my_asset(context: dg.AssetExecutionContext):
+                    return context.load_asset_value(dg.AssetKey("upstream_asset")) * 2
+        """
+        from dagster._core.storage.asset_value_loader import AssetValueLoader
+
+        loader = AssetValueLoader(
+            assets_defs_by_key={
+                asset_key: self._step_execution_context.job_def.asset_layer.get(
+                    asset_key
+                ).assets_def
+            },
+            instance=self.instance,
+        )
+        return loader.load_asset_value(
+            asset_key,
+            python_type=python_type,
+            partition_key=partition_key,
+        )

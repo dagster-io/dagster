@@ -25,6 +25,11 @@ export type ScheduleAssetSelectionQuery = {
         assetSelection: {
           __typename: 'AssetSelection';
           assetSelectionString: string | null;
+          assetChecks: Array<{
+            __typename: 'AssetCheckhandle';
+            name: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
           assetsOrError:
             | {
                 __typename: 'AssetConnection';
@@ -35,7 +40,7 @@ export type ScheduleAssetSelectionQuery = {
                   definition: {
                     __typename: 'AssetNode';
                     id: string;
-                    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+                    automationCondition: {__typename: 'AutomationCondition'} | null;
                   } | null;
                 }>;
               }
@@ -54,4 +59,4 @@ export type ScheduleAssetSelectionQuery = {
     | {__typename: 'ScheduleNotFoundError'};
 };
 
-export const ScheduleAssetSelectionQueryVersion = 'ff337e4645f6881b8240ef02dc13ef8dcdee46de71badedd37eb811bab741b87';
+export const ScheduleAssetSelectionQueryVersion = '33af4b2d37d581ed3da0226f0877ad73a1ad46ab9c8938a19509fc4f851c78bb';

@@ -1,3 +1,59 @@
+# 1.4.0 (December 23, 2025)
+
+- Upgrade to Eslint 9
+- Upgrade Storybook to 9.1.17
+- Add new icons: Compass, upvote/downvote for AI feedback, smart toy
+- Split `DateRangeDialog` into a separate component
+- Fix icon display in list items
+- Clean up disabled `TextInput` styles
+- Clean up CSS for CodeMirror hints
+- Improve `Button` and `Alert` CSS
+- Convert `Spinner` and `Icon` to CSS modules
+- Refactor `ButtonLink` and `Box` to use CSS modules
+- Add CSS variables for fonts
+- Remove some Blueprint imports
+
+# 1.3.0 (October 27, 2025)
+
+- Migrate back to styled-components v5
+- Add "none" intent to `Alert`
+- Allow `ButtonGroup` buttons to be disabled
+- Fix color of disabled `Checkbox`
+- Replace `react-dates` with `react-day-picker`
+- Allow a "close" button to be shown in `Dialog` header
+- Add `ListItem`, `HoverButton`, and `HorizontalControls`
+- Add some new icons
+- Refactor `MiddleTruncate`
+- Fix disabled `Radio` button styles
+- Update `Skeleton` styles
+- Fixes for `SplitPanelContainer`
+- Allow disabling tags in `TagSelector`
+- Update some `Text` styles
+- Fix text input styles for disabled inputs
+- Use new `Toaster` based on `sonner` library
+- Add some more colors
+- Add theme color sets for colorblind themes
+
+# 1.2.1 (December 5, 2024)
+
+- Split CodeMirror-based components out of main index export
+
+# 1.2.0 (December 5, 2024)
+
+- Migrate styled-components to v6
+- Fix overaggressive middle truncation in Dialog body
+- Fix scrollbar styles in dark mode
+- Stop patching global lint in CodeMirror
+
+# 1.1.4 (October 11, 2024)
+
+- Add onBlur prop to TokenizingField
+- Remove node globals rollup plugin
+- Eliminate defaultProps
+- Bump rollup from 2.79.1 to 2.79.2
+- Bump React to 18.3.1
+- Migrate Blueprint 4 to 5
+
 # 1.1.3 (September 25, 2024)
 
 - Revert Rollup upgrade

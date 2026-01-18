@@ -4,7 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {useFeatureFlags} from './Flags';
+import {useFeatureFlags} from './useFeatureFlags';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 
@@ -52,8 +52,8 @@ export const WebSocketProvider = (props: Props) => {
     websocketClient.status === WebSocket.OPEN
       ? 'available'
       : websocketClient.status === WebSocket.CLOSED
-      ? 'unavailable'
-      : 'attempting-to-connect',
+        ? 'unavailable'
+        : 'attempting-to-connect',
   );
 
   const value = React.useMemo(
@@ -117,7 +117,9 @@ export const WebSocketProvider = (props: Props) => {
     }
 
     return () => {
-      timeout && clearTimeout(timeout);
+      if (timeout) {
+        clearTimeout(timeout);
+      }
     };
   }, [availability]);
 

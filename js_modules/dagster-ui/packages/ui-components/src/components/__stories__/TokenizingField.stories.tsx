@@ -1,9 +1,8 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 import styled from 'styled-components';
 
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {
   Suggestion,
   SuggestionProvider,
@@ -15,7 +14,7 @@ import {
 export default {
   title: 'TokenizingField',
   component: TokenizingField,
-} as Meta;
+};
 
 export const Default = () => {
   const [value, setValue] = useState<TokenizingFieldValue[]>([]);
@@ -101,10 +100,10 @@ export const CustomSuggestionRenderer = () => {
       onChange={(values) => setValue(values)}
       suggestionProviders={suggestionProviders}
       suggestionRenderer={(suggestion) => (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <ColorSwatch $color={suggestion.text} />
           {suggestion.text}
-        </Group>
+        </Box>
       )}
     />
   );

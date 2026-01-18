@@ -1,6 +1,7 @@
 import uuid
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Iterator, Optional, Sequence
+from typing import Optional
 
 import sqlalchemy as db
 from sqlalchemy.engine import Connection
@@ -40,11 +41,18 @@ class InMemoryRunStorage(SqlRunStorage):
 
         if preload:
             for payload in preload:
-                self.add_job_snapshot(payload.job_snapshot, payload.dagster_run.job_snapshot_id)
-                self.add_execution_plan_snapshot(
-                    payload.execution_plan_snapshot, payload.dagster_run.execution_plan_snapshot_id
-                )
-                self.add_run(payload.dagster_run)
+                run = payload.dagster_run
+                job_snap_id = self.add_job_snapshot(payload.job_snapshot)
+                plan_snap_id = self.add_execution_plan_snapshot(payload.execution_plan_snapshot)
+
+                # if the snapshot id has shifted due to changes in json structure
+                # update the runs pointers
+                if job_snap_id != run.job_snapshot_id:
+                    run = run._replace(job_snapshot_id=job_snap_id)
+                if plan_snap_id != run.execution_plan_snapshot_id:
+                    run = run._replace(execution_plan_snapshot_id=plan_snap_id)
+
+                self.add_run(run)
 
     def has_secondary_index(self, name: str) -> bool:
         return True

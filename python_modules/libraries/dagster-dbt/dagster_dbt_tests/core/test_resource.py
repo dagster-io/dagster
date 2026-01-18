@@ -2,7 +2,7 @@ import os
 import shutil
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Union, cast
 
 import pydantic
 import pytest
@@ -12,12 +12,12 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.dbt_cli_invocation import PARTIAL_PARSE_FILE_NAME
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
-from dagster_dbt.errors import DagsterDbtCliRuntimeError
-from dbt.version import __version__ as dbt_version
+from dagster_dbt.errors import DagsterDbtCliRuntimeError, DagsterDbtProfilesDirectoryNotFoundError
 from packaging import version
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -27,6 +27,7 @@ from dagster_dbt_tests.dbt_projects import (
     test_exceptions_path,
     test_jaffle_shop_path,
     test_jaffle_with_profile_vars_path,
+    test_pre_packaged_jaffle_shop_path,
 )
 
 
@@ -41,7 +42,7 @@ def dbt_with_profile_vars_fixture() -> DbtCliResource:
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
-def test_dbt_cli(global_config_flags: List[str]) -> None:
+def test_dbt_cli(global_config_flags: list[str]) -> None:
     dbt = DbtCliResource(
         project_dir=os.fspath(test_jaffle_shop_path), global_config_flags=global_config_flags
     )
@@ -54,7 +55,7 @@ def test_dbt_cli(global_config_flags: List[str]) -> None:
 
 
 def test_dbt_cli_executable() -> None:
-    dbt_executable = cast(str, shutil.which("dbt"))
+    dbt_executable = cast("str", shutil.which("dbt"))
     invocation = DbtCliResource(
         project_dir=os.fspath(test_jaffle_shop_path), dbt_executable=dbt_executable
     ).cli(["parse"])
@@ -232,6 +233,26 @@ def test_dbt_profile_configuration() -> None:
     ]
     assert dbt_cli_invocation.is_successful()
 
+    dbt_cli_invocation = (
+        DbtCliResource(
+            project_dir=DbtProject(
+                os.fspath(test_jaffle_shop_path), profile="jaffle_shop", target="dev"
+            )
+        )
+        .cli(["parse"])
+        .wait()
+    )
+
+    assert dbt_cli_invocation.process.args == [
+        "dbt",
+        "parse",
+        "--profile",
+        "jaffle_shop",
+        "--target",
+        "dev",
+    ]
+    assert dbt_cli_invocation.is_successful()
+
 
 @pytest.mark.parametrize(
     "profiles_dir", [None, test_jaffle_shop_path, os.fspath(test_jaffle_shop_path)]
@@ -246,15 +267,49 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
         .is_successful()
     )
 
+    assert (
+        DbtCliResource(
+            project_dir=DbtProject(os.fspath(test_jaffle_shop_path), profiles_dir=profiles_dir)
+        )
+        .cli(["parse"])
+        .is_successful()
+    )
+
+    assert (
+        DbtCliResource(
+            project_dir=DbtProject(
+                os.fspath(test_pre_packaged_jaffle_shop_path),
+                packaged_project_dir=os.fspath(test_jaffle_shop_path),
+                profiles_dir=profiles_dir,
+            )
+        )
+        .cli(["parse"])
+        .is_successful()
+    )
+
     # profiles directory must exist
     with pytest.raises(ValidationError, match="does not exist"):
         DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), profiles_dir="nonexistent")
+
+    # Error is raised at the DbtProject level when a nonexistent directory is passed to a DbtProject object
+    with pytest.raises(DagsterDbtProfilesDirectoryNotFoundError, match="does not exist"):
+        DbtCliResource(
+            project_dir=DbtProject(os.fspath(test_jaffle_shop_path), profiles_dir="nonexistent")
+        )
 
     # profiles directory must contain profile configuration
     with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
         DbtCliResource(
             project_dir=os.fspath(test_jaffle_shop_path),
             profiles_dir=f"{os.fspath(test_jaffle_shop_path)}/models",
+        )
+
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
+        DbtCliResource(
+            project_dir=DbtProject(
+                os.fspath(test_jaffle_shop_path),
+                profiles_dir=f"{os.fspath(test_jaffle_shop_path)}/models",
+            )
         )
 
 
@@ -327,7 +382,7 @@ def test_dbt_partial_parse(dbt: DbtCliResource) -> None:
 
 
 def test_dbt_cli_debug_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -338,12 +393,12 @@ def test_dbt_cli_debug_execution(
 
 
 @pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.7.9"),
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.7.9"),
     reason="`dbt retry` with `--target-path` support is only available in `dbt-core>=1.7.9`",
 )
 def test_dbt_retry_execution(
     monkeypatch: pytest.MonkeyPatch,
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     dbt: DbtCliResource,
     testrun_uid: str,
 ) -> None:
@@ -376,7 +431,7 @@ def test_dbt_retry_execution(
     )
 
 
-def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict[str, Any]) -> None:
+def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_dbt_source_freshness_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -389,8 +444,21 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict
     assert result.success
 
 
+@pytest.mark.parametrize(
+    "context_type",
+    [
+        OpExecutionContext,
+        AssetExecutionContext,
+    ],
+    ids=[
+        "dbt_cli_selection_with_op_execution_context",
+        "dbt_cli_selection_with_asset_execution_context",
+    ],
+)
 def test_dbt_cli_asset_selection(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
+    test_jaffle_shop_manifest: dict[str, Any],
+    dbt: DbtCliResource,
 ) -> None:
     dbt_select = " ".join(
         [
@@ -400,7 +468,7 @@ def test_dbt_cli_asset_selection(
     )
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, select=dbt_select)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: context_type, dbt: DbtCliResource):  # pyright: ignore
         dbt_cli_invocation = dbt.cli(["build"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "build", "--select", dbt_select]
@@ -421,7 +489,7 @@ def test_dbt_cli_asset_selection(
     ],
 )
 def test_dbt_cli_subsetted_execution(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     dbt: DbtCliResource,
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> None:
@@ -439,7 +507,7 @@ def test_dbt_cli_subsetted_execution(
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["build"], context=context)
 
-        dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
+        dbt_cli_args: list[str] = list(dbt_cli_invocation.process.args)  # type: ignore
         *dbt_args, dbt_select_args = dbt_cli_args
 
         assert dbt_args == ["dbt", "build", "--select"]
@@ -458,9 +526,9 @@ def test_dbt_cli_subsetted_execution(
     assert result.success
 
 
-@pytest.mark.parametrize("exclude", [None, "fqn:test_jaffle_shop.customers"])
+@pytest.mark.parametrize("exclude", ["", "fqn:test_jaffle_shop.customers"])
 def test_dbt_cli_default_selection(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource, exclude: Optional[str]
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource, exclude: str
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, exclude=exclude)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -512,8 +580,18 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
     assert len(dbt.get_state_args()) == 2
 
 
+def test_cli_state_path():
+    cli = DbtCliResource(test_jaffle_shop_path, state_path="state")
+    assert cli.state_path
+    assert Path(cli.state_path) == test_jaffle_shop_path / "state"
+
+    cli = DbtCliResource(test_jaffle_shop_path, state_path="/tmp/state")
+    assert cli.state_path
+    assert Path(cli.state_path) == Path("/tmp/state").resolve()
+
+
 def test_dbt_cli_op_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:
     @op(out={})
     def my_dbt_op_yield_events(context: OpExecutionContext, dbt: DbtCliResource):
@@ -560,10 +638,14 @@ def test_custom_subclass():
     assert isinstance(custom, DbtCliResource)
 
 
-def test_metadata(test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource) -> None:
+@pytest.mark.skipif(
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.8"),
+    reason="Lock issue with Duckdb in test suite for `dbt-core==1.7`",
+)
+def test_metadata(test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource) -> None:
     def assert_on_expected_metadata(metadata):
         assert isinstance(metadata["Execution Duration"], FloatMetadataValue)
-        assert cast(float, metadata["Execution Duration"].value) > 0
+        assert cast("float", metadata["Execution Duration"].value) > 0
 
         assert isinstance(metadata["unique_id"], TextMetadataValue)
         assert isinstance(metadata["invocation_id"], TextMetadataValue)

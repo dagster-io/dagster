@@ -1,24 +1,15 @@
 import warnings
 from datetime import datetime
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInvariantViolationError,
-    Field,
-    StringSource,
-    execute_job,
-    graph,
-    job,
-    op,
-    reconstructable,
-    static_partitioned_config,
-)
+from dagster import job
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 
 
 def define_the_job():
-    @op
+    @dg.op
     def my_op():
         return 5
 
@@ -39,9 +30,9 @@ def test_simple_job_no_warnings():
 
 
 def test_job_execution_multiprocess_config():
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(define_the_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(define_the_job),
             instance=instance,
             run_config={"execution": {"config": {"multiprocess": {"max_concurrent": 4}}}},
         ) as result:
@@ -53,7 +44,7 @@ results_lst = []
 
 
 def define_in_process_job():
-    @op
+    @dg.op
     def my_op():
         results_lst.append("entered")
 
@@ -73,7 +64,7 @@ def test_switch_to_in_process_execution():
     assert len(results_lst) == 10
 
 
-@graph
+@dg.graph
 def basic_graph():
     pass
 
@@ -83,15 +74,15 @@ basic_job = basic_graph.to_job()
 
 def test_non_reconstructable_job_error():
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="you must wrap the ``to_job`` call in a function at module scope",
     ):
-        reconstructable(basic_job)
+        dg.reconstructable(basic_job)
 
 
 @job
 def my_namespace_job():
-    @op
+    @dg.op
     def inner_op():
         pass
 
@@ -99,15 +90,15 @@ def my_namespace_job():
 
 
 def test_reconstructable_job_namespace():
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(my_namespace_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(my_namespace_job), instance=instance)
         assert result.success
 
 
 def test_job_top_level_input():
     @job
     def my_job_with_input(x):
-        @op
+        @dg.op
         def my_op(y):
             return y
 
@@ -119,15 +110,15 @@ def test_job_top_level_input():
 
 
 def test_job_post_process_config():
-    @op(config_schema={"foo": Field(StringSource)})
+    @dg.op(config_schema={"foo": dg.Field(dg.StringSource)})
     def the_op(context):
         return context.op_config["foo"]
 
-    @graph
+    @dg.graph
     def basic():
         the_op()
 
-    with environ({"SOME_ENV_VAR": None}):
+    with environ({"SOME_ENV_VAR": None}):  # pyright: ignore[reportArgumentType]
         # Ensure that the env var not existing will not throw an error, since resolution happens in post-processing.
         the_job = basic.to_job(
             config={"ops": {"the_op": {"config": {"foo": {"env": "SOME_ENV_VAR"}}}}}
@@ -141,11 +132,11 @@ def test_job_run_request():
     def partition_fn(partition_key: str):
         return {"ops": {"my_op": {"config": {"partition": partition_key}}}}
 
-    @static_partitioned_config(partition_keys=["a", "b", "c", "d"])
+    @dg.static_partitioned_config(partition_keys=["a", "b", "c", "d"])
     def my_partitioned_config(partition_key: str):
         return partition_fn(partition_key)
 
-    @op
+    @dg.op
     def my_op():
         pass
 
@@ -173,7 +164,7 @@ def test_job_run_request():
 
 
 # Datetime is not serializable
-@op
+@dg.op
 def op_expects_date(the_date: datetime) -> str:
     return the_date.strftime("%m/%d/%Y")
 
@@ -188,13 +179,13 @@ def test_job_input_values_out_of_process():
 
     assert pass_from_job.execute_in_process().success
 
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(pass_from_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(pass_from_job), instance=instance)
         assert result.success
 
 
 def test_subset_job_with_config():
-    @op
+    @dg.op
     def echo(x: int):
         return x
 
@@ -231,7 +222,7 @@ def test_coerce_resource_job_decorator() -> None:
     class BareResourceObject:
         pass
 
-    @op(required_resource_keys={"bare_resource"})
+    @dg.op(required_resource_keys={"bare_resource"})
     def an_op(context) -> None:
         assert context.resources.bare_resource
         executed["yes"] = True
@@ -250,12 +241,12 @@ def test_coerce_resource_graph_to_job() -> None:
     class BareResourceObject:
         pass
 
-    @op(required_resource_keys={"bare_resource"})
+    @dg.op(required_resource_keys={"bare_resource"})
     def an_op(context) -> None:
         assert context.resources.bare_resource
         executed["yes"] = True
 
-    @graph
+    @dg.graph
     def a_graph() -> None:
         an_op()
 
@@ -266,10 +257,10 @@ def test_coerce_resource_graph_to_job() -> None:
 
 
 def test_job_tag_transfer():
-    @op
+    @dg.op
     def my_op(): ...
 
-    @graph
+    @dg.graph
     def my_graph():
         my_op()
 

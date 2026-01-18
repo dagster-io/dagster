@@ -2,6 +2,52 @@
 
 import * as Types from '../../graphql/types';
 
+export type RunStepStatsQueryVariables = Types.Exact<{
+  runId: Types.Scalars['ID']['input'];
+}>;
+
+export type RunStepStatsQuery = {
+  __typename: 'Query';
+  pipelineRunOrError:
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'Run';
+        id: string;
+        stepStats: Array<{
+          __typename: 'RunStepStats';
+          stepKey: string;
+          status: Types.StepEventStatus | null;
+          startTime: number | null;
+          endTime: number | null;
+          attempts: Array<{
+            __typename: 'RunMarker';
+            startTime: number | null;
+            endTime: number | null;
+          }>;
+          markers: Array<{
+            __typename: 'RunMarker';
+            startTime: number | null;
+            endTime: number | null;
+          }>;
+        }>;
+      }
+    | {__typename: 'RunNotFoundError'};
+};
+
+export type RunStepStatsFragment = {
+  __typename: 'Run';
+  id: string;
+  stepStats: Array<{
+    __typename: 'RunStepStats';
+    stepKey: string;
+    status: Types.StepEventStatus | null;
+    startTime: number | null;
+    endTime: number | null;
+    attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
+    markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
+  }>;
+};
+
 export type RunMetadataProviderMessageFragment_AlertFailureEvent = {
   __typename: 'AlertFailureEvent';
   message: string;
@@ -109,8 +155,22 @@ export type RunMetadataProviderMessageFragment_ExecutionStepUpForRetryEvent = {
   stepKey: string | null;
 };
 
+export type RunMetadataProviderMessageFragment_FailedToMaterializeEvent = {
+  __typename: 'FailedToMaterializeEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
 export type RunMetadataProviderMessageFragment_HandledOutputEvent = {
   __typename: 'HandledOutputEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
+export type RunMetadataProviderMessageFragment_HealthChangedEvent = {
+  __typename: 'HealthChangedEvent';
   message: string;
   timestamp: string;
   stepKey: string | null;
@@ -161,6 +221,11 @@ export type RunMetadataProviderMessageFragment_LogsCapturedEvent = {
   pid: number | null;
   externalStdoutUrl: string | null;
   externalStderrUrl: string | null;
+  shellCmd: {
+    __typename: 'LogRetrievalShellCommand';
+    stdout: string | null;
+    stderr: string | null;
+  } | null;
 };
 
 export type RunMetadataProviderMessageFragment_MaterializationEvent = {
@@ -252,6 +317,7 @@ export type RunMetadataProviderMessageFragment_ObjectStoreOperationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -287,6 +353,7 @@ export type RunMetadataProviderMessageFragment_ObjectStoreOperationEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -309,6 +376,7 @@ export type RunMetadataProviderMessageFragment_ObjectStoreOperationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -462,7 +530,9 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_ExecutionStepStartEvent
   | RunMetadataProviderMessageFragment_ExecutionStepSuccessEvent
   | RunMetadataProviderMessageFragment_ExecutionStepUpForRetryEvent
+  | RunMetadataProviderMessageFragment_FailedToMaterializeEvent
   | RunMetadataProviderMessageFragment_HandledOutputEvent
+  | RunMetadataProviderMessageFragment_HealthChangedEvent
   | RunMetadataProviderMessageFragment_HookCompletedEvent
   | RunMetadataProviderMessageFragment_HookErroredEvent
   | RunMetadataProviderMessageFragment_HookSkippedEvent
@@ -486,3 +556,5 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_StepExpectationResultEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartedEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartingEvent;
+
+export const RunStepStatsQueryVersion = '77d73353a4aea095bfa241903122abf14eb38341c5869a9688b70c0d53f5a167';

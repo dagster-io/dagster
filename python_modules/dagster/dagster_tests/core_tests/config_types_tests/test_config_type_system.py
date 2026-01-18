@@ -1,36 +1,14 @@
+# ruff: noqa: UP006
 import re
 import string
 import typing
 
+import dagster as dg
 import pytest
-from dagster import (
-    Any,
-    ConfigMapping,
-    DagsterInvalidConfigDefinitionError,
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    Enum,
-    EnumValue,
-    Field,
-    Float,
-    GraphDefinition,
-    Int,
-    List,
-    Noneable,
-    Permissive,
-    ResourceDefinition,
-    Set,
-    String,
-    Tuple,
-    graph,
-    job,
-    op,
-)
+from dagster import Int, Set
 from dagster._check import ParameterCheckError
 from dagster._config import (
     DagsterEvaluationErrorReason,
-    Map,
-    Shape,
     convert_potential_field,
     process_config,
     validate_config,
@@ -39,16 +17,16 @@ from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_noop_config():
-    assert Field(Any)
+    assert dg.Field(dg.Any)
 
 
 def test_int_field():
-    config_field = convert_potential_field({"int_field": Int})
+    config_field = convert_potential_field({"int_field": dg.Int})
     assert validate_config(config_field.config_type, {"int_field": 1}).value == {"int_field": 1}
 
 
 def test_float_field():
-    config_field = convert_potential_field({"float_field": Float})
+    config_field = convert_potential_field({"float_field": dg.Float})
     assert validate_config(config_field.config_type, {"float_field": 1.0}).value == {
         "float_field": 1.0
     }
@@ -72,7 +50,7 @@ def assert_eval_failure(config_type, value):
 
 
 def test_int_fails():
-    config_field = convert_potential_field({"int_field": Int})
+    config_field = convert_potential_field({"int_field": dg.Int})
 
     assert_eval_failure(config_field.config_type, {"int_field": "fjkdj"})
     assert_eval_failure(config_field.config_type, {"int_field": True})
@@ -80,7 +58,7 @@ def test_int_fails():
 
 def test_default_arg():
     config_field = convert_potential_field(
-        {"int_field": Field(Int, default_value=2, is_required=False)}
+        {"int_field": dg.Field(dg.Int, default_value=2, is_required=False)}
     )
 
     assert_config_value_success(config_field.config_type, {}, {"int_field": 2})
@@ -88,13 +66,13 @@ def test_default_arg():
 
 def test_default_float_arg():
     config_field = convert_potential_field(
-        {"float_field": Field(Float, default_value=2.0, is_required=False)}
+        {"float_field": dg.Field(dg.Float, default_value=2.0, is_required=False)}
     )
 
     assert_config_value_success(config_field.config_type, {}, {"float_field": 2.0})
 
     config_field = convert_potential_field(
-        {"float_field": Field(Float, default_value=2, is_required=False)}
+        {"float_field": dg.Field(dg.Float, default_value=2, is_required=False)}
     )
 
     assert_config_value_success(config_field.config_type, {}, {"float_field": 2})
@@ -102,44 +80,46 @@ def test_default_float_arg():
 
 def _single_required_enum_config_dict():
     return convert_potential_field(
-        {"enum_field": Enum("MyEnum", [EnumValue("OptionA"), EnumValue("OptionB")])}
+        {"enum_field": dg.Enum("MyEnum", [dg.EnumValue("OptionA"), dg.EnumValue("OptionB")])}
     )
 
 
 def _single_required_string_config_dict():
-    return convert_potential_field({"string_field": String})
+    return convert_potential_field({"string_field": dg.String})
 
 
 def _multiple_required_fields_config_dict():
-    return convert_potential_field({"field_one": String, "field_two": String})
+    return convert_potential_field({"field_one": dg.String, "field_two": dg.String})
 
 
 def _single_optional_string_config_dict():
-    return convert_potential_field({"optional_field": Field(String, is_required=False)})
+    return convert_potential_field({"optional_field": dg.Field(dg.String, is_required=False)})
 
 
 def _single_optional_string_field_config_dict_with_default():
-    optional_field_def = Field(String, is_required=False, default_value="some_default")
+    optional_field_def = dg.Field(dg.String, is_required=False, default_value="some_default")
     return convert_potential_field({"optional_field": optional_field_def})
 
 
 def _mixed_required_optional_string_config_dict_with_default():
     return convert_potential_field(
         {
-            "optional_arg": Field(String, is_required=False, default_value="some_default"),
-            "required_arg": Field(String, is_required=True),
-            "optional_arg_no_default": Field(String, is_required=False),
+            "optional_arg": dg.Field(dg.String, is_required=False, default_value="some_default"),
+            "required_arg": dg.Field(dg.String, is_required=True),
+            "optional_arg_no_default": dg.Field(dg.String, is_required=False),
         }
     )
 
 
 def _multiple_required_fields_config_permissive_dict():
-    return Field(Permissive({"field_one": Field(String), "field_two": Field(String)}))
+    return dg.Field(
+        dg.Permissive({"field_one": dg.Field(dg.String), "field_two": dg.Field(dg.String)})
+    )
 
 
 def _validate(config_field, value):
     res = process_config(config_field.config_type, value)
-    assert res.success, res.errors[0].message
+    assert res.success, res.errors[0].message  # pyright: ignore[reportOptionalSubscript]
     return res.value
 
 
@@ -322,7 +302,7 @@ def test_permissive_multiple_required_fields_failing():
 def test_map_passing():
     # Ensure long form works
     assert _validate(
-        Field(Map(key_type=str, inner_type=str)),
+        dg.Field(dg.Map(key_type=str, inner_type=str)),
         {
             "field_one": "value_one",
             "field_two": "value_two",
@@ -333,13 +313,13 @@ def test_map_passing():
     }
 
     assert _validate(
-        Field(Map(key_type=int, inner_type=float)),
+        dg.Field(dg.Map(key_type=int, inner_type=float)),
         {5: 5.5, 3: 3.5},
     ) == {5: 5.5, 3: 3.5}
 
     # Ensure short form works
     assert _validate(
-        Field({str: int}),
+        dg.Field({str: int}),
         {
             "field_one": 2,
             "field_two": 5,
@@ -353,7 +333,7 @@ def test_map_passing():
 def test_map_failing():
     with pytest.raises(ParameterCheckError):
         _validate(
-            Field(Map(key_type="asdf", inner_type=str)),
+            dg.Field(dg.Map(key_type="asdf", inner_type=str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -362,7 +342,7 @@ def test_map_failing():
 
     with pytest.raises(ParameterCheckError) as e:
         _validate(
-            Field(Map(Noneable(str), str)),
+            dg.Field(dg.Map(dg.Noneable(str), str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -370,9 +350,9 @@ def test_map_failing():
         )
     assert "must be a scalar" in str(e)
 
-    with pytest.raises(DagsterInvalidDefinitionError) as e:
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as e:
         _validate(
-            Field({55: str}),
+            dg.Field({55: str}),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -380,9 +360,9 @@ def test_map_failing():
         )
     assert "Invalid key" in str(e)
 
-    with pytest.raises(DagsterInvalidDefinitionError) as e:
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as e:
         _validate(
-            Field({Noneable(str): str}),
+            dg.Field({dg.Noneable(str): str}),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -392,7 +372,7 @@ def test_map_failing():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(Map(key_type=str, inner_type=str)),
+            dg.Field(dg.Map(key_type=str, inner_type=str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -403,7 +383,7 @@ def test_map_failing():
 def test_map_shape_complex():
     # Long form
     assert _validate(
-        Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+        dg.Field(dg.Map(str, dg.Shape({"name": dg.Field(str), "number": dg.Field(int)}))),
         {
             "foo": {
                 "name": "test_name",
@@ -427,11 +407,11 @@ def test_map_shape_complex():
 
     # Short form
     assert _validate(
-        Field(
+        dg.Field(
             {
                 str: {
-                    "name": Field(str),
-                    "number": Field(int),
+                    "name": dg.Field(str),
+                    "number": dg.Field(int),
                 },
             }
         ),
@@ -458,7 +438,7 @@ def test_map_shape_complex():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+            dg.Field(dg.Map(str, dg.Shape({"name": dg.Field(str), "number": dg.Field(int)}))),
             {
                 "foo": {
                     "name": "test_name",
@@ -473,7 +453,7 @@ def test_map_shape_complex():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+            dg.Field(dg.Map(str, dg.Shape({"name": dg.Field(str), "number": dg.Field(int)}))),
             {
                 "foo": {
                     "name": "test_name",
@@ -506,17 +486,17 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return convert_potential_field({"nested": {"int_field": Int}})
+    return convert_potential_field({"nested": {"int_field": dg.Int}})
 
 
 def _nested_optional_config_with_default():
     return convert_potential_field(
-        {"nested": {"int_field": Field(Int, is_required=False, default_value=3)}}
+        {"nested": {"int_field": dg.Field(dg.Int, is_required=False, default_value=3)}}
     )
 
 
 def _nested_optional_config_with_no_default():
-    return convert_potential_field({"nested": {"int_field": Field(Int, is_required=False)}})
+    return convert_potential_field({"nested": {"int_field": dg.Field(dg.Int, is_required=False)}})
 
 
 def test_single_nested_config():
@@ -579,12 +559,12 @@ def test_nested_optional_with_no_default():
 
 
 def test_config_defaults():
-    @op(config_schema={"sum": Int})
+    @dg.op(config_schema={"sum": dg.Int})
     def two(_context):
         assert _context.op_config["sum"] == 6
         return _context.op_config["sum"]
 
-    @op(config_schema={"sum": Int})
+    @dg.op(config_schema={"sum": dg.Int})
     def one(_context, prev_sum):
         assert prev_sum == 6
         return prev_sum + _context.op_config["sum"]
@@ -593,12 +573,12 @@ def test_config_defaults():
         child_config = {"config": {"sum": config["a"] + config["b"] + config["c"]}}
         return {"one": child_config, "two": child_config}
 
-    @graph(
-        config=ConfigMapping(
+    @dg.graph(
+        config=dg.ConfigMapping(
             config_schema={
-                "a": Field(Int, is_required=False, default_value=1),
-                "b": Field(Int, is_required=False, default_value=2),
-                "c": Int,
+                "a": dg.Field(dg.Int, is_required=False, default_value=1),
+                "b": dg.Field(dg.Int, is_required=False, default_value=2),
+                "c": dg.Int,
             },
             config_fn=addition_graph_config_fn,
         )
@@ -606,7 +586,7 @@ def test_config_defaults():
     def addition_graph():
         return one(two())
 
-    @job
+    @dg.job
     def addition_job():
         addition_graph()
 
@@ -618,24 +598,24 @@ def test_config_defaults():
 
 
 def test_config_with_and_without_config():
-    @op(config_schema={"prefix": Field(str, is_required=False, default_value="_")})
+    @dg.op(config_schema={"prefix": dg.Field(str, is_required=False, default_value="_")})
     def prefix_value(context, v):
         return "{prefix}{v}".format(prefix=context.op_config["prefix"], v=v)
 
-    @graph(
-        config=ConfigMapping(
-            config_schema={"prefix": Field(str, is_required=False, default_value="_id_")},
+    @dg.graph(
+        config=dg.ConfigMapping(
+            config_schema={"prefix": dg.Field(str, is_required=False, default_value="_id_")},
             config_fn=lambda cfg: {"prefix_value": {"config": {"prefix": cfg["prefix"]}}},
         )
     )
     def prefix_id(val):
         return prefix_value(val)
 
-    @op
+    @dg.op
     def print_value(_, v):
         return str(v)
 
-    @job
+    @dg.job
     def config_issue_job():
         v = prefix_id()
         print_value(v)
@@ -665,27 +645,27 @@ def test_config_with_and_without_config():
 def test_build_optionality():
     optional_test_type = convert_potential_field(
         {
-            "required": {"value": String},
-            "optional": {"value": Field(String, is_required=False)},
+            "required": {"value": dg.String},
+            "optional": {"value": dg.Field(dg.String, is_required=False)},
         }
     ).config_type
 
-    assert optional_test_type.fields["required"].is_required
-    assert optional_test_type.fields["optional"].is_required is False
+    assert optional_test_type.fields["required"].is_required  # pyright: ignore[reportAttributeAccessIssue]
+    assert optional_test_type.fields["optional"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_wrong_op_name():
-    @op(name="some_op", ins={}, out={}, config_schema=Int)
+    @dg.op(name="some_op", ins={}, out={}, config_schema=Int)
     def some_op(_):
         return None
 
-    @job(name="job_wrong_op_name")
+    @dg.job(name="job_wrong_op_name")
     def job_def():
         some_op()
 
     env_config = {"ops": {"another_name": {"config": {}}}}
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(env_config)
 
     pe = pe_info.value
@@ -698,11 +678,11 @@ def fail_me():
 
 
 def dummy_resource(config_schema=None):
-    return ResourceDefinition(lambda _: None, config_schema=config_schema)
+    return dg.ResourceDefinition(lambda _: None, config_schema=config_schema)
 
 
 def test_wrong_resources():
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="job_test_multiple_context",
         node_defs=[],
     ).to_job(
@@ -713,7 +693,7 @@ def test_wrong_resources():
     )
 
     with pytest.raises(
-        DagsterInvalidConfigError,
+        dg.DagsterInvalidConfigError,
         match='Received unexpected config entry "nope" at path root:resources',
     ):
         job_def.execute_in_process({"resources": {"nope": {}}})
@@ -723,12 +703,12 @@ def test_op_list_config():
     value = [1, 2]
     called = {}
 
-    @op(name="op_list_config", ins={}, out={}, config_schema=[int])
+    @dg.op(name="op_list_config", ins={}, out={}, config_schema=[int])
     def op_list_config(context):
         assert context.op_config == value
         called["yup"] = True
 
-    @job(name="op_list_config_job")
+    @dg.job(name="op_list_config_job")
     def job_def():
         op_list_config()
 
@@ -739,7 +719,7 @@ def test_op_list_config():
 
 
 def test_two_list_types():
-    @op(
+    @dg.op(
         ins={},
         config_schema={"list_one": [int], "list_two": [int]},
     )
@@ -751,9 +731,9 @@ def test_two_list_types():
         run_config={"ops": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}},
     ).output_value() == {"list_one": [1], "list_two": [2]}
 
-    @op(
+    @dg.op(
         ins={},
-        config_schema={"list_one": [Int], "list_two": [Int]},
+        config_schema={"list_one": [dg.Int], "list_two": [dg.Int]},
     )
     def two_list_type_condensed_syntax(context):
         return context.op_config
@@ -767,7 +747,7 @@ def test_two_list_types():
         },
     ).output_value() == {"list_one": [1], "list_two": [2]}
 
-    @op(
+    @dg.op(
         ins={},
         config_schema={"list_one": [int], "list_two": [int]},
     )
@@ -787,11 +767,11 @@ def test_two_list_types():
 
 
 def test_multilevel_default_handling():
-    @op(config_schema=Field(Int, is_required=False, default_value=234))
+    @dg.op(config_schema=dg.Field(dg.Int, is_required=False, default_value=234))
     def has_default_value(context):
         assert context.op_config == 234
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="multilevel_default_handling", node_defs=[has_default_value]
     ).to_job()
 
@@ -807,18 +787,18 @@ def test_multilevel_default_handling():
 
 
 def test_no_env_missing_required_error_handling():
-    @op(config_schema=Int)
+    @dg.op(config_schema=Int)
     def required_int_op(_context):
         pass
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="no_env_missing_required_error", node_defs=[required_int_op]
     ).to_job()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process()
 
-    assert isinstance(pe_info.value, DagsterInvalidConfigError)
+    assert isinstance(pe_info.value, dg.DagsterInvalidConfigError)
     pe = pe_info.value
     assert len(pe.errors) == 1
     mfe = pe.errors[0]
@@ -831,15 +811,15 @@ def test_no_env_missing_required_error_handling():
 
 
 def test_root_extra_field():
-    @op(config_schema=Int)
+    @dg.op(config_schema=Int)
     def required_int_op(_context):
         pass
 
-    @job
+    @dg.job
     def job_def():
         required_int_op()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(
             run_config={
                 "ops": {"required_int_op": {"config": 948594}},
@@ -855,15 +835,15 @@ def test_root_extra_field():
 
 
 def test_deeper_path():
-    @op(config_schema=Int)
+    @dg.op(config_schema=Int)
     def required_int_op(_context):
         pass
 
-    @job
+    @dg.job
     def job_def():
         required_int_op()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(
             run_config={"ops": {"required_int_op": {"config": "asdf"}}},
         )
@@ -877,12 +857,12 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @op(config_schema=[int])
+    @dg.op(config_schema=[int])
     def required_list_int_op(context):
         assert context.op_config == [1, 2]
         called["yup"] = True
 
-    @job
+    @dg.job
     def job_def():
         required_list_int_op()
 
@@ -897,16 +877,16 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @op(config_schema=[int])
+    @dg.op(config_schema=[int])
     def required_list_int_op(context):
         assert context.op_config == [1, 2]
         called["yup"] = True
 
-    @job
+    @dg.job
     def job_def():
         required_list_int_op()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(
             run_config={"ops": {"required_list_int_op": {"config": [1, "nope"]}}},
         )
@@ -925,9 +905,9 @@ def test_list_in_config_error():
         "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
     )
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=re.escape(error_msg)):
 
-        @op(config_schema=List[int])
+        @dg.op(config_schema=dg.List[int])  # pyright: ignore[reportArgumentType]
         def _no_runtime_list_in_config(_):
             pass
 
@@ -935,12 +915,12 @@ def test_list_in_config_error():
 def test_working_map_path():
     called = {}
 
-    @op(config_schema={str: int})
+    @dg.op(config_schema={str: int})  # pyright: ignore[reportArgumentType]
     def required_map_int_op(context):
         assert context.op_config == {"foo": 1, "bar": 2}
         called["yup"] = True
 
-    @job
+    @dg.job
     def job_def():
         required_map_int_op()
 
@@ -955,16 +935,16 @@ def test_working_map_path():
 def test_item_error_map_path():
     called = {}
 
-    @op(config_schema={str: int})
+    @dg.op(config_schema={str: int})  # pyright: ignore[reportArgumentType]
     def required_map_int_op(context):
         assert context.op_config == {"foo": 1, "bar": 2}
         called["yup"] = True
 
-    @job
+    @dg.job
     def job_def():
         required_map_int_op()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(
             run_config={"ops": {"required_map_int_op": {"config": {"foo": 1, "bar": "nope"}}}},
         )
@@ -978,18 +958,18 @@ def test_item_error_map_path():
 
 
 def test_required_resource_not_given():
-    @op(required_resource_keys={"required"})
+    @dg.op(required_resource_keys={"required"})
     def needs_resource(_):
         pass
 
-    @job(
+    @dg.job(
         name="required_resource_not_given",
-        resource_defs={"required": dummy_resource(Int)},
+        resource_defs={"required": dummy_resource(dg.Int)},
     )
     def job_def():
         needs_resource()
 
-    with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as not_none_pe_info:
         job_def.execute_in_process(run_config={"resources": None})
 
     assert len(not_none_pe_info.value.errors) == 1
@@ -997,7 +977,7 @@ def test_required_resource_not_given():
         "Value at path root:resources must not be None." in not_none_pe_info.value.errors[0].message
     )
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(run_config={"resources": {}})
 
     pe = pe_info.value
@@ -1012,21 +992,21 @@ def test_required_resource_not_given():
 
 
 def test_multilevel_good_error_handling_ops():
-    @op(config_schema=Int)
+    @dg.op(config_schema=Int)
     def good_error_handling(_context):
         pass
 
-    @job
+    @dg.job
     def job_def():
         good_error_handling()
 
-    with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as not_none_pe_info:
         job_def.execute_in_process(run_config={"ops": None})
 
     assert len(not_none_pe_info.value.errors) == 1
     assert "Value at path root:ops must not be None." in not_none_pe_info.value.errors[0].message
 
-    with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as missing_field_pe_info:
         job_def.execute_in_process(run_config={"ops": {}})
 
     assert len(missing_field_pe_info.value.errors) == 1
@@ -1039,15 +1019,15 @@ def test_multilevel_good_error_handling_ops():
 
 
 def test_multilevel_good_error_handling_op_name_ops():
-    @op(config_schema=Int)
+    @dg.op(config_schema=Int)
     def good_error_handling(_context):
         pass
 
-    @job
+    @dg.job
     def job_def():
         good_error_handling()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(dg.DagsterInvalidConfigError) as pe_info:
         job_def.execute_in_process(run_config={"ops": {"good_error_handling": {}}})
 
     assert len(pe_info.value.errors) == 1
@@ -1060,11 +1040,11 @@ def test_multilevel_good_error_handling_op_name_ops():
 
 
 def test_multilevel_good_error_handling_config_ops_name_ops():
-    @op(config_schema=Noneable(int))
+    @dg.op(config_schema=dg.Noneable(int))
     def good_error_handling(_context):
         pass
 
-    @job
+    @dg.job
     def job_def():
         good_error_handling()
 
@@ -1073,11 +1053,11 @@ def test_multilevel_good_error_handling_config_ops_name_ops():
 
 def test_invalid_default_values():
     with pytest.raises(
-        DagsterInvalidConfigError,
+        dg.DagsterInvalidConfigError,
         match='Value "3" of type .* is not valid for expected type "Int"',
     ):
 
-        @op(config_schema=Field(Int, default_value="3"))
+        @dg.op(config_schema=dg.Field(dg.Int, default_value="3"))
         def _op(_):
             pass
 
@@ -1089,15 +1069,15 @@ def test_typing_types_into_config():
         "in the config system. You must use types that are imported "
         "from dagster or primitive types such as bool, int, etc."
     )
-    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=Field(typing.List))
+        @dg.op(config_schema=dg.Field(typing.List))
         def _op(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=typing.List)
+        @dg.op(config_schema=typing.List)
         def _op(_):
             pass
 
@@ -1108,15 +1088,15 @@ def test_typing_types_into_config():
         "such as bool, int, etc."
     )
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=Field(typing.List[int]))
+        @dg.op(config_schema=dg.Field(typing.List[int]))
         def _op(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=typing.List[int])
+        @dg.op(config_schema=typing.List[int])
         def _op(_):
             pass
 
@@ -1129,59 +1109,59 @@ def test_typing_types_into_config():
         typing.Tuple,
         typing.Tuple[int, int],
     ]:
-        with pytest.raises(DagsterInvalidDefinitionError):
+        with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-            @op(config_schema=Field(ttype))
+            @dg.op(config_schema=dg.Field(ttype))
             def _op(_):
                 pass
 
 
 def test_no_set_in_config_system():
     set_error_msg = re.escape("Cannot use Set in the context of a config field.")
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @op(config_schema=Field(Set))
+        @dg.op(config_schema=dg.Field(dg.Set))
         def _bare_open_set(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @op(config_schema=Set)
+        @dg.op(config_schema=Set)  # pyright: ignore[reportArgumentType]
         def _bare_open_set(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @op(config_schema=Field(Set[int]))
+        @dg.op(config_schema=dg.Field(dg.Set[int]))
         def _bare_closed_set(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @op(config_schema=Set[int])
+        @dg.op(config_schema=dg.Set[int])  # pyright: ignore[reportArgumentType]
         def _bare_closed_set(_):
             pass
 
 
 def test_no_tuple_in_config_system():
     tuple_error_msg = re.escape("Cannot use Tuple in the context of a config field.")
-    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=tuple_error_msg):
 
-        @op(config_schema=Field(Tuple))
+        @dg.op(config_schema=dg.Field(dg.Tuple))
         def _bare_open_tuple(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=tuple_error_msg):
 
-        @op(config_schema=Field(Tuple[int]))
+        @dg.op(config_schema=dg.Field(dg.Tuple[int]))
         def _bare_closed_set(_):
             pass
 
 
 def test_field_is_none():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema={"none_field": None})
+        @dg.op(config_schema={"none_field": None})
         def _none_is_bad(_):
             pass
 
@@ -1189,7 +1169,7 @@ def test_field_is_none():
 
 
 def test_permissive_defaults():
-    @op(config_schema=Permissive({"four": Field(int, default_value=4)}))
+    @dg.op(config_schema=dg.Permissive({"four": dg.Field(int, default_value=4)}))
     def perm_with_defaults(context):
         assert context.op_config["four"] == 4
 
@@ -1199,7 +1179,7 @@ def test_permissive_defaults():
 def test_permissive_ordering():
     alphabet = {letter: letter for letter in string.ascii_lowercase}
 
-    @op(config_schema=dict)
+    @dg.op(config_schema=dict)
     def test_order(context):
         alpha = list(context.op_config.keys())
         for idx, letter in enumerate(string.ascii_lowercase):
@@ -1208,3 +1188,14 @@ def test_permissive_ordering():
     assert wrap_op_in_graph_and_execute(
         test_order, run_config={"ops": {"test_order": {"config": alphabet}}}
     ).success
+
+
+def test_field_is_secret_parameter():
+    """Test that Field accepts and stores is_secret parameter."""
+    # Non-secret field
+    regular_field = dg.Field(str, description="A regular field")
+    assert regular_field.is_secret is False
+
+    # Secret field
+    secret_field = dg.Field(str, description="A secret field", is_secret=True)
+    assert secret_field.is_secret is True

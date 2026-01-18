@@ -1,0 +1,1 @@
+from dagster_airlift.mwaa.auth import MwaaSessionAuthBackend as MwaaSessionAuthBackend

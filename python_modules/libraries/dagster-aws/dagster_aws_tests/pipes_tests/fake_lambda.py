@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
-from typing import Any, Dict
+from typing import Any
 
 import boto3
 from dagster_pipes import PipesMappingParamsLoader, PipesS3MessageWriter, open_dagster_pipes
@@ -91,13 +91,13 @@ class FakeLambdaClient:
                     stderr=log_file,
                 )
 
-            response: Dict[str, Any] = {}
+            response: dict[str, Any] = {}
 
             if result.returncode == 42:
                 response["FunctionError"] = "Unhandled"
 
             elif result.returncode != 0:
-                with open(log_path, "r") as f:
+                with open(log_path) as f:
                     print(f.read())  # noqa: T201
                 result.check_returncode()
 
@@ -134,9 +134,13 @@ if __name__ == "__main__":
         val = fn(event, FakeLambdaContext())
     except Exception as e:
         tb = traceback.TracebackException.from_exception(e)
+        if sys.version_info >= (3, 13):
+            name = tb.exc_type_str.split(".")[-1]
+        else:
+            name = tb.exc_type.__name__ if tb.exc_type is not None else None
         val = {
             "errorMessage": str(tb),
-            "errorType": tb.exc_type.__name__,
+            "errorType": name,
             "stackTrace": tb.stack.format(),
             "requestId": "fake-request-id",
         }

@@ -1,0 +1,35 @@
+[project]
+name = "project_llm_fine_tune"
+version = "0.0.1"
+description = "Project LLM Fine Tune"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "dagster",
+    "dagster-openai",
+    "dagster-duckdb",
+    "pandas",
+    "openai",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "dagster-dg-cli",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+force-include = { "pyproject.toml" = "pyproject.toml" }
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_llm_fine_tune"
+registry_modules = [
+    "project_llm_fine_tune.components.*",
+]

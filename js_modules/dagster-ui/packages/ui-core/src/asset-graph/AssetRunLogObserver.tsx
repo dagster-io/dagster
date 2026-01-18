@@ -1,10 +1,10 @@
 import {memo, useCallback, useEffect, useRef, useState} from 'react';
 
+import {gql, useSubscription} from '../apollo-client';
 import {
   AssetLiveRunLogsSubscription,
   AssetLiveRunLogsSubscriptionVariables,
 } from './types/AssetRunLogObserver.types';
-import {gql, useSubscription} from '../apollo-client';
 import {AssetKey} from '../graphql/types';
 
 const OBSERVED_RUNS_CHANGED = 'observed-runs-changed';
@@ -18,7 +18,9 @@ function removeCallback(runId: string, callback: ObservedRunCallback) {
   if (!ObservedRuns[runId]) {
     console.log('[ObserveRuns]: Attempted to release runId that has already been released.');
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   ObservedRuns[runId] = ObservedRuns[runId]!.filter((w) => w !== callback);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (ObservedRuns[runId]!.length === 0) {
     delete ObservedRuns[runId];
   }
@@ -99,7 +101,8 @@ const SingleRunLogObserver = memo(({runId, callback}: SingleRunLogObserverProps)
             if (
               m.__typename === 'AssetMaterializationPlannedEvent' ||
               m.__typename === 'MaterializationEvent' ||
-              m.__typename === 'ObservationEvent'
+              m.__typename === 'ObservationEvent' ||
+              m.__typename === 'FailedToMaterializeEvent'
             ) {
               return {assetKey: m.assetKey} as ObservedEvent;
             }
@@ -150,6 +153,11 @@ export const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
             }
           }
           ... on ObservationEvent {
+            assetKey {
+              path
+            }
+          }
+          ... on FailedToMaterializeEvent {
             assetKey {
               path
             }

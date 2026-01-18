@@ -1,13 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
+from collections.abc import Mapping, Sequence
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional, Union
 
 from typing_extensions import TypedDict
 
+from dagster._annotations import public
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
 from dagster._core.storage.daemon_cursor import DaemonCursorStorage
 from dagster._core.storage.dagster_run import (
     DagsterRun,
@@ -22,7 +25,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
 
 
 class RunGroupInfo(TypedDict):
@@ -30,6 +33,7 @@ class RunGroupInfo(TypedDict):
     runs: Sequence[DagsterRun]
 
 
+@public
 class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorStorage):
     """Abstract base class for storing pipeline run history.
 
@@ -54,7 +58,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def add_historical_run(
+        self, dagster_run: DagsterRun, run_creation_time: datetime
+    ) -> DagsterRun:
+        """Add a historical run to storage."""
+
+    @abstractmethod
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, update_timestamp: Optional[datetime] = None
+    ) -> None:
         """Update run storage in accordance to a pipeline run related DagsterEvent.
 
         Args:
@@ -120,7 +132,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Sequence[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[tuple[str, Sequence[DagsterRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:
@@ -164,7 +176,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[Tuple[str, Set[str]]]:
+    ) -> Sequence[tuple[str, set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
 
         Args:
@@ -202,24 +214,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             bool
         """
 
-    def add_snapshot(
-        self,
-        snapshot: Union[JobSnapshot, ExecutionPlanSnapshot],
-        snapshot_id: Optional[str] = None,
-    ) -> None:
+    def add_snapshot(self, snapshot: Union[JobSnap, ExecutionPlanSnapshot]) -> None:
         """Add a snapshot to the storage.
 
         Args:
             snapshot (Union[PipelineSnapshot, ExecutionPlanSnapshot])
-            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
-                snapshot id will be generated from a hash of the snapshot. This should only be used
-                in debugging, where we might want to import a historical run whose snapshots were
-                calculated using a different hash function than the current code.
         """
-        if isinstance(snapshot, JobSnapshot):
-            self.add_job_snapshot(snapshot, snapshot_id)
+        if isinstance(snapshot, JobSnap):
+            self.add_job_snapshot(snapshot)
         else:
-            self.add_execution_plan_snapshot(snapshot, snapshot_id)
+            self.add_execution_plan_snapshot(snapshot)
 
     def has_snapshot(self, snapshot_id: str):
         return self.has_job_snapshot(snapshot_id) or self.has_execution_plan_snapshot(snapshot_id)
@@ -236,7 +240,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnap) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -246,17 +250,13 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
         Args:
             job_snapshot (PipelineSnapshot)
-            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
-                snapshot id will be generated from a hash of the snapshot. This should only be used
-                in debugging, where we might want to import a historical run whose snapshots were
-                calculated using a different hash function than the current code.
 
         Return:
             str: The job_snapshot_id
         """
 
     @abstractmethod
-    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnap:
         """Fetch a snapshot by ID.
 
         Args:
@@ -278,9 +278,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def add_execution_plan_snapshot(
-        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
-    ) -> str:
+    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
         """Add an execution plan snapshot to the run store.
 
         Execution plan snapshots are content-addressable, meaning
@@ -290,10 +288,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
         Args:
             execution_plan_snapshot (ExecutionPlanSnapshot)
-            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
-                snapshot id will be generated from a hash of the snapshot. This should only be used
-                in debugging, where we might want to import a historical run whose snapshots were
-                calculated using a different hash function than the current code.
 
         Return:
             str: The execution_plan_snapshot_id
@@ -335,7 +329,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def dispose(self) -> None:
         """Explicit lifecycle management."""
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     # Daemon Heartbeat Storage
@@ -353,10 +349,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types."""
 
+    def supports_run_telemetry(self) -> bool:
+        """Whether the storage supports run telemetry."""
+        return False
+
     def add_run_telemetry(
         self,
         run_telemetry: RunTelemetryData,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Not implemented in base class. Should be implemented in subclasses that support telemetry."""
         pass

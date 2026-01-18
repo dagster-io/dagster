@@ -17,7 +17,9 @@ export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
 export function isTimeseriesPartition(aPartitionKey = '') {
   return /\d{4}-\d{2}-\d{2}/.test(aPartitionKey); // cheak trick for now
 }
-
+export function isTimeBasedPartition(dimension: PartitionHealthDimension): boolean {
+  return dimension.type === PartitionDefinitionType.TIME_WINDOW; // check with type
+}
 /*
 This function takes the health of several assets and returns a single health object in which SUCCESS
 means that all the assets were in a SUCCESS state for that partition and SUCCESS_MISSING means only
@@ -35,10 +37,7 @@ the asset health bar you see is a flattened representation of the health of all 
 "show per-asset health" button beneath.
 
 */
-export function mergedAssetHealth(
-  assetHealth: PartitionHealthData[],
-  skipDimensionLengthsMatchingCheck: boolean = false,
-): PartitionHealthDataMerged {
+export function mergedAssetHealth(assetHealth: PartitionHealthData[]): PartitionHealthDataMerged {
   if (!assetHealth.length) {
     return {
       dimensions: [],
@@ -48,23 +47,11 @@ export function mergedAssetHealth(
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const dimensions = assetHealth[0]!.dimensions;
 
   if (!assetHealth.every((h) => h.dimensions.length === dimensions.length)) {
     throw new Error('Attempting to show unified asset health for assets with different dimensions');
-  }
-
-  if (
-    !assetHealth.every((h) =>
-      h.dimensions.every(
-        (dim, idx) => dim.partitionKeys.length === dimensions[idx]!.partitionKeys.length,
-      ),
-    ) &&
-    !skipDimensionLengthsMatchingCheck
-  ) {
-    throw new Error(
-      'Attempting to show unified asset health for assets with dimension of different lengths',
-    );
   }
 
   return {
@@ -79,6 +66,7 @@ export function mergedAssetHealth(
       uniq(assetHealth.map((health) => health.stateForKeyIdx(dimensionKeyIdxs))),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         dimensions[dimensionIdx]!.partitionKeys,
         assetHealth.map((health) =>
           health.rangesForSingleDimension(dimensionIdx, otherDimensionSelectedRanges),
@@ -107,6 +95,7 @@ export function mergedAssetHealth(
  */
 export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
   if (rangeSets.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return rangeSets[0]!;
   }
 
@@ -183,9 +172,18 @@ export function assembleRangesFromTransitions(
 
     if (!isEqual(last?.value, value)) {
       if (last) {
-        last.end = {idx: idx - 1, key: allKeys[idx - 1]!};
+        const clippedLastEndIdx = Math.min(idx - 1, allKeys.length - 1);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        last.end = {idx: clippedLastEndIdx, key: allKeys[clippedLastEndIdx]!};
       }
-      result.push({start: {idx, key: allKeys[idx]!}, end: {idx, key: allKeys[idx]!}, value});
+      const clippedEndIdx = Math.min(idx, allKeys.length - 1);
+      result.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        start: {idx, key: allKeys[idx]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        end: {idx: clippedEndIdx, key: allKeys[clippedEndIdx]!},
+        value,
+      });
     }
   }
   return result.filter(
@@ -212,33 +210,62 @@ export function explodePartitionKeysInSelectionMatching(
     return [];
   }
 
+  /** When you create a new dynamic partition, there's a brief moment where `selections` references
+   * the new key, but it is not yet present in the asset health data. Clicking "Launch Run" during
+   * this time period sends "null" to the server because this code is unable to find the key at
+   * the specified index.
+   *
+   * To prevent this, we return [] which disables the button until the UI is consistent.
+   */
   const results: string[] = [];
+  let keyNotFound = false;
 
   if (selections.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const range of selections[0]!.selectedRanges) {
       for (let idx = range.start.idx; idx <= range.end.idx; idx++) {
         if (shouldIncludeKey([idx])) {
-          results.push(selections[0]!.dimension.partitionKeys[idx]!);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const value = selections[0]!.dimension.partitionKeys[idx];
+          if (value === undefined) {
+            keyNotFound = true;
+            break;
+          }
+          results.push(value);
         }
       }
     }
-    return results;
+    return keyNotFound ? [] : results;
   }
+
   if (selections.length === 2) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const range1 of selections[0]!.selectedRanges) {
       for (let idx1 = range1.start.idx; idx1 <= range1.end.idx; idx1++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const key1 = selections[0]!.dimension.partitionKeys[idx1];
+        if (key1 === undefined) {
+          keyNotFound = true;
+          break;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const range2 of selections[1]!.selectedRanges) {
           for (let idx2 = range2.start.idx; idx2 <= range2.end.idx; idx2++) {
             if (shouldIncludeKey([idx1, idx2])) {
-              const key1 = selections[0]?.dimension.partitionKeys[idx1];
-              const key2 = selections[1]?.dimension.partitionKeys[idx2];
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              const key2 = selections[1]!.dimension.partitionKeys[idx2];
+              if (key2 === undefined) {
+                keyNotFound = true;
+                break;
+              }
               results.push(`${key1}|${key2}`);
             }
           }
         }
       }
     }
-    return results;
+
+    return keyNotFound ? [] : results;
   }
 
   throw new Error('Unsupported >2 partitions defined');

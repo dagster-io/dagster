@@ -10,7 +10,7 @@ import {Route} from '../app/Route';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {ActivatableButton} from '../runs/RunListTabs';
+import {ActivatableButton} from '../runs/ActivatableButton';
 
 export const OverviewActivityRoot = () => {
   useDocumentTitle('Overview | Activity');

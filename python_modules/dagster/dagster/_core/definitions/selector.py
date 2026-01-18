@@ -1,11 +1,18 @@
-from typing import AbstractSet, Any, Iterable, Mapping, Optional, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
+
+from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._annotations import public
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
 
 
 @record_custom
@@ -51,6 +58,10 @@ class JobSubsetSelector(IHaveNew):
             "solidSelection": self.op_selection,
         }
 
+    @property
+    def is_subset_selection(self) -> bool:
+        return bool(self.op_selection or self.asset_selection or self.asset_check_selection)
+
     def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> "JobSubsetSelector":
         check.invariant(
             self.op_selection is None,
@@ -61,9 +72,29 @@ class JobSubsetSelector(IHaveNew):
             self.location_name, self.repository_name, self.job_name, op_selection
         )
 
+    @property
+    def repository_selector(self) -> "RepositorySelector":
+        return RepositorySelector(
+            location_name=self.location_name,
+            repository_name=self.repository_name,
+        )
+
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash(make_hashable(self))
+        return self._hash
+
+    @property
+    def entity_selection(self) -> Optional[AbstractSet["EntityKey"]]:
+        if self.asset_selection is None and self.asset_check_selection is None:
+            return None
+
+        return (self.asset_selection or set()) | (self.asset_check_selection or set())
+
 
 @whitelist_for_serdes
 @record_custom
+@public
 class JobSelector(IHaveNew):
     location_name: str
     repository_name: str
@@ -103,16 +134,25 @@ class JobSelector(IHaveNew):
 
     @staticmethod
     def from_graphql_input(graphql_data):
+        job_name = graphql_data.get("jobName") or graphql_data.get("pipelineName")
         return JobSelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
-            job_name=graphql_data["jobName"],
+            job_name=job_name,
+        )
+
+    @property
+    def repository_selector(self) -> "RepositorySelector":
+        return RepositorySelector(
+            location_name=self.location_name,
+            repository_name=self.repository_name,
         )
 
 
+@public
 @whitelist_for_serdes
 @record
-class RepositorySelector(IHaveNew):
+class RepositorySelector:
     location_name: str
     repository_name: str
 
@@ -149,16 +189,9 @@ class AssetGroupSelector:
         )
 
 
-@record_custom
-class CodeLocationSelector(IHaveNew):
+@record(kw_only=False)
+class CodeLocationSelector:
     location_name: str
-
-    # allow posargs to avoid breaking change
-    def __new__(cls, location_name: str):
-        return super().__new__(
-            cls,
-            location_name=location_name,
-        )
 
     def to_repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
@@ -180,12 +213,24 @@ class ScheduleSelector:
             "scheduleName": self.schedule_name,
         }
 
+    @property
+    def instigator_name(self) -> str:
+        return self.schedule_name
+
     @staticmethod
     def from_graphql_input(graphql_data):
         return ScheduleSelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             schedule_name=graphql_data["scheduleName"],
+        )
+
+    @staticmethod
+    def from_instigator_selector(selector: "InstigatorSelector"):
+        return ScheduleSelector(
+            location_name=selector.location_name,
+            repository_name=selector.repository_name,
+            schedule_name=selector.name,
         )
 
 
@@ -232,6 +277,18 @@ class SensorSelector:
             sensor_name=graphql_data["sensorName"],
         )
 
+    @staticmethod
+    def from_instigator_selector(selector: "InstigatorSelector"):
+        return SensorSelector(
+            location_name=selector.location_name,
+            repository_name=selector.repository_name,
+            sensor_name=selector.name,
+        )
+
+    @property
+    def instigator_name(self) -> str:
+        return self.sensor_name
+
 
 @whitelist_for_serdes
 @record
@@ -257,6 +314,10 @@ class InstigatorSelector:
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
+
+    @property
+    def instigator_name(self) -> str:
+        return self.name
 
 
 @record
@@ -292,20 +353,12 @@ class PartitionSetSelector:
         }
 
 
-@record_custom
-class PartitionRangeSelector(IHaveNew):
+@record(kw_only=False)
+class PartitionRangeSelector:
     """The information needed to resolve a partition range."""
 
     start: str
     end: str
-
-    # allow posargs
-    def __new__(cls, start: str, end: str):
-        return super().__new__(
-            cls,
-            start=start,
-            end=end,
-        )
 
     def to_graphql_input(self):
         return {
@@ -321,18 +374,11 @@ class PartitionRangeSelector(IHaveNew):
         )
 
 
-@record_custom
-class PartitionsSelector(IHaveNew):
+@record(kw_only=False)
+class PartitionsSelector:
     """The information needed to define selection partitions."""
 
     ranges: Sequence[PartitionRangeSelector]
-
-    # allow posargs
-    def __new__(cls, ranges: Sequence[PartitionRangeSelector]):
-        return super().__new__(
-            cls,
-            ranges=ranges,
-        )
 
     def to_graphql_input(self):
         return {"ranges": [partition_range.to_graphql_input() for partition_range in self.ranges]}

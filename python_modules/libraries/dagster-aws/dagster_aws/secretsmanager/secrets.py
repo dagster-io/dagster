@@ -1,7 +1,9 @@
-from typing import Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import boto3.session
 import dagster._check as check
+from dagster._annotations import beta
 
 from dagster_aws.utils import construct_boto_client_retry_config
 
@@ -43,6 +45,7 @@ def construct_secretsmanager_client(
     return secrets_manager
 
 
+@beta
 def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Mapping[str, str]:
     """Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
@@ -64,6 +67,7 @@ def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Mapping[
     return secrets
 
 
+@beta
 def get_secrets_from_arns(secrets_manager, secret_arns: Sequence[str]) -> Mapping[str, str]:
     """Return a dictionary of AWS Secrets Manager names to arns."""
     secrets = {}

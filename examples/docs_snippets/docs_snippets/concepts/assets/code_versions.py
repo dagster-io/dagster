@@ -1,6 +1,6 @@
 import json
 
-from dagster import AssetSpec, MaterializeResult, Output, asset, multi_asset
+from dagster import AssetSpec, MaterializeResult, asset, multi_asset
 
 
 # start_single_asset

@@ -1,20 +1,26 @@
 import asyncio
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from io import TextIOWrapper
+from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import click
 import dagster._check as check
-import dagster._seven as seven
+import dagster_shared.seven as seven
 import requests
-from dagster._cli.utils import get_instance_for_cli, get_temporary_instance_for_cli
-from dagster._cli.workspace import workspace_target_argument
+from dagster._cli.utils import (
+    assert_no_remaining_opts,
+    get_instance_for_cli,
+    get_temporary_instance_for_cli,
+)
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
-    get_workspace_process_context_from_kwargs,
+    workspace_opts_to_load_target,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import get_stack_trace_array
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.schema import create_schema
@@ -126,7 +132,6 @@ PREDEFINED_QUERIES = {
 }
 
 
-@workspace_target_argument
 @click.command(
     name="ui",
     help=(
@@ -135,7 +140,7 @@ PREDEFINED_QUERIES = {
     )
     + "\n\nExamples:"
     "\n\n1. dagster-graphql"
-    f"\n\n2. dagster-graphql -y path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}"
+    f"\n\n2. dagster-graphql -w path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}"
     "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
     "\n\n4. dagster-graphql -m some_module -a define_repo"
     "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
@@ -145,9 +150,7 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--text", "-t", type=click.STRING, help="GraphQL document to execute passed as a string"
 )
-@click.option(
-    "--file", "-f", type=click.File(), help="GraphQL document to execute passed as a file"
-)
+@click.option("--file", type=click.File(), help="GraphQL document to execute passed as a file")
 @click.option(
     "--predefined",
     "-p",
@@ -179,9 +182,23 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--ephemeral-instance",
     is_flag=True,
+    default=False,
     help="Use an ephemeral DagsterInstance instead of resolving via DAGSTER_HOME",
 )
-def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **kwargs):
+@workspace_options
+def ui(
+    text: Optional[str],
+    file: Optional[TextIOWrapper],
+    predefined: Optional[str],
+    variables: Optional[str],
+    remote: Optional[str],
+    output: Optional[str],
+    ephemeral_instance: bool,
+    **other_opts,
+):
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     query = None
     if text is not None and file is None and predefined is None:
         query = text.strip("'\" \n\t")
@@ -191,7 +208,7 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
         query = PREDEFINED_QUERIES[predefined]
     else:
         raise click.UsageError(
-            "Must select one and only one of text (-t), file (-f), or predefined (-p) "
+            "Must select one and only one of text (-t), file (--file), or predefined (-p) "
             "to select GraphQL document to execute."
         )
 
@@ -202,8 +219,11 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
         with (
             get_temporary_instance_for_cli() if ephemeral_instance else get_instance_for_cli()
         ) as instance:
-            with get_workspace_process_context_from_kwargs(
-                instance, version=__version__, read_only=False, kwargs=kwargs
+            with WorkspaceProcessContext(
+                instance=instance,
+                version=__version__,
+                read_only=False,
+                workspace_load_target=workspace_opts_to_load_target(workspace_opts),
             ) as workspace_process_context:
                 execute_query_from_cli(
                     workspace_process_context,

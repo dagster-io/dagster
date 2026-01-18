@@ -21,8 +21,8 @@ import {
   SidebarOpInvocationInfo,
   TypeWrapper,
 } from './SidebarOpHelpers';
-import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
 import {gql} from '../apollo-client';
+import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
 import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -142,6 +142,7 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
               <Description description={inputDef.description} />
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
               <OpEdges title="Mapped to:" items={inputMappings[inputDef.name]!} />
             </SectionItemContainer>
           ))}
@@ -158,6 +159,7 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
               <OpEdges title="Mapped from:" items={outputMappings[outputDef.name]!} />
               <Description description={outputDef.description} />
             </SectionItemContainer>
@@ -214,6 +216,7 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
         ...DagsterTypeWithTooltipFragment
       }
     }
+    pools
     ... on SolidDefinition {
       requiredResources {
         resourceKey

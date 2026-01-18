@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional
 
 from celery import Celery
 from dagster import (
@@ -18,7 +19,7 @@ from dagster._core.launcher import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._grpc import ExecuteRunArgs, ResumeRunArgs
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, pack_value
 from typing_extensions import Self, override
 
@@ -38,11 +39,11 @@ if TYPE_CHECKING:
 
 
 class CeleryRunLauncher(RunLauncher, ConfigurableClass):
-    """Dagster [Run Launcher](https://docs.dagster.io/deployment/run-launcher) which
+    """Dagster [Run Launcher](https://docs.dagster.io/guides/deploy/execution/run-launchers) which
     starts runs as Celery tasks.
     """
 
-    _instance: DagsterInstance
+    _instance: DagsterInstance  # pyright: ignore[reportIncompatibleMethodOverride]
     celery: Celery
 
     def __init__(
@@ -50,7 +51,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         default_queue: str,
         broker: Optional[str] = None,
         backend: Optional[str] = None,
-        include: Optional[List[str]] = None,
+        include: Optional[list[str]] = None,
         config_source: Optional[dict] = None,
         inst_data: Optional[ConfigurableClassData] = None,
     ) -> None:

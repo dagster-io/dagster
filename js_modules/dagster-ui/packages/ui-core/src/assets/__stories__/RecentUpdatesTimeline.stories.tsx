@@ -8,11 +8,19 @@ export default {
   component: PartitionHealthSummary,
 };
 
+export const Loading = () => (
+  <RecentUpdatesTimeline assetKey={buildAssetKey()} loading={true} events={undefined} />
+);
+
+export const Empty = () => (
+  <RecentUpdatesTimeline assetKey={buildAssetKey()} loading={false} events={[]} />
+);
+
 export const Single = () => (
   <RecentUpdatesTimeline
     assetKey={buildAssetKey()}
     loading={false}
-    materializations={[buildMaterializationEvent({timestamp: '1'})]}
+    events={[buildMaterializationEvent({timestamp: '1731685045904'})]}
   />
 );
 
@@ -20,24 +28,24 @@ export const Multiple = () => (
   <RecentUpdatesTimeline
     assetKey={buildAssetKey()}
     loading={false}
-    materializations={[
+    events={[
       buildMaterializationEvent({
-        timestamp: '1',
+        timestamp: '1731685015904',
       }),
       buildMaterializationEvent({
-        timestamp: '2',
+        timestamp: '1731685020904',
       }),
       buildMaterializationEvent({
-        timestamp: '4',
+        timestamp: '1731685032904',
       }),
       buildMaterializationEvent({
-        timestamp: '5',
+        timestamp: '1731685043904',
       }),
       buildMaterializationEvent({
-        timestamp: '9',
+        timestamp: '1731685044904',
       }),
       buildMaterializationEvent({
-        timestamp: '12',
+        timestamp: '1731685045904',
       }),
     ]}
   />

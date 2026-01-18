@@ -2,11 +2,11 @@ import {Box, NonIdealState} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {TYPE_LIST_FRAGMENT, TypeList} from './TypeList';
+import {gql, useQuery} from '../apollo-client';
 import {
   TypeListContainerQuery,
   TypeListContainerQueryVariables,
 } from './types/TypeListContainer.types';
-import {gql, useQuery} from '../apollo-client';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {
@@ -39,6 +39,7 @@ export const TypeListContainer = ({explorerPath, repoAddress}: ITypeListContaine
   const queryResult = useQuery<TypeListContainerQuery, TypeListContainerQueryVariables>(
     TYPE_LIST_CONTAINER_QUERY,
     {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       variables: {pipelineSelector: pipelineSelector!},
       skip: !pipelineSelector,
     },

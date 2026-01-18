@@ -1,12 +1,12 @@
 import sys
 import time
 
+import dagster as dg
 import pytest
-from dagster import _seven, file_relative_path
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
+from dagster._core.test_utils import poll_for_finished_run, poll_for_step_start
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -14,6 +14,7 @@ from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarg
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import find_free_port
 from dagster._utils.merger import merge_dicts
+from dagster_shared import seven
 
 from dagster_tests.launcher_tests.test_default_run_launcher import (
     math_diamond,
@@ -23,11 +24,11 @@ from dagster_tests.launcher_tests.test_default_run_launcher import (
 
 
 def test_run_always_finishes():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="nope",
-            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            python_file=dg.file_relative_path(__file__, "test_default_run_launcher.py"),
         )
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
@@ -46,27 +47,27 @@ def test_run_always_finishes():
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
 
-                external_job = (
+                remote_job = (
                     workspace.get_code_location("test")
                     .get_repository("nope")
-                    .get_full_external_job("slow_job")
+                    .get_full_job("slow_job")
                 )
 
                 dagster_run = instance.create_run_for_job(
                     job_def=slow_job,
                     run_config=None,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
                 run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
         dagster_run = instance.get_run_by_id(run_id)
-        assert not dagster_run.is_finished
+        assert not dagster_run.is_finished  # pyright: ignore[reportOptionalMemberAccess]
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
@@ -84,11 +85,11 @@ def test_run_always_finishes():
 
 def test_run_from_pending_repository():
     run_id = make_new_run_id()
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="pending",
-            python_file=file_relative_path(__file__, "pending_repository.py"),
+            python_file=dg.file_relative_path(__file__, "pending_repository.py"),
         )
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
@@ -108,11 +109,11 @@ def test_run_from_pending_repository():
                 workspace = workspace_process_context.create_request_context()
 
                 code_location = workspace.get_code_location("test2")
-                external_job = code_location.get_repository("pending").get_full_external_job(
+                remote_job = code_location.get_repository("pending").get_full_job(
                     "my_cool_asset_job"
                 )
-                external_execution_plan = code_location.get_external_execution_plan(
-                    external_job=external_job,
+                remote_execution_plan = code_location.get_execution_plan(
+                    remote_job=remote_job,
                     run_config={},
                     step_keys_to_execute=None,
                     known_state=None,
@@ -143,28 +144,28 @@ def test_run_from_pending_repository():
                     tags=None,
                     root_run_id=None,
                     parent_run_id=None,
-                    job_snapshot=external_job.job_snapshot,
-                    execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-                    parent_job_snapshot=external_job.parent_job_snapshot,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    job_snapshot=remote_job.job_snapshot,
+                    execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
+                    parent_job_snapshot=remote_job.parent_job_snapshot,
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                     asset_selection=None,
                     op_selection=None,
                     asset_check_selection=None,
                     asset_graph=code_location.get_repository(
-                        external_job.repository_handle.repository_name
+                        remote_job.repository_handle.repository_name
                     ).asset_graph,
                 )
 
                 run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
         dagster_run = instance.get_run_by_id(run_id)
-        assert not dagster_run.is_finished
+        assert not dagster_run.is_finished  # pyright: ignore[reportOptionalMemberAccess]
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
@@ -192,16 +193,16 @@ def test_run_from_pending_repository():
         assert call_counts.get("compute_cacheable_data_called_b") == "1"
         # once at initial load time, once inside the run launch process, once for each (3) subprocess
         # upper bound of 5 here because race conditions result in lower count sometimes
-        assert int(call_counts.get("get_definitions_called_a")) < 6
-        assert int(call_counts.get("get_definitions_called_b")) < 6
+        assert int(call_counts.get("get_definitions_called_a")) < 6  # pyright: ignore[reportArgumentType]
+        assert int(call_counts.get("get_definitions_called_b")) < 6  # pyright: ignore[reportArgumentType]
 
 
 def test_terminate_after_shutdown():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with WorkspaceProcessContext(
             instance,
             PythonFileTarget(
-                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+                python_file=dg.file_relative_path(__file__, "test_default_run_launcher.py"),
                 attribute="nope",
                 working_directory=None,
                 location_name="test",
@@ -209,17 +210,17 @@ def test_terminate_after_shutdown():
         ) as workspace_process_context:
             workspace = workspace_process_context.create_request_context()
 
-            external_job = (
+            remote_job = (
                 workspace.get_code_location("test")
                 .get_repository("nope")
-                .get_full_external_job("sleepy_job")
+                .get_full_job("sleepy_job")
             )
 
             dagster_run = instance.create_run_for_job(
                 job_def=sleepy_job,
                 run_config=None,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             instance.launch_run(dagster_run.run_id, workspace)
@@ -228,21 +229,21 @@ def test_terminate_after_shutdown():
 
             code_location = workspace.get_code_location("test")
             # Tell the server to shut down once executions finish
-            code_location.grpc_server_registry.get_grpc_endpoint(
+            code_location.grpc_server_registry.get_grpc_endpoint(  # pyright: ignore[reportAttributeAccessIssue]
                 code_location.origin
             ).create_client().shutdown_server()
 
-            external_job = (
+            remote_job = (
                 workspace.get_code_location("test")
                 .get_repository("nope")
-                .get_full_external_job("math_diamond")
+                .get_full_job("math_diamond")
             )
 
             doomed_to_fail_dagster_run = instance.create_run_for_job(
                 job_def=math_diamond,
                 run_config=None,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             with pytest.raises(DagsterLaunchFailedError):
@@ -255,11 +256,11 @@ def test_terminate_after_shutdown():
 
 
 def test_server_down():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="nope",
-            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            python_file=dg.file_relative_path(__file__, "test_default_run_launcher.py"),
         )
 
         with GrpcServerProcess(
@@ -276,22 +277,22 @@ def test_server_down():
                     location_name="test",
                     port=api_client.port,
                     socket=api_client.socket,
-                    host=api_client.host,
+                    host=api_client.host,  # pyright: ignore[reportArgumentType]
                 ),
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
 
-                external_job = (
+                remote_job = (
                     workspace.get_code_location("test")
                     .get_repository("nope")
-                    .get_full_external_job("sleepy_job")
+                    .get_full_job("sleepy_job")
                 )
 
                 dagster_run = instance.create_run_for_job(
                     job_def=sleepy_job,
                     run_config=None,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
 
                 instance.launch_run(dagster_run.run_id, workspace)
@@ -300,13 +301,13 @@ def test_server_down():
 
                 launcher = instance.run_launcher
 
-                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]
+                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]  # pyright: ignore[reportOptionalMemberAccess]
 
                 # Replace run tags with an invalid port
                 instance.add_run_tags(
                     dagster_run.run_id,
                     {
-                        GRPC_INFO_TAG: _seven.json.dumps(
+                        GRPC_INFO_TAG: seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
                         )
                     },

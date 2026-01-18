@@ -16,9 +16,11 @@ export type RunRootQuery = {
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
         canTerminate: boolean;
+        allPools: Array<string> | null;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
+        hasRunMetricsEnabled: boolean;
         status: Types.RunStatus;
         mode: string;
         rootRunId: string | null;
@@ -47,6 +49,7 @@ export type RunRootQuery = {
         executionPlan: {
           __typename: 'ExecutionPlan';
           artifactsPersisted: boolean;
+          assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
           steps: Array<{
             __typename: 'ExecutionStep';
             key: string;
@@ -57,25 +60,8 @@ export type RunRootQuery = {
             }>;
           }>;
         } | null;
-        stepStats: Array<{
-          __typename: 'RunStepStats';
-          stepKey: string;
-          status: Types.StepEventStatus | null;
-          startTime: number | null;
-          endTime: number | null;
-          attempts: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-          markers: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-        }>;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunRootQueryVersion = 'b6d9cd067c92c1608b185d8386a54867378dfdbc4caea5e7e1799699031e40b0';
+export const RunRootQueryVersion = 'a43d256bd72f39975b4d776b20df42e3db4ea605cfe3cee1bd93c10deb62121b';

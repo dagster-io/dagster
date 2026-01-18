@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Optional, cast
 
 import pytest
 from dagster import (
@@ -22,12 +22,16 @@ from pytest_mock import MockFixture
 from sqlglot import Dialect
 
 from dagster_dbt_tests.conftest import _create_dbt_invocation
-from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path, test_metadata_path
+from dagster_dbt_tests.dbt_projects import (
+    test_dependencies_path,
+    test_jaffle_shop_path,
+    test_metadata_path,
+)
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 
 
-def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_no_column_schema(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -49,7 +53,7 @@ def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     [True, False],
 )
 def test_column_schema(
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     use_experimental_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -151,7 +155,7 @@ def test_column_schema(
 
 
 def test_exception_fetch_column_schema_with_adapter(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+    monkeypatch: pytest.MonkeyPatch, mocker: MockFixture, test_metadata_manifest: dict[str, Any]
 ):
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
 
@@ -188,7 +192,7 @@ def test_exception_fetch_column_schema_with_adapter(
 )
 def test_exception_column_schema(
     mocker: MockFixture,
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     use_experimental_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -223,7 +227,7 @@ def test_exception_column_schema(
     )
 
 
-def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
+def test_no_column_lineage(test_metadata_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(
@@ -253,7 +257,7 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
 )
 def test_exception_column_lineage(
     mocker: MockFixture,
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     use_experimental_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -285,14 +289,14 @@ def test_exception_column_lineage(
 
 
 @pytest.fixture(name="test_metadata_manifest_snowflake")
-def test_metadata_manifest_snowflake_fixture() -> Dict[str, Any]:
+def test_metadata_manifest_snowflake_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_metadata_path, target="snowflake").get_artifact(
         "manifest.json"
     )
 
 
 @pytest.fixture(name="test_metadata_manifest_bigquery")
-def test_metadata_manifest_bigquery_fixture() -> Dict[str, Any]:
+def test_metadata_manifest_bigquery_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_metadata_path, target="bigquery").get_artifact(
         "manifest.json"
     )
@@ -479,13 +483,13 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
 def test_column_lineage_real_warehouse(
     request: pytest.FixtureRequest,
     target: str,
-    excluded_models: Optional[List[str]],
+    excluded_models: Optional[list[str]],
     fetch_row_counts: bool,
     manifest_fixture_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    test_metadata_manifest: Dict[str, Any] = cast(
-        Dict[str, Any], request.getfixturevalue(manifest_fixture_name)
+    test_metadata_manifest: dict[str, Any] = cast(
+        "dict[str, Any]", request.getfixturevalue(manifest_fixture_name)
     )
     sql_dialect = target
 
@@ -586,7 +590,7 @@ def test_column_lineage_real_warehouse(
 )
 def test_column_lineage(
     sql_dialect: str,
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     asset_key_selection: Optional[AssetKey],
     use_async_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
@@ -669,7 +673,7 @@ def test_column_lineage(
     ],
 )
 def test_dbt_raw_cli_no_jinja_log_info(
-    test_metadata_manifest: Dict[str, Any], command: str
+    test_metadata_manifest: dict[str, Any], command: str
 ) -> None:
     result = subprocess.check_output(
         ["dbt", "--log-format", "json", "--no-partial-parse", command],
@@ -679,4 +683,111 @@ def test_dbt_raw_cli_no_jinja_log_info(
 
     assert not any(
         json.loads(line)["info"]["name"] == "JinjaLogInfo" for line in result.splitlines()
+    )
+
+
+EXPECTED_COLUMN_LINEAGE_FOR_DEPENDENCIES_PROJECT = {
+    **{
+        key: value
+        for key, value in EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT.items()
+        if key
+        in (
+            AssetKey(["raw_customers"]),
+            AssetKey(["raw_payments"]),
+            AssetKey(["raw_orders"]),
+            AssetKey(["stg_payments"]),
+            AssetKey(["stg_customers"]),
+            AssetKey(["stg_orders"]),
+            AssetKey(["orders"]),
+            AssetKey(["customers"]),
+        )
+    },
+    AssetKey(["stg_customers"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="id")
+            ],
+            "first_name": [
+                TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="first_name")
+            ],
+            "last_name": [
+                TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="last_name")
+            ],
+        }
+    ),
+    AssetKey(["customers_refined"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="customer_id")
+            ],
+            "first_name": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_name")
+            ],
+            "last_name": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="last_name")
+            ],
+            "first_order": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_order")
+            ],
+            "most_recent_order": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="most_recent_order")
+            ],
+            "number_of_orders": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="number_of_orders")
+            ],
+            "customer_lifetime_value": [
+                TableColumnDep(
+                    asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
+                )
+            ],
+        }
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "use_windows_manifest",
+    [False, True],
+)
+def test_column_lineage_dependencies(
+    test_dependencies_manifest: dict[str, Any],
+    test_dependencies_manifest_windows: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
+    capsys,
+    use_windows_manifest: bool,
+) -> None:
+    # Patch get_relation_from_adapter so that we can track how often
+    # relations are queried from the adapter vs cached
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(False).lower())
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_dependencies_path))
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(
+        manifest=test_dependencies_manifest_windows
+        if use_windows_manifest
+        else test_dependencies_manifest
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        cli_invocation = dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+        yield from cli_invocation
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": dbt},
+    )
+
+    column_lineage_by_asset_key = {
+        event.materialization.asset_key: TableMetadataSet.extract(
+            event.materialization.metadata
+        ).column_lineage
+        for event in result.get_asset_materialization_events()
+    }
+
+    expected_column_lineage_by_asset_key = EXPECTED_COLUMN_LINEAGE_FOR_DEPENDENCIES_PROJECT
+
+    assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
+        str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
     )

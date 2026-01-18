@@ -1,14 +1,14 @@
+import dagster as dg
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation import ExternalExecutionPlan
-from dagster._core.snap import create_execution_plan_snapshot_id, create_job_snapshot_id
-from dagster._utils import file_relative_path
+from dagster._core.remote_representation.external import RemoteExecutionPlan
+from dagster._core.snap import create_execution_plan_snapshot_id
 from dagster._utils.test import copy_directory
 
 
 # a change of schema in the snapshot hierarchy caused hashes to be different
 # when snapshots reloaded
 def test_run_created_in_0_7_9_snapshot_id_change():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
     with copy_directory(src_dir) as test_dir:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         # run_id = 'e297fa70-49e8-43f8-abfe-1634f02644f6'
@@ -22,7 +22,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 
         # It is the pipeline snapshot that changed
         # Verify that snapshot ids are not equal. This changed in 0.7.10
-        created_snapshot_id = create_job_snapshot_id(job_snapshot)
+        created_snapshot_id = job_snapshot.snapshot_id
         assert created_snapshot_id != old_job_snapshot_id
 
         # verify that both are accessible off of the historical pipeline
@@ -33,7 +33,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
         assert create_execution_plan_snapshot_id(ep_snapshot) != old_execution_plan_snapshot_id
 
         # This previously failed with a check error
-        assert ExternalExecutionPlan(ep_snapshot)
+        assert RemoteExecutionPlan(ep_snapshot)
 
 
 # Scripts to create this (run against 0.7.9)

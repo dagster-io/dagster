@@ -6,7 +6,6 @@ import pandas as pd
 from dagster import build_asset_context
 from dagster._utils import pushd
 from docs_snippets.tutorial.building_an_asset_graph import (
-    asset_with_logger,
     assets_initial_state,
     assets_with_metadata,
 )

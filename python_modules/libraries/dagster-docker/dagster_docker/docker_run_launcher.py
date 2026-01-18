@@ -1,5 +1,6 @@
 import json
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import dagster._check as check
 import docker
@@ -105,6 +106,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         container_kwargs = {**container_context.container_kwargs}
         labels = container_kwargs.pop("labels", {})
+
+        container_kwargs.pop("stop_timeout", None)
+
         if isinstance(labels, list):
             labels = {key: "" for key in labels}
 
@@ -122,7 +126,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 **container_kwargs,
             )
 
-        except docker.errors.ImageNotFound:
+        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
             client.images.pull(docker_image)
             container = client.containers.create(
                 image=docker_image,
@@ -147,7 +151,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         self._instance.add_run_tags(
             run.run_id,
-            {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},
+            {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},  # pyright: ignore[reportArgumentType]
         )
 
         container.start()
@@ -195,7 +199,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client(container_context).containers.get(container_id)
-        except docker.errors.NotFound:
+        except docker.errors.NotFound:  # pyright: ignore[reportAttributeAccessIssue]
             return None
 
     def terminate(self, run_id):
@@ -208,6 +212,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         container = self._get_container(run)
 
+        container_context = self.get_container_context(run)
+        stop_timeout = container_context.container_kwargs.get("stop_timeout")
+
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
@@ -216,7 +223,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        container.stop()
+        container.stop(timeout=stop_timeout)
 
         return True
 

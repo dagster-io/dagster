@@ -3,21 +3,23 @@ import random
 import tarfile
 import tempfile
 import warnings
+from collections.abc import Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import List, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional
 
 from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
     AutoMaterializePolicy,
+    BetaWarning,
     DagsterInstance,
     Definitions,
-    ExperimentalWarning,
     Nothing,
     Output,
     PartitionsDefinition,
+    PreviewWarning,
     RunRequest,
     SourceAsset,
     materialize,
@@ -27,7 +29,8 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._utils import file_relative_path
 
-warnings.simplefilter("ignore", category=ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 
 class ActivityHistory(NamedTuple):
@@ -36,7 +39,7 @@ class ActivityHistory(NamedTuple):
     run_requests: Sequence[RunRequest]
 
     def play_history(self, defs: Definitions, instance: DagsterInstance) -> None:
-        asset_graph = defs.get_asset_graph()
+        asset_graph = defs.resolve_asset_graph()
 
         for run_request in self.run_requests:
             materialize(
@@ -75,9 +78,10 @@ class PerfScenario(NamedTuple):
 
     @contextmanager
     def instance_from_snapshot(self):
-        with tempfile.TemporaryDirectory() as temp_dir, tarfile.open(
-            self.instance_snapshot_path
-        ) as tf:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tarfile.open(self.instance_snapshot_path) as tf,
+        ):
             tf.extractall(temp_dir)
             with DagsterInstance.from_ref(InstanceRef.from_dir(temp_dir)) as instance:
                 yield instance
@@ -106,7 +110,7 @@ class RandomAssets(NamedTuple):
             for i in range(self.n_assets)
         }
 
-        sources: List[SourceAsset] = []
+        sources: list[SourceAsset] = []
         for i in range(self.n_sources):
             _source_asset = SourceAsset(key=f"source_{i}")
             for j in random.sample(
@@ -146,9 +150,9 @@ class RandomAssets(NamedTuple):
         partition_keys_to_backfill: Optional[Sequence[str]] = None,
     ) -> PerfScenario:
         defs = self.build_definitions()
-        asset_graph = defs.get_asset_graph()
+        asset_graph = defs.resolve_asset_graph()
 
-        run_requests: List[RunRequest] = []
+        run_requests: list[RunRequest] = []
 
         if self.asset_partitions_def:
             for partition_key in partition_keys_to_backfill or []:

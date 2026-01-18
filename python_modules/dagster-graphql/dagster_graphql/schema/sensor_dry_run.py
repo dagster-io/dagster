@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional
 
 import graphene
 from dagster._core.definitions.selector import SensorSelector

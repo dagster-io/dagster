@@ -1,7 +1,6 @@
 import {render, screen} from '@testing-library/react';
 
 import {OpGraph} from '../OpGraph';
-import {SVGViewport} from '../SVGViewport';
 import {
   buildBasicDAG,
   buildCompositeCollapsedIODAG,
@@ -24,7 +23,6 @@ describe('OpGraph', () => {
         jobName="Test Pipeline"
         ops={ops}
         layout={getFullOpLayout(ops, {})}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         focusOps={[]}
         highlightedOps={[]}
         onClickOp={() => {}}
@@ -40,7 +38,6 @@ describe('OpGraph', () => {
         jobName="Test Pipeline"
         ops={ops}
         layout={getFullOpLayout(ops, {})}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         focusOps={[]}
         highlightedOps={[]}
         onClickOp={() => {}}
@@ -56,7 +53,6 @@ describe('OpGraph', () => {
         jobName="Test Pipeline"
         ops={ops}
         layout={getFullOpLayout(ops, {})}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         focusOps={[]}
         highlightedOps={[]}
         onClickOp={() => {}}
@@ -73,7 +69,6 @@ describe('OpGraph', () => {
         jobName="Test Pipeline"
         ops={ops}
         layout={getFullOpLayout(ops, {})}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         focusOps={[]}
         highlightedOps={[]}
         onClickOp={() => {}}
@@ -95,7 +90,6 @@ describe('OpGraph', () => {
         parentOp={undefined}
         parentHandleID={undefined}
         layout={getFullOpLayout(ops, {})}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         focusOps={[]}
         highlightedOps={[]}
         onClickOp={() => {}}
@@ -117,7 +111,6 @@ describe('OpGraph', () => {
         parentOp={parentOp}
         parentHandleID={parentOp.definition.name}
         layout={getFullOpLayout(childOps, {parentOp})}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         focusOps={[]}
         highlightedOps={[]}
         onClickOp={() => {}}

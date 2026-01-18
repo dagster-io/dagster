@@ -2,24 +2,29 @@ from dagster_sigma import (
     DagsterSigmaTranslator,
     SigmaBaseUrl,
     SigmaOrganization,
-    SigmaWorkbook,
+    SigmaWorkbookTranslatorData,
+    load_sigma_asset_specs,
 )
 
-from dagster import AssetSpec, EnvVar
+import dagster as dg
 
-resource = SigmaOrganization(
+sigma_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
-    client_id=EnvVar("SIGMA_CLIENT_ID"),
-    client_secret=EnvVar("SIGMA_CLIENT_SECRET"),
+    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
 )
 
 
-# A translator class lets us customize properties of the built
-# Sigma assets, such as the owners or asset key
+# A translator class lets us customize properties of the built Sigma assets, such as the owners or asset key
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
-    def get_workbook_spec(self, data: SigmaWorkbook) -> AssetSpec:
-        # We add a custom team owner tag to all reports
-        return super().get_workbook_spec(data)._replace(owners=["my_team"])
+    def get_asset_spec(self, data: SigmaWorkbookTranslatorData) -> dg.AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
+        # We create the default asset spec using super()
+        default_spec = super().get_asset_spec(data)
+        # we customize the team owner tag for all Sigma assets
+        return default_spec.replace_attributes(owners=["team:my_team"])
 
 
-defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)
+sigma_specs = load_sigma_asset_specs(
+    sigma_organization, dagster_sigma_translator=MyCustomSigmaTranslator()
+)
+defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})

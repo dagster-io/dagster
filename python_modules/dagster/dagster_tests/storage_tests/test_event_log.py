@@ -6,11 +6,18 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
+import dagster as dg
 import pytest
 import sqlalchemy
 import sqlalchemy as db
 from dagster import DagsterInstance
-from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.events import EngineEventData, SerializableErrorInfo, StepRetryData
+from dagster._core.execution.stats import (
+    StepEventStatus,
+    build_run_stats_from_events,
+    build_run_step_stats_from_events,
+    build_run_step_stats_snapshot_from_events,
+)
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     SqlEventLogStorageMetadata,
@@ -22,13 +29,15 @@ from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy.engine import Connection
 
-from dagster_tests.storage_tests.utils.event_log_storage import TestEventLogStorage
+from dagster_tests.storage_tests.utils.event_log_storage import (
+    TestEventLogStorage,
+    _synthesize_events,
+)
 
 
 class TestInMemoryEventLogStorage(TestEventLogStorage):
@@ -43,6 +52,9 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
         with DagsterInstance.ephemeral() as the_instance:
             yield the_instance
 
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
     @pytest.mark.skipif(
         sys.version_info >= (3, 12) and sqlalchemy_version.startswith("1.4."),
         reason="flaky Sqlite issues on certain version combinations",
@@ -54,10 +66,12 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
 class TestSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
+    # TestSqliteEventLogStorage::test_asset_wiped_event
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(temp_dir=tmpdir_path) as instance:
+            with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
@@ -66,6 +80,12 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         assert isinstance(event_log_storage, SqliteEventLogStorage)
         yield instance.event_log_storage
 
+    def supports_multiple_event_type_queries(self) -> bool:
+        return False
+
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
 
@@ -73,7 +93,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8"
         ) as fd:
             fd.write("some nonsense")
-        with pytest.raises(sqlalchemy.exc.DatabaseError):
+        with pytest.raises(sqlalchemy.exc.DatabaseError):  # pyright: ignore[reportAttributeAccessIssue]
             storage.get_logs_for_run("foo")
 
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
@@ -87,7 +107,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             )
             conn.execute(event_insert)
 
-        with pytest.raises(DagsterEventLogInvalidForRun):
+        with pytest.raises(dg.DagsterEventLogInvalidForRun):
             storage.get_logs_for_run(run_id_1)
 
         SqlEventLogStorageMetadata.create_all(
@@ -99,7 +119,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
                 run_id=run_id_2, event="3", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
-        with pytest.raises(DagsterEventLogInvalidForRun):
+        with pytest.raises(dg.DagsterEventLogInvalidForRun):
             storage.get_logs_for_run(run_id_2)
 
     def cmd(self, exceptions, tmpdir_path):
@@ -140,7 +160,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(
+            with dg.instance_for_test(
                 temp_dir=tmpdir_path,
                 overrides={
                     "event_log_storage": {
@@ -158,6 +178,12 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
         assert isinstance(event_log_storage, ConsolidatedSqliteEventLogStorage)
         yield event_log_storage
 
+    def supports_multiple_event_type_queries(self) -> bool:
+        return False
+
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
 
 class TestLegacyStorage(TestEventLogStorage):
     __test__ = True
@@ -165,7 +191,7 @@ class TestLegacyStorage(TestEventLogStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(temp_dir=tmpdir_path) as instance:
+            with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
@@ -179,8 +205,14 @@ class TestLegacyStorage(TestEventLogStorage):
         finally:
             legacy_storage.dispose()
 
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
     def is_sqlite(self, storage):
         return True
+
+    def supports_multiple_event_type_queries(self) -> bool:
+        return False
 
     @pytest.mark.parametrize("dagster_event_type", ["dummy"])
     def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):
@@ -279,3 +311,153 @@ def test_concurrency_reconcile():
             assert _get_slot_count(conn, "bar") == 3
             assert _get_limit_row_num(conn, "foo") == 5
             assert _get_limit_row_num(conn, "bar") == 3
+
+
+def test_run_stats():
+    @dg.op
+    def op_success(_):
+        return 1
+
+    @dg.op
+    def asset_op(_):
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey("asset_1"))
+        yield dg.Output(1)
+
+    @dg.op
+    def op_failure(_):
+        raise ValueError("failing")
+
+    def _ops():
+        op_success()
+        asset_op()
+        op_failure()
+
+    events, result = _synthesize_events(_ops, check_success=False)
+
+    run_stats = build_run_stats_from_events(result.run_id, events)
+
+    assert run_stats.run_id == result.run_id
+    assert run_stats.materializations == 1
+    assert run_stats.steps_succeeded == 2
+    assert run_stats.steps_failed == 1
+    assert (
+        run_stats.start_time is not None
+        and run_stats.end_time is not None
+        and run_stats.end_time > run_stats.start_time
+    )
+
+    # build up run stats through incremental events
+    incremental_run_stats = None
+    for event in events:
+        incremental_run_stats = build_run_stats_from_events(
+            result.run_id, [event], incremental_run_stats
+        )
+
+    assert incremental_run_stats == run_stats
+
+
+def test_step_stats():
+    @dg.op
+    def op_success(_):
+        return 1
+
+    @dg.op
+    def asset_op(_):
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey("asset_1"))
+        yield dg.Output(1)
+
+    @dg.op(out=dg.Out(str))
+    def op_failure(_):
+        time.sleep(0.001)
+        raise dg.RetryRequested(max_retries=3)
+
+    def _ops():
+        op_success()
+        asset_op()
+        op_failure()
+
+    events, result = _synthesize_events(_ops, check_success=False)
+
+    step_stats = build_run_step_stats_from_events(result.run_id, events)
+    assert len(step_stats) == 3
+    assert len([step for step in step_stats if step.status == StepEventStatus.SUCCESS]) == 2
+    assert len([step for step in step_stats if step.status == StepEventStatus.FAILURE]) == 1
+    assert all([step.run_id == result.run_id for step in step_stats])
+
+    op_failure_stats = next(
+        iter([step for step in step_stats if step.step_key == "op_failure"]), None
+    )
+    assert op_failure_stats
+    assert op_failure_stats.attempts == 4
+    assert len(op_failure_stats.attempts_list) == 4
+
+    # build up run stats through incremental events
+    incremental_snapshot = None
+    for event in events:
+        incremental_snapshot = build_run_step_stats_snapshot_from_events(
+            result.run_id, [event], incremental_snapshot
+        )
+
+    assert incremental_snapshot
+    assert incremental_snapshot.step_key_stats == step_stats
+
+
+def test_step_worker_failure_attempts():
+    run_id = "run_id"
+    step_key = "step_key"
+    job_name = "job_name"
+
+    STEP_EVENT_LOGS = [
+        dg.EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738790993.7522137,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=dg.DagsterEvent(
+                event_type_value="STEP_WORKER_STARTING",
+                job_name=job_name,
+                event_specific_data=EngineEventData(marker_start="step_process_start"),
+                step_key=step_key,
+            ),
+        ),
+        dg.EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738791010.1940305,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=dg.DagsterEvent(
+                event_type_value="STEP_UP_FOR_RETRY",
+                job_name=job_name,
+                event_specific_data=StepRetryData(
+                    error=SerializableErrorInfo(message="", stack=[], cls_name=None),
+                ),
+                step_key=step_key,
+            ),
+        ),
+        dg.EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738791036.962399,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=dg.DagsterEvent(
+                event_type_value="STEP_WORKER_STARTING",
+                job_name=job_name,
+                event_specific_data=EngineEventData(marker_start="step_process_start"),
+                step_key=step_key,
+            ),
+        ),
+    ]
+
+    run_step_stats = build_run_step_stats_from_events(run_id, STEP_EVENT_LOGS)
+    assert len(run_step_stats) == 1
+    step_stat = run_step_stats[0]
+    assert step_stat.attempts == 1

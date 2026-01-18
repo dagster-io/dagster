@@ -1,24 +1,21 @@
+from collections.abc import Mapping
 from enum import Enum
-from typing import Dict, List
+from typing import Any
 
 from pydantic import (
     BaseModel as PydanticBaseModel,
-    Extra,
+    Field,
 )
 
 
 class SupportedKubernetes(str, Enum):
-    V1_18 = "1.18.0"
+    V1_19 = "1.19.0"
 
 
-class ConfigurableClass(PydanticBaseModel):
+class ConfigurableClass(PydanticBaseModel, extra="forbid"):
     module: str
-    class_: str
+    class_: str = Field(alias="class")
     config: dict
-
-    class Config:
-        fields = {"class_": "class"}
-        extra = Extra.forbid
 
 
 class BaseModel(PydanticBaseModel):
@@ -33,7 +30,7 @@ class BaseModel(PydanticBaseModel):
         def schema_extra(schema, model):
             for prop, value in schema.get("properties", {}).items():
                 # retrieve right field from alias or name
-                field = next(x for x in model.__fields__.values() if x.alias == prop)
+                field = next(x for x in model.model_fields.values() if x.alias == prop)
                 if field.allow_none:
                     # only one type e.g. {'type': 'integer'}
                     if "type" in value:
@@ -47,15 +44,13 @@ class BaseModel(PydanticBaseModel):
                     value["anyOf"].append({"type": "null"})
 
 
-def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_18.value) -> str:
-    return (
-        f"https://kubernetesjsonschema.dev/v{version}/_definitions.json#/definitions/{definition}"
-    )
+def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_19.value) -> str:
+    return f"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v{version}/_definitions.json#/definitions/{definition}"
 
 
 def create_json_schema_conditionals(
-    enum_type_to_config_name_mapping: Dict[Enum, str],
-) -> List[dict]:
+    enum_type_to_config_name_mapping: dict[Enum, str],
+) -> list[Mapping[str, Any]]:
     return [
         {
             "if": {

@@ -3,6 +3,8 @@
     "paths": {
       "@dagster-io/ui-core/*": ["../ui-core/src/*"],
       "@dagster-io/ui-components": ["../ui-components/src"],
+      "@dagster-io/ui-components/editor": ["../ui-components/src/editor"],
+      "@dagster-io/dg-docs-components/*": ["../dg-docs-components/src/*"],
       "shared/*": ["../ui-core/src/*"]
     },
     "module": "esnext",
@@ -27,6 +29,6 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": true
   },
-  "include": ["src", "custom-next-env.d.ts"],
-  "exclude": ["node_modules", "next-env.d.ts"]
+  "include": ["src", "typings.d.ts", "next-env.d.ts"],
+  "exclude": ["node_modules"]
 }

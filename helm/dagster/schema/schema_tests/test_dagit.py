@@ -300,6 +300,18 @@ def test_webserver_db_pool_recycle(deployment_template: HelmTemplate):
     assert f"--db-pool-recycle {pool_recycle_s}" in command
 
 
+def test_webserver_db_pool_max_overflow(deployment_template: HelmTemplate):
+    pool_max_overflow_s = 30
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(dbPoolMaxOverflow=pool_max_overflow_s)
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--db-pool-max-overflow {pool_max_overflow_s}" in command
+
+
 def test_webserver_log_level(deployment_template: HelmTemplate):
     log_level = "trace"
     helm_values = DagsterHelmValues.construct(
@@ -495,7 +507,9 @@ def test_webserver_security_context(deployment_template: HelmTemplate):
         },
     }
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(securityContext=security_context)
+        dagsterWebserver=Webserver.construct(
+            securityContext=kubernetes.SecurityContext.parse_obj(security_context)
+        )
     )
 
     [webserver_deployment] = deployment_template.render(helm_values)
@@ -515,7 +529,9 @@ def test_webserver_security_context(deployment_template: HelmTemplate):
 def test_init_container_resources(deployment_template: HelmTemplate):
     init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(initContainerResources=init_container_resources)
+        dagsterWebserver=Webserver.construct(
+            initContainerResources=kubernetes.Resources.parse_obj(init_container_resources)
+        )
     )
 
     [webserver_deployment] = deployment_template.render(helm_values)
@@ -592,3 +608,34 @@ def test_env_configmap(configmap_template):
     assert len(cm.data) == 6
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert cm.data["TEST_ENV"] == "test_value"
+
+
+def test_check_db_container_toggle(deployment_template: HelmTemplate):
+    # Off test
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(checkDbReadyInitContainer=False)
+    )
+    [webserver_deployment] = deployment_template.render(helm_values)
+    assert (
+        webserver_deployment.spec.template.spec.init_containers is None
+        or "check-db-ready"
+        not in [
+            container.name for container in webserver_deployment.spec.template.spec.init_containers
+        ]
+    )
+
+    # On test
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(checkDbReadyInitContainer=True)
+    )
+    [webserver_deployment] = deployment_template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in webserver_deployment.spec.template.spec.init_containers
+    ]
+
+    # Default test
+    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
+    [webserver_deployment] = deployment_template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in webserver_deployment.spec.template.spec.init_containers
+    ]

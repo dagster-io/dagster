@@ -21,8 +21,12 @@ config:
   storage_account: {{ include "stringSource" $azureBlobComputeLogManagerConfig.storageAccount }}
   container: {{ include "stringSource" $azureBlobComputeLogManagerConfig.container }}
 
-  {{- if $azureBlobComputeLogManagerConfig.secretKey }}
-  secret_key: {{ include "stringSource" $azureBlobComputeLogManagerConfig.secretKey }}
+  {{- if $azureBlobComputeLogManagerConfig.secretCredential }}
+  secret_credential: {{ $azureBlobComputeLogManagerConfig.secretCredential | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.accessKeyOrSasToken }}
+  access_key_or_sas_token: {{ include "stringSource" $azureBlobComputeLogManagerConfig.accessKeyOrSasToken }}
   {{- end }}
 
   {{- if $azureBlobComputeLogManagerConfig.localDir }}
@@ -40,6 +44,11 @@ config:
   {{- if $azureBlobComputeLogManagerConfig.defaultAzureCredential }}
   default_azure_credential: {{ $azureBlobComputeLogManagerConfig.defaultAzureCredential | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $azureBlobComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}
@@ -118,6 +127,18 @@ config:
 
   {{- if $s3ComputeLogManagerConfig.region }}
   region: {{ $s3ComputeLogManagerConfig.region }}
+  {{- end }}
+{{- end }}
+
+{{- define "dagsterYaml.computeLogManager.local" }}
+{{- $localComputeLogManagerConfig := .Values.computeLogManager.config.localComputeLogManager }}
+module: dagster.core.storage.local_compute_log_manager
+class: LocalComputeLogManager
+config:
+  base_dir: {{ include "stringSource" $localComputeLogManagerConfig.baseDir }}
+
+  {{- if $localComputeLogManagerConfig.pollingTimeout }}
+  polling_timeout: {{ $localComputeLogManagerConfig.pollingTimeout }}
   {{- end }}
 {{- end }}
 

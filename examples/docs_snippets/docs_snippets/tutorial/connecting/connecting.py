@@ -1,25 +1,19 @@
-from dagster import (
-    AssetSelection,
-    Definitions,
-    ScheduleDefinition,
-    asset,
-    define_asset_job,
-)
+import dagster as dg
 
 from .resources import DataGeneratorResource
 
 
-@asset
+@dg.asset
 def foo_asset():
     return 1
 
 
 all_assets = [foo_asset]
-job = define_asset_job(
+job = dg.define_asset_job(
     name="hackernews_top_stories_job",
-    selection=AssetSelection.all(),
+    selection=dg.AssetSelection.all(),
 )
-hackernews_schedule = ScheduleDefinition(
+hackernews_schedule = dg.ScheduleDefinition(
     name="hackernews_top_stories_schedule",
     cron_schedule="1 1 1 * *",
     job=job,
@@ -32,7 +26,7 @@ from .resources import DataGeneratorResource
 
 datagen = DataGeneratorResource()  # Make the resource
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=all_assets,
     schedules=[hackernews_schedule],
     resources={

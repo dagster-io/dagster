@@ -2,8 +2,8 @@ import {Box, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 import {gql, useQuery} from '../apollo-client';
+import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 

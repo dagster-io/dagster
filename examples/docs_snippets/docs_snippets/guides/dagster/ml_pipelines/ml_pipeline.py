@@ -2,11 +2,11 @@
 
 ## data_ingestion_start
 import requests
-from dagster import asset
+import dagster as dg
 import pandas as pd
 
 
-@asset
+@dg.asset
 def hackernews_stories():
     # Get the max ID number from hacker news
     latest_item = requests.get(
@@ -32,12 +32,11 @@ def hackernews_stories():
 ## data_ingestion_end
 
 ## test_train_split_start
-
 from sklearn.model_selection import train_test_split
-from dagster import multi_asset, AssetOut
+import dagster as dg
 
 
-@multi_asset(outs={"training_data": AssetOut(), "test_data": AssetOut()})
+@dg.multi_asset(outs={"training_data": dg.AssetOut(), "test_data": dg.AssetOut()})
 def training_test_data(hackernews_stories):
     X = hackernews_stories.title
     y = hackernews_stories.descendants
@@ -54,8 +53,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 
 
-@multi_asset(
-    outs={"tfidf_vectorizer": AssetOut(), "transformed_training_data": AssetOut()}
+@dg.multi_asset(
+    outs={"tfidf_vectorizer": dg.AssetOut(), "transformed_training_data": dg.AssetOut()}
 )
 def transformed_train_data(training_data):
     X_train, y_train = training_data
@@ -68,7 +67,7 @@ def transformed_train_data(training_data):
     return vectorizer, (transformed_X_train, transformed_y_train)
 
 
-@asset
+@dg.asset
 def transformed_test_data(test_data, tfidf_vectorizer):
     X_test, y_test = test_data
     # Use the fitted tokenizer to transform the test dataset
@@ -82,12 +81,11 @@ def transformed_test_data(test_data, tfidf_vectorizer):
 
 
 ## models_start
-
 import xgboost as xg
 from sklearn.metrics import mean_absolute_error
 
 
-@asset
+@dg.asset
 def xgboost_comments_model(transformed_training_data):
     transformed_X_train, transformed_y_train = transformed_training_data
     # Train XGBoost model, which is a highly efficient and flexible model
@@ -98,7 +96,7 @@ def xgboost_comments_model(transformed_training_data):
     return xgb_r
 
 
-@asset
+@dg.asset
 def comments_model_test_set_r_squared(transformed_test_data, xgboost_comments_model):
     transformed_X_test, transformed_y_test = transformed_test_data
     # Use the test set data to get a score of the XGBoost model
@@ -110,7 +108,7 @@ def comments_model_test_set_r_squared(transformed_test_data, xgboost_comments_mo
 
 
 ## inference_start
-@asset
+@dg.asset
 def latest_story_comment_predictions(xgboost_comments_model, tfidf_vectorizer):
     # Get the max ID number from hacker news
     latest_item = requests.get(

@@ -1,8 +1,9 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional
 
 from dagster import AssetSpec
-from dagster._annotations import experimental
+from dagster._annotations import beta
 
 from dagster_looker.lkml.asset_utils import (
     build_looker_dashboard_specs,
@@ -12,7 +13,7 @@ from dagster_looker.lkml.asset_utils import (
 from dagster_looker.lkml.dagster_looker_lkml_translator import DagsterLookerLkmlTranslator
 
 
-@experimental
+@beta
 def build_looker_asset_specs(
     *,
     project_dir: Path,

@@ -1,6 +1,5 @@
 # ruff: isort: skip_file
 
-from dagster import asset
 
 # vanilla_schedule_start
 

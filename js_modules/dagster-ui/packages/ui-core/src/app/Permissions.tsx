@@ -1,11 +1,11 @@
 import * as React from 'react';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   PermissionFragment,
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
-import {gql, useQuery} from '../apollo-client';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -55,7 +55,7 @@ export type PermissionsFromJSON = {
   edit_workspace?: PermissionResult;
 };
 
-export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
+export const DEFAULT_DISABLED_REASON = 'Insufficient permissions';
 
 const DEFAULT_PERMISSIONS = {
   enabled: false,
@@ -223,6 +223,7 @@ export const usePermissionsForLocation = (
   const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
   let permissionsForLocation = unscopedPermissions;
   if (locationName && locationPermissions.hasOwnProperty(locationName)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     permissionsForLocation = locationPermissions[locationName]!;
   }
 

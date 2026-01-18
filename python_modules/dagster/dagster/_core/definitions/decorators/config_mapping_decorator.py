@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional, Type, Union, cast, overload
+from collections.abc import Callable
+from typing import Any, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -44,7 +45,7 @@ class _ConfigMapping:
             )
 
             config_schema = infer_schema_from_config_annotation(param.annotation, param.default)
-            config_cls = cast(Type[Config], param.annotation)
+            config_cls = cast("type[Config]", param.annotation)
 
             param_name = param.name
 

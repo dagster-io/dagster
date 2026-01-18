@@ -14,12 +14,6 @@ repos:
     args: [check, --fix, --exit-non-zero-on-fix]
     language: system
     pass_filenames: false
-  - id: docs-mdx-format
-    name: Format Docs
-    language: system
-    entry: bash -c "cd docs && make mdx-format"
-    pass_filenames: false
-    files: ^docs/content
 
   # We do not use pyright's provided pre-commit hook because we need the environment management
   # supplied by `scripts/run-pyright.py`.

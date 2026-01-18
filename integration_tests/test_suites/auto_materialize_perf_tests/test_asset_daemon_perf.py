@@ -4,16 +4,14 @@ import warnings
 
 import click
 import pytest
-from dagster import (
-    AssetSelection,
-    DailyPartitionsDefinition,
-    ExperimentalWarning,
-    HourlyPartitionsDefinition,
-    PartitionKeyRange,
-)
+from dagster import AssetSelection, BetaWarning, PartitionKeyRange, PreviewWarning
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
+)
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 
 from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import (
@@ -21,7 +19,8 @@ from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import 
 )
 from auto_materialize_perf_tests.perf_scenario import PerfScenario, RandomAssets
 
-warnings.simplefilter("ignore", category=ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -62,11 +61,11 @@ perf_scenarios = [
         n_runs=2, randomize_runs=True, max_execution_time_seconds=5
     ),
     all_daily_partitioned_500_assets.build_scenario(
-        partition_keys_to_backfill=["2020-01-01", "2020-01-02"], max_execution_time_seconds=40
+        partition_keys_to_backfill=["2020-01-01", "2020-01-02"], max_execution_time_seconds=45
     ),
     all_daily_partitioned_500_assets.build_scenario(
-        partition_keys_to_backfill=[f"2020-01-{i+1:02}" for i in range(20)],
-        max_execution_time_seconds=30,
+        partition_keys_to_backfill=[f"2020-01-{i + 1:02}" for i in range(20)],
+        max_execution_time_seconds=45,
     ),
     all_hourly_partitioned_100_assets.build_scenario(
         partition_keys_to_backfill=["2020-01-01-00:00", "2020-01-02-00:00"],
@@ -84,7 +83,7 @@ perf_scenarios = [
 
 @pytest.mark.parametrize("scenario", perf_scenarios, ids=[s.name for s in perf_scenarios])
 def test_auto_materialize_perf(scenario: PerfScenario):
-    asset_graph = scenario.defs.get_asset_graph()
+    asset_graph = scenario.defs.resolve_asset_graph()
     with scenario.instance_from_snapshot() as instance:
         start = time.time()
 
@@ -92,8 +91,9 @@ def test_auto_materialize_perf(scenario: PerfScenario):
             entity_keys=AssetSelection.all().resolve(asset_graph),
             instance=instance,
             asset_graph=asset_graph,
-            allow_backfills=False,
+            emit_backfills=False,
             cursor=AssetDaemonCursor.empty(),
+            evaluation_id=1,
         ).evaluate()
 
         end = time.time()

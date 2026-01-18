@@ -1,17 +1,17 @@
 from abc import abstractmethod
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import Generator, Optional, Sequence, Type, cast
+from typing import Optional, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
-    TimeWindow,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from google.api_core.exceptions import NotFound
@@ -23,9 +23,8 @@ from dagster_gcp.bigquery.utils import setup_gcp_creds
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-@experimental
 def build_bigquery_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
@@ -60,7 +59,7 @@ def build_bigquery_io_manager(
 
             bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table, my_second_table],
                 resources={
                     "io_manager": bigquery_io_manager.configured({
@@ -74,7 +73,7 @@ def build_bigquery_io_manager(
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                         "io_manager": bigquery_io_manager.configured({
@@ -137,7 +136,7 @@ def build_bigquery_io_manager(
     """
 
     @dagster_maintained_io_manager
-    @io_manager(config_schema=BigQueryIOManager.to_config_schema())
+    @io_manager(config_schema=BigQueryIOManager.to_config_schema())  # pyright: ignore[reportArgumentType]
     def bigquery_io_manager(init_context):
         """I/O Manager for storing outputs in a BigQuery database.
 
@@ -307,7 +306,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> Generator:
@@ -339,7 +338,7 @@ class BigQueryClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = (
                 f"SELECT {col_str} FROM"
                 f" `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
@@ -354,7 +353,7 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, _):  # pyright: ignore[reportIncompatibleMethodOverride]
         conn = bigquery.Client(
             project=context.resource_config.get("project"),
             location=context.resource_config.get("location"),
@@ -367,7 +366,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+    if table_slice.partition_dimensions:
         query = (
             f"DELETE FROM `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
         )
@@ -388,7 +387,7 @@ def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensi
 
 
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
-    partition = cast(TimeWindow, table_partition.partitions)
+    partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(BIGQUERY_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(BIGQUERY_DATETIME_FORMAT)

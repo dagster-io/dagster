@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   ButtonLink,
+  CaptionMono,
   Colors,
   FontFamily,
   Icon,
@@ -15,11 +16,6 @@ import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
-import {
-  LocationStatusEntryFragment,
-  WorkspaceDisplayMetadataFragment,
-} from './WorkspaceContext/types/WorkspaceQueries.types';
-import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
   NO_RELOAD_PERMISSION_TEXT,
@@ -29,28 +25,36 @@ import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceDisplayMetadataFragment,
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 
 export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
+  const [didCopy, setDidCopy] = useState(false);
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
   const onClick = useCallback(async () => {
     copy(value);
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'done',
-      message: 'Image string copied!',
-    });
+    setDidCopy(true);
+    const timer = setTimeout(() => {
+      setDidCopy(false);
+    }, 3000);
+    return () => clearTimeout(timer);
   }, [copy, value]);
 
   if (imageKV) {
     return (
-      <ImageNameBox flex={{direction: 'row', gap: 4}}>
-        <span style={{fontWeight: 500}}>image:</span>
-        <Tooltip content="Click to copy" placement="top" display="block">
-          <UnstyledButton onClick={onClick} style={MetadataValueButtonStyle}>
-            <MiddleTruncate text={imageKV.value} />
+      <ImageNameBox>
+        <span style={{fontWeight: 500}}>image: </span>
+        <span style={{marginRight: '4px'}}>
+          <CaptionMono>{imageKV.value}</CaptionMono>
+        </span>
+        <Tooltip content={didCopy ? 'Copied!' : 'Click to copy image string'} placement="top">
+          <UnstyledButton onClick={onClick}>
+            <Icon name={didCopy ? 'done' : 'copy'} size={12} />
           </UnstyledButton>
         </Tooltip>
       </ImageNameBox>
@@ -65,7 +69,10 @@ const ImageNameBox = styled(Box)`
   font-size: 12px;
 
   .bp5-popover-target {
+    display: inline;
     overflow: hidden;
+    position: relative;
+    top: 1px;
   }
 `;
 
@@ -75,7 +82,11 @@ export const ModuleOrPackageOrFile = ({
   metadata: WorkspaceDisplayMetadataFragment[];
 }) => {
   const imageKV = metadata.find(
-    ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
+    ({key}) =>
+      key === 'module_name' ||
+      key === 'package_name' ||
+      key === 'python_file' ||
+      key === 'autoload_defs_module_name',
   );
   if (imageKV) {
     return (
@@ -94,44 +105,34 @@ export const ModuleOrPackageOrFile = ({
 };
 
 export const LocationStatus = (props: {
-  locationStatus: LocationStatusEntryFragment;
+  locationStatus: LocationStatusEntryFragment | null;
   locationOrError: WorkspaceRepositoryLocationNode | null;
 }) => {
   const {locationStatus, locationOrError} = props;
   const [showDialog, setShowDialog] = useState(false);
 
   const reloadFn = useMemo(
-    () => buildReloadFnForLocation(locationStatus.name),
-    [locationStatus.name],
+    () => buildReloadFnForLocation(locationStatus?.name || ''),
+    [locationStatus?.name],
   );
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,
   });
 
-  if (locationStatus.loadStatus === 'LOADING') {
-    return (
-      <Tag minimal intent="primary">
-        Updating…
-      </Tag>
-    );
+  if (locationStatus?.loadStatus === 'LOADING') {
+    return <Tag intent="primary">Updating…</Tag>;
   }
 
-  if (locationOrError?.versionKey !== locationStatus.versionKey) {
-    return (
-      <Tag minimal intent="primary">
-        Loading…
-      </Tag>
-    );
+  if (locationOrError?.versionKey !== locationStatus?.versionKey) {
+    return <Tag intent="primary">Loading…</Tag>;
   }
 
-  if (locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
+  if (locationStatus && locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
-          <Tag minimal intent="danger">
-            Failed
-          </Tag>
+          <Tag intent="danger">Failed</Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
             <span style={{fontSize: '12px'}}>View error</span>
           </ButtonLink>
@@ -148,11 +149,7 @@ export const LocationStatus = (props: {
     );
   }
 
-  return (
-    <Tag minimal intent="success">
-      Loaded
-    </Tag>
-  );
+  return <Tag intent="success">Loaded</Tag>;
 };
 
 export const ReloadButton = ({location}: {location: string}) => {
@@ -165,7 +162,6 @@ export const ReloadButton = ({location}: {location: string}) => {
             <Tooltip
               content={hasReloadPermission ? '' : NO_RELOAD_PERMISSION_TEXT}
               canShow={!hasReloadPermission}
-              useDisabledButtonTooltipFix
             >
               <Button
                 icon={<Icon name="code_location_reload" />}

@@ -82,6 +82,10 @@ export type ScheduleRootQuery = {
           __typename: 'DryRunInstigationTicks';
           results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
         };
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
       }
     | {__typename: 'ScheduleNotFoundError'; message: string};
   instance: {
@@ -114,54 +118,4 @@ export type ScheduleRootQuery = {
   };
 };
 
-export type PreviousRunsForScheduleQueryVariables = Types.Exact<{
-  filter?: Types.InputMaybe<Types.RunsFilter>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
-}>;
-
-export type PreviousRunsForScheduleQuery = {
-  __typename: 'Query';
-  pipelineRunsOrError:
-    | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
-    | {__typename: 'PythonError'; message: string}
-    | {
-        __typename: 'Runs';
-        results: Array<{
-          __typename: 'Run';
-          id: string;
-          status: Types.RunStatus;
-          stepKeysToExecute: Array<string> | null;
-          canTerminate: boolean;
-          hasReExecutePermission: boolean;
-          hasTerminatePermission: boolean;
-          hasDeletePermission: boolean;
-          mode: string;
-          rootRunId: string | null;
-          parentRunId: string | null;
-          pipelineSnapshotId: string | null;
-          pipelineName: string;
-          solidSelection: Array<string> | null;
-          creationTime: number;
-          startTime: number | null;
-          endTime: number | null;
-          updateTime: number | null;
-          repositoryOrigin: {
-            __typename: 'RepositoryOrigin';
-            id: string;
-            repositoryName: string;
-            repositoryLocationName: string;
-          } | null;
-          assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-          assetCheckSelection: Array<{
-            __typename: 'AssetCheckhandle';
-            name: string;
-            assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          }> | null;
-          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-        }>;
-      };
-};
-
-export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
-
-export const PreviousRunsForScheduleQueryVersion = '7955ced58f846514ce4272707e9682b6bd66f53a26b4f6ff3754f1581f5ef92f';
+export const ScheduleRootQueryVersion = 'da4d343e5bc6f68278f354dc62d5148a9709a89436104b43cca504427a274a8b';

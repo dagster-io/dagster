@@ -1,4 +1,5 @@
-from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset, repository
+from dagster import AutoMaterializePolicy, asset, repository
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2023-02-01")
 

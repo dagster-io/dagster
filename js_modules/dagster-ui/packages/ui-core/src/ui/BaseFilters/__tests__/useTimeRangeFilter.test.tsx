@@ -1,46 +1,85 @@
 import {IconName} from '@dagster-io/ui-components';
-import {act, render, waitFor} from '@testing-library/react';
+import {TZDate} from '@date-fns/tz';
+import {render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
-// eslint-disable-next-line no-restricted-imports
-import moment from 'moment-timezone';
+import {endOfDay, startOfDay, subDays} from 'date-fns';
+import {act, useState} from 'react';
 
+import {TimeContext} from '../../../app/time/TimeContext';
+import {DateRangeDialog} from '../../DateRangeDialog';
 import {
   ActiveFilterState,
-  CustomTimeRangeFilterDialog,
   TimeRangeState,
   calculateTimeRanges,
   useTimeRangeFilter,
 } from '../useTimeRangeFilter';
 
-let mockReactDates = jest.fn((_props) => <div />);
-beforeEach(() => {
-  mockReactDates = jest.fn((_props) => <div />);
-});
-jest.mock('react-dates', () => {
-  return {
-    DateRangePicker: (props: any) => mockReactDates(props),
-  };
-});
+const MAR_1_2025_MIDNIGHT_EASTERN = 1740805200000;
+const MAR_3_2025_MIDNIGHT_EASTERN = 1740978000000;
+const MAR_3_2025_END_OF_DAY_EASTERN = 1741064399999;
+
+const MAR_1_2025_MIDNIGHT_DARWIN = 1740753000000;
+const MAR_3_2025_MIDNIGHT_DARWIN = 1740925800000;
+const MAR_3_2025_END_OF_DAY_DARWIN = 1741012199999;
+
+jest.mock('@dagster-io/ui-components', () => ({
+  ...jest.requireActual('@dagster-io/ui-components'),
+  DayPickerWrapper: ({onSelect}: any) => {
+    return (
+      <div>
+        <button
+          onClick={() => {
+            onSelect({
+              from: new Date(MAR_1_2025_MIDNIGHT_EASTERN),
+              to: new Date(MAR_3_2025_MIDNIGHT_EASTERN),
+            });
+          }}
+        >
+          Set NYC dates
+        </button>
+        <button
+          onClick={() => {
+            onSelect({
+              from: new Date(MAR_1_2025_MIDNIGHT_DARWIN),
+              to: new Date(MAR_3_2025_MIDNIGHT_DARWIN),
+            });
+          }}
+        >
+          Set Darwin dates
+        </button>
+      </div>
+    );
+  },
+}));
+
 const mockFilterProps = {
   name: 'Test Filter',
   activeFilterTerm: 'Timestamp',
   icon: 'date' as IconName,
-  state: [null, null] as TimeRangeState,
 };
 
+function useTimeRangeFilterWrapper({state: initialState}: {state: TimeRangeState}) {
+  const [state, setState] = useState<TimeRangeState>(initialState);
+  return useTimeRangeFilter({...mockFilterProps, state, onStateChanged: setState});
+}
+
 describe('useTimeRangeFilter', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should initialize filter state', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [2, 3]}));
     const filter = result.current;
 
     expect(filter.name).toBe(mockFilterProps.name);
     expect(filter.icon).toBe(mockFilterProps.icon);
-    expect(filter.state).toEqual(mockFilterProps.state);
+    expect(filter.state).toEqual([2, 3]);
   });
 
   it('should reset filter state', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [1, 2]}));
     let filter = result.current;
 
     act(() => {
@@ -48,18 +87,18 @@ describe('useTimeRangeFilter', () => {
     });
 
     filter = result.current;
-    expect(filter.state).not.toEqual(mockFilterProps.state);
+    expect(filter.state).not.toEqual([1, 2]);
 
     act(() => {
       filter.setState([null, null]);
     });
     filter = result.current;
 
-    expect(filter.state).toEqual(mockFilterProps.state);
+    expect(filter.state).toEqual([null, null]);
   });
 
   it('should handle pre-defined time ranges', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
     let filter = result.current;
 
     act(() => {
@@ -77,50 +116,97 @@ describe('useTimeRangeFilter', () => {
   });
 });
 
-describe('CustomTimeRangeFilterDialog', () => {
+describe('DateRangeDialog', () => {
   it('should render', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
     const filter = result.current;
 
-    const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={() => {}} />);
+    const {getByText} = render(
+      <DateRangeDialog onApply={filter.setState} onCancel={() => {}} isOpen={true} />,
+    );
 
     expect(getByText('Select a date range')).toBeInTheDocument();
   });
 
   it('should apply custom date range', async () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
-    let filter = result.current;
+    const user = userEvent.setup();
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
 
-    const {getByText} = await act(async () =>
-      render(<CustomTimeRangeFilterDialog filter={filter} close={() => {}} />),
+    const {findByText} = render(
+      <TimeContext.Provider
+        value={{
+          timezone: ['America/New_York', () => {}, () => {}],
+          hourCycle: ['h23', () => {}, () => {}],
+        }}
+      >
+        <DateRangeDialog onApply={result.current.setState} onCancel={() => {}} isOpen={true} />
+      </TimeContext.Provider>,
     );
 
-    // Mock selecting start and end dates
-    const startDate = moment().startOf('day').subtract(10, 'days');
-    const endDate = moment().endOf('day').subtract(5, 'days');
+    const setDatesButton = await findByText(/set nyc dates/i);
+    await user.click(setDatesButton);
 
-    await waitFor(() => {
-      act(() => {
-        ((mockReactDates.mock.calls[0] as any)[0] as any).onDatesChange({
-          startDate,
-          endDate,
-        });
-      });
-    });
+    const applyButton = await findByText(/apply/i);
+    await user.click(applyButton);
 
-    // Click apply button
-    await userEvent.click(getByText('Apply'));
-    filter = result.current;
+    const expectedStart = startOfDay(
+      new TZDate(MAR_1_2025_MIDNIGHT_EASTERN, 'America/New_York'),
+    ).valueOf();
+    const expectedEnd = endOfDay(
+      new TZDate(MAR_3_2025_END_OF_DAY_EASTERN, 'America/New_York'),
+    ).valueOf();
 
-    expect(filter.state).toEqual([startDate.valueOf(), endDate.valueOf()]);
+    expect(result.current.state).toEqual([expectedStart, expectedEnd]);
+  });
+
+  it('should apply custom date range with timezone', async () => {
+    const user = userEvent.setup();
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
+
+    const {findByText} = render(
+      <TimeContext.Provider
+        value={{
+          timezone: ['Australia/Darwin', () => {}, () => {}],
+          hourCycle: ['h23', () => {}, () => {}],
+        }}
+      >
+        <DateRangeDialog onApply={result.current.setState} onCancel={() => {}} isOpen={true} />
+      </TimeContext.Provider>,
+    );
+
+    const setDatesButton = await findByText(/set darwin dates/i);
+    await user.click(setDatesButton);
+
+    const applyButton = await findByText(/apply/i);
+    await user.click(applyButton);
+
+    const expectedStart = startOfDay(
+      new TZDate(MAR_1_2025_MIDNIGHT_DARWIN, 'Australia/Darwin'),
+    ).valueOf();
+    const expectedEnd = endOfDay(
+      new TZDate(MAR_3_2025_END_OF_DAY_DARWIN, 'Australia/Darwin'),
+    ).valueOf();
+
+    expect(result.current.state).toEqual([expectedStart, expectedEnd]);
   });
 
   it('should close dialog on cancel', async () => {
     const closeMock = jest.fn();
-    const {result} = await act(async () => renderHook(() => useTimeRangeFilter(mockFilterProps)));
+    const {result} = await act(async () =>
+      renderHook(() => useTimeRangeFilterWrapper({state: [null, null]})),
+    );
     let filter = result.current;
 
-    const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={closeMock} />);
+    const {getByText} = render(
+      <DateRangeDialog
+        onApply={(val) => {
+          filter.setState(val);
+          closeMock();
+        }}
+        onCancel={closeMock}
+        isOpen={true}
+      />,
+    );
 
     // Click cancel button
     await userEvent.click(getByText('Cancel'));
@@ -199,7 +285,7 @@ describe('ActiveFilterState', () => {
   });
 
   it('should render custom filter state with lower boundary', () => {
-    const customRange = [moment().subtract(3, 'days').valueOf(), null] as TimeRangeState;
+    const customRange = [subDays(new Date(), 3).valueOf(), null] as TimeRangeState;
     const {getByText} = render(
       <ActiveFilterState
         activeFilterTerm="Timestamp"
@@ -214,7 +300,7 @@ describe('ActiveFilterState', () => {
   });
 
   it('should render custom filter state with upper boundary', () => {
-    const customRange = [null, moment().subtract(1, 'days').valueOf()] as TimeRangeState;
+    const customRange = [null, subDays(new Date(), 1).valueOf()] as TimeRangeState;
     const {getByText} = render(
       <ActiveFilterState
         activeFilterTerm="Timestamp"
@@ -230,8 +316,8 @@ describe('ActiveFilterState', () => {
 
   it('should render custom filter state with both boundaries', () => {
     const customRange = [
-      moment().subtract(5, 'days').valueOf(),
-      moment().subtract(2, 'days').valueOf(),
+      subDays(new Date(), 5).valueOf(),
+      subDays(new Date(), 2).valueOf(),
     ] as TimeRangeState;
     const {getByText} = render(
       <ActiveFilterState

@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional, cast
+from typing import ContextManager, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -86,7 +86,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             SqlEventLogStorageMetadata.create_all(conn)
             stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
@@ -94,6 +96,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             isolation_level=mysql_isolation_level(),
             pool_size=1,
             pool_recycle=pool_recycle,
+            max_overflow=max_overflow,
         )
 
     def upgrade(self) -> None:
@@ -110,7 +113,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return mysql_config()
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "MySQLEventLogStorage":
         return MySQLEventLogStorage(
@@ -139,7 +142,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not row:
             return None
 
-        return cast(str, row[0])
+        return cast("str", row[0])
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
@@ -185,13 +188,11 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
-            self._secondary_index_cache[name] = super(
-                MySQLEventLogStorage, self
-            ).has_secondary_index(name)
+            self._secondary_index_cache[name] = super().has_secondary_index(name)
         return self._secondary_index_cache[name]
 
     def enable_secondary_index(self, name: str) -> None:
-        super(MySQLEventLogStorage, self).enable_secondary_index(name)
+        super().enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 

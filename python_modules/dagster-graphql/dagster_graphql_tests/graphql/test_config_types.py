@@ -1,5 +1,5 @@
 import json
-from typing import Sequence
+from collections.abc import Sequence
 
 import dagster._check as check
 from dagster._config import ALL_CONFIG_BUILTINS
@@ -169,7 +169,9 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid", (
+            result.data
+        )
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
 
     def test_basic_valid_config_non_dict_config(self, graphql_context: WorkspaceRequestContext):

@@ -2,15 +2,15 @@ import random
 import time
 
 from dagster import (
+    AssetExecutionContext,
     Definitions,
-    OpExecutionContext,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
     in_process_executor,
     job,
     op,
 )
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 example_partition_def = StaticPartitionsDefinition(
     partition_keys=[str(i) for i in range(1, 32)],
@@ -20,7 +20,7 @@ example_partition_def = StaticPartitionsDefinition(
 @asset(
     partitions_def=example_partition_def,
 )
-def partitioned_asset(context: OpExecutionContext) -> None:
+def partitioned_asset(context: AssetExecutionContext) -> None:
     """This asset is partitioned."""
     context.log.info("Preparing to greet the world!")
     time.sleep(10)

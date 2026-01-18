@@ -1,8 +1,10 @@
 import inspect
-from typing import Any, NamedTuple, Optional, Type, TypeVar, Union
+from typing import Any, NamedTuple, Optional, TypeVar, Union
+
+from dagster_shared.error import DagsterError
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param
+from dagster._annotations import PublicAttr, deprecated_param, public
 from dagster._core.definitions.inference import InferredOutputProps
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import (
@@ -11,7 +13,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, check_valid_name
-from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (
     DagsterType,
     is_dynamic_output_annotation,
@@ -46,7 +48,7 @@ class OutputDefinition:
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+        code_version (Optional[str]): Version of the code that generates this output. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
 
@@ -197,6 +199,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
         ) from e
 
 
+@public
 class DynamicOutputDefinition(OutputDefinition):
     """Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
     output that will dynamically alter the graph at runtime.
@@ -241,13 +244,14 @@ class DynamicOutputDefinition(OutputDefinition):
 
 class OutputPointer(NamedTuple("_OutputPointer", [("node_name", str), ("output_name", str)])):
     def __new__(cls, node_name: str, output_name: Optional[str] = None):
-        return super(OutputPointer, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(node_name, "node_name"),
             check.opt_str_param(output_name, "output_name", DEFAULT_OUTPUT),
         )
 
 
+@public
 @deprecated_param(
     param="dagster_type",
     breaking_version="2.0",
@@ -290,7 +294,7 @@ class OutputMapping(NamedTuple):
             )
 
             @graph(out=GraphOut())
-            def the_graph:
+            def the_graph():
                 return emit_five()
     """
 
@@ -316,11 +320,12 @@ class OutputMapping(NamedTuple):
         )
 
 
+@public
 class Out(
     NamedTuple(
         "_Out",
         [
-            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("dagster_type", PublicAttr[Union[DagsterType, type[NoValueSentinel]]]),
             ("description", PublicAttr[Optional[str]]),
             ("is_required", PublicAttr[bool]),
             ("io_manager_key", PublicAttr[str]),
@@ -350,14 +355,14 @@ class Out(
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+        code_version (Optional[str]): Version of the code that generates this output. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
     """
 
     def __new__(
         cls,
-        dagster_type: Optional[Union[Type, DagsterType]] = NoValueSentinel,
+        dagster_type: Optional[Union[type, DagsterType]] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
@@ -365,7 +370,7 @@ class Out(
         code_version: Optional[str] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
-        return super(Out, cls).__new__(
+        return super().__new__(
             cls,
             dagster_type=(
                 NoValueSentinel
@@ -423,6 +428,7 @@ class Out(
         return False
 
 
+@public
 class DynamicOut(Out):
     """Variant of :py:class:`Out <dagster.Out>` for an output that will dynamically alter the graph at
     runtime.
@@ -488,6 +494,7 @@ class DynamicOut(Out):
         return True
 
 
+@public
 class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
     """Represents information about the outputs that a graph maps.
 
@@ -496,7 +503,7 @@ class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]
     """
 
     def __new__(cls, description: Optional[str] = None):
-        return super(GraphOut, cls).__new__(cls, description=description)
+        return super().__new__(cls, description=description)
 
     def to_definition(self, name: Optional[str]) -> "OutputDefinition":
         return OutputDefinition(name=name, description=self.description)

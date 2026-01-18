@@ -24,6 +24,7 @@ vars:
 
 models:
   test_dagster_dbt_semantic_models:
+    +tags: "test"
     materialized: table
     staging:
       materialized: view

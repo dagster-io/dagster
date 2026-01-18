@@ -21,7 +21,7 @@ class CustomOperator(PythonOperator):
                 dagster_operator_parameters.invocation_args, ts, dag_run, **kwargs
             )
 
-        super(CustomOperator, self).__init__(
+        super().__init__(
             *args,
             task_id=dagster_operator_parameters.task_id,
             provide_context=True,

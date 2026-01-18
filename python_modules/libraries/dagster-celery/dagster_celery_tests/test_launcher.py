@@ -1,13 +1,15 @@
 import logging
 import time
-from typing import Any, Iterator, Mapping
+from collections.abc import Iterator, Mapping
+from typing import Any
 
 import pytest
-from dagster import DagsterInstance, DagsterRunStatus, _seven, file_relative_path, instance_for_test
+from dagster import DagsterInstance, DagsterRunStatus, file_relative_path, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import execute_run_monitoring_iteration
 from dagster_celery.defaults import broker_url
+from dagster_shared import seven
 
 from dagster_celery_tests.repo_runner import crashy_job, exity_job, noop_job, sleepy_job
 from dagster_celery_tests.utils import start_celery_worker
@@ -82,17 +84,17 @@ def test_successful_run(
     workspace: WorkspaceRequestContext,
     run_config,
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("noop_job")
+        .get_full_job("noop_job")
     )
 
     dagster_run = instance.create_run_for_job(
         job_def=noop_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
 
@@ -115,7 +117,7 @@ def test_successful_run(
     run_configs(),
 )
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_crashy_run(
@@ -127,17 +129,17 @@ def test_crashy_run(
 ):
     logger = logging.getLogger()
 
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("crashy_job")
+        .get_full_job("crashy_job")
     )
 
     run = instance.create_run_for_job(
         job_def=crashy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -164,7 +166,7 @@ def test_crashy_run(
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_exity_run(
@@ -173,17 +175,17 @@ def test_exity_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("exity_job")
+        .get_full_job("exity_job")
     )
 
     run = instance.create_run_for_job(
         job_def=exity_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -224,16 +226,16 @@ def test_terminated_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("sleepy_job")
+        .get_full_job("sleepy_job")
     )
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id

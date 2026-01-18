@@ -1,7 +1,17 @@
+from collections.abc import Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Union,
+    overload,
+)
 
 import dagster._check as check
+from dagster._annotations import beta_param, public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -11,11 +21,12 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import normalize_tags
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.executor_definition import ExecutorDefinition
-    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -37,12 +48,15 @@ class _Job:
         op_retry_policy: Optional[RetryPolicy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
         self.name = name
         self.description = description
-        self.tags = normalize_tags(tags, warning_stacklevel=4)
+        self.tags = normalize_tags(
+            tags, warning_stacklevel=5
+        )  # reset once owners is out of beta_param
         self.run_tags = run_tags
         self.metadata = metadata
         self.resource_defs = resource_defs
@@ -53,6 +67,7 @@ class _Job:
         self.op_retry_policy = op_retry_policy
         self.partitions_def = partitions_def
         self.input_values = input_values
+        self._owners = owners
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -106,6 +121,7 @@ class _Job:
             op_retry_policy=self.op_retry_policy,
             partitions_def=self.partitions_def,
             input_values=self.input_values,
+            owners=self._owners,
         )
         update_wrapper(job_def, fn)
         return job_def
@@ -131,9 +147,12 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = ...,
     partitions_def: Optional["PartitionsDefinition"] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
+    owners: Optional[Sequence[str]] = ...,
 ) -> _Job: ...
 
 
+@beta_param(param="owners")
+@public
 def job(
     compose_fn: Optional[Callable[..., Any]] = None,
     *,
@@ -152,6 +171,7 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     input_values: Optional[Mapping[str, object]] = None,
+    owners: Optional[Sequence[str]] = None,
 ) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -249,4 +269,5 @@ def job(
         op_retry_policy=op_retry_policy,
         partitions_def=partitions_def,
         input_values=input_values,
+        owners=owners,
     )

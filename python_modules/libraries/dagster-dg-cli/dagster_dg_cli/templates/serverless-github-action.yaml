@@ -1,0 +1,126 @@
+name: Dagster Cloud Serverless Deployment
+on:
+  push:
+    branches:
+      - "main"
+      - "master"
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  # Cancel in-progress deploys to same branch
+  group: ${{ github.ref }}/deploy
+  cancel-in-progress: true
+env:
+  # The organization name in Dagster Cloud
+  DAGSTER_CLOUD_ORGANIZATION: "TEMPLATE_ORGANIZATION_NAME"
+  # The Dagster Cloud URL
+  DAGSTER_CLOUD_URL: "TEMPLATE_DAGSTER_CLOUD_URL"
+  # The API token from https://dagster.cloud/ should be stored in Secrets
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  # Path to the root folder containing the dagster project
+  DAGSTER_PROJECT_DIR: "TEMPLATE_PROJECT_DIR"
+  # Enable PEX-based fast deploys (set to "false" to use Docker builds instead)
+  ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
+  # Python version used to deploy the project
+  PYTHON_VERSION: "3.10"
+  # GitHub token for PR comments and branch deployments
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  dagster_cloud_default_deploy:
+    name: Dagster Serverless Deploy
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Prerun Checks
+        id: prerun
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Detect if this is branch deployment and initialize the build session
+      - name: Initialize build session
+        id: ci-init
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
+          # A full deployment name. If this run is for a pull request, this value will be used as
+          # the base deployment for the branch deployment.
+          deployment: "TEMPLATE_DEFAULT_DEPLOYMENT_NAME"
+
+      # Ensure the correct Python version is installed
+      - name: Set up Python ${{ env.PYTHON_VERSION }} for target
+        id: setup-python-version
+        if: steps.prerun.outputs.result != 'skip'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: steps.prerun.outputs.result != 'skip'
+        run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install uv
+        shell: bash
+
+      # Sync all projects (workspace or single project)
+      - name: Sync project dependencies
+        if: steps.prerun.outputs.result != 'skip'
+        run: |
+          cd ${{ env.DAGSTER_PROJECT_DIR }}
+          for project in $(${{ steps.setup-python-version.outputs.python-path }} -m uv run dg list projects); do
+            (cd "$project" && ${{ steps.setup-python-version.outputs.python-path }} -m uv sync)
+          done
+        shell: bash
+
+      # Refresh state for any StateBackedComponents in the project
+      - name: Refresh defs state
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy refresh-defs-state --target-path=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # If using fast build, install setuptools for PEX builds
+      - name: Install setuptools
+        if: steps.prerun.outputs.result == 'pex-deploy'
+        run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install setuptools
+        shell: bash
+
+      # Otherwise, enable buildx for caching Docker builds
+      - name: Set up Docker Buildx
+        if: steps.prerun.outputs.result == 'docker-deploy'
+        uses: docker/setup-buildx-action@v3
+
+      # Build and push (PEX or Docker based on project configuration)
+      - name: Build and push
+        id: build-and-push
+        if: steps.prerun.outputs.result == 'pex-deploy' || steps.prerun.outputs.result == 'docker-deploy'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
+
+      # Deploy all code locations in this build session to Dagster Cloud
+      - name: Deploy to Dagster Cloud
+        id: ci-deploy
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy finish"
+
+      # Update a PR comment - this runs always() so the comment is updated on success and failure
+      - name: Update PR comment for branch deployments
+        id: ci-notify
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # Generate a summary that shows up on the Workflow Summary page
+      - name: Generate a summary
+        id: ci-summary
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY"

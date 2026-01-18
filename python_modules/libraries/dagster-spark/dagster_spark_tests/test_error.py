@@ -36,7 +36,7 @@ def test_jar_not_found():
     assert result.is_node_failed("spark_op")
     assert (
         "does not exist. A valid jar must be built before running this op."
-        in result.failure_data_for_node("spark_op").error.cause.message
+        in result.failure_data_for_node("spark_op").error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
     )
 
 
@@ -71,5 +71,5 @@ def test_no_spark_home():
     assert (
         "No spark home set. You must either pass spark_home in config or set "
         "$SPARK_HOME in your environment (got None)."
-        in result.failure_data_for_node("spark_op").error.cause.message
+        in result.failure_data_for_node("spark_op").error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
     )

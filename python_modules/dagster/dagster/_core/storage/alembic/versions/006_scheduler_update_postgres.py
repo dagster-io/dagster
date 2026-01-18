@@ -27,7 +27,7 @@ def upgrade():
         return
     instance = get_currently_upgrading_instance()
     if instance.scheduler:
-        instance.scheduler.wipe(instance)
+        instance.scheduler.wipe(instance)  # pyright: ignore[reportAttributeAccessIssue]
 
     #   No longer dropping the "schedules" table here, since
     #   the 0.10.0 migration checks for the presence of the "schedules"

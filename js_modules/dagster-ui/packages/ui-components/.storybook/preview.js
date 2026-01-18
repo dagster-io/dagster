@@ -1,21 +1,18 @@
+import {withThemeByClassName} from '@storybook/addon-themes';
+import {MemoryRouter} from 'react-router-dom';
+import {createGlobalStyle} from 'styled-components';
+
 import {
+  Colors,
   FontFamily,
-  GlobalGeistMono,
   GlobalDialogStyle,
+  GlobalGeist,
+  GlobalGeistMono,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
-  GlobalToasterStyle,
-  GlobalTooltipStyle,
   GlobalThemeStyle,
-  Colors,
-  GlobalGeist,
+  Toaster,
 } from '../src';
-
-import {withThemeByClassName} from '@storybook/addon-themes';
-
-import {MemoryRouter} from 'react-router-dom';
-
-import {createGlobalStyle} from 'styled-components';
 
 import '@blueprintjs/core/lib/css/blueprint.css';
 import '@blueprintjs/select/lib/css/blueprint-select.css';
@@ -73,11 +70,10 @@ export const decorators = [
       <GlobalThemeStyle />
       <GlobalGeist />
       <GlobalGeistMono />
-      <GlobalToasterStyle />
-      <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
       <Story />
     </MemoryRouter>
   ),
@@ -86,6 +82,9 @@ export const decorators = [
       light: 'themeLight',
       dark: 'themeDark',
       system: 'themeSystem',
+      lightNoRedGreen: 'themeLightNoRedGreen',
+      darkNoRedGreen: 'themeDarkNoRedGreen',
+      systemNoRedGreen: 'themeSystemNoRedGreen',
     },
     defaultTheme: 'system',
     parentSelector: 'body',

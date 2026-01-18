@@ -1,29 +1,29 @@
-from dagster._utils.yaml_utils import load_yaml_from_path
+from dagster_shared.yaml_utils import load_yaml_from_path
 
 # ruff: isort: split
 
 # start
 import os
 
-from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
+import dagster as dg
 
 
-@op
+@dg.op
 def add_one(num: int) -> int:
     return num + 1
 
 
-@op
+@dg.op
 def add_two(num: int) -> int:
     return num + 2
 
 
-@op
+@dg.op
 def subtract(left: int, right: int) -> int:
     return left + right
 
 
-def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
+def construct_graph_with_yaml(yaml_file, op_defs) -> dg.GraphDefinition:
     yaml_data = load_yaml_from_path(yaml_file)
     assert isinstance(yaml_data, dict)
 
@@ -34,12 +34,12 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
         alias = op_yaml_data.get("alias", def_name)
         op_deps_entry = {}
         for input_name, input_data in op_yaml_data.get("deps", {}).items():
-            op_deps_entry[input_name] = DependencyDefinition(
+            op_deps_entry[input_name] = dg.DependencyDefinition(
                 node=input_data["op"], output=input_data.get("output", "result")
             )
-        deps[NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
+        deps[dg.NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
 
-    return GraphDefinition(
+    return dg.GraphDefinition(
         name=yaml_data["name"],
         description=yaml_data.get("description"),
         node_defs=op_defs,
@@ -47,6 +47,6 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
     )
 
 
-def define_dep_dsl_graph() -> GraphDefinition:
+def define_dep_dsl_graph() -> dg.GraphDefinition:
     path = os.path.join(os.path.dirname(__file__), "my_graph.yaml")
     return construct_graph_with_yaml(path, [add_one, add_two, subtract])

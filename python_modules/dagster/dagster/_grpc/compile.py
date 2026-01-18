@@ -3,6 +3,11 @@
 This tooling should be invoked to regenerate the Python grpc artifacts by running:
 
     python -m dagster._grpc.compile
+
+    Previously built with:
+        grpcio==1.62.3
+        grpcio-tools==1.62.3
+        protobuf==4.25.0
 """
 
 import os
@@ -16,7 +21,7 @@ from dagster._utils import file_relative_path, safe_tempfile_path
 
 PROTOS_DIR = file_relative_path(__file__, "protos")
 
-PROTOS_PATH = os.path.join(PROTOS_DIR, "api.proto")
+PROTOS_PATH = os.path.join(PROTOS_DIR, "dagster_api.proto")
 
 GENERATED_DIR = file_relative_path(__file__, "__generated__")
 
@@ -40,8 +45,8 @@ GENERATED_PB2_RUFF_DIRECTIVE = [
 
 
 def protoc(generated_dir: str):
-    generated_pb2_path = os.path.join(generated_dir, "api_pb2.py")
-    generated_grpc_path = os.path.join(generated_dir, "api_pb2_grpc.py")
+    generated_pb2_path = os.path.join(generated_dir, "dagster_api_pb2.py")
+    generated_grpc_path = os.path.join(generated_dir, "dagster_api_pb2_grpc.py")
 
     # python -m grpc_tools.protoc \
     #   -I protos --python_out __generated__ --grpc_python_out __generated__ protos/api.proto
@@ -62,22 +67,22 @@ def protoc(generated_dir: str):
         ]
     )
 
-    # The generated api_pb2_grpc.py file must be altered:
-    # 1. Change the import from `import api_pb2 as api__pb2` to `from . import api_pb2 as api__pb2`.
+    # The generated dagster_api_pb2_grpc.py file must be altered:
+    # 1. Change the import from `import dagster_api_pb2 as dagster_api__pb2` to `from . import dagster_api_pb2 as dagster_api__pb2`.
     #    See: https://github.com/grpc/grpc/issues/22914
     with safe_tempfile_path() as tempfile_path:
         shutil.copyfile(
             generated_grpc_path,
             tempfile_path,
         )
-        with open(tempfile_path, "r", encoding="utf8") as generated:
+        with open(tempfile_path, encoding="utf8") as generated:
             with open(generated_grpc_path, "w", encoding="utf8") as rewritten:
                 for line in GENERATED_HEADER:
                     rewritten.write(line)
 
                 for line in generated.readlines():
-                    if line == "import api_pb2 as api__pb2\n":
-                        rewritten.write("from . import api_pb2 as api__pb2\n")
+                    if line == "import dagster_api_pb2 as dagster__api__pb2\n":
+                        rewritten.write("from . import dagster_api_pb2 as dagster__api__pb2\n")
                     else:
                         rewritten.write(line)
 
@@ -86,7 +91,7 @@ def protoc(generated_dir: str):
             generated_pb2_path,
             tempfile_path,
         )
-        with open(tempfile_path, "r", encoding="utf8") as generated:
+        with open(tempfile_path, encoding="utf8") as generated:
             with open(generated_pb2_path, "w", encoding="utf8") as rewritten:
                 for line in GENERATED_HEADER:
                     rewritten.write(line)

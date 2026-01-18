@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 import docker
 import docker.errors
@@ -7,8 +8,8 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -24,7 +25,6 @@ from dagster._core.pipes.utils import (
 from dagster_pipes import DagsterPipesError, PipesDefaultMessageWriter, PipesExtras, PipesParams
 
 
-@experimental
 class PipesDockerLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
@@ -55,7 +55,6 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from docker logs directly."
 
 
-@experimental
 class PipesDockerClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs external processes in docker containers.
 
@@ -100,10 +99,10 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         image: str,
         extras: Optional[PipesExtras] = None,
         command: Optional[Union[str, Sequence[str]]] = None,

@@ -1,317 +1,538 @@
-import datetime
 import re
+from typing import cast
+from unittest.mock import MagicMock
 
 import pytest
 import responses
-from dagster import Failure, build_init_resource_context
-from dagster_fivetran import FivetranOutput, fivetran_resource
+from dagster import AssetExecutionContext, AssetKey, Failure
+from dagster._config.field_utils import EnvVar
+from dagster._core.definitions.materialize import materialize
+from dagster._core.test_utils import environ
+from dagster._vendored.dateutil import parser
+from dagster_fivetran import FivetranOutput, FivetranSyncConfig, FivetranWorkspace, fivetran_assets
+from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
 
-from dagster_fivetran_tests.utils import (
-    DEFAULT_CONNECTOR_ID,
-    get_complex_sample_connector_schema_config,
-    get_sample_connector_response,
-    get_sample_resync_response,
-    get_sample_sync_response,
-    get_sample_update_response,
+from dagster_fivetran_tests.conftest import (
+    FIVETRAN_API_BASE,
+    FIVETRAN_API_VERSION,
+    SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+    SAMPLE_SUCCESS_MESSAGE,
+    TEST_ACCOUNT_ID,
+    TEST_API_KEY,
+    TEST_API_SECRET,
+    TEST_MAX_TIME_STR,
+    TEST_PREVIOUS_MAX_TIME_STR,
+    TEST_SCHEMA_NAME,
+    TEST_TABLE_NAME,
+    get_fivetran_connector_api_url,
+    get_sample_connection_details,
+    list_connectors_for_group_sample,
 )
 
 
-def test_get_connector_details():
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
+def test_basic_resource_request(
+    connector_id: str,
+    destination_id: str,
+    group_id: str,
+    all_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    # fetch workspace data calls
+    client.list_connectors_for_group(group_id=group_id)
+    client.get_destination_details(destination_id=destination_id)
+    client.get_groups()
+    client.get_schema_config_for_connector(connector_id=connector_id)
+
+    assert len(all_api_mocks.calls) == 4
+    assert "Basic" in all_api_mocks.calls[0].request.headers["Authorization"]
+    assert group_id in all_api_mocks.calls[0].request.url
+    assert destination_id in all_api_mocks.calls[1].request.url
+    assert "groups" in all_api_mocks.calls[2].request.url
+    assert f"{connector_id}/schemas" in all_api_mocks.calls[3].request.url
+
+    # connector details calls
+    all_api_mocks.calls.reset()
+    client.get_connector_details(connector_id=connector_id)
+    client.update_schedule_type_for_connector(connector_id=connector_id, schedule_type="auto")
+
+    assert len(all_api_mocks.calls) == 2
+    assert connector_id in all_api_mocks.calls[0].request.url
+    assert connector_id in all_api_mocks.calls[1].request.url
+    assert all_api_mocks.calls[1].request.method == "PATCH"
+
+    # columns config calls
+    all_api_mocks.calls.reset()
+    client.get_columns_config_for_table(
+        connector_id=connector_id, schema_name=TEST_SCHEMA_NAME, table_name=TEST_TABLE_NAME
+    )
+    assert len(all_api_mocks.calls) == 1
+    assert (
+        f"{connector_id}/schemas/{TEST_SCHEMA_NAME}/tables/{TEST_TABLE_NAME}/columns"
+        in all_api_mocks.calls[0].request.url
     )
 
-    with responses.RequestsMock() as rsps:
-        rsps.add(
-            rsps.GET,
-            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-            json=get_sample_connector_response(),
+    # sync calls
+    all_api_mocks.calls.reset()
+    client.start_sync(connector_id=connector_id)
+    assert len(all_api_mocks.calls) == 3
+    assert f"{connector_id}/force" in all_api_mocks.calls[2].request.url
+
+    # resync calls
+    all_api_mocks.calls.reset()
+    client.start_resync(connector_id=connector_id, resync_parameters=None)
+    assert len(all_api_mocks.calls) == 3
+    assert f"{connector_id}/resync" in all_api_mocks.calls[2].request.url
+
+    # resync calls with parameters
+    all_api_mocks.calls.reset()
+    client.start_resync(connector_id=connector_id, resync_parameters={"property1": ["string"]})
+    assert len(all_api_mocks.calls) == 3
+    assert f"{connector_id}/schemas/tables/resync" in all_api_mocks.calls[2].request.url
+
+    # poll calls
+    # Succeeded poll
+    all_api_mocks.calls.reset()
+    client.poll_sync(
+        connector_id=connector_id,
+        previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
+    )
+    assert len(all_api_mocks.calls) == 1
+
+    # Timed out poll
+    all_api_mocks.calls.reset()
+    with pytest.raises(Failure, match=f"Sync for connector '{connector_id}' timed out"):
+        client.poll_sync(
+            connector_id=connector_id,
+            # The poll process will time out because the value of
+            # `FivetranConnector.last_sync_completed_at` does not change in the test
+            previous_sync_completed_at=parser.parse(TEST_MAX_TIME_STR),  # pyright: ignore[reportArgumentType]
+            poll_timeout=2,
+            poll_interval=1,
+        )
+
+    # Failed poll
+    all_api_mocks.calls.reset()
+    # Replace the mock API call and set `failed_at` as more recent that `succeeded_at`
+    all_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=get_fivetran_connector_api_url(connector_id),
+        json=get_sample_connection_details(
+            succeeded_at=TEST_PREVIOUS_MAX_TIME_STR, failed_at=TEST_MAX_TIME_STR
+        ),
+        status=200,
+    )
+    with pytest.raises(Failure, match=f"Sync for connector '{connector_id}' failed!"):
+        client.poll_sync(
+            connector_id=connector_id,
+            previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
+            poll_timeout=2,
+            poll_interval=1,
+        )
+
+
+def test_list_connectors_for_group_cursor(connector_id: str, group_id: str):
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    setup_state = FivetranConnectorSetupStateType.CONNECTED.value
+
+    # Create mock responses to mock API behavior for the "list connectors for group" endpoint
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            # initial state, a cursor is returned, we will do a second call
+            response.add(
+                method=responses.GET,
+                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+                json=list_connectors_for_group_sample(
+                    setup_state=setup_state, next_cursor="some_cursor"
+                ),
+                status=200,
+            )
+            # final state, no cursor so we break after the second call
+            response.add(
+                method=responses.GET,
+                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+                json=list_connectors_for_group_sample(setup_state=setup_state, next_cursor=None),
+                status=200,
+            )
+            return client.list_connectors_for_group(group_id=group_id)
+
+    assert len(cast("list", _mock_interaction())) == 2
+
+
+@pytest.mark.parametrize(
+    "method, n_polls, succeed_at_end",
+    [
+        ("sync_and_poll", 0, True),
+        ("sync_and_poll", 0, False),
+        ("sync_and_poll", 4, True),
+        ("sync_and_poll", 4, False),
+        ("sync_and_poll", 30, True),
+        ("resync_and_poll", 0, True),
+        ("resync_and_poll", 0, False),
+        ("resync_and_poll", 4, True),
+        ("resync_and_poll", 4, False),
+        ("resync_and_poll", 30, True),
+    ],
+    ids=[
+        "sync_short_success",
+        "sync_short_failure",
+        "sync_medium_success",
+        "sync_medium_failure",
+        "sync_long_success",
+        "resync_short_success",
+        "resync_short_failure",
+        "resync_medium_success",
+        "resync_medium_failure",
+        "resync_long_success",
+    ],
+)
+def test_sync_and_poll_client_methods(method, n_polls, succeed_at_end, connector_id):
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+    test_sync_api_url = (
+        f"{test_connector_api_url}/force"
+        if method == "sync_and_poll"
+        else f"{test_connector_api_url}/resync"
+    )
+
+    test_succeeded_at = TEST_MAX_TIME_STR
+    test_failed_at = TEST_PREVIOUS_MAX_TIME_STR
+    # Set `failed_at` as more recent that `succeeded_at` if the sync and poll process is expected to fail
+    if not succeed_at_end:
+        test_succeeded_at = TEST_PREVIOUS_MAX_TIME_STR
+        test_failed_at = TEST_MAX_TIME_STR
+
+    # Create mock responses to mock full sync and poll behavior, used only in this test
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            response.add(
+                responses.GET,
+                f"{test_connector_api_url}/schemas",
+                json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+            )
+            response.add(responses.PATCH, test_connector_api_url, json=SAMPLE_SUCCESS_MESSAGE)
+            response.add(responses.POST, test_sync_api_url, json=SAMPLE_SUCCESS_MESSAGE)
+            # initial state
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR, failed_at=MIN_TIME_STR
+                ),
+            )
+            # n polls before updating
+            for _ in range(n_polls):
+                response.add(
+                    responses.GET,
+                    test_connector_api_url,
+                    json=get_sample_connection_details(
+                        succeeded_at=MIN_TIME_STR, failed_at=MIN_TIME_STR
+                    ),
+                )
+            # final state will be updated
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=test_succeeded_at, failed_at=test_failed_at
+                ),
+            )
+            test_method = getattr(client, method)
+            return test_method(connector_id, poll_interval=0.1)
+
+    if succeed_at_end:
+        assert _mock_interaction() == FivetranOutput(
+            connector_details=get_sample_connection_details(
+                succeeded_at=test_succeeded_at, failed_at=test_failed_at
+            )["data"],
+            schema_config=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR["data"],
+        )
+    else:
+        with pytest.raises(Failure, match="failed!"):
+            _mock_interaction()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        "sync_and_poll",
+        "resync_and_poll",
+    ],
+    ids=[
+        "sync_paused_connector",
+        "resync_paused_connector",
+    ],
+)
+def test_sync_and_poll_client_methods_with_paused_connector(method, connector_id):
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+
+    # Create mock responses to mock sync and poll behavior with a paused connector
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            response.add(
+                responses.GET,
+                f"{test_connector_api_url}/schemas",
+                json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+            )
+            # initial state
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR, failed_at=MIN_TIME_STR, paused=True
+                ),
+            )
+            test_method = getattr(client, method)
+            return test_method(connector_id, poll_interval=0.1)
+
+    assert _mock_interaction() is None
+
+
+def test_fivetran_sync_and_poll_materialization_method(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    sync_and_poll: MagicMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
+        def my_fivetran_assets(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        # Mocked FivetranClient.sync_and_poll returns API response where all connector tables are expected
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys == materialized_asset_keys
+
+        # Mocked FivetranClient.sync_and_poll returns API response
+        # where one expected table is missing and an unexpected table is present
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+        )
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys != materialized_asset_keys
+        assert (
+            AssetKey(["schema_name_in_destination_1", "another_table_name_in_destination_1"])
+            in materialized_asset_keys
         )
         assert (
-            ft_resource.get_connector_details(DEFAULT_CONNECTOR_ID)
-            == get_sample_connector_response()["data"]
+            AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            not in materialized_asset_keys
+        )
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+        )
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
+        )
+
+        # Mocked FivetranClient.sync_and_poll returns None if the connector is paused
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 0
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - The connector with ID (?s:.)+ has not been synced.",
+            captured.err,
         )
 
 
-@pytest.mark.parametrize("max_retries,n_flakes", [(0, 0), (1, 2), (5, 7), (7, 5), (4, 4)])
-def test_get_connector_details_flake(max_retries, n_flakes):
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-                "request_max_retries": max_retries,
-                "request_retry_delay": 0,
-            }
+def test_fivetran_resync_and_poll_materialization_method(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    resync_and_poll: MagicMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
         )
-    )
 
-    def _mock_interaction():
-        with responses.RequestsMock() as rsps:
-            # first n requests fail
-            for _ in range(n_flakes):
-                rsps.add(
-                    rsps.GET,
-                    f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-                    status=500,
-                )
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-                json=get_sample_connector_response(),
-            )
-            return ft_resource.get_connector_details(DEFAULT_CONNECTOR_ID)
-
-    if n_flakes > max_retries:
-        with pytest.raises(
-            Failure,
-            match=re.escape(
-                f"Max retries ({max_retries}) exceeded with url:"
-                " https://api.fivetran.com/v1/connectors/some_connector."
-            ),
+        @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
+        def my_fivetran_assets(
+            context: AssetExecutionContext,
+            fivetran: FivetranWorkspace,
+            config: FivetranSyncConfig,
         ):
-            _mock_interaction()
-    else:
-        assert _mock_interaction() == get_sample_connector_response()["data"]
+            yield from fivetran.sync_and_poll(context=context, config=config)
+
+        # Mocked FivetranClient.resync_and_poll returns API response where all connector tables are expected
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys == materialized_asset_keys
+
+        # Mocked FivetranClient.resync_and_poll returns API response
+        # where one expected table is missing and an unexpected table is present
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
+        )
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys != materialized_asset_keys
+        assert (
+            AssetKey(["schema_name_in_destination_1", "another_table_name_in_destination_1"])
+            in materialized_asset_keys
+        )
+        assert (
+            AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            not in materialized_asset_keys
+        )
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+        )
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
+        )
+
+        # Mocked FivetranClient.resync_and_poll returns None if the connector is paused
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 0
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - The connector with ID (?s:.)+ has not been resynced.",
+            captured.err,
+        )
 
 
-@pytest.mark.parametrize(
-    "data,expected",
-    [
-        (
-            {"succeeded_at": "2021-01-01T01:00:00.0Z", "failed_at": None},
-            (datetime.datetime(2021, 1, 1, 1, 0, tzinfo=datetime.timezone.utc), True, "scheduled"),
-        ),
-        (
-            {"succeeded_at": None, "failed_at": "2021-01-01T01:00:00.0Z"},
-            (
-                datetime.datetime(2021, 1, 1, 1, 0, tzinfo=datetime.timezone.utc),
-                False,
-                "scheduled",
-            ),
-        ),
-        (
-            {
-                "succeeded_at": "2021-01-01T01:00:00.0Z",
-                "failed_at": None,
-                "status": {"sync_state": "foo"},
+def test_fivetran_resync_and_poll_with_resync_parameters(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    resync_and_poll: MagicMock,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
+        def my_fivetran_assets(
+            context: AssetExecutionContext,
+            fivetran: FivetranWorkspace,
+            config: FivetranSyncConfig,
+        ):
+            yield from fivetran.sync_and_poll(context=context, config=config)
+
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={
+                "ops": {
+                    connector_id: {
+                        "config": {
+                            "resync": True,
+                            "resync_parameters": {
+                                "schema_name_in_destination_1": ["table_name_in_destination_1"],
+                            },
+                        }
+                    }
+                }
             },
-            (datetime.datetime(2021, 1, 1, 1, 0, tzinfo=datetime.timezone.utc), True, "foo"),
-        ),
-        (
-            {"succeeded_at": "2021-01-01T02:00:00.00Z", "failed_at": "2021-01-01T01:00:00.0Z"},
-            (datetime.datetime(2021, 1, 1, 2, 0, tzinfo=datetime.timezone.utc), True, "scheduled"),
-        ),
-        (
-            {"succeeded_at": "2021-01-01T01:00:00.0Z", "failed_at": "2021-01-01T02:00:00.00Z"},
-            (
-                datetime.datetime(2021, 1, 1, 2, 0, tzinfo=datetime.timezone.utc),
-                False,
-                "scheduled",
-            ),
-        ),
-    ],
-)
-def test_get_connector_sync_status(data, expected):
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
         )
-    )
+        assert result.success
 
-    with responses.RequestsMock() as rsps:
-        rsps.add(
-            rsps.GET,
-            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-            json=get_sample_connector_response(data=data),
+        # Verify resync_and_poll was called with the correct parameters
+        resync_and_poll.assert_called_with(
+            connector_id=connector_id,
+            resync_parameters={"schema_name_in_destination_1": ["table_name_in_destination_1"]},
         )
-        assert ft_resource.get_connector_sync_status(DEFAULT_CONNECTOR_ID) == expected
-
-
-@pytest.mark.parametrize(
-    "n_polls, succeed_at_end",
-    [(0, True), (0, False), (4, True), (4, False), (30, True)],
-)
-def test_sync_and_poll(n_polls, succeed_at_end):
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
-    )
-    api_prefix = f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}"
-
-    final_data = (
-        {"succeeded_at": "2021-01-01T02:00:00.0Z"}
-        if succeed_at_end
-        else {"failed_at": "2021-01-01T02:00:00.0Z"}
-    )
-
-    def _mock_interaction():
-        with responses.RequestsMock() as rsps:
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_complex_sample_connector_schema_config(),
-            )
-            rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
-            rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
-            # initial state
-            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-            # n polls before updating
-            for _ in range(n_polls):
-                rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-            # final state will be updated
-            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
-            return ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=0.1)
-
-    if succeed_at_end:
-        assert _mock_interaction() == FivetranOutput(
-            connector_details=get_sample_connector_response(data=final_data)["data"],
-            schema_config=get_complex_sample_connector_schema_config()["data"],
-        )
-    else:
-        with pytest.raises(Failure, match="failed!"):
-            _mock_interaction()
-
-
-def test_sync_and_poll_timeout():
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
-    )
-
-    with pytest.raises(Failure, match="timed out"):
-        with responses.RequestsMock() as rsps:
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_complex_sample_connector_schema_config(),
-            )
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-                json=get_sample_connector_response(),
-            )
-            rsps.add(
-                rsps.PATCH,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-                json=get_sample_update_response(),
-            )
-            rsps.add(
-                rsps.POST,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/force",
-                json=get_sample_sync_response(),
-            )
-            ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=1, poll_timeout=2)
-
-
-@pytest.mark.parametrize(
-    "data,match",
-    [
-        ({"paused": True}, "paused"),
-        ({"status": {"setup_state": "foo"}}, "setup"),
-    ],
-)
-def test_sync_and_poll_invalid(data, match):
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
-    )
-
-    with pytest.raises(Failure, match=match):
-        with responses.RequestsMock() as rsps:
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_complex_sample_connector_schema_config(),
-            )
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-                json=get_sample_connector_response(data=data),
-            )
-            rsps.add(
-                rsps.PATCH,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-                json=get_sample_update_response(),
-            )
-            rsps.add(
-                rsps.POST,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/force",
-                json=get_sample_sync_response(),
-            )
-            ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=0.1)
-
-
-@pytest.mark.parametrize(
-    "n_polls, succeed_at_end",
-    [(0, True), (0, False), (4, True), (4, False), (30, True)],
-)
-def test_resync_and_poll(n_polls, succeed_at_end):
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
-    )
-    api_prefix = f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}"
-
-    final_data = (
-        {"succeeded_at": "2021-01-01T02:00:00.0Z"}
-        if succeed_at_end
-        else {"failed_at": "2021-01-01T02:00:00.0Z"}
-    )
-
-    def _mock_interaction():
-        with responses.RequestsMock() as rsps:
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_complex_sample_connector_schema_config(),
-            )
-            rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
-            rsps.add(
-                rsps.POST, f"{api_prefix}/schemas/tables/resync", json=get_sample_resync_response()
-            )
-            # initial state
-            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-            # n polls before updating
-            for _ in range(n_polls):
-                rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-            # final state will be updated
-            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
-            return ft_resource.resync_and_poll(
-                DEFAULT_CONNECTOR_ID,
-                resync_parameters={"xyz1": ["abc1", "abc2"]},
-                poll_interval=0.1,
-            )
-
-    if succeed_at_end:
-        assert _mock_interaction() == FivetranOutput(
-            connector_details=get_sample_connector_response(data=final_data)["data"],
-            schema_config=get_complex_sample_connector_schema_config()["data"],
-        )
-    else:
-        with pytest.raises(Failure, match="failed!"):
-            _mock_interaction()

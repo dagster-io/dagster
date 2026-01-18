@@ -1,12 +1,12 @@
 import time
 
 from dagster import AssetKey, DagsterEvent, DagsterEventType
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.event_api import EventLogRecord
@@ -346,6 +346,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
             {
+                "assetKey": {"path": ["asset_3"]},
+                "assetChecksOrError": {
+                    "checks": [{"name": "asset_3_check"}, {"name": "asset_3_other_check"}]
+                },
+            },
+            {
                 "assetKey": {"path": ["check_in_op_asset"]},
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
@@ -354,6 +360,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {
                     "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
                 },
+            },
+            {
+                "assetKey": {"path": ["owned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "owned_asset_check"}]},
+            },
+            {
+                "assetKey": {"path": ["unowned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "unowned_asset_check"}]},
             },
         ]
 
@@ -369,12 +383,24 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
             {
+                "assetKey": {"path": ["asset_3"]},
+                "assetChecksOrError": {"checks": [{"name": "asset_3_check"}]},
+            },
+            {
                 "assetKey": {"path": ["check_in_op_asset"]},
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
             {
                 "assetKey": {"path": ["one"]},
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["owned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "owned_asset_check"}]},
+            },
+            {
+                "assetKey": {"path": ["unowned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "unowned_asset_check"}]},
             },
         ]
 
@@ -416,8 +442,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         }
 
     def test_asset_check_execution_cursoring(self, graphql_context: WorkspaceRequestContext):
-        graphql_context.instance.wipe()
-
         run_ids = [create_run_for_test(graphql_context.instance).run_id for _ in range(10)]
         for run_id in run_ids:
             graphql_context.instance.event_log_storage.store_event(
@@ -460,8 +484,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             assert execution["runId"] == expected_run_id
 
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
-        graphql_context.instance.wipe()
-
         run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
         create_run_for_test(graphql_context.instance, run_id=run_id_one)
 
@@ -521,7 +543,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         "timestamp": evaluation_timestamp,
                         "severity": "ERROR",
                         "targetMaterialization": {
-                            "storageId": 42,
+                            "storageId": "42",
                             "runId": run_id_two,
                             "timestamp": 3.3,
                         },
@@ -535,8 +557,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         }
 
     def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
-        graphql_context.instance.wipe()
-
         run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
         create_run_for_test(graphql_context.instance, run_id=run_id_one)
 
@@ -580,8 +600,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         }
 
     def test_asset_check_failure(self, graphql_context: WorkspaceRequestContext):
-        graphql_context.instance.wipe()
-
         run = create_run_for_test(graphql_context.instance)
 
         graphql_context.instance.event_log_storage.store_event(
@@ -621,7 +639,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
     def test_latest_execution(self, graphql_context: WorkspaceRequestContext):
         instance = graphql_context.instance
-        instance.wipe()
 
         def new_materialization() -> EventLogRecord:
             """Stores a materialization in a new run, and asserts that latest execustion is null."""
@@ -857,7 +874,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", (
+            result.data
+        )
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
@@ -1308,8 +1327,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         }
 
     def test_deleted_run(self, graphql_context: WorkspaceRequestContext):
-        graphql_context.instance.wipe()
-
         run_id = make_new_run_id()
         run = create_run_for_test(graphql_context.instance, run_id=run_id)
 

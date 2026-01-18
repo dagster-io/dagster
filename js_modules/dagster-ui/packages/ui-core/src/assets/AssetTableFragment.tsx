@@ -1,3 +1,4 @@
+import {FRESHNESS_POLICY_FRAGMENT} from './FreshnessPolicyFragment';
 import {gql} from '../apollo-client';
 
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
@@ -9,15 +10,28 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isMaterializable
     isObservable
     isExecutable
+    isPartitioned
+    isAutoCreatedStub
+    hasAssetChecks
     computeKind
     hasMaterializePermission
     hasReportRunlessAssetEventPermission
+    assetKey {
+      path
+    }
+    internalFreshnessPolicy {
+      ...FreshnessPolicyFragment
+    }
     partitionDefinition {
       description
       dimensionTypes {
         type
         dynamicPartitionsDefinitionName
       }
+    }
+    automationCondition {
+      label
+      expandedLabel
     }
     description
     owners {
@@ -32,6 +46,8 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    pools
+    jobNames
     kinds
     repository {
       id
@@ -42,6 +58,8 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       }
     }
   }
+
+  ${FRESHNESS_POLICY_FRAGMENT}
 `;
 
 export const ASSET_TABLE_FRAGMENT = gql`

@@ -1,17 +1,14 @@
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional
+from typing import Optional, Union
 
+import dagster as dg
 from dagster._annotations import public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-)
+from dagster._core.pipes.client import PipesClientCompletedInvocation
 from dagster._core.pipes.context import build_external_execution_context_data
-from dagster._core.pipes.utils import PipesMessageHandler, open_pipes_session
+from dagster._core.pipes.utils import PipesMessageHandler
 from dagster_pipes import (
     PipesContext,
     PipesContextData,
@@ -36,7 +33,7 @@ class InProcessPipesContextLoader(PipesContextLoader):
 
 class InProcessPipesMessageWriteChannel(PipesMessageWriterChannel):
     def __init__(self) -> None:
-        self.messages: List[PipesMessage] = []
+        self.messages: list[PipesMessage] = []
 
     def write_message(self, message: PipesMessage) -> None:
         self.messages.append(message)
@@ -62,7 +59,7 @@ class InProcessPipesParamLoader(PipesParamsLoader):
         return True
 
 
-class InProcessContextInjector(PipesContextInjector):
+class InProcessContextInjector(dg.PipesContextInjector):
     @contextmanager
     def inject_context(self, context_data: "PipesContextData") -> Iterator[PipesParams]:
         yield {}
@@ -71,7 +68,7 @@ class InProcessContextInjector(PipesContextInjector):
         return "In-process context injection."
 
 
-class InProcessMessageReader(PipesMessageReader):
+class InProcessMessageReader(dg.PipesMessageReader):
     def __init__(
         self,
         message_writer: InProcessPipesMessageWriter,
@@ -81,7 +78,7 @@ class InProcessMessageReader(PipesMessageReader):
         self.pipes_context = pipes_context
 
     @contextmanager
-    def read_messages(self, handler: "PipesMessageHandler") -> Iterator[PipesParams]:
+    def read_messages(self, handler: PipesMessageHandler) -> Iterator[PipesParams]:
         yield {}
         for pipes_message in self.message_writer.write_channel.messages:
             handler.handle_message(pipes_message)
@@ -90,7 +87,7 @@ class InProcessMessageReader(PipesMessageReader):
         return "In-process message reader."
 
 
-class InProcessPipesClient(PipesClient, TreatAsResourceParam):
+class InProcessPipesClient(dg.PipesClient, TreatAsResourceParam):
     """An in-process pipes clients unusable in test cases. A function inside the orchestration
     process actually serves as the "external" execution. This allows us to test the inner machinery
     of pipes without actually launching subprocesses, which makes the tests much more lightweight
@@ -98,22 +95,25 @@ class InProcessPipesClient(PipesClient, TreatAsResourceParam):
     """
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[dg.OpExecutionContext, dg.AssetExecutionContext],
         fn: Callable[[PipesContext], None],
         extras: Optional[PipesExtras] = None,
+        metadata: Optional[RawMetadataMapping] = None,  # metadata to attach to all materializations
     ) -> PipesClientCompletedInvocation:
         pipes_context_data = build_external_execution_context_data(context=context, extras=extras)
         pipes_context_loader = InProcessPipesContextLoader(pipes_context_data)
         pipes_message_writer = InProcessPipesMessageWriter()
-        with PipesContext(  # construct PipesContext directly to avoid env var check in open_dagster_pipes
-            context_loader=pipes_context_loader,
-            message_writer=pipes_message_writer,
-            params_loader=InProcessPipesParamLoader(),
-        ) as pipes_context:
-            with open_pipes_session(
+        with (
+            PipesContext(  # construct PipesContext directly to avoid env var check in open_dagster_pipes
+                context_loader=pipes_context_loader,
+                message_writer=pipes_message_writer,
+                params_loader=InProcessPipesParamLoader(),
+            ) as pipes_context
+        ):
+            with dg.open_pipes_session(
                 context=context,
                 context_injector=InProcessContextInjector(),
                 message_reader=InProcessMessageReader(
@@ -123,4 +123,4 @@ class InProcessPipesClient(PipesClient, TreatAsResourceParam):
             ) as session:
                 fn(pipes_context)
 
-        return PipesClientCompletedInvocation(session)
+        return PipesClientCompletedInvocation(session, metadata=metadata)

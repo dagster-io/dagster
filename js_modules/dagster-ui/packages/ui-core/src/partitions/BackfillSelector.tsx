@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
 
 import {
   DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
@@ -26,11 +25,11 @@ import {
 } from './BackfillMessaging';
 import {DimensionRangeWizard} from './DimensionRangeWizard';
 import {PartitionRunStatusCheckboxes, countsByState} from './PartitionRunStatusCheckboxes';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {
   BackfillSelectorQuery,
   BackfillSelectorQueryVariables,
 } from './types/BackfillSelector.types';
-import {gql, useMutation, useQuery} from '../apollo-client';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
@@ -44,6 +43,7 @@ import {
 } from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -76,7 +76,6 @@ export const BackfillPartitionSelector = ({
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }) => {
-  const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
     Object.keys(runStatusData).filter(
       (k) => !runStatusData[k] || runStatusData[k] === RunStatus.FAILURE,
@@ -88,6 +87,7 @@ export const BackfillPartitionSelector = ({
   ]);
 
   const selected = React.useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return range.filter((r) => stateFilters.includes(runStatusData[r]!));
   }, [range, stateFilters, runStatusData]);
 
@@ -122,7 +122,7 @@ export const BackfillPartitionSelector = ({
   }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
-    showBackfillSuccessToast(history, backfillId, false);
+    showBackfillSuccessToast(backfillId);
     onLaunch?.(backfillId, query);
   };
 
@@ -173,6 +173,7 @@ export const BackfillPartitionSelector = ({
   const counts = countsByState(
     range.map((key) => ({
       partitionKey: key,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       state: runStatusData[key]!,
     })),
   );
@@ -208,6 +209,7 @@ export const BackfillPartitionSelector = ({
                   ? PartitionDefinitionType.TIME_WINDOW
                   : PartitionDefinitionType.STATIC
               }
+              showQuickSelectOptionsForStatuses={false}
             />
 
             <PartitionRunStatusCheckboxes
@@ -390,7 +392,7 @@ const LaunchBackfillButton = ({
           partitionNames,
           reexecutionSteps,
           fromFailure,
-          tags,
+          tags: tagsWithUIExecutionTags(tags),
         },
       },
     });

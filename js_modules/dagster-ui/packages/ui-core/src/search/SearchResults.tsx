@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
+import {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -57,6 +58,10 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'source';
     case AssetFilterSearchResultType.Column:
       return 'view_column';
+    case AssetFilterSearchResultType.ColumnTag:
+      return 'tag';
+    case AssetFilterSearchResultType.TableName:
+      return 'database';
     default:
       assertUnreachable(type);
   }
@@ -76,6 +81,10 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Group';
     case AssetFilterSearchResultType.Column:
       return 'Column';
+    case AssetFilterSearchResultType.ColumnTag:
+      return 'Column tag';
+    case AssetFilterSearchResultType.TableName:
+      return 'Table name';
     default:
       assertUnreachable(type);
   }
@@ -85,46 +94,30 @@ type ResultType = Fuse.FuseResult<SearchResult> | Pick<Fuse.FuseResult<SearchRes
 type ItemProps<T extends ResultType> = {
   isHighlight: boolean;
   onClickResult: (result: T) => void;
+  queryString: string;
   result: T;
 };
 
-function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] {
-  // Fuse provides indices of the label that match the query string.
-  // Use these match indices to display the label with the matching parts bolded.
+function buildSearchLabel(result: Fuse.FuseResult<SearchResult>, queryString: string): ReactNode {
+  const queryStringLower = queryString.toLowerCase();
+  const {label} = result.item;
+  const exactMatchPosition = label.indexOf(queryStringLower);
 
-  let longestMatch: Fuse.RangeTuple | undefined;
-  // Only bold longest match
-  if (result.matches && result.matches.length > 0) {
-    const match = result.matches[0]!; // Only one match per row, since we only match by label
-
-    if (match.indices.length > 0) {
-      longestMatch = match.indices[0]!;
-      for (let i = 1; i < match.indices.length; i++) {
-        const current: [number, number] = match.indices[i]!;
-        if (current[1] - current[0] > longestMatch[1]! - longestMatch[0]!) {
-          longestMatch = current;
-        }
-      }
-    }
+  if (exactMatchPosition === -1) {
+    return <Caption>{result.item.label}</Caption>;
   }
 
-  const labelComponents = [];
-  let parsedString = '';
-  if (longestMatch) {
-    const stringBeforeMatch = result.item.label.slice(parsedString.length, longestMatch[0]);
-    labelComponents.push(<Caption>{stringBeforeMatch}</Caption>);
-    parsedString += stringBeforeMatch;
+  const stringBeforeMatch = label.slice(0, exactMatchPosition);
+  const match = label.slice(exactMatchPosition, exactMatchPosition + queryString.length);
+  const stringAfterMatch = label.slice(exactMatchPosition + queryString.length);
 
-    const match = result.item.label.slice(longestMatch[0], longestMatch[1] + 1);
-    labelComponents.push(<CaptionBolded>{match}</CaptionBolded>);
-    parsedString += match;
-  }
-
-  const stringAfterMatch = result.item.label.substring(parsedString.length);
-  labelComponents.push(<Caption>{stringAfterMatch}</Caption>);
-  parsedString += stringAfterMatch;
-
-  return labelComponents;
+  return (
+    <>
+      <Caption>{stringBeforeMatch}</Caption>
+      <CaptionBolded>{match}</CaptionBolded>
+      <Caption>{stringAfterMatch}</Caption>
+    </>
+  );
 }
 
 function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element[] {
@@ -164,6 +157,7 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
 export const SearchResultItem = <T extends ResultType>({
   isHighlight,
   onClickResult,
+  queryString,
   result,
 }: ItemProps<T>) => {
   const {item} = result;
@@ -185,7 +179,7 @@ export const SearchResultItem = <T extends ResultType>({
     [onClickResult, result],
   );
 
-  const labelComponents = 'refIndex' in result ? buildSearchLabel(result) : [<>{item.label}</>];
+  const labelComponents = 'refIndex' in result ? buildSearchLabel(result, queryString) : item.label;
 
   return (
     <Item isHighlight={isHighlight} ref={element}>
@@ -255,6 +249,7 @@ export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>
         <SearchResultItem
           key={result.item.href}
           isHighlight={highlight === ii}
+          queryString={queryString}
           result={result}
           onClickResult={onClickResult}
         />

@@ -1,27 +1,17 @@
 import os
 import pickle
 import re
+from collections.abc import Callable
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Dict, Tuple
+from typing import Any
 
-from dagster import (
-    DynamicOut,
-    DynamicOutput,
-    ExecutorDefinition,
-    JobDefinition,
-    ReexecutionOptions,
-    execute_job,
-    job,
-    op,
-    reconstructable,
-    resource,
-)
-from dagster._core.test_utils import instance_for_test
+import dagster as dg
+from dagster import ExecutorDefinition, ReexecutionOptions
 
 
 def get_dynamic_job_resource_init_failure(
     executor_def: ExecutorDefinition,
-) -> Tuple[JobDefinition, Callable[[str, int, int], Dict[str, Any]]]:
+) -> tuple[dg.JobDefinition, Callable[[str, int, int], dict[str, Any]]]:
     # Induces failure state where among a series of dynamic steps induced from
     # upstream dynamic outputs, some of those steps fail during resource
     # initialization time. Since resource initialization is happening across
@@ -29,12 +19,12 @@ def get_dynamic_job_resource_init_failure(
     # initializations that have already occurred within an external file
     # (count.pkl) so that state can be shared. In multiprocessing case, race
     # conditions are avoided by setting max concurrency to 1.
-    @op(out=DynamicOut(), config_schema={"num_dynamic_steps": int})
+    @dg.op(out=dg.DynamicOut(), config_schema={"num_dynamic_steps": int})
     def source(context):
         for i in range(context.op_config["num_dynamic_steps"]):
-            yield DynamicOutput(i, mapping_key=str(i))
+            yield dg.DynamicOutput(i, mapping_key=str(i))
 
-    @resource(config_schema={"path": str, "allowed_initializations": int})
+    @dg.resource(config_schema={"path": str, "allowed_initializations": int})
     def resource_for_dynamic_step(init_context):
         # Get the count of successful initializations. If it is already at the
         # allowed initialization number, fail.
@@ -50,15 +40,15 @@ def get_dynamic_job_resource_init_failure(
             pickle.dump(init_count, f)
         return None
 
-    @op(required_resource_keys={"foo"})
+    @dg.op(required_resource_keys={"foo"})
     def mapped_op(x):
         pass
 
-    @op
+    @dg.op
     def consumer(x):
         pass
 
-    @job(resource_defs={"foo": resource_for_dynamic_step}, executor_def=executor_def)
+    @dg.job(resource_defs={"foo": resource_for_dynamic_step}, executor_def=executor_def)
     def the_job():
         consumer(source().map(mapped_op).collect())
 
@@ -75,7 +65,7 @@ def get_dynamic_job_resource_init_failure(
 
 def get_dynamic_job_op_failure(
     executor_def: ExecutorDefinition,
-) -> Tuple[JobDefinition, Callable[[str, int, int], Dict[str, Any]]]:
+) -> tuple[dg.JobDefinition, Callable[[str, int, int], dict[str, Any]]]:
     # Induces failure state where among a series of dynamic steps induced from
     # upstream dynamic outputs, some of those steps fail during op runtime.
     # Since step runs are happening across multiple processes, it is necessary
@@ -83,12 +73,12 @@ def get_dynamic_job_op_failure(
     # within an external file (count.pkl) so that state can be shared. In
     # multiprocessing case, race conditions are avoided by setting max
     # concurrency to 1.
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def source():
         for i in range(3):
-            yield DynamicOutput(i, mapping_key=str(i))
+            yield dg.DynamicOutput(i, mapping_key=str(i))
 
-    @op(config_schema={"path": str, "allowed_runs": int})
+    @dg.op(config_schema={"path": str, "allowed_runs": int})
     def mapped_op(context, x):
         # Get the count of successful initializations. If it is already at the
         # allowed initialization number, fail.
@@ -103,11 +93,11 @@ def get_dynamic_job_op_failure(
             run_count += 1
             pickle.dump(run_count, f)
 
-    @op
+    @dg.op
     def consumer(x):
         return 4
 
-    @job
+    @dg.job
     def the_job():
         consumer(source().map(mapped_op).collect())
 
@@ -134,10 +124,10 @@ def _write_blank_count(path):
 def assert_expected_failure_behavior(job_fn, config_fn):
     num_dynamic_steps = 3
     with TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir) as instance:
+        with dg.instance_for_test(temp_dir=temp_dir) as instance:
             _write_blank_count(temp_dir)
-            result = execute_job(
-                reconstructable(job_fn),
+            result = dg.execute_job(
+                dg.reconstructable(job_fn),
                 instance,
                 run_config=config_fn(
                     temp_dir, 1, num_dynamic_steps
@@ -155,8 +145,8 @@ def assert_expected_failure_behavior(job_fn, config_fn):
                 list(result.get_failed_step_keys()),
             )
             _write_blank_count(temp_dir)
-            retry_result = execute_job(
-                reconstructable(job_fn),
+            retry_result = dg.execute_job(
+                dg.reconstructable(job_fn),
                 instance,
                 run_config=config_fn(
                     temp_dir, num_dynamic_steps, num_dynamic_steps

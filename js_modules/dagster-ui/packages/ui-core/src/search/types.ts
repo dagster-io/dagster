@@ -1,15 +1,15 @@
 import Fuse from 'fuse.js';
 
+import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
+import {AssetKey, DefinitionTag} from '../graphql/types';
+import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
 import {
-  SearchAssetFragment,
-  SearchGroupFragment,
-  SearchPartitionSetFragment,
-  SearchPipelineFragment,
-  SearchResourceDetailFragment,
-  SearchScheduleFragment,
-  SearchSensorFragment,
-} from './types/useGlobalSearch.types';
-import {DefinitionTag} from '../graphql/types';
+  WorkspaceAssetGroupFragment,
+  WorkspacePartitionSetFragment,
+  WorkspacePipelineFragment,
+  WorkspaceScheduleFragment,
+  WorkspaceSensorFragment,
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum SearchResultType {
   AssetGroup,
@@ -28,12 +28,14 @@ export enum SearchResultType {
 export enum AssetFilterSearchResultType {
   // Add types with corresponding strings to distinguish
   // between SearchResultType.AssetGroup
-  Kind = 'AssetFilterSearchResultType.Kind',
-  Tag = 'AssetFilterSearchResultType.Tag',
-  CodeLocation = 'AssetFilterSearchResultType.CodeLocation',
-  Owner = 'AssetFilterSearchResultType.Owner',
-  AssetGroup = 'AssetFilterSearchResultType.AssetGroup',
-  Column = 'AssetFilterSearchResultType.Column',
+  Kind = 'kind:',
+  Tag = 'tag:',
+  CodeLocation = 'code_location:',
+  Owner = 'owner:',
+  AssetGroup = 'asset_group:',
+  Column = 'column:',
+  ColumnTag = 'column_tag:',
+  TableName = 'table_name:',
 }
 
 export function isAssetFilterSearchResultType(
@@ -45,11 +47,14 @@ export function isAssetFilterSearchResultType(
     type === AssetFilterSearchResultType.Kind ||
     type === AssetFilterSearchResultType.Owner ||
     type === AssetFilterSearchResultType.Tag ||
-    type === AssetFilterSearchResultType.Column
+    type === AssetFilterSearchResultType.Column ||
+    type === AssetFilterSearchResultType.ColumnTag ||
+    type === AssetFilterSearchResultType.TableName
   );
 }
 
 export type SearchResult = {
+  key?: AssetKey;
   label: string;
   description: string;
   href: string;
@@ -60,13 +65,13 @@ export type SearchResult = {
   repoPath?: string;
   node?:
     | null
-    | SearchAssetFragment
-    | SearchGroupFragment
-    | SearchPipelineFragment
-    | SearchScheduleFragment
-    | SearchSensorFragment
-    | SearchPartitionSetFragment
-    | SearchResourceDetailFragment;
+    | AssetTableFragment
+    | WorkspaceAssetGroupFragment
+    | WorkspacePipelineFragment
+    | WorkspaceScheduleFragment
+    | WorkspaceSensorFragment
+    | WorkspacePartitionSetFragment
+    | ResourceEntryFragment;
 };
 
 export type ReadyResponse = {type: 'ready'};

@@ -7,7 +7,7 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.test_utils import environ, remove_none_recursively
+from dagster._core.test_utils import environ
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
@@ -19,6 +19,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.utils import sanitize_k8s_label
+from dagster_shared.utils import remove_none_recursively
 
 
 def test_job_serialization():
@@ -798,7 +799,9 @@ def test_construct_dagster_k8s_job_with_user_defined_image():
     expected_image = "different_image:tag"
     user_defined_k8s_config = get_user_defined_k8s_config(
         user_defined_k8s_env_tags_graph.to_job(
-            tags={USER_DEFINED_K8S_CONFIG_KEY: {"container_config": {"image": expected_image}}}
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {"container_config": {"image": expected_image}},
+            }
         ).tags
     )
 

@@ -14,12 +14,44 @@ query InstanceDetailSummaryQuery {
         runQueuingSupported
         hasInfo
         useAutoMaterializeSensors
+        poolConfig {
+            poolGranularity
+            defaultPoolLimit
+            opGranularityRunBuffer
+        }
     }
 }
 """
 
 GET_CONCURRENCY_LIMITS_QUERY = """
-query InstanceConcurrencyLimitsQuery {
+query InstanceConcurrencyLimitsQuery($concurrencyKey: String!) {
+    instance {
+        concurrencyLimit(concurrencyKey: $concurrencyKey) {
+            concurrencyKey
+            slotCount
+            activeSlotCount
+            activeRunIds
+            claimedSlots {
+                runId
+                stepKey
+            }
+            pendingSteps {
+                runId
+                stepKey
+                enqueuedTimestamp
+                assignedTimestamp
+                priority
+            }
+            limit
+            usingDefaultLimit
+        }
+    }
+}
+
+"""
+
+ALL_CONCURRENCY_LIMITS_QUERY = """
+query AllConcurrencyLimitsQuery {
     instance {
         concurrencyLimits {
             concurrencyKey
@@ -37,6 +69,8 @@ query InstanceConcurrencyLimitsQuery {
                 assignedTimestamp
                 priority
             }
+            limit
+            usingDefaultLimit
         }
     }
 }
@@ -67,6 +101,40 @@ BaseTestSuite: Any = make_graphql_context_test_suite(
 )
 
 
+def fetch_concurrency_limit(graphql_context, key: str):
+    results = execute_dagster_graphql(
+        graphql_context,
+        GET_CONCURRENCY_LIMITS_QUERY,
+        {"concurrencyKey": key},
+    )
+    assert results.data
+    assert "instance" in results.data
+    assert "concurrencyLimit" in results.data["instance"]
+    return results.data["instance"]["concurrencyLimit"]
+
+
+def set_concurrency_limit(graphql_context, key: str, limit: int):
+    execute_dagster_graphql(
+        graphql_context,
+        SET_CONCURRENCY_LIMITS_MUTATION,
+        variables={
+            "concurrencyKey": key,
+            "limit": limit,
+        },
+    )
+
+
+def fetch_all_concurrency_limits(graphql_context):
+    results = execute_dagster_graphql(
+        graphql_context,
+        ALL_CONCURRENCY_LIMITS_QUERY,
+    )
+    assert results.data
+    assert "instance" in results.data
+    assert "concurrencyLimits" in results.data["instance"]
+    return [limit for limit in results.data["instance"]["concurrencyLimits"]]
+
+
 class TestInstanceSettings(BaseTestSuite):
     def test_instance_settings(self, graphql_context):
         results = execute_dagster_graphql(graphql_context, INSTANCE_QUERY)
@@ -75,39 +143,24 @@ class TestInstanceSettings(BaseTestSuite):
                 "runQueuingSupported": True,
                 "hasInfo": graphql_context.show_instance_config,
                 "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
+                "poolConfig": {
+                    "poolGranularity": None,
+                    "defaultPoolLimit": None,
+                    "opGranularityRunBuffer": None,
+                },
             }
         }
 
     def test_concurrency_limits(self, graphql_context):
         instance = graphql_context.instance
 
-        def _fetch_limits(key: str):
-            results = execute_dagster_graphql(
-                graphql_context,
-                GET_CONCURRENCY_LIMITS_QUERY,
-            )
-            assert results.data
-            assert "instance" in results.data
-            assert "concurrencyLimits" in results.data["instance"]
-            limit_info = results.data["instance"]["concurrencyLimits"]
-            return next(iter([info for info in limit_info if info["concurrencyKey"] == key]), None)
-
-        def _set_limits(key: str, limit: int):
-            execute_dagster_graphql(
-                graphql_context,
-                SET_CONCURRENCY_LIMITS_MUTATION,
-                variables={
-                    "concurrencyKey": key,
-                    "limit": limit,
-                },
-            )
-
         # default limits are empty
-        assert _fetch_limits("foo") is None
+        all_limits = fetch_all_concurrency_limits(graphql_context)
+        assert len(all_limits) == 0
 
         # set a limit
-        _set_limits("foo", 10)
-        foo = _fetch_limits("foo")
+        set_concurrency_limit(graphql_context, "foo", 10)
+        foo = fetch_concurrency_limit(graphql_context, "foo")
         assert foo["concurrencyKey"] == "foo"
         assert foo["slotCount"] == 10
         assert foo["activeSlotCount"] == 0
@@ -118,7 +171,7 @@ class TestInstanceSettings(BaseTestSuite):
         # claim a slot
         run_id = make_new_run_id()
         instance.event_log_storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
-        foo = _fetch_limits("foo")
+        foo = fetch_concurrency_limit(graphql_context, "foo")
         assert foo["concurrencyKey"] == "foo"
         assert foo["slotCount"] == 10
         assert foo["activeSlotCount"] == 1
@@ -130,9 +183,8 @@ class TestInstanceSettings(BaseTestSuite):
         assert foo["pendingSteps"][0]["assignedTimestamp"] is not None
         assert foo["pendingSteps"][0]["priority"] == 0
 
-        # set a new limit
-        _set_limits("foo", 5)
-        foo = _fetch_limits("foo")
+        set_concurrency_limit(graphql_context, "foo", 5)
+        foo = fetch_concurrency_limit(graphql_context, "foo")
         assert foo["concurrencyKey"] == "foo"
         assert foo["slotCount"] == 5
         assert foo["activeSlotCount"] == 1
@@ -144,9 +196,8 @@ class TestInstanceSettings(BaseTestSuite):
         assert foo["pendingSteps"][0]["assignedTimestamp"] is not None
         assert foo["pendingSteps"][0]["priority"] == 0
 
-        # free a slot
         instance.event_log_storage.free_concurrency_slots_for_run(run_id)
-        foo = _fetch_limits("foo")
+        foo = fetch_concurrency_limit(graphql_context, "foo")
         assert foo["concurrencyKey"] == "foo"
         assert foo["slotCount"] == 5
         assert foo["activeSlotCount"] == 0
@@ -243,3 +294,48 @@ class TestInstanceSettings(BaseTestSuite):
         assert foo_info.pending_run_ids == set()
         assert foo_info.assigned_step_count == 1
         assert foo_info.assigned_run_ids == {run_id_2}
+
+
+ConcurrencyTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[
+        GraphQLContextVariant.sqlite_with_default_concurrency_managed_grpc_env(),
+    ]
+)
+
+
+class TestConcurrencyInstanceSettings(ConcurrencyTestSuite):
+    def test_default_concurrency(self, graphql_context):
+        # no limits
+        all_limits = fetch_all_concurrency_limits(graphql_context)
+        assert len(all_limits) == 0
+
+        # default limits are empty
+        limit = fetch_concurrency_limit(graphql_context, "foo")
+        assert limit is not None
+        assert limit["slotCount"] == 0
+        assert limit["limit"] == 1
+        assert limit["usingDefaultLimit"]
+
+        # set a limit
+        set_concurrency_limit(graphql_context, "foo", 0)
+
+        limit = fetch_concurrency_limit(graphql_context, "foo")
+        assert limit is not None
+        assert limit["slotCount"] == 0
+        assert limit["limit"] == 0
+        assert not limit["usingDefaultLimit"]
+
+        # instance settings
+        results = execute_dagster_graphql(graphql_context, INSTANCE_QUERY)
+        assert results.data == {
+            "instance": {
+                "runQueuingSupported": True,
+                "hasInfo": graphql_context.show_instance_config,
+                "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
+                "poolConfig": {
+                    "poolGranularity": None,
+                    "defaultPoolLimit": 1,
+                    "opGranularityRunBuffer": None,
+                },
+            }
+        }

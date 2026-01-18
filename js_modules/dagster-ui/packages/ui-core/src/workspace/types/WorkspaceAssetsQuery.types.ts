@@ -11,12 +11,30 @@ export type RepoAssetTableFragment = {
   isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
+  isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
+  hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  pools: Array<string>;
+  jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -25,6 +43,11 @@ export type RepoAssetTableFragment = {
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -68,12 +91,30 @@ export type WorkspaceAssetsQuery = {
           isMaterializable: boolean;
           isObservable: boolean;
           isExecutable: boolean;
+          isPartitioned: boolean;
+          isAutoCreatedStub: boolean;
+          hasAssetChecks: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
           hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
+          pools: Array<string>;
+          jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          internalFreshnessPolicy:
+            | {
+                __typename: 'CronFreshnessPolicy';
+                deadlineCron: string;
+                lowerBoundDeltaSeconds: number;
+                timezone: string;
+              }
+            | {
+                __typename: 'TimeWindowFreshnessPolicy';
+                failWindowSeconds: number;
+                warnWindowSeconds: number | null;
+              }
+            | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -82,6 +123,11 @@ export type WorkspaceAssetsQuery = {
               type: Types.PartitionDefinitionType;
               dynamicPartitionsDefinitionName: string | null;
             }>;
+          } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
           } | null;
           owners: Array<
             | {__typename: 'TeamAssetOwner'; team: string}
@@ -99,4 +145,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = '5f392a40e848c1adfc661f4f9db904cbab74d68900bf5632d92b44fdf2128228';
+export const WorkspaceAssetsQueryVersion = '8e60e278ee64dbc08867486462047b5db1852bbcb23777cd6fbae587703e7ebe';

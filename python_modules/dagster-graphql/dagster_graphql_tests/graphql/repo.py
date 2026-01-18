@@ -6,9 +6,11 @@ import os
 import string
 import time
 from collections import OrderedDict
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+from datetime import timedelta
+from typing import Literal, Optional, TypeVar, Union
 
 from dagster import (
     Any,
@@ -27,17 +29,15 @@ from dagster import (
     BackfillPolicy,
     Bool,
     DagsterInstance,
-    DailyPartitionsDefinition,
+    DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
     DynamicOutput,
-    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
     Field,
-    HourlyPartitionsDefinition,
     In,
     Int,
     IOManager,
@@ -52,7 +52,6 @@ from dagster import (
     ScheduleDefinition,
     SensorResult,
     SourceAsset,
-    StaticPartitionsDefinition,
     String,
     TableColumn,
     TableColumnConstraints,
@@ -60,30 +59,28 @@ from dagster import (
     TableRecord,
     TableSchema,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_check,
     asset_sensor,
     dagster_type_loader,
-    daily_partitioned_config,
     define_asset_job,
-    freshness_policy_sensor,
     graph,
+    graph_asset,
     job,
     logger,
     multi_asset,
     multi_asset_sensor,
+    observable_source_asset,
     op,
     repository,
     resource,
     run_failure_sensor,
     run_status_sensor,
     schedule,
-    static_partitioned_config,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
@@ -95,22 +92,39 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionedConfig
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig,
+    daily_partitioned_config,
+    static_partitioned_config,
+)
 from dagster._core.definitions.reconstruct import ReconstructableRepository
-from dagster._core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    RunRequest,
+    SensorDefinition,
+    SensorType,
+    SkipReason,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -118,7 +132,8 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-from typing_extensions import Literal, Never
+from dagster_shared.seven import get_system_temp_directory
+from typing_extensions import Never
 
 T = TypeVar("T")
 
@@ -127,7 +142,7 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
-    with open(path, "r", encoding="utf8") as fd:
+    with open(path, encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
@@ -180,7 +195,7 @@ def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCo
 
 
 @contextmanager
-def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
+def get_main_remote_repo(instance: DagsterInstance) -> Iterator[RemoteRepository]:
     with get_main_workspace(instance) as workspace:
         location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
@@ -498,7 +513,7 @@ def scalar_output_job():
     def return_bool():
         return True
 
-    @op(out=Out(Any))
+    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
     def return_any():
         return "dkjfkdjfe"
 
@@ -616,16 +631,16 @@ def foo_logger(init_context):
     return logger_
 
 
-@logger({"log_level": Field(str), "prefix": Field(str)})
+@logger({"log_level": Field(str), "prefix": Field(str)})  # pyright: ignore[reportArgumentType]
 def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
             self.prefix = prefix
-            super(BarLogger, self).__init__(name, *args, **kwargs)
+            super().__init__(name, *args, **kwargs)
 
         def log(self, lvl, msg, *args, **kwargs):
             msg = self.prefix + msg
-            super(BarLogger, self).log(lvl, msg, *args, **kwargs)
+            super().log(lvl, msg, *args, **kwargs)
 
     logger_ = BarLogger("bar", init_context.logger_config["prefix"])
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
@@ -668,6 +683,9 @@ def composites_job():
     div_four(add_four())
 
 
+class SomeClass: ...
+
+
 @job
 def materialization_job():
     @op
@@ -700,6 +718,7 @@ def materialization_job():
                             name="foo",
                             type="integer",
                             constraints=TableColumnConstraints(unique=True),
+                            tags={"foo": "bar"},
                         ),
                         TableColumn(name="bar", type="string"),
                     ],
@@ -708,6 +727,9 @@ def materialization_job():
                     ),
                 ),
                 "my job": MetadataValue.job("materialization_job", location_name="test_location"),
+                "some_class": ObjectMetadataValue(SomeClass()),
+                "float inf": float("inf"),
+                "float -inf": float("-inf"),
             },
         )
         yield Output(None)
@@ -759,7 +781,7 @@ def eventually_successful():
         return depth
 
     @op
-    def collect(fan_in: List[int]):
+    def collect(fan_in: list[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
 
@@ -872,6 +894,11 @@ def tagged_job():
         return "Hello"
 
     simple_op()
+
+
+@job(tags={EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow"})
+def some_external_job():
+    pass
 
 
 @resource
@@ -1128,6 +1155,8 @@ def define_schedules():
         provide_config_schedule,
         always_error,
         jobless_schedule,
+        owned_schedule,
+        unowned_schedule,
     ]
 
 
@@ -1138,6 +1167,10 @@ def define_sensors():
             run_key=None,
             tags={"test": "1234"},
         )
+
+    @sensor(job_name="no_config_job")
+    def run_key_sensor(_):
+        return RunRequest(run_key="the_key")
 
     @sensor(job_name="no_config_job")
     def always_error_sensor(_):
@@ -1234,10 +1267,6 @@ def define_sensors():
     def many_asset_sensor(_):
         pass
 
-    @freshness_policy_sensor(asset_selection=AssetSelection.all())
-    def fresh_sensor(_):
-        pass
-
     @run_failure_sensor
     def the_failure_sensor():
         pass
@@ -1248,13 +1277,16 @@ def define_sensors():
 
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets(
-            "fresh_diamond_bottom", "asset_with_automation_condition"
+        target=AssetSelection.assets(
+            "fresh_diamond_bottom",
+            "asset_with_automation_condition",
+            "asset_with_custom_automation_condition",
         ),
     )
 
     return [
         always_no_config_sensor_with_tags_and_metadata,
+        run_key_sensor,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
@@ -1268,12 +1300,13 @@ def define_sensors():
         run_status,
         single_asset_sensor,
         many_asset_sensor,
-        fresh_sensor,
         the_failure_sensor,
         auto_materialize_sensor,
         every_asset_sensor,
         invalid_asset_selection_error,
         jobless_sensor,
+        owned_sensor,
+        unowned_sensor,
     ]
 
 
@@ -1398,6 +1431,15 @@ def hanging_op(context, my_op):
         time.sleep(0.1)
 
 
+@job(
+    partitions_def=integers_partitions,
+    config=integers_config,
+    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+)
+def hanging_partitioned_job():
+    hanging_op(my_op())
+
+
 @op
 def never_runs_op(hanging_op):
     pass
@@ -1448,8 +1490,12 @@ executable_test_job = define_asset_job(name="executable_test_job", selection=[ex
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
+@asset
+def not_included_asset(): ...
+
+
 @asset(partitions_def=static_partitions_def)
-def upstream_static_partitioned_asset():
+def upstream_static_partitioned_asset(not_included_asset):
     return 1
 
 
@@ -1615,6 +1661,11 @@ observation_job = define_asset_job(
 )
 
 
+@observable_source_asset
+def observable_asset_same_version():
+    return DataVersion("5")
+
+
 @op
 def op_1():
     return 1
@@ -1660,7 +1711,12 @@ def req_config_job():
     the_op()
 
 
-@asset(owners=["user@dagsterlabs.com", "team:team1"])
+@asset(
+    owners=["user@dagsterlabs.com", "team:team1"],
+    freshness_policy=FreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_1():
     yield Output(3)
 
@@ -1670,7 +1726,12 @@ def asset_2():
     raise Exception("foo")
 
 
-@asset(deps=[AssetKey("asset_2")])
+@asset(
+    deps=[AssetKey("asset_2")],
+    freshness_policy=FreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_3():
     yield Output(7)
 
@@ -1735,8 +1796,33 @@ def ungrouped_asset_5():
     return 1
 
 
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_1():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_2():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_3():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_4():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_5():
+    return 1
+
+
 @multi_asset(outs={"int_asset": AssetOut(), "str_asset": AssetOut()})
-def typed_multi_asset() -> Tuple[int, str]:
+def typed_multi_asset() -> tuple[int, str]:
     return (1, "yay")
 
 
@@ -1766,7 +1852,7 @@ def fresh_diamond_right(fresh_diamond_top):
 
 
 @asset(
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+    legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30),
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
 )
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
@@ -1798,6 +1884,18 @@ def asset_with_compute_storage_kinds():
 
 @asset(automation_condition=AutomationCondition.eager())
 def asset_with_automation_condition() -> None: ...
+
+
+class MyAutomationCondition(AutomationCondition):
+    @property
+    def name(self) -> str:
+        return "some_custom_name"
+
+    def evaluate(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+
+
+@asset(automation_condition=MyAutomationCondition().since_last_handled())
+def asset_with_custom_automation_condition() -> None: ...
 
 
 fresh_diamond_assets_job = define_asset_job(
@@ -1934,6 +2032,28 @@ def my_check(asset_1):
     )
 
 
+@asset_check(asset=asset_3, description="asset_3 check", blocking=True)
+def asset_3_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
+@asset_check(asset=asset_3, description="asset_3 second check", blocking=True)
+def asset_3_other_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
 @asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
 def check_in_op_asset():
     yield Output(1)
@@ -1968,6 +2088,37 @@ def subsettable_checked_multi_asset(context: OpExecutionContext):
 checked_multi_asset_job = define_asset_job(
     "checked_multi_asset_job", AssetSelection.assets(subsettable_checked_multi_asset)
 )
+
+
+@asset(pool="foo")
+def concurrency_asset():
+    pass
+
+
+@op(pool="bar")
+def concurrency_op_1():
+    pass
+
+
+@op(pool="baz")
+def concurrency_op_2(input_1):
+    return input_1
+
+
+@graph_asset
+def concurrency_graph_asset():
+    return concurrency_op_2(concurrency_op_1())
+
+
+@multi_asset(
+    specs=[
+        AssetSpec("concurrency_multi_asset_1"),
+        AssetSpec("concurrency_multi_asset_2"),
+    ],
+    pool="buzz",
+)
+def concurrency_multi_asset():
+    pass
 
 
 # These are defined separately because the dict repo does not handle unresolved asset jobs
@@ -2018,6 +2169,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         hard_failer,
         hello_world_with_tags,
         infinite_loop_job,
+        hanging_partitioned_job,
         integers,
         job_with_default_config,
         job_with_enum_config,
@@ -2050,7 +2202,119 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         static_partitioned_job,
         tagged_job,
         two_ins_job,
+        some_external_job,
+        owned_job,
+        unowned_job,
+        owned_partitioned_job,
+        unowned_partitioned_job,
     ]
+
+
+partitions_def_for_permissions = StaticPartitionsDefinition(["a", "b", "c"])
+
+
+@asset(
+    owners=["test@elementl.com", "team:foo"],
+)
+def owned_asset():
+    return 1
+
+
+@asset_check(asset=owned_asset, description="owned asset check", blocking=True)
+def owned_asset_check(owned_asset):
+    return AssetCheckResult(passed=True)
+
+
+@asset
+def unowned_asset():
+    return 2
+
+
+@asset_check(asset=unowned_asset, description="unowned asset check", blocking=True)
+def unowned_asset_check(unowned_asset):
+    return AssetCheckResult(passed=True)
+
+
+@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
+def owned_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_asset():
+    return 2
+
+
+@op
+def permission_test_op():
+    pass
+
+
+@job(owners=["test@elementl.com", "team:foo"])
+def owned_job():
+    permission_test_op()
+
+
+@job
+def unowned_job():
+    permission_test_op()
+
+
+@op
+def permission_partitioned_op(context):
+    context.log.info(f"Processing partition: {context.partition_key}")
+    return context.partition_key
+
+
+@job(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
+def owned_partitioned_job():
+    permission_partitioned_op()
+
+
+@job(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_job():
+    permission_partitioned_op()
+
+
+@sensor(job=owned_job, owners=["test@elementl.com", "team:foo"])
+def owned_sensor():
+    pass
+
+
+@sensor(job=unowned_job)
+def unowned_sensor():
+    pass
+
+
+@schedule(job=owned_job, cron_schedule="* * * * *", owners=["test@elementl.com", "team:foo"])
+def owned_schedule():
+    return {}
+
+
+@schedule(job=unowned_job, cron_schedule="* * * * *")
+def unowned_schedule():
+    return {}
+
+
+# Assets for testing assetsForSameStorageAddress GraphQL field
+@asset(metadata={"dagster/table_name": "db.schema.shared_table"})
+def table_asset_1():
+    pass
+
+
+@asset(metadata={"dagster/table_name": "DB.SCHEMA.SHARED_TABLE"})  # case-insensitive match
+def table_asset_2():
+    pass
+
+
+@asset(metadata={"dagster/table_name": "db.schema.different_table"})
+def table_asset_3():
+    pass
+
+
+@asset  # no table_name
+def table_asset_4():
+    pass
 
 
 def define_assets():
@@ -2075,6 +2339,7 @@ def define_assets():
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,
+        not_included_asset,
         upstream_static_partitioned_asset,
         middle_static_partitioned_asset_1,
         middle_static_partitioned_asset_2,
@@ -2113,9 +2378,27 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        observable_asset_same_version,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
+        asset_with_custom_automation_condition,
+        concurrency_asset,
+        concurrency_graph_asset,
+        concurrency_multi_asset,
+        asset_with_prefix_1,
+        asset_with_prefix_2,
+        asset_with_prefix_3,
+        asset_with_prefix_4,
+        asset_with_prefix_5,
+        owned_asset,
+        unowned_asset,
+        owned_partitioned_asset,
+        unowned_partitioned_asset,
+        table_asset_1,
+        table_asset_2,
+        table_asset_3,
+        table_asset_4,
     ]
 
 
@@ -2129,6 +2412,10 @@ def define_resources():
 def define_asset_checks():
     return [
         my_check,
+        asset_3_check,
+        asset_3_other_check,
+        owned_asset_check,
+        unowned_asset_check,
     ]
 
 
@@ -2152,13 +2439,21 @@ test_repo._name = "test_repo"  # noqa: SLF001
 
 
 def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
+    if isinstance(instigator, SensorDefinition) and instigator.sensor_type in (
+        # these rely on asset selections, which are invalid with the repos constructed
+        # using the legacy dictionary pattern
+        SensorType.AUTOMATION,
+        SensorType.AUTO_MATERIALIZE,
+    ):
+        return True
     try:
         return instigator.job_name in asset_job_names or instigator.has_anonymous_job
     except DagsterInvalidDefinitionError:  # thrown when `job_name` is invalid
         return False
 
 
-# asset jobs are incompatible with dict repository so we exclude them and any schedules/sensors that target them
+# asset jobs are incompatible with dict repository so we exclude them and any schedules/sensors that target them,
+# e.g. AutomationConditionSensorDefinitions
 @repository(default_executor_def=in_process_executor)
 def test_dict_repo():
     return {

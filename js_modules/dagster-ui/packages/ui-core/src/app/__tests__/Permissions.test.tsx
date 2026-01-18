@@ -60,7 +60,7 @@ describe('Permissions', () => {
       // Falls back to base default permission
       expect(extracted.canStartSchedule).toEqual({
         enabled: false,
-        disabledReason: 'Disabled by your administrator',
+        disabledReason: 'Insufficient permissions',
       });
     });
 
@@ -86,7 +86,7 @@ describe('Permissions', () => {
       // Falls back to base default permission
       expect(extracted.canReloadWorkspace).toEqual({
         enabled: false,
-        disabledReason: 'Disabled by your administrator',
+        disabledReason: 'Insufficient permissions',
       });
     });
   });

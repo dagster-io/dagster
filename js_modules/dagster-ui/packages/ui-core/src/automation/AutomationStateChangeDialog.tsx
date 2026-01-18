@@ -1,13 +1,12 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
+  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
+  ProgressBar,
 } from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 
@@ -45,12 +44,11 @@ export interface AutomationInfo {
 export interface Props {
   openWithIntent: OpenWithIntent;
   onClose: () => void;
-  onComplete: () => void;
   automations: AutomationInfo[];
 }
 
 export const AutomationStateChangeDialog = (props: Props) => {
-  const {openWithIntent, onClose, onComplete, automations} = props;
+  const {openWithIntent, onClose, automations} = props;
   const count = automations.length;
 
   const [state, dispatch] = useInstigationStateReducer();
@@ -194,7 +192,6 @@ export const AutomationStateChangeDialog = (props: Props) => {
     }
 
     dispatch({type: 'complete'});
-    onComplete();
   };
 
   const progressContent = () => {
@@ -224,12 +221,12 @@ export const AutomationStateChangeDialog = (props: Props) => {
       case 'completed':
         const value = count > 0 ? state.completion.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
-            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+          <Box flex={{direction: 'column', gap: 8}}>
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 1} />
             {state.step === 'updating' ? (
               <NavigationBlock message="Automations are being updated, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -294,9 +291,9 @@ export const AutomationStateChangeDialog = (props: Props) => {
     const successCount = state.completion.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
@@ -307,11 +304,11 @@ export const AutomationStateChangeDialog = (props: Props) => {
                     successCount === 1 ? '1 automation' : `${successCount} automations`
                   }.`}
             </div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
@@ -322,20 +319,20 @@ export const AutomationStateChangeDialog = (props: Props) => {
                       errorCount === 1 ? '1 automation' : `${errorCount} automations`
                     }:`}
               </div>
-            </Group>
+            </Box>
             <ul style={{margin: '8px 0'}}>
               {Object.keys(errors).map((automationName) => (
                 <li key={automationName}>
-                  <Group direction="row" spacing={8}>
+                  <Box flex={{direction: 'row', gap: 8}}>
                     <strong>{automationName}:</strong>
                     {errors[automationName] ? <div>{errors[automationName]}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -350,10 +347,10 @@ export const AutomationStateChangeDialog = (props: Props) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

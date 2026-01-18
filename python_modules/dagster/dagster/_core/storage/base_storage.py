@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 
+from dagster._annotations import public
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.schedules.base import ScheduleStorage
 
 
+@public
 class DagsterStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for Dagster persistent storage, for reading and writing data for runs,
     events, and schedule/sensor state.

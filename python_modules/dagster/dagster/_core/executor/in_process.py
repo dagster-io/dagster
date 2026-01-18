@@ -1,5 +1,8 @@
 import os
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
+
+from dagster_shared.utils.timing import format_duration
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData
@@ -10,8 +13,9 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
-from dagster._utils.timing import format_duration, time_execution_scope
+from dagster._utils.timing import time_execution_scope
 
 
 def inprocess_execution_iterator(
@@ -23,18 +27,32 @@ def inprocess_execution_iterator(
         job_context.instance, job_context.dagster_run
     ) as instance_concurrency_context:
         yield from inner_plan_execution_iterator(
-            job_context, execution_plan, instance_concurrency_context
+            job_context,
+            execution_plan,
+            instance_concurrency_context,
         )
 
 
 class InProcessExecutor(Executor):
-    def __init__(self, retries: RetryMode, marker_to_close: Optional[str] = None):
+    def __init__(
+        self,
+        retries: RetryMode,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
+        marker_to_close: Optional[str] = None,
+    ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
+        self._step_dependency_config = check.inst_param(
+            step_dependency_config, "step_dependency_config", StepDependencyConfig
+        )
         self.marker_to_close = check.opt_str_param(marker_to_close, "marker_to_close")
 
     @property
     def retries(self) -> RetryMode:
         return self._retries
+
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_dependency_config
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -64,6 +82,7 @@ class InProcessExecutor(Executor):
                         instance=plan_context.instance,
                         raise_on_error=plan_context.raise_on_error,
                         output_capture=plan_context.output_capture,
+                        step_dependency_config=self.step_dependency_config,
                     ),
                 )
             )

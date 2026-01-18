@@ -1,6 +1,6 @@
 from enum import Enum
 
-from dagster import Config, ConfigurableResource, asset, materialize
+import dagster as dg
 
 
 def test_enum_name_config():
@@ -8,16 +8,16 @@ def test_enum_name_config():
         TYPE_A = "a"
         TYPE_B = "b"
 
-    class MyConfig(Config):
+    class MyConfig(dg.Config):
         enum: MyEnum = MyEnum.TYPE_A
 
-    @asset
+    @dg.asset
     def my_asset(
         config: MyConfig,
     ):
         return config.enum.value
 
-    materialize([my_asset])
+    dg.materialize([my_asset])
 
 
 def test_enum_name_resource_x():
@@ -25,14 +25,14 @@ def test_enum_name_resource_x():
         TYPE_A = "a"
         TYPE_B = "b"
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         enum: MyEnum = MyEnum.TYPE_A
 
-    @asset
+    @dg.asset
     def my_asset(my_resource: MyResource):
         return my_resource.enum.value
 
-    materialize([my_asset], resources={"my_resource": MyResource()})
+    dg.materialize([my_asset], resources={"my_resource": MyResource()})
 
 
 def test_enum_name_resource_override_name():
@@ -40,14 +40,14 @@ def test_enum_name_resource_override_name():
         TYPE_A = "a"
         TYPE_B = "b"
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         enum: MyEnum = MyEnum.TYPE_A
 
-    @asset
+    @dg.asset
     def my_asset(my_resource: MyResource):
         return my_resource.enum.value
 
-    materialize([my_asset], resources={"my_resource": MyResource(enum=MyEnum.TYPE_A.name)})
+    dg.materialize([my_asset], resources={"my_resource": MyResource(enum=MyEnum.TYPE_A.name)})  # pyright: ignore[reportArgumentType]
 
 
 def test_enum_name_resource_override_enum():
@@ -55,11 +55,11 @@ def test_enum_name_resource_override_enum():
         TYPE_A = "a"
         TYPE_B = "b"
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         enum: MyEnum = MyEnum.TYPE_A
 
-    @asset
+    @dg.asset
     def my_asset(my_resource: MyResource):
         return my_resource.enum.value
 
-    materialize([my_asset], resources={"my_resource": MyResource(enum=MyEnum.TYPE_A)})
+    dg.materialize([my_asset], resources={"my_resource": MyResource(enum=MyEnum.TYPE_A)})

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 810 810" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <clipPath id="clip1"><path d="M559 449h199v199H559Z"/></clipPath>
+    <clipPath id="clip2"><path d="M559 157h199v200H559Z"/></clipPath>
+    <clipPath id="clip3"><path d="M334 38.625h146v146.375H334Z"/></clipPath>
+  </defs>
+  <path fill="#f03a42" d="M181.426 449.27l72.797 125.95-126.082 72.742-72.813-126.05L181.426 449.27"/>
+  <path fill="#f03a42" d="M334.203 621.313h145.629v145.606H334.203V621.313"/>
+  <g clip-path="url(#clip1)">
+    <path fill="#f03a42" d="M559.77 575.2l72.832-125.918 126.098 72.637-72.844 126.016L559.77 575.2"/>
+  </g>
+  <g clip-path="url(#clip2)">
+    <path fill="#f03a42" d="M632.613 356.82L559.781 230.734l126.07-72.805 72.859 126.105-126.097 72.786"/>
+  </g>
+  <path fill="#221d1d" d="M479.848 475.84H334.223V330.176h145.625v145.664"/>
+  <g clip-path="url(#clip3)">
+    <path fill="#f03a42" d="M479.84 184.578H334.21V38.969h145.63v145.61"/>
+  </g>
+  <path fill="#f03a42" d="M254.23 230.742L181.43 356.84 55.332 284.04l72.797-126.09 126.101 72.793"/>
+</svg>

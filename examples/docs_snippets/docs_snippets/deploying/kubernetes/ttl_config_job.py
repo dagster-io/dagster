@@ -1,15 +1,15 @@
 # ruff: noqa: T201
-from dagster import job, op
+import dagster as dg
 
 
-@op
+@dg.op
 def my_op():
     print("foo")
 
 
 # fmt: off
 # start_ttl
-@job(
+@dg.job(
     tags = {
         'dagster-k8s/config': {
             'job_spec_config': {

@@ -1,11 +1,11 @@
-from dagster import repository
+import dagster as dg
 
 
-@repository
+@dg.repository
 def repo_one():
     return []
 
 
-@repository
+@dg.repository
 def repo_two():
     return []

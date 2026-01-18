@@ -1,7 +1,7 @@
 import os
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 from unittest.mock import patch
 
 import pandas_gbq
@@ -10,15 +10,10 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     EnvVar,
     IOManagerDefinition,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
     TimeWindowPartitionMapping,
@@ -31,6 +26,13 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_gcp import build_bigquery_io_manager
 from dagster_gcp_pyspark import (
@@ -82,7 +84,7 @@ def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
 
 @pytest.mark.integration
 def test_handle_output(spark):
-    with patch("pyspark.sql.DataFrame.write") as mock_write:
+    with patch("pyspark.sql.readwriter.DataFrameWriter.save") as mock_save:
         handler = BigQueryPySparkTypeHandler()
 
         columns = ["col1", "col2"]
@@ -110,12 +112,12 @@ def test_handle_output(spark):
             ),
         }
 
-        assert len(mock_write.method_calls) == 1
+        assert mock_save.call_count == 1
 
 
 @pytest.mark.integration
 def test_load_input(spark):
-    with patch("pyspark.sql.DataFrameReader.load") as mock_read:
+    with patch("pyspark.sql.readwriter.DataFrameReader.load") as mock_read:
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -505,7 +507,7 @@ def test_dynamic_partitions(spark, io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -520,7 +522,7 @@ def test_dynamic_partitions(spark, io_manager):
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],

@@ -1,7 +1,9 @@
-from typing import Any, Mapping, Optional, Union
+import asyncio
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
     ResourceDefinition,
@@ -13,6 +15,7 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 
 
+@public
 class InitResourceContext:
     """The context object available as the argument to the initialization function of a :py:class:`dagster.ResourceDefinition`.
 
@@ -37,6 +40,7 @@ class InitResourceContext:
         instance: Optional[DagsterInstance] = None,
         dagster_run: Optional[DagsterRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
+        event_loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
         self._resource_config = resource_config
         self._resource_def = resource_def
@@ -45,6 +49,7 @@ class InitResourceContext:
         self._instance = instance
         self._resources = resources
         self._dagster_run = dagster_run
+        self._event_loop = event_loop
 
     @public
     @property
@@ -73,6 +78,17 @@ class InitResourceContext:
         """The Dagster instance configured for the current execution context."""
         return self._instance
 
+    @public
+    @property
+    def run(self) -> Optional[DagsterRun]:
+        """The dagster run to use. When initializing resources outside of execution context, this will be None."""
+        return self._dagster_run
+
+    @deprecated(
+        breaking_version="a future release",
+        subject="InitResourceContext.dagster_run",
+        additional_warn_text="You have called the deprecated method dagster_run on InitResourceContext. Use context.run instead.",
+    )
     @property
     def dagster_run(self) -> Optional[DagsterRun]:
         """The dagster run to use. When initializing resources outside of execution context, this will be None."""
@@ -91,7 +107,11 @@ class InitResourceContext:
         """The log manager for this run of the job."""
         return self._log_manager
 
-    @public
+    @deprecated(
+        breaking_version="a future release",
+        subject="InitResourceContext.run_id",
+        additional_warn_text="You have called the deprecated method run_id on InitResourceContext. Use context.run.run_id instead.",
+    )
     @property
     def run_id(self) -> Optional[str]:
         """The id for this run of the job or pipeline. When initializing resources outside of
@@ -113,6 +133,10 @@ class InitResourceContext:
             dagster_run=self.dagster_run,
             log_manager=self.log,
         )
+
+    @property
+    def event_loop(self) -> Optional[asyncio.AbstractEventLoop]:
+        return self._event_loop
 
 
 class UnboundInitResourceContext(InitResourceContext):
@@ -160,7 +184,7 @@ class UnboundInitResourceContext(InitResourceContext):
         self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
-        super(UnboundInitResourceContext, self).__init__(
+        super().__init__(
             resource_config=resource_config,
             resources=resources,
             resource_def=None,
@@ -176,13 +200,17 @@ class UnboundInitResourceContext(InitResourceContext):
 
     def __exit__(self, *exc):
         self._resources_cm.__exit__(*exc)
-        if self._instance_provided:
+        # if an instance was provided, assume the outer context will handle disposing of it
+        if not self._instance_provided:
             self._instance_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)
-        if self._instance_provided and not self._cm_scope_entered:
+        # if an instance was provided, assume the outer context will handle disposing of it
+        # if _cm_scope_entered is True, then we can rely on __exit__ being called to dispose
+        # of the instance if necessary
+        if not self._instance_provided and not self._cm_scope_entered:
             self._instance_cm.__exit__(None, None, None)
 
     @property
@@ -190,7 +218,7 @@ class UnboundInitResourceContext(InitResourceContext):
         return self._resource_config
 
     @property
-    def resource_def(self) -> Optional[ResourceDefinition]:
+    def resource_def(self) -> Optional[ResourceDefinition]:  # pyright: ignore[reportIncompatibleMethodOverride]
         raise DagsterInvariantViolationError(
             "UnboundInitResourceContext has not been bound to resource definition."
         )
@@ -231,11 +259,12 @@ class UnboundInitResourceContext(InitResourceContext):
         )
 
 
+@public
 def build_init_resource_context(
     config: Optional[Mapping[str, Any]] = None,
     resources: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
-) -> InitResourceContext:
+) -> UnboundInitResourceContext:
     """Builds resource initialization context from provided parameters.
 
     ``build_init_resource_context`` can be used as either a function or context manager. If there is a

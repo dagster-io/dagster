@@ -7,6 +7,7 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.instance import DagsterInstance
 from dagster._core.pipes.client import PipesContextInjector
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
+from dagster._core.test_utils import environ
 from dagster_k8s import execute_k8s_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.pipes import PipesK8sClient, PipesK8sPodLogsMessageReader
@@ -177,6 +178,7 @@ def test_pipes_client_file_inject(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
+@pytest.mark.default
 def test_use_execute_k8s_job(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
@@ -190,11 +192,12 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
             reader,
             extras={"storage_root": "/tmp/"},
         ) as pipes_session:
-            job_name = "number_y_asset_job"
+            job_name = "number-y-asset-job"
 
             # stand-in for any means of creating kubernetes work
             execute_k8s_job(
-                context=context,
+                context=context.op_execution_context,
+                namespace=namespace,
                 image=docker_image,
                 command=[
                     "python",
@@ -210,8 +213,16 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
                     }.items()
                 ],
                 k8s_job_name=job_name,
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+                image_pull_policy="IfNotPresent",
             )
-            reader.consume_pod_logs(core_api, job_name, namespace)
+
+            api_client = DagsterKubernetesClient.production_client()
+            pod_names = api_client.get_pod_names_in_job(job_name=job_name, namespace=namespace)
+            pod_name = pod_names[0]
+
+            reader.consume_pod_logs(context, core_api, pod_name, namespace)
         yield from pipes_session.get_results()
 
     result = materialize(
@@ -230,7 +241,8 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
-def test_error(namespace, cluster_provider):
+@pytest.mark.default
+def test_pipes_error(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
     @asset
@@ -278,3 +290,53 @@ def test_error(namespace, cluster_provider):
     assert len(pipes_msgs) == 2
     assert "successfully opened" in pipes_msgs[0]
     assert "external process pipes closed with exception" in pipes_msgs[1]
+
+
+@pytest.mark.default
+def test_pipes_client_read_timeout(namespace, cluster_provider):
+    # despite a strict request timeout causing frequent interruptions,
+    # the pipes client can still complete.
+    # also implicitly verifies that messages are deduped since otherwise
+    # the same pipe control messages would be logged multiple times and the
+    # run would fail.
+    with environ({"DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT": "1"}):
+        docker_image = get_test_project_docker_image()
+
+        @asset
+        def number_y(
+            context: AssetExecutionContext,
+            pipes_client: PipesK8sClient,
+        ):
+            return pipes_client.run(
+                context=context,
+                namespace=namespace,
+                image=docker_image,
+                command=[
+                    "python",
+                    "-m",
+                    "numbers_example.number_y",
+                ],
+                extras={
+                    "storage_root": "/tmp/",
+                },
+                env={
+                    "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                    "NUMBER_Y": "2",
+                },
+            ).get_results()
+
+        result = materialize(
+            [number_y],
+            resources={
+                "pipes_client": PipesK8sClient(
+                    load_incluster_config=False,
+                    kubeconfig_file=cluster_provider.kubeconfig_file,
+                    poll_interval=POLL_INTERVAL,
+                )
+            },
+            raise_on_error=False,
+        )
+        assert result.success
+        mats = result.asset_materializations_for_node(number_y.op.name)
+        assert "is_even" in mats[0].metadata
+        assert mats[0].metadata["is_even"].value is True

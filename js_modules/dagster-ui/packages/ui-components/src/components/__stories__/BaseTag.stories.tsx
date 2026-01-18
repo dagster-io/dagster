@@ -1,15 +1,13 @@
-import {Meta} from '@storybook/react';
-
 import {BaseTag} from '../BaseTag';
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {Icon} from '../Icon';
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'BaseTag',
   component: BaseTag,
-} as Meta;
+};
 
 const COLORS = [
   {
@@ -47,9 +45,9 @@ const COLORS = [
 
 export const Basic = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       {COLORS.map(({fillColor, textColor, iconColor}, ii) => (
-        <Group direction="row" spacing={8} key={ii}>
+        <Box flex={{direction: 'row', gap: 8}} key={ii}>
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
@@ -68,8 +66,8 @@ export const Basic = () => {
             label="Lorem"
           />
           <BaseTag fillColor={fillColor} textColor={textColor} label="Lorem" />
-        </Group>
+        </Box>
       ))}
-    </Group>
+    </Box>
   );
 };

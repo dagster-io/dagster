@@ -44,7 +44,7 @@ def most_frequent_words(topstories):
     # Remove the line above
 
     # Replace the with the two lines below
-    with open("data/stopwords.csv", "r") as f:
+    with open("data/stopwords.csv") as f:
         stopwords = {row[0] for row in csv.reader(f)}
 
     # ...

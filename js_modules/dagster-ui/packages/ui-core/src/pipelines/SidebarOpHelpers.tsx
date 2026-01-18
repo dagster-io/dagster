@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
-import {Code, Colors, FontFamily, Group, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, Code, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -76,10 +76,10 @@ export const DependencyRow = ({
     <tr>
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
-        <Group direction="row" spacing={2} alignItems="center">
+        <Box flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
           {isDynamic && <Icon name="op_dynamic" color={Colors.accentGray()} />}
           <Icon name="arrow_forward" color={Colors.accentGray()} />
-        </Group>
+        </Box>
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}</Cell>
     </tr>
@@ -115,7 +115,7 @@ export const ResourceContainer = styled.div`
   & h4 {
     margin-top: 0;
   }
-  & ${IconWrapper} {
+  & .iconGlobal {
     margin-right: 8px;
   }
 `;

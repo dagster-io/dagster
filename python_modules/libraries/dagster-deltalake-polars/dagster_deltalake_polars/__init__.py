@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_deltalake_polars.deltalake_polars_type_handler import (
     DeltaLakePolarsIOManager as DeltaLakePolarsIOManager,

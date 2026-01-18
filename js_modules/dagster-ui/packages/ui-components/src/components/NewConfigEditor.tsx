@@ -27,6 +27,7 @@ import {
 } from './configeditor/codemirror-yaml/mode';
 import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
 import {ConfigSchema} from './configeditor/types/ConfigSchema';
+import {FontFamily} from './styles';
 
 export {isHelpContextEqual} from './configeditor/isHelpContextEqual';
 export {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
@@ -47,7 +48,7 @@ interface ConfigEditorProps {
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 const performLint = debounce((editor: any) => {
-  editor.performLint();
+  editor.performPatchedLint();
 }, 1000);
 
 const performInitialPass = (
@@ -69,6 +70,30 @@ const ConfigEditorStyle = createGlobalStyle`
     position: absolute;
     inset: 0;
   }
+
+  .dagster.CodeMirror-hints {
+    background-color: ${Colors.backgroundDefault()};
+    box-shadow: 2px 3px 5px ${Colors.shadowDefault()};
+    border: none;
+    font-family: ${FontFamily.monospace};
+    font-size: 14px;
+    z-index: 100;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 2px;
+    margin-top: 2px;
+  }
+
+  .dagster .CodeMirror-hint {
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: ${Colors.textDefault()};
+  }
+
+  .dagster .CodeMirror-hint-active {
+    background-color: ${Colors.backgroundBlue()};
+    color: ${Colors.textDefault()};
+  }
 `;
 
 export type ConfigEditorHandle = {
@@ -81,46 +106,42 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
     props;
   const editor = useRef<CodeMirror.Editor | null>(null);
 
-  useImperativeHandle(
-    ref,
-    () => {
-      const moveCursor = (line: number, ch: number) => {
-        if (!editor.current) {
-          return;
-        }
+  useImperativeHandle(ref, () => {
+    const moveCursor = (line: number, ch: number) => {
+      if (!editor.current) {
+        return;
+      }
 
-        editor.current.setCursor(line, ch, {scroll: false});
-        const {clientHeight} = editor.current.getScrollInfo();
-        const {left, top} = editor.current.cursorCoords(true, 'local');
-        const offsetFromTop = 20;
+      editor.current.setCursor(line, ch, {scroll: false});
+      const {clientHeight} = editor.current.getScrollInfo();
+      const {left, top} = editor.current.cursorCoords(true, 'local');
+      const offsetFromTop = 20;
 
-        editor.current?.scrollIntoView({
-          left,
-          right: left,
-          top: top - offsetFromTop,
-          bottom: top + (clientHeight - offsetFromTop),
-        });
-        editor.current.focus();
-      };
+      editor.current?.scrollIntoView({
+        left,
+        right: left,
+        top: top - offsetFromTop,
+        bottom: top + (clientHeight - offsetFromTop),
+      });
+      editor.current.focus();
+    };
 
-      const moveCursorToPath = (path: string[]) => {
-        if (!editor.current) {
-          return;
-        }
-        const codeMirrorDoc = editor.current.getDoc();
-        const yamlDoc = yaml.parseDocument(configCode);
-        const range = findRangeInDocumentFromPath(yamlDoc, path, 'key');
-        if (!range) {
-          return;
-        }
-        const from = codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position;
-        moveCursor(from.line, from.ch);
-      };
+    const moveCursorToPath = (path: string[]) => {
+      if (!editor.current) {
+        return;
+      }
+      const codeMirrorDoc = editor.current.getDoc();
+      const yamlDoc = yaml.parseDocument(configCode);
+      const range = findRangeInDocumentFromPath(yamlDoc, path, 'key');
+      if (!range) {
+        return;
+      }
+      const from = codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position;
+      moveCursor(from.line, from.ch);
+    };
 
-      return {moveCursor, moveCursorToPath};
-    },
-    [configCode],
-  );
+    return {moveCursor, moveCursorToPath};
+  }, [configCode]);
 
   const options = useMemo(() => {
     return {
@@ -131,7 +152,7 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
       smartIndent: true,
       showCursorWhenSelecting: true,
       lintOnChange: false,
-      lint: {
+      patchedLint: {
         checkConfig,
         lintOnChange: false,
         onUpdateLinting: false,

@@ -1,19 +1,7 @@
 import time
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from types import TracebackType
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from typing_extensions import Self
 
@@ -29,19 +17,29 @@ from dagster._core.execution.context.system import (
     PlanExecutionContext,
     PlanOrchestrationContext,
 )
+from dagster._core.execution.plan.inputs import FromMultipleSources
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode, RetryState
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.state import PastExecutionState
+
 
 def _default_sort_key(step: ExecutionStep) -> float:
     return int(step.tags.get(PRIORITY_TAG, 0)) * -1
+
+
+def _pool_key_for_step(step: ExecutionStep) -> Optional[str]:
+    # for backwards compatibility, we also check the tags
+    return step.pool or step.tags.get(GLOBAL_CONCURRENCY_TAG)
 
 
 CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
@@ -57,8 +55,9 @@ class ActiveExecution:
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
@@ -66,6 +65,7 @@ class ActiveExecution:
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         self._retry_state = self._plan.known_state.get_retry_state()
         self._instance_concurrency_context = instance_concurrency_context
+        self._step_dependency_config = step_dependency_config
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
@@ -83,42 +83,42 @@ class ActiveExecution:
         self._context_guard: bool = False  # Prevent accidental direct use
 
         # We decide what steps to skip based on what outputs are yielded by upstream steps
-        self._step_outputs: Set[StepOutputHandle] = set(self._plan.known_state.ready_outputs)
+        self._step_outputs: set[StepOutputHandle] = set(self._plan.known_state.ready_outputs)
 
         # All steps to be executed start out here in _pending
-        self._pending: Dict[str, Set[str]] = dict(self._plan.get_executable_step_deps())
+        self._pending: dict[str, set[str]] = dict(self._plan.get_executable_step_deps())
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
         # to _gathering while in flight
-        self._gathering_dynamic_outputs: Dict[str, Mapping[str, Optional[List[str]]]] = {}
+        self._gathering_dynamic_outputs: dict[str, Mapping[str, Optional[list[str]]]] = {}
         # then on resolution move to _completed
-        self._completed_dynamic_outputs: Dict[str, Mapping[str, Optional[Sequence[str]]]] = (
+        self._completed_dynamic_outputs: dict[str, Mapping[str, Optional[Sequence[str]]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
         self._new_dynamic_mappings: bool = False
 
         # track which upstream deps caused a step to skip
-        self._skipped_deps: Dict[str, Sequence[str]] = {}
+        self._skipped_deps: dict[str, Sequence[str]] = {}
 
         # steps move in to these buckets as a result of _update calls
-        self._executable: List[str] = []
-        self._pending_skip: List[str] = []
-        self._pending_retry: List[str] = []
-        self._pending_abandon: List[str] = []
-        self._waiting_to_retry: Dict[str, float] = {}
-        self._messaged_concurrency_slots: Dict[str, float] = {}
+        self._executable: list[str] = []
+        self._pending_skip: list[str] = []
+        self._pending_retry: list[str] = []
+        self._pending_abandon: list[str] = []
+        self._waiting_to_retry: dict[str, float] = {}
+        self._messaged_concurrency_slots: dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
-        self._in_flight: Set[str] = set()
+        self._in_flight: set[str] = set()
 
         # and finally their terminal state is tracked by these sets, via mark_*
-        self._success: Set[str] = set()
-        self._failed: Set[str] = set()
-        self._skipped: Set[str] = set()
-        self._abandoned: Set[str] = set()
+        self._success: set[str] = set()
+        self._failed: set[str] = set()
+        self._skipped: set[str] = set()
+        self._abandoned: set[str] = set()
 
         # see verify_complete
-        self._unknown_state: Set[str] = set()
+        self._unknown_state: set[str] = set()
 
         self._interrupted: bool = False
 
@@ -131,7 +131,7 @@ class ActiveExecution:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
@@ -197,7 +197,8 @@ class ActiveExecution:
             ),
         )
 
-    def _should_skip_step(self, step_key: str, successful_or_skipped_steps: Set[str]) -> bool:
+    def _should_skip_step(self, step_key: str) -> bool:
+        successful_or_skipped_steps = self._success | self._skipped
         step = self.get_step_by_key(step_key)
         for step_input in step.step_inputs:
             missing_source_handles = []
@@ -210,8 +211,14 @@ class ActiveExecution:
                     missing_source_handles.append(source_handle)
 
             if missing_source_handles:
-                if len(missing_source_handles) == len(
-                    step_input.get_step_output_handle_dependencies()
+                if (
+                    # for the FromMultipleSources case (aka fan-in), we only skip if all sources
+                    # are missing. for other cases, we skip if any source is missing
+                    not isinstance(step_input.source, FromMultipleSources)
+                    or (
+                        len(missing_source_handles)
+                        == len(step_input.get_step_output_handle_dependencies())
+                    )
                 ):
                     self._skipped_deps[step_key] = [
                         f"{h.step_key}.{h.output_name}" for h in missing_source_handles
@@ -219,17 +226,54 @@ class ActiveExecution:
                     return True
         return False
 
+    def _all_upstream_outputs_failed_or_abandoned(self, step_key: str) -> bool:
+        failed_or_abandoned_steps = self._failed | self._abandoned
+        # check that all upstream outputs have failed or been abandoned
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            if any(
+                source_handle not in self._step_outputs
+                and source_handle.step_key in failed_or_abandoned_steps
+                for source_handle in step_input.get_step_output_handle_dependencies()
+            ):
+                return True
+        return False
+
+    def _has_produced_output(self, step_output_handle: StepOutputHandle) -> bool:
+        # check if the step output has been produced by this run or any parent run
+        if step_output_handle in self._step_outputs:
+            return True
+        elif step_output_handle.step_key in self._plan.step_keys_to_execute:
+            # step will be executed in this run, so should wait for this run to
+            # produce the output instead of looking at past runs
+            return False
+
+        # this case can happen if the original run was executed with AFTER_UPSTREAM_OUTPUTS
+        parent_state = self._plan.known_state.parent_state
+        while parent_state is not None:
+            if step_output_handle in parent_state.produced_outputs:
+                return True
+            parent_state = cast("Optional[PastExecutionState]", parent_state.parent_state)
+        return False
+
+    def _all_upstream_outputs_produced(self, step_key: str) -> bool:
+        # check that all upstream outputs have been emitted
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            if any(
+                not self._has_produced_output(source_handle)
+                for source_handle in step_input.get_step_output_handle_dependencies()
+            ):
+                return False
+        return True
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
         """
-        new_steps_to_execute: List[str] = []
-        new_steps_to_skip: List[str] = []
-        new_steps_to_abandon: List[str] = []
-
-        successful_or_skipped_steps = self._success | self._skipped
-        failed_or_abandoned_steps = self._failed | self._abandoned
-        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
+        new_steps_to_execute: list[str] = []
+        new_steps_to_skip: list[str] = []
+        new_steps_to_abandon: list[str] = []
 
         if self._new_dynamic_mappings:
             new_step_deps = self._plan.resolve(self._completed_dynamic_outputs)
@@ -238,13 +282,24 @@ class ActiveExecution:
 
             self._new_dynamic_mappings = False
 
+        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
         for step_key, depends_on_steps in self._pending.items():
-            if depends_on_steps.issubset(resolved_steps):
-                if self._should_skip_step(step_key, successful_or_skipped_steps):
+            # traditional behavior, wait for all upstream steps before executing
+            if self._step_dependency_config.require_upstream_step_success:
+                if depends_on_steps.issubset(resolved_steps):
+                    if self._should_skip_step(step_key):
+                        new_steps_to_skip.append(step_key)
+                    elif depends_on_steps.intersection(self._failed | self._abandoned):
+                        new_steps_to_abandon.append(step_key)
+                    else:
+                        new_steps_to_execute.append(step_key)
+            # optional behavior, executes as soon as all upstream outputs are available
+            else:
+                if self._should_skip_step(step_key):
                     new_steps_to_skip.append(step_key)
-                elif depends_on_steps.intersection(failed_or_abandoned_steps):
+                elif self._all_upstream_outputs_failed_or_abandoned(step_key):
                     new_steps_to_abandon.append(step_key)
-                else:
+                elif self._all_upstream_outputs_produced(step_key):
                     new_steps_to_execute.append(step_key)
 
         for key in new_steps_to_execute:
@@ -331,7 +386,7 @@ class ActiveExecution:
                 in_flight_steps,
             )
 
-        batch: List[ExecutionStep] = []
+        batch: list[ExecutionStep] = []
 
         for step in steps:
             if limit is not None and len(batch) >= limit:
@@ -350,15 +405,16 @@ class ActiveExecution:
             if run_scoped_concurrency_limits_counter:
                 run_scoped_concurrency_limits_counter.update_counters_with_launched_item(step)
 
-            step_concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG)
-            if step_concurrency_key and self._instance_concurrency_context:
+            # fallback to fetching from tags for backwards compatibility
+            concurrency_key = _pool_key_for_step(step)
+            if concurrency_key and self._instance_concurrency_context:
                 try:
                     step_priority = int(step.tags.get(PRIORITY_TAG, 0))
                 except ValueError:
                     step_priority = 0
 
                 if not self._instance_concurrency_context.claim(
-                    step_concurrency_key, step.key, step_priority
+                    concurrency_key, step.key, step_priority
                 ):
                     continue
 
@@ -420,11 +476,11 @@ class ActiveExecution:
         while steps_to_abandon:
             for step in steps_to_abandon:
                 step_context = job_context.for_step(step)
-                failed_inputs: List[str] = []
+                failed_inputs: list[str] = []
                 for step_input in step.step_inputs:
                     failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
 
-                abandoned_inputs: List[str] = []
+                abandoned_inputs: list[str] = []
                 for step_input in step.step_inputs:
                     abandoned_inputs.extend(
                         self._abandoned.intersection(step_input.dependency_keys)
@@ -499,7 +555,7 @@ class ActiveExecution:
     def handle_event(self, dagster_event: DagsterEvent) -> None:
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
-        step_key = cast(str, dagster_event.step_key)
+        step_key = cast("str", dagster_event.step_key)
         if dagster_event.is_step_failure:
             self.mark_failed(step_key)
             if self._instance_concurrency_context:
@@ -512,7 +568,6 @@ class ActiveExecution:
                 dagster_event.step_key is not None,
                 "Resource init failure was reported during execution without a step key.",
             )
-            self.mark_failed(step_key)
             if self._instance_concurrency_context:
                 self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_step_success:
@@ -536,7 +591,7 @@ class ActiveExecution:
             if self._instance_concurrency_context:
                 self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_successful_output:
-            event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
+            event_specific_data = cast("StepOutputData", dagster_event.event_specific_data)
             self.mark_step_produced_output(event_specific_data.step_output_handle)
             if dagster_event.step_output_data.step_output_handle.mapping_key:
                 check.not_none(
@@ -612,7 +667,7 @@ class ActiveExecution:
     def _resolve_any_dynamic_outputs(self, step_key: str) -> None:
         if step_key in self._gathering_dynamic_outputs:
             step = self.get_step_by_key(step_key)
-            completed_mappings: Dict[str, Optional[Sequence[str]]] = {}
+            completed_mappings: dict[str, Optional[Sequence[str]]] = {}
             for output_name, mappings in self._gathering_dynamic_outputs[step_key].items():
                 # if no dynamic outputs were returned and the output was marked is_required=False
                 # set to None to indicate a skip should occur
@@ -656,9 +711,9 @@ class ActiveExecution:
             ):
                 step = self.get_step_by_key(step_key)
                 step_context = plan_context.for_step(step)
-                step_concurrency_key = cast(str, step.tags.get(GLOBAL_CONCURRENCY_TAG))
+                pool = check.inst(_pool_key_for_step(step), str)
                 self._messaged_concurrency_slots[step_key] = time.time()
                 is_initial_message = last_messaged_timestamp is None
                 yield DagsterEvent.step_concurrency_blocked(
-                    step_context, step_concurrency_key, initial=is_initial_message
+                    step_context, pool, initial=is_initial_message
                 )

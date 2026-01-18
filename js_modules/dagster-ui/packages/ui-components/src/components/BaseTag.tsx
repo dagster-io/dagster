@@ -2,10 +2,8 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
-import {SpinnerWrapper} from './Spinner';
 
-interface Props {
+export interface BaseTagProps {
   fillColor?: string;
   textColor?: string;
   icon?: React.ReactNode;
@@ -28,7 +26,7 @@ const BaseTagTooltipStyle: React.CSSProperties = {
   left: -13,
 };
 
-export const BaseTag = (props: Props) => {
+export const BaseTag = (props: BaseTagProps) => {
   const {
     fillColor = Colors.backgroundDefault(),
     textColor = Colors.textDefault(),
@@ -39,7 +37,12 @@ export const BaseTag = (props: Props) => {
     tooltipText,
   } = props;
   return (
-    <StyledTag $fillColor={fillColor} $interactive={interactive} $textColor={textColor}>
+    <StyledTag
+      className="StyledTag"
+      $fillColor={fillColor}
+      $interactive={interactive}
+      $textColor={textColor}
+    >
       {icon || null}
       {label !== undefined && label !== null ? (
         <span
@@ -86,17 +89,20 @@ export const StyledTag = styled.div<StyledTagProps>`
     text-overflow: ellipsis;
   }
 
-  > ${IconWrapper}:first-child, > ${SpinnerWrapper}:first-child {
+  > .iconGlobal:first-child,
+  > .spinnerGlobal:first-child {
     margin-right: 4px;
     margin-left: -4px;
   }
 
-  > ${IconWrapper}:last-child, > ${SpinnerWrapper}:last-child {
+  > .iconGlobal:last-child,
+  > .spinnerGlobal:last-child {
     margin-left: 4px;
     margin-right: -4px;
   }
 
-  > ${IconWrapper}:first-child:last-child, > ${SpinnerWrapper}:first-child:last-child {
+  > .iconGlobal:first-child:last-child,
+  > .spinnerGlobal:first-child:last-child {
     margin: 0 -4px;
   }
 `;

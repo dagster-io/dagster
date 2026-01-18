@@ -2,16 +2,19 @@ import React, {useCallback, useContext, useMemo, useState} from 'react';
 import {useRecoilValue} from 'recoil';
 
 import {CodeLocationFilters, flattenCodeLocationRows} from './flattenCodeLocationRows';
+import {DefinitionsSource} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
 import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
+import {TruncatedTextWithFullTextOnHover} from '../ui/TruncatedTextWithFullTextOnHover';
+import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
+const STATUS_VALUES: Set<string> = new Set(Object.values(CodeLocationRowStatusType));
+
 export const useCodeLocationPageFilters = () => {
-  const {loading, locationEntries} = useContext(WorkspaceContext);
+  const {loadingNonAssets: loading, locationEntries} = useContext(WorkspaceContext);
   const codeLocationStatusData = useRecoilValue(codeLocationStatusAtom);
   const [searchValue, setSearchValue] = useState('');
 
@@ -22,12 +25,15 @@ export const useCodeLocationPageFilters = () => {
   const queryString = searchValue.toLocaleLowerCase();
 
   const [filters, setFilters] = useQueryPersistedState<CodeLocationFilters>({
-    encode: ({status}) => ({
-      status: status?.length ? JSON.stringify(status) : undefined,
-    }),
+    encode: ({status}) => {
+      return {status: Array.isArray(status) ? status : undefined};
+    },
     decode: (qs) => {
+      const status = Array.isArray(qs?.status) ? qs.status : [];
       return {
-        status: qs.status ? JSON.parse(qs.status) : [],
+        status: status.filter(
+          (s) => typeof s === 'string' && STATUS_VALUES.has(s),
+        ) as CodeLocationRowStatusType[],
       };
     },
   });
@@ -39,7 +45,21 @@ export const useCodeLocationPageFilters = () => {
         ? codeLocationStatusData.locationStatusesOrError.entries
         : [];
 
-    return flattenCodeLocationRows(codeLocationStatuses, locationEntries, queryString, filters);
+    // Remove `CONNECTION` entries from the code location list.
+    const codeServerEntries = new Set(
+      locationEntries
+        .filter((entry) => entry.definitionsSource !== DefinitionsSource.CONNECTION)
+        .map((entry) => entry.name),
+    );
+
+    const filteredStatuses = codeLocationStatuses.filter((status) =>
+      codeServerEntries.has(status.name),
+    );
+    const filteredLocationEntries = locationEntries.filter((entry) =>
+      codeServerEntries.has(entry.name),
+    );
+
+    return flattenCodeLocationRows(filteredStatuses, filteredLocationEntries, queryString, filters);
   }, [locationEntries, queryString, filters, codeLocationStatusData]);
 
   const statusFilter = useStaticSetFilter<CodeLocationRowStatusType>({
@@ -47,7 +67,7 @@ export const useCodeLocationPageFilters = () => {
     icon: 'tag',
     allValues: useMemo(
       () =>
-        (['Failed', 'Loaded', 'Updating', 'Loading'] as const).map((value) => ({
+        Object.values(CodeLocationRowStatusType).map((value) => ({
           key: value,
           value,
           match: [value],

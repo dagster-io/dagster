@@ -53,7 +53,7 @@ models:
               field: customer_id
           - relationships:
               to: source('jaffle_shop', 'raw_customers')
-              field: customer_id
+              field: id
           - relationships_with_duplicate:
               to: ref('customers')
               another_to: ref('customers')

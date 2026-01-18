@@ -93,7 +93,7 @@ def test_tags_to_plan():
     @job
     def k8s_ready():
         blank.tag(
-            {
+            {  # pyright: ignore[reportArgumentType]
                 USER_DEFINED_K8S_CONFIG_KEY: {
                     "container_config": {
                         "resources": {
@@ -108,7 +108,7 @@ def test_tags_to_plan():
     plan = create_execution_plan(k8s_ready)
     step = next(iter(plan.step_dict.values()))
 
-    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
+    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)  # pyright: ignore[reportArgumentType]
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -165,7 +165,7 @@ def test_tags_to_dynamic_plan():
     plan = create_execution_plan(k8s_ready, known_state=known_state)
 
     emit_step = plan.get_step_by_key(emit.name)
-    user_defined_k8s_config = get_user_defined_k8s_config(emit_step.tags)
+    user_defined_k8s_config = get_user_defined_k8s_config(emit_step.tags)  # pyright: ignore[reportArgumentType]
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -180,7 +180,7 @@ def test_tags_to_dynamic_plan():
     for mapping_key in range(3):
         multiply_inputs_step = plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]")
         dynamic_step_user_defined_k8s_config = get_user_defined_k8s_config(
-            multiply_inputs_step.tags
+            multiply_inputs_step.tags  # pyright: ignore[reportArgumentType]
         )
 
         assert dynamic_step_user_defined_k8s_config.container_config

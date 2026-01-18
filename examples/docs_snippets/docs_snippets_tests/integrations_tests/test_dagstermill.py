@@ -1,7 +1,7 @@
 import os
 from contextlib import contextmanager
 
-from dagstermill_tests.test_ops import cleanup_result_notebook
+from dagstermill.test_utils import cleanup_result_notebook
 
 from dagster import execute_job
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -49,7 +49,7 @@ def exec_for_test(module_name, fn_name, env=None, raise_on_error=True, **kwargs)
                 cleanup_result_notebook(result)
 
 
-@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(max_runs=2)
 def test_config_asset():
     module_path = "docs_snippets.integrations.dagstermill.iris_notebook_config"
     if not IS_BUILDKITE:
@@ -62,7 +62,7 @@ def test_config_asset():
         assert result.success
 
 
-@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(max_runs=2)
 def test_iris_classify_job():
     module_path = "docs_snippets.integrations.dagstermill.iris_notebook_op"
     if not IS_BUILDKITE:
@@ -75,7 +75,7 @@ def test_iris_classify_job():
         assert result.success
 
 
-@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(max_runs=2)
 def test_outputs_job():
     module_path = "docs_snippets.integrations.dagstermill.notebook_outputs"
     if not IS_BUILDKITE:

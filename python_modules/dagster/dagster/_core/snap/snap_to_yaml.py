@@ -1,8 +1,10 @@
 import json
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
+
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
-from dagster._utils.yaml_utils import dump_run_config_yaml
 
 
 def _safe_json_loads(json_str: Optional[str]) -> object:
@@ -52,7 +54,7 @@ def default_values_yaml_from_type_snap(
 def default_values_from_type_snap(type_snap: ConfigTypeSnap, snapshot: ConfigSchemaSnapshot) -> Any:
     """Given a type snap and a snapshot, returns a dictionary of default values for the type
     snap, recursively assembling a default if the type snap does not have a default value
-    explicitly set.
+    explicitly set. Secret fields are masked with ********.
     """
     if not type_snap.fields:
         return {}
@@ -71,10 +73,54 @@ def default_values_from_type_snap(type_snap: ConfigTypeSnap, snapshot: ConfigSch
         # First, we try to get the default value from the field itself
         # this is usually only set for primitive field types with user-supplied defaults
         if default_value_as_json:
-            defaults_by_field[field_name] = _safe_json_loads(default_value_as_json)
+            # Mask secret fields with asterisks
+            if field.is_secret is True:
+                defaults_by_field[field_name] = "********"
+            else:
+                parsed_default = _safe_json_loads(default_value_as_json)
+                # If this is a composite field, recursively mask any nested secrets
+                if field_snap and field_snap.fields:
+                    defaults_by_field[field_name] = _mask_secrets_in_dict(
+                        parsed_default, field_snap, snapshot
+                    )
+                else:
+                    defaults_by_field[field_name] = parsed_default
         # If there is no default value on the field, if the field has child fields, we recurse
         # to assemble the default values for the child fields
         elif field_snap and field_snap.fields:
             defaults_by_field[field_name] = default_values_from_type_snap(field_snap, snapshot)
 
     return defaults_by_field
+
+
+def _mask_secrets_in_dict(
+    value: Any, type_snap: ConfigTypeSnap, snapshot: ConfigSchemaSnapshot
+) -> Any:
+    """Recursively walks through a config dict and masks secret field values."""
+    if not isinstance(value, Mapping) or not type_snap.fields:
+        return value
+
+    result = {}
+    for key, val in value.items():
+        # Find the field definition for this key
+        field = type_snap.get_field(key) if key in type_snap.field_names else None
+
+        if field:
+            # If this field is marked as secret, mask it
+            if field.is_secret is True:
+                result[key] = "********"
+            else:
+                # Otherwise, recursively process nested structures
+                field_snap = (
+                    snapshot.get_config_snap(field.type_key)
+                    if snapshot.has_config_snap(field.type_key)
+                    else None
+                )
+                if field_snap and field_snap.fields:
+                    result[key] = _mask_secrets_in_dict(val, field_snap, snapshot)
+                else:
+                    result[key] = val
+        else:
+            result[key] = val
+
+    return result

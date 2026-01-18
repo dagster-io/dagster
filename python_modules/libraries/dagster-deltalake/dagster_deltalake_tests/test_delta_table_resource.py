@@ -19,7 +19,9 @@ def test_resource(tmp_path):
     @asset
     def create_table(delta_table: DeltaTableResource):
         write_deltalake(
-            delta_table.url, data, storage_options=delta_table.storage_options.str_dict()
+            delta_table.url,
+            data,
+            storage_options=delta_table.storage_options.str_dict(),
         )
 
     @asset
@@ -48,7 +50,9 @@ def test_resource_versioned(tmp_path):
     @asset
     def create_table(delta_table: DeltaTableResource):
         write_deltalake(
-            delta_table.url, data, storage_options=delta_table.storage_options.str_dict()
+            delta_table.url,
+            data,
+            storage_options=delta_table.storage_options.str_dict(),
         )
         write_deltalake(
             delta_table.url,
@@ -66,7 +70,9 @@ def test_resource_versioned(tmp_path):
         [create_table, read_table],
         resources={
             "delta_table": DeltaTableResource(
-                url=os.path.join(tmp_path, "table"), storage_options=LocalConfig(), version=0
+                url=os.path.join(tmp_path, "table"),
+                storage_options=LocalConfig(),
+                version=0,
             )
         },
     )
@@ -79,7 +85,7 @@ def test_resource_versioned(tmp_path):
         AzureConfig(account_name="test", use_azure_cli=True),
         GcsConfig(bucket="test"),
         S3Config(bucket="test"),
-        ClientConfig(timeout=1),
+        ClientConfig(timeout="1s"),
     ],
 )
 def test_config_classes_are_string_dicts(tmp_path, config):

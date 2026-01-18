@@ -1,23 +1,26 @@
 import dataclasses
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
-from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.events import AssetKey
-from dagster._serdes.serdes import (
+from dagster_shared.serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
     PackableValue,
     SerializableNonScalarKeyMapping,
     UnpackContext,
+    UnpackedValue,
     WhitelistMap,
+    inner_unpack_value,
     pack_value,
-    unpack_value,
     whitelist_for_serdes,
 )
+
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -46,13 +49,13 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
     ) -> JsonSerializableValue:
         return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
+    ) -> UnpackedValue:
+        return inner_unpack_value(unpacked_value, whitelist_map, context)
 
 
 @whitelist_for_serdes(
@@ -66,8 +69,9 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
 class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
-    Attributes:
-        evaluation_id (int): The ID of the evaluation that produced this cursor.
+    Args:
+        evaluation_id (int): (DEPRECATED) The ID of the evaluation that produced this cursor.
+            This is no longer used as the source of truth for the evaluation id.
         previous_evaluation_state (Sequence[AutomationConditionEvaluationState]): (DEPRECATED) The
             evaluation info recorded for each asset on the previous tick.
         previous_cursors (Sequence[AutomationConditionCursor]): The cursor objects for each asset
@@ -123,9 +127,24 @@ class AssetDaemonCursor:
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         condition_cursors: Sequence["AutomationConditionCursor"],
+        asset_graph: BaseAssetGraph,
     ) -> "AssetDaemonCursor":
-        # do not "forget" about values for non-evaluated assets
-        new_condition_cursors = dict(self.previous_condition_cursors_by_key)
+        # we carry forward the last cursor of any asset that is either not in the current
+        # asset graph, or is not materializable, as an asset with a condition can enter
+        # this state if a code location is temporarily unavailable.
+        #
+        # this means that we will explicitly not carry forward the cursor for an asset that
+        # is currently materializable, meaning if an asset has its automation condition
+        # removed explicitly, its cursor will be deleted.
+        unpropagated_keys = {
+            k for k in asset_graph.get_all_asset_keys() if asset_graph.get(k).is_materializable
+        }
+        new_condition_cursors = {
+            k: v
+            for k, v in self.previous_condition_cursors_by_key.items()
+            if k not in unpropagated_keys
+        }
+        # populate the real new cursors
         for cursor in condition_cursors:
             new_condition_cursors[cursor.key] = cursor
 

@@ -11,45 +11,46 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {DagsterTag, TagType} from './RunTag';
-import {RunTags} from './RunTags';
+import {RunTags, tagsAsYamlString} from './RunTags';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PipelineTag} from '../graphql/types';
+import {CopyButton} from '../ui/CopyButton';
 
 export const RunRowTags = ({
   run,
   onAddTag,
   isHovered,
-  isJob,
+  hideTags,
 }: {
   run: Pick<RunTableRunFragment, 'tags' | 'assetSelection' | 'mode'>;
   onAddTag?: (token: RunFilterToken) => void;
   isHovered: boolean;
-  isJob: boolean;
+  hideTags?: string[];
 }) => {
   const {isTagPinned, onToggleTagPin} = useTagPinning();
   const [showRunTags, setShowRunTags] = React.useState(false);
 
   const allTagsWithPinned = React.useMemo(() => {
     const allTags: Omit<PipelineTag, '__typename'>[] = [...run.tags];
-    if ((isJob && run.mode !== 'default') || !isJob) {
+    if (run.mode !== 'default') {
       allTags.push({key: 'mode', value: run.mode});
     }
     return allTags.map((tag) => {
       return {...tag, pinned: isTagPinned(tag)};
     });
-  }, [run, isJob, isTagPinned]);
+  }, [run, isTagPinned]);
 
   const tagsToShow = React.useMemo(() => {
     const targetBackfill = allTagsWithPinned.find((tag) => tag.key === DagsterTag.Backfill);
     const tagKeys: Set<string> = new Set([]);
     const tags: TagType[] = [];
 
-    if (targetBackfill && targetBackfill.pinned) {
-      const link = getBackfillPath(targetBackfill.value, !!run.assetSelection?.length);
+    if (targetBackfill && targetBackfill.pinned && !hideTags?.includes(DagsterTag.Backfill)) {
+      const link = getBackfillPath(targetBackfill.value);
       tags.push({
         ...targetBackfill,
         link,
@@ -61,12 +62,15 @@ export const RunRowTags = ({
         // We already added this tag
         return;
       }
+      if (hideTags?.includes(tag.key)) {
+        return;
+      }
       if (tag.pinned) {
         tags.push(tag);
       }
     });
     return tags;
-  }, [allTagsWithPinned, run.assetSelection?.length]);
+  }, [allTagsWithPinned, hideTags]);
 
   return (
     <>
@@ -115,12 +119,8 @@ export const RunRowTags = ({
           <RunTags tags={allTagsWithPinned} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
         </DialogBody>
         <DialogFooter topBorder>
-          <Button
-            intent="primary"
-            onClick={() => {
-              setShowRunTags(false);
-            }}
-          >
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
+          <Button intent="primary" onClick={() => setShowRunTags(false)}>
             Close
           </Button>
         </DialogFooter>

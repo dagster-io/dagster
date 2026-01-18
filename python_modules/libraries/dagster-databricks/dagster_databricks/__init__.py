@@ -8,8 +8,14 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
+from dagster_databricks.components.databricks_asset_bundle.component import (
+    DatabricksAssetBundleComponent as DatabricksAssetBundleComponent,
+)
+from dagster_databricks.components.databricks_workspace.component import (
+    DatabricksWorkspaceComponent as DatabricksWorkspaceComponent,
+)
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,
     DatabricksError as DatabricksError,

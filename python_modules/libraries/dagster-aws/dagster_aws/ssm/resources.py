@@ -1,12 +1,14 @@
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
+import dagster as dg
 from dagster import (
     Config,
     Field as LegacyDagsterField,
     resource,
 )
-from dagster._config.field_utils import Shape
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
@@ -22,8 +24,10 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 
 if TYPE_CHECKING:
     import botocore
+    from dagster._config.field_utils import Shape
 
 
+@beta
 class SSMResource(ResourceWithBoto3Configuration):
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
@@ -48,7 +52,7 @@ class SSMResource(ResourceWithBoto3Configuration):
             def example_job():
                 example_ssm_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={
                     'ssm': SSMResource(
@@ -76,6 +80,7 @@ class SSMResource(ResourceWithBoto3Configuration):
         )
 
 
+@beta
 @dagster_maintained_resource
 @resource(config_schema=SSMResource.to_config_schema())
 def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAttributeAccessIssue)
@@ -131,11 +136,13 @@ def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAt
     return SSMResource.from_resource_context(context).get_client()
 
 
-class ParameterStoreTag(Config):
+@beta
+class ParameterStoreTag(dg.Resolvable, Config):
     key: str = Field(description="Tag key to search for.")
-    values: Optional[List[str]] = Field(default=None, description="List")
+    values: Optional[list[str]] = Field(default=None, description="List")
 
 
+@beta
 class ParameterStoreResource(ResourceWithBoto3Configuration):
     """Resource that provides a dict which maps selected SSM Parameter Store parameters to
     their string values. Optionally sets selected parameters as environment variables.
@@ -175,16 +182,16 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
             )
     """
 
-    parameters: List[str] = Field(
+    parameters: list[str] = Field(
         default=[], description="An array of AWS SSM Parameter Store parameter names to fetch."
     )
-    parameter_tags: List[ParameterStoreTag] = Field(
+    parameter_tags: list[ParameterStoreTag] = Field(
         default=[],
         description=(
             "AWS SSM Parameter store parameters with this tag will be fetched and made available."
         ),
     )
-    parameter_paths: List[str] = Field(
+    parameter_paths: list[str] = Field(
         default=[], description="List of path prefixes to pull parameters from."
     )
     with_decryption: bool = Field(
@@ -202,10 +209,10 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
     @contextmanager
     def parameters_in_environment(
         self,
-        parameters: Optional[List[str]] = None,
-        parameter_tags: Optional[List[ParameterStoreTag]] = None,
-        parameter_paths: Optional[List[str]] = None,
-    ) -> Generator[Dict[str, str], None, None]:
+        parameters: Optional[list[str]] = None,
+        parameter_tags: Optional[list[ParameterStoreTag]] = None,
+        parameter_paths: Optional[list[str]] = None,
+    ) -> Generator[dict[str, str], None, None]:
         """Yields a dict which maps selected Parameter Store parameters to their string values. Also
         sets chosen parameters as environment variables.
 
@@ -265,10 +272,10 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
 
     def fetch_parameters(
         self,
-        parameters: Optional[List[str]] = None,
-        parameter_tags: Optional[List[ParameterStoreTag]] = None,
-        parameter_paths: Optional[List[str]] = None,
-    ) -> Dict[str, str]:
+        parameters: Optional[list[str]] = None,
+        parameter_tags: Optional[list[ParameterStoreTag]] = None,
+        parameter_paths: Optional[list[str]] = None,
+    ) -> dict[str, str]:
         """Fetches parameters from SSM Parameter Store and returns them as a dict.
 
         Args:
@@ -287,15 +294,16 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
 
 
 LEGACY_PARAMETERSTORE_SCHEMA = {
-    **cast(Shape, ParameterStoreResource.to_config_schema().as_field().config_type).fields,
+    **cast("Shape", ParameterStoreResource.to_config_schema().as_field().config_type).fields,
     "add_to_environment": LegacyDagsterField(
         bool,
         default_value=False,
-        description="Whether to add the paramters to the environment. Defaults to False.",
+        description="Whether to add the parameters to the environment. Defaults to False.",
     ),
 }
 
 
+@beta
 @dagster_maintained_resource
 @resource(config_schema=LEGACY_PARAMETERSTORE_SCHEMA)
 @contextmanager

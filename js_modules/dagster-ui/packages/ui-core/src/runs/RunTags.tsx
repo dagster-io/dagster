@@ -1,5 +1,6 @@
 import {Box} from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
+import * as yaml from 'yaml';
 
 import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
@@ -119,6 +120,7 @@ export const RunTags = memo((props: Props) => {
   const modeTag = mode ? (
     <RunTag tag={{key: 'mode', value: mode}} actions={actionsForTag({key: 'mode', value: mode})} />
   ) : null;
+
   return (
     <Box flex={{direction: 'row', wrap: 'wrap', gap: 4}}>
       {modeTag}
@@ -128,3 +130,9 @@ export const RunTags = memo((props: Props) => {
     </Box>
   );
 });
+
+export function tagsAsYamlString(displayedTags: TagType[]): string {
+  return yaml.stringify(
+    Object.fromEntries(displayedTags.map((d) => [d.originalKey || d.key, d.value])),
+  );
+}

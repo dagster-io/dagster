@@ -1,8 +1,8 @@
 import {Code} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
-import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 import {gql} from '../apollo-client';
+import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 

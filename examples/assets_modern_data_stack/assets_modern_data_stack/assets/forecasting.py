@@ -2,10 +2,7 @@ import datetime
 
 import numpy as np
 import pandas as pd
-from dagster import AssetExecutionContext, asset
-from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
+from dagster import AssetExecutionContext, asset, build_last_update_freshness_checks
 from dagster_airbyte import build_airbyte_assets
 from dagster_dbt import DbtCliResource, dbt_assets
 from scipy import optimize
@@ -44,7 +41,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: np.ndarray
 ) -> pd.DataFrame:
-    """Predicted orders for the next 30 days based on the fit paramters."""
+    """Predicted orders for the next 30 days based on the fit parameters."""
     a, b = tuple(order_forecast_model)
     start_date = daily_order_summary.order_date.max()
     future_dates = pd.date_range(start=start_date, end=start_date + pd.DateOffset(days=30))

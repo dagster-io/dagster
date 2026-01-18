@@ -1,10 +1,11 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Optional, Sequence, Type, cast
+from typing import Any, Optional, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -14,7 +15,6 @@ from dagster._core.storage.db_io_manager import (
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
-from snowflake.connector.errors import ProgrammingError
 
 from dagster_snowflake.resources import SnowflakeResource
 
@@ -22,14 +22,14 @@ SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_snowflake_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             slices of Snowflake tables and an in-memory type - e.g. a Pandas DataFrame. If only
-            one DbTypeHandler is provided, it will be used as teh default_load_type.
+            one DbTypeHandler is provided, it will be used as the default_load_type.
         default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
@@ -58,7 +58,7 @@ def build_snowflake_io_manager(
 
             snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table, my_second_table],
                 resources={
                     "io_manager": snowflake_io_manager.configured({
@@ -74,7 +74,7 @@ def build_snowflake_io_manager(
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={"io_manager" snowflake_io_manager.configured(
                     {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
@@ -279,6 +279,15 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
+    additional_snowflake_connection_args: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
+            " available arguments, see the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect>`__."
+            " This config will be ignored if using the sqlalchemy connector."
+        ),
+    )
 
     @staticmethod
     @abstractmethod
@@ -300,7 +309,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         """If an asset or op is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
 
@@ -347,27 +356,29 @@ class SnowflakeDbClient(DbClient):
             if context.resource_config
             else {}
         )
-        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(
+        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(  # pyright: ignore[reportArgumentType]
             raw_conn=False
         ) as conn:
             yield conn
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        schemas = (
-            connection.cursor()
-            .execute(f"show schemas like '{table_slice.schema}' in database {table_slice.database}")
-            .fetchall()
-        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
+            )
+            schemas = cursor.fetchall()
+
         if len(schemas) == 0:
-            connection.cursor().execute(f"create schema {table_slice.schema};")
+            with connection.cursor() as cursor:
+                cursor.execute(f"create schema {table_slice.schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
             connection.cursor().execute(_get_cleanup_statement(table_slice))
-        except ProgrammingError as e:
-            if "does not exist" in e.msg:  # type: ignore
+        except Exception as e:
+            if "does not exist or not authorized" in str(e):
                 # table doesn't exist yet, so ignore the error
                 return
             else:
@@ -376,7 +387,7 @@ class SnowflakeDbClient(DbClient):
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = (
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
@@ -390,7 +401,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+    if table_slice.partition_dimensions:
         query = (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
@@ -411,7 +422,7 @@ def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensi
 
 
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
-    partition = cast(TimeWindow, table_partition.partitions)
+    partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)

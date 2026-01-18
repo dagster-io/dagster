@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
 export interface TabStyleProps {
@@ -57,7 +56,7 @@ export const tabCSS = css<TabStyleProps>`
   line-height: 20px;
   font-weight: 600;
   padding: ${({$size}) => ($size === 'small' ? '10px 0' : '16px 0')};
-  box-shadow: ${({selected}) => (selected ? Colors.accentBlue() : 'transparent')} 0 -2px 0 inset;
+  box-shadow: ${({selected}) => (selected ? Colors.textDefault() : 'transparent')} 0 -2px 0 inset;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -68,13 +67,13 @@ export const tabCSS = css<TabStyleProps>`
     cursor: pointer;
     user-select: none;
     color: ${({selected, disabled}) =>
-      selected ? Colors.accentBlue() : disabled ? Colors.textDisabled() : Colors.textLight()};
+      selected ? Colors.textDefault() : disabled ? Colors.textDisabled() : Colors.textLight()};
   }
 
   ${({disabled}) =>
     disabled
       ? css`
-          & ${IconWrapper} {
+          & .iconGlobal {
             background-color: ${Colors.textDisabled()};
           }
         `
@@ -84,7 +83,7 @@ export const tabCSS = css<TabStyleProps>`
   &:focus {
     outline: none !important;
     box-shadow: ${({selected, disabled}) =>
-        selected ? Colors.accentBlue() : disabled ? 'transparent' : Colors.accentGray()}
+        selected ? Colors.textDefault() : disabled ? 'transparent' : Colors.accentGray()}
       0 -2px 0 inset;
   }
 
@@ -93,7 +92,7 @@ export const tabCSS = css<TabStyleProps>`
     a {
       text-decoration: none;
       color: ${({selected, disabled}) =>
-        selected ? Colors.accentBlue() : disabled ? Colors.textDisabled() : Colors.accentBlue()};
+        selected ? Colors.textDefault() : disabled ? Colors.textDisabled() : Colors.textDefault()};
     }
 
     ${({disabled}) => (disabled ? `color: ${Colors.textDisabled()};` : null)}

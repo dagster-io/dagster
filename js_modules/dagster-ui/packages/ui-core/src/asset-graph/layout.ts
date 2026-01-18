@@ -1,8 +1,8 @@
 import * as dagre from 'dagre';
 
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
-import {IBounds, IPoint} from '../graph/common';
-import {ChangeReason} from '../graphql/types';
+import type {IBounds, IPoint} from '../graph/common';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
 
@@ -56,7 +56,9 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
 
 export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
+  flagAssetGraphGroupsPerCodeLocation: boolean;
   overrides?: Partial<LayoutAssetGraphConfig>;
+  facets: AssetNodeFacet[];
 };
 
 export const Config = {
@@ -69,9 +71,9 @@ export const Config = {
     rankdir: 'LR',
     edgesep: 90,
     nodesep: -10,
-    nodeHeight: 'auto',
+    nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 65,
-    groupPaddingBottom: -15,
+    groupPaddingBottom: -4,
     groupRendering: 'if-varied',
     clusterpaddingtop: 100,
   },
@@ -84,9 +86,9 @@ export const Config = {
     rankdir: 'TB',
     nodesep: 40,
     edgesep: 10,
-    nodeHeight: 'auto',
+    nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 55,
-    groupPaddingBottom: -5,
+    groupPaddingBottom: -4,
     groupRendering: 'if-varied',
   },
 };
@@ -97,7 +99,7 @@ export const layoutAssetGraph = (
 ): AssetGraphLayout => {
   try {
     return layoutAssetGraphImpl(graphData, opts);
-  } catch (e) {
+  } catch {
     try {
       return layoutAssetGraphImpl(graphData, {
         ...opts,
@@ -105,7 +107,7 @@ export const layoutAssetGraph = (
           ranker: 'longest-path',
         },
       });
-    } catch (e) {
+    } catch {
       return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
     }
   }
@@ -115,6 +117,7 @@ export const layoutAssetGraphImpl = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
+  const facets = new Set<AssetNodeFacet>(opts.facets);
   const g = new dagre.graphlib.Graph({compound: true});
   const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
 
@@ -125,6 +128,7 @@ export const layoutAssetGraphImpl = (
   const shouldRender = (node?: GraphNode) => node;
   const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
   const expandedGroups = graphData.expandedGroups || [];
+  const expandedGroupsSet = new Set(expandedGroups);
 
   // Identify all the groups
   const groups: {[id: string]: GroupLayout} = {};
@@ -133,7 +137,7 @@ export const layoutAssetGraphImpl = (
       const id = groupIdForNode(node);
       groups[id] = groups[id] || {
         id,
-        expanded: expandedGroups.includes(id),
+        expanded: expandedGroupsSet.has(id),
         groupName: node.definition.groupName,
         repositoryName: node.definition.repository.name,
         repositoryLocationName: node.definition.repository.location.name,
@@ -148,7 +152,7 @@ export const layoutAssetGraphImpl = (
 
   if (groupsPresent) {
     Object.keys(groups).forEach((groupId) => {
-      if (expandedGroups.includes(groupId)) {
+      if (expandedGroupsSet.has(groupId)) {
         // sized based on it's children, but "border" tells Dagre we want cluster-level
         // spacing between the node and others. Necessary because our groups have title bars.
         g.setNode(groupId, {borderType: 'borderRight'});
@@ -160,10 +164,10 @@ export const layoutAssetGraphImpl = (
 
   // Add all the nodes inside expanded groups to the graph
   renderedNodes.forEach((node) => {
-    if (!groupsPresent || expandedGroups.includes(groupIdForNode(node))) {
+    if (!groupsPresent || expandedGroupsSet.has(groupIdForNode(node))) {
       const label =
         config.nodeHeight === 'auto'
-          ? getAssetNodeDimensions(node.definition)
+          ? getAssetNodeDimensions(facets)
           : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
 
       g.setNode(node.id, label);
@@ -193,11 +197,11 @@ export const layoutAssetGraphImpl = (
       let w = downstreamId;
 
       const wGroup = groupIdForAssetId[downstreamId];
-      if (groupsPresent && wGroup && !expandedGroups.includes(wGroup)) {
+      if (groupsPresent && wGroup && !expandedGroupsSet.has(wGroup)) {
         w = wGroup;
       }
       const vGroup = groupIdForAssetId[upstreamId];
-      if (groupsPresent && vGroup && !expandedGroups.includes(vGroup)) {
+      if (groupsPresent && vGroup && !expandedGroupsSet.has(vGroup)) {
         v = vGroup;
       }
       if (v === w) {
@@ -241,7 +245,8 @@ export const layoutAssetGraphImpl = (
     };
     if (!isGroupId(id)) {
       nodes[id] = {id, bounds};
-    } else if (!expandedGroups.includes(id)) {
+    } else if (!expandedGroupsSet.has(id)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const group = groups[id]!;
       group.bounds = bounds;
     }
@@ -256,6 +261,7 @@ export const layoutAssetGraphImpl = (
       const nodeLayout = nodes[node.id];
       if (nodeLayout && node.definition.groupName) {
         const groupId = groupIdForNode(node);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const group = groups[groupId]!;
         group.bounds =
           group.bounds.width === 0
@@ -338,37 +344,20 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
 };
 
 export const ASSET_NODE_WIDTH = 320;
-export const ASSET_NODE_NAME_MAX_LENGTH = 38;
+export const ASSET_NODE_TAGS_HEIGHT = 28;
+export const ASSET_NODE_STATUS_ROW_HEIGHT = 25;
 
-export const getAssetNodeDimensions = (def: {
-  assetKey: {path: string[]};
-  opNames: string[];
-  isMaterializable: boolean;
-  isObservable: boolean;
-  isPartitioned: boolean;
-  graphName: string | null;
-  description?: string | null;
-  computeKind: string | null;
-  changedReasons?: ChangeReason[];
-}) => {
-  const width = ASSET_NODE_WIDTH;
+export const ASSET_NODE_NAME_MAX_LENGTH = 31;
 
-  let height = 106; // top tags area + name + description
+export const getAssetNodeDimensions = (facets: Set<AssetNodeFacet>) => {
+  let height = 0;
 
-  if (!def.isMaterializable && def.isObservable) {
-    height += 30; // status row
+  if (facets.size === 0) {
+    height = 60;
   } else {
-    height += 28; // status row
-    height += 28; // checks row
-    if (def.isPartitioned) {
-      height += 52;
-    }
-  }
-  if (def.changedReasons?.length) {
-    height += 30;
+    height = 50; // box padding + border + name
+    height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
   }
 
-  height += 36; // tags beneath
-
-  return {width, height};
+  return {width: ASSET_NODE_WIDTH, height};
 };

@@ -6,7 +6,7 @@ from dagster import (
     PartitionKeyRange,
     _check as check,
 )
-from dagster._seven.temp_dir import get_system_temp_directory
+from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 from .parquet_io_manager import PartitionedParquetIOManager
 
@@ -60,7 +60,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
     def _table_path(self, context) -> str:
         return f"{self._schema(context)}.{context.asset_key.path[-1]}"
 
-    def _schema(self, context) -> str:
+    def _schema(self, context) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
         return f"{context.asset_key.path[-2]}"
 
     def _connect_duckdb(self):

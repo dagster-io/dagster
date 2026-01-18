@@ -59,7 +59,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         return pg_config()
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ) -> "DagsterPostgresStorage":
         return DagsterPostgresStorage(

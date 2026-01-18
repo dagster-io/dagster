@@ -7,7 +7,6 @@ import {
   DialogBody,
   DialogFooter,
   FontFamily,
-  Group,
   Icon,
   Table,
   Tooltip,
@@ -18,19 +17,25 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {TableSchema} from './TableSchema';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment.types';
+import {
+  MetadataEntryFragment,
+  TableMetadataEntryFragment,
+} from './types/MetadataEntryFragment.types';
+import {PoolTag} from '../../src/instance/PoolTag';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
-import {IntMetadataEntry, MaterializationEvent, TableMetadataEntry} from '../graphql/types';
+import {IntMetadataEntry, MaterializationEvent} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+
 export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
   'dagster_dbt/select',
   'dagster_dbt/exclude',
@@ -52,11 +57,13 @@ export const isCanonicalRowCountMetadataEntry = (
 ): m is IntMetadataEntry =>
   m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/row_count';
 
+export type LogRowStructuredRow = {label: string; item: JSX.Element};
+
 export const LogRowStructuredContentTable = ({
   rows,
   styles,
 }: {
-  rows: {label: string; item: JSX.Element}[];
+  rows: LogRowStructuredRow[];
   styles?: React.CSSProperties;
 }) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
@@ -114,14 +121,14 @@ export const MetadataEntry = ({
   switch (entry.__typename) {
     case 'PathMetadataEntry':
       return (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
             <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
           </IconButton>
-        </Group>
+        </Box>
       );
 
     case 'JsonMetadataEntry':
@@ -131,7 +138,7 @@ export const MetadataEntry = ({
       return expandSmallValues && jsonString.length < 1000 ? (
         <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(jsonString)}</div>
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           copyContent={() => jsonString}
           content={() => (
@@ -147,19 +154,19 @@ export const MetadataEntry = ({
           )}
         >
           [Show JSON]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
 
     case 'UrlMetadataEntry':
       return (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <MetadataEntryAction href={entry.url} title="Open in a new tab" target="_blank">
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">
             <Icon name="link" color={Colors.accentGray()} />
           </a>
-        </Group>
+        </Box>
       );
     case 'TextMetadataEntry':
       return <>{entry.text}</>;
@@ -167,7 +174,7 @@ export const MetadataEntry = ({
       return expandSmallValues && entry.mdStr.length < 1000 ? (
         <Markdown>{entry.mdStr}</Markdown>
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           copyContent={() => entry.mdStr}
           content={() => (
@@ -182,7 +189,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show Markdown]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     case 'PythonArtifactMetadataEntry':
       return (
@@ -235,7 +242,7 @@ export const MetadataEntry = ({
       return expandSmallValues && entry.schema.columns.length < 5 ? (
         <TableSchema schema={entry.schema} />
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           modalWidth={900}
           copyContent={() => JSON.stringify(entry.schema, null, 2)}
@@ -251,25 +258,25 @@ export const MetadataEntry = ({
           )}
         >
           [Show Table Schema]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     case 'NotebookMetadataEntry':
       if (repoLocation) {
         return <NotebookButton path={entry.path} repoLocation={repoLocation} />;
       }
       return (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
             <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
           </IconButton>
-        </Group>
+        </Box>
       );
     case 'CodeReferencesMetadataEntry':
       return (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           modalWidth={900}
           content={() => (
@@ -287,8 +294,10 @@ export const MetadataEntry = ({
           )}
         >
           [Show Code References]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
+    case 'PoolMetadataEntry':
+      return <PoolTag pool={entry.pool} />;
     default:
       return assertUnreachable(entry);
   }
@@ -312,23 +321,14 @@ const PythonArtifactLink = ({
   description: string;
 }) => (
   <>
-    <Tooltip
-      hoverOpenDelay={100}
-      position="top"
-      content={`${module}.${name}`}
-      usePortal
-      modifiers={{
-        preventOverflow: {enabled: false},
-        flip: {enabled: false},
-      }}
-    >
+    <Tooltip position="top" content={`${module}.${name}`}>
       <span style={{cursor: 'pointer', textDecoration: 'underline'}}>{name}</span>
     </Tooltip>{' '}
     - {description}
   </>
 );
 
-const MetadataEntryModalAction = (props: {
+const MetadataEntryDialogAction = (props: {
   children: React.ReactNode;
   label: string;
   modalWidth?: number;
@@ -366,7 +366,7 @@ const MetadataEntryModalAction = (props: {
   );
 };
 
-export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}) => {
+export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryFragment}) => {
   const [showSchema, setShowSchema] = React.useState(false);
 
   const schema = entry.table.schema;
@@ -376,7 +376,7 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}
     .map((record) => {
       try {
         return JSON.parse(record);
-      } catch (e) {
+      } catch {
         invalidRecords.push(record);
         return null;
       }

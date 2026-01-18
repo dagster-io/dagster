@@ -23,6 +23,7 @@ fragment metadataEntryFragment on MetadataEntry {
   description
   ... on FloatMetadataEntry {
     floatValue
+    floatRepr
   }
   ... on IntMetadataEntry {
     intRepr
@@ -74,6 +75,7 @@ fragment metadataEntryFragment on MetadataEntry {
           name
           type
           constraints { nullable unique other }
+          tags { key value }
         }
       }
     }
@@ -85,6 +87,7 @@ fragment metadataEntryFragment on MetadataEntry {
         name
         type
         constraints { nullable unique other }
+        tags { key value }
       }
     }
   }
@@ -255,14 +258,18 @@ subscription subscribeTest($runId: ID!) {
 RUN_EVENTS_QUERY = (
     MESSAGE_EVENT_FRAGMENTS
     + """
-query pipelineRunEvents($runId: ID!, $cursor: String) {
-  logsForRun(runId: $runId, afterCursor: $cursor) {
+query pipelineRunEvents($runId: ID!, $cursor: String, $limit: Int) {
+  logsForRun(runId: $runId, afterCursor: $cursor, limit: $limit) {
     __typename
     ... on EventConnection {
       events {
         ...messageEventFragment
       }
       cursor
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }
@@ -327,6 +334,71 @@ mutation($executionParams: ExecutionParams!) {
 """
 )
 
+
+LAUNCH_MULTIPLE_RUNS_MUTATION = (
+    ERROR_FRAGMENT
+    + """
+mutation($executionParamsList: [ExecutionParams!]!) {
+  launchMultipleRuns(executionParamsList: $executionParamsList) {
+    __typename
+    ... on LaunchMultipleRunsResult {
+      launchMultipleRunsResult {
+        __typename
+        ... on InvalidStepError {
+          invalidStepKey
+        }
+        ... on InvalidOutputError {
+          stepKey
+          invalidOutputName
+        }
+        ... on LaunchRunSuccess {
+          run {
+            runId
+            pipeline {
+              name
+            }
+            tags {
+              key
+              value
+            }
+            status
+            runConfigYaml
+            mode
+            resolvedOpSelection
+          }
+        }
+        ... on ConflictingExecutionParamsError {
+          message
+        }
+        ... on PresetNotFoundError {
+          preset
+          message
+        }
+        ... on RunConfigValidationInvalid {
+          pipelineName
+          errors {
+            __typename
+            message
+            path
+            reason
+          }
+        }
+        ... on PipelineNotFoundError {
+          message
+          pipelineName
+        }
+        ... on PythonError {
+          ...errorFragment
+        }
+      }
+    }
+    ... on PythonError {
+      ...errorFragment
+    }
+  }
+}
+"""
+)
 
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
     ERROR_FRAGMENT
@@ -408,6 +480,9 @@ mutation($backfillParams: LaunchBackfillParams!) {
       ...errorFragment
     }
     ... on PartitionSetNotFoundError {
+      message
+    }
+    ... on PartitionKeysNotFoundError {
       message
     }
     ... on LaunchBackfillSuccess {

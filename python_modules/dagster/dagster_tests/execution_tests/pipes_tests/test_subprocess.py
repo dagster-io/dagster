@@ -1,70 +1,32 @@
-import inspect
+import os
 import re
 import shutil
 import subprocess
-import textwrap
+import tempfile
 import time
-from contextlib import contextmanager
+from collections.abc import Iterator
 from multiprocessing import Process
+from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
 
+import dagster as dg
 import pytest
-from dagster import op
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
-from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata import (
-    BoolMetadataValue,
-    DagsterAssetMetadataValue,
-    DagsterRunMetadataValue,
-    FloatMetadataValue,
-    IntMetadataValue,
-    JsonMetadataValue,
-    MarkdownMetadataValue,
-    NotebookMetadataValue,
-    NullMetadataValue,
-    PathMetadataValue,
-    TextMetadataValue,
-    UrlMetadataValue,
-)
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
+from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
-from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster._core.pipes.utils import (
-    PipesEnvContextInjector,
-    PipesTempFileContextInjector,
-    PipesTempFileMessageReader,
-    open_pipes_session,
-)
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils import process_is_alive
 from dagster._utils.env import environ
-from dagster._utils.warnings import ExperimentalWarning
 from dagster_pipes import DagsterPipesError
 
+from dagster_tests.execution_tests.pipes_tests.utils import temp_script
+
 _PYTHON_EXECUTABLE = shutil.which("python")
-
-
-@contextmanager
-def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
-    # drop the signature line
-    source = textwrap.dedent(inspect.getsource(script_fn).split("\n", 1)[1])
-    with NamedTemporaryFile() as file:
-        file.write(source.encode())
-        file.flush()
-        yield file.name
 
 
 @pytest.fixture
@@ -110,21 +72,21 @@ def test_pipes_subprocess(
     if context_injector_spec == "default":
         context_injector = None
     elif context_injector_spec == "user/file":
-        context_injector = PipesTempFileContextInjector()
+        context_injector = dg.PipesTempFileContextInjector()
     elif context_injector_spec == "user/env":
-        context_injector = PipesEnvContextInjector()
+        context_injector = dg.PipesEnvContextInjector()
     else:
         assert False, "Unreachable"
 
     if message_reader_spec == "default":
         message_reader = None
     elif message_reader_spec == "user/file":
-        message_reader = PipesTempFileMessageReader()
+        message_reader = dg.PipesTempFileMessageReader()
 
     else:
         assert False, "Unreachable"
 
-    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
+    @dg.asset(check_specs=[dg.AssetCheckSpec(name="foo_check", asset=dg.AssetKey(["foo"]))])
     def foo(context: AssetExecutionContext, ext: PipesSubprocessClient):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
@@ -138,15 +100,15 @@ def test_pipes_subprocess(
             },
         ).get_results()
 
-    resource = PipesSubprocessClient(
+    resource = dg.PipesSubprocessClient(
         context_injector=context_injector, message_reader=message_reader
     )
 
-    with instance_for_test() as instance:
-        materialize([foo], instance=instance, resources={"ext": resource})
+    with dg.instance_for_test() as instance:
+        dg.materialize([foo], instance=instance, resources={"ext": resource})
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
-        assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
+        assert isinstance(mat.asset_materialization.metadata["bar"], dg.MarkdownMetadataValue)
         assert mat.asset_materialization.metadata["bar"].value == "baz"
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
@@ -156,7 +118,7 @@ def test_pipes_subprocess(
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
 
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
-            check_key=AssetCheckKey(foo.key, name="foo_check"),
+            check_key=dg.AssetCheckKey(foo.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1
@@ -170,22 +132,22 @@ def test_pipes_subprocess_client_no_return():
         with open_dagster_pipes() as context:
             context.report_asset_materialization()
 
-    @asset
+    @dg.asset
     def foo(context: OpExecutionContext, client: PipesSubprocessClient):
         with temp_script(script_fn) as external_script:
             cmd = [_PYTHON_EXECUTABLE, external_script]
             client.run(command=cmd, context=context).get_results()
 
-    client = PipesSubprocessClient()
+    client = dg.PipesSubprocessClient()
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             r"did not yield or return expected outputs.*Did you forget to `yield from"
             r" pipes_session.get_results\(\)` or `return"
             r" <PipesClient>\.run\(\.\.\.\)\.get_results`?"
         ),
     ):
-        materialize([foo], resources={"client": client})
+        dg.materialize([foo], resources={"client": client})
 
 
 def test_pipes_multi_asset():
@@ -198,24 +160,24 @@ def test_pipes_multi_asset():
             )
             context.report_asset_materialization(data_version="alpha", asset_key="bar")
 
-    @multi_asset(specs=[AssetSpec("foo"), AssetSpec("bar")])
+    @dg.multi_asset(specs=[dg.AssetSpec("foo"), dg.AssetSpec("bar")])
     def foo_bar(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
-    with instance_for_test() as instance:
-        materialize(
+    with dg.instance_for_test() as instance:
+        dg.materialize(
             [foo_bar],
             instance=instance,
-            resources={"pipes_subprocess_client": PipesSubprocessClient()},
+            resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
         )
-        foo_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        foo_mat = instance.get_latest_materialization_event(dg.AssetKey(["foo"]))
         assert foo_mat and foo_mat.asset_materialization
         assert foo_mat.asset_materialization.metadata["foo_meta"].value == "ok"
         assert foo_mat.asset_materialization.tags
         assert foo_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
-        bar_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        bar_mat = instance.get_latest_materialization_event(dg.AssetKey(["foo"]))
         assert bar_mat and bar_mat.asset_materialization
         assert bar_mat.asset_materialization.tags
         assert bar_mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
@@ -228,21 +190,21 @@ def test_pipes_dynamic_partitions():
         with open_dagster_pipes() as _:
             pass
 
-    @asset(partitions_def=DynamicPartitionsDefinition(name="blah"))
+    @dg.asset(partitions_def=dg.DynamicPartitionsDefinition(name="blah"))
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         instance.add_dynamic_partitions("blah", ["bar"])
-        materialize(
+        dg.materialize(
             [foo],
             instance=instance,
-            resources={"pipes_subprocess_client": PipesSubprocessClient()},
+            resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
             partition_key="bar",
         )
-        foo_mat = instance.get_latest_materialization_event(AssetKey(["foo"]))
+        foo_mat = instance.get_latest_materialization_event(dg.AssetKey(["foo"]))
         assert foo_mat and foo_mat.asset_materialization
         assert foo_mat.asset_materialization.partition == "bar"
 
@@ -267,64 +229,168 @@ def test_pipes_typed_metadata():
                     "dagster_run_meta": {"raw_value": "foo", "type": "dagster_run"},
                     "asset_meta": {"raw_value": "bar/baz", "type": "asset"},
                     "null_meta": {"raw_value": None, "type": "null"},
+                    "table_meta": {
+                        "raw_value": {
+                            "records": [{"code": "invalid-data-type"}],
+                            "schema": [
+                                {
+                                    "name": "code",
+                                    "type": "string",
+                                    "description": "code",
+                                    "tags": {"key": "value"},
+                                    "constraints": {"unique": True},
+                                }
+                            ],
+                        },
+                        "type": "table",
+                    },
+                    "table_schema_meta": {
+                        "raw_value": {
+                            "columns": [
+                                {
+                                    "name": "code",
+                                    "type": "string",
+                                    "description": "code",
+                                    "tags": {"key": "value"},
+                                    "constraints": {"unique": True},
+                                }
+                            ]
+                        },
+                        "type": "table_schema",
+                    },
+                    "table_column_lineage_meta": {
+                        "raw_value": {
+                            "deps_by_column": {"a": [{"asset_key": "b", "column_name": "c"}]},
+                        },
+                        "type": "table_column_lineage",
+                    },
+                    "timestamp_meta": {"raw_value": 111, "type": "timestamp"},
                 }
             )
 
-    @asset
+    @dg.asset
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
-    with instance_for_test() as instance:
-        materialize(
+    with dg.instance_for_test() as instance:
+        dg.materialize(
             [foo],
             instance=instance,
-            resources={"pipes_subprocess_client": PipesSubprocessClient()},
+            resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
         metadata = mat.asset_materialization.metadata
         # assert isinstance(metadata["infer_meta"], TextMetadataValue)
         # assert metadata["infer_meta"].value == "bar"
-        assert isinstance(metadata["text_meta"], TextMetadataValue)
+        assert isinstance(metadata["text_meta"], dg.TextMetadataValue)
         assert metadata["text_meta"].value == "bar"
-        assert isinstance(metadata["url_meta"], UrlMetadataValue)
+        assert isinstance(metadata["url_meta"], dg.UrlMetadataValue)
         assert metadata["url_meta"].value == "http://bar.com"
-        assert isinstance(metadata["path_meta"], PathMetadataValue)
+        assert isinstance(metadata["path_meta"], dg.PathMetadataValue)
         assert metadata["path_meta"].value == "/bar"
-        assert isinstance(metadata["notebook_meta"], NotebookMetadataValue)
+        assert isinstance(metadata["notebook_meta"], dg.NotebookMetadataValue)
         assert metadata["notebook_meta"].value == "/bar.ipynb"
-        assert isinstance(metadata["json_meta"], JsonMetadataValue)
+        assert isinstance(metadata["json_meta"], dg.JsonMetadataValue)
         assert metadata["json_meta"].value == ["bar"]
-        assert isinstance(metadata["md_meta"], MarkdownMetadataValue)
+        assert isinstance(metadata["md_meta"], dg.MarkdownMetadataValue)
         assert metadata["md_meta"].value == "bar"
-        assert isinstance(metadata["float_meta"], FloatMetadataValue)
+        assert isinstance(metadata["float_meta"], dg.FloatMetadataValue)
         assert metadata["float_meta"].value == 1.0
-        assert isinstance(metadata["int_meta"], IntMetadataValue)
+        assert isinstance(metadata["int_meta"], dg.IntMetadataValue)
         assert metadata["int_meta"].value == 1
-        assert isinstance(metadata["bool_meta"], BoolMetadataValue)
+        assert isinstance(metadata["bool_meta"], dg.BoolMetadataValue)
         assert metadata["bool_meta"].value is True
-        assert isinstance(metadata["dagster_run_meta"], DagsterRunMetadataValue)
+        assert isinstance(metadata["dagster_run_meta"], dg.DagsterRunMetadataValue)
         assert metadata["dagster_run_meta"].value == "foo"
-        assert isinstance(metadata["asset_meta"], DagsterAssetMetadataValue)
-        assert metadata["asset_meta"].value == AssetKey(["bar", "baz"])
-        assert isinstance(metadata["null_meta"], NullMetadataValue)
+        assert isinstance(metadata["asset_meta"], dg.DagsterAssetMetadataValue)
+        assert metadata["asset_meta"].value == dg.AssetKey(["bar", "baz"])
+        assert isinstance(metadata["null_meta"], dg.NullMetadataValue)
         assert metadata["null_meta"].value is None
+        assert isinstance(metadata["table_meta"], dg.TableMetadataValue)
+        table_metadata = metadata["table_meta"]
+        assert table_metadata.records == [dg.TableRecord({"code": "invalid-data-type"})]
+        assert table_metadata.schema == dg.TableSchema(
+            columns=[
+                dg.TableColumn(
+                    name="code",
+                    type="string",
+                    description="code",
+                    tags={"key": "value"},
+                    constraints=dg.TableColumnConstraints(unique=True),
+                )
+            ],
+        )
+        assert isinstance(metadata["table_schema_meta"], dg.TableSchemaMetadataValue)
+        assert metadata["table_schema_meta"] == dg.TableSchemaMetadataValue(
+            dg.TableSchema(
+                columns=[
+                    dg.TableColumn(
+                        name="code",
+                        type="string",
+                        description="code",
+                        tags={"key": "value"},
+                        constraints=dg.TableColumnConstraints(unique=True),
+                    )
+                ]
+            )
+        )
+        assert isinstance(metadata["table_column_lineage_meta"], dg.TableColumnLineageMetadataValue)
+        assert metadata["table_column_lineage_meta"].value == dg.TableColumnLineage(
+            deps_by_column={"a": [dg.TableColumnDep(asset_key="b", column_name="c")]}
+        )
+        assert isinstance(metadata["timestamp_meta"], dg.TimestampMetadataValue)
+        assert metadata["timestamp_meta"].value == 111
 
 
 def test_pipes_asset_failed():
     def script_fn():
         raise Exception("foo")
 
-    @asset
+    @dg.asset
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError):
-        materialize([foo], resources={"pipes_subprocess_client": PipesSubprocessClient()})
+        dg.materialize([foo], resources={"pipes_subprocess_client": dg.PipesSubprocessClient()})
+
+
+def retry_script_fn():
+    raise Exception("foo")
+
+
+def retry_script_fn_success():
+    pass
+
+
+@dg.op(retry_policy=dg.RetryPolicy(max_retries=3))
+def retry_foo(context: OpExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
+    should_fail = Path(os.environ["SHOULD_FAIL_FILE"]).read_text() == "true"
+    with temp_script(retry_script_fn if should_fail else retry_script_fn_success) as script_path:
+        Path(os.environ["SHOULD_FAIL_FILE"]).write_text("false")
+        cmd = [_PYTHON_EXECUTABLE, script_path]
+        return pipes_subprocess_client.run(command=cmd, context=context).get_results()
+
+
+@dg.job(resource_defs={"pipes_subprocess_client": dg.PipesSubprocessClient()})
+def retry_my_job():
+    retry_foo()
+
+
+def test_pipes_retry_policy():
+    with (
+        dg.instance_for_test() as instance,
+        tempfile.TemporaryDirectory() as temp_dir,
+        environ({"SHOULD_FAIL_FILE": str(Path(temp_dir) / "should_fail")}),
+    ):
+        (Path(temp_dir) / "should_fail").write_text("true")
+        result = dg.execute_job(dg.reconstructable(retry_my_job), instance=instance)
+        assert result.success
+        assert result.retry_attempts_for_node("retry_foo") == 1
 
 
 def test_pipes_asset_invocation():
@@ -334,13 +400,13 @@ def test_pipes_asset_invocation():
         with open_dagster_pipes() as context:
             context.log.info("hello world")
 
-    @asset
+    @dg.asset
     def foo(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             yield from pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
-    foo(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
+    foo(context=dg.build_asset_context(), pipes_subprocess_client=dg.PipesSubprocessClient())
 
 
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
@@ -372,22 +438,22 @@ def test_pipes_no_orchestration():
 
 
 def test_pipes_no_client(external_script):
-    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["subproc_run"]))])
+    @dg.asset(check_specs=[dg.AssetCheckSpec(name="foo_check", asset=dg.AssetKey(["subproc_run"]))])
     def subproc_run(context: AssetExecutionContext):
         extras = {"bar": "baz"}
         cmd = [_PYTHON_EXECUTABLE, external_script]
 
-        with open_pipes_session(
+        with dg.open_pipes_session(
             context,
-            PipesTempFileContextInjector(),
-            PipesTempFileMessageReader(),
+            dg.PipesTempFileContextInjector(),
+            dg.PipesTempFileMessageReader(),
             extras=extras,
         ) as pipes_session:
             subprocess.run(cmd, env=pipes_session.get_bootstrap_env_vars(), check=False)
         yield from pipes_session.get_results()
 
-    with instance_for_test() as instance:
-        materialize(
+    with dg.instance_for_test() as instance:
+        dg.materialize(
             [subproc_run],
             instance=instance,
         )
@@ -399,7 +465,7 @@ def test_pipes_no_client(external_script):
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
 
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
-            AssetCheckKey(
+            dg.AssetCheckKey(
                 asset_key=subproc_run.key,
                 name="foo_check",
             ),
@@ -416,26 +482,26 @@ def test_pipes_no_client_no_yield():
         with open_dagster_pipes() as _:
             pass
 
-    @asset
+    @dg.asset
     def foo(context: OpExecutionContext):
         with temp_script(script_fn) as external_script:
-            with open_pipes_session(
+            with dg.open_pipes_session(
                 context,
-                PipesTempFileContextInjector(),
-                PipesTempFileMessageReader(),
+                dg.PipesTempFileContextInjector(),
+                dg.PipesTempFileMessageReader(),
             ) as pipes_session:
                 cmd = [_PYTHON_EXECUTABLE, external_script]
                 subprocess.run(cmd, env=pipes_session.get_bootstrap_env_vars(), check=False)
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             r"did not yield or return expected outputs.*Did you forget to `yield from"
             r" pipes_session.get_results\(\)` or `return"
             r" <PipesClient>\.run\(\.\.\.\)\.get_results`?"
         ),
     ):
-        materialize([foo])
+        dg.materialize([foo])
 
 
 def test_pipes_manual_close():
@@ -446,17 +512,17 @@ def test_pipes_manual_close():
         context.report_asset_materialization(data_version="alpha")
         context.close()
 
-    @asset
+    @dg.asset
     def foo(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_client.run(command=cmd, context=context).get_results()
 
-    with instance_for_test() as instance:
-        materialize(
+    with dg.instance_for_test() as instance:
+        dg.materialize(
             [foo],
             instance=instance,
-            resources={"pipes_client": PipesSubprocessClient()},
+            resources={"pipes_client": dg.PipesSubprocessClient()},
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
@@ -469,17 +535,17 @@ def test_pipes_no_close():
         context = open_dagster_pipes()
         context.report_asset_materialization(data_version="alpha")
 
-    @asset
+    @dg.asset
     def foo(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_client.run(command=cmd, context=context).get_results()
 
-    with instance_for_test() as instance:
-        result = materialize(
+    with dg.instance_for_test() as instance:
+        result = dg.materialize(
             [foo],
             instance=instance,
-            resources={"pipes_client": PipesSubprocessClient()},
+            resources={"pipes_client": dg.PipesSubprocessClient()},
         )
         assert result.success  # doesn't fail out, just warns
         conn = instance.get_records_for_run(result.run_id)
@@ -508,7 +574,7 @@ def test_subprocess_env_precedence():
                 },
             )
 
-    @asset
+    @dg.asset
     def env_test(context, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
@@ -520,9 +586,11 @@ def test_subprocess_env_precedence():
 
     # callsite overrides client overrides inherited parent env
     with environ({"A": "parent", "B": "parent", "C": "parent"}):
-        result = materialize(
+        result = dg.materialize(
             [env_test],
-            resources={"pipes_client": PipesSubprocessClient(env={"B": "client", "C": "client"})},
+            resources={
+                "pipes_client": dg.PipesSubprocessClient(env={"B": "client", "C": "client"})
+            },
         )
         assert result.success
         mat_evts = result.get_asset_materialization_events()
@@ -539,17 +607,17 @@ def test_pipes_exception():
         with open_dagster_pipes():
             raise Exception("oops")
 
-    @asset
+    @dg.asset
     def raises(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             return pipes_client.run(command=cmd, context=context).get_results()
 
-    with instance_for_test() as instance:
-        result = materialize(
+    with dg.instance_for_test() as instance:
+        result = dg.materialize(
             [raises],
             instance=instance,
-            resources={"pipes_client": PipesSubprocessClient()},
+            resources={"pipes_client": dg.PipesSubprocessClient()},
             raise_on_error=False,
         )
         assert not result.success
@@ -571,18 +639,18 @@ def test_run_in_op():
         with open_dagster_pipes() as pipes:
             pipes.log.info("hello there")
 
-    @op
+    @dg.op
     def just_run(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             pipes_client.run(command=cmd, context=context)
 
-    @job
+    @dg.job
     def sample_job():
         just_run()
 
     result = sample_job.execute_in_process(
-        resources={"pipes_client": PipesSubprocessClient()},
+        resources={"pipes_client": dg.PipesSubprocessClient()},
     )
     assert result.success
 
@@ -590,7 +658,7 @@ def test_run_in_op():
 def test_pipes_expected_materialization():
     def script_fn(): ...
 
-    @asset
+    @dg.asset
     def missing_mat_result(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
@@ -603,12 +671,12 @@ def test_pipes_expected_materialization():
         DagsterPipesError,
         match="No materialization results received from external process",
     ):
-        materialize(
+        dg.materialize(
             [missing_mat_result],
-            resources={"pipes_client": PipesSubprocessClient()},
+            resources={"pipes_client": dg.PipesSubprocessClient()},
         )
 
-    @asset
+    @dg.asset
     def missing_results(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
@@ -618,13 +686,13 @@ def test_pipes_expected_materialization():
             ).get_results(implicit_materializations=False)
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         # less then ideal error message
         match=r"op 'missing_results' did not yield or return expected outputs {'result'}",
     ):
-        materialize(
+        dg.materialize(
             [missing_results],
-            resources={"pipes_client": PipesSubprocessClient()},
+            resources={"pipes_client": dg.PipesSubprocessClient()},
         )
 
 
@@ -637,7 +705,7 @@ def test_user_messages():
             pipes.report_custom_message("cool message")
             pipes.report_custom_message(2)
 
-    @asset
+    @dg.asset
     def extra_msg(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
@@ -649,9 +717,9 @@ def test_user_messages():
             assert messages[2] == 2
             return response.get_materialize_result()
 
-    result = materialize(
+    result = dg.materialize(
         [extra_msg],
-        resources={"pipes_client": PipesSubprocessClient()},
+        resources={"pipes_client": dg.PipesSubprocessClient()},
     )
     assert result.success
 
@@ -665,18 +733,18 @@ def test_bad_user_message():
         with open_dagster_pipes() as pipes:
             pipes.report_custom_message(Cursed())
 
-    @asset
+    @dg.asset
     def bad_msg(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             response = pipes_client.run(command=cmd, context=context)
             return response.get_materialize_result()
 
-    with instance_for_test() as instance:
-        result = materialize(
+    with dg.instance_for_test() as instance:
+        result = dg.materialize(
             [bad_msg],
             instance=instance,
-            resources={"pipes_client": PipesSubprocessClient()},
+            resources={"pipes_client": dg.PipesSubprocessClient()},
             raise_on_error=False,
         )
         assert not result.success
@@ -716,12 +784,12 @@ def _execute_job(spin_timeout, subproc_log_path):
 
     with temp_script(script_fn) as script_path:
 
-        @op
+        @dg.op
         def stalling_pipes_op(
             context: OpExecutionContext,
         ):
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            PipesSubprocessClient().run(
+            dg.PipesSubprocessClient().run(
                 command=cmd,
                 context=context,
                 extras={
@@ -730,7 +798,7 @@ def _execute_job(spin_timeout, subproc_log_path):
                 },
             )
 
-        @job
+        @dg.job
         def pipes_job():
             stalling_pipes_op()
 
@@ -742,7 +810,7 @@ def _execute_job(spin_timeout, subproc_log_path):
 
 def test_cancellation():
     spin_timeout = 600
-    with instance_for_test(), NamedTemporaryFile() as subproc_log_path:
+    with dg.instance_for_test(), NamedTemporaryFile() as subproc_log_path:
         p = Process(target=_execute_job, args=(spin_timeout, subproc_log_path.name))
         p.start()
         pid = None
@@ -779,15 +847,18 @@ def test_pipes_cli_args_params_loader():
             # this assert will only pass if PipesCliArgsParamsLoader is working correctly
             assert pipes.asset_key == "asset_with_pipes_cli_args_params_loader"
 
-    @asset
+    @dg.asset
     def asset_with_pipes_cli_args_params_loader(
         context: OpExecutionContext, pipes_client: PipesSubprocessClient
     ):
-        with temp_script(script_fn) as script_path, open_pipes_session(
-            context=context,
-            context_injector=PipesTempFileContextInjector(),  # this doesn't really matter
-            message_reader=PipesTempFileMessageReader(),  # this doesn't really matter
-        ) as session:
+        with (
+            temp_script(script_fn) as script_path,
+            dg.open_pipes_session(
+                context=context,
+                context_injector=dg.PipesTempFileContextInjector(),  # this doesn't really matter
+                message_reader=dg.PipesTempFileMessageReader(),  # this doesn't really matter
+            ) as session,
+        ):
             pipes_args = session.get_bootstrap_cli_arguments()
 
             cmd = [_PYTHON_EXECUTABLE, script_path] + sum(  # noqa: RUF017
@@ -796,32 +867,31 @@ def test_pipes_cli_args_params_loader():
 
             return pipes_client.run(command=cmd, context=context).get_materialize_result()
 
-    result = materialize(
+    result = dg.materialize(
         [asset_with_pipes_cli_args_params_loader],
-        resources={"pipes_client": PipesSubprocessClient()},
+        resources={"pipes_client": dg.PipesSubprocessClient()},
     )
     assert result.success
 
 
-def test_pipes_subprocess_client_no_experimental_warning():
+def test_pipes_subprocess_client_no_beta_warning(recwarn):
     def script_fn():
         pass
 
-    @asset
+    @dg.asset
     def foo(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
         # print("blah")
         with temp_script(script_fn) as external_script:
             cmd = [_PYTHON_EXECUTABLE, external_script]
             return pipes_client.run(command=cmd, context=context).get_materialize_result()
 
-    with pytest.warns() as record:
-        materialize(
-            [foo],
-            resources={"pipes_client": PipesSubprocessClient()},
-        )
+    dg.materialize(
+        [foo],
+        resources={"pipes_client": dg.PipesSubprocessClient()},
+    )
 
-    experimental_warnings = [w for w in record if issubclass(w.category, ExperimentalWarning)]
+    beta_warnings = [w for w in recwarn if issubclass(w.category, dg.BetaWarning)]
 
-    if experimental_warnings:
-        for warning in experimental_warnings:
+    if beta_warnings:
+        for warning in beta_warnings:
             assert "Pipes" not in str(warning.message)

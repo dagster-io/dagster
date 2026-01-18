@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -8,18 +6,18 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   Mono,
+  ProgressBar,
+  showToast,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
 import * as React from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
-import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 import {useMutation} from '../apollo-client';
-import {getSharedToaster} from '../app/DomUtils';
+import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 import {TerminateRunPolicy} from '../graphql/types';
 import {testId} from '../testing/testId';
 
@@ -154,7 +152,7 @@ export const TerminationDialog = (props: Props) => {
         variables: {runIds: runIdsChunk, terminatePolicy: state.policy},
       });
       if (!data || data?.terminateRuns.__typename === 'PythonError') {
-        (await getSharedToaster()).show({
+        showToast({
           message: 'Sorry, an error occurred and the runs could not be terminated.',
           intent: 'danger',
         });
@@ -194,15 +192,15 @@ export const TerminationDialog = (props: Props) => {
       case 'initial':
         if (!count) {
           return (
-            <Group direction="column" spacing={16}>
+            <Box flex={{direction: 'column', gap: 16}}>
               <div>No runs selected for termination.</div>
               <div>The runs you selected may already have finished executing.</div>
-            </Group>
+            </Box>
           );
         }
 
         return (
-          <Group direction="column" spacing={16}>
+          <Box flex={{direction: 'column', gap: 16}}>
             <div>
               {`${count} ${
                 count === 1 ? 'run' : 'runs'
@@ -228,27 +226,27 @@ export const TerminationDialog = (props: Props) => {
                 ) : null}
               </div>
             ) : !props.selectedRunsAllQueued ? (
-              <Group direction="row" spacing={8}>
+              <Box flex={{direction: 'row', gap: 8}}>
                 <Icon name="warning" color={Colors.accentYellow()} />
                 <div>
                   <strong>Warning:</strong> computational resources created by runs may not be
                   cleaned up.
                 </div>
-              </Group>
+              </Box>
             ) : undefined}
-          </Group>
+          </Box>
         );
       case 'terminating':
       case 'completed':
         const value = count > 0 ? state.termination.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
+          <Box flex={{direction: 'column', gap: 8}}>
             <div>{force ? 'Forcing termination…' : 'Terminating…'}</div>
-            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'terminating' ? (
               <NavigationBlock message="Termination in progress, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -309,9 +307,9 @@ export const TerminationDialog = (props: Props) => {
     const successCount = state.termination.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {force
@@ -322,11 +320,11 @@ export const TerminationDialog = (props: Props) => {
                     successCount === 1 ? 'run' : `runs`
                   }.`}
             </div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {force
@@ -337,20 +335,20 @@ export const TerminationDialog = (props: Props) => {
                       errorCount === 1 ? 'run' : 'runs'
                     }:`}
               </div>
-            </Group>
+            </Box>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Group direction="row" spacing={8}>
+                  <Box flex={{direction: 'row', gap: 8}}>
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -365,10 +363,10 @@ export const TerminationDialog = (props: Props) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

@@ -35,10 +35,10 @@ def test_event_generation_manager():
         yield "C"
 
     with pytest.raises(CheckError, match="Not a generator"):
-        EventGenerationManager(None, int)
+        EventGenerationManager(None, int)  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(CheckError, match="must be a class"):
-        EventGenerationManager(basic_generator(), None)
+        EventGenerationManager(basic_generator(), None)  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(CheckError, match="Called `get_object` before `generate_setup_events`"):
         basic_manager = EventGenerationManager(basic_generator(), int)

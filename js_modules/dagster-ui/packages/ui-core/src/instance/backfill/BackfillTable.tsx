@@ -1,7 +1,10 @@
 import {Table} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillFragments';
+import {
+  BACKFILL_ACTIONS_BACKFILL_FRAGMENT,
+  PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT,
+} from './BackfillFragments';
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillTableFragment} from './types/BackfillTable.types';
@@ -19,8 +22,7 @@ export const BackfillTable = ({
   refetch: () => void;
   showBackfillTarget?: boolean;
 }) => {
-  const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] =
-    useState<BackfillTableFragment>();
+  const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] = useState<string>();
 
   return (
     <>
@@ -51,26 +53,12 @@ export const BackfillTable = ({
       </Table>
 
       <BackfillPartitionsRequestedDialog
-        backfill={partitionsRequestedBackfill}
+        backfillId={partitionsRequestedBackfill}
         onClose={() => setPartitionsRequestedBackfill(undefined)}
       />
     </>
   );
 };
-
-export const PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT = gql`
-  fragment PartitionSetForBackfillTableFragment on PartitionSet {
-    id
-    name
-    mode
-    pipelineName
-    repositoryOrigin {
-      id
-      repositoryName
-      repositoryLocationName
-    }
-  }
-`;
 
 export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
@@ -78,7 +66,6 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     status
     isAssetBackfill
     isValidSerialization
-    partitionNames
     numPartitions
     timestamp
     partitionSetName

@@ -6,9 +6,10 @@ import tempfile
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import Iterator, Optional, Sequence, TextIO
+from typing import IO, Optional, TypeVar, Union
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -24,8 +25,10 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
-from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.pipes.client import PipesContextInjector, PipesLaunchedData, PipesMessageReader
 from dagster._core.pipes.context import (
     PipesMessageHandler,
     PipesSession,
@@ -33,10 +36,14 @@ from dagster._core.pipes.context import (
 )
 from dagster._utils import tail_file
 
+TCursor = TypeVar("TCursor")
+
+
 _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
+@public
 class PipesFileContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by writing it to a
     specified file.
@@ -73,13 +80,14 @@ class PipesFileContextInjector(PipesContextInjector):
         return f"Attempted to inject context via file {self._path}"
 
 
+@public
 class PipesTempFileContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by writing it to an
     automatically-generated temporary file.
     """
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Inject context to external environment by writing it to an automatically-generated
         temporary file as JSON and exposing the path to the file.
 
@@ -100,6 +108,7 @@ class PipesTempFileContextInjector(PipesContextInjector):
         return "Attempted to inject context via a temporary file."
 
 
+@public
 class PipesEnvContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by injecting it directly into the external process environment."""
 
@@ -124,16 +133,28 @@ class PipesEnvContextInjector(PipesContextInjector):
         return "Attempted to inject context directly, typically as an environment variable."
 
 
+@public
 class PipesFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing a specified file.
 
     Args:
         path (str): The path of the file to which messages will be written. The file will be deleted
             on close of the pipes session.
+        include_stdio_in_messages (bool): Whether to include stdout/stderr logs in the messages produced by the message writer in the external process.
+        cleanup_file (bool): Whether to delete the file on close of the pipes session.
     """
 
-    def __init__(self, path: str):
+    def __init__(
+        self, path: str, include_stdio_in_messages: bool = False, cleanup_file: bool = True
+    ):
         self._path = check.str_param(path, "path")
+        self._include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
+        self._cleanup_file = cleanup_file
+
+    def on_launched(self, params: PipesLaunchedData) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        self.launched_payload = params
 
     @contextmanager
     def read_messages(
@@ -160,12 +181,15 @@ class PipesFileMessageReader(PipesMessageReader):
                 daemon=True,
             )
             thread.start()
-            yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            yield {
+                PipesDefaultMessageWriter.FILE_PATH_KEY: self._path,
+                PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: self._include_stdio_in_messages,
+            }
         finally:
             is_session_closed.set()
             if thread:
                 thread.join()
-            if os.path.exists(self._path):
+            if os.path.exists(self._path) and self._cleanup_file:
                 os.remove(self._path)
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
@@ -184,8 +208,14 @@ class PipesFileMessageReader(PipesMessageReader):
         return f"Attempted to read messages from file {self._path}."
 
 
+@public
 class PipesTempFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing an automatically-generated temporary file."""
+
+    def __init__(self, include_stdio_in_messages: bool = False):
+        self._include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
 
     @contextmanager
     def read_messages(
@@ -204,7 +234,8 @@ class PipesTempFileMessageReader(PipesMessageReader):
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileMessageReader(
-                os.path.join(tempdir, _MESSAGE_READER_FILENAME)
+                os.path.join(tempdir, _MESSAGE_READER_FILENAME),
+                include_stdio_in_messages=self._include_stdio_in_messages,
             ).read_messages(handler) as params:
                 yield params
 
@@ -236,31 +267,18 @@ WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL = 10
 WAIT_FOR_LOGS_TIMEOUT = 60
 
 
-class PipesBlobStoreMessageReader(PipesMessageReader):
-    """Message reader that reads a sequence of message chunks written by an external process into a
-    blob store such as S3, Azure blob storage, or GCS.
-
-    The reader maintains a counter, starting at 1, that is synchronized with a message writer in
-    some pipes process. The reader starts a thread that periodically attempts to read a chunk
-    indexed by the counter at some location expected to be written by the pipes process. The chunk
-    should be a file with each line corresponding to a JSON-encoded pipes message. When a chunk is
-    successfully read, the messages are processed and the counter is incremented. The
-    :py:class:`PipesBlobStoreMessageWriter` on the other end is expected to similarly increment a
-    counter (starting from 1) on successful write, keeping counters on the read and write end in
-    sync.
-
-    If `log_readers` is passed, the message reader will start the passed log readers when the
-    `opened` message is received from the external process.
+class PipesThreadedMessageReader(PipesMessageReader):
+    """A base class for message readers that read messages and logs in background threads.
 
     Args:
-        interval (float): interval in seconds between attempts to download a chunk
-        log_readers (Optional[Sequence[PipesLogReader]]): A set of readers for logs.
+        interval (float): The interval in seconds at which to poll for messages.
+        log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers to use to read logs.
     """
 
     interval: float
-    counter: int
-    log_readers: Sequence["PipesLogReader"]
+    log_readers: dict[str, "PipesLogReader"]
     opened_payload: Optional[PipesOpenedData]
+    launched_payload: Optional[PipesLaunchedData]
 
     def __init__(
         self,
@@ -268,11 +286,15 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         log_readers: Optional[Sequence["PipesLogReader"]] = None,
     ):
         self.interval = interval
-        self.counter = 1
-        self.log_readers = check.opt_sequence_param(
-            log_readers, "log_readers", of_type=PipesLogReader
-        )
+
+        self.log_readers = {
+            str(i): reader
+            for i, reader in enumerate(
+                check.opt_sequence_param(log_readers, "log_readers", of_type=PipesLogReader)
+            )
+        }
         self.opened_payload = None
+        self.launched_payload = None
 
     @contextmanager
     def read_messages(
@@ -317,6 +339,21 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     def on_opened(self, opened_payload: PipesOpenedData) -> None:
         self.opened_payload = opened_payload
 
+    def on_launched(self, launched_payload: PipesLaunchedData) -> None:
+        self.launched_payload = launched_payload
+
+    def add_log_reader(self, log_reader: "PipesLogReader") -> None:
+        """Can be used to attach extra log readers to the message reader.
+        Typically called when the target for reading logs is not known until after the external
+        process has started (for example, when the target depends on an external job_id).
+        The LogReader will be eventually started by the PipesThreadedMessageReader.
+        """
+        key = str(len(self.log_readers))
+        self.log_readers[key] = log_reader
+
+    @abstractmethod
+    def messages_are_readable(self, params: PipesParams) -> bool: ...
+
     @abstractmethod
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
@@ -328,7 +365,19 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         """
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
+    def download_messages(
+        self, cursor: Optional[TCursor], params: PipesParams
+    ) -> Optional[tuple[TCursor, str]]:
+        """Download a chunk of messages from the target location.
+
+        Args:
+            cursor (Optional[Any]): Cursor specifying start location from which to download
+                messages in a stream. The format of the value varies with the message reader
+                implementation. It might be an integer index for a line in a log file, or a
+                timestamp for a message in a time-indexed stream.
+            params (PipesParams): A dict of parameters that specifies where to download messages from.
+        """
+        ...
 
     def _messages_thread(
         self,
@@ -338,27 +387,75 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     ) -> None:
         try:
             start_or_last_download = datetime.datetime.now()
+            session_closed_at = None
+            cursor = None
+            can_read_messages = False
+
+            # main loop to read messages
+            # at every step, we:
+            # - exit early if we have received the closed message
+            # - consume params from the launched_payload if possible
+            # - check if we can start reading messages (e.g. log files are available)
+            # - download a chunk of messages and process them
+            # - if is_session_closed is set, we exit the loop after waiting for WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL
             while True:
+                # if we have the closed message, we can exit
+                # since the message reader has been started and the external process has completed
+                if handler.received_closed_message:
+                    return
+
+                if not can_read_messages:  # this branch will be executed until we can read messages
+                    # check for new params in case they have been updated
+                    params = {**params, **(self.launched_payload or {})}
+                    can_read_messages = self.messages_are_readable(params)
+
                 now = datetime.datetime.now()
                 if (
                     now - start_or_last_download
                 ).seconds > self.interval or is_session_closed.is_set():
-                    start_or_last_download = now
-                    chunk = self.download_messages_chunk(self.counter, params)
-                    if chunk:
-                        for line in chunk.split("\n"):
-                            message = json.loads(line)
-                            handler.handle_message(message)
-                        self.counter += 1
-                    elif is_session_closed.is_set():
-                        break
+                    if can_read_messages:
+                        start_or_last_download = now
+                        result = self.download_messages(cursor, params)
+                        if result is not None:
+                            cursor, chunk = result
+                            for line in chunk.split("\n"):
+                                try:
+                                    message = json.loads(line)
+                                    if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
+                                        handler.handle_message(message)
+                                except json.JSONDecodeError:
+                                    pass
+
                 time.sleep(DEFAULT_SLEEP_INTERVAL)
+
+                if is_session_closed.is_set():
+                    if session_closed_at is None:
+                        session_closed_at = datetime.datetime.now()
+
+                    # After the external process has completed, we don't want to immediately exit
+                    if (
+                        datetime.datetime.now() - session_closed_at
+                    ).seconds > WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL:
+                        if not can_read_messages:
+                            self._log_unstartable_warning(handler, params)
+                        return
+
         except:
             handler.report_pipes_framework_exception(
                 f"{self.__class__.__name__} messages thread",
                 sys.exc_info(),
             )
             raise
+
+    def _log_unstartable_warning(self, handler: PipesMessageHandler, params: PipesParams) -> None:
+        if self.launched_payload is not None:
+            handler._context.log.warning(  # noqa: SLF001
+                f"[pipes] Target of {self.__class__.__name__} is not readable after receiving extra params from the external process (`on_launched` has been called)"
+            )
+        else:
+            handler._context.log.warning(  # noqa: SLF001
+                f"[pipes] Target of {self.__class__.__name__} is not readable."
+            )
 
     def _logs_thread(
         self,
@@ -367,33 +464,29 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         is_session_closed: Event,
         messages_thread: Thread,
     ) -> None:
-        # Start once we have received the opened message from the external process
-        while True:
-            if self.opened_payload is not None:
-                break
-            # We never received the `opened` message and never will, so don't try to start the log
-            # reader threads.
-            elif not messages_thread.is_alive():
-                return
-            time.sleep(DEFAULT_SLEEP_INTERVAL)
-
-        # Logs are started with a merge of the params generated by the message reader and the opened
-        # payload.
-        log_params = {**params, **self.opened_payload}
+        wait_for_logs_start = None
 
         # Loop over all log readers and start them if the target is readable, which typically means
         # a file exists at the target location. Different execution environments may write logs at
         # different times (e.g., some may write logs periodically during execution, while others may
         # only write logs after the process has completed).
         try:
-            unstarted_log_readers = list(self.log_readers)
-            wait_for_logs_start = None
-            while unstarted_log_readers:
-                # iterate in reverse so we can pop off elements as we go
-                for i in reversed(range(len(unstarted_log_readers))):
-                    if unstarted_log_readers[i].target_is_readable(log_params):
-                        reader = unstarted_log_readers.pop(i)
-                        reader.start(log_params, is_session_closed)
+            unstarted_log_readers = {**self.log_readers}
+
+            while True:
+                if self.opened_payload is not None:
+                    params = {**params, **self.opened_payload}
+
+                # periodically check for new readers which may be added after the
+                # external process has started and add them to the unstarted log readers
+                for key in self.log_readers:
+                    if key not in unstarted_log_readers:
+                        unstarted_log_readers[key] = self.log_readers[key]
+
+                for key in list(unstarted_log_readers.keys()).copy():
+                    if unstarted_log_readers[key].target_is_readable(params):
+                        reader = unstarted_log_readers.pop(key)
+                        reader.start(params, is_session_closed)
 
                 # In some cases logs might not be written out until after the external process has
                 # exited. That will leave us in this state, where some log readers have not been
@@ -403,29 +496,84 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
                 if is_session_closed.is_set():
                     if wait_for_logs_start is None:
                         wait_for_logs_start = datetime.datetime.now()
-                    if (
-                        datetime.datetime.now() - wait_for_logs_start
-                    ).seconds > WAIT_FOR_LOGS_TIMEOUT:
-                        for log_reader in unstarted_log_readers:
-                            warnings.warn(
-                                f"Attempted to read log for reader {log_reader.name} but log was"
-                                " still not written {WAIT_FOR_LOGS_TIMEOUT} seconds after session close. Abandoning log."
-                            )
-                        break
-                time.sleep(DEFAULT_SLEEP_INTERVAL)
 
-            # Wait for the external process to complete
-            is_session_closed.wait()
-        except:
+                    if not unstarted_log_readers:
+                        return
+                    elif (
+                        unstarted_log_readers
+                        and (datetime.datetime.now() - wait_for_logs_start).seconds
+                        > WAIT_FOR_LOGS_TIMEOUT
+                    ):
+                        for key, log_reader in unstarted_log_readers.items():
+                            warnings.warn(
+                                log_reader.with_debug_info(
+                                    f"[pipes] Attempted to read log for reader {log_reader.name} but log was"
+                                    f" still not written {WAIT_FOR_LOGS_TIMEOUT} seconds after session close. Abandoning reader {key}."
+                                )
+                            )
+
+                        return
+
+                time.sleep(DEFAULT_SLEEP_INTERVAL)
+        except Exception:
             handler.report_pipes_framework_exception(
                 f"{self.__class__.__name__} logs thread",
                 sys.exc_info(),
             )
             raise
         finally:
-            for log_reader in self.log_readers:
+            for log_reader in self.log_readers.values():
                 if log_reader.is_running():
                     log_reader.stop()
+
+
+@public
+class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
+    """Message reader that reads a sequence of message chunks written by an external process into a
+    blob store such as S3, Azure blob storage, or GCS.
+
+    The reader maintains a counter, starting at 1, that is synchronized with a message writer in
+    some pipes process. The reader starts a thread that periodically attempts to read a chunk
+    indexed by the counter at some location expected to be written by the pipes process. The chunk
+    should be a file with each line corresponding to a JSON-encoded pipes message. When a chunk is
+    successfully read, the messages are processed and the counter is incremented. The
+    :py:class:`PipesBlobStoreMessageWriter` on the other end is expected to similarly increment a
+    counter (starting from 1) on successful write, keeping counters on the read and write end in
+    sync.
+
+    If `log_readers` is passed, the message reader will start the passed log readers when the
+    `opened` message is received from the external process.
+
+    Args:
+        interval (float): interval in seconds between attempts to download a chunk
+        log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers to use to read logs.
+    """
+
+    counter: int
+
+    def __init__(
+        self,
+        interval: float = 10,
+        log_readers: Optional[Sequence["PipesLogReader"]] = None,
+    ):
+        super().__init__(interval=interval, log_readers=log_readers)
+
+        self.counter = 1
+
+    @abstractmethod
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+        ...
+        # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
+
+    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, cursor: Optional[int], params: PipesParams
+    ) -> Optional[tuple[int, str]]:
+        # mapping new interface to the old one
+        # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
+        chunk = self.download_messages_chunk(self.counter, params)
+        if chunk:
+            self.counter += 1
+            return self.counter, chunk
 
 
 class PipesLogReader(ABC):
@@ -446,19 +594,38 @@ class PipesLogReader(ABC):
         """Override this to distinguish different log readers in error messages."""
         return self.__class__.__name__
 
+    @property
+    def debug_info(self) -> Optional[str]:
+        """An optional message containing debug information about the log reader.
+
+        It will be included in error messages when the log reader fails to start or throws an exception.
+        """
+
+    def with_debug_info(self, message: str) -> str:
+        """Helper method to include debug info in error messages."""
+        return f"{message}\nDebug info: {self.debug_info}" if self.debug_info else message
+
 
 class PipesChunkedLogReader(PipesLogReader):
     """Reader for reading stdout/stderr logs from a blob store such as S3, Azure blob storage, or GCS.
 
     Args:
         interval (float): interval in seconds between attempts to download a chunk.
-        target_stream (TextIO): The stream to which to write the logs. Typcially `sys.stdout` or `sys.stderr`.
+        target_stream (IO[str]): The stream to which to write the logs. Typcially `sys.stdout` or `sys.stderr`.
+        debug_info (Optional[str]): An optional message containing debug information about the log reader.
     """
 
-    def __init__(self, *, interval: float = 10, target_stream: TextIO):
+    def __init__(
+        self, *, interval: float = 10, target_stream: IO[str], debug_info: Optional[str] = None
+    ):
         self.interval = interval
         self.target_stream = target_stream
         self.thread: Optional[Thread] = None
+        self._debug_info = debug_info
+
+    @property
+    def debug_info(self) -> Optional[str]:
+        return self._debug_info
 
     @abstractmethod
     def download_log_chunk(self, params: PipesParams) -> Optional[str]: ...
@@ -512,7 +679,21 @@ def _join_thread(thread: Thread, thread_name: str) -> None:
         raise DagsterPipesExecutionError(f"Timed out waiting for {thread_name} thread to finish.")
 
 
-def extract_message_or_forward_to_file(handler: "PipesMessageHandler", log_line: str, file: TextIO):
+def forward_only_logs_to_file(log_line: str, file: IO[str]):
+    """Will write the log line to the file if it is not a Pipes message."""
+    try:
+        message = json.loads(log_line)
+        if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
+            return
+        else:
+            file.writelines((log_line, "\n"))
+    except Exception:
+        file.writelines((log_line, "\n"))
+
+
+def extract_message_or_forward_to_file(
+    handler: "PipesMessageHandler", log_line: str, file: IO[str]
+):
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
@@ -521,7 +702,7 @@ def extract_message_or_forward_to_file(handler: "PipesMessageHandler", log_line:
         else:
             file.writelines((log_line, "\n"))
     except Exception:
-        # move non-message logs in to stdout for compute log capture
+        # move non-message logs in to file for compute log capture
         file.writelines((log_line, "\n"))
 
 
@@ -539,9 +720,10 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 )
 
 
+@public
 @contextmanager
 def open_pipes_session(
-    context: OpExecutionContext,
+    context: Union[OpExecutionContext, AssetExecutionContext],
     context_injector: PipesContextInjector,
     message_reader: PipesMessageReader,
     extras: Optional[PipesExtras] = None,
@@ -561,7 +743,7 @@ def open_pipes_session(
 
 
     Args:
-        context (OpExecutionContext): The context for the current op/asset execution.
+        context (Union[OpExecutionContext, AssetExecutionContext]): The context for the current op/asset execution.
         context_injector (PipesContextInjector): The context injector to use to inject context into the external process.
         message_reader (PipesMessageReader): The message reader to use to read messages from the external process.
         extras (Optional[PipesExtras]): Optional extras to pass to the external process via the injected context.
@@ -577,7 +759,7 @@ def open_pipes_session(
         extras = {"foo": "bar"}
 
         @asset
-        def ext_asset(context: OpExecutionContext):
+        def ext_asset(context: AssetExecutionContext):
             with open_pipes_session(
                 context=context,
                 extras={"foo": "bar"},
@@ -600,9 +782,10 @@ def open_pipes_session(
     context_data = build_external_execution_context_data(context, extras)
     message_handler = PipesMessageHandler(context, message_reader)
     try:
-        with context_injector.inject_context(
-            context_data
-        ) as ci_params, message_handler.handle_messages() as mr_params:
+        with (
+            context_injector.inject_context(context_data) as ci_params,
+            message_handler.handle_messages() as mr_params,
+        ):
             yield PipesSession(
                 context_data=context_data,
                 message_handler=message_handler,
@@ -612,7 +795,7 @@ def open_pipes_session(
             )
     finally:
         if not message_handler.received_opened_message:
-            context.log.warn(
+            context.log.warning(
                 "[pipes] did not receive any messages from external process. Check stdout / stderr"
                 " logs from the external process if"
                 f" possible.\n{context_injector.__class__.__name__}:"
@@ -620,7 +803,7 @@ def open_pipes_session(
                 f" {message_reader.no_messages_debug_text()}\n"
             )
         elif not message_handler.received_closed_message:
-            context.log.warn(
+            context.log.warning(
                 "[pipes] did not receive closed message from external process. Buffered messages"
                 " may have been discarded without being delivered. Use `open_dagster_pipes` as a"
                 " context manager (a with block) to ensure that cleanup is successfully completed."

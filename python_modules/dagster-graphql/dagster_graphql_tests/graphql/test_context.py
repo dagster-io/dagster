@@ -31,18 +31,18 @@ def get_repo():
     return my_repo
 
 
-def test_can_reload_on_external_repository_error():
+def test_can_reload_on_remote_repository_error():
     with instance_for_test() as instance:
         with ExitStack() as exit_stack:
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._core.remote_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
-            ) as external_repository_mock:
-                external_repository_mock.side_effect = Exception("get_external_repo_failure")
+                "dagster._api.snapshot_repository.sync_get_external_repositories_data_grpc"
+            ) as remote_repository_mock:
+                remote_repository_mock.side_effect = Exception("get_remote_repo_failure")
 
-                with pytest.warns(UserWarning, match=re.escape("get_external_repo_failure")):
+                with pytest.warns(UserWarning, match=re.escape("get_remote_repo_failure")):
                     workspace = exit_stack.enter_context(
                         define_out_of_process_workspace(__file__, "get_repo", instance)
                     )

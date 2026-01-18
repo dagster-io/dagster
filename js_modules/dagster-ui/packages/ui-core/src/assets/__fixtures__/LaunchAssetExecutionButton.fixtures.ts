@@ -8,6 +8,7 @@ import {
   LaunchBackfillParams,
   PartitionDefinitionType,
   PartitionRangeStatus,
+  Query,
   buildAssetCheck,
   buildAssetChecks,
   buildAssetKey,
@@ -18,18 +19,25 @@ import {
   buildDimensionDefinitionType,
   buildDimensionPartitionKeys,
   buildInstance,
+  buildLaunchBackfillSuccess,
+  buildLaunchRunSuccess,
   buildMaterializationEvent,
-  buildMode,
+  buildMutation,
   buildPartitionDefinition,
   buildPartitionRunConfig,
   buildPartitionTags,
   buildPartitionTagsAndConfig,
   buildPipeline,
+  buildPipelineTag,
+  buildQuery,
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
+  buildResource,
+  buildResourceConnection,
   buildRun,
   buildRunLauncher,
+  buildTimePartitionRangeStatus,
   buildTimePartitionStatuses,
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
@@ -189,7 +197,7 @@ export const ASSET_DAILY = buildAssetNode({
   hasMaterializePermission: true,
   repository: REPO,
   dependencyKeys: [],
-  dependedByKeys: [{__typename: 'AssetKey', path: ['asset_weekly']}],
+  dependedByKeys: [buildAssetKey({path: ['asset_weekly']})],
   graphName: null,
   jobNames: ['__ASSET_JOB', 'my_asset_job'],
   opNames: ['asset_daily'],
@@ -214,7 +222,6 @@ export const ASSET_DAILY = buildAssetNode({
 });
 
 export const ASSET_WEEKLY = buildAssetNode({
-  __typename: 'AssetNode',
   id: 'test.py.repo.["asset_weekly"]',
   groupName: 'mapped',
   hasMaterializePermission: true,
@@ -268,8 +275,7 @@ export const buildLaunchAssetWarningsMock = (
     variables: {upstreamAssetKeys: upstreamAssetKeys.map(asAssetKeyInput)},
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodes: [],
       instance: buildInstance({
         daemonHealth: buildDaemonHealth({
@@ -282,51 +288,46 @@ export const buildLaunchAssetWarningsMock = (
         runQueuingSupported: false,
         runLauncher: buildRunLauncher({name: 'DefaultRunLauncher'}),
       }),
-    },
+    }),
   },
 });
 
 export const PartitionHealthAssetDailyMaterializedRanges = [
-  {
+  buildTimePartitionRangeStatus({
     status: PartitionRangeStatus.MATERIALIZED,
     startTime: 1662940800.0,
     endTime: 1663027200.0,
     startKey: '2022-09-12',
     endKey: '2022-09-12',
-    __typename: 'TimePartitionRangeStatus' as const,
-  },
-  {
+  }),
+  buildTimePartitionRangeStatus({
     status: PartitionRangeStatus.MATERIALIZED,
     startTime: 1663027200.0,
     endTime: 1667088000.0,
     startKey: '2022-09-13',
     endKey: '2022-10-29',
-    __typename: 'TimePartitionRangeStatus' as const,
-  },
-  {
+  }),
+  buildTimePartitionRangeStatus({
     status: PartitionRangeStatus.MATERIALIZED,
     startTime: 1668816000.0,
     endTime: 1670803200.0,
     startKey: '2022-11-19',
     endKey: '2022-12-11',
-    __typename: 'TimePartitionRangeStatus' as const,
-  },
-  {
+  }),
+  buildTimePartitionRangeStatus({
     status: PartitionRangeStatus.MATERIALIZED,
     startTime: 1671494400.0,
     endTime: 1674086400.0,
     startKey: '2022-12-20',
     endKey: '2023-01-18',
-    __typename: 'TimePartitionRangeStatus' as const,
-  },
-  {
+  }),
+  buildTimePartitionRangeStatus({
     status: PartitionRangeStatus.MATERIALIZED,
     startTime: 1676851200.0,
     endTime: 1676937600.0,
     startKey: '2023-02-20',
     endKey: '2023-02-20',
-    __typename: 'TimePartitionRangeStatus' as const,
-  },
+  }),
 ];
 
 export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery> = {
@@ -339,8 +340,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_daily"]',
         partitionKeysByDimension: [
@@ -354,7 +354,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
           ranges: PartitionHealthAssetDailyMaterializedRanges,
         }),
       }),
-    },
+    }),
   },
 };
 
@@ -375,8 +375,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_weekly"]',
         partitionKeysByDimension: [
@@ -394,7 +393,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
           ranges: [],
         }),
       }),
-    },
+    }),
   },
 };
 
@@ -408,8 +407,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_weekly_root"]',
         partitionKeysByDimension: [
@@ -427,7 +425,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
           ranges: [],
         }),
       }),
-    },
+    }),
   },
 };
 
@@ -442,19 +440,9 @@ export const buildLaunchAssetLoaderGenericJobMock = (jobName: string) => {
       },
     },
     result: {
-      data: {
-        __typename: 'Query',
-        pipelineOrError: {
-          id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
-          modes: [
-            buildMode({
-              id: 'da3055161c528f4c839339deb4a362ec1be4f079-default',
-              resources: [],
-            }),
-          ],
-          __typename: 'Pipeline',
-        },
-      },
+      data: buildQuery({
+        resourcesOrError: buildResourceConnection({resources: []}),
+      }),
     },
   };
   return result;
@@ -470,88 +458,18 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
-      pipelineOrError: {
-        id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
-        modes: [
-          {
-            id: 'da3055161c528f4c839339deb4a362ec1be4f079-default',
-            resources: [
-              {
-                name: 'io_manager',
-                description:
-                  'Built-in filesystem IO manager that stores and retrieves values using pickling.',
-                configField: {
-                  name: 'config',
-                  isRequired: false,
-                  configType: {
-                    __typename: 'CompositeConfigType',
-                    key: 'Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851',
-                    description: null,
-                    isSelector: false,
-                    typeParamKeys: [],
-                    fields: [
-                      {
-                        name: 'base_dir',
-                        description: null,
-                        isRequired: false,
-                        configTypeKey: 'StringSourceType',
-                        defaultValueAsJson: null,
-                        __typename: 'ConfigTypeField',
-                      },
-                    ],
-                    recursiveConfigTypes: [
-                      {
-                        __typename: 'CompositeConfigType',
-                        key: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        description: null,
-                        isSelector: true,
-                        typeParamKeys: [],
-                        fields: [
-                          {
-                            name: 'env',
-                            description: null,
-                            isRequired: true,
-                            configTypeKey: 'String',
-                            defaultValueAsJson: null,
-                            __typename: 'ConfigTypeField',
-                          },
-                        ],
-                      },
-                      {
-                        __typename: 'RegularConfigType',
-                        givenName: 'String',
-                        key: 'String',
-                        description: '',
-                        isSelector: false,
-                        typeParamKeys: [],
-                      },
-                      {
-                        __typename: 'ScalarUnionConfigType',
-                        key: 'StringSourceType',
-                        description: null,
-                        isSelector: false,
-                        typeParamKeys: [
-                          'String',
-                          'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        ],
-                        scalarTypeKey: 'String',
-                        nonScalarTypeKey: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                      },
-                    ],
-                  },
-                  __typename: 'ConfigTypeField',
-                },
-                __typename: 'Resource',
-              },
-            ],
-            __typename: 'Mode',
-          },
+    data: buildQuery({
+      resourcesOrError: buildResourceConnection({
+        resources: [
+          buildResource({
+            name: 'io_manager',
+            configField: buildConfigTypeField({
+              isRequired: false,
+            }),
+          }),
         ],
-        __typename: 'Pipeline',
-      },
-    },
+      }),
+    }),
   },
 };
 
@@ -565,88 +483,18 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
-      pipelineOrError: {
-        id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
-        modes: [
-          {
-            id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
-            resources: [
-              {
-                name: 'io_manager',
-                description:
-                  'Built-in filesystem IO manager that stores and retrieves values using pickling.',
-                configField: {
-                  name: 'config',
-                  isRequired: false,
-                  configType: {
-                    __typename: 'CompositeConfigType',
-                    key: 'Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851',
-                    description: null,
-                    isSelector: false,
-                    typeParamKeys: [],
-                    fields: [
-                      {
-                        name: 'base_dir',
-                        description: null,
-                        isRequired: false,
-                        configTypeKey: 'StringSourceType',
-                        defaultValueAsJson: null,
-                        __typename: 'ConfigTypeField',
-                      },
-                    ],
-                    recursiveConfigTypes: [
-                      {
-                        __typename: 'CompositeConfigType',
-                        key: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        description: null,
-                        isSelector: true,
-                        typeParamKeys: [],
-                        fields: [
-                          {
-                            name: 'env',
-                            description: null,
-                            isRequired: true,
-                            configTypeKey: 'String',
-                            defaultValueAsJson: null,
-                            __typename: 'ConfigTypeField',
-                          },
-                        ],
-                      },
-                      {
-                        __typename: 'RegularConfigType',
-                        givenName: 'String',
-                        key: 'String',
-                        description: '',
-                        isSelector: false,
-                        typeParamKeys: [],
-                      },
-                      {
-                        __typename: 'ScalarUnionConfigType',
-                        key: 'StringSourceType',
-                        description: null,
-                        isSelector: false,
-                        typeParamKeys: [
-                          'String',
-                          'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        ],
-                        scalarTypeKey: 'String',
-                        nonScalarTypeKey: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                      },
-                    ],
-                  },
-                  __typename: 'ConfigTypeField',
-                },
-                __typename: 'Resource',
-              },
-            ],
-            __typename: 'Mode',
-          },
+    data: buildQuery({
+      resourcesOrError: buildResourceConnection({
+        resources: [
+          buildResource({
+            name: 'io_manager',
+            configField: buildConfigTypeField({
+              isRequired: false,
+            }),
+          }),
         ],
-        __typename: 'Pipeline',
-      },
-    },
+      }),
+    }),
   },
 };
 
@@ -661,19 +509,9 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
       },
     },
     result: {
-      data: {
-        __typename: 'Query',
-        pipelineOrError: {
-          id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
-          modes: [
-            buildMode({
-              id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
-              resources: [],
-            }),
-          ],
-          __typename: 'Pipeline',
-        },
-      },
+      data: buildQuery({
+        resourcesOrError: buildResourceConnection({resources: []}),
+      }),
     },
   };
 
@@ -685,12 +523,11 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodes: [ASSET_DAILY, ASSET_WEEKLY],
       assetNodeDefinitionCollisions: [],
       assetNodeAdditionalRequiredKeys: [],
-    },
+    }),
   },
 };
 
@@ -703,10 +540,9 @@ export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetC
       },
     },
     result: {
-      data: {
-        __typename: 'Query',
+      data: buildQuery({
         assetNodes: [ASSET_WEEKLY_ROOT],
-      },
+      }),
     },
   };
 
@@ -726,32 +562,28 @@ export function buildConfigPartitionSelectionLatestPartitionMock(
       },
     },
     result: {
-      data: {
-        __typename: 'Query',
+      data: buildQuery({
         pipelineOrError: buildPipeline({
           partition: buildPartitionTagsAndConfig({
             name: '2023-03-14',
             runConfigOrError: buildPartitionRunConfig({
               yaml: '{}\n',
-              __typename: 'PartitionRunConfig',
             }),
             tagsOrError: buildPartitionTags({
               results: [
-                {
+                buildPipelineTag({
                   key: 'dagster/partition',
                   value: partitionName,
-                  __typename: 'PipelineTag',
-                },
-                {
+                }),
+                buildPipelineTag({
                   key: 'dagster/partition_set',
                   value: `${jobName}_partition_set`,
-                  __typename: 'PipelineTag',
-                },
+                }),
               ],
             }),
           }),
         }),
-      },
+      }),
     },
   };
 }
@@ -776,7 +608,7 @@ export const PartitionHealthAssetMocks = [
 
 export function buildLaunchAssetLoaderMock(
   assetKeys: AssetKeyInput[],
-  overrides: Partial<LaunchAssetLoaderQuery> = {},
+  overrides: Partial<Query> & Partial<LaunchAssetLoaderQuery> = {},
 ): MockedResponse<LaunchAssetLoaderQuery> {
   return {
     request: {
@@ -786,15 +618,14 @@ export function buildLaunchAssetLoaderMock(
       },
     },
     result: {
-      data: {
-        __typename: 'Query',
+      data: buildQuery({
         assetNodeDefinitionCollisions: [],
         assetNodeAdditionalRequiredKeys: [],
         assetNodes: LOADER_RESULTS.filter((a) =>
           assetKeys.some((k) => tokenForAssetKey(k) === tokenForAssetKey(a.assetKey)),
         ),
         ...overrides,
-      },
+      }),
     },
   };
 }
@@ -808,10 +639,9 @@ export function buildExpectedLaunchBackfillMutation(
       variables: {backfillParams},
     },
     result: jest.fn(() => ({
-      data: {
-        __typename: 'Mutation',
-        launchPartitionBackfill: {__typename: 'LaunchBackfillSuccess', backfillId: 'backfillid'},
-      },
+      data: buildMutation({
+        launchPartitionBackfill: buildLaunchBackfillSuccess({backfillId: 'backfillid'}),
+      }),
     })),
   };
 }
@@ -825,17 +655,16 @@ export function buildExpectedLaunchSingleRunMutation(
       variables: {executionParams},
     },
     result: jest.fn(() => ({
-      data: {
-        __typename: 'Mutation',
-        launchPipelineExecution: {
-          __typename: 'LaunchRunSuccess',
+      data: buildMutation({
+        launchPipelineExecution: buildLaunchRunSuccess({
           run: buildRun({
             runId: 'RUN_ID',
             id: 'RUN_ID',
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             pipelineName: executionParams['selector']['pipelineName']!,
           }),
-        },
-      },
+        }),
+      }),
     })),
   };
 }

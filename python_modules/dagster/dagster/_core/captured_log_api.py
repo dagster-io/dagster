@@ -1,10 +1,12 @@
 import base64
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
 
-from dagster._seven import json
+from dagster_shared.record import record
+from dagster_shared.seven import json
 
 
-class LogLineCursor(NamedTuple):
+@record
+class LogLineCursor:
     """Representation of a log line cursor, to keep track of the place in the logs.
     The captured logs are stored in multiple files in the same direcotry. The cursor keeps
     track of the file name and the number of lines read so far.
@@ -35,4 +37,6 @@ class LogLineCursor(NamedTuple):
     @staticmethod
     def parse(cursor_str: str) -> "LogLineCursor":
         raw = json.loads(base64.b64decode(cursor_str).decode("utf-8"))
-        return LogLineCursor(raw["log_key"], raw["line"], raw["has_more_now"])
+        return LogLineCursor(
+            log_key=raw["log_key"], line=raw["line"], has_more_now=raw["has_more_now"]
+        )

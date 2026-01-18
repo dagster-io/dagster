@@ -1,0 +1,7 @@
+load_from:
+  - python_module:
+      module_name: kitchen_sink.dagster_multi_code_locations.first_dag_defs
+      location_name: first_dag_location
+  - python_module:
+      module_name: kitchen_sink.dagster_multi_code_locations.second_dag_defs
+      location_name: second_dag_location

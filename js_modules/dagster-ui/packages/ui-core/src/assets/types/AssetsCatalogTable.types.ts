@@ -26,11 +26,30 @@ export type AssetCatalogTableQuery = {
             isMaterializable: boolean;
             isObservable: boolean;
             isExecutable: boolean;
+            isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
+            hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
+            pools: Array<string>;
+            jobNames: Array<string>;
             kinds: Array<string>;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            internalFreshnessPolicy:
+              | {
+                  __typename: 'CronFreshnessPolicy';
+                  deadlineCron: string;
+                  lowerBoundDeltaSeconds: number;
+                  timezone: string;
+                }
+              | {
+                  __typename: 'TimeWindowFreshnessPolicy';
+                  failWindowSeconds: number;
+                  warnWindowSeconds: number | null;
+                }
+              | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -39,6 +58,11 @@ export type AssetCatalogTableQuery = {
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
+            } | null;
+            automationCondition: {
+              __typename: 'AutomationCondition';
+              label: string | null;
+              expandedLabel: Array<string>;
             } | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
@@ -81,12 +105,30 @@ export type AssetCatalogGroupTableQuery = {
     isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
+    isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
+    hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
+    pools: Array<string>;
+    jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy:
+      | {
+          __typename: 'CronFreshnessPolicy';
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
+        }
+      | {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        }
+      | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -95,6 +137,11 @@ export type AssetCatalogGroupTableQuery = {
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
+    } | null;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
     } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -118,12 +165,30 @@ export type AssetCatalogGroupTableNodeFragment = {
   isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
+  isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
+  hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  pools: Array<string>;
+  jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -132,6 +197,11 @@ export type AssetCatalogGroupTableNodeFragment = {
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -145,6 +215,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '24337025321725613b86a82d1733d75dde2cfd750be0a0cee0b4b75ac5b14d64';
+export const AssetCatalogTableQueryVersion = 'b9fb4b1e1639dcbd1f54b152d8c70e9522db4b57874dce2eb9d59608ac41dbb3';
 
-export const AssetCatalogGroupTableQueryVersion = '4fdeaff9339d10f2a6b4b78993f9627c5b58f7e4ceb01ffdf04d71d65ab2bc1d';
+export const AssetCatalogGroupTableQueryVersion = 'e40ea9d79f47b7677feefebd934e0a32808f21f2586e3149fd930d584b135203';

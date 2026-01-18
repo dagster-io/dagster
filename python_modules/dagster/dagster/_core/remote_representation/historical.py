@@ -3,7 +3,8 @@ from typing import Optional
 import dagster._check as check
 from dagster._core.remote_representation.job_index import JobIndex
 from dagster._core.remote_representation.represented import RepresentedJob
-from dagster._core.snap import JobSnapshot
+from dagster._core.snap import JobSnap
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 
 class HistoricalJob(RepresentedJob):
@@ -17,13 +18,13 @@ class HistoricalJob(RepresentedJob):
 
     def __init__(
         self,
-        job_snapshot: JobSnapshot,
+        job_snapshot: JobSnap,
         identifying_job_snapshot_id: str,
-        parent_job_snapshot: Optional[JobSnapshot],
+        parent_job_snapshot: Optional[JobSnap],
     ):
-        self._snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+        self._snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         self._parent_snapshot = check.opt_inst_param(
-            parent_job_snapshot, "parent_job_snapshot", JobSnapshot
+            parent_job_snapshot, "parent_job_snapshot", JobSnap
         )
         self._identifying_job_snapshot_id = check.str_param(
             identifying_job_snapshot_id, "identifying_job_snapshot_id"
@@ -46,3 +47,6 @@ class HistoricalJob(RepresentedJob):
     @property
     def computed_job_snapshot_id(self):
         return self._job_index.job_snapshot_id
+
+    def get_external_job_source(self) -> Optional[str]:
+        return self._job_index.job_snapshot.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)

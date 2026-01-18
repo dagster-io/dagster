@@ -1,20 +1,16 @@
 import json
 from pathlib import Path
 
-from dagster_dbt import (
-    DbtCloudClientResource,
-    dbt_assets,
-    load_assets_from_dbt_cloud_job,
-)
+from dagster_dbt import DbtCloudClientResource, load_assets_from_dbt_cloud_job
 
 from dagster import asset
 from dagster._core.definitions import materialize
-from dagster._core.instance_for_test import environ
+from dagster._utils.env import environ
 from docs_snippets.integrations.dbt.dbt import (
     scope_schedule_assets_dbt_and_downstream,
     scope_schedule_assets_dbt_only,
 )
-from docs_snippets.integrations.dbt.dbt_cloud import (
+from docs_snippets.integrations.dbt.dbt_cloud_legacy import (
     scope_define_instance,
     scope_schedule_dbt_cloud_assets,
 )

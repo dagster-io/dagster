@@ -32,4 +32,4 @@ def test_basic_pd_df_metadata():
     metadata = input_event.step_input_data.type_check_data.metadata
 
     assert metadata["row_count"] == MetadataValue.text("2")
-    assert metadata["metadata"].data["columns"] == ["num1", "num2"]
+    assert metadata["metadata"].data["columns"] == ["num1", "num2"]  # pyright: ignore[reportAttributeAccessIssue]

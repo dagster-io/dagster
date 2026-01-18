@@ -1,12 +1,12 @@
-import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
+import {Box, Colors, PageHeader, Subheading, Subtitle1} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
 import {gql, useQuery} from '../apollo-client';
+import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -61,7 +61,7 @@ export const InstanceHealthPage = () => {
   const {pageTitle} = useContext(InstancePageContext);
   return (
     <>
-      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="health" />} />
+      <PageHeader title={<Subtitle1>{pageTitle}</Subtitle1>} tabs={<InstanceTabs tab="health" />} />
       <InstanceHealthPageContent />
     </>
   );

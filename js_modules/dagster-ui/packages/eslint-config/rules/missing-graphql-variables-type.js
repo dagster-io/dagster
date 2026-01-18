@@ -1,7 +1,3 @@
-/* eslint-disable */
-
-const fs = require('fs');
-const path = require('path');
 const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);
@@ -10,11 +6,8 @@ const createRule = ESLintUtils.RuleCreator((name) => name);
  * Strategy:
  *  1. Pass over all useQuery calls and append "Variables" to the identifierName of the first type
  *    -- eg: useQuery<SomeQuery>() --> SomeQueryVariables
- *  2. Check if "SomeQueryVariables" is exported from the file that "SomeQuery" is imported from.
- *  3. If it's not then continue
- *     If it is then check that the second type argument to useQuery is that SomeQueryVariables.
+ *  2. Check that the second type argument to useQuery is that SomeQueryVariables.
  *     If not then throw an error.
- *
  */
 
 const apisRequiringVariableType = new Set([
@@ -32,13 +25,16 @@ module.exports = createRule({
         if (callee.type !== 'Identifier') {
           return;
         }
+
         // if it's not a useQuery call then ignore
         if (!apisRequiringVariableType.has(callee.name)) {
           return;
         }
+
         const API = callee.name;
         const queryType =
-          node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
+          node.typeArguments && node.typeArguments.params && node.typeArguments.params[0];
+
         if (!queryType || queryType.type !== 'TSTypeReference') {
           return;
         }
@@ -48,7 +44,8 @@ module.exports = createRule({
 
         const queryName = queryType.typeName.name;
         const variablesName = queryName + 'Variables';
-        const secondType = node.typeParameters.params[1];
+        const secondType = node.typeArguments.params[1];
+
         if (
           secondType &&
           secondType.type === 'TSTypeReference' &&
@@ -57,8 +54,9 @@ module.exports = createRule({
         ) {
           return;
         }
+
         let queryImportSpecifier = null;
-        const importDeclaration = context.getSourceCode().ast.body.find(
+        const importDeclaration = context.sourceCode.ast.body.find(
           (node) =>
             node.type === 'ImportDeclaration' &&
             node.specifiers.find((node) => {
@@ -68,9 +66,11 @@ module.exports = createRule({
               }
             }),
         );
+
         if (!importDeclaration) {
           return;
         }
+
         context.report({
           messageId: 'missing-graphql-variables-type',
           node,

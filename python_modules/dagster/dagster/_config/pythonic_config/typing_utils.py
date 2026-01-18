@@ -1,20 +1,49 @@
-from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
+import sys
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Generic,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    get_origin,
+)
 
 from pydantic import Field
-from typing_extensions import Annotated, Self, dataclass_transform, get_origin
+from typing_extensions import Self, dataclass_transform
 
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
 try:
     # Pydantic 1.x
-    from pydantic._internal._model_construction import ModelMetaclass  # type: ignore
+    from pydantic._internal._model_construction import ModelMetaclass
 except ImportError:
     # Pydantic 2.x
     from pydantic.main import ModelMetaclass
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
+
+
+def _materialize_annotations_for_pydantic(namespaces: dict[str, Any]) -> dict[str, Any]:
+    """Materialize lazy annotations in Python 3.14+ (PEP 649)."""
+    annotations = namespaces.get("__annotations__", {})
+
+    # if annotations are empty, try calling __annotate_func__ (PEP 649)
+    if sys.version_info >= (3, 14) and not annotations:
+        import annotationlib
+
+        annotate_func = annotationlib.get_annotate_from_class_namespace(namespaces)
+        if annotate_func is not None:
+            annotations = annotationlib.call_annotate_function(
+                annotate_func, annotationlib.Format.VALUE
+            )
+            namespaces["__annotations__"] = annotations
+
+    return annotations
 
 
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
@@ -30,20 +59,20 @@ class LateBoundTypesForResourceTypeChecking:
     class _Temp(Generic[_TResValue]):
         pass
 
-    _ResourceDep: Type = _Temp
-    _Resource: Type = _Temp
-    _PartialResource: Type = _Temp
+    _ResourceDep: type = _Temp
+    _Resource: type = _Temp
+    _PartialResource: type = _Temp
 
     @staticmethod
-    def get_resource_rep_type() -> Type:
+    def get_resource_rep_type() -> type:
         return LateBoundTypesForResourceTypeChecking._ResourceDep
 
     @staticmethod
-    def get_resource_type() -> Type:
+    def get_resource_type() -> type:
         return LateBoundTypesForResourceTypeChecking._Resource
 
     @staticmethod
-    def get_partial_resource_type(base: Type) -> Type:
+    def get_partial_resource_type(base: type) -> type:
         # LateBoundTypesForResourceTypeChecking._PartialResource[base] would be the more
         # correct thing to return, but to enable that deeper pydantic integration
         # needs to be done on the PartialResource class
@@ -52,7 +81,7 @@ class LateBoundTypesForResourceTypeChecking:
 
     @staticmethod
     def set_actual_types_for_type_checking(
-        resource_dep_type: Type, resource_type: Type, partial_resource_type: Type
+        resource_dep_type: type, resource_type: type, partial_resource_type: type
     ) -> None:
         LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type
         LateBoundTypesForResourceTypeChecking._Resource = resource_type
@@ -62,7 +91,8 @@ class LateBoundTypesForResourceTypeChecking:
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class BaseConfigMeta(ModelMetaclass):  # type: ignore
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
-        annotations = namespaces.get("__annotations__", {})
+        # Materialize lazy annotations for Python 3.14+ before Pydantic sees them
+        annotations = _materialize_annotations_for_pydantic(namespaces)
 
         # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
         # being created
@@ -105,12 +135,15 @@ class BaseResourceMeta(BaseConfigMeta):
     """
 
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
+        from pydantic.fields import FieldInfo
+
         # Gather all type annotations from the class and its base classes
-        annotations = namespaces.get("__annotations__", {})
+        # Materialize lazy annotations for Python 3.14+ before Pydantic sees them
+        annotations = _materialize_annotations_for_pydantic(namespaces)
+
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
-
                 if (
                     get_origin(annotations[field])
                     == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()
@@ -128,11 +161,20 @@ class BaseResourceMeta(BaseConfigMeta):
                     base = annotations[field]
                     annotations[field] = Annotated[
                         Union[
-                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
                             base,
+                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
                         ],
                         "resource_dependency",
                     ]
+                    # Pydantic 2.5.0 changed the default union mode to "smart", which causes
+                    # partial resource initialization to fail, since Pydantic would attempt to
+                    # initialize a PartialResource with parameters which are invalid.
+                    # https://github.com/pydantic/pydantic-core/pull/867
+                    # Here, we explicitly set the union mode to "left_to_right".
+                    # https://docs.pydantic.dev/latest/concepts/unions/#left-to-right-mode
+                    namespaces[field] = FieldInfo(
+                        union_mode="left_to_right", annotation=annotations[field]
+                    )
 
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces, **kwargs)
@@ -175,7 +217,7 @@ class TypecheckAllowPartialResourceInitParams:
 
     def __get__(self: Self, obj: Any, owner: Any) -> Self:
         # no-op implementation (only used to affect type signature)
-        return cast(Self, getattr(obj, self._assigned_name))
+        return cast("Self", getattr(obj, self._assigned_name))
 
     # The annotation her has been temporarily changed from:
     #     value: Union[Self, "PartialResource[Self]"]

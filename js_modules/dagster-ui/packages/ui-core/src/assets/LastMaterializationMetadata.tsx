@@ -1,4 +1,4 @@
-import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -8,8 +8,9 @@ import {StaleReasonsTag} from './Stale';
 import {isRunlessEvent} from './isRunlessEvent';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNodeWithStaleData, isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -30,7 +31,11 @@ export const LatestMaterializationMetadata = ({
   definition,
 }: {
   assetKey: AssetKeyInput;
-  latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
+  latest:
+    | AssetObservationFragment
+    | AssetFailedToMaterializeFragment
+    | AssetSuccessfulMaterializationFragment
+    | undefined;
   liveData: LiveDataForNodeWithStaleData | undefined;
   definition: Pick<AssetViewDefinitionNodeFragment, 'changedReasons'>;
 }) => {
@@ -91,17 +96,15 @@ export const LatestMaterializationMetadata = ({
                               isJob={isThisThingAJob(repo, latestRun.pipelineName)}
                             />
                           </Box>
-                          <Group
-                            direction="row"
+                          <Box
+                            flex={{direction: 'row', gap: 8, alignItems: 'center'}}
                             padding={{left: 8}}
-                            spacing={8}
-                            alignItems="center"
                           >
                             <Icon name="linear_scale" color={Colors.accentGray()} />
                             <Link to={linkToRunEvent(latestRun, latestEvent)}>
                               {latestEvent.stepKey}
                             </Link>
-                          </Group>
+                          </Box>
                         </>
                       )}
                     </div>

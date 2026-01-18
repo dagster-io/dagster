@@ -3,7 +3,6 @@ import {
   Button,
   Colors,
   Icon,
-  IconWrapper,
   Menu,
   MenuItem,
   Popover,
@@ -58,8 +57,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     const filteredFilters = selectedFilter
       ? []
       : search
-      ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
-      : filters;
+        ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
+        : filters;
 
     const results: Record<string, {label: JSX.Element; key: string; value: any}[]> = {};
     if (search) {
@@ -381,7 +380,7 @@ export const FilterDropdownButton = React.memo(({filters, label}: FilterDropdown
 });
 
 const DropdownMenuContainer = styled.div`
-  ${IconWrapper} {
+  .iconGlobal {
     margin-left: 0 !important;
   }
 `;
@@ -413,8 +412,8 @@ type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
   menuKey: string;
   index: number;
 };
-export const FilterDropdownMenuItem = React.memo(
-  ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
+const FilterDropdownMenuItem = React.memo(
+  ({menuKey, index, ref: _ref, ...rest}: FilterDropdownMenuItemProps) => {
     const divRef = React.useRef<HTMLDivElement | null>(null);
     React.useLayoutEffect(() => {
       if (rest.active) {

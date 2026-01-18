@@ -23,7 +23,7 @@ from dagster import (
     with_resources,
 )
 from dagster._config.pythonic_config import Config
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
@@ -303,12 +303,12 @@ def error_job():
 
 if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
     # We need type-ignores here because type checkers don't understand the `*_PRESENT` kwargs.
-    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})
+    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
     # FIXME add an output to this
-    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})
+    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})
+    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
     @job(resource_defs=common_resource_defs)
     def tutorial_job():

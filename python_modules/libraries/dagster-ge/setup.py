@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_ge/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -23,22 +22,23 @@ setup(
     description="Package for GE-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_ge_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.10,<3.14",  # great_expectations incompatible with Python 3.14
     install_requires=[
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
-        # Pin numpy pending update of great_expectations
-        "numpy<2",
-        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, <0.17.12",
+        "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
+    extras_require={
+        "test": [
+            "great-expectations>=0.18.22",  # lower bound to test version for consistent snapshots
+        ],
+    },
     zip_safe=False,
 )

@@ -1,12 +1,13 @@
 import datetime
 import os
 
+import pytest
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator  # type: ignore
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
@@ -15,8 +16,6 @@ from dagster._core.storage.local_compute_log_manager import (
 from dagster._core.test_utils import instance_for_test
 from dagster._time import get_current_datetime
 from dagster_airflow import make_dagster_job_from_airflow_dag
-
-from dagster_airflow_tests.marks import requires_no_db
 
 default_args = {
     "owner": "dagster",
@@ -49,7 +48,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
         log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
     )
     assert os.path.exists(compute_io_path)
-    stdout_file = open(compute_io_path, "r", encoding="utf8")
+    stdout_file = open(compute_io_path, encoding="utf8")
     file_contents = normalize_file_content(stdout_file.read())
     stdout_file.close()
 
@@ -87,7 +86,7 @@ def get_dag():
     return dag
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_job_tags():
     dag = get_dag()
 
@@ -108,7 +107,7 @@ def test_job_tags():
         check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d"))
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_job_auto_tag():
     dag = get_dag()
 
@@ -141,7 +140,7 @@ def test_job_auto_tag():
             log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
         )
         assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r", encoding="utf8")
+        stdout_file = open(compute_io_path, encoding="utf8")
         file_contents = normalize_file_content(stdout_file.read())
 
         stdout_file.close()

@@ -1,14 +1,15 @@
+from collections.abc import Mapping
 from contextlib import ExitStack
-from typing import Any, Dict, Mapping, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import (
     default_job_io_manager_with_fs_io_manager_schema,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
@@ -17,12 +18,15 @@ from dagster._core.execution.context.output import build_output_context
 from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
-from dagster._core.storage.io_manager import IOManager
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
 
+if TYPE_CHECKING:
+    from dagster._core.storage.io_manager import IOManager
 
+
+@public
 class AssetValueLoader:
     """Caches resource definitions that are used to load asset values across multiple load
     invocations.
@@ -37,7 +41,7 @@ class AssetValueLoader:
         instance: Optional[DagsterInstance] = None,
     ):
         self._assets_defs_by_key = assets_defs_by_key
-        self._resource_instance_cache: Dict[str, object] = {}
+        self._resource_instance_cache: dict[str, object] = {}
         self._exit_stack: ExitStack = ExitStack().__enter__()
         if not instance and is_dagster_home_set():
             self._instance = self._exit_stack.enter_context(DagsterInstance.get())
@@ -75,12 +79,12 @@ class AssetValueLoader:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type[object]] = None,
+        python_type: Optional[type[object]] = None,
         partition_key: Optional[str] = None,
-        input_definition_metadata: Optional[Dict[str, Any]] = None,
+        input_definition_metadata: Optional[dict[str, Any]] = None,
         resource_config: Optional[Mapping[str, Any]] = None,
         # deprecated
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> object:
         """Loads the contents of an asset as a Python object.
 
@@ -131,7 +135,7 @@ class AssetValueLoader:
             {k: v for k, v in resource_defs.items() if k in required_resource_keys},
             resource_config=resource_config,
         )
-        io_manager = cast(IOManager, self._resource_instance_cache[io_manager_key])
+        io_manager = cast("IOManager", self._resource_instance_cache[io_manager_key])
 
         io_config = resource_config.get(io_manager_key)
         io_resource_config = {io_manager_key: io_config} if io_config else {}

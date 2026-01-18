@@ -1,18 +1,17 @@
 import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import {useMemo, useState} from 'react';
 
-import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
+import {TruncatedTextWithFullTextOnHover} from '../../TruncatedTextWithFullTextOnHover';
 import {FilterDropdown} from '../FilterDropdown';
 import {useFilters} from '../useFilters';
 import {useStaticSetFilter} from '../useStaticSetFilter';
-import {useTimeRangeFilter} from '../useTimeRangeFilter';
+import {TimeRangeState, useTimeRangeFilter} from '../useTimeRangeFilter';
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'useFilters',
   component: FilterDropdown,
-} as Meta;
+};
 
 const TestComponent = () => {
   const [userState, setUserState] = useState<Set<any>>(new Set());
@@ -90,10 +89,16 @@ const TestComponent = () => {
     ),
   });
 
+  const [timeRangeState, setTimeRangeState] = useState<TimeRangeState | undefined>(undefined);
+
   const timeRangeFilter = useTimeRangeFilter({
     name: 'Timestamp',
     activeFilterTerm: 'Timestamp',
     icon: 'date',
+    onStateChanged: (state) => {
+      setTimeRangeState(state);
+    },
+    state: timeRangeState,
   });
 
   const filters = useMemo(

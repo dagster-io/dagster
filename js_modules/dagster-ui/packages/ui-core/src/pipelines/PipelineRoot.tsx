@@ -2,7 +2,7 @@ import {Redirect, Switch} from 'react-router-dom';
 import {JobFallthroughRoot} from 'shared/pipelines/JobFallthroughRoot.oss';
 
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
-import {PipelineRunsRoot} from './PipelineRunsRoot';
+import {PipelineRunsFeedRoot} from './PipelineRunsFeedRoot';
 import {Route} from '../app/Route';
 import {JobOrAssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchpadSetupFromRunRoot} from '../launchpad/LaunchpadSetupFromRunRoot';
@@ -70,7 +70,7 @@ export const PipelineRoot = (props: Props) => {
             '/locations/:repoPath/jobs/:pipelinePath/runs',
           ]}
         >
-          <PipelineRunsRoot repoAddress={repoAddress} />
+          <PipelineRunsFeedRoot repoAddress={repoAddress} />
         </Route>
         <Route
           path={[

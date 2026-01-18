@@ -1,19 +1,18 @@
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
-from dagster._core.remote_representation import RepresentedJob
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.historical import HistoricalJob
+from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.dagster_types import (
@@ -58,7 +57,9 @@ class GrapheneInputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info: ResolveInfo) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_job.job_snapshot, self._input_def_snap.dagster_type_key
+            self._represented_job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+            self._represented_job.job_snapshot.config_schema_snapshot.get_config_snap,
+            self._input_def_snap.dagster_type_key,
         )
 
     def resolve_metadata_entries(self, _graphene_info):
@@ -77,18 +78,16 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def __init__(
         self,
-        represented_pipeline: RepresentedJob,
+        represented_job: RepresentedJob,
         solid_def_name: str,
         output_def_name: str,
         is_dynamic: bool,
     ):
-        self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedJob
-        )
+        self._represented_job = check.inst_param(represented_job, "represented_job", RepresentedJob)
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(output_def_name, "output_def_name")
 
-        node_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
+        node_def_snap = represented_job.get_node_def_snap(solid_def_name)
         self._output_def_snap = node_def_snap.get_output_snap(output_def_name)
 
         super().__init__(
@@ -99,7 +98,8 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_pipeline.job_snapshot,
+            self._represented_job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+            self._represented_job.job_snapshot.config_schema_snapshot.get_config_snap,
             self._output_def_snap.dagster_type_key,
         )
 
@@ -333,7 +333,7 @@ def _build_solid_handles(
 ) -> Sequence["GrapheneSolidHandle"]:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
-    all_handle: List[GrapheneSolidHandle] = []
+    all_handle: list[GrapheneSolidHandle] = []
     for solid_invocation in current_dep_index.node_invocations:
         solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.node_def_name
         handle = GrapheneSolidHandle(
@@ -373,7 +373,8 @@ class GrapheneISolidDefinition(graphene.Interface):
     metadata = non_null_list(GrapheneMetadataItemDefinition)
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
-    asset_nodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    pools = non_null_list(graphene.String)
 
     class Meta:
         name = "ISolidDefinition"
@@ -424,57 +425,48 @@ class ISolidDefinitionMixin:
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
 
-    def resolve_asset_nodes(self, graphene_info: ResolveInfo) -> Sequence["GrapheneAssetNode"]:
-        # NOTE: This is a temporary hack. We really should prob be resolving solids against the repo
-        # rather than pipeline, that way we would not have to refetch the repo here here in order to
-        # access the asset nodes.
+    def resolve_assetNodes(self, graphene_info: ResolveInfo) -> Sequence["GrapheneAssetNode"]:
         from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
         # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
         if isinstance(self._represented_pipeline, HistoricalJob):
             return []
         else:
-            assert isinstance(self._represented_pipeline, ExternalJob)
-            repo_handle = self._represented_pipeline.repository_handle
-            origin = repo_handle.code_location_origin
-            location = graphene_info.context.get_code_location(origin.location_name)
-            ext_repo = location.get_repository(repo_handle.repository_name)
-            nodes = [
-                node
-                for node in ext_repo.get_asset_node_snaps()
+            assert isinstance(self._represented_pipeline, RemoteJob)
+            job_asset_nodes = graphene_info.context.get_assets_in_job(
+                self._represented_pipeline.handle.to_selector()
+            )
+            remote_nodes = [
+                remote_node
+                for remote_node in job_asset_nodes
                 if (
-                    (node.node_definition_name == self.solid_def_name)
-                    or (node.graph_name and node.graph_name == self.solid_def_name)
+                    (remote_node.asset_node_snap.node_definition_name == self.solid_def_name)
+                    or (
+                        remote_node.asset_node_snap.graph_name
+                        and remote_node.asset_node_snap.graph_name == self.solid_def_name
+                    )
                 )
             ]
-            asset_checks_loader = AssetChecksLoader(
-                context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
-            )
-
-            base_deployment_context = graphene_info.context.get_base_deployment_context()
 
             return [
                 GrapheneAssetNode(
-                    repository_selector=ext_repo.selector,
-                    asset_node_snap=node,
-                    asset_checks_loader=asset_checks_loader,
-                    # base_deployment_context will be None if we are not in a branch deployment
-                    asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-                        code_location_name=location.name,
-                        repository_name=ext_repo.name,
-                        branch_workspace=graphene_info.context,
-                        base_workspace=base_deployment_context,
-                    )
-                    if base_deployment_context is not None
-                    else None,
+                    remote_node=remote_node,
                 )
-                for node in nodes
+                for remote_node in remote_nodes
             ]
+
+    def resolve_pools(self, _graphene_info) -> Sequence[str]:
+        if isinstance(self._solid_def_snap, OpDefSnap):
+            return [self._solid_def_snap.pool] if self._solid_def_snap.pool else []
+        if isinstance(self._solid_def_snap, GraphDefSnap):
+            return list(self._solid_def_snap.pools)
+        return []
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     config_field = graphene.Field(GrapheneConfigTypeField)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    pool = graphene.String()
 
     class Meta:
         interfaces = (GrapheneISolidDefinition,)
@@ -484,7 +476,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
         _solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
         if not isinstance(_solid_def_snap, OpDefSnap):
-            check.failed("Expected SolidDefSnap")
+            check.failed("Expected OpDefSnap")
         self._solid_def_snap = _solid_def_snap
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
@@ -494,7 +486,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     ) -> Optional[GrapheneConfigTypeField]:
         return (
             GrapheneConfigTypeField(
-                config_schema_snapshot=self._represented_pipeline.config_schema_snapshot,
+                get_config_type=self._represented_pipeline.config_schema_snapshot.get_config_snap,
                 field_snap=self._solid_def_snap.config_field_snap,
             )
             if self._solid_def_snap.config_field_snap
@@ -507,6 +499,9 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         return [
             GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
         ]
+
+    def resolve_pool(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._solid_def_snap.pool
 
 
 class GrapheneSolidStepStatsUnavailableError(graphene.ObjectType):

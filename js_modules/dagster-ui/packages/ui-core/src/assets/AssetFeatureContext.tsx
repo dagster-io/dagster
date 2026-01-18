@@ -2,14 +2,14 @@ import * as React from 'react';
 
 import {AssetTabConfig, AssetTabConfigInput, useAssetTabs} from './AssetTabs';
 import {AssetKey, AssetViewParams} from './types';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 
 export type AssetViewFeatureInput = {
   selectedTab: string;
   assetKey: AssetKey;
-  definition: AssetNodeDefinitionFragment | null;
+  definition: AssetViewDefinitionNodeFragment | null;
 };
 
 type AssetFeatureContextType = {

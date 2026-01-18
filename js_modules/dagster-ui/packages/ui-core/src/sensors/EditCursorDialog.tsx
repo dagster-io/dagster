@@ -1,22 +1,22 @@
 import {
+  Box,
   Button,
   ButtonLink,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   TextArea,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import 'chartjs-adapter-date-fns';
 
+import {gql, useMutation} from '../apollo-client';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
 } from './types/EditCursorDialog.types';
-import {gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -51,7 +51,7 @@ export const EditCursorDialog = ({
       await showSharedToaster({
         intent: 'danger',
         message: (
-          <Group direction="row" spacing={8}>
+          <Box flex={{direction: 'row', gap: 8}}>
             <div>Could not set cursor value.</div>
             <ButtonLink
               color={Colors.accentReversed()}
@@ -70,7 +70,7 @@ export const EditCursorDialog = ({
             >
               View error
             </ButtonLink>
-          </Group>
+          </Box>
         ),
       });
     }
@@ -92,7 +92,7 @@ export const EditCursorDialog = ({
       <DialogBody>
         <TextArea
           value={cursorValue}
-          $resize="vertical"
+          resize="vertical"
           onChange={(e) => setCursorValue(e.target.value)}
           style={{width: '100%'}}
         />

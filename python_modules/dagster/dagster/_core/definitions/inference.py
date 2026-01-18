@@ -1,14 +1,16 @@
+from collections.abc import Callable, Mapping, Sequence
 from inspect import Parameter, Signature, isgeneratorfunction, signature
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Optional
+
+from dagster_shared.record import record
+from docstring_parser import parse
 
 from dagster._core.decorator_utils import get_type_hints
 from dagster._core.definitions.utils import NoValueSentinel
-from dagster._seven import is_module_available
-
-IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
 
 
-class InferredInputProps(NamedTuple):
+@record
+class InferredInputProps:
     """The information about an input that can be inferred from the function signature."""
 
     name: str
@@ -17,7 +19,8 @@ class InferredInputProps(NamedTuple):
     default_value: Any = NoValueSentinel
 
 
-class InferredOutputProps(NamedTuple):
+@record
+class InferredOutputProps:
     """The information about an input that can be inferred from the function signature."""
 
     annotation: Any
@@ -26,10 +29,8 @@ class InferredOutputProps(NamedTuple):
 
 def _infer_input_description_from_docstring(fn: Callable[..., Any]) -> Mapping[str, Optional[str]]:
     doc_str = fn.__doc__
-    if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
+    if doc_str is None:
         return {}
-
-    from docstring_parser import parse
 
     try:
         docstring = parse(doc_str)
@@ -40,9 +41,8 @@ def _infer_input_description_from_docstring(fn: Callable[..., Any]) -> Mapping[s
 
 def _infer_output_description_from_docstring(fn: Callable[..., Any]) -> Optional[str]:
     doc_str = fn.__doc__
-    if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
+    if doc_str is None:
         return None
-    from docstring_parser import parse
 
     try:
         docstring = parse(doc_str)
@@ -83,15 +83,15 @@ def _infer_inputs_from_params(
     for param in params:
         if param.default is not Parameter.empty:
             input_def = InferredInputProps(
-                param.name,
-                type_hints.get(param.name, param.annotation),
+                name=param.name,
+                annotation=type_hints.get(param.name, param.annotation),
                 default_value=param.default,
                 description=_descriptions.get(param.name),
             )
         else:
             input_def = InferredInputProps(
-                param.name,
-                type_hints.get(param.name, param.annotation),
+                name=param.name,
+                annotation=type_hints.get(param.name, param.annotation),
                 description=_descriptions.get(param.name),
             )
 

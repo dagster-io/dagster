@@ -1,28 +1,20 @@
 import datetime
 import os
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
-from dagster._annotations import deprecated, experimental
+from dagster_shared.serdes import whitelist_for_serdes
+
+from dagster._annotations import deprecated
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.assets.graph.base_asset_graph import sort_key_for_asset_partition
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.base_asset_graph import sort_key_for_asset_partition
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
@@ -30,17 +22,16 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
-    get_time_partitions_def,
 )
+from dagster._core.definitions.partitions.utils import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
 if TYPE_CHECKING:
@@ -52,7 +43,6 @@ if TYPE_CHECKING:
     )
 
 
-@deprecated(breaking_version="1.9")
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
@@ -137,10 +127,7 @@ class MaterializeOnCronRule(
         if self.all_partitions:
             return {
                 AssetKeyPartitionKey(context.legacy_context.asset_key, partition_key)
-                for partition_key in partitions_def.get_partition_keys(
-                    current_time=context.legacy_context.evaluation_time,
-                    dynamic_partitions_store=context.legacy_context.instance_queryer,
-                )
+                for partition_key in partitions_def.get_partition_keys()
             }
 
         # for partitions_defs without a time component, just return the last partition if any ticks
@@ -149,23 +136,17 @@ class MaterializeOnCronRule(
         if time_partitions_def is None:
             return {
                 AssetKeyPartitionKey(
-                    context.legacy_context.asset_key,
-                    partitions_def.get_last_partition_key(
-                        dynamic_partitions_store=context.legacy_context.instance_queryer
-                    ),
+                    context.legacy_context.asset_key, partitions_def.get_last_partition_key()
                 )
             }
 
-        missed_time_partition_keys = filter(
-            None,
-            [
-                time_partitions_def.get_last_partition_key(
-                    current_time=missed_tick,
-                    dynamic_partitions_store=context.legacy_context.instance_queryer,
-                )
-                for missed_tick in missed_ticks
-            ],
-        )
+        missed_time_partition_keys = []
+        for missed_tick in missed_ticks:
+            with partition_loading_context(effective_dt=missed_tick):
+                missed_key = time_partitions_def.get_last_partition_key()
+                if missed_key is not None:
+                    missed_time_partition_keys.append(missed_key)
+
         # for multi partitions definitions, request to materialize all partitions for each missed
         # cron schedule tick
         if isinstance(partitions_def, MultiPartitionsDefinition):
@@ -175,7 +156,6 @@ class MaterializeOnCronRule(
                 for partition_key in partitions_def.get_multipartition_keys_with_dimension_value(
                     partitions_def.time_window_dimension.name,
                     time_partition_key,
-                    dynamic_partitions_store=context.legacy_context.instance_queryer,
                 )
             }
         else:
@@ -222,7 +202,7 @@ class MaterializeOnCronRule(
 
 
 @whitelist_for_serdes
-@experimental
+@deprecated(breaking_version="1.10.0")
 class AutoMaterializeAssetPartitionsFilter(
     NamedTuple(
         "_AutoMaterializeAssetPartitionsFilter",
@@ -232,7 +212,7 @@ class AutoMaterializeAssetPartitionsFilter(
     """A filter that can be applied to an asset partition, during auto-materialize evaluation, and
     returns a boolean for whether it passes.
 
-    Attributes:
+    Args:
         latest_run_required_tags (Optional[Sequence[str]]): `passes` returns
             True if the run responsible for the latest materialization of the asset partition
             has all of these tags.
@@ -250,8 +230,8 @@ class AutoMaterializeAssetPartitionsFilter(
         if self.latest_run_required_tags is None:
             return asset_partitions
 
-        will_update_asset_partitions: Set[AssetKeyPartitionKey] = set()
-        storage_ids_to_fetch_by_key: Dict[AssetKey, List[int]] = defaultdict(list)
+        will_update_asset_partitions: set[AssetKeyPartitionKey] = set()
+        storage_ids_to_fetch_by_key: dict[AssetKey, list[int]] = defaultdict(list)
 
         for asset_partition in asset_partitions:
             if context.legacy_context.will_update_asset_partition(asset_partition):
@@ -263,7 +243,7 @@ class AutoMaterializeAssetPartitionsFilter(
                 if latest_storage_id is not None:
                     storage_ids_to_fetch_by_key[asset_partition.asset_key].append(latest_storage_id)
 
-        asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        asset_partitions_by_latest_run_id: dict[str, set[AssetKeyPartitionKey]] = defaultdict(set)
 
         step = int(os.getenv("DAGSTER_ASSET_DAEMON_RUN_TAGS_EVENT_FETCH_LIMIT", "1000"))
 
@@ -357,17 +337,15 @@ class MaterializeOnParentUpdatedRule(
         )
 
         asset_partitions_by_updated_parents: Mapping[
-            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+            AssetKeyPartitionKey, set[AssetKeyPartitionKey]
         ] = defaultdict(set)
         asset_partitions_by_will_update_parents: Mapping[
-            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+            AssetKeyPartitionKey, set[AssetKeyPartitionKey]
         ] = defaultdict(set)
 
         subset_to_evaluate = context.legacy_context.parent_has_or_will_update_subset
         for asset_partition in subset_to_evaluate.asset_partitions:
             parent_asset_partitions = context.legacy_context.asset_graph.get_parents_partitions(
-                dynamic_partitions_store=context.legacy_context.instance_queryer,
-                current_time=context.legacy_context.instance_queryer.evaluation_time,
                 asset_key=asset_partition.asset_key,
                 partition_key=asset_partition.partition_key,
             ).parent_partitions
@@ -400,10 +378,10 @@ class MaterializeOnParentUpdatedRule(
             else updated_and_will_update_parents
         )
 
-        updated_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+        updated_parent_assets_by_asset_partition: dict[AssetKeyPartitionKey, set[AssetKey]] = (
             defaultdict(set)
         )
-        will_update_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+        will_update_parent_assets_by_asset_partition: dict[AssetKeyPartitionKey, set[AssetKey]] = (
             defaultdict(set)
         )
 
@@ -502,8 +480,6 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                     handled_subset, context.legacy_context.partitions_def
                 ).inverse(
                     context.legacy_context.partitions_def,
-                    context.legacy_context.evaluation_time,
-                    context.legacy_context.instance_queryer,
                 )
                 if handled_subset.size > 0
                 else context.legacy_context.candidate_subset
@@ -518,17 +494,15 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 context.legacy_context.candidate_parent_has_or_will_update_subset.asset_partitions
             )
             if isinstance(context.legacy_context.partitions_def, TimeWindowPartitionsDefinition):
-                last_partition_key = context.legacy_context.partitions_def.get_last_partition_key(
-                    current_time=context.legacy_context.evaluation_time
+                last_partition_key = context.legacy_context.partitions_def.get_last_partition_key()
+                effective_dt = datetime.datetime.fromtimestamp(
+                    context.legacy_context.previous_evaluation_timestamp or 0,
+                    tz=datetime.timezone.utc,
                 )
-                previous_last_partition_key = (
-                    context.legacy_context.partitions_def.get_last_partition_key(
-                        current_time=datetime.datetime.fromtimestamp(
-                            context.legacy_context.previous_evaluation_timestamp or 0,
-                            tz=datetime.timezone.utc,
-                        )
+                with partition_loading_context(effective_dt=effective_dt):
+                    previous_last_partition_key = (
+                        context.legacy_context.partitions_def.get_last_partition_key()
                     )
-                )
                 if last_partition_key != previous_last_partition_key:
                     asset_partitions_to_evaluate |= {
                         AssetKeyPartitionKey(context.legacy_context.asset_key, last_partition_key)
@@ -687,7 +661,7 @@ class SkipOnNotAllParentsUpdatedRule(
     """An auto-materialize rule that enforces that an asset can only be materialized if all parents
     have been materialized since the asset's last materialization.
 
-    Attributes:
+    Args:
         require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
             asset or an asset partition that depends on more than one partition in any upstream asset.
             If true, requires all upstream partitions in each upstream asset to be materialized since
@@ -724,8 +698,6 @@ class SkipOnNotAllParentsUpdatedRule(
         )
         for candidate in subset_to_evaluate.asset_partitions:
             parent_partitions = context.legacy_context.asset_graph.get_parents_partitions(
-                context.legacy_context.instance_queryer,
-                context.legacy_context.instance_queryer.evaluation_time,
                 context.legacy_context.asset_key,
                 candidate.partition_key,
             ).parent_partitions
@@ -858,6 +830,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_cursor(
                     asset_key=parent_asset_key,
                     after_cursor=context.legacy_context.previous_max_storage_id,
+                    require_data_version_update=False,
                 ),
                 parent_partitions_def,
             )
@@ -929,8 +902,6 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                         child_asset_partition.partition_key,
                         parent_asset_key,
                         child_asset_partition.asset_key,
-                        context.legacy_context.instance_queryer,
-                        context.legacy_context.evaluation_time,
                     ).partitions_subset
                 )
 
@@ -1041,10 +1012,7 @@ class SkipOnRequiredButNonexistentParentsRule(
         for candidate in subset_to_evaluate.asset_partitions:
             nonexistent_parent_partitions = (
                 context.legacy_context.asset_graph.get_parents_partitions(
-                    context.legacy_context.instance_queryer,
-                    context.legacy_context.instance_queryer.evaluation_time,
-                    candidate.asset_key,
-                    candidate.partition_key,
+                    candidate.asset_key, candidate.partition_key
                 ).required_but_nonexistent_parents_partitions
             )
 
@@ -1088,14 +1056,19 @@ class SkipOnBackfillInProgressRule(
             AutomationResult,
         )
 
+        # this backfilling subset is aware of the current partitions definitions, and so will
+        # be valid
+        asset_subset = (
+            context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset().get_asset_subset(
+                context.legacy_context.asset_key
+            )
+            or context.asset_graph_view.get_empty_subset(
+                key=context.legacy_context.asset_key
+            ).convert_to_serializable_subset()
+        )
+
         backfilling_subset = ValidAssetSubset.coerce_from_subset(
-            # this backfilling subset is aware of the current partitions definitions, and so will
-            # be valid
-            (
-                context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-            ).get_asset_subset(
-                context.legacy_context.asset_key, context.legacy_context.asset_graph
-            ),
+            asset_subset,
             context.legacy_context.partitions_def,
         )
 

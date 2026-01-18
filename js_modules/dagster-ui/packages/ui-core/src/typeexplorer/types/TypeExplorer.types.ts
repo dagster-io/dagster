@@ -75,6 +75,7 @@ export type TypeExplorerFragment_ListDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -110,6 +111,7 @@ export type TypeExplorerFragment_ListDagsterType = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -132,6 +134,7 @@ export type TypeExplorerFragment_ListDagsterType = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1322,6 +1325,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1357,6 +1361,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1379,6 +1384,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2569,6 +2575,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2604,6 +2611,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2626,6 +2634,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;

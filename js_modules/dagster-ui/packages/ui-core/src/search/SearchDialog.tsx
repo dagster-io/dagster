@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -11,8 +11,6 @@ import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
 import {useTrackEvent} from '../app/analytics';
 
 const MAX_DISPLAYED_RESULTS = 50;
@@ -72,9 +70,17 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-export const SearchDialog = () => {
+// sort by Fuse score ascending, lower is better
+const sortResultsByFuseScore = (
+  a: Fuse.FuseResult<SearchResult>,
+  b: Fuse.FuseResult<SearchResult>,
+) => {
+  return (a.score ?? 0) - (b.score ?? 0);
+};
+
+export const useSearchDialog = () => {
   const history = useHistory();
-  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
+  const {loading, searchPrimary, searchSecondary} = useGlobalSearch({
     searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
@@ -82,43 +88,40 @@ export const SearchDialog = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
 
-  const results = [...primaryResults, ...secondaryResults];
-  const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
-  const numRenderedResults = renderedResults.length;
+  const {renderedResults, numRenderedResults} = React.useMemo(() => {
+    const results = [...primaryResults, ...secondaryResults].sort(sortResultsByFuseScore);
+    const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
+    return {renderedResults, numRenderedResults: renderedResults.length};
+  }, [primaryResults, secondaryResults]);
 
   const openSearch = React.useCallback(() => {
     trackEvent('open-global-search');
     trackEvent('searchOpen');
-    initialize();
     dispatch({type: 'show-dialog'});
-  }, [initialize, trackEvent]);
+  }, [trackEvent]);
 
   React.useEffect(() => {
     __updateSearchVisibility(shown);
   }, [shown]);
 
-  const searchAndHandlePrimary = React.useCallback(
-    async (queryString: string) => {
-      const {queryString: queryStringForResults, results} = await searchPrimary(queryString);
-      dispatch({type: 'complete-primary', queryString: queryStringForResults, results});
-    },
-    [searchPrimary],
-  );
-
-  const searchAndHandleSecondary = React.useCallback(
-    async (queryString: string) => {
-      const {queryString: queryStringForResults, results} = await searchSecondary(queryString);
-      dispatch({type: 'complete-secondary', queryString: queryStringForResults, results});
-    },
-    [searchSecondary],
-  );
-
   const debouncedSearch = React.useMemo(() => {
     return debounce(async (queryString: string) => {
-      searchAndHandlePrimary(queryString);
-      searchAndHandleSecondary(queryString);
+      const [secondaryResults, primaryResults] = await Promise.all([
+        searchSecondary(queryString),
+        searchPrimary(queryString),
+      ]);
+      dispatch({
+        type: 'complete-primary',
+        queryString: primaryResults.queryString,
+        results: primaryResults.results,
+      });
+      dispatch({
+        type: 'complete-secondary',
+        queryString: secondaryResults.queryString,
+        results: secondaryResults.results,
+      });
     }, DEBOUNCE_MSEC);
-  }, [searchAndHandlePrimary, searchAndHandleSecondary]);
+  }, [searchPrimary, searchSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -133,18 +136,6 @@ export const SearchDialog = () => {
     },
     [history],
   );
-
-  const shortcutFilter = React.useCallback((e: KeyboardEvent) => {
-    if (e.altKey || e.shiftKey) {
-      return false;
-    }
-
-    if (e.ctrlKey || e.metaKey) {
-      return e.code === 'KeyK';
-    }
-
-    return e.code === 'Slash';
-  }, []);
 
   const highlightedResult = renderedResults[highlight] || null;
 
@@ -185,18 +176,9 @@ export const SearchDialog = () => {
     }
   };
 
-  return (
-    <>
-      <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <Tooltip
-          content={<TooltipShortcutInfo label="Search" shortcutKey="/" />}
-          placement="bottom"
-        >
-          <TopNavButton onClick={openSearch}>
-            <Icon name="search" size={20} />
-          </TopNavButton>
-        </Tooltip>
-      </ShortcutHandler>
+  return {
+    openSearch,
+    overlay: (
       <Overlay
         backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
         isOpen={shown}
@@ -227,8 +209,8 @@ export const SearchDialog = () => {
           />
         </Container>
       </Overlay>
-    </>
-  );
+    ),
+  };
 };
 
 const Container = styled.div`
@@ -272,7 +254,7 @@ export const SearchInput = styled.input`
   border: none;
   color: ${Colors.textDefault()};
   font-family: ${FontFamily.default};
-  font-size: 18px;
+  font-size: 16px;
   margin-left: 4px;
   outline: none;
   width: 100%;

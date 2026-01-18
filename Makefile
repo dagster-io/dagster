@@ -7,20 +7,23 @@
 #   regardless of the preceding command's exit status.
 
 pyright:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --all
 
 install_prettier:
 	npm install -g prettier
 
 install_pyright:
-	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
+	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
 
 rebuild_pyright:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --all --rebuild
 
 # Skip typecheck so that this can be used to test if all requirements can successfully be resolved
 # in CI independently of typechecking.
 rebuild_pyright_pins:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --update-pins --skip-typecheck
 
 quick_pyright:
@@ -30,34 +33,42 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	-ruff check --fix .
+	ruff check --fix .
 	ruff format .
 
 check_ruff:
 	ruff check .
 	ruff format --check .
 
+unsafe_ruff:
+	ruff check --fix --unsafe-fixes .
+	ruff format .
+
 check_prettier:
-#NOTE:  excludes README.md because it's a symlink
+#NOTE: excludes symlinked md files
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --check
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--check
 
 prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --write
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--write
 
 install_dev_python_modules:
-	python scripts/install_dev_python_modules.py -qqq
+	python scripts/install_dev_python_modules.py -q
 
 install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
 
 install_dev_python_modules_verbose_m1:
-	python scripts/install_dev_python_modules.py -qqq --include-prebuilt-grpcio-wheel
+	python scripts/install_dev_python_modules.py --include-prebuilt-grpcio-wheel
 
 graphql:
 	cd js_modules/dagster-ui/; make generate-graphql; make generate-perms
@@ -65,8 +76,8 @@ graphql:
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
 #NOTE:  dagster-hex is an external package
-	@echo Checking for prod installs - if any are listed below reinstall with 'pip -e'
-	@! (pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
+	@echo Checking for prod installs - if any are listed below reinstall with 'uv pip install -e'
+	@! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
 	cd js_modules/dagster-ui/; yarn install && yarn build
@@ -88,3 +99,6 @@ check_manifest:
 	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
+
+format_docs:
+	cd docs; yarn format

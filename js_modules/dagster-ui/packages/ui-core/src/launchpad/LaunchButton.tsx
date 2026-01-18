@@ -20,7 +20,7 @@ export interface LaunchButtonConfiguration {
   disabled: boolean;
   warning?: React.ReactNode;
   scope?: string;
-  onClick: () => Promise<any>;
+  onClick: (e: React.MouseEvent | KeyboardEvent) => Promise<any>;
   icon?: IconName | JSX.Element | 'dagster-spinner';
   tooltip?: string | JSX.Element;
 }
@@ -34,9 +34,12 @@ enum LaunchButtonStatus {
 function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; disabled: boolean}) {
   const [starting, setStarting] = React.useState(false);
 
-  const onConfigSelected = async (option: LaunchButtonConfiguration) => {
+  const onConfigSelected = async (
+    e: React.MouseEvent | KeyboardEvent,
+    option: LaunchButtonConfiguration,
+  ) => {
     setStarting(true);
-    await option.onClick();
+    await option.onClick(e);
     setStarting(false);
   };
 
@@ -69,8 +72,10 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
     runCount,
     disabled: config.disabled,
   });
-  const onClick = () => {
-    status === LaunchButtonStatus.Ready && onConfigSelected(config);
+  const onClick = (e: React.MouseEvent | KeyboardEvent) => {
+    if (status === LaunchButtonStatus.Ready) {
+      onConfigSelected(e, config);
+    }
   };
   return (
     <ShortcutHandler
@@ -118,7 +123,7 @@ export const LaunchButtonDropdown = ({
 
   return (
     <ShortcutHandler
-      onShortcut={() => onConfigSelected(primary)}
+      onShortcut={(e) => onConfigSelected(e, primary)}
       shortcutLabel="⌥L"
       shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
@@ -128,7 +133,7 @@ export const LaunchButtonDropdown = ({
         joined="right"
         icon={icon}
         tooltip={tooltip}
-        onClick={() => onConfigSelected(primary)}
+        onClick={(e) => onConfigSelected(e, primary)}
         disabled={!!disabled}
         {...forced}
       />
@@ -140,18 +145,11 @@ export const LaunchButtonDropdown = ({
         content={
           <Menu>
             {options.map((option, idx) => (
-              <Tooltip
-                key={idx}
-                hoverOpenDelay={300}
-                position="left"
-                openOnTargetFocus={false}
-                targetTagName="div"
-                content={option.tooltip || ''}
-              >
+              <Tooltip key={idx} position="left" content={option.tooltip || ''}>
                 <LaunchMenuItem
                   text={option.title}
                   disabled={option.disabled}
-                  onClick={() => onConfigSelected(option)}
+                  onClick={(e) => onConfigSelected(e, option)}
                   icon={option.icon !== 'dagster-spinner' ? option.icon : undefined}
                 />
               </Tooltip>
@@ -181,7 +179,7 @@ interface ButtonWithConfigurationProps {
   icon?: IconName | JSX.Element | 'dagster-spinner';
   joined?: 'left' | 'right';
   tooltip?: string | JSX.Element;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
   disabled?: boolean;
 }
 
@@ -200,7 +198,7 @@ const ButtonWithConfiguration = ({
 }: ButtonWithConfigurationProps) => {
   const confirm = useConfirmation();
 
-  const onClickWithWarning = async () => {
+  const onClickWithWarning = async (e: React.MouseEvent) => {
     if (!onClick || disabled) {
       return;
     }
@@ -211,17 +209,11 @@ const ButtonWithConfiguration = ({
         return;
       }
     }
-    onClick();
+    onClick(e);
   };
 
   return (
-    <Tooltip
-      position="left"
-      openOnTargetFocus={false}
-      targetTagName="div"
-      canShow={!!tooltip}
-      content={tooltip || ''}
-    >
+    <Tooltip position="left" canShow={!!tooltip} content={tooltip || ''}>
       <ButtonContainer
         role="button"
         intent="primary"

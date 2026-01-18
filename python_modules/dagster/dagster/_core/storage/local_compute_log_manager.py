@@ -2,11 +2,12 @@ import os
 import shutil
 import sys
 from collections import defaultdict
+from collections.abc import Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Generator, Iterator, Mapping, Optional, Sequence, Tuple
+from typing import IO, Final, Optional
 
-from typing_extensions import Final
+from dagster_shared.seven import json
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
@@ -16,6 +17,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.compute_log_manager import (
@@ -27,7 +29,6 @@ from dagster._core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -41,6 +42,7 @@ IO_TYPE_EXTENSION: Final[Mapping[ComputeIOType, str]] = {
 MAX_FILENAME_LENGTH: Final = 255
 
 
+@public
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
@@ -104,10 +106,10 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self, log_key: Sequence[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
     ) -> CapturedLogData:
         stdout_cursor, stderr_cursor = self.parse_cursor(cursor)
-        stdout, stdout_offset = self._read_bytes(
+        stdout, stdout_offset = self.get_log_data_for_type(
             log_key, ComputeIOType.STDOUT, offset=stdout_cursor, max_bytes=max_bytes
         )
-        stderr, stderr_offset = self._read_bytes(
+        stderr, stderr_offset = self.get_log_data_for_type(
             log_key, ComputeIOType.STDERR, offset=stderr_cursor, max_bytes=max_bytes
         )
         return CapturedLogData(
@@ -155,7 +157,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         else:
             check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
-    def _read_bytes(
+    def get_log_data_for_type(
         self,
         log_key: Sequence[str],
         io_type: ComputeIOType,
@@ -164,21 +166,6 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     ):
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         return self.read_path(path, offset or 0, max_bytes)
-
-    def parse_cursor(self, cursor: Optional[str] = None) -> Tuple[int, int]:
-        # Translates a string cursor into a set of byte offsets for stdout, stderr
-        if not cursor:
-            return 0, 0
-
-        parts = cursor.split(":")
-        if not parts or len(parts) != 2:
-            return 0, 0
-
-        stdout, stderr = [int(_) for _ in parts]
-        return stdout, stderr
-
-    def build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
-        return f"{stdout_offset}:{stderr_offset}"
 
     def complete_artifact_path(self, log_key):
         return self.get_captured_local_path(log_key, "complete")
@@ -355,7 +342,7 @@ class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
         self.update_paths = update_paths
         self.complete_paths = complete_paths
         patterns = update_paths + complete_paths
-        super(LocalComputeLogFilesystemEventHandler, self).__init__(patterns=patterns)
+        super().__init__(patterns=patterns)
 
     def on_created(self, event):
         if event.src_path in self.complete_paths:

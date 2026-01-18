@@ -7,22 +7,22 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
+from collections.abc import Generator, Mapping
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import Any, Generator, Generic, Mapping, Optional, TypeVar, Union
-
-from typing_extensions import TypeAlias
+from typing import Any, Generic, Optional, TypeAlias, TypeVar, Union
 
 from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._daemon.backfill import execute_backfill_iteration_loop
 from dagster._daemon.monitoring import (
     execute_concurrency_slots_iteration,
     execute_run_monitoring_iteration,
@@ -126,7 +126,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
                         break
                     except Exception:
-                        error_info = DaemonErrorCapture.on_exception(
+                        error_info = DaemonErrorCapture.process_exception(
                             exc_info=sys.exc_info(),
                             logger=self._logger,
                             log_message="Caught error, daemon loop will restart",
@@ -270,6 +270,11 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls) -> str:
         return "SCHEDULER"
 
+    def scheduler_delay_instrumentation(
+        self, scheduler_id: str, next_iteration_timestamp: float, now_timestamp: float
+    ) -> None:
+        pass
+
     def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
@@ -285,6 +290,7 @@ class SchedulerDaemon(DagsterDaemon):
             scheduler.max_catchup_runs,
             scheduler.max_tick_retries,
             shutdown_event,
+            self.scheduler_delay_instrumentation,
         )
 
 
@@ -311,6 +317,11 @@ class SensorDaemon(DagsterDaemon):
                     )
                 )
 
+    def instrument_elapsed(
+        self, sensor: RemoteSensor, elapsed: Optional[float], min_interval: int
+    ) -> None:
+        pass
+
     @classmethod
     def daemon_type(cls) -> str:
         return "SENSOR"
@@ -330,19 +341,58 @@ class SensorDaemon(DagsterDaemon):
             shutdown_event,
             threadpool_executor=self._threadpool_executor,
             submit_threadpool_executor=self._submit_threadpool_executor,
+            instrument_elapsed=self.instrument_elapsed,
         )
 
 
-class BackfillDaemon(IntervalDaemon):
+class BackfillDaemon(DagsterDaemon):
+    def __init__(self, settings: Mapping[str, Any]) -> None:
+        super().__init__()
+        self._exit_stack = ExitStack()
+        self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+        self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+
+        # Backfill daemon is enabled by default for reasons explained at:
+        # https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760
+        if settings.get("use_threads", True):
+            num_workers = settings.get("num_workers", 4)
+            if num_workers:
+                self._threadpool_executor = self._exit_stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_workers"),
+                        thread_name_prefix="backfill_daemon_worker",
+                    )
+                )
+
+            num_submit_workers = settings.get("num_submit_workers")
+            if num_submit_workers:
+                self._submit_threadpool_executor = self._exit_stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_submit_workers"),
+                        thread_name_prefix="backfill_submit_worker",
+                    )
+                )
+
     @classmethod
     def daemon_type(cls) -> str:
         return "BACKFILL"
 
-    def run_iteration(
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
+        super().__exit__(_exception_type, _exception_value, _traceback)
+
+    def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        shutdown_event: Event,
     ) -> DaemonIterator:
-        yield from execute_backfill_iteration(workspace_process_context, self._logger)
+        yield from execute_backfill_iteration_loop(
+            workspace_process_context,
+            self._logger,
+            shutdown_event,
+            threadpool_executor=self._threadpool_executor,
+            submit_threadpool_executor=self._submit_threadpool_executor,
+        )
 
 
 class MonitoringDaemon(IntervalDaemon):

@@ -1,4 +1,4 @@
-import {Box, Colors, NonIdealState, Row} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Row, SpinnerWithText} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
@@ -31,7 +31,7 @@ export const LogsScrollingTable = (props: Props) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const pinToBottom = useRef(true);
 
-  const {filteredNodes, textMatchNodes} = filterLogs(logs, filter, filterStepKeys);
+  const filteredNodes = filterLogs(logs, filter, filterStepKeys);
 
   const virtualizer = useVirtualizer({
     count: filteredNodes.length,
@@ -63,9 +63,13 @@ export const LogsScrollingTable = (props: Props) => {
       pinToBottom.current = shouldPin;
     };
 
-    parent && parent.addEventListener('scroll', onScroll);
+    if (parent) {
+      parent.addEventListener('scroll', onScroll);
+    }
     return () => {
-      parent && parent.removeEventListener('scroll', onScroll);
+      if (parent) {
+        parent.removeEventListener('scroll', onScroll);
+      }
     };
   }, [virtualizer]);
 
@@ -77,12 +81,10 @@ export const LogsScrollingTable = (props: Props) => {
   }, [totalHeight, virtualizer]);
 
   const content = () => {
-    if (logs.loading) {
+    if (logs.allNodeChunks.length === 0 && logs.loading) {
       return (
-        <Box margin={{top: 32}}>
-          <ListEmptyState>
-            <NonIdealState icon="spinner" title="Fetching logs..." />
-          </ListEmptyState>
+        <Box margin={{top: 32}} flex={{direction: 'column', alignItems: 'center'}}>
+          <SpinnerWithText label="Loading run logs…" />
         </Box>
       );
     }
@@ -102,10 +104,9 @@ export const LogsScrollingTable = (props: Props) => {
     return (
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const node = filteredNodes[index]!;
-          const textMatch = textMatchNodes.includes(node);
-          const focusedTimeMatch = Number(node.timestamp) === filter.focusedTime;
-          const highlighted = textMatch || focusedTimeMatch;
+          const highlighted = Number(node.timestamp) === filter.focusedTime;
 
           const row =
             node.__typename === 'LogMessageEvent' ? (

@@ -1,10 +1,12 @@
-import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
+import {Box, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 import {buildJobTabs} from 'shared/pipelines/buildJobTabs.oss';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 import {usePermissionsForLocation} from '../app/Permissions';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {JobTabs} from '../pipelines/JobTabs';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useRepository} from '../workspace/WorkspaceContext/util';
@@ -24,6 +26,7 @@ export const PipelineNav = (props: Props) => {
     '/locations/:repoPath/pipeline_or_job/:selector/:tab?',
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const explorerPath = explorerPathFromString(match!.params.selector);
   const {pipelineName, snapshotId} = explorerPath;
 
@@ -37,22 +40,33 @@ export const PipelineNav = (props: Props) => {
   // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
   // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
   const partitionSets = repo?.repository.partitionSets || [];
-  const hasLaunchpad = !isAssetJob;
+  const hasLaunchpad = !isAssetJob && !repoJobEntry?.externalJobSource;
   const hasPartitionSet = partitionSets.some(
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );
 
-  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet});
+  const pipelineSelector = useMemo(
+    () => ({
+      pipelineName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    }),
+    [pipelineName, repoAddress.name, repoAddress.location],
+  );
+
+  const {hasLaunchExecutionPermission} = useJobPermissions(pipelineSelector, repoAddress.location);
+
+  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission});
 
   return (
     <>
       <PageHeader
         title={
-          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/jobs">Jobs</Link>
             <span>/</span>
             {pipelineName}
-          </Heading>
+          </Subtitle1>
         }
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
@@ -71,6 +85,7 @@ export const PipelineNav = (props: Props) => {
             isJob={isJob}
             explorerPath={explorerPath}
             permissions={permissions}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             matchingTab={match!.params.tab}
             tabs={tabs}
           />

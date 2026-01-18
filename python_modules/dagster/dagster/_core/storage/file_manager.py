@@ -3,10 +3,9 @@ import os
 import shutil
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import BinaryIO, ContextManager, Iterator, Optional, TextIO, Union
-
-from typing_extensions import TypeAlias
+from typing import BinaryIO, ContextManager, Optional, TextIO, TypeAlias, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -20,6 +19,7 @@ from dagster._utils import mkdir_p
 IOStream: TypeAlias = Union[TextIO, BinaryIO]
 
 
+@public
 class FileHandle(ABC):
     """A reference to a file as manipulated by a FileManager.
 
@@ -40,6 +40,7 @@ class FileHandle(ABC):
         raise NotImplementedError()
 
 
+@public
 class LocalFileHandle(FileHandle):
     """A reference to a file on a local filesystem."""
 
@@ -59,6 +60,7 @@ class LocalFileHandle(FileHandle):
         return self._path
 
 
+@public
 class FileManager(ABC):
     """Base class for all file managers in dagster.
 
@@ -256,13 +258,13 @@ class LocalFileManager(FileManager):
         check.inst_param(file_handle, "file_handle", FileHandle)
         with self.read(file_handle, "rb") as handle_obj:  # type: ignore  # (??)
             temp_file_obj = self._temp_file_manager.tempfile()
-            temp_file_obj.write(handle_obj.read())
+            temp_file_obj.write(handle_obj.read())  # pyright: ignore[reportCallIssue,reportArgumentType]
             temp_name = temp_file_obj.name
             temp_file_obj.close()
             return temp_name
 
     @contextmanager
-    def read(self, file_handle: LocalFileHandle, mode: str = "rb") -> Iterator[IOStream]:
+    def read(self, file_handle: LocalFileHandle, mode: str = "rb") -> Iterator[IOStream]:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(file_handle, "file_handle", LocalFileHandle)
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")
@@ -271,7 +273,7 @@ class LocalFileManager(FileManager):
         with open(file_handle.path, mode, encoding=encoding) as file_obj:
             yield file_obj  # type: ignore  # (??)
 
-    def read_data(self, file_handle: LocalFileHandle) -> bytes:
+    def read_data(self, file_handle: LocalFileHandle) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride]
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()  # type: ignore  # (??)
 

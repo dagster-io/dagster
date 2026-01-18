@@ -16,14 +16,12 @@ class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
     """Override the actual handlers so that we can just test which run records they receive."""
 
     def __init__(self):
-        super(TestEventLogConsumerDaemon, self).__init__(
-            event_log_fetch_limit=TEST_EVENT_LOG_FETCH_LIMIT
-        )
+        super().__init__(event_log_fetch_limit=TEST_EVENT_LOG_FETCH_LIMIT)
         self.run_records = []
 
     @property
     def handle_updated_runs_fns(self):
-        def stash_run_records(_ctx, run_records):
+        def stash_run_records(_ctx, run_records, _logger):
             self.run_records = run_records
             yield
 

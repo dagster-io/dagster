@@ -1,9 +1,11 @@
 import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
 
 import {ExplorerPath} from './PipelinePathUtils';
+import {SidebarSection} from './SidebarComponents';
 import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
+import {gql, useQuery} from '../apollo-client';
 import {
   SidebarGraphOpQuery,
   SidebarGraphOpQueryVariables,
@@ -11,7 +13,7 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
-import {gql, useQuery} from '../apollo-client';
+import {PoolTag} from '../instance/PoolTag';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
@@ -120,22 +122,37 @@ export const SidebarOp = ({
       </Box>
     );
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const pools = solidContainer!.solidHandle!.solid.definition.pools;
   return (
     <>
       <SidebarOpInvocation
         key={`${handleID}-inv`}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         solid={solidContainer!.solidHandle!.solid}
         onEnterSubgraph={
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           solidContainer!.solidHandle!.solid.definition.__typename === 'CompositeSolidDefinition'
             ? onEnterSubgraph
             : undefined
         }
       />
+
+      {!!pools.length && (
+        <SidebarSection title={isGraph ? 'Pools' : 'Pool'}>
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 4}}>
+            {pools.map((pool) => (
+              <PoolTag key={pool} pool={pool} />
+            ))}
+          </Box>
+        </SidebarSection>
+      )}
+
       {!isGraph && repoAddress && (
         <SidebarOpExecutionGraphs
           key={`${handleID}-graphs`}
           handleID={handleID}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           solidName={solidContainer!.solidHandle!.solid.name}
           pipelineName={explorerPath.pipelineName}
           repoAddress={repoAddress}
@@ -144,6 +161,7 @@ export const SidebarOp = ({
       <SidebarOpDefinition
         key={`${handleID}-def`}
         showingSubgraph={showingSubgraph}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         definition={solidContainer!.solidHandle!.solid.definition}
         getInvocations={getInvocations}
         onClickInvocation={({handleID}) => onClickOp({path: handleID.split('.')})}

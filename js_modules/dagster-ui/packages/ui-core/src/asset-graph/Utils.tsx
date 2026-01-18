@@ -1,12 +1,12 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {featureEnabled} from '../app/Flags';
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {COMMON_COLLATOR} from '../app/Util';
+import {COMMON_COLLATOR} from '../app/commonCollator';
 import {
   AssetCheckLiveFragment,
-  AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
   AssetNodeLiveFragment,
@@ -16,11 +16,13 @@ import {
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {RunStatus} from '../graphql/types';
+import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
   JOB = 'job',
   GROUP = 'group',
+  CATALOG = 'catalog',
 }
 
 /**
@@ -31,9 +33,11 @@ export enum AssetGraphViewType {
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
 
-type AssetNode = AssetNodeForGraphQueryFragment;
+type AssetNode = WorkspaceAssetFragment;
 type AssetKey = AssetNodeKeyFragment;
-type AssetLiveNode = AssetNodeLiveFragment;
+type AssetLiveNode = AssetNodeLiveFragment & {
+  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
+};
 type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
@@ -82,14 +86,14 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
       // Skip add edges for self-dependencies (eg: assets relying on older partitions of themselves)
       return;
     }
-    data.downstream[upstreamGraphId] = {
-      ...(data.downstream[upstreamGraphId] || {}),
-      [downstreamGraphId]: true,
-    };
-    data.upstream[downstreamGraphId] = {
-      ...(data.upstream[downstreamGraphId] || {}),
-      [upstreamGraphId]: true,
-    };
+    if (!data.downstream[upstreamGraphId]) {
+      data.downstream[upstreamGraphId] = {};
+    }
+    if (!data.upstream[downstreamGraphId]) {
+      data.upstream[downstreamGraphId] = {};
+    }
+    data.downstream[upstreamGraphId][downstreamGraphId] = true;
+    data.upstream[downstreamGraphId][upstreamGraphId] = true;
   };
 
   assetNodes.forEach((definition: AssetNode) => {
@@ -132,7 +136,8 @@ export const graphHasCycles = (graphData: GraphData) => {
   };
   let hasCycles = false;
   while (nodes.size !== 0 && !hasCycles) {
-    hasCycles = search([], nodes.values().next().value);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    hasCycles = search([], nodes.values().next().value!);
   }
   return hasCycles;
 };
@@ -157,7 +162,7 @@ export interface LiveDataForNode {
   runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
   lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
+  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
   lastObservation: AssetNodeLiveObservationFragment | null;
   assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
@@ -193,24 +198,6 @@ export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
-
-export const buildLiveData = ({
-  assetNodes,
-  assetsLatestInfo,
-}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
-  const data: LiveData = {};
-
-  for (const liveNode of assetNodes) {
-    const graphId = toGraphId(liveNode.assetKey);
-    const assetLatestInfo = assetsLatestInfo.find(
-      (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
-    );
-
-    data[graphId] = buildLiveDataForNode(liveNode, assetLatestInfo);
-  }
-
-  return data;
-};
 
 export const buildLiveDataForNode = (
   assetNode: AssetLiveNode,
@@ -293,13 +280,15 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
 export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
 export const groupIdForNode = (node: GraphNode) =>
-  [
-    node.definition.repository.name,
-    '@',
-    node.definition.repository.location.name,
-    ':',
-    node.definition.groupName,
-  ].join('');
+  featureEnabled(FeatureFlag.flagAssetGraphGroupsPerCodeLocation)
+    ? [
+        node.definition.repository.name,
+        '@',
+        node.definition.repository.location.name,
+        ':',
+        node.definition.groupName,
+      ].join('')
+    : `global@global:${node.definition.groupName}`;
 
 // Inclusive
 export const getUpstreamNodes = memoize(

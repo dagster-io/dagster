@@ -1,4 +1,5 @@
-from typing import ContextManager, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import ContextManager, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -86,7 +87,9 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.migrate()
         self.optimize()
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
@@ -94,6 +97,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             isolation_level=mysql_isolation_level(),
             pool_size=1,
             pool_recycle=pool_recycle,
+            max_overflow=max_overflow,
         )
 
     @property
@@ -105,7 +109,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return mysql_config()
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "MySQLScheduleStorage":
         return MySQLScheduleStorage(
@@ -146,7 +150,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if not row:
             return None
 
-        return cast(str, row[0])
+        return cast("str", row[0])
 
     def upgrade(self) -> None:
         with self.connect() as conn:

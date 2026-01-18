@@ -1,4 +1,4 @@
-from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, StringSource
+import dagster as dg
 from dagster._config import (
     DagsterEvaluationErrorReason,
     EvaluateValueResult,
@@ -21,24 +21,24 @@ def assert_success(result, expected_value):
 
 
 def test_evaluate_scalar_success():
-    assert_success(eval_config_value_from_dagster_type(String, "foobar"), "foobar")
-    assert_success(eval_config_value_from_dagster_type(Int, 34234), 34234)
-    assert_success(eval_config_value_from_dagster_type(Bool, True), True)
+    assert_success(eval_config_value_from_dagster_type(dg.String, "foobar"), "foobar")
+    assert_success(eval_config_value_from_dagster_type(dg.Int, 34234), 34234)
+    assert_success(eval_config_value_from_dagster_type(dg.Bool, True), True)
 
 
 def test_evaluate_scalar_failure():
-    result = eval_config_value_from_dagster_type(String, 2343)
+    result = eval_config_value_from_dagster_type(dg.String, 2343)
     assert not result.success
     assert result.value is None
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert not error.stack.entries
-    assert error.error_data.config_type_snap.given_name == "String"
-    assert error.error_data.value_rep == "2343"
+    assert error.error_data.config_type_snap.given_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
+    assert error.error_data.value_rep == "2343"  # pyright: ignore[reportAttributeAccessIssue]
 
 
-SingleLevelShape = Shape({"level_one": Field(String)})
+SingleLevelShape = dg.Shape({"level_one": dg.Field(dg.String)})
 
 
 def test_single_error():
@@ -53,11 +53,11 @@ def test_single_level_scalar_mismatch():
     result = eval_config_value_from_dagster_type(SingleLevelShape, value)
     assert not result.success
     assert result.value is None
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 1
-    assert error.stack.entries[0].field_name == "level_one"
+    assert error.stack.entries[0].field_name == "level_one"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_single_level_dict_not_a_dict():
@@ -65,8 +65,8 @@ def test_single_level_dict_not_a_dict():
     result = eval_config_value_from_dagster_type(SingleLevelShape, value)
     assert not result.success
     assert result.value is None
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert not error.stack.entries
 
@@ -75,21 +75,21 @@ def test_root_missing_field():
     result = eval_config_value_from_dagster_type(SingleLevelShape, {})
     assert not result.success
     assert result.value is None
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
     assert len(result.errors_at_level()) == 1
-    assert error.error_data.field_name == "level_one"
+    assert error.error_data.field_name == "level_one"  # pyright: ignore[reportAttributeAccessIssue]
 
 
-DoubleLevelShape = Shape(
+DoubleLevelShape = dg.Shape(
     {
-        "level_one": Field(
-            Shape(
+        "level_one": dg.Field(
+            dg.Shape(
                 {
-                    "string_field": Field(String),
-                    "int_field": Field(Int, is_required=False, default_value=989),
-                    "bool_field": Field(Bool),
+                    "string_field": dg.Field(dg.String),
+                    "int_field": dg.Field(dg.Int, is_required=False, default_value=989),
+                    "bool_field": dg.Field(dg.Bool),
                 }
             )
         )
@@ -109,7 +109,7 @@ def test_nested_success():
     assert isinstance(result, EvaluateValueResult)
 
     assert result.success
-    assert result.value["level_one"]["int_field"] == 989
+    assert result.value["level_one"]["int_field"] == 989  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_nested_error_one_field_not_defined():
@@ -125,13 +125,13 @@ def test_nested_error_one_field_not_defined():
     result = eval_config_value_from_dagster_type(DoubleLevelShape, value)
 
     assert not result.success
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert error.error_data.field_name == "no_field_one"
+    assert error.error_data.field_name == "no_field_one"  # pyright: ignore[reportAttributeAccessIssue]
     assert len(error.stack.entries) == 1
     stack_entry = error.stack.entries[0]
-    assert stack_entry.field_name == "level_one"
+    assert stack_entry.field_name == "level_one"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def get_field_name_error(result, field_name):
@@ -155,13 +155,13 @@ def test_nested_error_two_fields_not_defined():
     result = eval_config_value_from_dagster_type(DoubleLevelShape, value)
 
     assert not result.success
-    assert len(result.errors) == 1
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
 
-    fields_error = result.errors[0]
+    fields_error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
 
     assert fields_error.reason == DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED
 
-    assert fields_error.error_data.field_names == ["no_field_one", "no_field_two"]
+    assert fields_error.error_data.field_names == ["no_field_one", "no_field_two"]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_nested_error_missing_fields():
@@ -169,10 +169,10 @@ def test_nested_error_missing_fields():
 
     result = eval_config_value_from_dagster_type(DoubleLevelShape, value)
     assert not result.success
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert error.error_data.field_name == "bool_field"
+    assert error.error_data.field_name == "bool_field"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_nested_error_multiple_missing_fields():
@@ -180,11 +180,11 @@ def test_nested_error_multiple_missing_fields():
 
     result = eval_config_value_from_dagster_type(DoubleLevelShape, value)
     assert not result.success
-    assert len(result.errors) == 1
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
 
-    fields_error = result.errors[0]
+    fields_error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
-    assert fields_error.error_data.field_names == ["bool_field", "string_field"]
+    assert fields_error.error_data.field_names == ["bool_field", "string_field"]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_nested_missing_and_not_defined():
@@ -192,16 +192,16 @@ def test_nested_missing_and_not_defined():
 
     result = eval_config_value_from_dagster_type(DoubleLevelShape, value)
     assert not result.success
-    assert len(result.errors) == 2
+    assert len(result.errors) == 2  # pyright: ignore[reportArgumentType]
 
     fields_error = next(
         error
-        for error in result.errors
+        for error in result.errors  # pyright: ignore[reportOptionalIterable]
         if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
     )
 
     assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
-    assert fields_error.error_data.field_names == ["bool_field", "string_field"]
+    assert fields_error.error_data.field_names == ["bool_field", "string_field"]  # pyright: ignore[reportAttributeAccessIssue]
 
     assert (
         get_field_name_error(result, "not_defined").reason
@@ -209,12 +209,12 @@ def test_nested_missing_and_not_defined():
     )
 
 
-MultiLevelShapeType = Shape(
+MultiLevelShapeType = dg.Shape(
     {
-        "level_one_string_field": String,
+        "level_one_string_field": dg.String,
         "level_two_dict": {
-            "level_two_int_field": Int,
-            "level_three_dict": {"level_three_string": String},
+            "level_two_int_field": dg.Int,
+            "level_three_dict": {"level_three_string": dg.String},
         },
     }
 )
@@ -245,14 +245,14 @@ def test_deep_scalar():
 
     result = eval_config_value_from_dagster_type(MultiLevelShapeType, value)
     assert not result.success
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
-    assert error.error_data.config_type_snap.given_name == "String"
-    assert error.error_data.value_rep == "123"
+    assert error.error_data.config_type_snap.given_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
+    assert error.error_data.value_rep == "123"  # pyright: ignore[reportAttributeAccessIssue]
     assert len(error.stack.entries) == 3
 
-    assert [entry.field_name for entry in error.stack.entries] == [
+    assert [entry.field_name for entry in error.stack.entries] == [  # pyright: ignore[reportAttributeAccessIssue]
         "level_two_dict",
         "level_three_dict",
         "level_three_string",
@@ -278,19 +278,19 @@ def test_deep_mixed_level_errors():
 
     result = eval_config_value_from_dagster_type(MultiLevelShapeType, value)
     assert not result.success
-    assert len(result.errors) == 3
+    assert len(result.errors) == 3  # pyright: ignore[reportArgumentType]
 
     root_errors = result.errors_at_level()
     assert len(root_errors) == 1
     root_error = root_errors[0]
     assert root_error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert root_error.error_data.field_name == "level_one_not_defined"
+    assert root_error.error_data.field_name == "level_one_not_defined"  # pyright: ignore[reportAttributeAccessIssue]
 
     level_two_errors = result.errors_at_level("level_two_dict")
     assert len(level_two_errors) == 1
     level_two_error = level_two_errors[0]
     assert level_two_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert level_two_error.error_data.field_name == "level_two_int_field"
+    assert level_two_error.error_data.field_name == "level_two_int_field"  # pyright: ignore[reportAttributeAccessIssue]
 
     assert not result.errors_at_level("level_two_dict", "level_three_dict")
 
@@ -304,7 +304,9 @@ def test_deep_mixed_level_errors():
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-ExampleSelector = Selector({"option_one": Field(String), "option_two": Field(String)})
+ExampleSelector = dg.Selector(
+    {"option_one": dg.Field(dg.String), "option_two": dg.Field(dg.String)}
+)
 
 
 def test_example_selector_success():
@@ -321,16 +323,16 @@ def test_example_selector_error_top_level_type():
     result = eval_config_value_from_dagster_type(ExampleSelector, "kjsdkf")
     assert not result.success
     assert result.value is None
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_example_selector_wrong_field():
     result = eval_config_value_from_dagster_type(ExampleSelector, {"nope": 234})
     assert not result.success
     assert result.value is None
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_example_selector_multiple_fields():
@@ -339,24 +341,26 @@ def test_example_selector_multiple_fields():
     )
 
     assert not result.success
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_selector_within_dict_no_subfields():
     result = eval_config_value_from_dagster_type(
-        Shape({"selector": Field(ExampleSelector)}), {"selector": {}}
+        dg.Shape({"selector": dg.Field(ExampleSelector)}), {"selector": {}}
     )
     assert not result.success
-    assert len(result.errors) == 1
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
     assert (
-        result.errors[0].message
+        result.errors[0].message  # pyright: ignore[reportOptionalSubscript]
         == "Must specify a field at path root:selector if more than one field "
         "is defined. Defined fields: ['option_one', 'option_two']"
     )
 
 
-SelectorWithDefaults = Selector({"default": Field(String, is_required=False, default_value="foo")})
+SelectorWithDefaults = dg.Selector(
+    {"default": dg.Field(dg.String, is_required=False, default_value="foo")}
+)
 
 
 def test_selector_with_defaults():
@@ -396,16 +400,16 @@ def test_evaluate_map_float():
 def test_evaluate_map_error_item_mismatch():
     result = eval_config_value_from_dagster_type({str: str}, {"a": 1})
     assert not result.success
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_evaluate_map_error_top_level_mismatch():
     string_map = {str: str}
     result = eval_config_value_from_dagster_type(string_map, 1)
     assert not result.success
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_evaluate_double_map():
@@ -430,8 +434,8 @@ def test_config_map_in_dict_error():
     value = {"nested_map": {"a": 1, "b": "bar", "c": 3}}
     result = eval_config_value_from_dagster_type(nested_map, value)
     assert not result.success
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 2
     stack_entry = error.stack.entries[0]
@@ -448,8 +452,8 @@ def test_config_map_in_dict_error_two_errors():
     value = {"nested_map": {"a": 1, 5: 3, "c": "bar"}}
     result = eval_config_value_from_dagster_type(nested_map, value)
     assert not result.success
-    assert len(result.errors) == 2
-    error = result.errors[0]
+    assert len(result.errors) == 2  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 2
     stack_entry = error.stack.entries[0]
@@ -458,7 +462,7 @@ def test_config_map_in_dict_error_two_errors():
     map_entry = error.stack.entries[1]
     assert isinstance(map_entry, EvaluationStackMapKeyEntry)
     assert map_entry.map_key == 5
-    map_entry = result.errors[1].stack.entries[1]
+    map_entry = result.errors[1].stack.entries[1]  # pyright: ignore[reportOptionalSubscript]
     assert isinstance(map_entry, EvaluationStackMapValueEntry)
     assert map_entry.map_key == "c"
 
@@ -499,7 +503,7 @@ def test_config_double_map_double_error():
     }
     error_result = eval_config_value_from_dagster_type(nested_maps, error_value)
     assert not error_result.success
-    assert len(error_result.errors) == 2
+    assert len(error_result.errors) == 2  # pyright: ignore[reportArgumentType]
 
 
 def test_evaluate_list_string():
@@ -512,16 +516,16 @@ def test_evaluate_list_string():
 def test_evaluate_list_error_item_mismatch():
     result = eval_config_value_from_dagster_type([str], [1])
     assert not result.success
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_evaluate_list_error_top_level_mismatch():
     string_list = [str]
     result = eval_config_value_from_dagster_type(string_list, 1)
     assert not result.success
-    assert len(result.errors) == 1
-    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_evaluate_double_list():
@@ -546,8 +550,8 @@ def test_config_list_in_dict_error():
     value = {"nested_list": [1, "bar", 3]}
     result = eval_config_value_from_dagster_type(nested_list, value)
     assert not result.success
-    assert len(result.errors) == 1
-    error = result.errors[0]
+    assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 2
     stack_entry = error.stack.entries[0]
@@ -579,17 +583,17 @@ def test_config_double_list_double_error():
     error_value = {"nested_list_one": "kjdfkdj", "nested_list_two": ["bar", 2]}
     error_result = eval_config_value_from_dagster_type(nested_lists, error_value)
     assert not error_result.success
-    assert len(error_result.errors) == 2
+    assert len(error_result.errors) == 2  # pyright: ignore[reportArgumentType]
 
 
 def test_nullable_int():
-    assert not eval_config_value_from_dagster_type(Int, None).success
-    assert eval_config_value_from_dagster_type(Int, 0).success
-    assert eval_config_value_from_dagster_type(Int, 1).success
+    assert not eval_config_value_from_dagster_type(dg.Int, None).success
+    assert eval_config_value_from_dagster_type(dg.Int, 0).success
+    assert eval_config_value_from_dagster_type(dg.Int, 1).success
 
-    assert eval_config_value_from_dagster_type(Noneable(int), None).success
-    assert eval_config_value_from_dagster_type(Noneable(int), 0).success
-    assert eval_config_value_from_dagster_type(Noneable(int), 1).success
+    assert eval_config_value_from_dagster_type(dg.Noneable(int), None).success
+    assert eval_config_value_from_dagster_type(dg.Noneable(int), 0).success
+    assert eval_config_value_from_dagster_type(dg.Noneable(int), 1).success
 
 
 def test_nullable_list():
@@ -600,21 +604,21 @@ def test_nullable_list():
     assert not eval_config_value_from_dagster_type(list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Noneable([int])
+    nullable_list_of_ints = dg.Noneable([int])
 
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, []).success
     assert not eval_config_value_from_dagster_type(nullable_list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = [Noneable(int)]
+    list_of_nullable_ints = [dg.Noneable(int)]
 
     assert not eval_config_value_from_dagster_type(list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, []).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Noneable([Noneable(int)])
+    nullable_list_of_nullable_ints = dg.Noneable([dg.Noneable(int)])
 
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, []).success
@@ -623,14 +627,14 @@ def test_nullable_list():
 
 
 def test_nullable_dict():
-    dict_with_int = Shape({"int_field": Int})
+    dict_with_int = dg.Shape({"int_field": dg.Int})
 
     assert not eval_config_value_from_dagster_type(dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(dict_with_int, {}).success
     assert not eval_config_value_from_dagster_type(dict_with_int, {"int_field": None}).success
     assert eval_config_value_from_dagster_type(dict_with_int, {"int_field": 1}).success
 
-    nullable_dict_with_int = Noneable(Shape({"int_field": Int}))
+    nullable_dict_with_int = dg.Noneable(dg.Shape({"int_field": dg.Int}))
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(nullable_dict_with_int, {}).success
@@ -639,7 +643,7 @@ def test_nullable_dict():
     ).success
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, {"int_field": 1}).success
 
-    dict_with_nullable_int = Shape({"int_field": Field(Noneable(int))})
+    dict_with_nullable_int = dg.Shape({"int_field": dg.Field(dg.Noneable(int))})
 
     assert not eval_config_value_from_dagster_type(dict_with_nullable_int, None).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {}).success
@@ -649,7 +653,9 @@ def test_nullable_dict():
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {"int_field": None}).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {"int_field": 1}).success
 
-    nullable_dict_with_nullable_int = Noneable(Shape({"int_field": Field(Noneable(int))}))
+    nullable_dict_with_nullable_int = dg.Noneable(
+        dg.Shape({"int_field": dg.Field(dg.Noneable(int))})
+    )
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).success
     assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).value is None
@@ -666,7 +672,9 @@ def test_nullable_dict():
 
 
 def test_any_with_default_value():
-    dict_with_any = Shape({"any_field": Field(Any, default_value="foo", is_required=False)})
+    dict_with_any = dg.Shape(
+        {"any_field": dg.Field(dg.Any, default_value="foo", is_required=False)}
+    )
     result = eval_config_value_from_dagster_type(dict_with_any, {})
     assert result.success
     assert result.value == {"any_field": "foo"}
@@ -674,10 +682,10 @@ def test_any_with_default_value():
 
 def test_post_process_error():
     error_result = eval_config_value_from_dagster_type(
-        Shape({"foo": StringSource}), {"foo": {"env": "THIS_ENV_VAR_DOES_NOT_EXIST"}}
+        dg.Shape({"foo": dg.StringSource}), {"foo": {"env": "THIS_ENV_VAR_DOES_NOT_EXIST"}}
     )
     assert not error_result.success
-    assert len(error_result.errors) == 1
-    error = error_result.errors[0]
+    assert len(error_result.errors) == 1  # pyright: ignore[reportArgumentType]
+    error = error_result.errors[0]  # pyright: ignore[reportOptionalSubscript]
     assert error.reason == DagsterEvaluationErrorReason.FAILED_POST_PROCESSING
     assert len(error.stack.entries) == 1

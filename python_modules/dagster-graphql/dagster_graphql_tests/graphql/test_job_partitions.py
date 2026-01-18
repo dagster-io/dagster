@@ -1,13 +1,6 @@
-from dagster import (
-    AssetKey,
-    ConfigurableResource,
-    Definitions,
-    StaticPartitionsDefinition,
-    asset,
-    job,
-    op,
-    static_partitioned_config,
-)
+from dagster import AssetKey, ConfigurableResource, Definitions, asset, job, op
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
@@ -103,6 +96,18 @@ def get_repo_with_differently_partitioned_assets():
     ).get_repository_def()
 
 
+def get_repo_with_unpartitioned_assets():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    return Definitions(
+        assets=[asset1, asset2],
+    ).get_repository_def()
+
+
 def test_get_partition_names():
     with instance_for_test() as instance:
         with define_out_of_process_context(
@@ -151,6 +156,30 @@ def test_get_partition_names_asset_selection():
                 "a",
                 "b",
             ]
+
+
+def test_get_partition_names_asset_selection_no_partitions():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_unpartitioned_assets", instance
+        ) as context:
+            result = execute_dagster_graphql(
+                context,
+                GET_PARTITIONS_QUERY,
+                variables={
+                    "selector": {
+                        "repositoryLocationName": context.code_location_names[0],
+                        "repositoryName": SINGLETON_REPOSITORY_NAME,
+                        "pipelineName": "__ASSET_JOB",
+                    },
+                    "selectedAssetKeys": [
+                        AssetKey("asset1").to_graphql_input(),
+                        AssetKey("asset2").to_graphql_input(),
+                    ],
+                },
+            )
+            assert result.data["pipelineOrError"]["name"] == "__ASSET_JOB"
+            assert result.data["pipelineOrError"]["partitionKeysOrError"]["partitionKeys"] == []
 
 
 def test_get_partition_tags():

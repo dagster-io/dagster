@@ -1,9 +1,9 @@
+import dagster as dg
 import pytest
-from dagster import AssetKey, AssetMaterialization, TableColumn, TableSchema
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
 from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
+from pydantic import ValidationError
 
 
 @pytest.fixture(autouse=True)
@@ -12,31 +12,43 @@ def error_on_warning():
 
 
 def test_table_metadata_set() -> None:
-    column_schema = TableSchema(
-        columns=[TableColumn("foo", "str", tags={"pii": "", "introduced": "v2"})]
+    column_schema = dg.TableSchema(
+        columns=[dg.TableColumn("foo", "str", tags={"pii": "", "introduced": "v2"})]
     )
     table_metadata = TableMetadataSet(column_schema=column_schema)
 
     dict_table_metadata = dict(table_metadata)
     assert dict_table_metadata == {"dagster/column_schema": column_schema}
-    assert isinstance(dict_table_metadata["dagster/column_schema"], TableSchema)
-    AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
+    assert isinstance(dict_table_metadata["dagster/column_schema"], dg.TableSchema)
+    dg.AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
 
     splat_table_metadata = {**table_metadata}
     assert splat_table_metadata == {"dagster/column_schema": column_schema}
-    assert isinstance(splat_table_metadata["dagster/column_schema"], TableSchema)
-    AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
+    assert isinstance(splat_table_metadata["dagster/column_schema"], dg.TableSchema)
+    dg.AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
 
     assert dict(TableMetadataSet()) == {}
     assert TableMetadataSet.extract(dict(TableMetadataSet())) == TableMetadataSet()
 
 
-def test_relation_identifier() -> None:
-    table_metadata = TableMetadataSet(relation_identifier="my_database.my_schema.my_table")
+def test_table_name() -> None:
+    table_metadata = TableMetadataSet(table_name="my_database.my_schema.my_table")
 
     dict_table_metadata = dict(table_metadata)
-    assert dict_table_metadata == {"dagster/relation_identifier": "my_database.my_schema.my_table"}
-    AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
+    assert dict_table_metadata == {"dagster/table_name": "my_database.my_schema.my_table"}
+    dg.AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
+
+
+def test_legacy_table_name() -> None:
+    table_metadata = TableMetadataSet.extract(
+        {"dagster/relation_identifier": "my_database.my_schema.my_table"}
+    )
+    assert table_metadata.table_name == "my_database.my_schema.my_table"
+
+    table_metadata = TableMetadataSet.extract(
+        {"dagster/table_name": "real value", "dagster/relation_identifier": "redundant"}
+    )
+    assert table_metadata.table_name == "real value"
 
 
 def test_row_count() -> None:
@@ -44,25 +56,25 @@ def test_row_count() -> None:
 
     dict_table_metadata = dict(table_metadata)
     assert dict_table_metadata == {"dagster/row_count": 67}
-    AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
+    dg.AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
 
     splat_table_metadata = {**table_metadata}
     assert splat_table_metadata == {"dagster/row_count": 67}
-    AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
+    dg.AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
 
 
-@ignore_warning("Class `TableColumnLineage` is experimental")
+@ignore_warning("Class `TableColumnLineage` is currently in beta")
 def test_invalid_column_lineage() -> None:
     with pytest.raises(CheckError):
-        TableColumnLineage(
+        dg.TableColumnLineage(
             {
                 "column": [
-                    TableColumnDep(
-                        asset_key=AssetKey("upstream"),
+                    dg.TableColumnDep(
+                        asset_key=dg.AssetKey("upstream"),
                         column_name="upstream_column",
                     ),
-                    TableColumnDep(
-                        asset_key=AssetKey("upstream"),
+                    dg.TableColumnDep(
+                        asset_key=dg.AssetKey("upstream"),
                         column_name="upstream_column",
                     ),
                 ],
@@ -70,19 +82,19 @@ def test_invalid_column_lineage() -> None:
         )
 
 
-@ignore_warning("Class `TableColumnLineage` is experimental")
+@ignore_warning("Class `TableColumnLineage` is currently in beta")
 def test_column_lineage() -> None:
     expected_deps = [
-        TableColumnDep(
-            asset_key=AssetKey("upstream"),
+        dg.TableColumnDep(
+            asset_key=dg.AssetKey("upstream"),
             column_name="upstream_column_b",
         ),
-        TableColumnDep(
-            asset_key=AssetKey("upstream"),
+        dg.TableColumnDep(
+            asset_key=dg.AssetKey("upstream"),
             column_name="upstream_column_a",
         ),
     ]
-    expected_column_lineage = TableColumnLineage(
+    expected_column_lineage = dg.TableColumnLineage(
         {
             "column": expected_deps,
         }
@@ -90,7 +102,7 @@ def test_column_lineage() -> None:
     expected_metadata = {"dagster/column_lineage": expected_column_lineage}
 
     table_metadata = TableMetadataSet(
-        column_lineage=TableColumnLineage(
+        column_lineage=dg.TableColumnLineage(
             {
                 "column": list(reversed(expected_deps)),
             }
@@ -100,13 +112,53 @@ def test_column_lineage() -> None:
     dict_table_metadata = dict(table_metadata)
     assert dict_table_metadata == expected_metadata
 
-    materialization = AssetMaterialization(asset_key="foo", metadata=dict_table_metadata)
+    materialization = dg.AssetMaterialization(asset_key="foo", metadata=dict_table_metadata)
     extracted_table_metadata = TableMetadataSet.extract(materialization.metadata)
     assert extracted_table_metadata.column_lineage == expected_column_lineage
 
     splat_table_metadata = {**table_metadata}
     assert splat_table_metadata == expected_metadata
 
-    materialization = AssetMaterialization(asset_key="foo", metadata=splat_table_metadata)
+    materialization = dg.AssetMaterialization(asset_key="foo", metadata=splat_table_metadata)
     extracted_table_metadata = TableMetadataSet.extract(materialization.metadata)
     assert extracted_table_metadata.column_lineage == expected_column_lineage
+
+
+def test_extract_normalized_table_name() -> None:
+    invalid_metadata = {
+        "dagster/column_schema": "foo",
+        "dagster/table_name": dg.FloatMetadataValue(1.0),
+    }
+
+    with pytest.raises(ValidationError):
+        TableMetadataSet.extract(invalid_metadata)
+
+    assert TableMetadataSet.extract_normalized_table_name(invalid_metadata) is None
+
+    invalid_metadata_with_valid_table_name = {
+        "dagster/column_schema": "foo",
+        "dagster/table_name": "BAR",
+    }
+
+    with pytest.raises(ValidationError):
+        TableMetadataSet.extract(invalid_metadata_with_valid_table_name)
+
+    assert (
+        TableMetadataSet.extract_normalized_table_name(invalid_metadata_with_valid_table_name)
+        == "bar"
+    )
+
+    invalid_metadata_with_valid_legacy_table_name = {
+        "dagster/column_schema": "foo",
+        "dagster/relation_identifier": "BAR",
+    }
+
+    with pytest.raises(ValidationError):
+        TableMetadataSet.extract(invalid_metadata_with_valid_legacy_table_name)
+
+    assert (
+        TableMetadataSet.extract_normalized_table_name(
+            invalid_metadata_with_valid_legacy_table_name
+        )
+        == "bar"
+    )

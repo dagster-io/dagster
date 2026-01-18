@@ -1,22 +1,25 @@
-from datetime import datetime
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
-from dagster import DailyPartitionsDefinition, PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import (
+import dagster as dg
+from dagster._core.definitions.partitions.utils import (
     PartitionRangeStatus,
     PartitionTimeWindowStatus,
-    TimeWindow,
+)
+from dagster._core.definitions.partitions.utils.time_window import (
     fetch_flattened_time_window_ranges,
 )
 from dagster._time import parse_time_string
 
+if TYPE_CHECKING:
+    from datetime import datetime
+
 DATE_FORMAT = "%Y-%m-%d"
 
 
-def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(
-        cast(datetime, parse_time_string(start)),
-        cast(datetime, parse_time_string(end)),
+def time_window(start: str, end: str) -> dg.TimeWindow:
+    return dg.TimeWindow(
+        cast("datetime", parse_time_string(start)),
+        cast("datetime", parse_time_string(end)),
     )
 
 
@@ -28,7 +31,7 @@ def _check_flatten_time_window_ranges(subsets, expected_result):
     ]
 
 
-partitions_def = DailyPartitionsDefinition(start_date="2021-12-01")
+partitions_def = dg.DailyPartitionsDefinition(start_date="2021-12-01")
 empty_subset = partitions_def.empty_subset()
 
 
@@ -36,10 +39,10 @@ def test_no_overlap() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-06", "2022-01-06")
+                partitions_def, dg.PartitionKeyRange("2022-01-06", "2022-01-06")
             ),
         },
         [
@@ -55,13 +58,13 @@ def test_no_overlap() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-06", "2022-01-06")
+                partitions_def, dg.PartitionKeyRange("2022-01-06", "2022-01-06")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-8", "2022-01-09")
+                partitions_def, dg.PartitionKeyRange("2022-01-8", "2022-01-09")
             ),
         },
         [
@@ -84,10 +87,10 @@ def test_overlapped() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-05", "2022-01-06")
+                partitions_def, dg.PartitionKeyRange("2022-01-05", "2022-01-06")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
         },
@@ -104,10 +107,10 @@ def test_overlapped() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-05", "2022-01-06")
+                partitions_def, dg.PartitionKeyRange("2022-01-05", "2022-01-06")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
         },
@@ -130,10 +133,10 @@ def test_materialized_spans_failed() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-10")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-05", "2022-01-06")
+                partitions_def, dg.PartitionKeyRange("2022-01-05", "2022-01-06")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
         },
@@ -157,17 +160,17 @@ def test_materialized_spans_many_failed() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-01", "2022-12-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-01", "2022-12-10")
             ),
             PartitionRangeStatus.FAILED: (
                 empty_subset.with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-05", "2022-01-06")
+                    partitions_def, dg.PartitionKeyRange("2022-01-05", "2022-01-06")
                 )
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-03-01", "2022-03-10")
+                    partitions_def, dg.PartitionKeyRange("2022-03-01", "2022-03-10")
                 )
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-09-01", "2022-10-01")
+                    partitions_def, dg.PartitionKeyRange("2022-09-01", "2022-10-01")
                 )
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
@@ -225,9 +228,9 @@ def test_empty() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-10")
             ).with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-20", "2022-02-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-20", "2022-02-10")
             ),
             PartitionRangeStatus.FAILED: empty_subset,
             PartitionRangeStatus.MATERIALIZING: empty_subset,
@@ -250,9 +253,9 @@ def test_empty() -> None:
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset,
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-10")
             ).with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-20", "2022-02-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-20", "2022-02-10")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
         },
@@ -275,9 +278,9 @@ def test_empty() -> None:
             PartitionRangeStatus.MATERIALIZED: empty_subset,
             PartitionRangeStatus.FAILED: empty_subset,
             PartitionRangeStatus.MATERIALIZING: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-10")
             ).with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-20", "2022-02-10")
+                partitions_def, dg.PartitionKeyRange("2022-01-20", "2022-02-10")
             ),
         },
         [
@@ -299,12 +302,12 @@ def test_cancels_out() -> None:
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ).with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-12", "2022-01-13")
+                partitions_def, dg.PartitionKeyRange("2022-01-12", "2022-01-13")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset,
         },
@@ -328,36 +331,36 @@ def test_lots() -> None:
         {
             PartitionRangeStatus.MATERIALIZED: (
                 empty_subset.with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                    partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
                 )
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-12", "2022-01-13")
+                    partitions_def, dg.PartitionKeyRange("2022-01-12", "2022-01-13")
                 )
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-15", "2022-01-17")
+                    partitions_def, dg.PartitionKeyRange("2022-01-15", "2022-01-17")
                 )
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-19", "2022-01-20")
+                    partitions_def, dg.PartitionKeyRange("2022-01-19", "2022-01-20")
                 )
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-22", "2022-01-24")
+                    partitions_def, dg.PartitionKeyRange("2022-01-22", "2022-01-24")
                 )
             ),
             PartitionRangeStatus.FAILED: (
                 empty_subset.with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2021-12-30", "2021-12-31")
+                    partitions_def, dg.PartitionKeyRange("2021-12-30", "2021-12-31")
                 )  # before materialized subset
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-02", "2022-01-03")
+                    partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-03")
                 )  # within materialized subset
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-05", "2022-01-06")
+                    partitions_def, dg.PartitionKeyRange("2022-01-05", "2022-01-06")
                 )  # directly after materialized subset
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-08", "2022-01-09")
+                    partitions_def, dg.PartitionKeyRange("2022-01-08", "2022-01-09")
                 )  # between materialized subsets
                 .with_partition_key_range(
-                    partitions_def, PartitionKeyRange("2022-01-11", "2022-01-14")
+                    partitions_def, dg.PartitionKeyRange("2022-01-11", "2022-01-14")
                 )  # encompasses materialized subset
                 .with_partition_keys(["2022-01-20"])  # at end materialized subset
                 .with_partition_keys(
@@ -403,13 +406,13 @@ def test_multiple_overlap_types():
     _check_flatten_time_window_ranges(
         {
             PartitionRangeStatus.MATERIALIZED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-01", "2022-01-06")
+                partitions_def, dg.PartitionKeyRange("2022-01-01", "2022-01-06")
             ),
             PartitionRangeStatus.FAILED: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-02", "2022-01-05")
+                partitions_def, dg.PartitionKeyRange("2022-01-02", "2022-01-05")
             ),
             PartitionRangeStatus.MATERIALIZING: empty_subset.with_partition_key_range(
-                partitions_def, PartitionKeyRange("2022-01-03", "2022-01-04")
+                partitions_def, dg.PartitionKeyRange("2022-01-03", "2022-01-04")
             ),
         },
         [

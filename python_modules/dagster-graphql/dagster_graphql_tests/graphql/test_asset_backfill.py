@@ -1,15 +1,14 @@
-from typing import Optional, Tuple
+from typing import Optional
+from unittest import mock
 
-import mock
-from dagster import (
-    AssetKey,
+from dagster import AssetKey, AssetOut, Definitions, asset, multi_asset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
-    Definitions,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
-    asset,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -27,7 +26,7 @@ from dagster_graphql.test.utils import (
 )
 
 ensure_dagster_tests_import()
-from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
+from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
     root_assets_different_partitions_same_downstream,
 )
 
@@ -173,6 +172,37 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     def asset2(asset1): ...
 
     return Definitions(assets=[asset1, asset2]).get_repository_def()
+
+
+def get_repo_with_non_subsettable_multi_asset() -> RepositoryDefinition:
+    partitions_def = StaticPartitionsDefinition(["x", "y", "z"])
+
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut()}, partitions_def=partitions_def)
+    def non_subsettable_multi_asset(): ...
+
+    return Definitions(assets=[non_subsettable_multi_asset]).get_repository_def()
+
+
+def get_repo_with_missing_upstream_partition() -> RepositoryDefinition:
+    upstream_partitions_def = StaticPartitionsDefinition(["a", "b"])
+    downstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=downstream_partitions_def)
+    def child(parent): ...
+
+    @asset(partitions_def=upstream_partitions_def)
+    def parent(): ...
+
+    return Definitions(assets=[child, parent]).get_repository_def()
+
+
+def get_repo_with_dynamic_partition() -> RepositoryDefinition:
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
+    @asset(partitions_def=dynamic_partitions_def)
+    def the_asset(): ...
+
+    return Definitions(assets=[the_asset]).get_repository_def()
 
 
 def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
@@ -396,9 +426,7 @@ def test_launch_asset_backfill_all_partitions_asset_selection():
                 target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
                 == all_partition_keys
             )
-            assert not target_subset.get_partitions_subset(
-                AssetKey("asset1"), asset_graph=repo.asset_graph
-            ).get_partition_keys()
+            assert AssetKey("asset1") not in target_subset.asset_keys
 
 
 def test_launch_asset_backfill_partitions_by_asset():
@@ -576,6 +604,165 @@ def test_launch_asset_backfill():
             )
 
 
+def test_launch_asset_backfill_with_nonexistent_partition_key():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "nonexistent1", "nonexistent2"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PartitionKeysNotFoundError"
+            )
+            assert (
+                "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_nonexistent_dynamic_partition_key():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("dynamic_partition", ["a", "b", "c"])
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["b", "nonexistent1", "nonexistent2"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PartitionKeysNotFoundError"
+            )
+            assert (
+                "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_nonexistent_upstream_partition_key():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_missing_upstream_partition", instance
+        ) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b", "c"],
+                        "assetSelection": [{"path": ["child"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "depends on non-existent partitions: EntitySubset<AssetKey(['parent'])>(DefaultPartitionsSubset(subset={'c'}"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_non_subsettable_multi_asset():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_non_subsettable_multi_asset", instance
+        ) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["x", "y"],
+                        "assetSelection": [{"path": ["a"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "Backfill must include every key in a non-subsettable multi-asset, included a but not b"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": {"path": ["a"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "x",
+                                        "end": "x",
+                                    }
+                                },
+                            },
+                            {
+                                "assetKey": {"path": ["b"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "x",
+                                        "end": "y",
+                                    }
+                                },
+                            },
+                        ],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "Targeted subset must match between every key in a non-subsettable multi-asset, but does not match between"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["x", "y"],
+                        "assetSelection": [{"path": ["a"]}, {"path": ["b"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "LaunchBackfillSuccess"
+            )
+
+
 def test_remove_partitions_defs_after_backfill_backcompat():
     repo = get_repo()
     all_asset_keys = repo.asset_graph.materializable_asset_keys
@@ -601,7 +788,7 @@ def test_remove_partitions_defs_after_backfill_backcompat():
         backfill = instance.get_backfills()[0]
         backcompat_backfill = backfill._replace(
             asset_backfill_data=None,
-            serialized_asset_backfill_data=backfill.asset_backfill_data.serialize(
+            serialized_asset_backfill_data=backfill.asset_backfill_data.serialize(  # pyright: ignore[reportOptionalMemberAccess]
                 instance, asset_graph=repo.asset_graph
             ),
         )
@@ -761,10 +948,10 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): asset_graph.get(
                         AssetKey("hourly")
-                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # pyright: ignore[reportOptionalMemberAccess]
                     AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),  # pyright: ignore[reportOptionalMemberAccess]
                 },
             )
 
@@ -826,13 +1013,13 @@ def test_launch_asset_backfill_with_two_anchor_assets():
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly1"): asset_graph.get(
                         AssetKey("hourly1")
-                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # pyright: ignore[reportOptionalMemberAccess]
                     AssetKey("hourly2"): asset_graph.get(
                         AssetKey("hourly2")
-                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # pyright: ignore[reportOptionalMemberAccess]
                     AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),  # pyright: ignore[reportOptionalMemberAccess]
                 },
             )
 
@@ -881,12 +1068,12 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): (
                         asset_graph.get(AssetKey("hourly"))
-                        .partitions_def.empty_subset()
+                        .partitions_def.empty_subset()  # pyright: ignore[reportOptionalMemberAccess]
                         .with_partition_keys(hourly_partitions)
                     ),
                     AssetKey("daily"): (
                         asset_graph.get(AssetKey("daily"))
-                        .partitions_def.empty_subset()
+                        .partitions_def.empty_subset()  # pyright: ignore[reportOptionalMemberAccess]
                         .with_partition_keys(["2020-01-02", "2020-01-03"])
                     ),
                 },
@@ -1169,12 +1356,12 @@ def _get_backfill_data(
     launch_backfill_result: GqlResult,
     instance: DagsterInstance,
     repo,
-) -> Tuple[str, AssetBackfillData]:
+) -> tuple[str, AssetBackfillData]:
     assert launch_backfill_result
     assert launch_backfill_result.data
-    assert (
-        "backfillId" in launch_backfill_result.data["launchPartitionBackfill"]
-    ), _get_error_message(launch_backfill_result)
+    assert "backfillId" in launch_backfill_result.data["launchPartitionBackfill"], (
+        _get_error_message(launch_backfill_result)
+    )
 
     backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
 
@@ -1264,9 +1451,9 @@ def test_get_backfills_with_filters():
                         }
                     },
                 )
-                assert (
-                    "backfillId" in launch_backfill_result.data["launchPartitionBackfill"]
-                ), _get_error_message(launch_backfill_result)
+                assert "backfillId" in launch_backfill_result.data["launchPartitionBackfill"], (
+                    _get_error_message(launch_backfill_result)
+                )
 
                 backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
                 backfill = instance.get_backfill(backfill_id)
@@ -1301,3 +1488,84 @@ def test_get_backfills_with_filters():
                 BACKFILLS_WITH_FILTERS_QUERY,
                 variables={"filters": {"statuses": ["REQUESTED"]}},
             )
+
+
+def test_launch_asset_backfill_with_run_config_data():
+    """Test that asset backfill can be launched with runConfigData."""
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # Test with runConfigData containing various configuration options
+            run_config_data = {
+                "ops": {
+                    "asset1": {"config": {"some_param": "test_value", "another_param": 42}},
+                    "asset2": {"config": {"nested_config": {"key": "value"}}},
+                },
+                "resources": {"some_resource": {"config": {"resource_param": "resource_value"}}},
+            }
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                        "runConfigData": run_config_data,
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+
+            # Verify the backfill was created successfully
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+            # Verify the runConfigData was stored correctly
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill is not None
+            assert backfill.run_config == run_config_data
+
+            # Test that the backfill can be queried and shows the correct configuration
+            single_backfill_result = execute_dagster_graphql(
+                context, SINGLE_BACKFILL_QUERY, variables={"backfillId": backfill_id}
+            )
+            assert not single_backfill_result.errors
+            assert single_backfill_result.data
+
+
+def test_launch_asset_backfill_with_empty_run_config_data():
+    """Test that asset backfill can be launched with empty runConfigData."""
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # Test with empty runConfigData
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                        "runConfigData": {},
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+
+            # Verify the backfill was created successfully
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+            # Verify the runConfigData was stored correctly
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill is not None
+            assert backfill.run_config == {}

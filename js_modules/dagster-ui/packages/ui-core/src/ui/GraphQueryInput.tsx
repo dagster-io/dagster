@@ -28,7 +28,7 @@ import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-interface GraphQueryInputProps {
+export interface GraphQueryInputProps {
   intent?: Intent;
   items: GraphQueryItem[];
   value: string;
@@ -73,7 +73,7 @@ interface SuggestionItem {
  * number of immediate input or output connections and randomly highlighting
  * either the ++solid or solid++ or solid+* syntax.
  */
-const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
+export const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
   const seed = items.length % 3;
 
   let placeholder = base;
@@ -93,16 +93,30 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
 
   if (seed === 0) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
-    placeholder = `${placeholder} (ex: ${example!.name}+*)`;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down')})`;
   } else if (seed === 1) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
-    placeholder = `${placeholder} (ex: ${example!.name}+)`;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down', 1)})`;
   } else if (seed === 2) {
     const example = ranked.sort((a, b) => b.incount - a.incount)[0];
-    placeholder = `${placeholder} (ex: ++${example!.name})`;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    placeholder = `${placeholder} (ex: ${traversal('up', 2)}${key(example!.name)})`;
   }
   return placeholder;
 };
+
+function key(name: string) {
+  return `name:"${name}"`;
+}
+
+function traversal(direction: 'up' | 'down', levels?: number) {
+  if (levels === undefined) {
+    return '+';
+  }
+  return direction === 'up' ? `+${levels}` : `${levels}+`;
+}
 
 const intentToStrokeColor = (intent: Intent | undefined) => {
   switch (intent) {
@@ -147,6 +161,7 @@ const buildSuggestions = (
       : [];
 
   // No need to show a match if our string exactly matches the one suggestion.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (matching.length === 1 && matching[0]!.name.toLowerCase() === lastElementLower) {
     return [];
   }
@@ -173,6 +188,7 @@ export const GraphQueryInput = React.memo(
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       () => buildSuggestions(lastElementName!, props.items, suffix!),
       [lastElementName, props.items, suffix],
     );
@@ -196,6 +212,7 @@ export const GraphQueryInput = React.memo(
       if (!suggestions[nextIdx]) {
         return;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const nextText = suggestions[nextIdx]!.name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {
@@ -230,6 +247,7 @@ export const GraphQueryInput = React.memo(
         e.preventDefault();
         let idx = (active ? active.idx : -1) + shift;
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         setActive({text: suggestions[idx]!.name, idx});
       }
 
@@ -332,7 +350,9 @@ export const GraphQueryInput = React.memo(
               placeholder={placeholderTextForItems(props.placeholder, props.items)}
               onChange={(e: React.ChangeEvent<any>) => {
                 setPendingValue(e.target.value);
-                props.autoApplyChanges && props.onChange(e.target.value);
+                if (props.autoApplyChanges) {
+                  props.onChange(e.target.value);
+                }
               }}
               onFocus={() => {
                 if (!flattenGraphsEnabled) {

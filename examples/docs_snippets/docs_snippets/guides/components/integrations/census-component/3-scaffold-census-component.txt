@@ -1,0 +1,1 @@
+dg scaffold defs dagster_census.CensusComponent census_ingest

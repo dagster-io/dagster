@@ -11,7 +11,7 @@ def test_environ():
         assert os.environ.get(env_var1) == "1.1"
         assert os.environ.get(env_var2) == "2.0"
 
-        with environ({env_var1: None}):
+        with environ({env_var1: None}):  # pyright: ignore[reportArgumentType]
             assert os.environ.get(env_var1) is None
             assert os.environ.get(env_var2) == "2.0"
 

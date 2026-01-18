@@ -1,7 +1,7 @@
 from typing import Any
 
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._utils import file_relative_path
@@ -9,12 +9,12 @@ from dagster._utils.merger import merge_dicts
 from utils import start_daemon
 
 
-def create_run(instance: DagsterInstance, external_job: ExternalJob, **kwargs: Any) -> DagsterRun:
+def create_run(instance: DagsterInstance, remote_job: RemoteJob, **kwargs: Any) -> DagsterRun:
     job_args = merge_dicts(
         {
             "job_name": "foo_job",
-            "external_job_origin": external_job.get_remote_origin(),
-            "job_code_origin": external_job.get_python_origin(),
+            "remote_job_origin": remote_job.get_remote_origin(),
+            "job_code_origin": remote_job.get_python_origin(),
         },
         kwargs,
     )
@@ -29,23 +29,23 @@ def assert_events_in_order(logs, expected_events):
 
 
 def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_example_repo):
-    external_schedule = foo_example_repo.get_external_schedule("always_run_schedule")
-    external_sensor = foo_example_repo.get_external_sensor("always_on_sensor")
-    external_job = foo_example_repo.get_full_external_job("foo_job")
+    remote_schedule = foo_example_repo.get_schedule("always_run_schedule")
+    remote_sensor = foo_example_repo.get_sensor("always_on_sensor")
+    remote_job = foo_example_repo.get_full_job("foo_job")
 
-    instance.start_schedule(external_schedule)
-    instance.start_sensor(external_sensor)
+    instance.start_schedule(remote_schedule)
+    instance.start_sensor(remote_sensor)
 
     with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
-        run = create_run(instance, external_job)
+        run = create_run(instance, remote_job, asset_graph=foo_example_workspace.asset_graph)
         instance.submit_run(run.run_id, foo_example_workspace)
 
         runs = [
             poll_for_finished_run(instance, run.run_id),
-            poll_for_finished_run(instance, run_tags=DagsterRun.tags_for_sensor(external_sensor)),
+            poll_for_finished_run(instance, run_tags=DagsterRun.tags_for_sensor(remote_sensor)),
             poll_for_finished_run(
                 instance,
-                run_tags=DagsterRun.tags_for_schedule(external_schedule),
+                run_tags=DagsterRun.tags_for_schedule(remote_schedule),
                 timeout=90,
             ),
         ]
@@ -65,9 +65,9 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
 def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
     with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
-        external_job = foo_example_repo.get_full_external_job("foo_job")
+        remote_job = foo_example_repo.get_full_job("foo_job")
 
-        run = create_run(instance, external_job)
+        run = create_run(instance, remote_job, asset_graph=foo_example_workspace.asset_graph)
 
         instance.submit_run(run.run_id, foo_example_workspace)
 

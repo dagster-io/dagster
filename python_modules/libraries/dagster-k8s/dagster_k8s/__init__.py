@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_k8s.executor import k8s_job_executor as k8s_job_executor
 from dagster_k8s.job import (

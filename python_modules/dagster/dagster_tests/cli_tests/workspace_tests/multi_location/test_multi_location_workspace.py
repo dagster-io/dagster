@@ -1,28 +1,27 @@
 import sys
 from contextlib import ExitStack
 
+import dagster as dg
 import pytest
 import yaml
-from dagster._core.remote_representation import GrpcServerCodeLocation
-from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,
     location_origins_from_config,
 )
-from dagster._utils import file_relative_path
 
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
 def test_multi_location_workspace_foo(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance,
-        [file_relative_path(__file__, "multi_location.yaml")],
+        [dg.file_relative_path(__file__, "multi_location.yaml")],
     ) as grpc_workspace:
         assert isinstance(grpc_workspace, WorkspaceProcessContext)
         assert grpc_workspace.code_locations_count == 3
@@ -35,8 +34,8 @@ def test_multi_file_extend_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance,
         [
-            file_relative_path(__file__, "multi_location.yaml"),
-            file_relative_path(__file__, "extra_location.yaml"),
+            dg.file_relative_path(__file__, "multi_location.yaml"),
+            dg.file_relative_path(__file__, "extra_location.yaml"),
         ],
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
@@ -51,8 +50,8 @@ def test_multi_file_override_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance,
         [
-            file_relative_path(__file__, "multi_location.yaml"),
-            file_relative_path(__file__, "override_location.yaml"),
+            dg.file_relative_path(__file__, "multi_location.yaml"),
+            dg.file_relative_path(__file__, "override_location.yaml"),
         ],
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
@@ -64,18 +63,18 @@ def test_multi_file_override_workspace(instance):
         loaded_from_file = workspace.create_request_context().get_code_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
-        external_repositories = loaded_from_file.get_repositories()
-        assert len(external_repositories) == 1
-        assert "extra_repository" in external_repositories
+        remote_repos = loaded_from_file.get_repositories()
+        assert len(remote_repos) == 1
+        assert "extra_repository" in remote_repos
 
 
 def test_multi_file_extend_and_override_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance,
         [
-            file_relative_path(__file__, "multi_location.yaml"),
-            file_relative_path(__file__, "override_location.yaml"),
-            file_relative_path(__file__, "extra_location.yaml"),
+            dg.file_relative_path(__file__, "multi_location.yaml"),
+            dg.file_relative_path(__file__, "override_location.yaml"),
+            dg.file_relative_path(__file__, "extra_location.yaml"),
         ],
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
@@ -88,9 +87,9 @@ def test_multi_file_extend_and_override_workspace(instance):
         loaded_from_file = workspace.create_request_context().get_code_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
-        external_repositories = loaded_from_file.get_repositories()
-        assert len(external_repositories) == 1
-        assert "extra_repository" in external_repositories
+        remote_repos = loaded_from_file.get_repositories()
+        assert len(remote_repos) == 1
+        assert "extra_repository" in remote_repos
 
 
 def _get_multi_location_workspace_yaml(executable):
@@ -140,7 +139,7 @@ def test_multi_location_origins(config_source):
 
     origins = location_origins_from_config(
         yaml.safe_load(config_source(fake_executable)),
-        file_relative_path(__file__, "not_a_real.yaml"),
+        dg.file_relative_path(__file__, "not_a_real.yaml"),
     )
 
     assert len(origins) == 6
@@ -163,7 +162,7 @@ def test_multi_location_origins(config_source):
         ]
     )
 
-    assert origins["loaded_from_file"].loadable_target_origin.python_file == file_relative_path(
+    assert origins["loaded_from_file"].loadable_target_origin.python_file == dg.file_relative_path(
         __file__, "hello_world_repository.py"
     )
     assert (
@@ -186,12 +185,12 @@ def test_grpc_multi_location_workspace(config_source):
     origins = location_origins_from_config(
         yaml.safe_load(config_source(sys.executable)),
         # fake out as if it were loaded by a yaml file in this directory
-        file_relative_path(__file__, "not_a_real.yaml"),
+        dg.file_relative_path(__file__, "not_a_real.yaml"),
     )
     with ExitStack() as stack:
-        instance = stack.enter_context(instance_for_test())
+        instance = stack.enter_context(dg.instance_for_test())
         code_locations = {
-            name: stack.enter_context(origin.create_single_location(instance))
+            name: stack.enter_context(origin.create_single_location(instance))  # pyright: ignore[reportAttributeAccessIssue]
             for name, origin in origins.items()
         }
 
@@ -209,17 +208,17 @@ def test_grpc_multi_location_workspace(config_source):
         assert loaded_from_module_location.repository_names == {"hello_world_repository"}
 
         named_loaded_from_file_location = code_locations.get("named_loaded_from_file")
-        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}
+        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}  # pyright: ignore[reportOptionalMemberAccess]
         assert isinstance(named_loaded_from_file_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_location = code_locations.get("named_loaded_from_module")
-        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}
+        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}  # pyright: ignore[reportOptionalMemberAccess]
         assert isinstance(named_loaded_from_module_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_attribute_location = code_locations.get(
             "named_loaded_from_module_attribute"
         )
-        assert named_loaded_from_module_attribute_location.repository_names == {
+        assert named_loaded_from_module_attribute_location.repository_names == {  # pyright: ignore[reportOptionalMemberAccess]
             "hello_world_repository_name"
         }
         assert isinstance(named_loaded_from_module_attribute_location, GrpcServerCodeLocation)
@@ -227,7 +226,7 @@ def test_grpc_multi_location_workspace(config_source):
         named_loaded_from_file_attribute_location = code_locations.get(
             "named_loaded_from_file_attribute"
         )
-        assert named_loaded_from_file_attribute_location.repository_names == {
+        assert named_loaded_from_file_attribute_location.repository_names == {  # pyright: ignore[reportOptionalMemberAccess]
             "hello_world_repository_name"
         }
         assert isinstance(named_loaded_from_file_attribute_location, GrpcServerCodeLocation)

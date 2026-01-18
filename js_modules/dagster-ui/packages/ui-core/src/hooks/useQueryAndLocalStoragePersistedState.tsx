@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import {QueryPersistedDataType, useQueryPersistedState} from './useQueryPersistedState';
 import {useSetStateUpdateCallback} from './useSetStateUpdateCallback';
+import {useStateWithStorage} from './useStateWithStorage';
 
 /**
  *
@@ -15,39 +16,20 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
     isEmptyState: (state: T) => boolean;
   },
 ): [T, (setterOrState: React.SetStateAction<T>) => void] => {
-  // Grab state from localStorage as "initialState"
-  const initialState = React.useMemo(() => {
-    try {
-      const value = localStorage.getItem(props.localStorageKey);
-      if (value) {
-        return props.decode?.(JSON.parse(value));
-      }
-    } catch {}
-    return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.localStorageKey]);
+  const {localStorageKey, isEmptyState, decode, encode} = props;
+
+  const [valueFromLocalStorage, setValueFromLocalStorage] = useStateWithStorage(
+    localStorageKey,
+    (json) => (decode ? decode(json ?? {}) : json),
+  );
 
   const [state, setter] = useQueryPersistedState(props);
 
-  const isFirstRender = React.useRef(true);
-  React.useEffect(() => {
-    if (initialState && props.isEmptyState(state)) {
-      setter(initialState);
-    }
-    isFirstRender.current = false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return [
-    isFirstRender.current && initialState && props.isEmptyState(state) ? initialState : state,
+    isEmptyState(state) ? (valueFromLocalStorage ?? state) : state,
     useSetStateUpdateCallback(state, (nextState) => {
+      setValueFromLocalStorage(encode ? encode(nextState) : nextState);
       setter(nextState);
-
-      // Persist state updates to localStorage
-      window.localStorage.setItem(
-        props.localStorageKey,
-        JSON.stringify(props.encode ? props.encode(nextState) : nextState),
-      );
     }),
   ];
 };

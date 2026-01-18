@@ -1,16 +1,13 @@
-from dagster import job, op, reconstructable
-from dagster._core.definitions.job_definition import JobDefinition
+import dagster as dg
 from dagster._core.events import MARKER_EVENTS
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import instance_for_test
 
 
-def define_job() -> JobDefinition:
-    @op
+def define_job() -> dg.JobDefinition:
+    @dg.op
     def ping():
         return "ping"
 
-    @job
+    @dg.job
     def simple():
         ping()
 
@@ -18,9 +15,9 @@ def define_job() -> JobDefinition:
 
 
 def test_multiproc_markers():
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(define_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(define_job),
             instance=instance,
         ) as result:
             assert result.success

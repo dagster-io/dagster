@@ -15,4 +15,4 @@ def test_partitioned_multi_asset_sensor():
             materialize([partitioned_asset], partition_key="1", instance=instance)
 
             result = partitioned_multi_asset_sensor(context)
-            assert len(result) == 1
+            assert len(result) == 1  # pyright: ignore[reportArgumentType]

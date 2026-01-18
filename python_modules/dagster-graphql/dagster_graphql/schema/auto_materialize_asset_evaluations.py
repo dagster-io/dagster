@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 import graphene
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
@@ -10,8 +11,8 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.partition_keys import (
     GraphenePartitionKeys,
@@ -127,7 +128,7 @@ def create_graphene_auto_materialize_rule_evaluation(
 
 def _create_rules_with_rule_evaluations_for_decision_type(
     evaluation: AutomationConditionEvaluation, decision_type: AutoMaterializeDecisionType
-) -> Tuple[
+) -> tuple[
     Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
 ]:
     rules = []
@@ -170,7 +171,7 @@ def _create_rules_with_rule_evaluations_for_decision_type(
 
 def create_graphene_auto_materialize_rules_with_rule_evaluations(
     evaluation: AutomationConditionEvaluation,
-) -> Tuple[
+) -> tuple[
     Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
 ]:
     rules, rules_with_rule_evaluations = [], []
@@ -210,7 +211,7 @@ def create_graphene_auto_materialize_rules_with_rule_evaluations(
 
 class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
-    evaluationId = graphene.NonNull(graphene.Int)
+    evaluationId = graphene.NonNull(graphene.ID)
     numRequested = graphene.NonNull(graphene.Int)
     numSkipped = graphene.NonNull(graphene.Int)
     numDiscarded = graphene.NonNull(graphene.Int)

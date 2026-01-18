@@ -1,8 +1,8 @@
 import {css} from 'styled-components';
 
 export const darkThemeColors = css`
-  --browser-color-scheme: 'dark';
-  --color-keyline-default: var(--color-translucent-gray15);
+  --browser-color-scheme: dark;
+  --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue200);
   --color-link-hover: var(--color-core-blue400);
   --color-link-disabled: var(--color-core-gray750);
@@ -118,6 +118,9 @@ export const darkThemeColors = css`
   --color-data-viz-violet-alt: var(--color-dataviz-violet100);
   --color-data-viz-yellow: var(--color-dataviz-yellow200);
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow100);
+  --color-checkbox-unchecked: var(--color-core-gray500);
+  --color-checkbox-checked: var(--color-core-blue400);
+  --color-checkbox-disabled: var(--color-core-gray700);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray950),
     var(--color-translucent-blue15) 100%

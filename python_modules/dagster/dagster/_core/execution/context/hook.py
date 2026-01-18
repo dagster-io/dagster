@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Set, Union
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -37,12 +38,13 @@ def _check_property_on_test_context(
             f"Attribute '{user_facing_name}' was not provided when "
             f"constructing context. Provide a value for the '{param_on_builder}' parameter on "
             "'build_hook_context'. To learn more, check out the testing hooks section of Dagster's "
-            "concepts docs: https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#testing-hooks"
+            "concepts docs: https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#testing-hooks"
         )
     else:
         return value
 
 
+@public
 class HookContext:
     """The ``context`` object available to a hook function on an DagsterEvent."""
 
@@ -143,7 +145,7 @@ class HookContext:
             * the output values in the normal case
             * a dictionary from mapping key to corresponding value in the mapped case
         """
-        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+        results: dict[str, Union[Any, dict[str, Any]]] = {}
         captured = self._step_execution_context.step_output_capture
 
         if captured is None:
@@ -172,7 +174,7 @@ class HookContext:
             * the applied output metadata in the normal case
             * a dictionary from mapping key to corresponding metadata in the mapped case
         """
-        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+        results: dict[str, Union[Any, dict[str, Any]]] = {}
         captured = self._step_execution_context.step_output_metadata_capture
 
         if captured is None:
@@ -277,7 +279,7 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
 
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> set[str]:
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
 
     @property
@@ -435,6 +437,7 @@ class BoundHookContext(HookContext):
         return self._instance
 
 
+@public
 def build_hook_context(
     resources: Optional[Mapping[str, Any]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,

@@ -47,7 +47,10 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             return {'open-nodes': Array.from(val)};
           },
           decode: (qs) => {
-            return new Set(qs['open-nodes']);
+            if (Array.isArray(qs['open-nodes'])) {
+              return new Set(qs['open-nodes'].map(String));
+            }
+            return new Set();
           },
           isEmptyState: (val) => val.size === 0,
         }),
@@ -90,7 +93,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
     expect(state).toEqual(new Set(['test', 'test2']));
 
     await waitFor(() => {
-      expect(querySearch).toEqual('?open-nodes%5B%5D=test&open-nodes%5B%5D=test2');
+      expect(querySearch).toEqual('?open-nodes%5B0%5D=test&open-nodes%5B1%5D=test2');
     });
   });
 
@@ -107,7 +110,10 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             return {'open-nodes': Array.from(val)};
           },
           decode: (qs) => {
-            return new Set(qs['open-nodes']);
+            if (Array.isArray(qs['open-nodes'])) {
+              return new Set(qs['open-nodes'].map(String));
+            }
+            return new Set();
           },
           isEmptyState: (val) => val.size === 0,
         }),

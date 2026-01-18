@@ -1,0 +1,23 @@
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH', 'target/local.duckdb') }}"
+      schema: "{{ env_var('DAGSTER_DBT_JAFFLE_SCHEMA', 'dev') }}"
+      threads: 24
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      client_session_keep_alive: False
+      database: TESTDB
+      schema: TESTSCHEMA
+    bigquery:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: BIGQUERY_IO_MANAGER_SCHEMA
+      threads: 4
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"

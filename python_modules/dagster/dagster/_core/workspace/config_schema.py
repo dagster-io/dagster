@@ -1,5 +1,6 @@
 import os
-from typing import Dict, Mapping, cast
+from collections.abc import Mapping
+from typing import cast
 
 import dagster._check as check
 from dagster._config import (
@@ -11,6 +12,7 @@ from dagster._config import (
     StringSource,
     process_config,
 )
+from dagster._config.field_utils import Permissive
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.merger import merge_dicts
 
@@ -36,7 +38,7 @@ def ensure_workspace_config(
             validation_result.errors,
             workspace_config,
         )
-    return cast(Dict[str, object], validation_result.value)
+    return cast("dict[str, object]", validation_result.value)
 
 
 def _get_target_config() -> Mapping[str, ScalarUnion]:
@@ -71,6 +73,15 @@ def _get_target_config() -> Mapping[str, ScalarUnion]:
                 "executable_path": Field(StringSource, is_required=False),
             },
         ),
+        "autoload_defs_module": ScalarUnion(
+            scalar_type=str,
+            non_scalar_schema={
+                "module_name": StringSource,
+                "working_directory": Field(StringSource, is_required=False),
+                "location_name": Field(StringSource, is_required=False),
+                "executable_path": Field(StringSource, is_required=False),
+            },
+        ),
     }
 
 
@@ -87,6 +98,7 @@ WORKSPACE_CONFIG_SCHEMA = {
                             "port": Field(IntSource, is_required=False),
                             "location_name": Field(StringSource, is_required=False),
                             "ssl": Field(bool, is_required=False),
+                            "additional_metadata": Field(Permissive(), is_required=False),
                         },
                     },
                 )

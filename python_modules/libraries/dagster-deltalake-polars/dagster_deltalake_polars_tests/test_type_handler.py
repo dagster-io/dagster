@@ -6,12 +6,7 @@ import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     asset,
     graph,
     instance_for_test,
@@ -19,6 +14,13 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
 from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
@@ -493,7 +495,7 @@ def test_dynamic_partition(tmp_path, io_manager):
     with instance_for_test() as instance:
         resource_defs = {"io_manager": io_manager}
 
-        instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
+        instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
         materialize(
             [dynamic_partitioned],
@@ -507,7 +509,7 @@ def test_dynamic_partition(tmp_path, io_manager):
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == ["1", "1", "1"]
 
-        instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
+        instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
 
         materialize(
             [dynamic_partitioned],

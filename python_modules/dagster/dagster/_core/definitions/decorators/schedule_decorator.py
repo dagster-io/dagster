@@ -1,9 +1,10 @@
 import copy
+from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Mapping, Optional, Sequence, Set, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import experimental_param
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_request import RunRequest, SkipReason
@@ -19,24 +20,25 @@ from dagster._core.definitions.schedule_definition import (
 )
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.definitions.target import ExecutableDefinition
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
 from dagster._utils import ensure_gen
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
 
 
-@experimental_param(param="target")
+@beta_param(param="owners")
+@public
 def schedule(
     cron_schedule: Union[str, Sequence[str]],
     *,
@@ -51,7 +53,7 @@ def schedule(
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     target: Optional[
         Union[
             "CoercibleToAssetSelection",
@@ -60,6 +62,7 @@ def schedule(
             "UnresolvedAssetJobDefinition",
         ]
     ] = None,
+    owners: Optional[Sequence[str]] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -107,7 +110,8 @@ def schedule(
             The target that the schedule will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
-            This is an experimental parameter that will replace `job` and `job_name`.
+            This parameter will replace `job` and `job_name`.
+        owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the schedule.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -127,10 +131,14 @@ def schedule(
                 " to ScheduleDefinition. Must provide only one of the two."
             )
         elif tags:
-            validated_tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=3)
+            validated_tags = normalize_tags(
+                tags,
+                allow_private_system_tags=False,
+                warning_stacklevel=3,
+            )
 
         context_param_name = get_context_param_name(fn)
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+        resource_arg_names: set[str] = {arg.name for arg in get_resource_args(fn)}
 
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
@@ -163,7 +171,14 @@ def schedule(
                     evaluated_run_config = copy.deepcopy(result)
                     evaluated_tags = (
                         validated_tags
-                        or (tags_fn and normalize_tags(tags_fn(context), allow_reserved_tags=False))
+                        or (
+                            tags_fn
+                            and normalize_tags(
+                                tags_fn(context),
+                                allow_private_system_tags=False,
+                                warning_stacklevel=5,
+                            )  # reset once owners is out of beta_param
+                        )
                         or None
                     )
                     yield RunRequest(
@@ -172,10 +187,10 @@ def schedule(
                         tags=evaluated_tags,
                     )
                 elif isinstance(result, list):
-                    yield from cast(List[RunRequest], result)
+                    yield from cast("list[RunRequest]", result)
                 else:
                     # this is a run-request based decorated function
-                    yield from cast(RunRequestIterator, ensure_gen(result))
+                    yield from cast("RunRequestIterator", ensure_gen(result))
 
         has_context_arg = has_at_least_one_parameter(fn)
         evaluation_fn = DecoratedScheduleFunction(
@@ -202,6 +217,7 @@ def schedule(
             metadata=metadata,
             should_execute=None,  # already encompassed in evaluation_fn
             target=target,
+            owners=owners,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

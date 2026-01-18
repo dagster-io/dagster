@@ -7,9 +7,10 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Dict, List, Optional, Sequence
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.definitions.data_version import (
@@ -54,9 +55,9 @@ class InputAssetVersionInfo:
 class DataVersionCache:
     def __init__(self, context: "StepExecutionContext"):
         self._context = context
-        self.input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
+        self.input_asset_version_info: dict[AssetKey, Optional[InputAssetVersionInfo]] = {}
         self.is_external_input_asset_version_info_loaded = False
-        self.values: Dict[AssetKey, "DataVersion"] = {}
+        self.values: dict[AssetKey, DataVersion] = {}
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         self.values[asset_key] = data_version
@@ -78,9 +79,9 @@ class DataVersionCache:
     def fetch_external_input_asset_version_info(self) -> None:
         output_keys = self._context.get_output_asset_keys()
 
-        all_dep_keys: List[AssetKey] = []
+        all_dep_keys: list[AssetKey] = []
         for output_key in output_keys:
-            if output_key not in self._context.job_def.asset_layer.asset_graph.all_asset_keys:
+            if not self._context.job_def.asset_layer.has(output_key):
                 continue
             dep_keys = self._context.job_def.asset_layer.get(output_key).parent_keys
             for key in dep_keys:
@@ -103,7 +104,7 @@ class DataVersionCache:
             else:
                 storage_id = event.storage_id
                 # Input name will be none if this is an internal dep
-                input_name = self._context.job_def.asset_layer.input_for_asset_key(
+                input_name = self._context.job_def.asset_layer.get_node_input_name(
                     self._context.node_handle, key
                 )
                 # Exclude AllPartitionMapping for now to avoid huge queries
@@ -137,7 +138,7 @@ class DataVersionCache:
                     event.timestamp,
                 )
 
-    def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> Dict[AssetKey, "AssetRecord"]:
+    def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> dict[AssetKey, "AssetRecord"]:
         batch_size = int(os.getenv("GET_ASSET_RECORDS_FOR_DATA_VERSION_BATCH_SIZE", "100"))
         asset_records_by_key = {}
         to_fetch = asset_keys

@@ -1,0 +1,7 @@
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH') }}"
+      threads: 24

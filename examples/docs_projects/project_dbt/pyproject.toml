@@ -1,0 +1,36 @@
+[project]
+name = "project_dbt"
+requires-python = ">=3.10,<3.15"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-duckdb",
+    "dagster-dbt",
+    "dbt-duckdb",
+    "pandas",
+    "requests",
+    "pyarrow",
+    "numpy",
+    "matplotlib",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "dagster-dg-cli",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_dbt"
+registry_modules = [
+    "project_dbt.components.*",
+]
+
+

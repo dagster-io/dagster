@@ -23,9 +23,11 @@ export function invocationsOfPlannedDynamicStep(plannedStepKey: string, runtimeS
 }
 
 export function dynamicKeyWithoutIndex(stepKey: string) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return stepKey.split('[')[0]!;
 }
 
 export function replacePlannedIndex(stepKey: string, stepKeyWithIndex: string) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return stepKey.replace('[?]', stepKeyWithIndex.match(/(\[.*\])/)![1]!);
 }

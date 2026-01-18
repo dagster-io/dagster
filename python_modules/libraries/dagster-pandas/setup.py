@@ -1,18 +1,17 @@
 import os
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def long_description() -> str:
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, "README.md"), "r", encoding="utf8") as fh:
+    with open(os.path.join(here, "README.md"), encoding="utf8") as fh:
         return fh.read()
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_pandas/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -36,17 +35,17 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pandas_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
         "pandas",

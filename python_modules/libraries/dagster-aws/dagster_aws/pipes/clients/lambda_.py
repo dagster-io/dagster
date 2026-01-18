@@ -1,10 +1,12 @@
 import json
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 import boto3
 from dagster import PipesClient
 from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -46,19 +48,19 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         function_name: str,
         event: Mapping[str, Any],
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
     ) -> PipesClientCompletedInvocation:
         """Synchronously invoke a lambda function, enriched with the pipes protocol.
 
         Args:
             function_name (str): The name of the function to use.
             event (Mapping[str, Any]): A JSON serializable object to pass as input to the lambda.
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external

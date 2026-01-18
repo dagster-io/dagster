@@ -1,8 +1,8 @@
+import {gql, useQuery} from '../apollo-client';
 import {
   InstanceConfigHasInfoQuery,
   InstanceConfigHasInfoQueryVariables,
 } from './types/useCanSeeConfig.types';
-import {gql, useQuery} from '../apollo-client';
 
 export const useCanSeeConfig = () => {
   const queryResult = useQuery<InstanceConfigHasInfoQuery, InstanceConfigHasInfoQueryVariables>(

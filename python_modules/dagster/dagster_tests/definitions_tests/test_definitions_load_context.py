@@ -1,12 +1,10 @@
 import json
 from unittest.mock import patch
 
+import dagster as dg
 import pytest
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
@@ -18,20 +16,13 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
-    repository_def_from_pointer,
+    initialize_repository_def_from_pointer,
     repository_def_from_target_def,
 )
-from dagster._core.definitions.repository_definition.repository_definition import (
-    RepositoryDefinition,
-    RepositoryLoadData,
-)
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.api import execute_job
-from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils.test.definitions import lazy_definitions, scoped_reconstruction_serdes_objects
+from dagster._utils.test.definitions import scoped_reconstruction_serdes_objects
+from dagster_shared.serdes import whitelist_for_serdes
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
 
@@ -46,7 +37,7 @@ def fetch_foo_integration_asset_info(workspace_id: str):
 
 
 # This function would be provided by integration lib dagster-foo
-def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str) -> Definitions:
+def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str) -> dg.Definitions:
     cache_key = f"{FOO_INTEGRATION_SOURCE_KEY}/{workspace_id}"
     if (
         context.load_type == DefinitionsLoadType.RECONSTRUCTION
@@ -57,25 +48,25 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
     else:
         payload = fetch_foo_integration_asset_info(workspace_id)
         serialized_payload = json.dumps(payload)
-    asset_specs = [AssetSpec(item["id"]) for item in payload]
+    asset_specs = [dg.AssetSpec(item["id"]) for item in payload]
     assets = external_assets_from_specs(asset_specs)
-    return Definitions(
+    return dg.Definitions(
         assets=assets,
     ).with_reconstruction_metadata({cache_key: serialized_payload})
 
 
-@lazy_definitions
+@dg.definitions
 def metadata_defs():
     context = DefinitionsLoadContext.get()
 
-    @asset
+    @dg.asset
     def regular_asset(): ...
 
-    all_asset_job = define_asset_job("all_assets", selection=AssetSelection.all())
+    all_asset_job = dg.define_asset_job("all_assets", selection=AssetSelection.all())
 
-    return Definitions.merge(
+    return Definitions.merge_unbound_defs(
         _get_foo_integration_defs(context, WORKSPACE_ID),
-        Definitions(assets=[regular_asset], jobs=[all_asset_job]),
+        dg.Definitions(assets=[regular_asset], jobs=[all_asset_job]),
     )
 
 
@@ -85,16 +76,16 @@ def metadata_defs():
 
 
 def test_reconstruction_metadata():
-    repo = repository_def_from_target_def(metadata_defs, DefinitionsLoadType.INITIALIZATION)
+    repo = repository_def_from_target_def(metadata_defs)
     assert repo
     assert repo.assets_defs_by_key.keys() == {
-        AssetKey("regular_asset"),
-        AssetKey("alpha"),
-        AssetKey("beta"),
+        dg.AssetKey("regular_asset"),
+        dg.AssetKey("alpha"),
+        dg.AssetKey("beta"),
     }
 
     recon_repo = ReconstructableRepository.for_file(__file__, "metadata_defs")
-    assert isinstance(recon_repo.get_definition(), RepositoryDefinition)
+    assert isinstance(recon_repo.get_definition(), dg.RepositoryDefinition)
 
     recon_repo_with_cache = recon_repo.with_repository_load_data(
         RepositoryLoadData(
@@ -117,9 +108,9 @@ def test_reconstruction_metadata():
 
 def test_invalid_reconstruction_metadata():
     with pytest.raises(
-        DagsterInvariantViolationError, match=r"Reconstruction metadata values must be strings"
+        dg.DagsterInvariantViolationError, match=r"Reconstruction metadata values must be strings"
     ):
-        Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})
+        dg.Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})  # pyright: ignore[reportArgumentType]
 
 
 def test_default_global_context():
@@ -130,32 +121,32 @@ def test_default_global_context():
 
 
 def test_invoke_lazy_definitions():
-    @lazy_definitions
-    def defs() -> Definitions:
-        return Definitions()
+    @dg.definitions
+    def defs() -> dg.Definitions:
+        return dg.Definitions()
 
     assert defs()
 
 
-@lazy_definitions
-def load_type_test_defs() -> Definitions:
+@dg.definitions
+def load_type_test_defs() -> dg.Definitions:
     context = DefinitionsLoadContext.get()
     if not context.load_type == DefinitionsLoadType.INITIALIZATION:
         raise Exception("Unexpected load type")
 
-    @asset
+    @dg.asset
     def foo(): ...
 
-    foo_job = define_asset_job("foo_job", [foo])
+    foo_job = dg.define_asset_job("foo_job", [foo])
 
-    return Definitions(assets=[foo], jobs=[foo_job])
+    return dg.Definitions(assets=[foo], jobs=[foo_job])
 
 
-def test_definitions_load_type():
+def test_definitions_load_type() -> None:
     pointer = CodePointer.from_python_file(__file__, "load_type_test_defs", None)
 
     # Load type is INITIALIZATION so should not raise
-    assert repository_def_from_pointer(pointer, DefinitionsLoadType.INITIALIZATION, None)
+    assert initialize_repository_def_from_pointer(pointer)
 
     recon_job = ReconstructableJob(
         repository=ReconstructableRepository(pointer),
@@ -163,9 +154,9 @@ def test_definitions_load_type():
     )
 
     # Executing a job should cause the definitions to be loaded with a non-INITIALIZATION load type
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with pytest.raises(Exception, match="Unexpected load type"):
-            execute_job(recon_job, instance=instance)
+            dg.execute_job(recon_job, instance=instance)
 
 
 def test_state_backed_defs_loader() -> None:
@@ -182,18 +173,18 @@ def test_state_backed_defs_loader() -> None:
         def fetch_state(self) -> ExampleDefState:
             return ExampleDefState(a_string="foo")
 
-        def defs_from_state(self, state: ExampleDefState) -> Definitions:
-            return Definitions([AssetSpec(key=state.a_string)])
+        def defs_from_state(self, state: ExampleDefState) -> dg.Definitions:
+            return dg.Definitions([dg.AssetSpec(key=state.a_string)])
 
     loader = ExampleStateBackedDefinitionsLoader()
 
     defs = loader.build_defs()
 
-    assert len(defs.get_all_asset_specs()) == 1
-    assert defs.get_assets_def("foo")
+    assert len(defs.resolve_all_asset_specs()) == 1
+    assert defs.resolve_assets_def("foo")
 
     with scoped_reconstruction_serdes_objects(dict(test_key=ExampleDefState(a_string="bar"))):
         loader_cached = ExampleStateBackedDefinitionsLoader()
         defs = loader_cached.build_defs()
-        assert len(defs.get_all_asset_specs()) == 1
-        assert defs.get_assets_def("bar")
+        assert len(defs.resolve_all_asset_specs()) == 1
+        assert defs.resolve_assets_def("bar")

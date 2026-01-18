@@ -1,0 +1,126 @@
+name: Dagster Cloud Hybrid Deployment
+on:
+  push: # For full deployments
+    branches:
+      - "main"
+      - "master"
+  pull_request: # For branch deployments
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  # Cancel in-progress deploys to the same branch
+  group: ${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+env:
+  # The organization name in Dagster Cloud
+  DAGSTER_CLOUD_ORGANIZATION: "TEMPLATE_ORGANIZATION_NAME"
+  # The Dagster Cloud URL
+  DAGSTER_CLOUD_URL: "TEMPLATE_DAGSTER_CLOUD_URL"
+  # The API token from https://dagster.cloud/ should be stored in Secrets
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  # Path to the root folder containing the dagster project
+  DAGSTER_PROJECT_DIR: "TEMPLATE_PROJECT_DIR"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  dagster-cloud-deploy:
+    runs-on: ubuntu-22.04
+    steps:
+      # If this is a closed PR the prerun step closes the branch deployment and returns
+      # output.result='skip' which is used to skip other steps in this workflow.
+      - name: Pre-run checks
+        id: prerun
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+
+      # Checkout the project
+      - name: Checkout
+        uses: actions/checkout@v3
+        if: steps.prerun.outputs.result != 'skip'
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Detect if this is branch deployment and initialize the build session
+      - name: Initialize build session
+        id: ci-init
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
+          # A full deployment name. If this run is for a pull request, this value will be used as
+          # the base deployment for the branch deployment.
+          deployment: "TEMPLATE_DEFAULT_DEPLOYMENT_NAME"
+
+      # Ensure the correct Python version is installed
+      - name: Set up Python ${{ env.PYTHON_VERSION }} for target
+        id: setup-python-version
+        if: steps.prerun.outputs.result != 'skip'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: steps.prerun.outputs.result != 'skip'
+        run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install uv
+        shell: bash
+
+      # Sync all projects (workspace or single project)
+      - name: Sync project dependencies
+        if: steps.prerun.outputs.result != 'skip'
+        run: |
+          cd ${{ env.DAGSTER_PROJECT_DIR }}
+          for project in $(${{ steps.setup-python-version.outputs.python-path }} -m uv run dg list projects); do
+            (cd "$project" && ${{ steps.setup-python-version.outputs.python-path }} -m uv sync)
+          done
+        shell: bash
+
+      # Refresh state for any StateBackedComponents in the project
+      - name: Refresh defs state
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy refresh-defs-state --target-path=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # Any value can be used as the docker image tag. It is recommended to use a unique value
+      # for each build so that multiple builds do not overwrite each other.
+      - name: Generate docker image tag
+        id: generate-image-tag
+        if: steps.prerun.outputs.result != 'skip'
+        run: echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV && echo $IMAGE_TAG
+
+      # Enable buildx for caching
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login to the container registry
+      # TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT
+
+      # For each code location, the "build-push-action" builds the docker
+      # image and a "set-build-output" command records the image tag for each code location.
+      # To re-use the same docker image across multiple code locations, build the docker image once
+      # and specify the same tag in multiple "set-build-output" commands. To use a different docker
+      # image for each code location, use multiple "build-push-actions" with a location specific
+      # tag.
+      # TEMPLATE_BUILD_LOCATION_FRAGMENT
+
+      # Deploy all code locations in this build session to Dagster Cloud
+      - name: Deploy to Dagster Cloud
+        id: ci-deploy
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy finish --path=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # Update a PR comment - this runs always() so the comment is updated on success and failure
+      - name: Update PR comment for branch deployments
+        id: ci-notify
+        if: steps.prerun.outputs.result != 'skip' && always()
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # Generate a summary that shows up on the Workflow Summary page
+      - name: Generate a summary
+        id: ci-summary
+        if: steps.prerun.outputs.result != 'skip' && always()
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY"

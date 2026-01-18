@@ -1,8 +1,11 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
+
+from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -10,17 +13,12 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
 @record
 class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition[T_EntityKey]
-
-    @property
-    def description(self) -> str:
-        return "Condition newly became true."
 
     @property
     def name(self) -> str:
@@ -41,15 +39,40 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
             return None
         return context.asset_graph_view.get_subset_from_serializable_subset(true_subset)
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
+        # newly true conditions should have stable cursoring logic regardless of where they
+        # exist in the broader condition tree, as they're always evaluated over the entire
+        # subset
+        return self._get_stable_unique_id(target_key)
+
+    def get_backcompat_node_unique_ids(
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
+    ) -> Sequence[str]:
+        return [
+            # get the standard globally-aware unique id for backcompat purposes
+            super().get_node_unique_id(
+                parent_unique_id=parent_unique_id, index=index, target_key=target_key
+            )
+        ]
+
+    async def evaluate(self, context: AutomationContext) -> AutomationResult:  # pyright: ignore[reportIncompatibleMethodOverride]
         # evaluate child condition
-        child_context = context.for_child_condition(
+        child_result = await context.for_child_condition(
             self.operand,
-            child_index=0,
+            child_indices=[0],
             # must evaluate child condition over the entire subset to avoid missing state transitions
             candidate_subset=context.asset_graph_view.get_full_subset(key=context.key),
-        )
-        child_result = self.operand.evaluate(child_context)
+        ).evaluate_async()
 
         # get the set of asset partitions of the child which newly became true
         newly_true_child_subset = child_result.true_subset.compute_difference(

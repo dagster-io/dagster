@@ -1,5 +1,6 @@
-from dagster._cli.workspace import get_workspace_process_context_from_kwargs
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import file_relative_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import (
@@ -10,15 +11,17 @@ from dagster_graphql.test.utils import (
 
 
 def test_execute_hammer_through_webserver():
-    with instance_for_test() as instance:
-        with get_workspace_process_context_from_kwargs(
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
+        with WorkspaceProcessContext(
             instance,
             version="",
             read_only=False,
-            kwargs={
-                "python_file": (file_relative_path(__file__, "hammer_job.py"),),
-                "attribute": "hammer_job",
-            },
+            workspace_load_target=workspace_opts_to_load_target(
+                WorkspaceOpts(
+                    python_file=(file_relative_path(__file__, "hammer_job.py"),),
+                    attribute="hammer_job",
+                )
+            ),
         ) as workspace_process_context:
             context = workspace_process_context.create_request_context()
             selector = infer_job_selector(context, "hammer_job")

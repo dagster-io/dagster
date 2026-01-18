@@ -1,12 +1,11 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, cast
 
 import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
@@ -22,7 +21,6 @@ from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
 from dagster_graphql.implementation.external import (
     fetch_location_entry,
@@ -30,6 +28,7 @@ from dagster_graphql.implementation.external import (
     fetch_repositories,
     fetch_repository,
     fetch_workspace,
+    get_remote_job_or_raise,
 )
 from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_check_executions
 from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
@@ -43,6 +42,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset,
     get_asset_node,
     get_asset_node_definition_collisions,
+    get_asset_records,
     get_assets,
 )
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
@@ -61,7 +61,6 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_sets_or_error,
 )
 from dagster_graphql.implementation.fetch_pipelines import (
-    get_job_or_error,
     get_job_snapshot_or_error_from_job_selector,
     get_job_snapshot_or_error_from_snap_or_selector,
     get_job_snapshot_or_error_from_snapshot_id,
@@ -90,9 +89,9 @@ from dagster_graphql.implementation.fetch_schedules import (
 from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.fetch_solids import get_graph_or_error
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
 from dagster_graphql.implementation.run_config_schema import resolve_run_config_schema_or_error
 from dagster_graphql.implementation.utils import (
+    UserFacingGraphQLError,
     capture_error,
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
@@ -103,7 +102,6 @@ from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluationRecordsOrError,
 )
 from dagster_graphql.schema.asset_graph import (
-    GrapheneAssetKey,
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
     GrapheneAssetNodeDefinitionCollision,
@@ -118,8 +116,10 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
+    GrapheneDefsStateInfo,
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
@@ -129,6 +129,7 @@ from dagster_graphql.schema.external import (
 )
 from dagster_graphql.schema.inputs import (
     GrapheneAssetBackfillPreviewParams,
+    GrapheneAssetCheckHandleInput,
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneBulkActionsFilter,
@@ -162,14 +163,24 @@ from dagster_graphql.schema.permissions import GraphenePermission
 from dagster_graphql.schema.pipelines.config_result import GraphenePipelineConfigValidationResult
 from dagster_graphql.schema.pipelines.pipeline import (
     GrapheneEventConnectionOrError,
+    GraphenePipeline,
     GrapheneRunOrError,
+)
+from dagster_graphql.schema.pipelines.resource import (
+    GrapheneResource,
+    GrapheneResourceConnection,
+    GrapheneResourcesOrError,
 )
 from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshotOrError
 from dagster_graphql.schema.resources import (
     GrapheneResourceDetailsListOrError,
     GrapheneResourceDetailsOrError,
 )
-from dagster_graphql.schema.roots.assets import GrapheneAssetOrError, GrapheneAssetsOrError
+from dagster_graphql.schema.roots.assets import (
+    GrapheneAssetOrError,
+    GrapheneAssetRecordsOrError,
+    GrapheneAssetsOrError,
+)
 from dagster_graphql.schema.roots.execution_plan import GrapheneExecutionPlanOrError
 from dagster_graphql.schema.roots.pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 from dagster_graphql.schema.run_config import GrapheneRunConfigSchemaOrError
@@ -188,6 +199,7 @@ from dagster_graphql.schema.runs_feed import (
     GrapheneRunsFeedConnectionOrError,
     GrapheneRunsFeedCount,
     GrapheneRunsFeedCountOrError,
+    GrapheneRunsFeedView,
 )
 from dagster_graphql.schema.schedules import (
     GrapheneScheduleOrError,
@@ -242,6 +254,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineOrError),
         params=graphene.NonNull(GraphenePipelineSelector),
         description="Retrieve a job by its location name, repository name, and job name.",
+    )
+
+    resourcesOrError = graphene.Field(
+        graphene.NonNull(GrapheneResourcesOrError),
+        pipelineSelector=graphene.NonNull(GraphenePipelineSelector),
+        description="Retrieve the list of resources for a given job.",
     )
 
     pipelineSnapshotOrError = graphene.Field(
@@ -375,16 +393,19 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunsFeedConnectionOrError),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
+        view=graphene.NonNull(GrapheneRunsFeedView),
         filter=graphene.Argument(GrapheneRunsFilter),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
     )
     runsFeedCountOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsFeedCountOrError),
+        view=graphene.NonNull(GrapheneRunsFeedView),
         filter=graphene.Argument(GrapheneRunsFilter),
         description="Retrieve the number of entries for the Runs Feed after applying a filter.",
     )
     runTagKeysOrError = graphene.Field(
-        GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
+        GrapheneRunTagKeysOrError,
+        description="Retrieve the distinct tag keys from all runs.",
     )
     runTagsOrError = graphene.Field(
         GrapheneRunTagsOrError,
@@ -440,11 +461,19 @@ class GrapheneQuery(graphene.ObjectType):
     assetsOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetsOrError),
         prefix=graphene.List(graphene.NonNull(graphene.String)),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         cursor=graphene.String(),
         limit=graphene.Int(),
-        description="Retrieve assets after applying a prefix filter, cursor, and limit.",
+        description="Retrieve all assets (both with or without a definition) after providing a list of asset keys, applying a prefix filter, cursor, and limit.",
     )
 
+    assetRecordsOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetRecordsOrError),
+        prefix=graphene.List(graphene.NonNull(graphene.String)),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retrieve materialized asset records after applying a prefix filter, cursor, and limit.",
+    )
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
@@ -458,7 +487,7 @@ class GrapheneQuery(graphene.ObjectType):
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
         description=(
-            "Retrieve asset nodes after applying a filter on asset group, job, and asset keys."
+            "Retrieve asset nodes (assets with a definition) after applying a filter on asset group, job, and asset keys."
         ),
     )
 
@@ -563,15 +592,15 @@ class GrapheneQuery(graphene.ObjectType):
 
     truePartitionsForAutomationConditionEvaluationNode = graphene.Field(
         non_null_list(graphene.String),
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         nodeUniqueId=graphene.Argument(graphene.String),
         description="Retrieve the partition keys which were true for a specific automation condition evaluation node.",
     )
 
     autoMaterializeEvaluationsForEvaluationId = graphene.Field(
         GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         description=(
             "Retrieve the auto materialization evaluation records for a given evaluation ID."
         ),
@@ -579,15 +608,16 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetConditionEvaluationForPartition = graphene.Field(
         GrapheneAssetConditionEvaluation,
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         partition=graphene.Argument(graphene.NonNull(graphene.String)),
         description="Retrieve the condition evaluation for an asset and partition.",
     )
 
     assetConditionEvaluationRecordsOrError = graphene.Field(
         GrapheneAssetConditionEvaluationRecordsOrError,
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        assetCheckKey=graphene.Argument(GrapheneAssetCheckHandleInput, required=False),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the condition evaluation records for an asset.",
@@ -595,7 +625,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetConditionEvaluationsForEvaluationId = graphene.Field(
         GrapheneAssetConditionEvaluationRecordsOrError,
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         description=("Retrieve the condition evaluation records for a given evaluation ID."),
     )
 
@@ -618,6 +648,11 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         description="Retrieve the executions for a given asset check.",
+    )
+
+    latestDefsStateInfo = graphene.Field(
+        GrapheneDefsStateInfo,
+        description="Retrieve the latest available DefsStateInfo for the current workspace.",
     )
 
     @capture_error
@@ -658,7 +693,7 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_location_statuses(graphene_info.context)
 
     @capture_error
-    def resolve_pipelineSnapshotOrError(
+    async def resolve_pipelineSnapshotOrError(
         self,
         graphene_info: ResolveInfo,
         snapshotId: Optional[str] = None,
@@ -667,10 +702,10 @@ class GrapheneQuery(graphene.ObjectType):
         if activePipelineSelector:
             job_selector = pipeline_selector_from_graphql(activePipelineSelector)
             if snapshotId:
-                return get_job_snapshot_or_error_from_snap_or_selector(
+                return await get_job_snapshot_or_error_from_snap_or_selector(
                     graphene_info, job_selector, snapshotId
                 )
-            return get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
+            return await get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
         elif snapshotId:
             return get_job_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
         else:
@@ -680,9 +715,15 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_graphOrError(
-        self, graphene_info: ResolveInfo, selector: Optional[GrapheneGraphSelector] = None
+        self,
+        graphene_info: ResolveInfo,
+        selector: Optional[GrapheneGraphSelector] = None,
     ):
-        assert selector is not None
+        if selector is None:
+            raise DagsterInvariantViolationError(
+                "Must pass graph selector",
+            )
+
         graph_selector = graph_selector_from_graphql(selector)
         return get_graph_or_error(graphene_info, graph_selector)
 
@@ -709,7 +750,10 @@ class GrapheneQuery(graphene.ObjectType):
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
+            instigator_statuses = {
+                InstigatorStatus.RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
+            }
         elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -754,7 +798,10 @@ class GrapheneQuery(graphene.ObjectType):
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
+            instigator_statuses = {
+                InstigatorStatus.RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
+            }
         elif sensorStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -791,10 +838,37 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     @capture_error
-    def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
-        return get_job_or_error(
-            graphene_info,
-            pipeline_selector_from_graphql(params),
+    async def resolve_pipelineOrError(
+        self, graphene_info: ResolveInfo, params: GraphenePipelineSelector
+    ):
+        return GraphenePipeline(
+            await get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
+        )
+
+    @capture_error
+    def resolve_resourcesOrError(
+        self, graphene_info: ResolveInfo, pipelineSelector: GraphenePipelineSelector
+    ) -> Sequence[GrapheneResource]:
+        from dagster_graphql.schema.errors import GraphenePipelineNotFoundError
+
+        job_selector = pipeline_selector_from_graphql(pipelineSelector)
+
+        if not graphene_info.context.has_job(job_selector):
+            raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=job_selector))
+
+        check.invariant(
+            not job_selector.is_subset_selection,
+            "resourcesOrError only accepts non-subsetted selectors",
+        )
+
+        def _get_config_type(key: str):
+            return graphene_info.context.get_config_type(job_selector, key)
+
+        return GrapheneResourceConnection(
+            resources=[
+                GrapheneResource(_get_config_type, resource_snap)
+                for resource_snap in graphene_info.context.get_resources(job_selector)
+            ]
         )
 
     def resolve_pipelineRunsOrError(
@@ -852,25 +926,36 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         limit: int,
+        view: GrapheneRunsFeedView,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
         return get_runs_feed_entries(
-            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
+            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector, view=view
         )
 
     def resolve_runsFeedCountOrError(
         self,
         graphene_info: ResolveInfo,
+        view: GrapheneRunsFeedView,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
-        return GrapheneRunsFeedCount(get_runs_feed_count(graphene_info, selector))
+        return GrapheneRunsFeedCount(
+            get_runs_feed_count(
+                graphene_info,
+                selector,
+                view=view,
+            )
+        )
 
     @capture_error
     def resolve_partitionSetsOrError(
-        self, graphene_info: ResolveInfo, repositorySelector: RepositorySelector, pipelineName: str
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: RepositorySelector,
+        pipelineName: str,
     ):
         return get_partition_sets_or_error(
             graphene_info,
@@ -900,7 +985,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
-        tagKeys: List[str],
+        tagKeys: list[str],
         valuePrefix: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -911,41 +996,41 @@ class GrapheneQuery(graphene.ObjectType):
         return get_run_group(graphene_info, runId)
 
     @capture_error
-    def resolve_isPipelineConfigValid(
+    async def resolve_isPipelineConfigValid(
         self,
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
         runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
     ):
-        return validate_pipeline_config(
+        return await validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=False),
         )
 
     @capture_error
-    def resolve_executionPlanOrError(
+    async def resolve_executionPlanOrError(
         self,
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
         runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
     ):
-        return get_execution_plan(
+        return await get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
         )
 
     @capture_error
-    def resolve_runConfigSchemaOrError(
+    async def resolve_runConfigSchemaOrError(
         self,
         graphene_info: ResolveInfo,
         selector: GraphenePipelineSelector,
         mode: Optional[str] = None,
     ):
-        return resolve_run_config_schema_or_error(
+        return await resolve_run_config_schema_or_error(
             graphene_info, pipeline_selector_from_graphql(selector), mode
         )
 
@@ -973,7 +1058,6 @@ class GrapheneQuery(graphene.ObjectType):
 
         repo = None
 
-        dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
         if group is not None:
             group_name = group.groupName
             repo_sel = RepositorySelector.from_graphql_input(group)
@@ -983,76 +1067,38 @@ class GrapheneQuery(graphene.ObjectType):
                 return []
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            asset_node_snaps = repo.get_asset_node_snaps()
-            results = (
-                [
-                    (repo_loc, repo, asset_node)
-                    for asset_node in asset_node_snaps
-                    if asset_node.group_name == group_name
-                ]
-                if asset_node_snaps
-                else []
-            )
+            remote_nodes = [
+                remote_node
+                for remote_node in repo.asset_graph.asset_nodes
+                if remote_node.group_name == group_name
+            ]
         elif pipeline is not None:
-            job_name = pipeline.pipelineName
-            repo_sel = RepositorySelector.from_graphql_input(pipeline)
-            repo_loc_entry = graphene_info.context.get_location_entry(repo_sel.location_name)
-            repo_loc = repo_loc_entry.code_location if repo_loc_entry else None
-            if not repo_loc or not repo_loc.has_repository(repo_sel.repository_name):
-                return []
-
-            repo = repo_loc.get_repository(repo_sel.repository_name)
-
-            asset_node_snaps = repo.get_asset_node_snaps(job_name)
-            results = (
-                [(repo_loc, repo, asset_node) for asset_node in asset_node_snaps]
-                if asset_node_snaps
-                else []
-            )
+            selector = pipeline_selector_from_graphql(pipeline)
+            remote_nodes = graphene_info.context.get_assets_in_job(selector)
         else:
             if not use_all_asset_keys and resolved_asset_keys:
                 remote_nodes = [
-                    graphene_info.context.get_asset_node(asset_key)
+                    graphene_info.context.asset_graph.get(asset_key)
                     for asset_key in resolved_asset_keys
+                    if graphene_info.context.asset_graph.has(asset_key)
                 ]
             else:
                 remote_nodes = [
                     remote_node for remote_node in graphene_info.context.asset_graph.asset_nodes
                 ]
 
-            results = []
-            for remote_node in remote_nodes:
-                if remote_node:
-                    repo_handle = remote_node.priority_repository_selector
-                    code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
-                    results.append(
-                        (
-                            code_loc,
-                            code_loc.get_repository(repo_handle.repository_name),
-                            remote_node.priority_node_snap,
-                        )
-                    )
-
         # Filter down to requested asset keys
         results = [
-            scoped_tuple
-            for scoped_tuple in results
-            if use_all_asset_keys
-            or scoped_tuple[2].asset_key in check.not_none(resolved_asset_keys)
+            remote_node
+            for remote_node in remote_nodes
+            if use_all_asset_keys or remote_node.key in check.not_none(resolved_asset_keys)
         ]
 
         if not results:
             return []
 
-        final_keys = [scoped_tuple[2].asset_key for scoped_tuple in results]
+        final_keys = [node.key for node in results]
         AssetRecord.prepare(graphene_info.context, final_keys)
-
-        asset_checks_loader = AssetChecksLoader(
-            context=graphene_info.context,
-            asset_keys=final_keys,
-        )
-
-        depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
         def load_asset_graph() -> RemoteAssetGraph:
             if repo is not None:
@@ -1060,38 +1106,16 @@ class GrapheneQuery(graphene.ObjectType):
             else:
                 return graphene_info.context.asset_graph
 
-        stale_status_loader = StaleStatusLoader(
-            instance=graphene_info.context.instance,
-            asset_graph=load_asset_graph,
-            loading_context=graphene_info.context,
-        )
-
-        base_deployment_context = graphene_info.context.get_base_deployment_context()
-
         nodes = [
             GrapheneAssetNode(
-                repository_selector=repo.selector,
-                asset_node_snap=asset_node_snap,
-                asset_checks_loader=asset_checks_loader,
-                depended_by_loader=depended_by_loader,
-                stale_status_loader=stale_status_loader,
-                dynamic_partitions_loader=dynamic_partitions_loader,
-                # base_deployment_context will be None if we are not in a branch deployment
-                asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-                    code_location_name=code_loc.name,
-                    repository_name=repo.name,
-                    branch_workspace=graphene_info.context,
-                    base_workspace=base_deployment_context,
-                )
-                if base_deployment_context is not None
-                else None,
+                remote_node=remote_node,
             )
-            for (code_loc, repo, asset_node_snap) in results
+            for remote_node in results
         ]
         return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
-        asset_key_input = cast(Mapping[str, Sequence[str]], assetKey)
+        asset_key_input = cast("Mapping[str, Sequence[str]]", assetKey)
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(asset_key_input))
 
     @capture_error
@@ -1099,6 +1123,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         prefix: Optional[Sequence[str]] = None,
+        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -1107,10 +1132,30 @@ class GrapheneQuery(graphene.ObjectType):
             prefix=prefix,
             cursor=cursor,
             limit=limit,
+            asset_keys=[
+                AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys
+            ]
+            if assetKeys is not None
+            else None,
+        )
+
+    @capture_error
+    def resolve_assetRecordsOrError(
+        self,
+        graphene_info: ResolveInfo,
+        prefix: Optional[Sequence[str]] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        return get_asset_records(
+            graphene_info,
+            prefix=prefix,
+            cursor=cursor,
+            limit=limit,
         )
 
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
-        return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
+        return get_asset(AssetKey.from_graphql_input(assetKey))
 
     def resolve_assetNodeAdditionalRequiredKeys(
         self,
@@ -1118,7 +1163,7 @@ class GrapheneQuery(graphene.ObjectType):
         assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
-        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        raw_asset_keys = cast("Sequence[Mapping[str, Sequence[str]]]", assetKeys)
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_additional_required_keys(graphene_info, asset_keys)
 
@@ -1128,7 +1173,7 @@ class GrapheneQuery(graphene.ObjectType):
         assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
-        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        raw_asset_keys = cast("Sequence[Mapping[str, Sequence[str]]]", assetKeys)
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_asset_node_definition_collisions(graphene_info, asset_keys)
 
@@ -1172,18 +1217,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        remote_nodes = {graphene_info.context.get_asset_node(asset_key) for asset_key in asset_keys}
-
-        # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            remote_node.key: remote_node.priority_node_snap.op_names
-            for remote_node in remote_nodes
-            if remote_node
-        }
-
-        AssetRecord.prepare(graphene_info.context, asset_keys)
-
-        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+        return get_assets_latest_info(graphene_info, asset_keys)
 
     @capture_error
     def resolve_logsForRun(
@@ -1225,8 +1259,12 @@ class GrapheneQuery(graphene.ObjectType):
         limit: int,
         cursor: Optional[str] = None,
     ):
+        asset_key = AssetKey.from_graphql_input(assetKey)
         return fetch_auto_materialize_asset_evaluations(
-            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+            graphene_info=graphene_info,
+            asset_key=asset_key,
+            cursor=cursor,
+            limit=limit,
         )
 
     def resolve_autoMaterializeEvaluationsForEvaluationId(
@@ -1241,39 +1279,43 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationForPartition(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
-        evaluationId: int,
+        assetKey: Optional[GrapheneAssetKeyInput],
+        evaluationId: str,
         partition: str,
     ):
         return fetch_asset_condition_evaluation_record_for_partition(
             graphene_info=graphene_info,
             graphene_asset_key=assetKey,
-            evaluation_id=evaluationId,
+            evaluation_id=int(evaluationId),
             partition_key=partition,
         )
 
     def resolve_assetConditionEvaluationRecordsOrError(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
+        assetKey: Optional[GrapheneAssetKeyInput],
         limit: int,
         cursor: Optional[str] = None,
+        assetCheckKey: Optional[GrapheneAssetCheckHandleInput] = None,
     ):
         return fetch_asset_condition_evaluation_records_for_asset_key(
-            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+            graphene_info=graphene_info,
+            graphene_entity_key=check.not_none(assetKey or assetCheckKey),
+            cursor=cursor,
+            limit=limit,
         )
 
     def resolve_truePartitionsForAutomationConditionEvaluationNode(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
-        evaluationId: int,
+        assetKey: Optional[GrapheneAssetKeyInput],
+        evaluationId: str,
         nodeUniqueId: str,
     ):
         return fetch_true_partitions_for_evaluation_node(
             graphene_info=graphene_info,
-            graphene_asset_key=assetKey,
-            evaluation_id=evaluationId,
+            graphene_entity_key=assetKey,
+            evaluation_id=int(evaluationId),
             node_unique_id=nodeUniqueId,
         )
 
@@ -1333,3 +1375,10 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
         )
+
+    def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):
+        defs_state_storage = graphene_info.context.instance.defs_state_storage
+        latest_info = (
+            defs_state_storage.get_latest_defs_state_info() if defs_state_storage else None
+        )
+        return GrapheneDefsStateInfo(latest_info) if latest_info else None

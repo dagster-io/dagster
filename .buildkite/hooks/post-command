@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+if command -v buildevents >/dev/null 2>&1; then
+    echo "buildevents step $BUILDKITE_BUILD_ID $STEP_SPAN_ID $COMMAND_START_TIME $BUILDKITE_LABEL"
+    buildevents step "$BUILDKITE_BUILD_ID" "$STEP_SPAN_ID" "$COMMAND_START_TIME" "$BUILDKITE_LABEL"
+fi

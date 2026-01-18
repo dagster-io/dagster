@@ -1,16 +1,10 @@
-import {Box, Caption, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, MonoSmall, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 
-import {RunlessEventTag} from './RunlessEventTag';
 import {AssetEventGroup} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {AssetKeyInput} from '../graphql/types';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
@@ -19,14 +13,10 @@ export const AssetEventList = ({
   groups,
   focused,
   setFocused,
-  xAxis,
-  assetKey,
   loading,
   onLoadMore,
 }: {
-  xAxis: 'time' | 'partition';
   groups: AssetEventGroup[];
-  assetKey: AssetKeyInput;
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
 
@@ -70,6 +60,7 @@ export const AssetEventList = ({
       >
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const group = groups[index]!;
             return (
               <AssetListRow
@@ -89,16 +80,12 @@ export const AssetEventList = ({
                 }}
               >
                 <Box
-                  style={{height: size}}
-                  padding={{left: 24, right: 12}}
+                  padding={{horizontal: 12, vertical: 8}}
                   flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                  border="bottom"
+                  data-index={index}
+                  ref={rowVirtualizer.measureElement}
                 >
-                  {xAxis === 'partition' ? (
-                    <AssetEventListPartitionRow group={group} />
-                  ) : (
-                    <AssetEventListEventRow group={group} assetKey={assetKey} />
-                  )}
+                  <AssetEventListEventRow group={group} />
                 </Box>
               </AssetListRow>
             );
@@ -128,6 +115,7 @@ export const AssetEventList = ({
 
 export const AssetListContainer = styled(Container)`
   outline: none;
+  padding: 8px;
   &:focus {
     box-shadow: 0 -1px ${Colors.accentBlue()};
   }
@@ -136,6 +124,7 @@ export const AssetListContainer = styled(Container)`
 export const AssetListRow = styled(Row)<{$focused: boolean}>`
   cursor: pointer;
   user-select: none;
+  border-radius: 8px;
 
   :focus,
   :active,
@@ -153,69 +142,37 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
     `}
 `;
 
-const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
-  const {partition, latest, timestamp} = group;
-  return (
-    <>
-      <Box flex={{gap: 4, direction: 'row', alignItems: 'flex-start'}}>
-        <Icon name="partition" />
-        {partition}
-        <div style={{flex: 1}} />
-        {!latest ? <Tag intent="none">Missing</Tag> : <Tag intent="success">Materialized</Tag>}
-      </Box>
-
-      <Caption color={Colors.textLight()} style={{userSelect: 'none'}}>
-        {timestamp ? (
-          <span>
-            Materialized <Timestamp timestamp={{ms: Number(timestamp)}} />
-          </span>
-        ) : (
-          'Never materialized'
-        )}
-      </Caption>
-    </>
-  );
-};
-
-const AssetEventListEventRow = ({
-  group,
-  assetKey,
-}: {
-  group: AssetEventGroup;
-  assetKey: AssetKeyInput;
-}) => {
+const AssetEventListEventRow = ({group}: {group: AssetEventGroup}) => {
   const {latest, partition, timestamp} = group;
-  const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : null;
+
+  const icon = () => {
+    switch (latest?.__typename) {
+      case 'MaterializationEvent':
+        return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
+      case 'ObservationEvent':
+        return <Icon name="observation" color={Colors.accentGreen()} size={16} />;
+      case 'FailedToMaterializeEvent':
+        if (latest?.materializationFailureType === 'FAILED') {
+          return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+        } else {
+          return <Icon name="status" color={Colors.accentGray()} size={16} />;
+        }
+    }
+    return null;
+  };
 
   return (
-    <>
-      <Box flex={{gap: 4, direction: 'row'}}>
-        {latest?.__typename === 'MaterializationEvent' ? (
-          <Icon name="materialization" />
-        ) : (
-          <Icon name="observation" />
-        )}
+    <Box flex={{direction: 'column', gap: 4}}>
+      <Box flex={{gap: 8, direction: 'row', alignItems: 'center'}}>
+        {icon()}
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </Box>
-      <Box flex={{gap: 4, direction: 'row'}}>
-        {partition && <Tag>{partition}</Tag>}
-        {latest && run ? (
-          <Tag>
-            <AssetRunLink
-              runId={run.id}
-              assetKey={assetKey}
-              event={{stepKey: latest.stepKey, timestamp: latest.timestamp}}
-            >
-              <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
-                {titleForRun(run)}
-              </Box>
-            </AssetRunLink>
-          </Tag>
-        ) : latest && isRunlessEvent(latest) ? (
-          <RunlessEventTag tags={latest.tags} />
-        ) : undefined}
-      </Box>
-    </>
+      {partition ? (
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Icon name="partition" />
+          <MonoSmall color={Colors.textLight()}>{partition}</MonoSmall>
+        </Box>
+      ) : undefined}
+    </Box>
   );
 };

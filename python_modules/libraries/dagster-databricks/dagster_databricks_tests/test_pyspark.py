@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -24,7 +24,7 @@ ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
 ADLS2_CONTAINER = "dagster-databricks-tests"
 
 
-BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
+BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: dict[str, Any] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST") or "https://",
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
     "local_job_package_path": os.path.abspath(os.path.dirname(__file__)),
@@ -48,8 +48,14 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
         ],
     },
     "permissions": {
-        "cluster_permissions": {"CAN_MANAGE": [{"group_name": "my_group"}]},
-        "job_permissions": {"CAN_MANAGE_RUN": [{"user_name": "my_user"}]},
+        "cluster_permissions": {
+            "CAN_MANAGE": [{"group_name": "my_group"}],
+            "CAN_RESTART": [{"user_name": "my_user"}],
+        },
+        "job_permissions": {
+            "CAN_MANAGE_RUN": [{"user_name": "my_user"}],
+            "CAN_MANAGE": [{"group_name": "my_group"}],
+        },
     },
     "secrets_to_env_variables": [],
     "env_variables": {},
@@ -165,12 +171,11 @@ def test_local():
     assert result.success
 
 
-@mock.patch("databricks.sdk.core.Config")
 @mock.patch("databricks.sdk.JobsAPI.submit")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.read_file")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.put_file")
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
-@mock.patch("databricks.sdk.JobsAPI.get_run")
+@mock.patch("databricks.sdk.JobsExt.get_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
 @mock.patch("databricks.sdk.core.ApiClient.do")
 def test_pyspark_databricks(
@@ -181,19 +186,23 @@ def test_pyspark_databricks(
     mock_put_file,
     mock_read_file,
     mock_submit_run,
-    mock_config,
 ):
     mock_submit_run_response = mock.Mock()
     mock_submit_run_response.bind.return_value = {"run_id": 12345}
     mock_submit_run.return_value = mock_submit_run_response
-    mock_read_file.return_value = "somefilecontents".encode()
+
+    mock_read_file.return_value = b"somefilecontents"
 
     running_state = DatabricksRunState(DatabricksRunLifeCycleState.RUNNING, None, "")
     final_state = DatabricksRunState(
         DatabricksRunLifeCycleState.TERMINATED, DatabricksRunResultState.SUCCESS, ""
     )
-    mock_get_run_state.side_effect = [running_state] * 5 + [final_state]
-    mock_get_run.return_value.as_dict = mock.Mock(return_value={})
+    # Poll the run state an arbitrary number of times before reaching its final state
+    n_run_states = [running_state] * 4 + [final_state]
+    mock_get_run_state.side_effect = n_run_states
+    mock_get_run.return_value.as_dict = mock.Mock(
+        return_value={"next_page_token": None}  # Fix for pagination in SDK 0.38.0
+    )
 
     with instance_for_test() as instance:
         result = do_nothing_local_job.execute_in_process(instance=instance)
@@ -231,11 +240,32 @@ def test_pyspark_databricks(
         assert result.success
         assert mock_perform_query.call_count == 2
         assert mock_get_run.call_count == 2
-        assert mock_get_run_state.call_count == 6
-        assert mock_get_step_events.call_count == 6
+        assert mock_get_run_state.call_count == len(n_run_states)
+        assert mock_get_step_events.call_count == len(n_run_states)
         assert mock_put_file.call_count == 4
         assert mock_read_file.call_count == 2
         assert mock_submit_run.call_count == 1
+
+        assert mock_perform_query.call_args_list[0].kwargs["body"]["access_control_list"] == [
+            {
+                "permission_level": "CAN_MANAGE_RUN",
+                "user_name": "my_user",
+            },
+            {
+                "permission_level": "CAN_MANAGE",
+                "group_name": "my_group",
+            },
+        ]
+        assert mock_perform_query.call_args_list[1].kwargs["body"]["access_control_list"] == [
+            {
+                "permission_level": "CAN_RESTART",
+                "user_name": "my_user",
+            },
+            {
+                "permission_level": "CAN_MANAGE",
+                "group_name": "my_group",
+            },
+        ]
 
     # Test 2 - attempting to update permissions for an existing cluster
 
@@ -280,7 +310,7 @@ def test_pyspark_databricks(
     reason="This test is slow and requires a Databricks cluster; run only upon explicit request",
 )
 def test_do_it_live_databricks_s3():
-    result = execute_job(
+    result = execute_job(  # pyright: ignore[reportCallIssue]
         reconstructable(define_pyspark_s3_job),
         run_config={
             "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
@@ -312,7 +342,7 @@ def test_do_it_live_databricks_adls2():
         }
     }
 
-    result = execute_job(
+    result = execute_job(  # pyright: ignore[reportCallIssue]
         reconstructable(define_pyspark_adls2_job),
         run_config={
             "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},

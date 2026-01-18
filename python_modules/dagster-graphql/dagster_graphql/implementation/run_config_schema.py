@@ -1,11 +1,12 @@
-from typing import TYPE_CHECKING, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.represented import RepresentedJob
 
-from dagster_graphql.implementation.external import get_external_job_or_raise
+from dagster_graphql.implementation.external import get_remote_job_or_raise
 from dagster_graphql.implementation.utils import JobSubsetSelector, UserFacingGraphQLError
 from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
 
-def resolve_run_config_schema_or_error(
+async def resolve_run_config_schema_or_error(
     graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
 ) -> "GrapheneRunConfigSchema":
     from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
@@ -28,10 +29,10 @@ def resolve_run_config_schema_or_error(
     if mode and mode != DEFAULT_MODE_NAME:
         return GrapheneModeNotFoundError(selector=selector, mode=mode)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
+    remote_job = await get_remote_job_or_raise(graphene_info, selector)
 
     return GrapheneRunConfigSchema(
-        represented_job=external_job,
+        represented_job=remote_job,
         mode=DEFAULT_MODE_NAME,
     )
 
@@ -43,7 +44,7 @@ def resolve_is_run_config_valid(
     run_config: Mapping[str, object],
 ) -> "GraphenePipelineConfigValidationValid":
     from dagster_graphql.schema.pipelines.config import (
-        GraphenePipelineConfigValidationError,
+        GrapheneConfigValidationError,
         GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,
     )
@@ -68,8 +69,8 @@ def resolve_is_run_config_valid(
             GrapheneRunConfigValidationInvalid(
                 pipeline_name=represented_pipeline.name,
                 errors=[
-                    GraphenePipelineConfigValidationError.from_dagster_error(
-                        represented_pipeline.config_schema_snapshot,
+                    GrapheneConfigValidationError.from_dagster_error(
+                        represented_pipeline.config_schema_snapshot.get_config_snap,
                         err,
                     )
                     for err in errors

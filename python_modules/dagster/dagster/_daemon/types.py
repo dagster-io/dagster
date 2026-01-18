@@ -1,8 +1,10 @@
-from typing import NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple, Optional
+
+from dagster_shared.serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
 
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -12,7 +14,7 @@ class DaemonHeartbeatSerializer(NamedTupleSerializer["DaemonHeartbeat"]):
         # just extract the name, which is the string we want.
         if isinstance(unpacked_dict.get("daemon_type"), UnknownSerdesValue):
             unknown = unpacked_dict["daemon_type"]
-            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]
+            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             context.clear_ignored_unknown_values(unknown)
         if unpacked_dict.get("error"):
             unpacked_dict["errors"] = [unpacked_dict["error"]]
@@ -41,7 +43,7 @@ class DaemonHeartbeat(
     ):
         errors = check.opt_sequence_param(errors, "errors", of_type=SerializableErrorInfo)
 
-        return super(DaemonHeartbeat, cls).__new__(
+        return super().__new__(
             cls,
             timestamp=check.float_param(timestamp, "timestamp"),
             daemon_type=check.str_param(daemon_type, "daemon_type"),
@@ -72,7 +74,7 @@ class DaemonStatus(
         healthy: Optional[bool],
         last_heartbeat: Optional[DaemonHeartbeat],
     ):
-        return super(DaemonStatus, cls).__new__(
+        return super().__new__(
             cls,
             daemon_type=check.str_param(daemon_type, "daemon_type"),
             required=check.bool_param(required, "required"),

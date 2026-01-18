@@ -1,7 +1,6 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
 import {useCallback, useMemo, useReducer} from 'react';
 
+import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '../apollo-client';
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
@@ -10,11 +9,10 @@ import {
   RepositoryLocationStatusQuery,
   RepositoryLocationStatusQueryVariables,
 } from './types/useRepositoryLocationReload.types';
-import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/UnauthorizedErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 
@@ -178,7 +176,7 @@ export const useRepositoryLocationReload = ({
           message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
           timeout: 3000,
           icon: 'check_circle',
-          intent: Intent.SUCCESS,
+          intent: 'success',
         });
         dispatch({type: 'success'});
 

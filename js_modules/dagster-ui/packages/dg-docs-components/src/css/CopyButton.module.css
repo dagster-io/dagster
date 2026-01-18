@@ -1,0 +1,18 @@
+.button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px;
+  color: var(--color-text-light);
+  transition: color 0.1s ease-in-out;
+}
+
+.button:hover {
+  background-color: var(--color-background-lighter);
+  color: var(--color-text-default);
+}
+
+.button:active {
+  color: var(--color-text-default);
+}

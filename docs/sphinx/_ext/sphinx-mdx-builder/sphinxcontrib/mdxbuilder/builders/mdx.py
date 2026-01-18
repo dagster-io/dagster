@@ -1,14 +1,13 @@
+from collections.abc import Iterator
 from os import path
-from typing import Iterator
 
 from docutils import nodes
 from docutils.io import StringOutput
-
 from sphinx.builders import Builder
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir
 
-from ..writers.mdx import MdxWriter
+from ..writers.mdx import MdxWriter  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,12 @@ class MdxBuilder(Builder):
             self.link_suffix = self.config.mdx_link_suffix
         elif self.link_suffix is None:
             self.link_suffix = self.file_suffix
+
+        # Initialize GitHub URL configuration
+        self.github_url = getattr(
+            self.config, "mdx_github_url", "https://github.com/dagster-io/dagster/blob/master"
+        )
+        self.show_source_links = getattr(self.config, "mdx_show_source_links", True)
 
         def file_transform(docname: str) -> str:
             return docname + self.file_suffix
@@ -56,7 +61,12 @@ class MdxBuilder(Builder):
                 pass
 
     def get_target_uri(self, docname: str, typ: str | None = None) -> str:
-        return self.link_transform(docname)
+        # Transform the docname to match the actual documentation URL structure
+        # Remove 'sections/api/apidocs/' prefix if present
+        transformed = docname
+        if transformed.startswith("sections/api/apidocs/"):
+            transformed = transformed.replace("sections/api/apidocs/", "api/", 1)
+        return self.link_transform(transformed)
 
     def prepare_writing(self, docnames: set[str]) -> None:
         self.writer = MdxWriter(self)
@@ -69,7 +79,7 @@ class MdxBuilder(Builder):
         try:
             with open(outfilename, "w", encoding="utf-8") as f:
                 f.write(self.writer.output)
-        except (IOError, OSError) as err:
+        except OSError as err:
             logger.warning(f"error writing file {outfilename}: {err}")
             raise err
 

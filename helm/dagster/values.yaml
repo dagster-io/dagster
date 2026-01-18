@@ -18,6 +18,12 @@ global:
   # to false below.
   celeryConfigSecretName: "dagster-celery-config-secret"
 
+  # The name of the ConfigMap containing the Dagster instance configuration (dagster.yaml).
+  # This is used by the dagster-user-deployments subchart when includeInstance is set to true.
+  # By default, this will be computed as "<release-name>-instance". Only set this if you are
+  # using a custom fullnameOverride or deploying with a non-standard release name.
+  dagsterInstanceConfigMap: ""
+
 nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true
@@ -72,6 +78,10 @@ dagsterWebserver:
   # Deploy a separate instance of the webserver in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
+  # The log format of the webserver, defaults to colored if not set
+  # Valid options are: colored|json|rich
+  # logFormat: colored
+
   # The timeout in milliseconds to set on database statements sent to the Dagster instance.
   dbStatementTimeout: ~
 
@@ -79,6 +89,9 @@ dagsterWebserver:
   # Defaults to 1 hour if not set.
   # Set to -1 to disable.
   dbPoolRecycle: ~
+
+  # The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.
+  dbPoolMaxOverflow: ~
 
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
@@ -151,6 +164,28 @@ dagsterWebserver:
   #     subPath: test_file.yaml
   volumeMounts: []
 
+  # Additional containers that should run as sidecars to the webserver. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before the webserver's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the connection to the database is tested. #
+  # Example:
+  # extraPrependedInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraPrependedInitContainers: []
+
   # Support Node, affinity and tolerations for webserver pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -165,6 +200,10 @@ dagsterWebserver:
 
   # Configure initContainer resources separately from main container
   initContainerResources: {}
+
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
+
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -208,6 +247,7 @@ computeLogManager:
   #   AzureBlobComputeLogManager,
   #   GCSComputeLogManager,
   #   S3ComputeLogManager,
+  #   LocalComputeLogManager,
   #   CustomComputeLogManager,
   # ]
   type: NoOpComputeLogManager
@@ -216,11 +256,13 @@ computeLogManager:
   #   azureBlobComputeLogManager:
   #     storageAccount: ~
   #     container: ~
-  #     secretKey: ~
+  #     secretCredential: ~
   #     defaultAzureCredential: ~
+  #     accessKeyOrSasToken: ~
   #     localDir: ~
   #     prefix: ~
   #     uploadInterval: ~
+  #     showUrlOnly: ~
   ##  Uncomment this configuration if the GCSComputeLogManager is selected
   #   gcsComputeLogManager:
   #     bucket: ~
@@ -240,6 +282,10 @@ computeLogManager:
   #     skipEmptyFiles: ~
   #     uploadInterval: ~
   #     uploadExtraArgs: {}
+  ##  Uncomment this configuration if the LocalComputeLogManager is selected
+  #   localComputeLogManager:
+  #     baseDir: ~
+  #     pollingTimeout: ~
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom webserver image that defines the user specified
   ##  compute log manager in an installed python module.
@@ -429,6 +475,10 @@ dagster-user-deployments:
       startupProbe:
         enabled: false
 
+      # Strategy to follow when replacing old pods with new pods. See:
+      # https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+      deploymentStrategy: {}
+
       service:
         annotations: {}
 
@@ -441,8 +491,7 @@ scheduler:
   #   CustomScheduler,
   #  ]
   type: DagsterDaemonScheduler
-  config:
-    {}
+  config: {}
     ## This configuration will only be used if the DagsterDaemonScheduler is selected.
     # daemonScheduler:
     #   maxCatchupRuns: 5
@@ -689,6 +738,8 @@ runLauncher:
       #     memory: 128Mi
       resources: {}
 
+      # Enable the check-db-ready initContainer
+      checkDbReadyInitContainer: true
       # Override the default K8s scheduler
       # schedulerName: ~
 
@@ -761,6 +812,7 @@ postgresql:
 
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
+    registry: "docker.io"
     repository: "library/postgres"
     tag: "14.6"
     pullPolicy: IfNotPresent
@@ -808,7 +860,7 @@ rabbitmq:
   enabled: false
 
   image:
-    repository: "bitnami/rabbitmq"
+    repository: "bitnamilegacy/rabbitmq"
     tag: "3.8.12"
     pullPolicy: IfNotPresent
 
@@ -837,6 +889,10 @@ redis:
   # To manage redis via helm, set `internal` to `true`. To use an external redis, set `internal` to `false`.
   # Note: If `internal` is true, then redis pod will be created regardless of `enabled` flag.
   internal: false
+  image:
+    repository: "bitnamilegacy/redis"
+    tag: "6.0.16"
+    pullPolicy: IfNotPresent
 
   usePassword: false
   password: "test"
@@ -885,6 +941,8 @@ flower:
   podSecurityContext: {}
   securityContext: {}
 
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -1057,6 +1115,10 @@ dagsterDaemon:
 
   heartbeatTolerance: 1800
 
+  # The log format of the daemon, defaults to colored if not set
+  # Valid options are: colored|json|rich
+  # logFormat: colored
+
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
     # https://docs.dagster.io/deployment/run-coordinator for more information.
@@ -1102,6 +1164,8 @@ dagsterDaemon:
     startTimeoutSeconds: 300
     # Timeout for runs to cancel (avoids runs hanging in CANCELING)
     # cancelTimeoutSeconds: 300
+    # Timeout for runs to finish (avoids runs hanging in RUNNING)
+    # maxRuntimeSeconds: 7200
     # How often to check on in progress runs
     pollIntervalSeconds: 120
     # [Experimental] Max number of times to attempt to resume a run with a new run worker instead
@@ -1140,6 +1204,21 @@ dagsterDaemon:
     # Uncomment to use a threadpool to submit runs from a single schedule tick in parallel. Can be
     # used to decrease latency when a schedule emits multiple run requests within a single tick.
     # numSubmitWorkers: 4
+
+    # Uncomment to configure the backfill daemon.
+    # Warning: Code deployments with version before 1.9.7 don't support this configuration and might fail.
+    # More details: https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760
+    # backfills:
+    #   Whether to submit backfills using an asynchronous thread pool, allowing backfill runs
+    #   to be enqueued in parallel
+    #   useThreads: true
+    #   The max number of worker threads to use when submitting backfills. Can be tuned
+    #   to allow more backfills to run in parallel, but may require allocating more resources to the
+    #   daemon.
+    #   numWorkers: 4
+    #   Uncomment to use a threadpool to submit runs from backfills in parallel. Can be
+    #   used to decrease latency when a backfill enqueues many run requests.
+    #   numSubmitWorkers: 4
 
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See
@@ -1209,6 +1288,29 @@ dagsterDaemon:
   #     subPath: test_file.yaml
   volumeMounts: []
 
+  # Additional containers that should run as sidecars to the daemon. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before to the daemon's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the connection to the database is tested.
+  #
+  # Example:
+  # extraPrependedInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraPrependedInitContainers: []
+
   annotations: {}
   nodeSelector: {}
   affinity: {}
@@ -1219,6 +1321,8 @@ dagsterDaemon:
 
   # Configure initContainer resources separately from main container
   initContainerResources: {}
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -1280,6 +1384,26 @@ extraManifests:
 migrate:
   enabled: false
 
+  # Additional containers that should be run as sidecars to the migration job. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using initContainers to use native sidecars instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Init containers that should run before the main job container, such as native sidecars. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # initContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  initContainers: []
+
 ####################################################################################################
 # As an open source project, we collect usage statistics to better understand how users engage
 # with Dagster and to inform development priorities.
@@ -1333,6 +1457,41 @@ retention:
       skipped: 7
       started: -1
       success: -1
+
+####################################################################################################
+# Concurrency
+# Configure concurrency limits for runs and ops/assets. This is the recommended way to configure
+# concurrency settings. Do NOT set these values if you are also configuring maxConcurrentRuns,
+# tagConcurrencyLimits, or blockOpConcurrencyLimitedRuns in dagsterDaemon.runCoordinator.config.
+####################################################################################################
+concurrency:
+  # Set to true to enable the concurrency configuration block
+  enabled: false
+
+  # Pool-level concurrency settings (for op/asset-level concurrency)
+  pools:
+    # Default max concurrent operations for an unconfigured pool (0 to max limit)
+    defaultLimit: ~
+    # Granularity of concurrency enforcement: "run" or "op"
+    granularity: ~
+    # When granularity is "op", number of runs allowed to block waiting for pool slots
+    opGranularityRunBuffer: ~
+
+  # Run-level concurrency settings
+  runs:
+    # Max runs in progress at once (-1 to disable, 0 to stop launches, default 10)
+    maxConcurrentRuns: ~
+    # Tag-based concurrency limits
+    # Example:
+    # tagConcurrencyLimits:
+    #   - key: "database"
+    #     limit: 1
+    #   - key: "team"
+    #     value:
+    #       applyLimitPerUniqueValue: true
+    #     limit: 2
+    tagConcurrencyLimits: []
+
 ####################################################################################################
 # Additional fields on the instance to configure that aren't already determined by a key above.
 # See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.

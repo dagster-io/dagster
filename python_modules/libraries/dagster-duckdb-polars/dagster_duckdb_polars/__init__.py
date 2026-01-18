@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_duckdb_polars.duckdb_polars_type_handler import (
     DuckDBPolarsIOManager as DuckDBPolarsIOManager,

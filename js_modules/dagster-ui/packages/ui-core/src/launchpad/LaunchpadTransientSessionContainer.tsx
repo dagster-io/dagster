@@ -1,6 +1,6 @@
 import {useState} from 'react';
 
-import LaunchpadSession from './LaunchpadSession';
+import LaunchpadSession, {LaunchpadConfig} from './LaunchpadSession';
 import {LaunchpadType} from './types';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -12,7 +12,8 @@ import {
   createSingleSession,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
+import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorUtils.types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 
@@ -23,11 +24,21 @@ interface Props {
   repoAddress: RepoAddress;
   sessionPresets: Partial<IExecutionSession>;
   rootDefaultYaml: string | undefined;
+  onSaveConfig?: (config: LaunchpadConfig) => void;
+  runConfigSchema: ConfigEditorRunConfigSchemaFragment | undefined;
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets, rootDefaultYaml} =
-    props;
+  const {
+    launchpadType,
+    pipeline,
+    partitionSets,
+    repoAddress,
+    sessionPresets,
+    rootDefaultYaml,
+    onSaveConfig,
+    runConfigSchema,
+  } = props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialData = useInitialDataForMode(
@@ -61,6 +72,8 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
       partitionSets={partitionSets}
       repoAddress={repoAddress}
       rootDefaultYaml={rootDefaultYaml}
+      onSaveConfig={onSaveConfig}
+      runConfigSchema={runConfigSchema}
     />
   );
 };

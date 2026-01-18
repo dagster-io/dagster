@@ -2,29 +2,24 @@ import functools
 import inspect
 import re
 import textwrap
+from collections.abc import Mapping, Sequence
 from inspect import Parameter, signature
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
     Callable,
+    Concatenate,
     ContextManager,
-    Mapping,
     Optional,
-    Sequence,
-    Set,
-    Type,
+    TypeAlias,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
-)
-
-from typing_extensions import (
-    Concatenate,
-    ParamSpec,
-    TypeAlias,
-    TypeGuard,
     get_type_hints as typing_get_type_hints,
 )
+
+from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -34,7 +29,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.resource_definition import ResourceDefinition
 
 Decoratable: TypeAlias = Union[
-    Type, Callable, property, staticmethod, classmethod, "OpDefinition", "ResourceDefinition"
+    type, Callable, property, staticmethod, classmethod, "OpDefinition", "ResourceDefinition"
 ]
 
 
@@ -46,7 +41,7 @@ T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 T_Type = TypeVar("T_Type", bound=type)
 
 
-def get_valid_name_permutations(param_name: str) -> Set[str]:
+def get_valid_name_permutations(param_name: str) -> set[str]:
     """Get all underscore permutations for provided arg name."""
     return {
         "_",
@@ -79,7 +74,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     elif inspect.isfunction(fn):
         target = fn
     elif hasattr(fn, "__call__"):
-        target = fn.__call__
+        target = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
     else:
         check.failed(f"Unhandled Callable object {fn}")
 
@@ -202,7 +197,7 @@ def _wrap_with_pre_call_fn(
             pre_call_fn()
         return fn(*args, **kwargs)
 
-    return cast(T_Callable, wrapped_with_pre_call_fn)
+    return cast("T_Callable", wrapped_with_pre_call_fn)
 
 
 def apply_context_manager_decorator(
@@ -222,7 +217,7 @@ def _wrap_with_context_manager(
         with cm():
             return fn(*args, **kwargs)
 
-    return cast(T_Callable, wrapped_with_context_manager_fn)
+    return cast("T_Callable", wrapped_with_context_manager_fn)
 
 
 def _update_decoratable(decoratable: T_Decoratable, new_fn: Callable[..., Any]) -> T_Decoratable:
@@ -259,7 +254,7 @@ def _update_decoratable(decoratable: T_Decoratable, new_fn: Callable[..., Any]) 
 
     # Pyright is unable to infer based on our checks that the return type is the same as the input
     # type.
-    return cast(T_Decoratable, val)
+    return cast("T_Decoratable", val)
 
 
 def is_decoratable(obj: Any) -> TypeGuard[Decoratable]:

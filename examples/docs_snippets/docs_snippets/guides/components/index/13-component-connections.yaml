@@ -1,0 +1,10 @@
+type: dagster_sling.SlingReplicationCollectionComponent
+
+attributes:
+  sling:
+    connections:
+      - name: DUCKDB
+        type: duckdb
+        instance: /tmp/jaffle_platform.duckdb
+  replications:
+    - path: replication.yaml

@@ -1,63 +1,67 @@
+import functools
+from collections.abc import Awaitable, Iterable
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type, TypeVar
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Callable,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypeVar,
+)
 
 from dagster import _check as check
+from dagster._check import CheckError
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    PartitionDimensionDefinition,
+from dagster._core.definitions.freshness import FreshnessState
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    use_partition_loading_context,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.utils import (
+    MultiPartitionKey,
+    PartitionDimensionDefinition,
+    TimeWindow,
     get_time_partitions_def,
 )
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
+    from dagster._core.definitions.assets.graph.base_asset_graph import (
+        BaseAssetGraph,
+        BaseAssetNode,
+    )
     from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
         ValidAssetSubset,
     )
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
     from dagster._core.instance import DagsterInstance
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
+    from dagster._core.storage.dagster_run import RunRecord
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+
 U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey, EntityKey)
-
-
-class TemporalContext(NamedTuple):
-    """TemporalContext represents an effective time, used for business logic, and last_event_id
-    which is used to identify that state of the event log at some point in time. Put another way,
-    the value of a TemporalContext represents a point in time and a snapshot of the event log.
-
-    Effective time: This is the effective time of the computation in terms of business logic,
-    and it impacts the behavior of partitioning and partition mapping. For example,
-    the "last" partition window of a given partitions definition, it is with
-    respect to the effective time.
-
-    Last event id: Our event log has a monotonically increasing event id. This is used to
-    cursor the event log. This event_id is also propogated to derived tables to indicate
-    when that record is valid.  This allows us to query the state of the event log
-    at a given point in time.
-
-    Note that insertion time of the last_event_id is not the same as the effective time.
-
-    A last_event_id of None indicates that the reads will be volatile will immediately
-    reflect any subsequent writes.
-    """
-
-    effective_dt: datetime
-    last_event_id: Optional[int]
 
 
 class AssetGraphView(LoadingContext):
@@ -99,7 +103,7 @@ class AssetGraphView(LoadingContext):
                 last_event_id=last_event_id or instance.event_log_storage.get_maximum_record_id(),
             ),
             instance=instance,
-            asset_graph=defs.get_asset_graph(),
+            asset_graph=defs.resolve_asset_graph(),
         )
 
     def __init__(
@@ -122,13 +126,20 @@ class AssetGraphView(LoadingContext):
             loading_context=self,
             evaluation_time=temporal_context.effective_dt,
         )
+        self._partition_loading_context = PartitionLoadingContext(
+            dynamic_partitions_store=self._queryer, temporal_context=temporal_context
+        )
+
+    @property
+    def partition_loading_context(self) -> PartitionLoadingContext:
+        return self._partition_loading_context
 
     @property
     def instance(self) -> "DagsterInstance":
         return self._instance
 
     @property
-    def loaders(self) -> Dict[Type, DataLoader]:
+    def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._loaders
 
     @property
@@ -157,46 +168,192 @@ class AssetGraphView(LoadingContext):
             return None
 
     @cached_method
+    @use_partition_loading_context
     def get_full_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
+        context = self._partition_loading_context
         value = (
-            AllPartitionsSubset(
-                partitions_def=partitions_def,
-                dynamic_partitions_store=self._queryer,
-                current_time=self.effective_dt,
-            )
+            AllPartitionsSubset(partitions_def=partitions_def, context=context)
             if partitions_def
             else True
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
+    def get_subset_not_in_graph(
+        self, *, key: T_EntityKey, candidate_subset: EntitySubset[T_EntityKey]
+    ) -> EntitySubset[T_EntityKey]:
+        partitions_def = self._get_partitions_def(key)
+        check.invariant(
+            partitions_def is not None and candidate_subset.is_partitioned,
+            "Both subsets must be partitioned to compute partition keys not in the graph",
+        )
+
+        # intentionally using subset_with_all_partitions and not AllPartitionsSubset here since
+        # the latter always returns the empty set on subtraction
+        missing_subset_value = (
+            candidate_subset.get_internal_subset_value()
+            - check.not_none(partitions_def).subset_with_all_partitions()
+        )
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(missing_subset_value))
+
     @cached_method
+    @use_partition_loading_context
     def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
         value = partitions_def.empty_subset() if partitions_def else False
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
+    def get_entity_subset_in_range(
+        self, asset_key: AssetKey, partition_key_range: "PartitionKeyRange"
+    ) -> EntitySubset[AssetKey]:
+        partitions_def = check.not_none(
+            self._get_partitions_def(asset_key), "Must have partitions def"
+        )
+        partition_subset_in_range = partitions_def.empty_subset().with_partition_key_range(
+            partitions_def=partitions_def, partition_key_range=partition_key_range
+        )
+        return EntitySubset(
+            self, key=asset_key, value=_ValidatedEntitySubsetValue(partition_subset_in_range)
+        )
+
+    @use_partition_loading_context
+    def get_latest_asset_graph_subset_from_serialized_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset
+    ) -> AssetGraphSubset:
+        # Ensures that all the passed in subsets are valid and up to date with the latest partitions
+        # that are actually in the asset graph
+        entity_subsets = [
+            self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
+            for asset_key in asset_graph_subset.asset_keys
+        ]
+        return AssetGraphSubset.from_entity_subsets(entity_subsets)
+
+    @use_partition_loading_context
+    def get_entity_subset_from_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset, key: AssetKey
+    ) -> EntitySubset[AssetKey]:
+        check.invariant(
+            self.asset_graph.has(key), f"Asset graph does not contain {key.to_user_string()}"
+        )
+
+        serializable_subset = asset_graph_subset.get_asset_subset(key)
+
+        if not serializable_subset:
+            return self.get_empty_subset(key=key)
+
+        serializable_subset = self._with_current_partitions_def(serializable_subset)
+
+        return EntitySubset(
+            self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
+        )
+
+    def _with_current_partitions_def(
+        self, serializable_subset: SerializableEntitySubset
+    ) -> SerializableEntitySubset:
+        """Used to transform a persisted SerializableEntitySubset (e.g. generated from backfill data)
+        into an up-to-date one based on the latest partitions information in the asset graph. Raises
+        an exception if the partitions in the asset graph are now totally incompatible (say, a
+        partitioned asset is now unpartitioned, or the subset references keys that no longer exist)
+        but adjusts the SerializableEntitySubset to reflect the latest version of the
+        PartitionsDefinition if it differs but is still valid (for example, the range of the
+        partitions have been extended and the subset is still valid.
+        """
+        current_partitions_def = self._get_partitions_def(serializable_subset.key)
+        key = serializable_subset.key
+        value = serializable_subset.value
+
+        if serializable_subset.is_partitioned:
+            check.invariant(
+                current_partitions_def is not None,
+                f"{key.to_user_string()} was partitioned when originally stored, but is no longer partitioned.",
+            )
+            if isinstance(value, AllPartitionsSubset):
+                check.invariant(
+                    value.partitions_def == current_partitions_def,
+                    f"Partitions definition for {key.to_user_string()} has an AllPartitionsSubset and no longer matches the stored partitions definition",
+                )
+                return serializable_subset
+            elif isinstance(value, TimeWindowPartitionsSubset):
+                serialized_partitions_def = value.partitions_def
+                if (
+                    not isinstance(current_partitions_def, TimeWindowPartitionsDefinition)
+                    or serialized_partitions_def.timezone != current_partitions_def.timezone
+                    or serialized_partitions_def.fmt != current_partitions_def.fmt
+                    or serialized_partitions_def.cron_schedule
+                    != current_partitions_def.cron_schedule
+                ):
+                    raise CheckError(
+                        f"Stored partitions definition for {key.to_user_string()} is no longer compatible with the latest partitions definition",
+                    )
+                missing_subset = value - current_partitions_def.subset_with_all_partitions()
+                if not missing_subset.is_empty:
+                    raise CheckError(
+                        f"Stored partitions definition for {key.to_user_string()} includes partitions {missing_subset} that are no longer present",
+                    )
+
+                return SerializableEntitySubset(
+                    key, value.with_partitions_def(current_partitions_def)
+                )
+            else:
+                return serializable_subset
+        else:
+            check.invariant(
+                current_partitions_def is None,
+                f"{key.to_user_string()} was un-partitioned when originally stored, but is now partitioned.",
+            )
+            return serializable_subset
+
+    @use_partition_loading_context
+    def iterate_asset_subsets(
+        self, asset_graph_subset: AssetGraphSubset
+    ) -> Iterable[EntitySubset[AssetKey]]:
+        """Returns an Iterable of EntitySubsets representing the subset of each asset that this
+        AssetGraphSubset contains.
+        """
+        for asset_key in asset_graph_subset.asset_keys:
+            yield self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
+
+    @use_partition_loading_context
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> Optional[EntitySubset[T_EntityKey]]:
-        if serializable_subset.is_compatible_with_partitions_def(
-            self._get_partitions_def(serializable_subset.key)
+        key = serializable_subset.key
+        if self.asset_graph.has(key) and serializable_subset.is_compatible_with_partitions_def(
+            self._get_partitions_def(key)
         ):
             return EntitySubset(
-                self,
-                key=serializable_subset.key,
-                value=_ValidatedEntitySubsetValue(serializable_subset.value),
+                self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
             )
         else:
             return None
 
+    @use_partition_loading_context
     def legacy_get_asset_subset_from_valid_subset(
         self, subset: "ValidAssetSubset"
     ) -> EntitySubset[AssetKey]:
         return EntitySubset(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
 
+    def _validate_partition_keys(
+        self, key: AssetKey, partition_keys: AbstractSet[str]
+    ) -> AbstractSet[str]:
+        partitions_def = self.asset_graph.get(key).partitions_def
+        if partitions_def is None:
+            return {partition_key for partition_key in partition_keys if partition_key is None}
+        else:
+            return {
+                partition_key
+                for partition_key in partition_keys
+                if partition_key is not None and partitions_def.has_partition_key(partition_key)
+            }
+
+    @use_partition_loading_context
     def get_asset_subset_from_asset_partitions(
-        self, key: AssetKey, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+        self,
+        key: AssetKey,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        validate_existence: bool = False,
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             all(akpk.asset_key == key for akpk in asset_partitions),
@@ -205,6 +362,10 @@ class AssetGraphView(LoadingContext):
         partition_keys = {
             akpk.partition_key for akpk in asset_partitions if akpk.partition_key is not None
         }
+
+        if validate_existence:
+            partition_keys = self._validate_partition_keys(key, partition_keys)
+
         partitions_def = self._get_partitions_def(key)
         value = (
             partitions_def.subset_with_partition_keys(partition_keys)
@@ -213,44 +374,96 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
+    def compute_parent_subset_and_required_but_nonexistent_subset(
+        self, parent_key, subset: EntitySubset[T_EntityKey]
+    ) -> tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
+        check.invariant(
+            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
+        )
+        to_key = parent_key
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        if subset.is_empty:
+            return self.get_empty_subset(key=parent_key), self.get_empty_subset(key=parent_key)
+        elif to_partitions_def is None:
+            return self.get_full_subset(key=to_key), self.get_empty_subset(key=parent_key)
+
+        upstream_partition_result = self._compute_upstream_partitions_result(to_key, subset)
+
+        parent_subset = EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(upstream_partition_result.partitions_subset),
+        )
+
+        required_but_nonexistent_subset = EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(
+                upstream_partition_result.required_but_nonexistent_subset
+            ),
+        )
+
+        return parent_subset, required_but_nonexistent_subset
+
+    @use_partition_loading_context
     def compute_parent_subset(
         self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )
-        return self.compute_mapped_subset(parent_key, subset)
+        return self.compute_mapped_subset(parent_key, subset, direction="up")
 
+    @use_partition_loading_context
     def compute_child_subset(
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
     ) -> EntitySubset[T_EntityKey]:
         check.invariant(
             child_key in self.asset_graph.get(subset.key).child_entity_keys,
         )
-        return self.compute_mapped_subset(child_key, subset)
+        return self.compute_mapped_subset(child_key, subset, direction="down")
 
-    def compute_mapped_subset(
+    def _compute_upstream_partitions_result(
         self, to_key: T_EntityKey, from_subset: EntitySubset
+    ) -> UpstreamPartitionsResult:
+        from_key = from_subset.key
+        parent_key = to_key
+        partition_mapping = self.asset_graph.get_partition_mapping(from_key, parent_key)
+        from_partitions_def = self.asset_graph.get(from_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+            downstream_partitions_subset=from_subset.get_internal_subset_value()
+            if from_partitions_def is not None
+            else None,
+            downstream_partitions_def=from_partitions_def,
+            upstream_partitions_def=check.not_none(to_partitions_def),
+        )
+
+    @use_partition_loading_context
+    def compute_mapped_subset(
+        self, to_key: T_EntityKey, from_subset: EntitySubset, direction: Literal["up", "down"]
     ) -> EntitySubset[T_EntityKey]:
         from_key = from_subset.key
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
         to_partitions_def = self.asset_graph.get(to_key).partitions_def
 
-        partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
-
-        if from_key in self.asset_graph.get(to_key).parent_entity_keys:
+        if direction == "down":
             if from_partitions_def is None or to_partitions_def is None:
                 return (
                     self.get_empty_subset(key=to_key)
                     if from_subset.is_empty
                     else self.get_full_subset(key=to_key)
                 )
+
+            partition_mapping = self.asset_graph.get_partition_mapping(to_key, from_key)
+
             to_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
                 upstream_partitions_subset=from_subset.get_internal_subset_value(),
                 upstream_partitions_def=from_partitions_def,
                 downstream_partitions_def=to_partitions_def,
-                dynamic_partitions_store=self._queryer,
-                current_time=self.effective_dt,
             )
         else:
             if to_partitions_def is None or from_subset.is_empty:
@@ -259,17 +472,10 @@ class AssetGraphView(LoadingContext):
                     if from_subset.is_empty
                     else self.get_full_subset(key=to_key)
                 )
-            to_partitions_subset = (
-                partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                    downstream_partitions_subset=from_subset.get_internal_subset_value()
-                    if from_partitions_def is not None
-                    else None,
-                    downstream_partitions_def=from_partitions_def,
-                    upstream_partitions_def=to_partitions_def,
-                    dynamic_partitions_store=self._queryer,
-                    current_time=self.effective_dt,
-                ).partitions_subset
-            )
+
+            to_partitions_subset = self._compute_upstream_partitions_result(
+                to_key, from_subset
+            ).partitions_subset
 
         return EntitySubset(
             self,
@@ -277,6 +483,7 @@ class AssetGraphView(LoadingContext):
             value=_ValidatedEntitySubsetValue(to_partitions_subset),
         )
 
+    @use_partition_loading_context
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str], asset_subset: EntitySubset[AssetKey]
     ) -> EntitySubset[AssetKey]:
@@ -288,11 +495,7 @@ class AssetGraphView(LoadingContext):
             self._get_partitions_def(asset_subset.key), "Must have partitions def"
         )
         for partition_key in partition_keys:
-            if not partitions_def.has_partition_key(
-                partition_key,
-                current_time=self.effective_dt,
-                dynamic_partitions_store=self._queryer,
-            ):
+            if not partitions_def.has_partition_key(partition_key):
                 check.failed(
                     f"Partition key {partition_key} not in partitions def {partitions_def}"
                 )
@@ -302,6 +505,7 @@ class AssetGraphView(LoadingContext):
         )
         return asset_subset.compute_intersection(keys_subset)
 
+    @use_partition_loading_context
     def compute_latest_time_window_subset(
         self, asset_key: AssetKey, lookback_delta: Optional[timedelta] = None
     ) -> EntitySubset[AssetKey]:
@@ -316,7 +520,7 @@ class AssetGraphView(LoadingContext):
             # if the asset has no time dimension, then return a full subset
             return self.get_full_subset(key=asset_key)
 
-        latest_time_window = time_partitions_def.get_last_partition_window(self.effective_dt)
+        latest_time_window = time_partitions_def.get_last_partition_window()
         if latest_time_window is None:
             return self.get_empty_subset(key=asset_key)
 
@@ -343,22 +547,181 @@ class AssetGraphView(LoadingContext):
         else:
             check.failed(f"Unsupported partitions_def: {partitions_def}")
 
-    def compute_missing_subset(
-        self, asset_key: "AssetKey", from_subset: EntitySubset[AssetKey]
+    async def compute_subset_with_status(
+        self, key: AssetCheckKey, status: Optional["AssetCheckExecutionResolvedStatus"]
+    ):
+        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
+
+        """Returns the subset of an asset check that matches a given status."""
+        summary = await AssetCheckSummaryRecord.gen(self, key)
+        latest_record = summary.last_check_execution_record if summary else None
+        resolved_status = (
+            await latest_record.resolve_status(self)
+            if latest_record and await latest_record.targets_latest_materialization(self)
+            else None
+        )
+        if resolved_status == status:
+            return self.get_full_subset(key=key)
+        else:
+            return self.get_empty_subset(key=key)
+
+    async def compute_subset_with_freshness_state(
+        self, key: AssetKey, state: FreshnessState
+    ) -> EntitySubset[AssetKey]:
+        from dagster._core.definitions.asset_health.asset_freshness_health import (
+            AssetFreshnessHealthState,
+        )
+
+        if not self.asset_graph.has(key) or self.asset_graph.get(key).freshness_policy is None:
+            if state == FreshnessState.NOT_APPLICABLE:
+                return self.get_full_subset(key=key)
+            else:
+                return self.get_empty_subset(key=key)
+
+        asset_freshness_health_state = await AssetFreshnessHealthState.compute_for_asset(key, self)
+
+        if asset_freshness_health_state.freshness_state == state:
+            return self.get_full_subset(key=key)
+        else:
+            return self.get_empty_subset(key=key)
+
+    async def _compute_run_in_progress_check_subset(
+        self, key: AssetCheckKey
+    ) -> EntitySubset[AssetCheckKey]:
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionResolvedStatus,
+        )
+
+        return await self.compute_subset_with_status(
+            key, AssetCheckExecutionResolvedStatus.IN_PROGRESS
+        )
+
+    async def _compute_execution_failed_check_subset(
+        self, key: AssetCheckKey
+    ) -> EntitySubset[AssetCheckKey]:
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionResolvedStatus,
+        )
+
+        return await self.compute_subset_with_status(
+            key, AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+        )
+
+    async def _compute_missing_check_subset(
+        self, key: AssetCheckKey
+    ) -> EntitySubset[AssetCheckKey]:
+        return await self.compute_subset_with_status(key, None)
+
+    async def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def:
+            cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
+            return (
+                cache_value.get_in_progress_subset(self, key, partitions_def)
+                if cache_value
+                else self.get_empty_subset(key=key)
+            )
+        value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    async def _compute_backfill_in_progress_asset_subset(
+        self, key: AssetKey
+    ) -> EntitySubset[AssetKey]:
+        asset_graph_subset = self._queryer.get_active_backfill_in_progress_asset_graph_subset()
+        return self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, key)
+
+    async def _compute_execution_failed_unpartitioned(self, key: AssetKey) -> bool:
+        from dagster._core.event_api import AssetRecordsFilter
+        from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
+        from dagster._core.storage.event_log.base import AssetRecord
+        from dagster._utils.storage import get_materialization_chunk_size
+
+        planned_materialization_info = (
+            self.instance.event_log_storage.get_latest_planned_materialization_info(key)
+        )
+        if not planned_materialization_info:
+            # has never been planned
+            return False
+
+        planned_storage_id = planned_materialization_info.storage_id
+        planned_run_id = planned_materialization_info.run_id
+        run = await RunRecord.gen(self, planned_run_id)
+
+        # note that if the run did fail, it's still possible that the materialization was successful,
+        # hence the extra code below this conditional
+        if not run or run.dagster_run.status != DagsterRunStatus.FAILURE:
+            # latest run did not fail
+            return False
+
+        # performance optimization: we will generally have this record cached, and in most cases
+        # the most recent materialization will map to the most recent planned run
+        asset_record = await AssetRecord.gen(self, key)
+        asset_entry = asset_record.asset_entry if asset_record else None
+        latest_materialization = asset_entry.last_materialization_record if asset_entry else None
+        if latest_materialization and latest_materialization.run_id == planned_run_id:
+            return False
+
+        # look for any materializations for the latest planned run for cases where
+        # the run failed but the materialization was successful
+        has_more = True
+        cursor = None
+        while has_more:
+            result = self.instance.fetch_materializations(
+                AssetRecordsFilter(asset_key=key, after_storage_id=planned_storage_id),
+                limit=get_materialization_chunk_size(),
+                cursor=cursor,
+            )
+            has_more, cursor = result.has_more, result.cursor
+            if any(record.run_id == planned_run_id for record in result.records):
+                return False
+
+        # could not find any materializations for the latest planned run
+        return True
+
+    async def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def:
+            cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
+            return (
+                cache_value.get_failed_subset(self, key, partitions_def)
+                if cache_value
+                else self.get_empty_subset(key=key)
+            )
+        else:
+            value = await self._compute_execution_failed_unpartitioned(key)
+            return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    async def _compute_missing_asset_subset(
+        self, key: AssetKey, from_subset: EntitySubset
     ) -> EntitySubset[AssetKey]:
         """Returns a subset which is the subset of the input subset that has never been materialized
         (if it is a materializable asset) or observered (if it is an observable asset).
         """
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
         # TODO: this logic should be simplified once we have a unified way of detecting both
         # materializations and observations through the parittion status cache. at that point, the
         # definition will slightly change to search for materializations and observations regardless
         # of the materializability of the asset
-        if self.asset_graph.get(asset_key).is_materializable:
+        if self.asset_graph.get(key).is_materializable:
             # cheap call which takes advantage of the partition status cache
-            materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
-            materialized_subset = EntitySubset(
-                self, key=asset_key, value=_ValidatedEntitySubsetValue(materialized_subset.value)
-            )
+            partitions_def = self._get_partitions_def(key)
+            if partitions_def:
+                cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
+                materialized_subset = (
+                    cache_value.get_materialized_subset(self, key, partitions_def)
+                    if cache_value
+                    else self.get_empty_subset(key=key)
+                )
+            else:
+                value = self._queryer.get_materialized_asset_subset(asset_key=key).value
+                materialized_subset = EntitySubset(
+                    self, key=key, value=_ValidatedEntitySubsetValue(value)
+                )
             return from_subset.compute_difference(materialized_subset)
         else:
             # more expensive call
@@ -368,28 +731,174 @@ class AssetGraphView(LoadingContext):
                 if not self._queryer.asset_partition_has_materialization_or_observation(ap)
             }
             return self.get_asset_subset_from_asset_partitions(
-                key=asset_key, asset_partitions=missing_asset_partitions
+                key=key, asset_partitions=missing_asset_partitions
             )
 
     @cached_method
-    def compute_in_progress_asset_subset(self, *, asset_key: AssetKey) -> EntitySubset[AssetKey]:
-        # part of in progress run
-        value = self._queryer.get_in_progress_asset_subset(asset_key=asset_key).value
-        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
+    async def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+        return await _dispatch(
+            key=key,
+            check_method=self._compute_run_in_progress_check_subset,
+            asset_method=self._compute_run_in_progress_asset_subset,
+        )
 
     @cached_method
-    def compute_failed_asset_subset(self, *, asset_key: "AssetKey") -> EntitySubset[AssetKey]:
-        value = self._queryer.get_failed_asset_subset(asset_key=asset_key).value
-        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
+    async def compute_backfill_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+        async def get_empty_subset(key: EntityKey) -> EntitySubset:
+            return self.get_empty_subset(key=key)
+
+        return await _dispatch(
+            key=key,
+            # asset checks cannot currently be backfilled
+            check_method=get_empty_subset,
+            asset_method=self._compute_backfill_in_progress_asset_subset,
+        )
 
     @cached_method
-    def compute_updated_since_cursor_subset(
-        self, *, asset_key: AssetKey, cursor: Optional[int]
+    async def compute_execution_failed_subset(self, *, key: EntityKey) -> EntitySubset:
+        return await _dispatch(
+            key=key,
+            check_method=self._compute_execution_failed_check_subset,
+            asset_method=self._compute_execution_failed_asset_subset,
+        )
+
+    @cached_method
+    async def compute_missing_subset(
+        self, *, key: EntityKey, from_subset: EntitySubset
+    ) -> EntitySubset:
+        return await _dispatch(
+            key=key,
+            check_method=self._compute_missing_check_subset,
+            asset_method=functools.partial(
+                self._compute_missing_asset_subset, from_subset=from_subset
+            ),
+        )
+
+    async def _expensively_filter_entity_subset(
+        self, subset: EntitySubset, filter_fn: Callable[[Optional[str]], Awaitable[bool]]
+    ) -> EntitySubset:
+        if subset.is_partitioned:
+            return subset.compute_intersection_with_partition_keys(
+                {pk for pk in subset.expensively_compute_partition_keys() if await filter_fn(pk)}
+            )
+        else:
+            return (
+                subset
+                if not subset.is_empty and await filter_fn(None)
+                else self.get_empty_subset(key=subset.key)
+            )
+
+    async def _compute_latest_check_run_matches(
+        self,
+        partition_key: Optional[str],
+        query_key: AssetCheckKey,
+        filter_fn: Callable[["RunRecord"], bool],
+    ) -> bool:
+        from dagster._core.storage.dagster_run import RunRecord
+        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
+
+        check.invariant(partition_key is None, "Partitioned checks not supported")
+        summary = await AssetCheckSummaryRecord.gen(self, query_key)
+        check_record = summary.last_check_execution_record if summary else None
+        if check_record and check_record.event:
+            run_record = await RunRecord.gen(self, check_record.event.run_id)
+            return bool(run_record) and filter_fn(run_record)
+        else:
+            return False
+
+    async def _compute_latest_asset_run_matches(
+        self,
+        partition_key: Optional[str],
+        query_key: AssetKey,
+        filter_fn: Callable[["RunRecord"], bool],
+    ) -> bool:
+        from dagster._core.storage.dagster_run import RunRecord
+        from dagster._core.storage.event_log.base import AssetRecord
+
+        asset_record = await AssetRecord.gen(self, query_key)
+        if (
+            asset_record
+            and asset_record.asset_entry.last_materialization
+            and asset_record.asset_entry.last_materialization.asset_materialization
+            and asset_record.asset_entry.last_materialization.asset_materialization.partition
+            == partition_key
+        ):
+            run_record = await RunRecord.gen(
+                self, asset_record.asset_entry.last_materialization.run_id
+            )
+            return bool(run_record) and filter_fn(run_record)
+        else:
+            return False
+
+    async def compute_latest_run_matches_subset(
+        self, from_subset: EntitySubset, filter_fn: Callable[["RunRecord"], bool]
+    ) -> EntitySubset:
+        return await _dispatch(
+            key=from_subset.key,
+            check_method=lambda k: self._expensively_filter_entity_subset(
+                from_subset,
+                filter_fn=functools.partial(
+                    self._compute_latest_check_run_matches, query_key=k, filter_fn=filter_fn
+                ),
+            ),
+            asset_method=lambda k: self._expensively_filter_entity_subset(
+                from_subset,
+                filter_fn=functools.partial(
+                    self._compute_latest_asset_run_matches, query_key=k, filter_fn=filter_fn
+                ),
+            ),
+        )
+
+    async def _compute_updated_since_cursor_subset(
+        self, key: AssetKey, cursor: Optional[int], require_data_version_update: bool = False
     ) -> EntitySubset[AssetKey]:
         value = self._queryer.get_asset_subset_updated_after_cursor(
-            asset_key=asset_key, after_cursor=cursor
+            asset_key=key,
+            after_cursor=cursor,
+            require_data_version_update=require_data_version_update,
         ).value
-        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    async def _compute_updated_since_time_subset(
+        self, key: AssetCheckKey, time: datetime
+    ) -> EntitySubset[AssetCheckKey]:
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
+
+        # intentionally left unimplemented for AssetKey, as this is a less performant query
+        summary = await AssetCheckSummaryRecord.gen(self, key)
+        record = summary.last_check_execution_record if summary else None
+        if (
+            record is None
+            or record.event is None
+            or record.event.dagster_event_type != DagsterEventType.ASSET_CHECK_EVALUATION
+            or record.event.timestamp < time.timestamp()
+        ):
+            return self.get_empty_subset(key=key)
+        else:
+            return self.get_full_subset(key=key)
+
+    @cached_method
+    async def compute_updated_since_temporal_context_subset(
+        self, *, key: EntityKey, temporal_context: TemporalContext
+    ) -> EntitySubset:
+        return await _dispatch(
+            key=key,
+            check_method=functools.partial(
+                self._compute_updated_since_time_subset, time=temporal_context.effective_dt
+            ),
+            asset_method=functools.partial(
+                self._compute_updated_since_cursor_subset, cursor=temporal_context.last_event_id
+            ),
+        )
+
+    @cached_method
+    async def compute_data_version_changed_since_temporal_context_subset(
+        self, *, key: AssetKey, temporal_context: TemporalContext
+    ) -> EntitySubset[AssetKey]:
+        return await self._compute_updated_since_cursor_subset(
+            key, cursor=temporal_context.last_event_id, require_data_version_update=True
+        )
 
     class MultiDimInfo(NamedTuple):
         tw_dim: PartitionDimensionDefinition
@@ -454,9 +963,23 @@ class AssetGraphView(LoadingContext):
                 for tw_pk in multi_dim_info.tw_partition_def.get_partition_keys_in_time_window(
                     time_window
                 )
-                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys(
-                    current_time=self.effective_dt,
-                    dynamic_partitions_store=self._queryer,
-                )
+                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys()
             },
         )
+
+
+I_Dispatch = TypeVar("I_Dispatch")
+O_Dispatch = TypeVar("O_Dispatch")
+
+
+async def _dispatch(
+    *,
+    key: EntityKey,
+    check_method: Callable[[AssetCheckKey], Awaitable[O_Dispatch]],
+    asset_method: Callable[[AssetKey], Awaitable[O_Dispatch]],
+) -> O_Dispatch:
+    """Applies a method for either a check or an asset."""
+    if isinstance(key, AssetCheckKey):
+        return await check_method(key)
+    else:
+        return await asset_method(key)

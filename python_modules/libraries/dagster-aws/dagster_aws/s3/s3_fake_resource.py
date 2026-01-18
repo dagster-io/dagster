@@ -55,7 +55,7 @@ class S3FakeSession:
 
     def get_object(self, Bucket, Key, *args, **kwargs):
         if not self.has_object(Bucket, Key):
-            raise ClientError({}, None)
+            raise ClientError({}, None)  # pyright: ignore[reportArgumentType]
 
         self.mock_extras.get_object(*args, **kwargs)
         return {"Body": self._get_byte_stream(Bucket, Key)}

@@ -1,5 +1,5 @@
+import sys
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
@@ -18,15 +18,19 @@ def get_description() -> str:
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
     return version["__version__"]
 
 
+# grpcio 1.66.2 is the min version compatible with python 3.13
+if sys.version_info >= (3, 13):
+    GRPC_VERSION_FLOOR = "1.66.2"
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-GRPC_VERSION_FLOOR = "1.44.0"
+else:
+    GRPC_VERSION_FLOOR = "1.44.0"
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
@@ -62,11 +66,11 @@ setup(
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Topic :: System :: Monitoring",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -74,68 +78,72 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         # cli
-        "click>=5.0",
+        "click>=5.0,<9.0",
         "coloredlogs>=6.1,<=14.0",
         "Jinja2",
-        "PyYAML>=5.1",
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
-        "croniter>=0.3.34",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
-        "packaging>=20.9",
-        "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
-        "protobuf>=4,<5; python_version>='3.11'",
+        "protobuf>=3.20.0,<7; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
+        "protobuf>=4,<7; python_version>='3.11'",
         "python-dotenv",
         "pytz",
         "requests",
         "setuptools",
+        "six",  # for vendored dateutil
         "tabulate",
         "tomli<3",
         "tqdm<5",
-        "typing_extensions>=4.4.0,<5",
-        'tzdata; platform_system=="Windows"',
+        "tzdata",
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
-        "watchdog>=0.8.3,<6",
+        "watchdog>=0.8.3,<7",
         'psutil>=1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439
         'pywin32!=226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
-        # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic>1.10.0,!=1.10.7,<2.10",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
+        f"dagster-shared{pin}",
+        "antlr4-python3-runtime",
     ],
     extras_require={
         "docker": ["docker"],
         "test": [
-            "buildkite-test-collector",
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
-            "mock==3.0.5",
             "mypy-protobuf",
             "objgraph",
             "pytest-cov==5.0.0",
             "pytest-mock==3.14.0",
-            "pytest-rerunfailures==14.0",
             "pytest-xdist==3.6.1",
             "pytest>=8",
             "pytest-asyncio",
+            "pytest-timeout",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
             "tox>=4",
             "morefs[asynclocal]",
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
+            "flaky",
+            "psutil",
+            "ruff==0.11.5",
+        ],
+        "test-components": [
+            "tomlkit",
+            "jsonschema",
+            "pandas",
+            "duckdb",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
@@ -145,7 +153,6 @@ setup(
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
-            "types-croniter",  # version will be resolved against croniter
             "types-cryptography",  # version will be resolved against cryptography
             "types-mock",  # version will be resolved against mock
             "types-paramiko",  # version will be resolved against paramiko
@@ -156,19 +163,21 @@ setup(
             "types-requests",  # version will be resolved against requests
             "types-simplejson",  # version will be resolved against simplejson
             "types-six",  # needed but not specified by grpcio
-            "types-sqlalchemy==1.4.53.34",  # later versions introduce odd errors
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.5.5",
+            "ruff==0.11.5",
         ],
     },
     entry_points={
         "console_scripts": [
             "dagster = dagster.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
-        ]
+        ],
+        "dagster_dg_cli.registry_modules": [
+            "dagster = dagster",
+        ],
     },
 )

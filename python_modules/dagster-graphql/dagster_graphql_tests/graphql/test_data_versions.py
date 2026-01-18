@@ -1,8 +1,11 @@
-from typing import Any, Mapping, Optional, Sequence, Union, cast
+import shutil
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any, Optional
 
+import pytest
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     OpExecutionContext,
     RepositoryDefinition,
     TimeWindowPartitionMapping,
@@ -16,20 +19,29 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
+from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
-    GqlAssetKey,
-    GqlResult,
     define_out_of_process_context,
+    ensure_dagster_graphql_tests_import,
     execute_dagster_graphql,
     infer_job_selector,
     infer_repository_selector,
+    materialize_assets,
+    temp_workspace_file,
 )
 
+ensure_dagster_graphql_tests_import()
+
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
 from dagster_graphql_tests.graphql.test_assets import (
     GET_ASSET_DATA_VERSIONS,
     GET_ASSET_DATA_VERSIONS_BY_PARTITION,
@@ -37,50 +49,36 @@ from dagster_graphql_tests.graphql.test_assets import (
 )
 
 
-def get_repo_v1():
-    @asset
-    def foo():
-        return True
+class TestDataVersions(ExecutingGraphQLContextTestMatrix):
+    # Storage dir is shared between tests in the same class, so we need to clean it out.
+    @pytest.fixture(autouse=True)
+    def clean_storage_directory(self, graphql_context):
+        """Clean IO manager storage directory before each test to prevent pollution."""
+        # Clean before test runs
+        storage_dir = Path(graphql_context.instance.storage_directory())
+        if storage_dir.exists():
+            shutil.rmtree(storage_dir)
+            storage_dir.mkdir(parents=True)
+        yield
+        # Clean after test runs
+        if storage_dir.exists():
+            shutil.rmtree(storage_dir)
+            storage_dir.mkdir(parents=True)
 
-    @asset
-    def bar(foo):
-        return True
+    def test_dependencies_changed(self, graphql_context):
+        repo_v2 = get_repo_v2()
+        instance = graphql_context.instance
 
-    @repository
-    def repo():
-        return [foo, bar]
-
-    return repo
-
-
-def get_repo_v2():
-    @asset
-    def bar():
-        return True
-
-    @repository
-    def repo():
-        return [bar]
-
-    return repo
-
-
-def test_dependencies_changed():
-    repo_v1 = get_repo_v1()
-    repo_v2 = get_repo_v2()
-
-    with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
-            assert _materialize_assets(context_v1, repo_v1)
+            assert materialize_assets(context_v1, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context_v1.instance)
         with define_out_of_process_context(__file__, "get_repo_v2", instance) as context_v2:
             assert _fetch_data_versions(context_v2, repo_v2)
 
+    def test_stale_status(self, graphql_context):
+        repo = get_repo_v1()
+        instance = graphql_context.instance
 
-def test_stale_status():
-    repo = get_repo_v1()
-
-    with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node(result, "foo")
@@ -88,18 +86,20 @@ def test_stale_status():
             assert foo["staleStatus"] == "MISSING"
             assert foo["staleCauses"] == []
 
-            assert _materialize_assets(context, repo)
+            assert materialize_assets(context, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] is not None
             assert foo["staleStatus"] == "FRESH"
             assert foo["staleCauses"] == []
 
-            assert _materialize_assets(context, repo, asset_selection=[AssetKey(["foo"])])
+            assert materialize_assets(context, asset_selection=[AssetKey(["foo"])])
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             bar = _get_asset_node(result, "bar")
             assert bar["dataVersion"] is not None
@@ -113,36 +113,12 @@ def test_stale_status():
                 }
             ]
 
+    def test_stale_status_partitioned(self, graphql_context):
+        instance = graphql_context.instance
+        instance.add_dynamic_partitions("dynamic", ["alpha", "beta"])
 
-def get_repo_partitioned():
-    partitions_def = StaticPartitionsDefinition(["alpha", "beta"])
-
-    class FooConfig(Config):
-        prefix: str = "ok"
-
-    @asset(partitions_def=partitions_def)
-    def foo(context: OpExecutionContext, config: FooConfig) -> Output[bool]:
-        return Output(
-            True, data_version=DataVersion(f"{config.prefix}_foo_{context.partition_key}")
-        )
-
-    @asset(partitions_def=partitions_def)
-    def bar(context: OpExecutionContext, foo) -> Output[bool]:
-        return Output(True, data_version=DataVersion(f"ok_bar_{context.partition_key}"))
-
-    @repository
-    def repo():
-        return [foo, bar]
-
-    return repo
-
-
-def test_stale_status_partitioned():
-    repo = get_repo_partitioned()
-
-    with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
-            for key in ["foo", "bar"]:
+            for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]))
                 node = _get_asset_node(result)
                 assert node["dataVersion"] is None
@@ -154,12 +130,15 @@ def test_stale_status_partitioned():
                 assert node["staleCauses"] == []  # always returns empty for this undefined field
                 assert node["staleCausesByPartition"] == [[], []]
 
-            assert _materialize_assets(
-                context, repo, [AssetKey(["foo"]), AssetKey(["bar"])], ["alpha", "beta"]
+            assert materialize_assets(
+                context,
+                [AssetKey(["foo"]), AssetKey(["bar"]), AssetKey("dynamic_asset")],
+                ["alpha", "beta"],
             )
             wait_for_runs_to_finish(context.instance)
 
-            for key in ["foo", "bar"]:
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
+            for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]), "alpha")
                 node = _get_asset_node(result)
                 assert node["dataVersion"] == f"ok_{key}_alpha"
@@ -169,15 +148,15 @@ def test_stale_status_partitioned():
                 assert node["staleCauses"] == []
                 assert node["staleCausesByPartition"] == [[], []]
 
-            assert _materialize_assets(
+            assert materialize_assets(
                 context,
-                repo,
                 [AssetKey(["foo"])],
                 ["alpha", "beta"],
                 run_config_data={"ops": {"foo": {"config": {"prefix": "from_config"}}}},
             )
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             result = _fetch_partition_data_versions(context, AssetKey(["foo"]), "alpha")
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] == "from_config_foo_alpha"
@@ -220,46 +199,43 @@ def test_stale_status_partitioned():
                 for key in ["beta", "alpha"]
             ]
 
+    def test_cross_repo_dependency(self, graphql_context):
+        instance = graphql_context.instance
 
-def test_data_version_from_tags():
-    repo_v1 = get_repo_v1()
-    with instance_for_test() as instance:
+        with (
+            temp_workspace_file(
+                [
+                    ("repo1", __file__, "get_cross_repo_test_repo1"),
+                    ("repo2", __file__, "get_cross_repo_test_repo2"),
+                ]
+            ) as workspace_file,
+            define_out_of_process_context(workspace_file, None, instance) as context,
+        ):
+            # Materialize the downstream asset. Provenance will store the version of foo as INITIAL.
+            assert materialize_assets(context, [AssetKey(["bar"])], location_name="repo2")
+            wait_for_runs_to_finish(context.instance)
+
+            repo2 = get_cross_repo_test_repo2()
+            result = _fetch_data_versions(context, repo2, location_name="repo2")
+            bar = _get_asset_node(result, "bar")
+            assert bar["staleStatus"] == "FRESH"
+
+    def test_data_version_from_tags(self, graphql_context):
+        repo_v1 = get_repo_v1()
+        instance = graphql_context.instance
+
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
-            assert _materialize_assets(context_v1, repo_v1)
+            assert materialize_assets(context_v1, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context_v1.instance)
             result = _fetch_data_versions(context_v1, repo_v1)
             tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
             dv_tag = next(tag for tag in tags if tag["key"] == DATA_VERSION_TAG)
             assert dv_tag["value"] == result.data["assetNodes"][0]["dataVersion"]
 
+    def test_partitioned_self_dep(self, graphql_context):
+        repo = get_repo_with_partitioned_self_dep_asset()
+        instance = graphql_context.instance
 
-def get_repo_with_partitioned_self_dep_asset():
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-        ins={
-            "a": AssetIn(
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-            )
-        },
-    )
-    def a(a):
-        del a
-
-    @asset
-    def b(a):
-        return a
-
-    @repository
-    def repo():
-        return [a, b]
-
-    return repo
-
-
-def test_partitioned_self_dep():
-    repo = get_repo_with_partitioned_self_dep_asset()
-
-    with instance_for_test() as instance:
         with define_out_of_process_context(
             __file__, "get_repo_with_partitioned_self_dep_asset", instance
         ) as context:
@@ -275,42 +251,10 @@ def test_partitioned_self_dep():
             node = _get_asset_node(result, "b")
             assert node["staleStatus"] == "MISSING"
 
+    def test_source_asset_job_name(self, graphql_context):
+        get_observable_source_asset_repo()
+        instance = graphql_context.instance
 
-def get_observable_source_asset_repo():
-    @asset(partitions_def=StaticPartitionsDefinition(["1"]))
-    def foo():
-        return 1
-
-    @observable_source_asset
-    def bar():
-        return DataVersion("1")
-
-    @asset(partitions_def=StaticPartitionsDefinition(["2"]))
-    def baz():
-        return 1
-
-    @op
-    def bop():
-        pass
-
-    @job
-    def bop_job():
-        bop()
-
-    foo_job = define_asset_job("foo_job", [foo])
-    bar_job = define_asset_job("bar_job", [bar])
-
-    defs = Definitions(
-        assets=[foo, bar, baz],
-        jobs=[foo_job, bar_job, bop_job],
-    )
-    return defs.get_repository_def()
-
-
-def test_source_asset_job_name():
-    get_observable_source_asset_repo()
-
-    with instance_for_test() as instance:
         with define_out_of_process_context(
             __file__, "get_observable_source_asset_repo", instance
         ) as context:
@@ -345,58 +289,161 @@ def test_source_asset_job_name():
             assert "bar_job" in bar_jobs
 
 
-def _materialize_assets(
+# ########################
+# ##### REPOSITORY DEFS
+# ########################
+
+# These are used to define definition state in the test functions above
+
+
+def get_repo_v1():
+    @asset
+    def foo():
+        return True
+
+    @asset
+    def bar(foo):
+        return True
+
+    @repository
+    def repo():
+        return [foo, bar]
+
+    return repo
+
+
+def get_repo_v2():
+    @asset
+    def bar():
+        return True
+
+    @repository
+    def repo():
+        return [bar]
+
+    return repo
+
+
+def get_repo_partitioned():
+    partitions_def = StaticPartitionsDefinition(["alpha", "beta"])
+
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
+    class FooConfig(Config):
+        prefix: str = "ok"
+
+    @asset(partitions_def=partitions_def)
+    def foo(context: OpExecutionContext, config: FooConfig) -> Output[bool]:
+        return Output(
+            True, data_version=DataVersion(f"{config.prefix}_foo_{context.partition_key}")
+        )
+
+    @asset(partitions_def=partitions_def)
+    def bar(context: OpExecutionContext, foo) -> Output[bool]:
+        return Output(True, data_version=DataVersion(f"ok_bar_{context.partition_key}"))
+
+    @asset(partitions_def=dynamic_partitions_def)
+    def dynamic_asset(context: OpExecutionContext):
+        return Output(True, data_version=DataVersion(f"ok_dynamic_asset_{context.partition_key}"))
+
+    @repository
+    def repo():
+        return [foo, bar, dynamic_asset]
+
+    return repo
+
+
+def get_cross_repo_test_repo1():
+    @asset
+    def foo():
+        pass
+
+    @repository
+    def repo1():
+        return [foo]
+
+    return repo1
+
+
+def get_cross_repo_test_repo2():
+    @asset(deps=["foo"])
+    def bar():
+        pass
+
+    @repository
+    def repo2():
+        return [bar]
+
+    return repo2
+
+
+def get_repo_with_partitioned_self_dep_asset():
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        ins={
+            "a": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            )
+        },
+    )
+    def a(a):
+        del a
+
+    @asset
+    def b(a):
+        return a
+
+    @repository
+    def repo():
+        return [a, b]
+
+    return repo
+
+
+def get_observable_source_asset_repo():
+    @asset(partitions_def=StaticPartitionsDefinition(["1"]))
+    def foo():
+        return 1
+
+    @observable_source_asset
+    def bar():
+        return DataVersion("1")
+
+    @asset(partitions_def=StaticPartitionsDefinition(["2"]))
+    def baz():
+        return 1
+
+    @op
+    def bop():
+        pass
+
+    @job
+    def bop_job():
+        bop()
+
+    foo_job = define_asset_job("foo_job", [foo])
+    bar_job = define_asset_job("bar_job", [bar])
+
+    defs = Definitions(
+        assets=[foo, bar, baz],
+        jobs=[foo_job, bar_job, bop_job],
+    )
+    return defs.get_repository_def()
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _fetch_data_versions(
     context: WorkspaceRequestContext,
     repo: RepositoryDefinition,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
-    partition_keys: Optional[Sequence[str]] = None,
-    run_config_data: Optional[Mapping[str, Any]] = None,
-) -> Union[GqlResult, Sequence[GqlResult]]:
-    gql_asset_selection = (
-        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
-        if asset_selection
-        else None
-    )
+    location_name: Optional[str] = None,
+):
     selector = infer_job_selector(
-        context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
+        context, repo.get_implicit_asset_job_names()[0], location_name=location_name
     )
-    if partition_keys:
-        results = []
-        for key in partition_keys:
-            results.append(
-                execute_dagster_graphql(
-                    context,
-                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-                    variables={
-                        "executionParams": {
-                            "selector": selector,
-                            "executionMetadata": {
-                                "tags": [{"key": "dagster/partition", "value": key}]
-                            },
-                            "runConfigData": run_config_data,
-                        }
-                    },
-                )
-            )
-        return results
-    else:
-        selector = infer_job_selector(
-            context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
-        )
-        return execute_dagster_graphql(
-            context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "runConfigData": run_config_data,
-                }
-            },
-        )
-
-
-def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_selector(context, repo.get_implicit_asset_job_names()[0])
     return execute_dagster_graphql(
         context,
         GET_ASSET_DATA_VERSIONS,
@@ -431,7 +478,5 @@ def _get_asset_node(result: Any, key: Optional[str] = None) -> Mapping[str, Any]
         return (
             to_check["assetNodeOrError"]
             if "assetNodeOrError" in to_check
-            else next(
-                (node for node in to_check["assetNodes"] if node["assetKey"]["path"] == [key])
-            )
+            else next(node for node in to_check["assetNodes"] if node["assetKey"]["path"] == [key])
         )

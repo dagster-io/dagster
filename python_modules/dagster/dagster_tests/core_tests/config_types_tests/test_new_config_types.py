@@ -1,4 +1,4 @@
-from dagster import Array, Int, Noneable
+import dagster as dg
 from dagster._config import ConfigTypeKind, resolve_to_config_type, validate_config
 
 
@@ -7,11 +7,11 @@ def test_config_any():
     assert validate_config(any_inst, 1).success
     assert validate_config(any_inst, None).success
     assert validate_config(any_inst, "r").success
-    assert any_inst.kind == ConfigTypeKind.ANY
+    assert any_inst.kind == ConfigTypeKind.ANY  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_config_int():
-    int_inst = resolve_to_config_type(Int)
+    int_inst = resolve_to_config_type(dg.Int)
     assert validate_config(int_inst, 1).success
     assert not validate_config(int_inst, None).success
     assert not validate_config(int_inst, "r").success
@@ -19,7 +19,7 @@ def test_config_int():
 
 
 def test_optional_int():
-    optional_int_inst = resolve_to_config_type(Noneable(int))
+    optional_int_inst = resolve_to_config_type(dg.Noneable(int))
 
     assert validate_config(optional_int_inst, 1).success
     assert validate_config(optional_int_inst, None).success
@@ -27,7 +27,7 @@ def test_optional_int():
 
 
 def test_list_int():
-    list_int = resolve_to_config_type([Int])
+    list_int = resolve_to_config_type([dg.Int])
 
     assert validate_config(list_int, [1]).success
     assert validate_config(list_int, [1, 2]).success
@@ -39,7 +39,7 @@ def test_list_int():
 
 
 def test_list_nullable_int():
-    lni = resolve_to_config_type(Array(Noneable(int)))
+    lni = resolve_to_config_type(dg.Array(dg.Noneable(int)))
 
     assert validate_config(lni, [1]).success
     assert validate_config(lni, [1, 2]).success
@@ -51,7 +51,7 @@ def test_list_nullable_int():
 
 
 def test_map_int():
-    map_str_int = resolve_to_config_type({str: Int})
+    map_str_int = resolve_to_config_type({str: dg.Int})
 
     assert validate_config(map_str_int, {"a": 1}).success
     assert validate_config(map_str_int, {"a": 1, "b": 2}).success
@@ -63,7 +63,7 @@ def test_map_int():
     assert not validate_config(map_str_int, {"a": 1, 4: 4}).success
     assert not validate_config(map_str_int, {"a": 1, None: 4}).success
 
-    map_int_int = resolve_to_config_type({Int: Int})
+    map_int_int = resolve_to_config_type({dg.Int: dg.Int})
 
     assert validate_config(map_int_int, {1: 1}).success
     assert validate_config(map_int_int, {2: 1, 3: 2}).success

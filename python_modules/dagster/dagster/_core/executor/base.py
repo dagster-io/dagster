@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from dagster import _check as check
 from dagster._annotations import public
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -14,6 +16,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.state import KnownExecutionState
 
 
+@public
 class Executor(ABC):
     @public
     @abstractmethod
@@ -41,12 +44,47 @@ class Executor(ABC):
         Returns: RetryMode
         """
 
-    def get_failure_or_retry_event_after_crash(
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return StepDependencyConfig.default()
+
+    def get_step_event_or_retry_event(
         self,
         step_context: "IStepContext",
         err_info: SerializableErrorInfo,
         known_state: "KnownExecutionState",
+        original_event: "DagsterEvent",
     ):
+        from dagster._core.events import DagsterEvent
+
+        retry_policy = step_context.op_retry_policy
+        retry_state = known_state.get_retry_state()
+        previous_attempt_count = retry_state.get_attempt_count(step_context.step.key)
+        should_retry = (
+            retry_policy
+            and not step_context.retry_mode.disabled
+            and previous_attempt_count < retry_policy.max_retries
+        )
+
+        if should_retry:
+            return DagsterEvent.step_retry_event(
+                step_context,
+                StepRetryData(
+                    error=err_info,
+                    seconds_to_wait=check.not_none(retry_policy).calculate_delay(
+                        previous_attempt_count + 1
+                    ),
+                ),
+            )
+        else:
+            return original_event
+
+    def log_failure_or_retry_event_after_error(
+        self,
+        step_context: "IStepContext",
+        err_info: SerializableErrorInfo,
+        known_state: "KnownExecutionState",
+    ) -> "DagsterEvent":
         from dagster._core.events import DagsterEvent
 
         # determine the retry policy for the step if needed

@@ -1,7 +1,10 @@
 import os
 import sys
 from io import StringIO
-from typing import Any, Callable, List, Type
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from dagster._utils.indenting_printer import IndentingPrinter
 
@@ -14,7 +17,7 @@ class IndentingBufferPrinter(IndentingPrinter):
     def __init__(self, indent_level: int = 4, current_indent: int = 0):
         self.buffer = StringIO()
         self.printer: Callable[[str], Any] = lambda x: self.buffer.write(x + "\n")
-        super(IndentingBufferPrinter, self).__init__(
+        super().__init__(
             indent_level=indent_level, printer=self.printer, current_indent=current_indent
         )
 
@@ -23,9 +26,9 @@ class IndentingBufferPrinter(IndentingPrinter):
 
     def __exit__(
         self,
-        _exception_type: Type[BaseException],
+        _exception_type: type[BaseException],
         _exception_value: BaseException,
-        _traceback: List[str],
+        _traceback: list[str],
     ) -> None:
         self.buffer.close()
 
@@ -35,13 +38,13 @@ class IndentingBufferPrinter(IndentingPrinter):
 
     def write_header(self) -> None:
         args = [os.path.basename(sys.argv[0])] + sys.argv[1:]
-        self.line("'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT")
+        self.line('"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.')
         self.blank_line()
         self.line("@generated")
         self.blank_line()
         self.line("Produced via:")
-        self.line("\n\t".join("%s \\" % s for s in args if s != "--snapshot-update"))
+        self.line("\n\t".join(f"{s} \\" for s in args if s != "--snapshot-update"))
         self.blank_line()
-        self.line("'''")
+        self.line('"""')
         self.blank_line()
         self.blank_line()

@@ -20,6 +20,7 @@ export type PipelineExplorerRootQuery = {
         description: string | null;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        externalJobSource: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -100,6 +101,12 @@ export type PipelineExplorerRootQuery = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -134,6 +141,7 @@ export type PipelineExplorerRootQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -156,6 +164,7 @@ export type PipelineExplorerRootQuery = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -464,6 +473,11 @@ export type PipelineExplorerRootQuery = {
             }>;
           };
         }>;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1602,4 +1616,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = 'f351896aa934dd97af817742b8d069bd5876a9315933e98aa988931c90ad17c2';
+export const PipelineExplorerRootQueryVersion = '4221d0d8b2d5f733513cc046448f5d9931186904aa33429dde0883718f3922e3';

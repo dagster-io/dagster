@@ -1,19 +1,19 @@
-import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
-import {History} from 'history';
+import {Alert, Box, ButtonLink, Colors, Mono} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   DaemonNotRunningAlertInstanceFragment,
   DaemonNotRunningAlertQuery,
   DaemonNotRunningAlertQueryVariables,
   UsingDefaultLauncherAlertInstanceFragment,
 } from './types/BackfillMessaging.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
 import {getBackfillPath} from '../runs/RunsFeedUtils';
+import {AnchorButton} from '../ui/AnchorButton';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -38,11 +38,11 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
   }
 
   return (
-    <Group direction="column" spacing={4}>
+    <Box flex={{direction: 'column', gap: 4}}>
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={Colors.accentReversed()}
+          color={Colors.accentPrimary()}
           underline="always"
           onClick={() => {
             showCustomAlert({
@@ -53,7 +53,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
           View error
         </ButtonLink>
       ) : null}
-    </Group>
+    </Box>
   );
 }
 
@@ -67,13 +67,8 @@ export async function showBackfillErrorToast(
   });
 }
 
-export async function showBackfillSuccessToast(
-  history: History<unknown>,
-  backfillId: string,
-  isAssetBackfill: boolean,
-) {
-  const url = getBackfillPath(backfillId, isAssetBackfill);
-  const [pathname, search] = url.split('?');
+export async function showBackfillSuccessToast(backfillId: string) {
+  const url = getBackfillPath(backfillId);
   await showSharedToaster({
     intent: 'success',
     message: (
@@ -82,8 +77,8 @@ export async function showBackfillSuccessToast(
       </div>
     ),
     action: {
-      text: 'View',
-      href: history.createHref({pathname, search}),
+      type: 'custom',
+      element: <AnchorButton to={url}>View</AnchorButton>,
     },
   });
 }

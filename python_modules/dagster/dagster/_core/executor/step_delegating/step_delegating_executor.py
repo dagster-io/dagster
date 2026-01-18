@@ -3,7 +3,8 @@ import math
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -12,9 +13,9 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
@@ -44,11 +45,13 @@ class StepDelegatingExecutor(Executor):
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
         max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         should_verify_step: bool = False,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._step_handler = step_handler
         self._retries = retries
+        self._step_dependency_config = step_dependency_config
 
         self._max_concurrent = check.opt_int_param(max_concurrent, "max_concurrent")
         self._tag_concurrency_limits = check.opt_list_param(
@@ -59,11 +62,11 @@ class StepDelegatingExecutor(Executor):
             check.invariant(self._max_concurrent > 0, "max_concurrent must be > 0")
 
         self._sleep_seconds = cast(
-            float,
+            "float",
             check.opt_float_param(sleep_seconds, "sleep_seconds", default=_default_sleep_seconds()),
         )
         self._check_step_health_interval_seconds = cast(
-            int,
+            "int",
             check.opt_int_param(
                 check_step_health_interval_seconds, "check_step_health_interval_seconds", default=20
             ),
@@ -78,13 +81,17 @@ class StepDelegatingExecutor(Executor):
     def retries(self):
         return self._retries
 
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_dependency_config
+
     def _get_pop_events_offset(self, instance: DagsterInstance):
         if "DAGSTER_EXECUTOR_POP_EVENTS_OFFSET" in os.environ:
             return int(os.environ["DAGSTER_EXECUTOR_POP_EVENTS_OFFSET"])
         return instance.event_log_storage.default_run_scoped_event_tailer_offset()
 
     def _pop_events(
-        self, instance: DagsterInstance, run_id: str, seen_storage_ids: Set[int]
+        self, instance: DagsterInstance, run_id: str, seen_storage_ids: set[int]
     ) -> Sequence[DagsterEvent]:
         conn = instance.get_records_for_run(
             run_id,
@@ -176,8 +183,9 @@ class StepDelegatingExecutor(Executor):
                 max_concurrent=self._max_concurrent,
                 tag_concurrency_limits=self._tag_concurrency_limits,
                 instance_concurrency_context=instance_concurrency_context,
+                step_dependency_config=self.step_dependency_config,
             ) as active_execution:
-                running_steps: Dict[str, ExecutionStep] = {}
+                running_steps: dict[str, ExecutionStep] = {}
 
                 if plan_context.resume_from_failure:
                     DagsterEvent.engine_event(
@@ -301,12 +309,25 @@ class StepDelegatingExecutor(Executor):
                                     active_execution.verify_complete(
                                         plan_context, dagster_event.step_key
                                     )
+                                elif dagster_event.is_resource_init_failure:
+                                    active_execution.handle_event(dagster_event)
+                                    assert isinstance(dagster_event.step_key, str)
+
+                                    step = active_execution.get_step_by_key(dagster_event.step_key)
+                                    step_context = plan_context.for_step(step)
+                                    assert isinstance(
+                                        dagster_event.engine_event_data.error, SerializableErrorInfo
+                                    )
+                                    self.log_failure_or_retry_event_after_error(
+                                        step_context,
+                                        dagster_event.engine_event_data.error,
+                                        active_execution.get_known_state(),
+                                    )
                                 else:
                                     active_execution.handle_event(dagster_event)
                                     if (
                                         dagster_event.is_step_success
                                         or dagster_event.is_step_failure
-                                        or dagster_event.is_resource_init_failure
                                         or dagster_event.is_step_up_for_retry
                                     ):
                                         assert isinstance(dagster_event.step_key, str)
@@ -341,23 +362,20 @@ class StepDelegatingExecutor(Executor):
                                             cls_name=None,
                                         )
 
-                                        self.get_failure_or_retry_event_after_crash(
+                                        self.log_failure_or_retry_event_after_error(
                                             step_context,
                                             health_check_error,
                                             active_execution.get_known_state(),
                                         )
 
                                 except Exception:
-                                    serializable_error = serializable_error_info_from_exc_info(
-                                        sys.exc_info()
-                                    )
-                                    # Log a step failure event if there was an error during the health
-                                    # check
-                                    DagsterEvent.step_failure_event(
-                                        step_context=plan_context.for_step(step),
-                                        step_failure_data=StepFailureData(
-                                            error=serializable_error,
-                                            user_failure_data=None,
+                                    DagsterEvent.engine_event(
+                                        step_context,
+                                        f"Error while checking health for step {step.key}",
+                                        EngineEventData(
+                                            error=serializable_error_info_from_exc_info(
+                                                sys.exc_info()
+                                            )
                                         ),
                                     )
 

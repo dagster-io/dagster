@@ -9,9 +9,7 @@ setup(
     description="Tools for infrastructure automation",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/automation",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -19,13 +17,21 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
+        "click",
         "packaging>=20.9",
         "pandas",
+        "pathspec",
         "pytablereader",
+        "pydantic",
+        "pyyaml",
         "requests",
-        "twine==1.15.0",
-        "virtualenv==20.25.0",
+        "rich",
+        "twine>=1.15.0",
+        "sphinx",
+        "virtualenv>=20.27.0",
         "urllib3",
+        "watchdog",
+        "deepeval>=3.0,!=3.6.5,!=3.6.8,!=3.6.9",
     ],
     extras_require={
         "buildkite": [
@@ -36,6 +42,9 @@ setup(
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
+            "dagster-docs = automation.dagster_docs:main",
+            "dagster-eval = automation.eval.cli:main",
+            "dagster-dev = automation.dagster_dev.cli:main",
         ]
     },
 )

@@ -12,9 +12,9 @@
 
 [tool.pyright]
 
+typeCheckingMode = "standard"
+
 include = [
-  ".buildkite/dagster-buildkite",
-  "docs/dagster-ui-screenshot",
   "docs/sphinx/_ext/dagster-sphinx",
   "python_modules",
   "examples",
@@ -36,24 +36,21 @@ exclude = [
   "**/build",
 ]
 
+extraPaths = [
+  ".buildkite/buildkite-shared"
+]
+
 # These two settings point pyright to a python environment to resolve imports against. This virtual
 # environment is defined in the `pyright` tox environment in the tox section below-- that
 # environment must be built before pyright can run correctly.
 venv = ".venv"
 venvPath = "pyright/master"
 
-# Set to false to help us during the transition from mypy to pyright. Mypy does
-# not analyze unannotated functions by default, and so as of 2023-02 the codebase contains a large
-# number of type errors in unannotated functions. Eventually we can turn off this setting.
-analyzeUnannotatedFunctions = false
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
-pythonVersion = "3.8"
+pythonVersion = "3.10"
 
-# Use "basic" ruleset. This differs from strict in several ways, but most
-# importantly it does not flag untyped code as an error.
-typeCheckingMode = "basic"
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
 # include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.
@@ -71,6 +68,13 @@ reportPrivateImportUsage = false
 # recognize.
 reportUnnecessaryTypeIgnoreComment = "warning"
 
+# Skip analyzing unannotated code in examples to facilitate terse code.
+executionEnvironments = [
+  { root = "examples", analyzeUnannotatedFunctions=false },
+  { root = "python_modules" },
+  { root = "integration_tests" }
+]
+
 # ########################
 # ##### PYTEST
 # ########################
@@ -78,11 +82,20 @@ reportUnnecessaryTypeIgnoreComment = "warning"
 [tool.pytest.ini_options]
 
 filterwarnings = [
-  "ignore::dagster.ExperimentalWarning",
   "ignore::DeprecationWarning",
   "ignore::UserWarning",
   "ignore::pytest.PytestCollectionWarning",
 ]
+
+markers = [
+  "unit: Fast unit tests with no external dependencies",
+  "integration: Tests requiring real git operations or other I/O",
+  "e2e: End-to-end tests requiring GitHub authentication",
+  "slow: Tests that take more than 1 second",
+]
+
+timeout = 240
+addopts = "-ra"
 
 # ########################
 # ##### RUFF
@@ -98,7 +111,7 @@ filterwarnings = [
 
 [tool.ruff]
 
-target-version = "py38"
+target-version = "py310"
 
 # *.py, *.ipy are included by default
 extend-include = ["*.ipynb"]
@@ -116,7 +129,7 @@ extend-exclude = [
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.5.5"
+required-version = "0.11.5"
 
 [tool.ruff.lint]
 
@@ -181,6 +194,13 @@ ignore = [
   # (assorted perf rules) We have a lot of violations, enable when autofix is available
   "PERF401", # (manual-list-comprehension)
   "PERF402", # (manual-list-copy)
+
+  # (pyupgrade) Keep using Union[] and Optional[] syntax to avoid excessive changes
+  # during Python 3.10 migration. Can be enabled later for gradual adoption of PEP 604.
+  "UP007",  # (non-pep604-annotation) Use X | Y for Union types
+  "UP036",  # (outdated-version-block) Version blocks that are now always true for Python 3.10+
+  "UP038",  # (non-pep604-isinstance) Use X | Y in isinstance/issubclass instead of (X, Y)
+  "UP045",  # (non-pep604-annotation) Use X | None for Optional types
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
@@ -191,6 +211,10 @@ select = [
   # Attributes are OK (which is why A003) is not included here.
   "A001",
   "A002",
+
+  # (jump-statement-in-finally) break, continue, and return statements in finally blocks
+  # are usually mistakes that swallow exceptions.
+  "B012",
 
   # (useless expression): Expressions that aren't assigned to anything are typically bugs.
   "B018",
@@ -222,6 +246,9 @@ select = [
   "PLE",
   "PLW",
 
+  # Packages have __init__.py files
+  "INP001",
+
   # (no commented out code) keep commented out code blocks out of the codebase
   # "ERA001",
 
@@ -243,8 +270,8 @@ select = [
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
 
-  # (f-strings) use f-strings instead of .format()
-  "UP032",
+  # (pyupgrade) auto-upgrade syntax to newer versions of Python
+  "UP",
 
   # (invalid escape sequence) flag errant backslashes
   "W605",
@@ -280,7 +307,20 @@ ban-relative-imports = "all"
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
-"examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
+"examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
+
+# Modules where it is expected for there to be no __init.py__
+"**/*test*/**/" = ["INP001"]
+"**/setup.py" = ["INP001"]
+"**/conftest.py" = ["INP001"]
+"examples/**" = ["INP001"]
+"docs/**" = ["INP001"]
+"**/scripts/**" = ["INP001"]
+"python_modules/dagster/dagster/_core/storage/alembic/env.py" = ["INP001"]
+"python_modules/libraries/dagster-airlift/kitchen-sink/**" = ["INP001"]
+# There is an __init__.py.tmpl
+"python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
+
 
 [tool.ruff.lint.pydocstyle]
 
@@ -290,7 +330,7 @@ ban-relative-imports = "all"
 convention = "google"
 
 [tool.ruff.format]
-exclude = ["examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
+exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"

@@ -1,9 +1,13 @@
 import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicStepSupport';
-import {ExecutionPlanToGraphFragment} from './types/toGraphQueryItems.types';
 import {gql} from '../apollo-client';
+import {ExecutionPlanToGraphFragment} from './types/toGraphQueryItems.types';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {StepKind} from '../graphql/types';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
+
+export type RunGraphQueryItem = GraphQueryItem & {
+  metadata?: IStepMetadata;
+};
 
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that
@@ -18,7 +22,7 @@ import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 export const toGraphQueryItems = (
   plan: ExecutionPlanToGraphFragment,
   runtimeStepMetadata: {[key: string]: IStepMetadata},
-) => {
+): RunGraphQueryItem[] => {
   // Step 1: Find unresolved steps in the initial plan and build a mapping
   // of their unresolved names to their resolved step keys, eg:
   // "multiply_input[*]" => ["multiply_input[1]", "multiply_input[2]"]
@@ -47,7 +51,7 @@ export const toGraphQueryItems = (
   }
 
   // Step 2: Create a graph node for each resolved step without any inputs or outputs.
-  const nodeTable: {[key: string]: GraphQueryItem} = {};
+  const nodeTable: {[key: string]: RunGraphQueryItem} = {};
   for (const step of plan.steps) {
     const stepRuntimeKeys = keyExpansionMap[step.key] || [step.key];
     for (const key of stepRuntimeKeys) {
@@ -55,6 +59,7 @@ export const toGraphQueryItems = (
         name: key,
         inputs: [],
         outputs: [],
+        metadata: runtimeStepMetadata[key],
       };
     }
   }
@@ -67,6 +72,7 @@ export const toGraphQueryItems = (
       for (const input of step.inputs) {
         // Add the input to our node in the result set
         const nodeInput: GraphQueryItem['inputs'][0] = {dependsOn: []};
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         nodeTable[key]!.inputs.push(nodeInput);
 
         // For each upstream step in the plan, map it to upstream nodes in the runtime graph
@@ -92,9 +98,11 @@ export const toGraphQueryItems = (
               continue;
             }
             nodeInput.dependsOn.push({solid: {name: upstreamKey}});
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             let upstreamOutput: GraphQueryItem['outputs'][0] = nodeTable[upstreamKey]!.outputs[0]!;
             if (!upstreamOutput) {
               upstreamOutput = {dependedBy: []};
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               nodeTable[upstreamKey]!.outputs.push(upstreamOutput);
             }
             upstreamOutput.dependedBy.push({

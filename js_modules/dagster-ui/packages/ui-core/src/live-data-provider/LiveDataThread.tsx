@@ -1,3 +1,4 @@
+import {LiveDataScheduler} from './LiveDataScheduler';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {BATCH_PARALLEL_FETCHES, BATCH_SIZE, threadIDToLimits} from './util';
 
@@ -19,20 +20,31 @@ export class LiveDataThread<T> {
     return {};
   }
 
-  constructor(
-    id: string,
-    manager: LiveDataThreadManager<T>,
-    queryKeys: (keys: string[]) => Promise<Record<string, T>>,
-  ) {
-    const limits = threadIDToLimits[id];
-    if (limits) {
-      this.batchSize = limits.batchSize;
-      this.parallelFetches = limits.parallelThreads;
-    }
+  private _scheduler: LiveDataScheduler<T>;
+  private observedKeys: Set<string>;
+
+  constructor({
+    threadID,
+    manager,
+    queryKeys,
+    batchSize,
+    parallelFetches,
+  }: {
+    threadID: string;
+    manager: LiveDataThreadManager<T>;
+    queryKeys: (keys: string[]) => Promise<Record<string, T>>;
+    batchSize?: number;
+    parallelFetches?: number;
+  }) {
+    const limits = threadIDToLimits[threadID];
+    this.batchSize = limits?.batchSize ?? batchSize ?? BATCH_SIZE;
+    this.parallelFetches = limits?.parallelThreads ?? parallelFetches ?? BATCH_PARALLEL_FETCHES;
     this.queryKeys = queryKeys;
     this.listenersCount = {};
     this.manager = manager;
     this.intervals = [];
+    this.observedKeys = new Set();
+    this._scheduler = new LiveDataScheduler(this);
   }
 
   public setPollRate(pollRate: number) {
@@ -40,8 +52,11 @@ export class LiveDataThread<T> {
   }
 
   public subscribe(key: string) {
-    this.listenersCount[key] = this.listenersCount[key] || 0;
-    this.listenersCount[key] += 1;
+    const prevCount = this.listenersCount[key] || 0;
+    this.listenersCount[key] = prevCount + 1;
+    if (prevCount === 0) {
+      this.observedKeys.add(key);
+    }
     this.startFetchLoop();
   }
 
@@ -52,30 +67,49 @@ export class LiveDataThread<T> {
     this.listenersCount[key] -= 1;
     if (this.listenersCount[key] === 0) {
       delete this.listenersCount[key];
+      this.observedKeys.delete(key);
     }
-    if (this.getObservedKeys().length === 0) {
-      this.stopFetchLoop();
-    }
+    this.stopFetchLoop(false);
   }
 
   public getObservedKeys() {
-    return Object.keys(this.listenersCount);
+    return this.observedKeys;
+  }
+
+  private _paused: boolean = false;
+
+  public pause() {
+    this._paused = true;
+    this.stopFetchLoop(true);
+  }
+  public unpause() {
+    this._paused = false;
+    this.startFetchLoop();
   }
 
   public startFetchLoop() {
-    if (this.activeFetches !== this.parallelFetches) {
-      requestAnimationFrame(this._batchedQueryKeys);
+    if (this._paused) {
+      return;
     }
-    if (this.intervals.length !== this.parallelFetches) {
-      this.intervals.push(setInterval(this._batchedQueryKeys, 5000));
-    }
+    this._scheduler.scheduleStartFetchLoop(() => {
+      if (this.activeFetches !== this.parallelFetches) {
+        requestAnimationFrame(this._batchedQueryKeys);
+      }
+      if (this.intervals.length !== this.parallelFetches) {
+        this.intervals.push(setInterval(this._batchedQueryKeys, 5000));
+      }
+    });
   }
 
-  public stopFetchLoop() {
-    this.intervals.forEach((id) => {
-      clearInterval(id);
+  public stopFetchLoop(force: boolean) {
+    this._scheduler.scheduleStopFetchLoop(() => {
+      if (force || this.getObservedKeys().size === 0) {
+        this.intervals.forEach((id) => {
+          clearInterval(id);
+        });
+        this.intervals = [];
+      }
     });
-    this.intervals = [];
   }
 
   private _batchedQueryKeys = async () => {

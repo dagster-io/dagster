@@ -2,7 +2,12 @@ import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
-import {PermissionResult, PermissionsState, permissionResultForKey} from '../app/Permissions';
+import {
+  DEFAULT_DISABLED_REASON,
+  PermissionResult,
+  PermissionsState,
+  permissionResultForKey,
+} from '../app/Permissions';
 import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -34,7 +39,7 @@ export const JobTabs = (props: Props) => {
   }, [matchingTab, tabs]);
 
   return (
-    <Tabs size="large" selectedTabId={selectedTab!.id}>
+    <Tabs size="large" selectedTabId={selectedTab?.id}>
       {tabs
         .filter((tab) => !tab.isHidden)
         .map((tab) => {
@@ -68,6 +73,7 @@ export const JobTabs = (props: Props) => {
 export type JobTabConfigInput = {
   hasLaunchpad: boolean;
   hasPartitionSet: boolean;
+  hasLaunchExecutionPermission?: boolean;
 };
 
 export interface JobTabConfig {
@@ -82,7 +88,7 @@ export interface JobTabConfig {
  * Define the default set of job tabs.
  */
 export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabConfig> => {
-  const {hasLaunchpad, hasPartitionSet} = input;
+  const {hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission} = input;
   return {
     overview: {
       id: 'overview',
@@ -93,8 +99,15 @@ export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabC
       id: 'launchpad',
       title: 'Launchpad',
       pathComponent: 'playground',
-      getPermissionsResult: (permissionsState: PermissionsState) =>
-        permissionResultForKey(permissionsState, 'canLaunchPipelineExecution'),
+      getPermissionsResult: (permissionsState: PermissionsState) => {
+        if (hasLaunchExecutionPermission !== undefined) {
+          return {
+            enabled: hasLaunchExecutionPermission,
+            disabledReason: DEFAULT_DISABLED_REASON,
+          };
+        }
+        return permissionResultForKey(permissionsState, 'canLaunchPipelineExecution');
+      },
       isHidden: !hasLaunchpad,
     },
     runs: {

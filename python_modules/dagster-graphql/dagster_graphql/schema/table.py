@@ -1,8 +1,11 @@
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import graphene
+from dagster._core.definitions.metadata.table import TableColumn
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import non_null_list
 
 if TYPE_CHECKING:
@@ -30,9 +33,14 @@ class GrapheneTableColumn(graphene.ObjectType):
     type = graphene.NonNull(graphene.String)
     description = graphene.String()
     constraints = graphene.NonNull(GrapheneTableColumnConstraints)
+    tags = non_null_list(GrapheneDefinitionTag)
 
     class Meta:
         name = "TableColumn"
+
+    @staticmethod
+    def resolve_tags(parent: TableColumn, _info) -> Sequence[GrapheneDefinitionTag]:
+        return [GrapheneDefinitionTag(key=key, value=value) for key, value in parent.tags.items()]
 
 
 class GrapheneTableSchema(graphene.ObjectType):

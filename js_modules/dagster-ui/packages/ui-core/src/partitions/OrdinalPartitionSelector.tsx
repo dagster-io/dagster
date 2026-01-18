@@ -6,6 +6,7 @@ import {
   Menu,
   MenuDivider,
   MenuItem,
+  MenuItemForInteractiveContent,
   MiddleTruncate,
   TagSelectorDropdownItemProps,
   TagSelectorDropdownProps,
@@ -30,6 +31,7 @@ export const OrdinalPartitionSelector = ({
   health,
   placeholder,
   mode = 'multiple',
+  disabled,
 }: {
   allPartitions: string[];
   selectedPartitions: string[];
@@ -39,20 +41,20 @@ export const OrdinalPartitionSelector = ({
   isDynamic: boolean;
   placeholder?: string;
   mode?: 'single' | 'multiple';
+  disabled?: boolean;
 }) => {
   const dotForPartitionKey = React.useCallback(
     (partitionKey: string) => {
       const index = allPartitions.indexOf(partitionKey);
       if ('ranges' in health) {
         return <AssetPartitionStatusDot status={partitionStatusAtIndex(health.ranges, index)} />;
-      } else {
-        return (
-          <RunStatusDot
-            size={10}
-            status={health.runStatusForPartitionKey(partitionKey, index) || RunStatus.NOT_STARTED}
-          />
-        );
       }
+      return (
+        <RunStatusDot
+          size={10}
+          status={health.runStatusForPartitionKey(partitionKey, index) || RunStatus.NOT_STARTED}
+        />
+      );
     },
     [allPartitions, health],
   );
@@ -68,34 +70,55 @@ export const OrdinalPartitionSelector = ({
       }
       renderDropdownItem={React.useCallback(
         (tag: string, dropdownItemProps: TagSelectorDropdownItemProps) => {
-          return (
-            <label>
-              <MenuItem
-                tagName="div"
-                data-testid={testId(`menu-item-${tag}`)}
-                onClick={dropdownItemProps.toggle}
-                text={
+          const sharedContent = (
+            <>
+              {dotForPartitionKey(tag)}
+              <div data-tooltip={tag} data-tooltip-style={DropdownItemTooltipStyle}>
+                <MiddleTruncate text={tag} />
+              </div>
+            </>
+          );
+
+          if (mode === 'multiple') {
+            return (
+              <label key={tag}>
+                <MenuItemForInteractiveContent data-testid={testId(`menu-item-${tag}`)}>
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns:
-                        mode === 'multiple' ? 'auto auto minmax(0, 1fr)' : 'auto minmax(0, 1fr)',
+                      gridTemplateColumns: 'auto auto minmax(0, 1fr)',
                       alignItems: 'center',
                       gap: 12,
                     }}
                   >
-                    {mode === 'multiple' && (
-                      <Checkbox
-                        checked={dropdownItemProps.selected}
-                        onChange={() => {
-                          // no-op, handled by click on parent, this just silences React warning
-                        }}
-                      />
-                    )}
-                    {dotForPartitionKey(tag)}
-                    <div data-tooltip={tag} data-tooltip-style={DropdownItemTooltipStyle}>
-                      <MiddleTruncate text={tag} />
-                    </div>
+                    <Checkbox
+                      checked={dropdownItemProps.selected}
+                      onChange={() => {
+                        dropdownItemProps.toggle();
+                      }}
+                    />
+                    {sharedContent}
+                  </div>
+                </MenuItemForInteractiveContent>
+              </label>
+            );
+          }
+
+          return (
+            <label key={tag}>
+              <MenuItem
+                onClick={() => dropdownItemProps.toggle()}
+                data-testid={testId(`menu-item-${tag}`)}
+                text={
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto auto minmax(0, 1fr)',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    {sharedContent}
                   </div>
                 }
               />
@@ -114,7 +137,6 @@ export const OrdinalPartitionSelector = ({
                   <>
                     <Box flex={{direction: 'column'}}>
                       <MenuItem
-                        tagName="div"
                         text={
                           <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
                             <StyledIcon name="add" size={24} />
@@ -133,24 +155,21 @@ export const OrdinalPartitionSelector = ({
                   <>
                     {mode === 'multiple' && (
                       <label>
-                        <MenuItem
-                          tagName="div"
-                          text={
-                            <Box flex={{alignItems: 'center', gap: 12}}>
-                              <Checkbox
-                                checked={isAllSelected}
-                                onChange={() => {
-                                  if (isAllSelected) {
-                                    setSelectedPartitions([]);
-                                  } else {
-                                    setSelectedPartitions(allTags);
-                                  }
-                                }}
-                              />
-                              <span>Select all ({allTags.length})</span>
-                            </Box>
-                          }
-                        />
+                        <MenuItemForInteractiveContent>
+                          <Box flex={{alignItems: 'center', gap: 12}}>
+                            <Checkbox
+                              checked={isAllSelected}
+                              onChange={() => {
+                                if (isAllSelected) {
+                                  setSelectedPartitions([]);
+                                } else {
+                                  setSelectedPartitions(allTags);
+                                }
+                              }}
+                            />
+                            <span>Select all ({allTags.length})</span>
+                          </Box>
+                        </MenuItemForInteractiveContent>
                       </label>
                     )}
                     {dropdown}
@@ -173,6 +192,7 @@ export const OrdinalPartitionSelector = ({
         return tags;
       }}
       searchPlaceholder="Filter partitions"
+      disabled={disabled}
     />
   );
 };

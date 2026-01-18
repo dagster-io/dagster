@@ -1,8 +1,9 @@
 import logging
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
@@ -80,7 +81,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         pass
 
     def store_event(self, event):
-        super(InMemoryEventLogStorage, self).store_event(event)
+        super().store_event(event)
         self._storage_id += 1
 
         handlers = list(self._handlers[event.run_id])
@@ -90,7 +91,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", event.run_id)
 
-    def watch(self, run_id: str, cursor: str, callback: Callable[..., Any]):
+    def watch(self, run_id: str, cursor: str, callback: Callable[..., Any]):  # pyright: ignore[reportIncompatibleMethodOverride]
         self._handlers[run_id].add(callback)
 
     def end_watch(self, run_id: str, handler: Callable[..., Any]):
@@ -102,7 +103,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return False
 
     @property
-    def supports_global_concurrency_limits(self) -> bool:
+    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         return False
 
     def dispose(self):

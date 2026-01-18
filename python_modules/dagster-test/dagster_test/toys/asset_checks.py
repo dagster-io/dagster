@@ -10,7 +10,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
-    DailyPartitionsDefinition,
     In,
     MaterializeResult,
     MetadataValue,
@@ -25,6 +24,7 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 
 @asset(key_prefix="test_prefix", group_name="asset_checks")
@@ -35,10 +35,19 @@ def checked_asset():
 @asset_check(asset=checked_asset, description="A check that fails half the time.")
 def random_fail_check(checked_asset):
     random.seed(time.time())
-    return AssetCheckResult(
-        passed=random.choice([False, True]),
-        metadata={"timestamp": MetadataValue.float(time.time())},
-    )
+    passed = random.choice([False, True])
+    if passed:
+        return AssetCheckResult(
+            passed=True,
+            description="Data quality check passed with zero null values detected in critical columns.",
+            metadata={"timestamp": MetadataValue.float(time.time())},
+        )
+    else:
+        return AssetCheckResult(
+            passed=False,
+            description="Data quality check failed - check the column schema!",
+            metadata={"timestamp": MetadataValue.float(time.time())},
+        )
 
 
 @asset_check(
@@ -330,6 +339,7 @@ def graph_multi_asset_check_3(staged_asset):
     yield AssetCheckResult(
         asset_key="graph_multi_asset_one",
         check_name="check_3",
+        description="This check failed, and here's a link to more information in our internal system: https://www.test.com/should-be-clickable-in-ui",
         passed=False,
         severity=AssetCheckSeverity.WARN,
         metadata={"sample": "metadata"},
@@ -340,6 +350,7 @@ def graph_multi_asset_check_3(staged_asset):
 def graph_multi_asset_2_check_1(staged_asset):
     result = AssetCheckResult(
         asset_key="graph_multi_asset_two",
+        description=f"Data quality check failed - {random.randint(1, 10)!s} null values detected in critical columns.",
         check_name="check_1",
         passed=False,
         metadata={"sample": "metadata"},
@@ -452,6 +463,26 @@ metadata_checks = build_metadata_bounds_checks(
 )
 
 
+@asset_check(asset="asset_5")
+def asset_5_check(context: AssetExecutionContext) -> AssetCheckResult:
+    return AssetCheckResult(
+        passed=False,
+        description="A check that always fails.",
+        metadata={"my_key": int(context.get_tag("my_key") or 0)},
+        severity=AssetCheckSeverity.WARN,
+    )
+
+
+@asset_check(asset="asset_6")
+def asset_6_check(context: AssetExecutionContext) -> AssetCheckResult:
+    return AssetCheckResult(
+        passed=False,
+        description="A check that always fails.",
+        metadata={"my_key": int(context.get_tag("my_key") or 0)},
+        severity=AssetCheckSeverity.ERROR,
+    )
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -477,4 +508,6 @@ def get_checks_and_assets():
         checks_only_job,
         metadata_asset,
         metadata_checks,
+        asset_5_check,
+        asset_6_check,
     ]

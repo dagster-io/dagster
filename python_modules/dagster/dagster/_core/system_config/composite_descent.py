@@ -1,15 +1,14 @@
-from typing import Callable, Iterator, Mapping, NamedTuple, NoReturn, cast
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Iterator, Mapping
+from typing import NamedTuple, NoReturn, TypeAlias, cast
 
 import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.dependency import GraphNode, Node, NodeHandle, OpNode
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.run_config import define_node_shape
+from dagster._core.definitions.run_config import define_node_config
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -25,7 +24,7 @@ class OpConfigEntry(
     NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", OpConfig)])
 ):
     def __new__(cls, handle: NodeHandle, op_config: OpConfig):
-        return super(OpConfigEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(handle, "handle", NodeHandle),
             check.inst_param(op_config, "solid_config", OpConfig),
@@ -41,7 +40,7 @@ class DescentStack(
     NamedTuple("_DescentStack", [("job_def", JobDefinition), ("handle", NodeHandle)])
 ):
     def __new__(cls, job_def: JobDefinition, handle: NodeHandle):
-        return super(DescentStack, cls).__new__(
+        return super().__new__(
             cls,
             job_def=check.inst_param(job_def, "job_def", JobDefinition),
             handle=check.inst_param(handle, "handle", NodeHandle),
@@ -174,7 +173,7 @@ def _composite_descent(
                     asset_layer,
                 )
                 if node.definition.has_config_mapping
-                else cast(Mapping[str, RawNodeConfig], current_op_config.get("ops", {}))
+                else cast("Mapping[str, RawNodeConfig]", current_op_config.get("ops", {}))
             )
 
             yield from _composite_descent(
@@ -216,7 +215,7 @@ def _apply_top_level_config_mapping(
         # Dynamically construct the type that the output of the config mapping function will
         # be evaluated against
 
-        type_to_evaluate_against = define_node_shape(
+        type_to_evaluate_against = define_node_config(
             nodes=graph_def.nodes,
             ignored_nodes=None,
             dependency_structure=graph_def.dependency_structure,
@@ -283,7 +282,7 @@ def _apply_config_mapping(
         else None
     )
 
-    type_to_evaluate_against = define_node_shape(
+    type_to_evaluate_against = define_node_config(
         nodes=graph_def.nodes,
         ignored_nodes=ignored_nodes,
         dependency_structure=graph_def.dependency_structure,

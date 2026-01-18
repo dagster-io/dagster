@@ -2,13 +2,11 @@ import importlib.util
 import os
 import pickle
 import tempfile
-from contextlib import contextmanager
 
 import nbformat
 import pytest
 from dagster import execute_job, job
 from dagster._check import CheckError
-from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.test_utils import instance_for_test
@@ -17,50 +15,13 @@ from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_job
 from dagstermill.factory import define_dagstermill_op
+from dagstermill.test_utils import cleanup_result_notebook, exec_for_test, get_path
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
 MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
-
-
-def get_path(materialization_event):
-    for value in materialization_event.event_specific_data.materialization.metadata.values():
-        if isinstance(value, (PathMetadataValue, NotebookMetadataValue)):
-            return value.path
-
-
-def cleanup_result_notebook(result):
-    if not result:
-        return
-    materialization_events = [
-        x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
-    ]
-    for materialization_event in materialization_events:
-        result_path = get_path(materialization_event)
-        if os.path.exists(result_path):
-            os.unlink(result_path)
-
-
-@contextmanager
-def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
-    result = None
-    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", fn_name)
-
-    with instance_for_test() as instance:
-        try:
-            with execute_job(
-                job=recon_job,
-                run_config=env,
-                instance=instance,
-                raise_on_error=raise_on_error,
-                **kwargs,
-            ) as result:
-                yield result
-        finally:
-            if result:
-                cleanup_result_notebook(result)
 
 
 @pytest.mark.notebook_test
@@ -167,12 +128,12 @@ def test_reexecute_result_notebook():
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
 
-        if result_path.endswith(".ipynb"):
-            with open(result_path, encoding="utf8") as fd:
+        if result_path.endswith(".ipynb"):  # pyright: ignore[reportPossiblyUnboundVariable,reportOptionalMemberAccess]
+            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType,reportPossiblyUnboundVariable]
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
             ep.preprocess(nb)
-            with open(result_path, encoding="utf8") as fd:
+            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType,reportPossiblyUnboundVariable]
                 expected = _strip_execution_metadata(nb)
                 actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
                 assert actual == expected
@@ -406,7 +367,7 @@ def test_resources_notebook_with_exception():
             assert not result.success
             assert result.all_events[8].event_type.value == "STEP_FAILURE"
             assert (
-                "raise Exception()" in result.all_events[8].event_specific_data.error.cause.message
+                "raise Exception()" in result.all_events[8].event_specific_data.error.cause.message  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             )
 
             # Expect something like:
@@ -519,7 +480,7 @@ def test_reserved_tags_not_overridden():
 
 def test_default_description():
     test_op = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
-    assert test_op.description.startswith("This op is backed by the notebook at ")
+    assert test_op.description.startswith("This op is backed by the notebook at ")  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_custom_description():
@@ -551,7 +512,7 @@ def test_failure(capsys):
         "failure_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert (
-            result.failure_data_for_node("yield_failure").user_failure_data.description
+            result.failure_data_for_node("yield_failure").user_failure_data.description  # pyright: ignore[reportOptionalMemberAccess]
             == "bad bad notebook"
         )
 

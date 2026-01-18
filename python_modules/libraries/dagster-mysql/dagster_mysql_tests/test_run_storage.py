@@ -13,17 +13,18 @@ TestRunStorage.__test__ = False
 
 class TestMySQLRunStorage(TestRunStorage):
     __test__ = True
+    # TestMySQLRunStorage::test_backfill_tags_filtering_multiple_results
 
-    def supports_backfill_tags_filtering_queries(self):
+    def supports_backfill_tags_filtering_queries(self) -> bool:
         return True
 
-    def supports_backfill_job_name_filtering_queries(self):
+    def supports_backfill_job_name_filtering_queries(self) -> bool:
         return True
 
-    def supports_backfill_id_filtering_queries(self):
+    def supports_backfill_id_filtering_queries(self) -> bool:
         return True
 
-    def supports_backfills_count(self):
+    def supports_backfills_count(self) -> bool:
         return True
 
     @pytest.fixture(name="instance", scope="function")
@@ -89,11 +90,11 @@ class TestMySQLRunStorage(TestRunStorage):
                     overrides=yaml.safe_load(explicit_cfg)
                 ) as from_explicit_instance:
                     assert (
-                        from_url_instance._run_storage.mysql_url  # noqa: SLF001
-                        == from_explicit_instance._run_storage.mysql_url  # noqa: SLF001
+                        from_url_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        == from_explicit_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                     )
                 with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
                     assert (
-                        from_url_instance._run_storage.mysql_url  # noqa: SLF001
-                        == from_env_instance._run_storage.mysql_url  # noqa: SLF001
+                        from_url_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        == from_env_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                     )

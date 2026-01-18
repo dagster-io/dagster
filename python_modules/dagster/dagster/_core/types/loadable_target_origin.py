@@ -1,44 +1,26 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, NamedTuple, Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
-import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.record import LegacyNamedTupleMixin, record, as_dict
 
 
-@whitelist_for_serdes
-class LoadableTargetOrigin(
-    NamedTuple(
-        "LoadableTargetOrigin",
-        [
-            ("executable_path", Optional[str]),
-            ("python_file", Optional[str]),
-            ("module_name", Optional[str]),
-            ("working_directory", Optional[str]),
-            ("attribute", Optional[str]),
-            ("package_name", Optional[str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        executable_path: Optional[str] = None,
-        python_file: Optional[str] = None,
-        module_name: Optional[str] = None,
-        working_directory: Optional[str] = None,
-        attribute: Optional[str] = None,
-        package_name: Optional[str] = None,
-    ):
-        return super(LoadableTargetOrigin, cls).__new__(
-            cls,
-            executable_path=check.opt_str_param(executable_path, "executable_path"),
-            python_file=check.opt_str_param(python_file, "python_file"),
-            module_name=check.opt_str_param(module_name, "module_name"),
-            working_directory=check.opt_str_param(working_directory, "working_directory"),
-            attribute=check.opt_str_param(attribute, "attribute"),
-            package_name=check.opt_str_param(package_name, "package_name"),
-        )
+@whitelist_for_serdes(
+    # This object is included in code location origin hashing used to identify schedule/sensor so
+    # ensure new fields are not included when they are not used which would change the hash.
+    skip_when_none_fields={"autoload_defs_module_name"},
+)
+@record
+class LoadableTargetOrigin(LegacyNamedTupleMixin):
+    executable_path: Optional[str] = None
+    python_file: Optional[str] = None
+    module_name: Optional[str] = None
+    working_directory: Optional[str] = None
+    attribute: Optional[str] = None
+    package_name: Optional[str] = None
+    autoload_defs_module_name: Optional[str] = None
 
     def get_cli_args(self) -> Sequence[str]:
         args = (
@@ -47,6 +29,11 @@ class LoadableTargetOrigin(
             + (["-d", self.working_directory] if self.working_directory else [])
             + (["-a", self.attribute] if self.attribute else [])
             + (["--package-name", self.package_name] if self.package_name else [])
+            + (
+                ["--autoload-defs-module-name", self.autoload_defs_module_name]
+                if self.autoload_defs_module_name
+                else []
+            )
         )
 
         return args
@@ -60,9 +47,13 @@ class LoadableTargetOrigin(
             )
         return ctx
 
+    @property
+    def as_dict(self) -> dict:
+        return {k: v for k, v in as_dict(self).items() if v is not None}
 
-_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = ContextVar(
-    "_current_loadable_target_origin", default=None
+
+_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = (
+    ContextVar("_current_loadable_target_origin", default=None)
 )
 
 

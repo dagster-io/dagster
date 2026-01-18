@@ -1,46 +1,29 @@
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Sequence
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetOut,
-    AssetsDefinition,
-    DailyPartitionsDefinition,
-    GraphOut,
-    HourlyPartitionsDefinition,
-    Out,
-    StaticPartitionsDefinition,
-    define_asset_job,
-    graph,
-    graph_asset,
-    graph_multi_asset,
-    op,
-)
+from dagster import AssetsDefinition
 from dagster._check import ParameterCheckError
-from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
-from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import ScheduleType
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.snap import MultiPartitionsSnap, TimeWindowPartitionsSnap
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.remote_representation.external_data import (
     AssetChildEdgeSnap,
     AssetNodeSnap,
     AssetParentEdgeSnap,
-    MultiPartitionsSnap,
     SensorSnap,
     TargetSnap,
-    TimeWindowPartitionsSnap,
     asset_node_snaps_from_repo,
 )
-from dagster._serdes import deserialize_value, serialize_value, unpack_value
+from dagster._serdes import unpack_value
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -51,20 +34,20 @@ def _get_asset_node_snaps_from_definitions(defs: Definitions) -> Sequence[AssetN
 
 
 def test_single_asset_job():
-    @asset(description="hullo")
+    @dg.asset(description="hullo")
     def asset1():
         return 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1],
-            jobs=[define_asset_job("assets_job", [asset1])],
+            jobs=[dg.define_asset_job("assets_job", [asset1])],
         )
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -81,20 +64,20 @@ def test_single_asset_job():
 
 
 def test_asset_with_default_backfill_policy():
-    @asset(description="hullo")
+    @dg.asset(description="hullo")
     def asset1():
         return 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1],
-            jobs=[define_asset_job("assets_job", [asset1])],
+            jobs=[dg.define_asset_job("assets_job", [asset1])],
         )
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -112,20 +95,20 @@ def test_asset_with_default_backfill_policy():
 
 
 def test_asset_with_single_run_backfill_policy():
-    @asset(description="hullo_single_run", backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(description="hullo_single_run", backfill_policy=BackfillPolicy.single_run())
     def asset1():
         return 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1],
-            jobs=[define_asset_job("assets_job", [asset1])],
+            jobs=[dg.define_asset_job("assets_job", [asset1])],
         )
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -142,7 +125,7 @@ def test_asset_with_single_run_backfill_policy():
     ]
 
     assert (
-        deserialize_value(serialize_value(asset_node_snaps[0]), AssetNodeSnap)
+        dg.deserialize_value(dg.serialize_value(asset_node_snaps[0]), AssetNodeSnap)
         == asset_node_snaps[0]
     )
 
@@ -157,7 +140,7 @@ def test_asset_with_multi_run_backfill_policy():
     )
     partitions_def = partitions_snap.get_partitions_definition()
 
-    @asset(
+    @dg.asset(
         description="hullo_ten_partitions_per_run",
         partitions_def=partitions_def,
         backfill_policy=BackfillPolicy.multi_run(10),
@@ -166,15 +149,15 @@ def test_asset_with_multi_run_backfill_policy():
         return 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1],
-            jobs=[define_asset_job("assets_job", [asset1])],
+            jobs=[dg.define_asset_job("assets_job", [asset1])],
         )
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -197,66 +180,66 @@ def test_non_partitioned_asset_with_multi_run_backfill_policy():
         ParameterCheckError, match="Non partitioned asset can only have single run backfill policy"
     ):
 
-        @asset(description="hullo", backfill_policy=BackfillPolicy.multi_run(10))
+        @dg.asset(description="hullo", backfill_policy=BackfillPolicy.multi_run(10))
         def asset1():
             return 1
 
 
 def test_asset_with_group_name():
-    @asset(group_name="group1")
+    @dg.asset(group_name="group1")
     def asset1():
         return 1
 
-    asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset1]))
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(dg.Definitions(assets=[asset1]))
 
     assert asset_node_snaps[0].group_name == "group1"
 
 
 def test_asset_missing_group_name():
-    @asset
+    @dg.asset
     def asset1():
         return 1
 
-    asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset1]))
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(dg.Definitions(assets=[asset1]))
 
     assert asset_node_snaps[0].group_name == DEFAULT_GROUP_NAME
 
 
 def test_asset_invalid_group_name():
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(group_name="group/with/slashes")
+        @dg.asset(group_name="group/with/slashes")
         def asset2():
             return 1
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(group_name="group.with.dots")
+        @dg.asset(group_name="group.with.dots")
         def asset3():
             return 1
 
 
 def test_two_asset_job():
-    @asset
+    @dg.asset
     def asset1():
         return 1
 
-    @asset
+    @dg.asset
     def asset2(asset1):
         assert asset1 == 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1, asset2],
-            jobs=[define_asset_job("assets_job", [asset1, asset2])],
+            jobs=[dg.define_asset_job("assets_job", [asset1, asset2])],
         ),
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("asset2"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2"))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset1",
             node_definition_name="asset1",
@@ -268,8 +251,8 @@ def test_two_asset_job():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("asset2"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey("asset1"))],
+            asset_key=dg.AssetKey("asset2"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey("asset1"))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset2",
@@ -285,31 +268,31 @@ def test_two_asset_job():
 
 
 def test_input_name_matches_output_name():
-    not_result = SourceAsset(key=AssetKey("not_result"), description=None)
+    not_result = dg.SourceAsset(key=dg.AssetKey("not_result"), description=None)
 
-    @asset(ins={"result": AssetIn(key=AssetKey("not_result"))})
+    @dg.asset(ins={"result": dg.AssetIn(key=dg.AssetKey("not_result"))})
     def something(result):
         pass
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[not_result, something],
-            jobs=[define_asset_job("assets_job", [something])],
+            jobs=[dg.define_asset_job("assets_job", [something])],
         )
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("not_result"),
+            asset_key=dg.AssetKey("not_result"),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("something"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("something"))],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("something"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey("not_result"))],
+            asset_key=dg.AssetKey("something"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey("not_result"))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="something",
@@ -326,38 +309,38 @@ def test_input_name_matches_output_name():
 def test_assets_excluded_from_subset_not_in_job():
     out_metadata = {"a": 1, "b": "c", "d": None}
 
-    @multi_asset(
-        outs={"a": AssetOut(metadata=out_metadata), "b": AssetOut(), "c": AssetOut()},
+    @dg.multi_asset(
+        outs={"a": dg.AssetOut(metadata=out_metadata), "b": dg.AssetOut(), "c": dg.AssetOut()},
         can_subset=True,
     )
     def abc():
         pass
 
-    @asset
+    @dg.asset
     def a2(a):
         return a
 
-    @asset
+    @dg.asset
     def c2(c):
         return c
 
     all_assets = [abc, a2, c2]
-    as_job = define_asset_job("as_job", selection="a*").resolve(
+    as_job = dg.define_asset_job("as_job", selection="a*").resolve(
         asset_graph=AssetGraph.from_assets(all_assets)
     )
-    cs_job = define_asset_job("cs_job", selection="*c2").resolve(
+    cs_job = dg.define_asset_job("cs_job", selection="*c2").resolve(
         asset_graph=AssetGraph.from_assets(all_assets)
     )
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[abc, a2, c2], jobs=[as_job, cs_job])
+        dg.Definitions(assets=[abc, a2, c2], jobs=[as_job, cs_job])
     )
 
     assert (
         AssetNodeSnap(
-            asset_key=AssetKey("a"),
+            asset_key=dg.AssetKey("a"),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("a2"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("a2"))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="abc",
             node_definition_name="abc",
@@ -373,9 +356,9 @@ def test_assets_excluded_from_subset_not_in_job():
 
     assert (
         AssetNodeSnap(
-            asset_key=AssetKey("c"),
+            asset_key=dg.AssetKey("c"),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("c2"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("c2"))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="abc",
             node_definition_name="abc",
@@ -390,32 +373,32 @@ def test_assets_excluded_from_subset_not_in_job():
 
 
 def test_two_downstream_assets_job():
-    @asset
+    @dg.asset
     def asset1():
         return 1
 
-    @asset
+    @dg.asset
     def asset2_a(asset1):
         assert asset1 == 1
 
-    @asset
+    @dg.asset
     def asset2_b(asset1):
         assert asset1 == 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1, asset2_a, asset2_b],
-            jobs=[define_asset_job("assets_job", [asset1, asset2_a, asset2_b])],
+            jobs=[dg.define_asset_job("assets_job", [asset1, asset2_a, asset2_b])],
         )
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
             child_edges=[
-                AssetChildEdgeSnap(child_asset_key=AssetKey("asset2_a")),
-                AssetChildEdgeSnap(child_asset_key=AssetKey("asset2_b")),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2_a")),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2_b")),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset1",
@@ -428,8 +411,8 @@ def test_two_downstream_assets_job():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("asset2_a"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey("asset1"))],
+            asset_key=dg.AssetKey("asset2_a"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey("asset1"))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset2_a",
@@ -442,8 +425,8 @@ def test_two_downstream_assets_job():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("asset2_b"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey("asset1"))],
+            asset_key=dg.AssetKey("asset2_b"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey("asset1"))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset2_b",
@@ -459,25 +442,25 @@ def test_two_downstream_assets_job():
 
 
 def test_cross_job_asset_dependency():
-    @asset
+    @dg.asset
     def asset1():
         return 1
 
-    @asset
+    @dg.asset
     def asset2(asset1):
         assert asset1 == 1
 
-    assets_job1 = define_asset_job("assets_job1", [asset1])
-    assets_job2 = define_asset_job("assets_job2", [asset2])
+    assets_job1 = dg.define_asset_job("assets_job1", [asset1])
+    assets_job2 = dg.define_asset_job("assets_job2", [asset2])
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[asset1, asset2], jobs=[assets_job1, assets_job2])
+        dg.Definitions(assets=[asset1, asset2], jobs=[assets_job1, assets_job2])
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("asset2"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2"))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset1",
             node_definition_name="asset1",
@@ -489,8 +472,8 @@ def test_cross_job_asset_dependency():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("asset2"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey("asset1"))],
+            asset_key=dg.AssetKey("asset2"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey("asset1"))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset2",
@@ -506,15 +489,15 @@ def test_cross_job_asset_dependency():
 
 
 def test_same_asset_in_multiple_jobs():
-    @asset
+    @dg.asset
     def asset1():
         return 1
 
-    job1 = define_asset_job("job1", [asset1])
-    job2 = define_asset_job("job2", [asset1])
+    job1 = dg.define_asset_job("job1", [asset1])
+    job2 = dg.define_asset_job("job2", [asset1])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[asset1],
             jobs=[job1, job2],
         )
@@ -522,7 +505,7 @@ def test_same_asset_in_multiple_jobs():
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("asset1"),
+            asset_key=dg.AssetKey("asset1"),
             parent_edges=[],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -539,9 +522,9 @@ def test_same_asset_in_multiple_jobs():
 
 
 def test_basic_multi_asset():
-    @multi_asset(
+    @dg.multi_asset(
         outs={
-            f"out{i}": AssetOut(description=f"foo: {i}", key=AssetKey(f"asset{i}"))
+            f"out{i}": dg.AssetOut(description=f"foo: {i}", key=dg.AssetKey(f"asset{i}"))
             for i in range(10)
         }
     )
@@ -549,17 +532,17 @@ def test_basic_multi_asset():
         """Some docstring for this operation."""
         pass
 
-    assets_job = define_asset_job("assets_job", [assets])
+    assets_job = dg.define_asset_job("assets_job", [assets])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[assets], jobs=[assets_job])
+        dg.Definitions(assets=[assets], jobs=[assets_job])
     )
 
     execution_set_identifier = assets.unique_id
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey(f"asset{i}"),
+            asset_key=dg.AssetKey(f"asset{i}"),
             parent_edges=[],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -578,37 +561,37 @@ def test_basic_multi_asset():
 
 
 def test_inter_op_dependency():
-    @asset
+    @dg.asset
     def in1():
         pass
 
-    @asset
+    @dg.asset
     def in2():
         pass
 
-    @asset
+    @dg.asset
     def downstream(only_in, mixed, only_out):
         pass
 
-    @multi_asset(
-        outs={"only_in": AssetOut(), "mixed": AssetOut(), "only_out": AssetOut()},
+    @dg.multi_asset(
+        outs={"only_in": dg.AssetOut(), "mixed": dg.AssetOut(), "only_out": dg.AssetOut()},
         internal_asset_deps={
-            "only_in": {AssetKey("in1"), AssetKey("in2")},
-            "mixed": {AssetKey("in1"), AssetKey("only_in")},
-            "only_out": {AssetKey("only_in"), AssetKey("mixed")},
+            "only_in": {dg.AssetKey("in1"), dg.AssetKey("in2")},
+            "mixed": {dg.AssetKey("in1"), dg.AssetKey("only_in")},
+            "only_out": {dg.AssetKey("only_in"), dg.AssetKey("mixed")},
         },
         can_subset=True,
     )
     def assets(in1, in2):
         pass
 
-    subset_job = define_asset_job("subset_job", selection="mixed").resolve(
+    subset_job = dg.define_asset_job("subset_job", selection="mixed").resolve(
         asset_graph=AssetGraph.from_assets([in1, in2, assets, downstream]),
     )
-    all_assets_job = define_asset_job("assets_job", [in1, in2, assets, downstream])
+    all_assets_job = dg.define_asset_job("assets_job", [in1, in2, assets, downstream])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[in1, in2, assets, downstream],
             jobs=[subset_job, all_assets_job],
             # jobs=[all_assets_job, subset_job],
@@ -618,11 +601,11 @@ def test_inter_op_dependency():
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey(["downstream"]),
+            asset_key=dg.AssetKey(["downstream"]),
             parent_edges=[
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["mixed"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["only_in"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["only_out"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["mixed"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["only_in"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["only_out"])),
             ],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -637,11 +620,11 @@ def test_inter_op_dependency():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["in1"]),
+            asset_key=dg.AssetKey(["in1"]),
             parent_edges=[],
             child_edges=[
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["mixed"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["only_in"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["mixed"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["only_in"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="in1",
@@ -655,9 +638,9 @@ def test_inter_op_dependency():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["in2"]),
+            asset_key=dg.AssetKey(["in2"]),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey(["only_in"]))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["only_in"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="in2",
             node_definition_name="in2",
@@ -670,14 +653,14 @@ def test_inter_op_dependency():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["mixed"]),
+            asset_key=dg.AssetKey(["mixed"]),
             parent_edges=[
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["in1"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["only_in"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["in1"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["only_in"])),
             ],
             child_edges=[
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["downstream"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["only_out"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["downstream"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["only_out"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="assets",
@@ -690,15 +673,15 @@ def test_inter_op_dependency():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["only_in"]),
+            asset_key=dg.AssetKey(["only_in"]),
             parent_edges=[
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["in1"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["in2"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["in1"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["in2"])),
             ],
             child_edges=[
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["downstream"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["mixed"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["only_out"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["downstream"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["mixed"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["only_out"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="assets",
@@ -712,13 +695,13 @@ def test_inter_op_dependency():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["only_out"]),
+            asset_key=dg.AssetKey(["only_out"]),
             parent_edges=[
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["mixed"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["only_in"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["mixed"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["only_in"])),
             ],
             child_edges=[
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["downstream"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["downstream"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="assets",
@@ -734,38 +717,38 @@ def test_inter_op_dependency():
 
 
 def test_source_asset_with_op() -> None:
-    foo = SourceAsset(key=AssetKey("foo"), description=None)
+    foo = dg.SourceAsset(key=dg.AssetKey("foo"), description=None)
 
-    @asset
+    @dg.asset
     def bar(foo):
         pass
 
-    assets_job = define_asset_job("assets_job", [bar])
+    assets_job = dg.define_asset_job("assets_job", [bar])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[foo, bar], jobs=[assets_job])
+        dg.Definitions(assets=[foo, bar], jobs=[assets_job])
     )
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("bar"),
+            asset_key=dg.AssetKey("bar"),
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="bar",
             node_definition_name="bar",
             graph_name=None,
             op_names=["bar"],
             description=None,
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey("foo"))],
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey("foo"))],
             child_edges=[],
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("foo"),
+            asset_key=dg.AssetKey("foo"),
             execution_type=AssetExecutionType.UNEXECUTABLE,
             description=None,
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("bar"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("bar"))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -773,13 +756,13 @@ def test_source_asset_with_op() -> None:
 
 
 def test_unused_source_asset():
-    foo = SourceAsset(key=AssetKey("foo"), description="abc")
-    bar = SourceAsset(key=AssetKey("bar"), description="def")
+    foo = dg.SourceAsset(key=dg.AssetKey("foo"), description="abc")
+    bar = dg.SourceAsset(key=dg.AssetKey("bar"), description="def")
 
-    asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[foo, bar]))
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(dg.Definitions(assets=[foo, bar]))
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("bar"),
+            asset_key=dg.AssetKey("bar"),
             description="def",
             parent_edges=[],
             child_edges=[],
@@ -789,7 +772,7 @@ def test_unused_source_asset():
             is_source=True,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("foo"),
+            asset_key=dg.AssetKey("foo"),
             description="abc",
             parent_edges=[],
             child_edges=[],
@@ -802,26 +785,26 @@ def test_unused_source_asset():
 
 
 def test_used_source_asset():
-    bar = SourceAsset(key=AssetKey("bar"), description="def", tags={"biz": "baz"})
+    bar = dg.SourceAsset(key=dg.AssetKey("bar"), description="def", tags={"biz": "baz"})
 
-    @asset
+    @dg.asset
     def foo(bar):
         assert bar
 
-    job1 = define_asset_job("job1", [foo])
+    job1 = dg.define_asset_job("job1", [foo])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(
+        dg.Definitions(
             assets=[bar, foo],
             jobs=[job1],
         )
     )
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey("bar"),
+            asset_key=dg.AssetKey("bar"),
             description="def",
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey(["foo"]))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["foo"]))],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
@@ -829,13 +812,13 @@ def test_used_source_asset():
             tags={"biz": "baz"},
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("foo"),
+            asset_key=dg.AssetKey("foo"),
             op_name="foo",
             node_definition_name="foo",
             graph_name=None,
             op_names=["foo"],
             description=None,
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey(["bar"]))],
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["bar"]))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             job_names=["__ASSET_JOB", "job1"],
@@ -853,7 +836,7 @@ def test_graph_output_metadata_and_description() -> None:
         "none": None,
         "md": MetadataValue.md("#123"),
         "float": MetadataValue.float(1.23),
-        "_asd_123_sdas": MetadataValue.python_artifact(MetadataValue),
+        "_asd_123_sdas": MetadataValue.python_artifact(dg.MetadataValue),
     }
 
     out_metadata = {
@@ -861,15 +844,15 @@ def test_graph_output_metadata_and_description() -> None:
         "out_list": [1, 2, 3],
     }
 
-    @op(out=Out(metadata=out_metadata))
+    @dg.op(out=dg.Out(metadata=out_metadata))
     def add_one(i):
         return i + 1
 
-    @graph
+    @dg.graph
     def three(zero):
         return add_one(add_one(add_one(zero)))
 
-    @asset
+    @dg.asset
     def zero():
         return 0
 
@@ -877,16 +860,16 @@ def test_graph_output_metadata_and_description() -> None:
         three, metadata_by_output_name={"result": asset_metadata}
     )
 
-    assets_job = define_asset_job("assets_job", [zero, three_asset])
+    assets_job = dg.define_asset_job("assets_job", [zero, three_asset])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[zero, three_asset], jobs=[assets_job])
+        dg.Definitions(assets=[zero, three_asset], jobs=[assets_job])
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey(["three"]),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey(["zero"]))],
+            asset_key=dg.AssetKey(["three"]),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["zero"]))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="three",
@@ -900,9 +883,9 @@ def test_graph_output_metadata_and_description() -> None:
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["zero"]),
+            asset_key=dg.AssetKey(["zero"]),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey(["three"]))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["three"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="zero",
             node_definition_name="zero",
@@ -918,82 +901,82 @@ def test_graph_output_metadata_and_description() -> None:
 
 
 def test_nasty_nested_graph_asset() -> None:
-    @op
+    @dg.op
     def add_one(i):
         return i + 1
 
-    @graph
+    @dg.graph
     def add_three(i):
         return add_one(add_one(add_one(i)))
 
-    @graph
+    @dg.graph
     def add_five(i):
         return add_one(add_three(add_one(i)))
 
-    @op
+    @dg.op
     def get_sum(a, b):
         return a + b
 
-    @graph
+    @dg.graph
     def sum_plus_one(a, b):
         return add_one(get_sum(a, b))
 
-    @asset
+    @dg.asset
     def zero():
         return 0
 
-    @graph(out={"eight": GraphOut(), "five": GraphOut()})
+    @dg.graph(out={"eight": dg.GraphOut(), "five": dg.GraphOut()})
     def create_eight_and_five(zero):
         return add_five(add_three(zero)), add_five(zero)
 
-    @graph(out={"thirteen": GraphOut(), "six": GraphOut()})
+    @dg.graph(out={"thirteen": dg.GraphOut(), "six": dg.GraphOut()})
     def create_thirteen_and_six(eight, five, zero):
         return add_five(eight), sum_plus_one(five, zero)
 
-    @graph
+    @dg.graph
     def create_twenty(thirteen, six):
         return sum_plus_one(thirteen, six)
 
-    eight_and_five = AssetsDefinition(
-        keys_by_input_name={"zero": AssetKey("zero")},
-        keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
+    eight_and_five = dg.AssetsDefinition(
+        keys_by_input_name={"zero": dg.AssetKey("zero")},
+        keys_by_output_name={"eight": dg.AssetKey("eight"), "five": dg.AssetKey("five")},
         node_def=create_eight_and_five,
         can_subset=True,
     )
 
-    thirteen_and_six = AssetsDefinition(
+    thirteen_and_six = dg.AssetsDefinition(
         keys_by_input_name={
-            "eight": AssetKey("eight"),
-            "five": AssetKey("five"),
-            "zero": AssetKey("zero"),
+            "eight": dg.AssetKey("eight"),
+            "five": dg.AssetKey("five"),
+            "zero": dg.AssetKey("zero"),
         },
-        keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        keys_by_output_name={"thirteen": dg.AssetKey("thirteen"), "six": dg.AssetKey("six")},
         node_def=create_thirteen_and_six,
         can_subset=True,
     )
 
-    twenty = AssetsDefinition(
-        keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
-        keys_by_output_name={"result": AssetKey("twenty")},
+    twenty = dg.AssetsDefinition(
+        keys_by_input_name={"thirteen": dg.AssetKey("thirteen"), "six": dg.AssetKey("six")},
+        keys_by_output_name={"result": dg.AssetKey("twenty")},
         node_def=create_twenty,
         can_subset=True,
     )
 
-    assets_job = define_asset_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])
+    assets_job = dg.define_asset_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[zero, eight_and_five, thirteen_and_six, twenty], jobs=[assets_job])
+        dg.Definitions(assets=[zero, eight_and_five, thirteen_and_six, twenty], jobs=[assets_job])
     )
 
     assert asset_node_snaps[-3:] == [
         AssetNodeSnap(
-            asset_key=AssetKey(["thirteen"]),
+            asset_key=dg.AssetKey(["thirteen"]),
             parent_edges=[
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["eight"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["five"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["zero"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["eight"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["five"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["zero"])),
             ],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey(["twenty"]))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["twenty"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="create_thirteen_and_six",
             node_definition_name="add_one",
@@ -1012,10 +995,10 @@ def test_nasty_nested_graph_asset() -> None:
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["twenty"]),
+            asset_key=dg.AssetKey(["twenty"]),
             parent_edges=[
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["six"])),
-                AssetParentEdgeSnap(parent_asset_key=AssetKey(["thirteen"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["six"])),
+                AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["thirteen"])),
             ],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -1030,13 +1013,13 @@ def test_nasty_nested_graph_asset() -> None:
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey(["zero"]),
+            asset_key=dg.AssetKey(["zero"]),
             parent_edges=[],
             child_edges=[
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["eight"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["five"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["six"])),
-                AssetChildEdgeSnap(child_asset_key=AssetKey(["thirteen"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["eight"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["five"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["six"])),
+                AssetChildEdgeSnap(child_asset_key=dg.AssetKey(["thirteen"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="zero",
@@ -1053,23 +1036,23 @@ def test_nasty_nested_graph_asset() -> None:
 
 
 def test_deps_resolve_group():
-    @asset(key_prefix="abc")
+    @dg.asset(key_prefix="abc")
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(asset1):
         del asset1
 
-    assets_job = define_asset_job("assets_job", [asset1, asset2])
+    assets_job = dg.define_asset_job("assets_job", [asset1, asset2])
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[asset1, asset2], jobs=[assets_job])
+        dg.Definitions(assets=[asset1, asset2], jobs=[assets_job])
     )
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey(["abc", "asset1"]),
+            asset_key=dg.AssetKey(["abc", "asset1"]),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("asset2"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2"))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="abc__asset1",
             node_definition_name="abc__asset1",
@@ -1081,8 +1064,8 @@ def test_deps_resolve_group():
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("asset2"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey(["abc", "asset1"]))],
+            asset_key=dg.AssetKey("asset2"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["abc", "asset1"]))],
             child_edges=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="asset2",
@@ -1097,16 +1080,16 @@ def test_deps_resolve_group():
     ]
 
 
-def test_back_compat_external_sensor():
+def test_back_compat_remote_sensor():
     SERIALIZED_0_12_10_SENSOR = (
         '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode":'
         ' "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
     )
-    external_sensor_data = deserialize_value(SERIALIZED_0_12_10_SENSOR, SensorSnap)
-    assert isinstance(external_sensor_data, SensorSnap)
-    assert len(external_sensor_data.target_dict) == 1
-    assert "my_pipeline" in external_sensor_data.target_dict
-    target = external_sensor_data.target_dict["my_pipeline"]
+    sensor_snap = dg.deserialize_value(SERIALIZED_0_12_10_SENSOR, SensorSnap)
+    assert isinstance(sensor_snap, SensorSnap)
+    assert len(sensor_snap.target_dict) == 1
+    assert "my_pipeline" in sensor_snap.target_dict
+    target = sensor_snap.target_dict["my_pipeline"]
     assert isinstance(target, TargetSnap)
     assert target.job_name == "my_pipeline"
 
@@ -1121,7 +1104,7 @@ def _check_partitions_def_equal(
     assert p1.cron_schedule == p2.cron_schedule
 
 
-def test_back_compat_external_time_window_partitions_def():
+def test_back_compat_remote_time_window_partitions_def():
     start = datetime(year=2022, month=5, day=5)
 
     external = TimeWindowPartitionsSnap(
@@ -1136,7 +1119,7 @@ def test_back_compat_external_time_window_partitions_def():
 
     _check_partitions_def_equal(
         external.get_partitions_definition(),
-        TimeWindowPartitionsDefinition(
+        dg.TimeWindowPartitionsDefinition(
             schedule_type=ScheduleType.WEEKLY,
             start=start,
             timezone="Europe/Berlin",
@@ -1148,10 +1131,10 @@ def test_back_compat_external_time_window_partitions_def():
     )
 
 
-def test_external_time_window_partitions_def_cron_schedule():
+def test_remote_time_window_partitions_def_cron_schedule():
     start = datetime(year=2022, month=5, day=5)
 
-    partitions_def = TimeWindowPartitionsDefinition(
+    partitions_def = dg.TimeWindowPartitionsDefinition(
         start=start,
         timezone="US/Central",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
@@ -1164,11 +1147,11 @@ def test_external_time_window_partitions_def_cron_schedule():
     _check_partitions_def_equal(external, partitions_def)
 
 
-def test_external_multi_partitions_def():
-    partitions_def = MultiPartitionsDefinition(
+def test_remote_multi_partitions_def():
+    partitions_def = dg.MultiPartitionsDefinition(
         {
-            "date": DailyPartitionsDefinition("2022-01-01"),
-            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+            "date": dg.DailyPartitionsDefinition("2022-01-01"),
+            "static": dg.StaticPartitionsDefinition(["a", "b", "c"]),
         }
     )
 
@@ -1178,83 +1161,82 @@ def test_external_multi_partitions_def():
 
 
 def test_graph_asset_description():
-    @op
+    @dg.op
     def op1(): ...
 
-    @graph_asset(description="bar")
+    @dg.graph_asset(description="bar")
     def foo():
         return op1()
 
-    assets_job = define_asset_job("assets_job", [foo])
+    assets_job = dg.define_asset_job("assets_job", [foo])
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        Definitions(assets=[foo], jobs=[assets_job])
+        dg.Definitions(assets=[foo], jobs=[assets_job])
     )
     assert asset_node_snaps[0].description == "bar"
 
 
 def test_graph_multi_asset_description():
-    @op
+    @dg.op
     def op1(): ...
 
-    @op
+    @dg.op
     def op2(): ...
 
-    @graph_multi_asset(
+    @dg.graph_multi_asset(
         outs={
-            "asset1": AssetOut(description="bar"),
-            "asset2": AssetOut(description="baz"),
+            "asset1": dg.AssetOut(description="bar"),
+            "asset2": dg.AssetOut(description="baz"),
         }
     )
     def foo():
         return {"asset1": op1(), "asset2": op2()}
 
-    assets_job = define_asset_job("assets_job", [foo])
+    assets_job = dg.define_asset_job("assets_job", [foo])
 
     asset_node_snaps = {
         asset_node.asset_key: asset_node
         for asset_node in _get_asset_node_snaps_from_definitions(
-            Definitions(assets=[foo], jobs=[assets_job])
+            dg.Definitions(assets=[foo], jobs=[assets_job])
         )
     }
-    assert asset_node_snaps[AssetKey("asset1")].description == "bar"
-    assert asset_node_snaps[AssetKey("asset2")].description == "baz"
+    assert asset_node_snaps[dg.AssetKey("asset1")].description == "bar"
+    assert asset_node_snaps[dg.AssetKey("asset2")].description == "baz"
 
 
-def test_external_time_window_valid_partition_key():
-    hourly_partition = HourlyPartitionsDefinition(start_date="2023-03-11-15:00")
+def test_remote_time_window_valid_partition_key():
+    hourly_partition = dg.HourlyPartitionsDefinition(start_date="2023-03-11-15:00")
 
-    external_partitions_def = TimeWindowPartitionsSnap.from_def(hourly_partition)
+    partitions_snap = TimeWindowPartitionsSnap.from_def(hourly_partition)
+    assert partitions_snap.get_partitions_definition().has_partition_key("2023-03-11-15:00") is True
     assert (
-        external_partitions_def.get_partitions_definition().has_partition_key("2023-03-11-15:00")
-        is True
-    )
-    assert (
-        external_partitions_def.get_partitions_definition().start.timestamp()
+        partitions_snap.get_partitions_definition().start.timestamp()
         == create_datetime(2023, 3, 11, 15).timestamp()
     )
 
 
-def test_external_assets_def_to_external_asset_graph():
+def test_external_assets_def_to_asset_node_snaps():
     asset1, asset2 = external_assets_from_specs(
-        [AssetSpec("asset1"), AssetSpec("asset2", deps=["asset1"])]
+        [dg.AssetSpec("asset1"), dg.AssetSpec("asset2", deps=["asset1"])]
     )
 
-    asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset1, asset2]))
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(
+        dg.Definitions(assets=[asset1, asset2])
+    )
 
     assert len(asset_node_snaps) == 2
 
     assert asset_node_snaps == [
         AssetNodeSnap(
-            asset_key=AssetKey(["asset1"]),
+            asset_key=dg.AssetKey(["asset1"]),
             parent_edges=[],
-            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("asset2"))],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2"))],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             group_name=DEFAULT_GROUP_NAME,
         ),
         AssetNodeSnap(
-            asset_key=AssetKey("asset2"),
-            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey(["asset1"]))],
+            asset_key=dg.AssetKey("asset2"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["asset1"]))],
             child_edges=[],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             group_name=DEFAULT_GROUP_NAME,
@@ -1262,17 +1244,47 @@ def test_external_assets_def_to_external_asset_graph():
     ]
 
 
-def test_historical_external_asset_node_that_models_underlying_external_assets_def() -> None:
+def test_asst_specs_in_defs_snaps():
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(
+        dg.Definitions(
+            assets=[
+                dg.AssetSpec("asset1"),
+                dg.AssetSpec("asset2", deps=["asset1"]),
+            ]
+        )
+    )
+
+    assert len(asset_node_snaps) == 2
+
+    assert asset_node_snaps == [
+        AssetNodeSnap(
+            asset_key=dg.AssetKey(["asset1"]),
+            parent_edges=[],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=dg.AssetKey("asset2"))],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+        AssetNodeSnap(
+            asset_key=dg.AssetKey("asset2"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=dg.AssetKey(["asset1"]))],
+            child_edges=[],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+    ]
+
+
+def test_historical_asset_node_snap_that_models_underlying_external_assets_def() -> None:
     assert not AssetNodeSnap(
-        asset_key=AssetKey("asset_one"),
+        asset_key=dg.AssetKey("asset_one"),
         parent_edges=[],
         child_edges=[],
         # purposefully not using constants here so we know when we are breaking ourselves
-        metadata={"dagster/asset_execution_type": TextMetadataValue("UNEXECUTABLE")},
+        metadata={"dagster/asset_execution_type": dg.TextMetadataValue("UNEXECUTABLE")},
     ).is_executable
 
     assert AssetNodeSnap(
-        asset_key=AssetKey("asset_one"),
+        asset_key=dg.AssetKey("asset_one"),
         parent_edges=[],
         child_edges=[],
     ).is_executable
@@ -1315,5 +1327,5 @@ def test_back_compat_team_owners():
         "owners": ["foo", "hi@me.com"],
     }
 
-    external_asset_node = unpack_value(packed_1_7_7_external_asset)
-    assert external_asset_node.owners == ["team:foo", "hi@me.com"]
+    asset_node_snap = unpack_value(packed_1_7_7_external_asset)
+    assert asset_node_snap.owners == ["team:foo", "hi@me.com"]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]

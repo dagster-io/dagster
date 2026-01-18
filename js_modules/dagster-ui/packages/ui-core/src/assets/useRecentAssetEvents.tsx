@@ -1,101 +1,224 @@
-import uniq from 'lodash/uniq';
 import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetKey, AssetViewParams} from './types';
-import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
+import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-data/AssetBaseDataProvider';
+import {
+  AssetFailedToMaterializeFragment,
+  AssetObservationFragment,
+  AssetPartitionEventsQuery,
+  AssetPartitionEventsQueryVariables,
+  AssetSuccessfulMaterializationFragment,
+  LatestAssetPartitionsQuery,
+  LatestAssetPartitionsQueryVariables,
+  RecentAssetEventsForCatalogViewQuery,
+  RecentAssetEventsForCatalogViewQueryVariables,
+  RecentAssetEventsQuery,
+  RecentAssetEventsQueryVariables,
+} from './types/useRecentAssetEvents.types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
-/**
-The params behavior on this page is a bit nuanced - there are two main query
-params: ?timestamp= and ?partition= and only one is set at a time. They can
-be undefined, an empty string or a value and all three states are used.
+export type AssetEventFragment =
+  | AssetSuccessfulMaterializationFragment
+  | AssetFailedToMaterializeFragment
+  | AssetObservationFragment;
 
-- If both are undefined, we expand the first item in the table by default
-- If one is present, it determines which xAxis is used (partition grouping)
-- If one is present and set to a value, that item in the table is expanded.
-- If one is present but an empty string, no items in the table is expanded.
- */
-export function getXAxisForParams(
-  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
-  {defaultToPartitions}: {defaultToPartitions: boolean},
-) {
-  const xAxisDefault = defaultToPartitions ? 'partition' : 'time';
-  const xAxis: 'partition' | 'time' =
-    params.partition !== undefined
-      ? 'partition'
-      : params.time !== undefined || params.asOf
-      ? 'time'
-      : xAxisDefault;
+export function useLatestAssetPartitions(assetKey: AssetKey | undefined, limit: number) {
+  const queryResult = useQuery<LatestAssetPartitionsQuery, LatestAssetPartitionsQueryVariables>(
+    LATEST_ASSET_PARTITIONS_QUERY,
+    {
+      skip: !assetKey,
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        assetKey: {path: assetKey ? assetKey.path : []},
+        limit,
+      },
+    },
+  );
 
-  return xAxis;
+  const {data, loading, refetch} = queryResult;
+  const value = useMemo(() => {
+    const assetNode =
+      data?.assetNodeOrError.__typename === 'AssetNode' ? data?.assetNodeOrError : null;
+    const partitionKeys = assetNode?.partitionKeyConnection?.results || [];
+
+    return {
+      partitionKeys,
+      loading,
+      refetch,
+    };
+  }, [data, loading, refetch]);
+  return value;
 }
 
-/**
- * If the asset has a defined partition space, we load all materializations in the
- * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
- * you still see accurate info for the last 100 partitions in the UI. A count-based
- * limit could cause random partitions to disappear if materializations were out of order.
- */
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
-  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
-  {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
+  limit: number,
+  eventTypeSelectors: AssetEventHistoryEventTypeSelector[],
 ) {
-  const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
-  const xAxis = getXAxisForParams(params, {defaultToPartitions: assetHasDefinedPartitions});
+  const queryResult = useQuery<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>(
+    RECENT_ASSET_EVENTS_QUERY,
+    {
+      skip: !assetKey,
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        assetKey: {path: assetKey?.path || []},
+        limit,
+        eventTypeSelectors: eventTypeSelectors || [
+          AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+          AssetEventHistoryEventTypeSelector.OBSERVATION,
+          AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+        ],
+      },
+    },
+  );
+  const {data, loading, refetch} = queryResult;
 
-  const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
+  const value = useMemo(() => {
+    const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
 
-  const queryResult = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(ASSET_EVENTS_QUERY, {
+    return {
+      latestInfo: data?.assetsLatestInfo[0],
+      events: asset?.assetEventHistory?.results || [],
+      loading: loading && !data,
+      refetch,
+    };
+  }, [data, loading, refetch]);
+
+  return value;
+}
+
+export function useRecentAssetEventsForCatalogView({
+  assetKey,
+  limit,
+  eventTypeSelectors,
+}: {
+  assetKey: AssetKey | undefined;
+  limit: number;
+  eventTypeSelectors: AssetEventHistoryEventTypeSelector[];
+}) {
+  const queryResult = useQuery<
+    RecentAssetEventsForCatalogViewQuery,
+    RecentAssetEventsForCatalogViewQueryVariables
+  >(RECENT_ASSET_EVENTS_QUERY_FOR_CATALOG_VIEW, {
     skip: !assetKey,
     fetchPolicy: 'cache-and-network',
-    variables: loadUsingPartitionKeys
-      ? {
-          assetKey: {path: assetKey?.path ?? []},
-          before,
-          partitionInLast: 120,
-        }
-      : {
-          assetKey: {path: assetKey?.path ?? []},
-          before,
-          limit: 100,
-        },
+    variables: {
+      assetKey: {path: assetKey?.path || []},
+      limit,
+      eventTypeSelectors,
+    },
   });
   const {data, loading, refetch} = queryResult;
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
-    const materializations = asset?.assetMaterializations || [];
-    const observations = asset?.assetObservations || [];
-
-    const allPartitionKeys = asset?.definition?.partitionKeys;
-    const loadedPartitionKeys =
-      loadUsingPartitionKeys && allPartitionKeys
-        ? allPartitionKeys.slice(allPartitionKeys.length - 120)
-        : uniq(
-            [...materializations, ...observations].map((p) => p.partition!).filter(Boolean),
-          ).sort();
 
     return {
-      asset,
-      loadedPartitionKeys,
-      materializations,
-      observations,
-      loading,
+      latestInfo: data?.assetsLatestInfo[0],
+      events: asset?.assetEventHistory?.results || [],
+      loading: loading && !data,
       refetch,
-      xAxis,
     };
-  }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
+  }, [data, loading, refetch]);
 
   return value;
 }
 
+export function useAssetPartitionMaterializations(
+  assetKey: AssetKey | undefined,
+  partitionKeys: string[],
+  loadingPartitions: boolean,
+) {
+  const queryResult = useQuery<AssetPartitionEventsQuery, AssetPartitionEventsQueryVariables>(
+    ASSET_PARTITIONS_MATERIALIZATIONS_QUERY,
+    {
+      skip: !assetKey || loadingPartitions,
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        assetKey: {path: assetKey ? assetKey.path : []},
+        partitions: partitionKeys,
+      },
+    },
+  );
+
+  const {data, loading, refetch} = queryResult;
+
+  const value = useMemo(() => {
+    const assetNode =
+      data?.assetNodeOrError.__typename === 'AssetNode' ? data?.assetNodeOrError : null;
+    const materializations = (assetNode?.latestMaterializationByPartition || []).filter(
+      (event) => event !== null,
+    );
+
+    return {
+      materializations,
+      partitionKeys,
+      loading,
+      refetch,
+    };
+  }, [data, loading, refetch, partitionKeys]);
+
+  return value;
+}
+
+export function useLatestAssetPartitionMaterializations(
+  assetKey: AssetKey | undefined,
+  limit: number,
+) {
+  const {partitionKeys, loading} = useLatestAssetPartitions(assetKey, limit);
+  return useAssetPartitionMaterializations(
+    assetKey,
+    useMemo(() => [...partitionKeys].reverse(), [partitionKeys]),
+    loading,
+  );
+}
+
 export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
 
-export const ASSET_MATERIALIZATION_FRAGMENT = gql`
-  fragment AssetMaterializationFragment on MaterializationEvent {
+export const ASSET_FAILED_TO_MATERIALIZE_FRAGMENT = gql`
+  fragment AssetFailedToMaterializeFragment on FailedToMaterializeEvent {
+    tags {
+      key
+      value
+    }
+    runOrError {
+      ... on PipelineRun {
+        id
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    assetKey {
+      path
+    }
+    partition
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    materializationFailureType
+  }
+
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+export const ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT = gql`
+  fragment AssetSuccessfulMaterializationFragment on MaterializationEvent {
     partition
     tags {
       key
@@ -166,42 +289,130 @@ export const ASSET_OBSERVATION_FRAGMENT = gql`
   ${METADATA_ENTRY_FRAGMENT}
 `;
 
-export const ASSET_EVENTS_QUERY = gql`
-  query AssetEventsQuery(
+export const RECENT_ASSET_EVENTS_QUERY = gql`
+  query RecentAssetEventsQuery(
     $assetKey: AssetKeyInput!
-    $limit: Int
+    $eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    $limit: Int!
     $before: String
-    $partitionInLast: Int
+    $after: String
+    $cursor: String
+    $partitions: [String!]
   ) {
+    assetsLatestInfo(assetKeys: [$assetKey]) {
+      id
+      ...AssetLatestInfoFragment
+    }
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
         key {
           path
         }
-        assetObservations(
+        assetEventHistory(
           limit: $limit
+          afterTimestampMillis: $after
           beforeTimestampMillis: $before
-          partitionInLast: $partitionInLast
+          eventTypeSelectors: $eventTypeSelectors
+          cursor: $cursor
+          partitions: $partitions
         ) {
-          ...AssetObservationFragment
-        }
-        assetMaterializations(
-          limit: $limit
-          beforeTimestampMillis: $before
-          partitionInLast: $partitionInLast
-        ) {
-          ...AssetMaterializationFragment
-        }
-
-        definition {
-          id
-          partitionKeys
+          results {
+            ...AssetSuccessfulMaterializationFragment
+            ...AssetFailedToMaterializeFragment
+            ...AssetObservationFragment
+          }
+          cursor
         }
       }
     }
   }
 
   ${ASSET_OBSERVATION_FRAGMENT}
-  ${ASSET_MATERIALIZATION_FRAGMENT}
+  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
+  ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
+`;
+
+export const RECENT_ASSET_EVENTS_QUERY_FOR_CATALOG_VIEW = gql`
+  query RecentAssetEventsForCatalogViewQuery(
+    $assetKey: AssetKeyInput!
+    $eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    $limit: Int!
+    $before: String
+    $after: String
+    $cursor: String
+    $partitions: [String!]
+  ) {
+    assetsLatestInfo(assetKeys: [$assetKey]) {
+      id
+      latestRun {
+        id
+        status
+        startTime
+      }
+      inProgressRunIds
+      unstartedRunIds
+    }
+    assetOrError(assetKey: $assetKey) {
+      ... on Asset {
+        id
+        key {
+          path
+        }
+        assetEventHistory(
+          limit: $limit
+          afterTimestampMillis: $after
+          beforeTimestampMillis: $before
+          eventTypeSelectors: $eventTypeSelectors
+          cursor: $cursor
+          partitions: $partitions
+        ) {
+          results {
+            ... on MaterializationEvent {
+              runId
+              timestamp
+            }
+            ... on FailedToMaterializeEvent {
+              runId
+              timestamp
+            }
+            ... on ObservationEvent {
+              runId
+              timestamp
+            }
+          }
+          cursor
+        }
+      }
+    }
+  }
+`;
+
+export const ASSET_PARTITIONS_MATERIALIZATIONS_QUERY = gql`
+  query AssetPartitionEventsQuery($assetKey: AssetKeyInput!, $partitions: [String!]!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        latestMaterializationByPartition(partitions: $partitions) {
+          ...AssetSuccessfulMaterializationFragment
+        }
+      }
+    }
+  }
+
+  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
+`;
+
+export const LATEST_ASSET_PARTITIONS_QUERY = gql`
+  query LatestAssetPartitionsQuery($assetKey: AssetKeyInput!, $limit: Int!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        partitionKeyConnection(limit: $limit, ascending: false) {
+          results
+        }
+      }
+    }
+  }
 `;

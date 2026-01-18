@@ -4,7 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from subprocess import PIPE, Popen
-from typing import Dict, List, Literal, Optional
+from typing import Literal, Optional
 
 import boto3
 
@@ -44,7 +44,11 @@ class LocalGlueMockClient:
 
         self.process = None  # jobs will be executed in a separate process
 
-        self._job_runs: Dict[str, SimulatedJobRun] = {}  # mapping of JobRunId to SimulatedJobRun
+        self._job_runs: dict[str, SimulatedJobRun] = {}  # mapping of JobRunId to SimulatedJobRun
+
+    @property
+    def meta(self):
+        return self.glue_client.meta
 
     def get_job_run(self, JobName: str, RunId: str):
         # get original response
@@ -76,7 +80,7 @@ class LocalGlueMockClient:
 
         return response
 
-    def start_job_run(self, JobName: str, Arguments: Optional[Dict[str, str]], **kwargs):
+    def start_job_run(self, JobName: str, Arguments: Optional[dict[str, str]], **kwargs):
         params = {
             "JobName": JobName,
         }
@@ -129,7 +133,7 @@ class LocalGlueMockClient:
 
         return response
 
-    def batch_stop_job_run(self, JobName: str, JobRunIds: List[str]):
+    def batch_stop_job_run(self, JobName: str, JobRunIds: list[str]):
         for job_run_id in JobRunIds:
             if simulated_job_run := self._job_runs.get(job_run_id):
                 simulated_job_run.popen.terminate()
@@ -141,13 +145,13 @@ class LocalGlueMockClient:
         stdout, stderr = self._job_runs[job_run_id].popen.communicate()
 
         if self.pipes_messages_backend == "cloudwatch":
-            assert (
-                self.cloudwatch_client is not None
-            ), "cloudwatch_client has to be provided with cloudwatch messages backend"
+            assert self.cloudwatch_client is not None, (
+                "cloudwatch_client has to be provided with cloudwatch messages backend"
+            )
 
-            assert (
-                self.cloudwatch_client is not None
-            ), "cloudwatch_client has to be provided with cloudwatch messages backend"
+            assert self.cloudwatch_client is not None, (
+                "cloudwatch_client has to be provided with cloudwatch messages backend"
+            )
 
             try:
                 self.cloudwatch_client.create_log_group(

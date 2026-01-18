@@ -1,8 +1,8 @@
+import {gql} from '../apollo-client';
 import {
   PartitionMatrixSolidHandleFragment,
   PartitionMatrixStepRunFragment,
 } from './types/useMatrixData.types';
-import {gql} from '../apollo-client';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
@@ -81,6 +81,7 @@ function buildMatrixData(
         return blankState;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const lastRun = partition.runs[partition.runs.length - 1]!;
       const lastRunStepStatus = lastRun.stepStats.find((stats) =>
         isStepKeyForNode(node.name, stats.stepKey),
@@ -93,6 +94,7 @@ function buildMatrixData(
       ) {
         let idx = partition.runs.length - 2;
         while (idx >= 0 && !previousRunStatus) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const currRun = partition.runs[idx]!;
           const currRunStatus = currRun.stepStats.find((stats) =>
             isStepKeyForNode(node.name, stats.stepKey),
@@ -129,7 +131,9 @@ function buildMatrixData(
   const partitionsWithARun = partitionColumns.filter((p) => p.runs.length > 0).length;
 
   const stepRows = layout.boxes.map((box, idx) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const totalFailures = partitionColumns.filter((p) => p.steps[idx]!.color.includes('FAILURE'));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const finalFailures = partitionColumns.filter((p) => p.steps[idx]!.color.endsWith('FAILURE'));
     return {
       x: box.x,
@@ -145,6 +149,7 @@ function buildMatrixData(
 
   if (options?.showFailuresAndGapsOnly) {
     for (let ii = stepRows.length - 1; ii >= 0; ii--) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       if (stepRows[ii]!.finalFailurePercent === 0) {
         stepRows.splice(ii, 1);
         partitionColumns.forEach((p) => p.steps.splice(ii, 1));
@@ -152,7 +157,9 @@ function buildMatrixData(
     }
     for (let ii = partitionColumns.length - 1; ii >= 0; ii--) {
       if (
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         partitionColumns[ii]!.runs.length === 0 ||
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         partitionColumns[ii]!.steps.every((step) => step.color.includes('SUCCESS'))
       ) {
         partitionColumns.splice(ii, 1);

@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from dagster import RunConfig
 from dagster._utils import file_relative_path
@@ -6,14 +8,14 @@ from dagster_ge.factory import GEContextResource
 from with_great_expectations.definitions import defs
 from with_great_expectations.ge_demo import GEOpConfig, payroll_data
 
+_GE_ROOT_DIR = file_relative_path(os.path.dirname(__file__), "with_great_expectations/gx")
+
 
 def test_pipeline_success():
     res = payroll_data.execute_in_process(
         resources={
             "ge_data_context": GEContextResource(
-                ge_root_dir=file_relative_path(
-                    __file__, "../with_great_expectations/great_expectations"
-                )
+                ge_root_dir=_GE_ROOT_DIR,
             )
         },
     )
@@ -25,9 +27,7 @@ def test_pipeline_failure():
         payroll_data.execute_in_process(
             resources={
                 "ge_data_context": GEContextResource(
-                    ge_root_dir=file_relative_path(
-                        __file__, "../with_great_expectations/great_expectations"
-                    )
+                    ge_root_dir=_GE_ROOT_DIR,
                 )
             },
             run_config=RunConfig(

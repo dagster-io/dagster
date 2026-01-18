@@ -1,22 +1,19 @@
+from collections.abc import Iterator, Mapping
 from functools import update_wrapper
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    Mapping,
     Optional,
+    TypeAlias,
     Union,
     cast,
     overload,
 )
 
-from typing_extensions import TypeAlias
-
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import beta_param, public
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
     get_function_params,
@@ -56,7 +53,8 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
-@experimental_param(param="version")
+@public
+@beta_param(param="version")
 class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     """Core class for defining resources.
 
@@ -82,7 +80,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         required_resource_keys: (Optional[Set[str]]) Keys for the resources required by this
             resource. A DagsterInvariantViolationError will be raised during initialization if
             dependencies are cyclic.
-        version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
+        version (Optional[str]): (Beta) The version of the resource's definition fn. Two
             wrapped resource functions should only have the same version if they produce the same
             resource definition when provided with the same inputs.
     """
@@ -192,7 +190,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         # Make sure telemetry info gets passed in to hardcoded resources
         if hasattr(value, "_is_dagster_maintained"):
             resource_def._dagster_maintained = value._is_dagster_maintained()  # noqa: SLF001
-            resource_def._hardcoded_resource_type = type(value)  # noqa: SLF001
+            resource_def._hardcoded_resource_type = type(value)
 
         return resource_def
 
@@ -270,7 +268,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
             if args:
                 check.opt_inst_param(args[0], context_param_name, UnboundInitResourceContext)
                 return resource_invocation_result(
-                    self, cast(Optional[UnboundInitResourceContext], args[0])
+                    self, cast("Optional[UnboundInitResourceContext]", args[0])
                 )
             else:
                 if context_param_name not in kwargs:
@@ -282,7 +280,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
                 )
 
                 return resource_invocation_result(
-                    self, cast(Optional[UnboundInitResourceContext], kwargs[context_param_name])
+                    self, cast("Optional[UnboundInitResourceContext]", kwargs[context_param_name])
                 )
         elif len(args) + len(kwargs) > 0:
             raise DagsterInvalidInvocationError(
@@ -374,6 +372,8 @@ def resource(
 ) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
+@public
+@beta_param(param="version")
 def resource(
     config_schema: Union[ResourceFunction, CoercableToConfigSchema] = None,
     description: Optional[str] = None,
@@ -395,7 +395,7 @@ def resource(
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.resource_config`. If not set, Dagster will accept any config provided.
         description(Optional[str]): A human-readable description of the resource.
-        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+        version (Optional[str]): (Beta) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by this resource.
@@ -407,7 +407,7 @@ def resource(
 
     def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
-            config_schema=cast(Optional[Dict[str, Any]], config_schema),
+            config_schema=cast("Optional[dict[str, Any]]", config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
@@ -416,6 +416,7 @@ def resource(
     return _wrap
 
 
+@public
 def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     """A helper function that creates a ``ResourceDefinition`` to take in user-defined values.
 

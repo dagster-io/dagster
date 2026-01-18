@@ -250,7 +250,7 @@ describe('buildAssetTabs', () => {
   it('hides auto-materialize tab if no auto-materialize policy', () => {
     const hookResult = renderHook(() =>
       useAssetTabs({
-        definition: {...definitionWithPartition, autoMaterializePolicy: null},
+        definition: {...definitionWithPartition, automationCondition: null},
         params,
       }),
     );
@@ -269,10 +269,32 @@ describe('buildAssetTabs', () => {
     expect(tabKeys).toEqual(['overview', 'events', 'checks', 'lineage', 'automation']);
   });
 
+  it('shows partitions tab if partitions are defined and observable but not materializable', () => {
+    const hookResult = renderHook(() =>
+      useAssetTabs({
+        definition: {
+          ...definitionWithPartition,
+          isObservable: true,
+          isMaterializable: false,
+        },
+        params,
+      }),
+    );
+    const tabKeys = hookResult.result.current.map(({id}) => id);
+    expect(tabKeys).toEqual([
+      'overview',
+      'partitions',
+      'events',
+      'checks',
+      'lineage',
+      'automation',
+    ]);
+  });
+
   it('hides partitions and auto-materialize tabs if no partitions or auto-materializing', () => {
     const hookResult = renderHook(() =>
       useAssetTabs({
-        definition: {...definitionWithoutPartition, autoMaterializePolicy: null},
+        definition: {...definitionWithoutPartition, automationCondition: null},
         params,
       }),
     );

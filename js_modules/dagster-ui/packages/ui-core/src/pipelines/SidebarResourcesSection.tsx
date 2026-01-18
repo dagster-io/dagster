@@ -1,10 +1,10 @@
-import {Box, Colors, ConfigTypeSchema, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, Colors, ConfigTypeSchema, Icon} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
-import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
 import {gql} from '../apollo-client';
+import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 const NO_DESCRIPTION = '';
@@ -91,7 +91,7 @@ const ContextResourceContainer = styled.div`
   & h4 {
     margin-top: -2px;
   }
-  & ${IconWrapper} {
+  & .iconGlobal {
     margin-right: 8px;
   }
 `;

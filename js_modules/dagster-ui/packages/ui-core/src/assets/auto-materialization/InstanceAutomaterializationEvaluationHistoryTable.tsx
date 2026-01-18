@@ -20,16 +20,16 @@ const PAGE_SIZE = 15;
 
 interface Props {
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
-  setTableView: (view: 'evaluations' | 'runs') => void;
   setTimerange: (range?: [number, number]) => void;
   setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
+  actionBarComponents?: React.ReactNode;
 }
 
 export const InstanceAutomaterializationEvaluationHistoryTable = ({
   setSelectedTick,
-  setTableView,
   setTimerange,
   setParentStatuses,
+  actionBarComponents,
 }: Props) => {
   const [tickStatus, setTickStatus] = useQueryPersistedState<AutomaterializationTickStatusDisplay>({
     queryKey: 'status',
@@ -98,9 +98,9 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
       ticks={queryResult.data?.autoMaterializeTicks || []}
       paginationProps={paginationProps}
       setSelectedTick={setSelectedTick}
-      setTableView={setTableView}
       tickStatus={tickStatus}
       setTickStatus={setTickStatus}
+      actionBarComponents={actionBarComponents}
     />
   );
 };

@@ -9,12 +9,13 @@ import {
   MiddleTruncate,
   Popover,
   Tooltip,
+  useDelayedState,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {
@@ -22,7 +23,7 @@ import {
   SingleScheduleQueryVariables,
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {gql, useLazyQuery} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus} from '../graphql/types';
@@ -32,7 +33,8 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {CronTag} from '../schedules/CronTag';
 import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
-import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
+import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitchFragment';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {
@@ -71,21 +73,25 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [querySchedule, scheduleQueryResult] = useLazyQuery<
-    SingleScheduleQuery,
-    SingleScheduleQueryVariables
-  >(SINGLE_SCHEDULE_QUERY, {
-    variables: {
-      selector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-        scheduleName: name,
-      },
-    },
-    notifyOnNetworkStatusChange: true,
-  });
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
 
-  const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
+  const scheduleQueryResult = useQuery<SingleScheduleQuery, SingleScheduleQueryVariables>(
+    SINGLE_SCHEDULE_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          scheduleName: name,
+        },
+      },
+      notifyOnNetworkStatusChange: true,
+      skip: !shouldQuery,
+    },
+  );
+
+  const scheduleAssetSelectionQueryResult = useQuery<
     ScheduleAssetSelectionQuery,
     ScheduleAssetSelectionQueryVariables
   >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
@@ -96,14 +102,8 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         scheduleName: name,
       },
     },
+    skip: !shouldQuery,
   });
-
-  useDelayedRowQuery(
-    React.useCallback(() => {
-      querySchedule();
-      queryScheduleAssetSelection();
-    }, [querySchedule, queryScheduleAssetSelection]),
-  );
 
   useQueryRefreshAtInterval(scheduleQueryResult, FIFTEEN_SECONDS);
   useQueryRefreshAtInterval(scheduleAssetSelectionQueryResult, FIFTEEN_SECONDS);
@@ -188,6 +188,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                   >
                     Next tick:&nbsp;
                     <TimestampDisplay
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       timestamp={scheduleData.scheduleState.nextTick.timestamp!}
                       timezone={scheduleData.executionTimezone}
                       timeFormat={{showSeconds: false, showTimezone: true}}
@@ -225,7 +226,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {tick ? (
             <div>
-              <TickStatusTag tick={tick} />
+              <TickStatusTag tick={tick} tickResultType="runs" />
             </div>
           ) : (
             <LoadingOrNone queryResult={scheduleQueryResult} />

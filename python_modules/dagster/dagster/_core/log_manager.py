@@ -1,11 +1,11 @@
 import datetime
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, TypedDict, Union, cast
-
-from typing_extensions import Final
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, Union, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
 from dagster._utils.log import get_dagster_logger
 
@@ -111,7 +111,7 @@ def construct_log_record_message(metadata: DagsterLogRecordMetadata) -> str:
     from dagster._core.events import EVENT_TYPE_TO_DISPLAY_STRING
 
     if metadata["resource_name"] is not None:
-        log_source = f'resource:{metadata["resource_name"]}'
+        log_source = f"resource:{metadata['resource_name']}"
     else:
         log_source = metadata["job_name"] or "system"
 
@@ -205,7 +205,7 @@ class DagsterLogHandler(logging.Handler):
 
     def with_tags(self, **new_tags: str) -> "DagsterLogHandler":
         return DagsterLogHandler(
-            metadata={**self._metadata, **cast(DagsterLogHandlerMetadata, new_tags)},
+            metadata={**self._metadata, **cast("DagsterLogHandlerMetadata", new_tags)},
             loggers=self._loggers,
             handlers=self._handlers,
         )
@@ -279,6 +279,7 @@ class DagsterLogHandler(logging.Handler):
             self._local_thread_context.should_capture = True
 
 
+@public
 class DagsterLogManager(logging.Logger):
     """Centralized dispatch for logging from user code.
 

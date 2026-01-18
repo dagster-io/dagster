@@ -2,8 +2,8 @@ import {Box, ConfigTypeSchema} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
-import {TypeExplorerFragment} from './types/TypeExplorer.types';
 import {gql} from '../apollo-client';
+import {TypeExplorerFragment} from './types/TypeExplorer.types';
 import {gqlTypePredicate} from '../app/Util';
 import {dagsterTypeKind} from '../dagstertype/DagsterType';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';

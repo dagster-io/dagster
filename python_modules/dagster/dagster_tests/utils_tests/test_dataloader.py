@@ -1,13 +1,12 @@
 import asyncio
 import random
+from collections.abc import Iterable
 from functools import cached_property
-from typing import Iterable, List, NamedTuple
-from unittest import mock
 
 import pytest
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
-from dagster._model import DagsterModel
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._utils.aiodataloader import DataLoader
+from dagster_shared.record import record
 
 
 class Context:
@@ -16,9 +15,10 @@ class Context:
         return ThingLoader()
 
 
-class Thing(DagsterModel):
+@record
+class Thing:
     key: str
-    batch_keys: List[str]
+    batch_keys: list[str]
 
     @staticmethod
     async def gen(context: Context, key: str) -> "Thing":
@@ -33,13 +33,13 @@ class Thing(DagsterModel):
         return await other_other.gen_other_thing(context)
 
 
-async def batch_load_fn(keys: List[str]):
+async def batch_load_fn(keys: list[str]):
     return [Thing(key=key, batch_keys=keys) for key in keys]
 
 
 class ThingLoader(DataLoader[str, Thing]):
     def __init__(self):
-        super().__init__(batch_load_fn=batch_load_fn)
+        super().__init__(batch_load_fn=batch_load_fn)  # pyright: ignore[reportArgumentType]
 
 
 def test_basic() -> None:
@@ -88,12 +88,12 @@ def test_event_loop_change() -> None:
 def test_exception() -> None:
     class TestException(Exception): ...
 
-    async def batch_load_fn(keys: List[str]):
+    async def batch_load_fn(keys: list[str]):
         raise TestException()
 
     class Thrower(DataLoader[str, str]):
         def __init__(self):
-            super().__init__(batch_load_fn=batch_load_fn)
+            super().__init__(batch_load_fn=batch_load_fn)  # pyright: ignore[reportArgumentType]
 
     async def _test():
         loader = Thrower()
@@ -125,7 +125,7 @@ def test_bad_load_fn():
     async def _oops(wrong, args, here): ...
 
     async def _test():
-        loader = DataLoader(_oops)
+        loader = DataLoader(_oops)  # pyright: ignore[reportArgumentType]
         done, pending = await asyncio.wait(
             (loader.load(1),),
             timeout=0.01,
@@ -134,38 +134,44 @@ def test_bad_load_fn():
         assert len(done) == 1
 
         with pytest.raises(TypeError):
-            done[0].result()
+            done[0].result()  # pyright: ignore[reportIndexIssue]
 
     asyncio.run(_test())
 
 
-class LoadableThing(
-    NamedTuple("_LoadableThing", [("key", str), ("val", int)]), InstanceLoadableBy[str]
-):
-    @classmethod
-    def _blocking_batch_load(
-        cls, keys: Iterable[str], instance: mock.MagicMock
-    ) -> List["LoadableThing"]:
-        instance.query(keys)
-        return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
-
-
-class BasicLoadingContext(LoadingContext):
+class MockedLoadingContext(LoadingContext):
     def __init__(self):
+        from unittest import mock
+
         self._loaders = {}
-        self._mock_instance = mock.MagicMock()
+        self._instance = mock.MagicMock()
 
     @property
     def loaders(self):
         return self._loaders
 
     @property
-    def instance(self) -> mock.MagicMock:
-        return self._mock_instance
+    def instance(self):
+        return self._instance
+
+
+@record(kw_only=False)
+class LoadableThing(LoadableBy[str, MockedLoadingContext]):
+    key: str
+    val: int
+
+    @classmethod
+    def _blocking_batch_load(
+        cls,
+        keys: Iterable[str],
+        context: MockedLoadingContext,
+    ) -> list["LoadableThing"]:
+        context.instance.query(keys)
+        return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
 
 
 def test_sync_loadable_by() -> None:
-    context = BasicLoadingContext()
+    context = MockedLoadingContext()
 
     # test caching
     a1 = LoadableThing.blocking_get(context, "a")

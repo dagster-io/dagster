@@ -127,7 +127,7 @@ export const StaleReasonsTag = ({
   const grouped = groupedCauses(assetKey, liveData);
   const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
   if (!totalCauses) {
-    return <div />;
+    return null;
   }
   const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
   return (
@@ -209,6 +209,7 @@ const StaleCausesPopoverSummary = ({
         </Subtitle2>
       </Box>
       {Object.entries(grouped).map(([label, causes], idx) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const isSelf = isEqual(assetKey.path, causes[0]!.key.path);
         return (
           <Box key={label}>
@@ -217,6 +218,7 @@ const StaleCausesPopoverSummary = ({
               border={idx === 0 ? 'bottom' : 'top-and-bottom'}
             >
               <CaptionSubtitle>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {getCollapsedHeaderLabel(isSelf, causes[0]!.category, causes.length)}
               </CaptionSubtitle>
             </Box>

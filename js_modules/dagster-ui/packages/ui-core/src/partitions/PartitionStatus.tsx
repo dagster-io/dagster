@@ -11,6 +11,7 @@ import {
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
 import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
+import {assertExists} from '../util/invariant';
 
 type SelectionRange = {
   start: string;
@@ -111,8 +112,8 @@ export const PartitionStatus = React.memo(
         const operation = !e.getModifierState('Shift')
           ? 'replace'
           : currentSelection.every((name) => selectedSet.has(name))
-          ? 'subtract'
-          : 'add';
+            ? 'subtract'
+            : 'add';
 
         if (operation === 'replace') {
           onSelect(currentSelection);
@@ -143,10 +144,10 @@ export const PartitionStatus = React.memo(
         selectedSet.size === 0
           ? []
           : selectedSet.size === partitionNames.length
-          ? [{startIdx: 0, endIdx: partitionNames.length - 1, status: true}]
-          : assembleIntoSpans(partitionNames, (key) => selectedSet.has(key)).filter(
-              (s) => s.status,
-            ),
+            ? [{startIdx: 0, endIdx: partitionNames.length - 1, status: true}]
+            : assembleIntoSpans(partitionNames, (key) => selectedSet.has(key)).filter(
+                (s) => s.status,
+              ),
       [selectedSet, partitionNames],
     );
 
@@ -160,14 +161,18 @@ export const PartitionStatus = React.memo(
     const _onClick = onClick
       ? (e: React.MouseEvent<any, MouseEvent>) => {
           const partitionName = toPartitionName(e.nativeEvent);
-          partitionName && onClick(partitionName);
+          if (partitionName) {
+            onClick(partitionName);
+          }
         }
       : undefined;
 
     const _onMouseDown = onSelect
       ? (e: React.MouseEvent<any, MouseEvent>) => {
           const partitionName = toPartitionName(e.nativeEvent);
-          partitionName && setCurrentSelectionRange({start: partitionName, end: partitionName});
+          if (partitionName) {
+            setCurrentSelectionRange({start: partitionName, end: partitionName});
+          }
         }
       : undefined;
 
@@ -219,10 +224,10 @@ export const PartitionStatus = React.memo(
                     tooltipMessage
                       ? tooltipMessage
                       : s.start.idx === s.end.idx
-                      ? `Partition ${partitionNames[s.start.idx]} is ${s.label.toLowerCase()}`
-                      : `Partitions ${partitionNames[s.start.idx]} through ${
-                          partitionNames[s.end.idx]
-                        } are ${s.label.toLowerCase()}`
+                        ? `Partition ${partitionNames[s.start.idx]} is ${s.label.toLowerCase()}`
+                        : `Partitions ${partitionNames[s.start.idx]} through ${
+                            partitionNames[s.end.idx]
+                          } are ${s.label.toLowerCase()}`
                   }
                 >
                   <div className="color-span" style={s.style} />
@@ -269,8 +274,12 @@ export const PartitionStatus = React.memo(
                   left: 0,
                   width: indexToPct(
                     Math.min(
-                      partitionNames.indexOf(selected[selected.length - 1]!),
-                      partitionNames.indexOf(selected[0]!),
+                      partitionNames.indexOf(
+                        assertExists(selected[selected.length - 1], 'Expected non-empty selection'),
+                      ),
+                      partitionNames.indexOf(
+                        assertExists(selected[0], 'Expected non-empty selection'),
+                      ),
                     ),
                   ),
                   height: small ? 14 : 24,
@@ -280,14 +289,22 @@ export const PartitionStatus = React.memo(
                 style={{
                   left: `min(calc(100% - 3px), ${indexToPct(
                     Math.min(
-                      partitionNames.indexOf(selected[0]!),
-                      partitionNames.indexOf(selected[selected.length - 1]!),
+                      partitionNames.indexOf(
+                        assertExists(selected[0], 'Expected non-empty selection'),
+                      ),
+                      partitionNames.indexOf(
+                        assertExists(selected[selected.length - 1], 'Expected non-empty selection'),
+                      ),
                     ),
                   )})`,
                   width: indexToPct(
                     Math.abs(
-                      partitionNames.indexOf(selected[selected.length - 1]!) -
-                        partitionNames.indexOf(selected[0]!),
+                      partitionNames.indexOf(
+                        assertExists(selected[selected.length - 1], 'Expected non-empty selection'),
+                      ) -
+                        partitionNames.indexOf(
+                          assertExists(selected[0], 'Expected non-empty selection'),
+                        ),
                     ) + 1,
                   ),
                   height: small ? 14 : 24,
@@ -301,8 +318,15 @@ export const PartitionStatus = React.memo(
                     partitionNames.length -
                       1 -
                       Math.max(
-                        partitionNames.indexOf(selected[selected.length - 1]!),
-                        partitionNames.indexOf(selected[0]!),
+                        partitionNames.indexOf(
+                          assertExists(
+                            selected[selected.length - 1],
+                            'Expected non-empty selection',
+                          ),
+                        ),
+                        partitionNames.indexOf(
+                          assertExists(selected[0], 'Expected non-empty selection'),
+                        ),
                       ),
                   ),
                   height: small ? 14 : 24,
@@ -349,8 +373,8 @@ function useColorSegments(
     return _statusForKey
       ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
       : _ranges && splitPartitions
-      ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
-      : assetHealthToColorSegments(_ranges!);
+        ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
+        : assetHealthToColorSegments(assertExists(_ranges, 'Expected ranges to be defined'));
   }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
 }
 
@@ -361,9 +385,10 @@ function splitColorSegments(partitionNames: string[], segments: ColorSegment[]):
   const result: ColorSegment[] = [];
   for (const segment of segments) {
     for (let idx = segment.start.idx; idx <= segment.end.idx; idx++) {
+      const key = assertExists(partitionNames[idx], `Expected partition name at index ${idx}`);
       result.push({
-        start: {idx, key: partitionNames[idx]!},
-        end: {idx, key: partitionNames[idx]!},
+        start: {idx, key},
+        end: {idx, key},
         label: segment.label,
         style: segment.style,
       });
@@ -383,9 +408,9 @@ function assetHealthToColorSegments(ranges: Range[]) {
 
 const statusToBackgroundColor = (status: RunStatus | undefined) => {
   if (status === undefined) {
-    return Colors.accentGray();
+    return Colors.backgroundDisabled();
   }
-  return status === RunStatus.NOT_STARTED ? Colors.accentGrayHover() : RUN_STATUS_COLORS[status];
+  return status === RunStatus.NOT_STARTED ? Colors.backgroundDisabled() : RUN_STATUS_COLORS[status];
 };
 
 function opRunStatusToColorRanges(

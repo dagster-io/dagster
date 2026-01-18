@@ -1,16 +1,17 @@
 import json
 import os
 from decimal import Decimal
-from typing import Any, Dict, cast
+from pathlib import Path
+from typing import Any, cast
+from unittest import mock
 
-import mock
 import pytest
 from dagster import (
     AssetExecutionContext,
     _check as check,
     materialize,
 )
-from dagster._check.functions import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
@@ -30,7 +31,7 @@ def standalone_duckdb_dbfile_path_fixture(request) -> None:
     """Generate a unique duckdb dbfile path for certain tests which need
     it, rather than using the default one-file-per-worker approach.
     """
-    node_name = cast(str, request.node.name).replace("[", "_").replace("]", "_")
+    node_name = cast("str", request.node.name).replace("[", "_").replace("]", "_")
     jaffle_shop_duckdb_db_file_name = f"{node_name}_jaffle_shop"
     jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
 
@@ -48,11 +49,11 @@ def test_jaffle_shop_invocation_standalone_duckdb_dbfile_fixture(
 @pytest.fixture(name="test_jaffle_shop_manifest_standalone_duckdb_dbfile")
 def test_jaffle_shop_manifest_standalone_duckdb_dbfile_fixture(
     test_jaffle_shop_invocation_standalone_duckdb_dbfile: DbtCliInvocation,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return test_jaffle_shop_invocation_standalone_duckdb_dbfile.get_artifact("manifest.json")
 
 
-def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
+def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -71,14 +72,14 @@ def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[s
 
 
 @pytest.fixture(name="test_jaffle_shop_manifest_snowflake")
-def test_jaffle_shop_manifest_snowflake_fixture() -> Dict[str, Any]:
+def test_jaffle_shop_manifest_snowflake_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_jaffle_shop_path, target="snowflake").get_artifact(
         "manifest.json"
     )
 
 
 @pytest.fixture(name="test_jaffle_shop_manifest_bigquery")
-def test_jaffle_shop_manifest_bigquery_fixture() -> Dict[str, Any]:
+def test_jaffle_shop_manifest_bigquery_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_jaffle_shop_path, target="bigquery").get_artifact(
         "manifest.json"
     )
@@ -103,7 +104,7 @@ def test_jaffle_shop_manifest_bigquery_fixture() -> Dict[str, Any]:
     ],
 )
 def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture_name: str) -> None:
-    manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    manifest = cast("dict[str, Any]", request.getfixturevalue(manifest_fixture_name))
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -139,7 +140,7 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
 
 
 def test_insights_err_not_snowflake_or_bq(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
@@ -176,7 +177,7 @@ def test_insights_err_not_snowflake_or_bq(
 def test_row_count_does_not_obscure_errors(
     request: pytest.FixtureRequest, target: str, manifest_fixture_name: str
 ) -> None:
-    manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    manifest = cast("dict[str, Any]", request.getfixturevalue(manifest_fixture_name))
 
     # Test that row count fetching does not obscure other errors in the dbt run
     # First, run dbt without any row count fetching, and ensure that it fails
@@ -235,7 +236,7 @@ def test_row_count_does_not_obscure_errors(
 
 
 def test_row_count_err(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     # test that we can handle exceptions in row count fetching
@@ -265,7 +266,7 @@ def test_row_count_err(
 
 
 def test_attach_metadata(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
 ) -> None:
     def _summarize(
         invocation: DbtCliInvocation,
@@ -314,10 +315,77 @@ def test_attach_metadata(
     )
 
     summaries_by_asset_key = {
-        asset_key: cast(TableMetadataValue, metadata["summary"])
+        asset_key: cast("TableMetadataValue", metadata["summary"])
         for asset_key, metadata in metadata_by_asset_key.items()
     }
     assert all(
         len(summary.records) > 0 and "column_name" in summary.records[0].data
         for summary in summaries_by_asset_key.values()
     ), str(summaries_by_asset_key)
+
+
+def test_row_count_with_relative_path_in_profile(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
+) -> None:
+    """This test verifies that adapter operations run from the correct working directory
+    (the dbt project directory) rather than the Dagster execution directory. This was
+    causing issues when users referenced relative filepaths in their profiles.yml files.
+    """
+    # Create a temporary test file with a relative path to simulate the issue
+    config_dir = test_jaffle_shop_path / "config"
+    config_dir.mkdir(exist_ok=True)
+    test_file = config_dir / "test_relative_path_marker.txt"
+
+    try:
+        test_file.write_text("test marker file")
+
+        def _check_relative_path_access(
+            invocation: DbtCliInvocation,
+            event: DbtDagsterEventType,
+        ):
+            if not isinstance(event, (AssetMaterialization, Output)):
+                return None
+
+            # This simulates what happens when a dbt adapter tries to access a file
+            # specified with a relative path in profiles.yml (e.g., private_key_path: config/ci_priv.p8)
+            # The file access should work because we're in the correct working directory
+            relative_path = Path("config/test_relative_path_marker.txt")
+
+            # This will raise FileNotFoundError if we're not in the dbt project directory
+            if not relative_path.exists():
+                raise FileNotFoundError(
+                    f"Could not find {relative_path} from current directory {os.getcwd()}. "
+                    "This indicates the adapter is not running from the dbt project directory."
+                )
+
+            return {"relative_path_test": "success"}
+
+        @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            event_iterator = dbt.cli(["build"], context=context).stream()
+            yield from event_iterator._attach_metadata(_check_relative_path_access)  # noqa: SLF001
+
+        result = materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        )
+
+        assert result.success
+
+        # Validate that the relative path check succeeded
+        metadata_by_asset_key = {
+            check.not_none(event.asset_key): event.materialization.metadata
+            for event in result.get_asset_materialization_events()
+        }
+
+        # Check that at least one asset has the relative_path_test metadata
+        # (indicating that relative path access worked from the metadata attachment function)
+        assert any(
+            "relative_path_test" in metadata for metadata in metadata_by_asset_key.values()
+        ), "Relative path test metadata not found, indicating working directory issue"
+
+    finally:
+        if test_file.exists():
+            test_file.unlink()
+        if config_dir.exists() and not any(config_dir.iterdir()):
+            config_dir.rmdir()

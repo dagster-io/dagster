@@ -1,19 +1,26 @@
 import datetime
 import logging
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, Optional, Union  # noqa: UP035
+
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.instance import DagsterInstance
 
 
@@ -23,6 +30,7 @@ class EvaluateAutomationConditionsResult:
         cursor: AssetDaemonCursor,
         results: Iterable[AutomationResult],
         requested_subsets: Iterable[EntitySubset],
+        partition_loading_context: PartitionLoadingContext,
     ):
         self._requested_subsets = requested_subsets
         self._requested_asset_partitions = set().union(
@@ -34,6 +42,7 @@ class EvaluateAutomationConditionsResult:
         )
         self.cursor = cursor
         self.results = list(results)
+        self._partition_loading_context = partition_loading_context
 
     @cached_property
     def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[Optional[str]]]:
@@ -45,7 +54,8 @@ class EvaluateAutomationConditionsResult:
     @property
     def total_requested(self) -> int:
         """Returns the total number of asset partitions requested during this evaluation."""
-        return len(self._requested_asset_partitions)
+        with partition_loading_context(new_ctx=self._partition_loading_context):
+            return sum(r.true_subset.size for r in self.results)
 
     def get_requested_partitions(self, asset_key: AssetKey) -> AbstractSet[Optional[str]]:
         """Returns the specific partition keys requested for the given asset during this evaluation."""
@@ -112,30 +122,48 @@ def evaluate_automation_conditions(
         defs = Definitions(assets=defs)
 
     if asset_selection is None:
-        asset_selection = AssetSelection.all(include_sources=True)
+        asset_selection = (
+            AssetSelection.all(include_sources=True) | AssetSelection.all_asset_checks()
+        )
 
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
+
+    # round-trip the provided cursor to simulate actual usage
+    cursor = (
+        deserialize_value(serialize_value(cursor), AssetDaemonCursor)
+        if cursor
+        else AssetDaemonCursor.empty()
+    )
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
         instance=instance,
         entity_keys={
             key
             for key in asset_selection.resolve(asset_graph)
+            | asset_selection.resolve_checks(asset_graph)
             if asset_graph.get(key).automation_condition is not None
         },
         evaluation_time=evaluation_time,
-        allow_backfills=False,
+        emit_backfills=False,
         logger=logging.getLogger("dagster.automation_condition_tester"),
-        cursor=cursor or AssetDaemonCursor.empty(),
+        cursor=cursor,
+        evaluation_id=cursor.evaluation_id,
     )
     results, requested_subsets = evaluator.evaluate()
-    cursor = AssetDaemonCursor(
-        evaluation_id=0,
-        last_observe_request_timestamp_by_asset_key={},
-        previous_evaluation_state=None,
-        previous_condition_cursors=[result.get_new_cursor() for result in results],
-    )
+    with partition_loading_context(
+        effective_dt=evaluation_time, dynamic_partitions_store=instance
+    ) as ctx:
+        new_cursor = cursor.with_updates(
+            evaluation_timestamp=(evaluation_time or datetime.datetime.now()).timestamp(),
+            newly_observe_requested_asset_keys=[],
+            evaluation_id=cursor.evaluation_id + 1,
+            condition_cursors=[result.get_new_cursor() for result in results],
+            asset_graph=asset_graph,
+        )
 
-    return EvaluateAutomationConditionsResult(
-        cursor=cursor, requested_subsets=requested_subsets, results=results
-    )
+        return EvaluateAutomationConditionsResult(
+            cursor=new_cursor,
+            requested_subsets=requested_subsets,
+            results=results,
+            partition_loading_context=ctx,
+        )

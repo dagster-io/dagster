@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 import responses
@@ -8,15 +8,14 @@ from dagster import (
     AssetKey,
     AssetSelection,
     AutoMaterializePolicy,
-    DailyPartitionsDefinition,
-    FreshnessPolicy,
     MetadataValue,
     asset,
     define_asset_job,
     file_relative_path,
 )
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,
@@ -36,17 +35,18 @@ from dagster_dbt_tests.cloud.utils import (
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
+DBT_CLOUD_ENVIRONMENT_ID = 376530
 
-with open(file_relative_path(__file__, "sample_manifest.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_manifest.json"), encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
 
-with open(file_relative_path(__file__, "sample_run_results.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_run_results.json"), encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
 
 
 def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
-    dbt_commands: List[str],
+    dbt_commands: list[str],
     run_results_json: Optional[dict] = None,
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON
@@ -57,6 +57,7 @@ def _add_dbt_cloud_job_responses(
         json={
             "data": {
                 "project_id": DBT_CLOUD_PROJECT_ID,
+                "environment_id": DBT_CLOUD_ENVIRONMENT_ID,
                 "generate_docs": True,
                 "execute_steps": dbt_commands,
                 "name": "A dbt Cloud job",
@@ -152,7 +153,7 @@ def test_load_assets_from_dbt_cloud_job(
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -174,11 +175,24 @@ def test_load_assets_from_dbt_cloud_job(
 
     # Assert that the outputs have the correct metadata
     for output in dbt_cloud_assets[0].op.output_dict.values():
-        assert output.metadata.keys() == {"dbt Cloud Job", "dbt Cloud Documentation"}
+        # Check user-facing metadata
+        assert "dbt Cloud Job" in output.metadata
+        assert "dbt Cloud Documentation" in output.metadata
         assert output.metadata["dbt Cloud Job"] == MetadataValue.url(
             dbt_cloud_service.build_url_for_job(
                 project_id=DBT_CLOUD_PROJECT_ID, job_id=DBT_CLOUD_JOB_ID
             )
+        )
+
+        # Check internal tracking metadata
+        assert output.metadata["dagster_dbt/cloud_account_id"] == MetadataValue.int(
+            DBT_CLOUD_ACCOUNT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_project_id"] == MetadataValue.int(
+            DBT_CLOUD_PROJECT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
+            DBT_CLOUD_ENVIRONMENT_ID
         )
 
     materialize_cereal_assets = define_asset_job(
@@ -269,7 +283,7 @@ def test_load_assets_from_cached_compile_run(
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -288,11 +302,24 @@ def test_load_assets_from_cached_compile_run(
 
     # Assert that the outputs have the correct metadata
     for output in dbt_cloud_assets[0].op.output_dict.values():
-        assert output.metadata.keys() == {"dbt Cloud Job", "dbt Cloud Documentation"}
+        # Check user-facing metadata
+        assert "dbt Cloud Job" in output.metadata
+        assert "dbt Cloud Documentation" in output.metadata
         assert output.metadata["dbt Cloud Job"] == MetadataValue.url(
             dbt_cloud_service.build_url_for_job(
                 project_id=DBT_CLOUD_PROJECT_ID, job_id=DBT_CLOUD_JOB_ID
             )
+        )
+
+        # Check internal tracking metadata
+        assert output.metadata["dagster_dbt/cloud_account_id"] == MetadataValue.int(
+            DBT_CLOUD_ACCOUNT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_project_id"] == MetadataValue.int(
+            DBT_CLOUD_PROJECT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
+            DBT_CLOUD_ENVIRONMENT_ID
         )
 
     materialize_cereal_assets = define_asset_job(
@@ -408,7 +435,7 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud,
         job_id=DBT_CLOUD_JOB_ID,
-        node_info_to_group_fn=lambda node_info: node_info["tags"][0],
+        node_info_to_group_fn=lambda node_info: next(iter(node_info["tags"]), None),
     )
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
     dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
@@ -449,31 +476,6 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
 
 
 @responses.activate
-def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
-    _add_dbt_cloud_job_responses(
-        dbt_cloud_service=dbt_cloud_service,
-        dbt_commands=["dbt build"],
-    )
-
-    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
-        dbt_cloud=dbt_cloud,
-        job_id=DBT_CLOUD_JOB_ID,
-        node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
-            maximum_lag_minutes=len(node_info["name"])
-        ),
-    )
-    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
-    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
-        dbt_assets_definition_cacheable_data
-    )
-
-    assert dbt_cloud_assets[0].freshness_policies_by_key == {
-        key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
-        for key in dbt_cloud_assets[0].keys
-    }
-
-
-@responses.activate
 def test_custom_auto_materialize_policy(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_service=dbt_cloud_service,
@@ -508,13 +510,11 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
         job_id=DBT_CLOUD_JOB_ID,
         partitions_def=partition_def,
         partition_key_to_vars_fn=lambda partition_key: {"run_date": partition_key},
-        # FreshnessPolicies not currently supported for partitioned assets
-        node_info_to_freshness_policy_fn=lambda _: None,
     )
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -618,7 +618,7 @@ def test_subsetting(
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -711,3 +711,32 @@ def test_load_from_dbt_cloud_with_env_var(dbt_cloud_service) -> None:
 
         # Implicitly, we check that requests are made with the right account ID, since that is a part of the URLs
         # we set up in _add_dbt_cloud_job_responses
+
+
+@responses.activate
+def test_dbt_cloud_metadata_ids(dbt_cloud, dbt_cloud_service):
+    """Test that dbt Cloud asset specs contain the correct ID metadata."""
+    dbt_commands = ["dbt run"]
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=dbt_commands,
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+    )
+
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    # Verify that all outputs have the required ID metadata
+    for output in dbt_cloud_assets[0].op.output_dict.values():
+        metadata = output.metadata
+
+        assert metadata["dagster_dbt/cloud_account_id"] == MetadataValue.int(DBT_CLOUD_ACCOUNT_ID)
+        assert metadata["dagster_dbt/cloud_project_id"] == MetadataValue.int(DBT_CLOUD_PROJECT_ID)
+        assert metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
+            DBT_CLOUD_ENVIRONMENT_ID
+        )

@@ -17,7 +17,6 @@ describe('encodeRunPageFilters', () => {
   it('serializes log levels,', () => {
     expect(
       encodeRunPageFilters({
-        hideNonMatches: true,
         focusedTime: 1611430148147,
         logQuery: [
           {token: 'step', value: 'bar'},
@@ -27,8 +26,7 @@ describe('encodeRunPageFilters', () => {
         sinceTime: 0,
       }),
     ).toEqual({
-      focusedTime: 1611430148147,
-      hideNonMatches: 'true',
+      focusedTime: '1611430148147',
       levels: 'critical|error',
       logs: 'step:bar|query:foo*',
     });
@@ -151,6 +149,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
@@ -164,6 +163,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
@@ -177,6 +177,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {

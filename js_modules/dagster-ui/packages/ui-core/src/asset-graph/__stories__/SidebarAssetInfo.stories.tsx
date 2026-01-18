@@ -4,17 +4,24 @@ import * as React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {buildPartitionHealthMock} from '../../assets/__fixtures__/PartitionHealthQuery.fixtures';
-import {AssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
-import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
+import {RecentAssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
+import {RECENT_ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
   RunStatus,
+  buildAssetLatestInfo,
   buildAssetNode,
+  buildAssetResultEventHistoryConnection,
   buildCompositeConfigType,
   buildFreshnessPolicy,
+  buildMaterializationEvent,
+  buildObservationEvent,
   buildRegularDagsterType,
   buildRepository,
   buildRepositoryLocation,
+  buildRepositoryOrigin,
+  buildRun,
+  buildRunNotFoundError,
   buildSolidDefinition,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
@@ -69,7 +76,6 @@ const buildSidebarQueryMock = (
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset1"]',
         description: null,
-        metadataEntries: [],
         jobNames: ['test_job'],
         assetKey: {
           path: ['asset1'],
@@ -140,9 +146,13 @@ const buildSidebarQueryMock = (
     },
   });
 
-const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetEventsQuery> => ({
+const buildEventsMock = ({
+  reported,
+}: {
+  reported: boolean;
+}): MockedResponse<RecentAssetEventsQuery> => ({
   request: {
-    query: ASSET_EVENTS_QUERY,
+    query: RECENT_ASSET_EVENTS_QUERY,
     variables: {
       assetKey: {path: ['asset1']},
       before: undefined,
@@ -152,72 +162,63 @@ const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetE
   result: {
     data: {
       __typename: 'Query',
+      assetsLatestInfo: [buildAssetLatestInfo()],
       assetOrError: {
         __typename: 'Asset',
         key: MockAssetKey,
         id: '["asset1"]',
-        definition: {
-          __typename: 'AssetNode',
-          id: 'test.py.repo.["asset1"]',
-          partitionKeys: [],
-        },
-        assetMaterializations: [
-          {
-            __typename: 'MaterializationEvent',
-            description: '1234',
-            metadataEntries: [],
-            partition: null,
-            timestamp: '1234567865400',
-            assetLineage: [],
-            label: null,
-            stepKey: 'op',
-            tags: [],
-            runId: reported ? '' : '12345',
-            runOrError: reported
-              ? {__typename: 'RunNotFoundError'}
-              : {
-                  __typename: 'Run',
-                  pipelineName: '__ASSET_JOB_1',
-                  mode: 'default',
-                  pipelineSnapshotId: null,
-                  id: '12345',
-                  status: RunStatus.SUCCESS,
-                  repositoryOrigin: {
-                    __typename: 'RepositoryOrigin',
-                    id: 'test.py',
-                    repositoryLocationName: 'repo',
-                    repositoryName: 'test.py',
-                  },
-                },
-          },
-        ],
-        assetObservations: [
-          {
-            __typename: 'ObservationEvent',
-            description: '1234',
-            runId: '12345',
-            metadataEntries: [],
-            partition: null,
-            timestamp: '1234567865400',
-            label: null,
-            stepKey: 'op',
-            tags: [],
-            runOrError: {
-              __typename: 'Run',
-              pipelineName: '__ASSET_JOB_1',
-              mode: 'default',
-              pipelineSnapshotId: null,
-              id: '12345',
-              status: RunStatus.SUCCESS,
-              repositoryOrigin: {
-                __typename: 'RepositoryOrigin',
-                id: 'test.py',
-                repositoryLocationName: 'repo',
-                repositoryName: 'test.py',
-              },
-            },
-          },
-        ],
+        assetEventHistory: buildAssetResultEventHistoryConnection({
+          results: [
+            buildMaterializationEvent({
+              description: '1234',
+              metadataEntries: [],
+              partition: null,
+              timestamp: '1234567865400',
+              assetLineage: [],
+              label: null,
+              stepKey: 'op',
+              tags: [],
+              runId: reported ? '' : '12345',
+              runOrError: reported
+                ? buildRunNotFoundError()
+                : buildRun({
+                    pipelineName: '__ASSET_JOB_1',
+                    mode: 'default',
+                    pipelineSnapshotId: null,
+                    id: '12345',
+                    status: RunStatus.SUCCESS,
+                    repositoryOrigin: buildRepositoryOrigin({
+                      id: 'test.py',
+                      repositoryLocationName: 'repo',
+                      repositoryName: 'test.py',
+                    }),
+                  }),
+            }),
+            buildObservationEvent({
+              description: '1234',
+              runId: '12345',
+              metadataEntries: [],
+              partition: null,
+              timestamp: '1234567865400',
+              label: null,
+              stepKey: 'op',
+              tags: [],
+              runOrError: buildRun({
+                pipelineName: '__ASSET_JOB_1',
+                mode: 'default',
+                pipelineSnapshotId: null,
+                id: '12345',
+                status: RunStatus.SUCCESS,
+                repositoryOrigin: buildRepositoryOrigin({
+                  id: 'test.py',
+                  repositoryLocationName: 'repo',
+                  repositoryName: 'test.py',
+                  repositoryLocationMetadata: [],
+                }),
+              }),
+            }),
+          ],
+        }),
       },
     },
   },
@@ -235,6 +236,7 @@ const TestContainer = ({
     mocks={
       mocks || [
         buildEventsMock({reported: false}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock(),
       ]
@@ -259,6 +261,7 @@ export const AssetWithReportedMaterialization = () => {
     <TestContainer
       mocks={[
         buildEventsMock({reported: true}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock(),
       ]}
@@ -273,6 +276,7 @@ export const AssetWithPolicies = () => {
     <TestContainer
       mocks={[
         buildEventsMock({reported: false}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock({
           freshnessPolicy: buildFreshnessPolicy({

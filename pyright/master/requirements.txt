@@ -26,17 +26,17 @@
 
 ### LIBRARIES
 
--e docs/dagster-ui-screenshot
 -e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/automation
 -e python_modules/dagster[pyright,test]
+-e python_modules/libraries/create-dagster
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test
--e python_modules/dagster-pipes
+-e python_modules/dagster-pipes[stubs]
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
--e python_modules/libraries/dagster-airflow[test_airflow_2]
+-e python_modules/libraries/dagster-airflow
 -e python_modules/libraries/dagster-aws[stubs,test]
 -e python_modules/libraries/dagster-azure/
 -e python_modules/libraries/dagster-celery/
@@ -51,6 +51,10 @@
 -e python_modules/libraries/dagster-deltalake/
 -e python_modules/libraries/dagster-deltalake-pandas/
 -e python_modules/libraries/dagster-deltalake-polars/
+-e python_modules/libraries/dagster-dlt/
+-e python_modules/libraries/dagster-dg-core[test]
+-e python_modules/libraries/dagster-dg-cli[ai]
+-e python_modules/libraries/dagster-cloud-cli[test]
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
@@ -58,7 +62,7 @@
 -e python_modules/libraries/dagster-duckdb-polars/
 -e python_modules/libraries/dagster-embedded-elt
 -e python_modules/libraries/dagster-fivetran/
--e python_modules/libraries/dagster-gcp/
+-e python_modules/libraries/dagster-gcp[test,dataproc]
 -e python_modules/libraries/dagster-gcp-pandas[test]
 -e python_modules/libraries/dagster-gcp-pyspark/
 -e python_modules/libraries/dagster-ge/
@@ -74,17 +78,17 @@
 -e python_modules/libraries/dagster-pandas/
 -e python_modules/libraries/dagster-pandera/
 -e python_modules/libraries/dagster-papertrail/
--e python_modules/libraries/dagster-polars[deltalake,gcp,test]
 -e python_modules/libraries/dagster-postgres/
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
--e python_modules/libraries/dagster-sdf/
--e python_modules/libraries/dagster-shell/
--e python_modules/libraries/dagster-sigma
+-e python_modules/libraries/dagster-shared/
+-e python_modules/libraries/dagster-sigma[test]
 -e python_modules/libraries/dagster-slack/
+-e python_modules/libraries/dagster-sling/
 -e python_modules/libraries/dagster-snowflake/
 -e python_modules/libraries/dagster-snowflake-pandas/
+-e python_modules/libraries/dagster-snowflake-polars/
 -e python_modules/libraries/dagster-snowflake-pyspark/
 -e python_modules/libraries/dagster-spark/
 -e python_modules/libraries/dagster-ssh/
@@ -93,8 +97,14 @@
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
 
+### COMMUNITY
+dagster-anthropic
+dagster-chroma
+dagster-gemini
+dagster-weaviate
+dagster-qdrant
+
 ### OTHER
-pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
 
 ### CONSTRAINED BEYOND RUNTIME
@@ -103,7 +113,9 @@ wordcloud  # (quickstart-*)
 # runtime, some of these versions have bugged or incomplete type annotations
 # that trigger type errors
 apache-airflow>2.7
-pendulum<3
+types-sqlalchemy==1.4.53.34
+fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
+types-setuptools==80.9.0.20250822  # Pinned due to overly strict _DictLike types in newer versions (20251223) causing false positives in setup.py files
 
 ### EXAMPLES
 
@@ -120,20 +132,26 @@ pendulum<3
 -e examples/docs_snippets[full]
 -e examples/feature_graph_backed_assets
 # -e examples/project_fully_featured
-# -e examples/quickstart_aws  # (analyzed but not installed)
 # -e examples/quickstart_etl  # (analyzed but not installed)
-# -e examples/quickstart_gcp  # (analyzed but not installed)
-# -e examples/quickstart_snowflake  # (analyzed but not installed)
 -e examples/tutorial_notebook_assets
--e examples/with_airflow
 -e examples/with_great_expectations
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e examples/experimental/dagster-blueprints
--e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
--e examples/experimental/dagster-airlift/examples/dbt-example
--e examples/experimental/dagster-airlift/examples/kitchen-sink
--e examples/experimental/dagster-airlift/examples/perf-harness
--e examples/experimental/dagster-airlift/examples/tutorial-example
+-e python_modules/libraries/dagster-airlift[mwaa] # (includes airflow dependencies)
+-e examples/starlift-demo
+-e python_modules/libraries/dagster-airlift/kitchen-sink
+-e python_modules/libraries/dagster-dbt/kitchen-sink
+-e python_modules/libraries/dagster-airlift/perf-harness
+-e examples/airlift-migration-tutorial
+-e examples/data-quality-patterns
+-e examples/ingestion-patterns
+-e examples/snowflake_cortex/dagster_snowflake
 -e examples/use_case_repository[dev]
+# -e examples/docs_projects/project_atproto_dashboard
+# -e examples/docs_projects/project_dagster_modal_pipes
+# -e examples/docs_projects/project_prompt_eng
+# -e examples/docs_projects/project_ask_ai_dagster
+# -e examples/docs_projects/project_llm_fine_tune
+# -e examples/docs_projects/project_components_pdf_extraction
+# -e examples/docs_projects/project_dbt

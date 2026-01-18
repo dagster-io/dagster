@@ -42,7 +42,11 @@ export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) =
       setCollapsedKeys((current) => {
         const nextCollapsedKeys = new Set(current || []);
         allKeys.forEach((key) => {
-          expand ? nextCollapsedKeys.delete(key) : nextCollapsedKeys.add(key);
+          if (expand) {
+            nextCollapsedKeys.delete(key);
+          } else {
+            nextCollapsedKeys.add(key);
+          }
         });
         return Array.from(nextCollapsedKeys);
       });

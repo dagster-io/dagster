@@ -1,17 +1,18 @@
+from collections.abc import Sequence
 from functools import update_wrapper
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
     Optional,
-    Sequence,
     Union,
     cast,
     overload,
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -63,7 +64,7 @@ class _Hook:
             required_resource_keys=self.required_resource_keys,
             decorated_fn=self.decorated_fn or fn,
         )
-        update_wrapper(cast(Callable[..., Any], hook_def), fn)
+        update_wrapper(cast("Callable[..., Any]", hook_def), fn)
         return hook_def
 
 
@@ -101,7 +102,7 @@ def event_list_hook(
         :py:class:`context <HookContext>`, and provides access to system
         information, such as loggers (context.log), resources (context.resources), the op
         (context.op) and its execution step (context.step) which triggers this hook.
-    - An `event_list` object is passed as the second paramter. It provides the full event list of the
+    - An `event_list` object is passed as the second parameter. It provides the full event list of the
         associated execution step.
 
     Args:
@@ -148,6 +149,7 @@ def success_hook(
 ) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
+@public
 def success_hook(
     hook_fn: Optional[SuccessOrFailureHookFn] = None,
     *,
@@ -220,6 +222,7 @@ def failure_hook(
 ) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
+@public
 def failure_hook(
     name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,

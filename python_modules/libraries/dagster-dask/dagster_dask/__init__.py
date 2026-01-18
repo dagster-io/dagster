@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_dask.data_frame import DataFrame as DataFrame
 from dagster_dask.executor import dask_executor as dask_executor

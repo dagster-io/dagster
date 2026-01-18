@@ -3,18 +3,14 @@ import {
   Checkbox,
   Colors,
   FontFamily,
-  Group,
   Icon,
-  NonIdealState,
   Spinner,
-  SpinnerWrapper,
   SplitPanelContainer,
   useViewport,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {
@@ -45,30 +41,28 @@ import {
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
-  interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
+import {GanttChartSelectionInput} from './GanttChartSelectionInput';
 import {GanttChartTimescale} from './GanttChartTimescale';
 import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
+import {RunGraphQueryItem} from './toGraphQueryItems';
 import {useGanttChartMode} from './useGanttChartMode';
 import {AppContext} from '../app/AppContext';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {useThrottledMemo} from '../hooks/useThrottledMemo';
-import {CancelRunButton} from '../runs/RunActionButtons';
+import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import {
   EMPTY_RUN_METADATA,
   IRunMetadataDict,
   IStepMetadata,
   IStepState,
 } from '../runs/RunMetadataProvider';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
-import {RunFragment} from '../runs/types/RunFragments.types';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 export {GanttChartMode} from './Constants';
 
@@ -94,7 +88,7 @@ interface GanttChartProps {
   selection: StepSelection;
   focusedTime: number | null;
   runId: string;
-  graph: GraphQueryItem[];
+  graph: RunGraphQueryItem[];
   options?: Partial<GanttChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
@@ -121,7 +115,7 @@ export const GanttChart = (props: GanttChartProps) => {
 
   const cachedLayout = React.useRef<GanttChartLayout | null>(null);
   const cachedLayoutParams = React.useRef<BuildLayoutParams | null>(null);
-  const graphFiltered = filterByQuery(graph, selection.query);
+  const graphFiltered = filterRunSelectionByQuery(graph, selection.query);
   const layoutParams = React.useMemo(
     () => ({
       nodes: state.hideUnselectedSteps ? graphFiltered.all : graph,
@@ -140,6 +134,7 @@ export const GanttChart = (props: GanttChartProps) => {
       cachedLayout.current = buildLayout(layoutParams);
       cachedLayoutParams.current = layoutParams;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return cachedLayout.current!;
   }, [layoutParams]);
 
@@ -164,7 +159,7 @@ export const GanttChart = (props: GanttChartProps) => {
 
   const onDoubleClickStep = React.useCallback(
     (stepKey: string) => {
-      const query = `*${stepKey}*`;
+      const query = `+name:"${stepKey}"+`;
       onUpdateQuery(selection.query !== query ? query : '*');
     },
     [onUpdateQuery, selection.query],
@@ -262,7 +257,9 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   // since we would just be animating endlessly with no new logs.
   React.useEffect(() => {
     if (scale === 0 || lostWebsocket || exitedAt) {
-      animationRequest.current && cancelAnimationFrame(animationRequest.current);
+      if (animationRequest.current) {
+        cancelAnimationFrame(animationRequest.current);
+      }
     }
 
     // Set the final timestamp.
@@ -276,7 +273,9 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   React.useEffect(() => {
     animationRequest.current = requestAnimationFrame(animate);
     return () => {
-      animationRequest.current && cancelAnimationFrame(animationRequest.current);
+      if (animationRequest.current) {
+        cancelAnimationFrame(animationRequest.current);
+      }
     };
   }, [animate]);
 
@@ -347,11 +346,6 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
 
   const measurementComplete = viewport.width > 0;
 
-  const presets = useMemo(
-    () => (metadata ? interestingQueriesFor(metadata, layout) : undefined),
-    [layout, metadata],
-  );
-
   const content = (
     <>
       {options.mode === GanttChartMode.WATERFALL_TIMED && measurementComplete && (
@@ -386,12 +380,10 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
         {lostWebsocket ? (
           <WebsocketWarning>
             <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
-              <Group
-                direction="row"
-                spacing={8}
+              <Box
+                flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}
                 background={Colors.backgroundYellow()}
                 padding={{vertical: 8, horizontal: 12}}
-                alignItems="flex-start"
               >
                 <Icon name="warning" color={Colors.accentYellow()} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
@@ -400,19 +392,17 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
                     {` Verify that your instance is responding to requests at ${rootServerURI} and reload the page.`}
                   </span>
                 </div>
-              </Group>
+              </Box>
             </Box>
           </WebsocketWarning>
         ) : null}
         <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          <GraphQueryInput
+          <GanttChartSelectionInput
             items={props.graph}
             value={props.selection.query}
-            placeholder="Type a step subset"
             onChange={props.onUpdateQuery}
-            presets={presets}
-            className={selection.keys.length > 0 ? 'has-step' : ''}
           />
+
           <Checkbox
             checked={options.hideUnselectedSteps}
             label="Hide unselected steps"
@@ -458,6 +448,8 @@ interface GanttChartViewportContentsProps {
 const GanttChartViewportContents = React.memo((props: GanttChartViewportContentsProps) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
 
+  const focusedStepsSet = useMemo(() => new Set(focusedSteps), [focusedSteps]);
+
   return useThrottledMemo(() => {
     const items: React.ReactNode[] = [];
 
@@ -490,8 +482,8 @@ const GanttChartViewportContents = React.memo((props: GanttChartViewportContents
           items.push(
             <GanttLine
               darkened={
-                (focusedSteps?.includes(box.node.name) || hoveredStep) === box.node.name ||
-                (focusedSteps?.includes(child.node.name) || hoveredStep) === child.node.name
+                (focusedStepsSet.has(box.node.name) || hoveredStep) === box.node.name ||
+                (focusedStepsSet.has(child.node.name) || hoveredStep) === child.node.name
               }
               dotted={childNotDrawn || childWaiting}
               key={`${box.key}-${child.key}-${childIdx}`}
@@ -522,7 +514,7 @@ const GanttChartViewportContents = React.memo((props: GanttChartViewportContents
           className={`
             chart-element
             ${useDot ? 'dot' : 'box'}
-            ${focusedSteps.includes(box.node.name) && 'focused'}
+            ${focusedStepsSet.has(box.node.name) && 'focused'}
             ${hoveredStep === box.node.name && 'hovered'}
             ${isDynamicStep(box.node.name) && 'dynamic'}`}
           style={{
@@ -817,7 +809,7 @@ const GanttChartContainer = styled.div`
       filter: brightness(115%);
     }
 
-    ${SpinnerWrapper} {
+    .spinnerGlobal {
       display: inline-block;
       vertical-align: text-bottom;
       padding-right: 4px;
@@ -893,40 +885,6 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
           metadata={EMPTY_RUN_METADATA}
           selection={EMPTY_SELECTION}
           runId={runId}
-          nowMs={0}
-        />
-      }
-    />
-  </GanttChartContainer>
-);
-
-export const QueuedState = ({run}: {run: RunFragment}) => (
-  <GanttChartContainer>
-    <OptionsContainer style={{justifyContent: 'flex-end'}}>
-      <CancelRunButton run={run} />
-    </OptionsContainer>
-    <SplitPanelContainer
-      identifier="gantt-split"
-      axis="horizontal"
-      first={
-        <NonIdealState
-          icon="arrow_forward"
-          title="Run queued"
-          description="This run is queued for execution and will start soon."
-          action={
-            <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
-              View queued runs
-            </Link>
-          }
-        />
-      }
-      firstInitialPercent={70}
-      second={
-        <GanttStatusPanel
-          graph={EMPTY_GRAPH}
-          metadata={EMPTY_RUN_METADATA}
-          selection={EMPTY_SELECTION}
-          runId={run.id}
           nowMs={0}
         />
       }

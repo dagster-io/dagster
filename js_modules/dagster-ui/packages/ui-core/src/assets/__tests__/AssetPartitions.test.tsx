@@ -146,7 +146,97 @@ describe('AssetPartitions', () => {
     expect(screen.queryByText('2022-08-31-00:00')).toBeVisible();
   });
 
+  it('should support filtering by partition status and partition text', async () => {
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
+    });
+
+    const successCheck = screen.getByTestId(
+      `partition-status-${AssetPartitionStatus.MATERIALIZED}-checkbox`,
+    );
+    const missingCheck = screen.getByTestId(
+      `partition-status-${AssetPartitionStatus.MISSING}-checkbox`,
+    );
+    await userEvent.click(missingCheck);
+    await userEvent.click(successCheck);
+    expect(screen.getByTestId('router-search')).toHaveTextContent(
+      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MATERIALIZING}`,
+    );
+
+    const searchInput = screen.getByTestId(`search-0`);
+    await userEvent.type(searchInput, '09');
+
+    // verify that filtering by state updates the left sidebar
+    expect(screen.queryByText('2022-09-23-19:00')).toBeVisible();
+  });
+
   it('should support reverse sorting individual dimensions', async () => {
+    const user = userEvent.setup();
+    const Component = () => {
+      const [params, setParams] = useState<AssetViewParams>({});
+      return (
+        <MemoryRouter>
+          <MockedProvider mocks={[MultiDimensionTimeFirstPartitionHealthQuery]}>
+            <AssetPartitions
+              assetKey={{path: ['multi_dimension_time_first']}}
+              params={params}
+              setParams={setParams}
+              paramsTimeWindowOnly={false}
+              assetPartitionDimensions={['date', 'zstate']}
+              dataRefreshHint={undefined}
+              isLoadingDefinition={false}
+            />
+          </MockedProvider>
+        </MemoryRouter>
+      );
+    };
+
+    render(<Component />);
+
+    expect(await screen.findByTestId('partitions-date')).toBeVisible();
+    expect(await screen.findByTestId('partitions-zstate')).toBeVisible();
+
+    expect(await screen.findByTestId('asset-partition-row-2023-02-05-index-0')).toBeVisible();
+    expect(await screen.findByTestId('asset-partition-row-TN-index-0')).toBeVisible();
+
+    await user.click(await screen.findByTestId('sort-0'));
+    await user.click(await screen.findByRole('menuitem', {name: /^creation sort/i}));
+
+    expect(await screen.findByTestId('asset-partition-row-2021-05-06-index-0')).toBeVisible();
+    expect(await screen.findByTestId('asset-partition-row-TN-index-0')).toBeVisible();
+
+    await user.click(await screen.findByTestId('sort-1'));
+    await user.click(await screen.findByRole('menuitem', {name: /^reverse creation sort/i}));
+    expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
+
+    await user.click(await screen.findByTestId('sort-1'));
+    await user.click(await screen.findByRole('menuitem', {name: /^alphabetical sort/i}));
+    expect(await screen.findByTestId('asset-partition-row-FL-index-0')).toBeVisible();
+
+    await user.click(await screen.findByTestId('sort-1'));
+    await user.click(await screen.findByRole('menuitem', {name: /^reverse alphabetical sort/i}));
+    expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
+  });
+
+  it('should set the focused partition when you click a list element', async () => {
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
+    const listItem = await screen.findByText(/nc/i);
+    await userEvent.click(listItem);
+    await waitFor(async () => {
+      expect(screen.getByTestId('focused-partition')).toHaveTextContent(/nc/i);
+    });
+  });
+
+  it('should not render a top bar with a partition input for statically partitioned assets', async () => {
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-selected')).toHaveTextContent('11 Partitions Selected');
+    });
+    expect(screen.queryByTestId('dimension-range-input')).toBeNull();
+  });
+
+  it('should support searching within a multiple asset partition', async () => {
     const Component = () => {
       const [params, setParams] = useState<AssetViewParams>({});
       return (
@@ -185,61 +275,75 @@ describe('AssetPartitions', () => {
       ).toBeVisible();
     });
 
-    await userEvent.click(screen.getByTestId('sort-0'));
-    await userEvent.click(screen.getByTestId('sort-creation'));
+    // search partitions
+    const searchInput = screen.getByTestId(`search-0`);
+    await userEvent.type(searchInput, '2023-01-3');
 
+    // verify partitions search results
     await waitFor(() => {
       expect(
         getByTestId(
           screen.getByTestId('partitions-date'),
-          'asset-partition-row-2021-05-06-index-0',
+          'asset-partition-row-2023-01-31-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-30-index-1',
+        ),
+      ).toBeVisible();
+      expect(
+        screen.queryByTestId('asset-partition-row-2023-02-05-index-0'),
+      ).not.toBeInTheDocument();
+
+      // verify zstate is unchanged
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
+
+    // search zstate
+    const searchInput1 = screen.getByTestId(`search-1`);
+    await userEvent.type(searchInput1, 'VA');
+
+    await waitFor(() => {
+      // verify zstate search filters properly
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-VA-index-0'),
+      ).toBeVisible();
+      expect(screen.queryByTestId('asset-partition-row-TN-index-0')).not.toBeInTheDocument();
+
+      // verify partitions search results are unchanged
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-31-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-30-index-1',
+        ),
+      ).toBeVisible();
+    });
+
+    // clear the search input
+    await userEvent.clear(searchInput);
+    await userEvent.clear(searchInput1);
+
+    // verify original rows are visible again
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-02-05-index-0',
         ),
       ).toBeVisible();
       expect(
         getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
       ).toBeVisible();
     });
-
-    await userEvent.click(screen.getByTestId('sort-1'));
-    await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-reverse-creation'));
-    });
-    await waitFor(() => {
-      expect(
-        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
-      ).toBeVisible();
-    });
-
-    await userEvent.click(screen.getByTestId('sort-1'));
-    await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-alphabetical'));
-    });
-    expect(
-      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-FL-index-0'),
-    ).toBeVisible();
-
-    await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-reverse-alphabetical'));
-    });
-    expect(
-      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
-    ).toBeVisible();
-  });
-
-  it('should set the focused partition when you click a list element', async () => {
-    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
-    const listItem = await screen.findByText(/nc/i);
-    await userEvent.click(listItem);
-    await waitFor(async () => {
-      expect(screen.getByTestId('focused-partition')).toHaveTextContent(/nc/i);
-    });
-  });
-
-  it('should not render a top bar with a partition input for statically partitioned assets', async () => {
-    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
-    await waitFor(() => {
-      expect(screen.getByTestId('partitions-selected')).toHaveTextContent('11 Partitions Selected');
-    });
-    expect(screen.queryByTestId('dimension-range-input')).toBeNull();
   });
 });

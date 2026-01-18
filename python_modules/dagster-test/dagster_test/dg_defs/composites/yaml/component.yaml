@@ -1,0 +1,10 @@
+type: dagster_test.components.simple_asset.SimpleAssetComponent
+attributes:
+  asset_key: first_yaml
+  value: one
+
+---
+type: dagster_test.components.simple_asset.SimpleAssetComponent
+attributes:
+  asset_key: second_yaml
+  value: two

@@ -1,6 +1,0 @@
-ops:
-  multiply_the_word:
-    inputs:
-      word: test
-    config:
-      factor: 2

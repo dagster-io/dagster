@@ -57,7 +57,9 @@ export const OpIOBox = ({
       onMouseEnter={() => onHighlightEdges(edges)}
       onMouseLeave={() => onHighlightEdges([])}
       onClick={(e) => {
-        jumpTargetOp && onDoubleClick(jumpTargetOp);
+        if (jumpTargetOp) {
+          onDoubleClick(jumpTargetOp);
+        }
         e.stopPropagation();
       }}
       onDoubleClick={(e) => e.stopPropagation()}
@@ -171,6 +173,7 @@ export function metadataForCompositeParentIO(
   return {
     edges,
     title,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     jumpTargetOp: edges.length === 1 ? edges[0]!.a : null,
   };
 }
@@ -185,9 +188,11 @@ export function metadataForIO(
   let jumpTargetOp: string | null = null;
 
   if (invocation && item.__typename === 'InputDefinition') {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const others = invocation.inputs.find((i) => i.definition.name === item.name)!.dependsOn;
     if (others.length) {
       title += `\n\nFrom:\n` + others.map(titleOfIO).join('\n');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       jumpTargetOp = others.length === 1 ? others[0]!.solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
@@ -204,6 +209,7 @@ export function metadataForIO(
     const others = output.dependedBy;
     if (others.length) {
       title += '\n\nUsed By:\n' + others.map((o) => titleOfIO(o)).join('\n');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       jumpTargetOp = others.length === 1 ? others[0]!.solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }

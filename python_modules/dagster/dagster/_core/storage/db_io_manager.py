@@ -1,33 +1,18 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
+from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
-)
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import MultiPartitionKey, TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
@@ -62,7 +47,7 @@ class DbTypeHandler(ABC, Generic[T]):
 
     @property
     @abstractmethod
-    def supported_types(self) -> Sequence[Type[object]]:
+    def supported_types(self) -> Sequence[type[object]]:
         pass
 
 
@@ -78,8 +63,8 @@ class DbClient(Generic[T]):
     def get_select_statement(table_slice: TableSlice) -> str: ...
 
     @staticmethod
-    def get_relation_identifier(table_slice: TableSlice) -> Optional[str]:
-        """Returns a string which is set as the dagster/relation_identifier metadata value for an
+    def get_table_name(table_slice: TableSlice) -> str:
+        """Returns a string which is set as the dagster/table_name metadata value for an
         emitted asset. This value should be the fully qualified name of the table, including the
         schema and database, if applicable.
         """
@@ -111,9 +96,9 @@ class DbIOManager(IOManager):
         database: str,
         schema: Optional[str] = None,
         io_manager_name: Optional[str] = None,
-        default_load_type: Optional[Type] = None,
+        default_load_type: Optional[type] = None,
     ):
-        self._handlers_by_type: Dict[Optional[Type[Any]], DbTypeHandler] = {}
+        self._handlers_by_type: dict[type[Any], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
@@ -156,9 +141,8 @@ class DbIOManager(IOManager):
             self._db_client.ensure_schema_exists(context, table_slice, conn)
             self._db_client.delete_table_slice(context, table_slice, conn)
 
-            handler_metadata = self._handlers_by_type[obj_type].handle_output(
-                context, table_slice, obj, conn
-            )
+            handler = self._resolve_handler(obj_type)
+            handler_metadata = handler.handle_output(context, table_slice, obj, conn)
 
         context.add_output_metadata(
             {
@@ -171,11 +155,7 @@ class DbIOManager(IOManager):
         # don't fail if it errors because the user has already attached it.
         try:
             context.add_output_metadata(
-                dict(
-                    TableMetadataSet(
-                        relation_identifier=self._db_client.get_relation_identifier(table_slice)
-                    )
-                )
+                dict(TableMetadataSet(table_name=self._db_client.get_table_name(table_slice)))
             )
         except DagsterInvalidMetadata:
             pass
@@ -189,10 +169,17 @@ class DbIOManager(IOManager):
 
         self._check_supported_type(load_type)
 
-        table_slice = self._get_table_slice(context, cast(OutputContext, context.upstream_output))
+        table_slice = self._get_table_slice(context, cast("OutputContext", context.upstream_output))
 
         with self._db_client.connect(context, table_slice) as conn:
-            return self._handlers_by_type[load_type].load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
+            return self._resolve_handler(load_type).load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
+
+    def _resolve_handler(self, obj_type: type) -> DbTypeHandler:
+        return next(
+            handler
+            for type_, handler in self._handlers_by_type.items()
+            if issubclass(obj_type, type_)
+        )
 
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
@@ -201,13 +188,13 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        partition_dimensions: List[TablePartitionDimension] = []
+        partition_dimensions: list[TablePartitionDimension] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
             # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
             if output_context_metadata.get("schema"):
-                schema = cast(str, output_context_metadata["schema"])
+                schema = cast("str", output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
             elif len(asset_key_path) > 1:
@@ -226,19 +213,34 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    multi_partition_key_mapping = cast(
-                        MultiPartitionKey, context.asset_partition_key
-                    ).keys_by_dimension
-                    for part in context.asset_partitions_def.partitions_defs:
-                        partition_key = multi_partition_key_mapping[part.name]
-                        if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
-                            partitions = part.partitions_def.time_window_for_partition_key(
-                                partition_key
-                            )
-                        else:
-                            partitions = [partition_key]
+                    partition_range = context.asset_partition_key_range
 
-                        partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
+                    for part in context.asset_partitions_def.partitions_defs:
+                        start_key_for_partition = cast(
+                            "MultiPartitionKey", partition_range.start
+                        ).keys_by_dimension[part.name]
+                        end_key_for_partition = cast(
+                            "MultiPartitionKey", partition_range.end
+                        ).keys_by_dimension[part.name]
+
+                        if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
+                            start_time = part.partitions_def.time_window_for_partition_key(
+                                start_key_for_partition
+                            ).start
+                            end_time = part.partitions_def.time_window_for_partition_key(
+                                end_key_for_partition
+                            ).end
+                            partitions = TimeWindow(start_time, end_time)
+                        else:
+                            partitions = part.partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(
+                                    start=start_key_for_partition, end=end_key_for_partition
+                                )
+                            )
+
+                        partition_expr_str = cast("Mapping[str, str]", partition_expr).get(
+                            part.name
+                        )
                         if partition_expr is None:
                             raise ValueError(
                                 f"Asset '{context.asset_key}' has partition {part.name}, but the"
@@ -249,13 +251,14 @@ class DbIOManager(IOManager):
                             )
                         partition_dimensions.append(
                             TablePartitionDimension(
-                                partition_expr=cast(str, partition_expr_str), partitions=partitions
+                                partition_expr=cast("str", partition_expr_str),
+                                partitions=partitions,
                             )
                         )
                 elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
                     partition_dimensions.append(
                         TablePartitionDimension(
-                            partition_expr=cast(str, partition_expr),
+                            partition_expr=cast("str", partition_expr),
                             partitions=(
                                 context.asset_partitions_time_window
                                 if context.asset_partition_keys
@@ -266,14 +269,18 @@ class DbIOManager(IOManager):
                 else:
                     partition_dimensions.append(
                         TablePartitionDimension(
-                            partition_expr=cast(str, partition_expr),
+                            partition_expr=cast("str", partition_expr),
                             partitions=context.asset_partition_keys,
                         )
                     )
         else:
-            table = output_context.name
+            if "table" in output_context_metadata:
+                table = check.str_param(output_context_metadata["table"], "table")
+            else:
+                table = output_context.name
+
             if output_context_metadata.get("schema"):
-                schema = cast(str, output_context_metadata["schema"])
+                schema = cast("str", output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
             else:
@@ -288,7 +295,7 @@ class DbIOManager(IOManager):
         )
 
     def _check_supported_type(self, obj_type):
-        if obj_type not in self._handlers_by_type:
+        if not issubclass(obj_type, tuple(self._handlers_by_type.keys())):
             msg = (
                 f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
                 " handlers for types"

@@ -10,6 +10,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const failedB = {
     id: 'failed-b',
@@ -17,6 +18,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const succeededA = {
     id: 'succeeded-a',
@@ -24,6 +26,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const succeededB = {
     id: 'succeeded-b',
@@ -31,6 +34,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const inProgressA = {
     id: 'inProgress-a',
@@ -38,6 +42,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const inProgressB = {
     id: 'inProgress-b',
@@ -45,6 +50,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const queuedA = {
     id: 'queued-a',
@@ -52,6 +58,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const queuedB = {
     id: 'queued-b',
@@ -59,6 +66,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const scheduledA = {
     id: 'scheduled-a',
@@ -66,6 +74,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
   const scheduledB = {
     id: 'scheduled-b',
@@ -73,6 +82,7 @@ describe('mergeStatusToBackground', () => {
     startTime: 10,
     endTime: 50,
     automation: null,
+    externalJobSource: null,
   };
 
   it('uses a single color if all runs are the same status', () => {

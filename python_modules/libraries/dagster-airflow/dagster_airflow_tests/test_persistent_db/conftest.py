@@ -6,8 +6,8 @@ fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 
 import importlib
 import time
+from collections.abc import Generator
 from datetime import datetime
-from typing import Generator
 
 import airflow
 import pytest

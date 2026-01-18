@@ -7,7 +7,6 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG, RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -18,7 +17,9 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
     infer_job_selector,
+    main_repo_location_name,
 )
+from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -69,16 +70,14 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
     def test_retry_execution_permission_failure(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "eventually_successful")
 
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
-        external_job_origin = repository.get_full_external_job(
-            "eventually_successful"
-        ).get_remote_origin()
+        remote_job_origin = repository.get_full_job("eventually_successful").get_remote_origin()
 
         run_id = create_run_for_test(
             graphql_context.instance,
             "eventually_successful",
-            external_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
         ).run_id
 
         result = execute_dagster_graphql(

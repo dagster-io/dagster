@@ -12,7 +12,7 @@ from dagster_graphql.implementation.fetch_schedules import (
     stop_schedule,
 )
 from dagster_graphql.implementation.utils import (
-    assert_permission_for_location,
+    assert_permission_for_schedule,
     capture_error,
     require_permission_check,
 )
@@ -25,6 +25,7 @@ from dagster_graphql.schema.inputs import GrapheneScheduleSelector
 from dagster_graphql.schema.instigation import GrapheneInstigationState
 from dagster_graphql.schema.schedules.schedules import (
     GrapheneSchedule,
+    GrapheneScheduleNotFoundError,
     GrapheneScheduleOrError,
     GrapheneSchedules,
     GrapheneSchedulesOrError,
@@ -64,7 +65,12 @@ class GrapheneScheduleStateResult(graphene.ObjectType):
 
 class GrapheneScheduleMutationResult(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneUnauthorizedError, GrapheneScheduleStateResult)
+        types = (
+            GraphenePythonError,
+            GrapheneUnauthorizedError,
+            GrapheneScheduleStateResult,
+            GrapheneScheduleNotFoundError,
+        )
         name = "ScheduleMutationResult"
 
 
@@ -83,9 +89,7 @@ class GrapheneStartScheduleMutation(graphene.Mutation):
     @require_permission_check(Permissions.START_SCHEDULE)
     def mutate(self, graphene_info: ResolveInfo, schedule_selector):
         selector = ScheduleSelector.from_graphql_input(schedule_selector)
-        assert_permission_for_location(
-            graphene_info, Permissions.START_SCHEDULE, selector.location_name
-        )
+        assert_permission_for_schedule(graphene_info, Permissions.START_SCHEDULE, selector)
         return start_schedule(graphene_info, selector)
 
 
@@ -145,12 +149,8 @@ class GrapheneResetScheduleMutation(graphene.Mutation):
     def mutate(self, graphene_info: ResolveInfo, schedule_selector):
         selector = ScheduleSelector.from_graphql_input(schedule_selector)
 
-        assert_permission_for_location(
-            graphene_info, Permissions.START_SCHEDULE, selector.location_name
-        )
-        assert_permission_for_location(
-            graphene_info, Permissions.STOP_RUNNING_SCHEDULE, selector.location_name
-        )
+        assert_permission_for_schedule(graphene_info, Permissions.START_SCHEDULE, selector)
+        assert_permission_for_schedule(graphene_info, Permissions.STOP_RUNNING_SCHEDULE, selector)
 
         return reset_schedule(graphene_info, selector)
 

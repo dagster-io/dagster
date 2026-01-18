@@ -1,33 +1,18 @@
 import keyword
 import os
 import re
-import warnings
+from collections.abc import Iterable, Mapping, Sequence
 from glob import glob
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
 import yaml
+from dagster_shared.yaml_utils import merge_yaml_strings, merge_yamls
 
 import dagster._check as check
-import dagster._seven as seven
+from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.storage.tags import check_reserved_tags
 from dagster._core.utils import is_valid_email
-from dagster._utils.warnings import deprecation_warning
-from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
+from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
 
 DEFAULT_OUTPUT = "result"
 DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided
@@ -64,10 +49,14 @@ MAX_TITLE_LENGTH = 100
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import AssetKey
+    from dagster._core.definitions.asset_selection import AssetSelection
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
     )
+    from dagster._core.definitions.sensor_definition import SensorDefinition
+    from dagster._core.remote_representation.external import RemoteSensor
 
 
 class NoValueSentinel:
@@ -78,7 +67,7 @@ def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str, allow_list: Optional[List[str]] = None) -> str:
+def check_valid_name(name: str, allow_list: Optional[list[str]] = None) -> str:
     check.str_param(name, "name")
 
     if allow_list and name in allow_list:
@@ -110,7 +99,7 @@ def is_valid_name(name: str) -> bool:
     return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
 
 
-def is_valid_title_and_reason(title: Optional[str]) -> Tuple[bool, Optional[str]]:
+def is_valid_title_and_reason(title: Optional[str]) -> tuple[bool, Optional[str]]:
     check.opt_str_param(title, "title")
 
     if title is None:
@@ -160,134 +149,70 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return f"{name}({props_str})"
 
 
-class NormalizedTags(NamedTuple):
-    tags: Mapping[str, str]
-
-    def with_normalized_tags(self, normalized_tags: "NormalizedTags") -> "NormalizedTags":
-        return NormalizedTags({**self.tags, **normalized_tags.tags})
-
-
-def normalize_tags(
-    tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
-    allow_reserved_tags: bool = True,
-    warn_on_deprecated_tags: bool = True,
-    warning_stacklevel: int = 4,
-) -> NormalizedTags:
-    """Normalizes JSON-object tags into string tags and warns on deprecated tags.
-
-    New tags properties should _not_ use this function, because it doesn't hard error on tags that
-    are no longer supported.
-    """
-    if isinstance(tags, NormalizedTags):
-        return tags
-
-    valid_tags: Dict[str, str] = {}
-    invalid_tag_keys = []
-    for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
-        if not isinstance(value, str):
-            valid = False
-            err_reason = f'Could not JSON encode value "{value}"'
-            str_val = None
-            try:
-                str_val = seven.json.dumps(value)
-                err_reason = f'JSON encoding "{str_val}" of value "{value}" is not equivalent to original value'
-
-                valid = seven.json.loads(str_val) == value
-            except Exception:
-                pass
-
-            if not valid:
-                raise DagsterInvalidDefinitionError(
-                    f'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
-                    "or meet the constraint that json.loads(json.dumps(value)) == value."
-                )
-
-            valid_tags[key] = str_val  # type: ignore  # (possible none)
-        else:
-            valid_tags[key] = value
-
-        if not is_valid_definition_tag_key(key):
-            invalid_tag_keys.append(key)
-
-    if invalid_tag_keys:
-        invalid_tag_keys_sample = invalid_tag_keys[: min(5, len(invalid_tag_keys))]
-        if warn_on_deprecated_tags:
-            warnings.warn(
-                f"Non-compliant tag keys like {invalid_tag_keys_sample} are deprecated. {VALID_DEFINITION_TAG_KEY_EXPLANATION}",
-                category=DeprecationWarning,
-                stacklevel=warning_stacklevel,
-            )
-
-    if not allow_reserved_tags:
-        check_reserved_tags(valid_tags)
-
-    return NormalizedTags(valid_tags)
-
-
-# Inspired by allowed Kubernetes labels:
-# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-
-# We allow in some cases for users to specify multi-level namespaces for tags,
-# right now we only allow this for the `dagster/kind` namespace, which is how asset kinds are
-# encoded under the hood.
-VALID_NESTED_NAMESPACES_TAG_KEYS = r"dagster/kind/"
-VALID_DEFINITION_TAG_KEY_REGEX_STR = (
-    r"^([A-Za-z0-9_.-]{1,63}/|" + VALID_NESTED_NAMESPACES_TAG_KEYS + r")?[A-Za-z0-9_.-]{1,63}$"
-)
-VALID_DEFINITION_TAG_KEY_REGEX = re.compile(VALID_DEFINITION_TAG_KEY_REGEX_STR)
-VALID_DEFINITION_TAG_KEY_EXPLANATION = (
-    "Allowed characters: alpha-numeric, '_', '-', '.'. "
-    "Tag keys can also contain a namespace section, separated by a '/'. Each section "
-    "must have <= 63 characters."
-)
-
-VALID_DEFINITION_TAG_VALUE_REGEX_STR = r"^[A-Za-z0-9_.-]{0,63}$"
-VALID_DEFINITION_TAG_VALUE_REGEX = re.compile(VALID_DEFINITION_TAG_VALUE_REGEX_STR)
-
-
-def is_valid_definition_tag_key(key: str) -> bool:
-    return bool(VALID_DEFINITION_TAG_KEY_REGEX.match(key))
-
-
-def is_valid_definition_tag_value(key: str) -> bool:
-    return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
-
-
-def validate_tags_strict(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    if tags is None:
-        return tags
-
-    for key, value in tags.items():
-        validate_tag_strict(key, value)
-
-    return tags
-
-
-def validate_tag_strict(key: str, value: str) -> None:
-    if not isinstance(key, str):
-        raise DagsterInvalidDefinitionError("Tag keys must be strings")
-
-    if not isinstance(value, str):
-        raise DagsterInvalidDefinitionError("Tag values must be strings")
-
-    if not is_valid_definition_tag_key(key):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid tag key: {key}. {VALID_DEFINITION_TAG_KEY_EXPLANATION}"
-        )
-
-    if not is_valid_definition_tag_value(value):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid tag value: {value}, for key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
-            "Must have <= 63 characters."
-        )
-
-
 def validate_asset_owner(owner: str, key: "AssetKey") -> None:
-    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
+    if not is_valid_asset_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
+
+
+def validate_component_owner(owner: str) -> None:
+    if not is_valid_asset_owner(owner):
+        raise DagsterInvalidDefinitionError(
+            f"Invalid owner '{owner}'. Owner must be an email address or a team "
+            "name prefixed with 'team:'."
+        )
+
+
+def is_valid_asset_owner(owner: str) -> bool:
+    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
+
+
+def is_valid_definition_owner(owner: str) -> bool:
+    """Enhanced owner validation that checks team name characters.
+
+    An owner must be either:
+    - A valid email address
+    - A team name prefixed with 'team:' where the team name contains only valid characters (A-Za-z0-9_)
+    """
+    if is_valid_email(owner):
+        return True
+
+    if owner.startswith("team:") and len(owner) > 5:
+        team_name = owner[5:]  # Remove 'team:' prefix
+        return has_valid_name_chars(team_name)
+
+    return False
+
+
+def validate_definition_owner(owner: str, definition_type: str, definition_name: str) -> None:
+    """Validate that an owner string is properly formatted.
+
+    Args:
+        owner: The owner string to validate
+        definition_type: Type of definition (e.g., "job", "sensor", "schedule") for error messages
+        definition_name: Name of the definition for error messages
+    """
+    if not is_valid_definition_owner(owner):
+        if owner.startswith("team:"):
+            team_name = owner[5:] if len(owner) > 5 else ""
+            if not team_name:
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                    "Team name cannot be empty after 'team:' prefix."
+                )
+            else:
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                    f"Team name '{team_name}' contains invalid characters. "
+                    f"Team names must match regex {VALID_NAME_REGEX_STR}."
+                )
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                "Owner must be an email address or a team name prefixed with 'team:'."
+            )
 
 
 def validate_group_name(group_name: Optional[str]) -> None:
@@ -342,7 +267,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
             f"loaded by file/patterns {config_files}."
         ) from err
 
-    return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
 def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
@@ -367,10 +292,10 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
             f"Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} "
         ) from err
 
-    return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
-def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> Mapping[str, Any]:
+def config_from_pkg_resources(pkg_resource_defs: Sequence[tuple[str, str]]) -> Mapping[str, Any]:
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
@@ -438,3 +363,87 @@ T = TypeVar("T")
 def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
     """Dedupe definitions by reference equality."""
     return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
+
+
+def get_default_automation_condition_sensor(
+    sensors: Sequence["SensorDefinition"],
+    asset_graph: "BaseAssetGraph",
+) -> Optional["SensorDefinition"]:
+    """Given a list of existing sensors, adds an AutomationConditionSensorDefinition with name
+    `default_automation_condition_sensor` that targets all assets/asset_checks that have an
+    automation_condition and are not targeted by an existing AutomationConditionSensorDefinition
+    if any such untargeted assets/asset_checks exist.
+    """
+    from dagster._core.definitions.automation_condition_sensor_definition import (
+        DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+        AutomationConditionSensorDefinition,
+    )
+
+    with disable_dagster_warnings():
+        sensor_selection = get_default_automation_condition_sensor_selection(sensors, asset_graph)
+        if sensor_selection:
+            return AutomationConditionSensorDefinition(
+                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, target=sensor_selection
+            )
+
+    return None
+
+
+def get_default_automation_condition_sensor_selection(
+    sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]], asset_graph: "BaseAssetGraph"
+) -> Optional["AssetSelection"]:
+    from dagster._core.definitions.asset_selection import AssetSelection
+    from dagster._core.definitions.sensor_definition import SensorType
+
+    automation_condition_sensors = sorted(
+        (
+            s
+            for s in sensors
+            if s.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
+        ),
+        key=lambda s: s.name,
+    )
+
+    automation_condition_keys = set()
+    for k in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
+        if asset_graph.get(k).automation_condition is not None:
+            automation_condition_keys.add(k)
+
+    has_auto_observe_keys = False
+    for k in asset_graph.observable_asset_keys:
+        if (
+            # for backcompat, treat auto-observe assets as if they have a condition
+            asset_graph.get(k).automation_condition is not None
+            or asset_graph.get(k).auto_observe_interval_minutes is not None
+        ):
+            has_auto_observe_keys = True
+            automation_condition_keys.add(k)
+
+    # get the set of keys that are handled by an existing sensor
+    covered_keys: set[EntityKey] = set()
+    for sensor in automation_condition_sensors:
+        selection = check.not_none(sensor.asset_selection)
+        covered_keys = covered_keys.union(
+            selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
+        )
+
+    default_sensor_keys = automation_condition_keys - covered_keys
+    if len(default_sensor_keys) > 0:
+        # Use AssetSelection.all if the default sensor is the only sensor - otherwise
+        # enumerate the assets that are not already included in some other
+        # non-default sensor
+        default_sensor_asset_selection = AssetSelection.all(include_sources=has_auto_observe_keys)
+
+        # if there are any asset checks, include checks in the selection
+        if any(isinstance(k, AssetCheckKey) for k in default_sensor_keys):
+            default_sensor_asset_selection |= AssetSelection.all_asset_checks()
+
+        # remove any selections that are already covered
+        for sensor in automation_condition_sensors:
+            default_sensor_asset_selection = default_sensor_asset_selection - check.not_none(
+                sensor.asset_selection
+            )
+        return default_sensor_asset_selection
+    # no additional sensor required
+    else:
+        return None

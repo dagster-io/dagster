@@ -15,20 +15,22 @@ import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphN
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
-import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {gql} from '../apollo-client';
+import {OpGraphSelectionInput} from './OpGraphSelectionInput';
+import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {Route} from '../app/Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';
+import {filterOpSelectionByQuery} from '../op-selection/AntlrOpSelection';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
   preferAssetRendering: boolean;
+  isExternal?: boolean;
 }
 
 interface GraphExplorerProps {
@@ -109,6 +111,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
 
     window.requestAnimationFrame(() => {
       handleAdjustPath((opNames) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
         opNames[opNames.length - 1] = last;
         opNames.push('');
@@ -156,10 +159,12 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     (options.explodeComposites ||
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-  const queryResultOps = useMemo(
-    () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
-    [opsQuery, solids, solidsQueryEnabled],
-  );
+  const queryResultOps = useMemo(() => {
+    if (solidsQueryEnabled) {
+      return filterOpSelectionByQuery(solids, opsQuery);
+    }
+    return filterByQuery(solids, opsQuery);
+  }, [opsQuery, solids, solidsQueryEnabled]);
 
   const highlightedOps = useMemo(
     () => queryResultOps.all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
@@ -193,11 +198,9 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
         <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
             <QueryOverlay>
-              <GraphQueryInput
+              <OpGraphSelectionInput
                 items={solids}
                 value={explorerPath.opsQuery}
-                placeholder="Type an op subset…"
-                popoverPosition="bottom-left"
                 onChange={handleQueryChange}
               />
             </QueryOverlay>
@@ -273,6 +276,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
               onEnterSubgraph={handleEnterCompositeSolid}
               onLeaveSubgraph={handleLeaveCompositeSolid}
               layout={layout}
+              isExternal={options.isExternal}
             />
           )}
         </ErrorBoundary>
@@ -291,6 +295,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
                 onEnterSubgraph={handleEnterCompositeSolid}
                 onClickOp={handleClickOp}
                 repoAddress={repoAddress}
+                isExternal={options.isExternal}
                 {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
               />
             )}

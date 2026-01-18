@@ -2,8 +2,9 @@ import base64
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Mapping, Optional
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
@@ -14,17 +15,14 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.remote_representation import (
-    ExternalJob,
-    ExternalSchedule,
+from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
-)
-from dagster._core.remote_representation.origin import (
     RemoteInstigatorOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id
@@ -46,7 +44,9 @@ def get_test_project_environments_path():
 def get_buildkite_registry_config():
     import boto3
 
-    ecr_client = boto3.client("ecr", region_name="us-west-2")
+    session = boto3.Session()
+
+    ecr_client = session.client("ecr", region_name="us-west-2")
     token = ecr_client.get_authorization_token()
     username, password = (
         base64.b64decode(token["authorizationData"][0]["authorizationToken"])
@@ -72,14 +72,14 @@ def find_local_test_image(docker_image):
             f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
             f"docker rmi {docker_image}"
         )
-    except docker.errors.ImageNotFound:
+    except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
         build_and_tag_test_image(docker_image)
 
 
 def build_and_tag_test_image(tag):
     check.str_param(tag, "tag")
 
-    base_python = "3.11"
+    base_python = "3.12"
 
     # Build and tag local dagster test image
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
@@ -92,7 +92,7 @@ def get_test_project_recon_job(
     filename: Optional[str] = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructableJobForTest(  # type: ignore # ignored for update, fix me!
+    return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
@@ -107,7 +107,7 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         cls,
         reconstructable_job: ReconstructableJob,
     ):
-        return super(ReOriginatedReconstructableJobForTest, cls).__new__(
+        return super().__new__(
             cls,
             reconstructable_job.repository,
             reconstructable_job.job_name,
@@ -135,16 +135,16 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         )
 
 
-class ReOriginatedExternalJobForTest(ExternalJob):
+class ReOriginatedExternalJobForTest(RemoteJob):
     def __init__(
-        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
+        self, remote_job: RemoteJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
-        super(ReOriginatedExternalJobForTest, self).__init__(
-            external_job.external_job_data,
-            external_job.repository_handle,
+        super().__init__(
+            remote_job.job_data_snap,
+            remote_job.repository_handle,
         )
 
     def get_python_origin(self):
@@ -190,16 +190,16 @@ class ReOriginatedExternalJobForTest(ExternalJob):
         )
 
 
-class ReOriginatedExternalScheduleForTest(ExternalSchedule):
+class ReOriginatedExternalScheduleForTest(RemoteSchedule):
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
+        remote_schedule: RemoteSchedule,
         container_image=None,
     ):
         self._container_image = container_image
-        super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,  # noqa: SLF001
-            external_schedule.handle.repository_handle,
+        super().__init__(
+            remote_schedule._schedule_snap,  # noqa: SLF001
+            remote_schedule.handle.repository_handle,
         )
 
     def get_remote_origin(self):
@@ -220,11 +220,11 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         )
 
     @property
-    def selector_id(self):
+    def selector_id(self):  # pyright: ignore[reportIncompatibleVariableOverride]
         """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(
-                "user-code-deployment-1",
+                "user-code-deployment-1",  # pyright: ignore[reportCallIssue]
                 "demo_execution_repo",
                 self.name,
             )
@@ -247,28 +247,26 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
 
 
 @contextmanager
-def get_test_project_external_job_hierarchy(
-    instance, job_name, container_image=None, filename=None
-):
+def get_test_project_remote_job_hierarchy(instance, job_name, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        job = repo.get_full_external_job(job_name)
+        job = repo.get_full_job(job_name)
         yield workspace, location, repo, job
 
 
 @contextmanager
-def get_test_project_external_repo(instance, container_image=None, filename=None):
+def get_test_project_remote_repo(instance, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         yield location, location.get_repository("demo_execution_repo")
 
 
 @contextmanager
-def get_test_project_workspace_and_external_job(
+def get_test_project_workspace_and_remote_job(
     instance, job_name, container_image=None, filename=None
 ):
-    with get_test_project_external_job_hierarchy(instance, job_name, container_image, filename) as (
+    with get_test_project_remote_job_hierarchy(instance, job_name, container_image, filename) as (
         workspace,
         _location,
         _repo,
@@ -278,13 +276,11 @@ def get_test_project_workspace_and_external_job(
 
 
 @contextmanager
-def get_test_project_external_schedule(
-    instance, schedule_name, container_image=None, filename=None
-):
-    with get_test_project_external_repo(
+def get_test_project_remote_schedule(instance, schedule_name, container_image=None, filename=None):
+    with get_test_project_remote_repo(
         instance, container_image=container_image, filename=filename
     ) as (_, repo):
-        yield repo.get_external_schedule(schedule_name)
+        yield repo.get_schedule(schedule_name)
 
 
 def get_test_project_docker_image():
@@ -316,5 +312,5 @@ def get_test_project_docker_image():
         )
 
     final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
-    print("Using Docker image: %s" % final_docker_image)  # noqa: T201
+    print(f"Using Docker image: {final_docker_image}")  # noqa: T201
     return final_docker_image

@@ -1,7 +1,7 @@
 import importlib
 import os
 import tempfile
-from typing import List, Optional
+from typing import Optional
 
 import airflow
 from airflow.models.connection import Connection
@@ -15,6 +15,7 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
+from dagster._annotations import superseded
 
 from dagster_airflow.resources.airflow_db import AirflowDatabase
 from dagster_airflow.utils import (
@@ -37,7 +38,7 @@ class AirflowEphemeralDatabase(AirflowDatabase):
     @staticmethod
     def _initialize_database(
         airflow_home_path: str = os.path.join(tempfile.gettempdir(), "dagster_airflow"),
-        connections: List[Connection] = [],
+        connections: list[Connection] = [],
     ):
         os.environ["AIRFLOW_HOME"] = airflow_home_path
         os.makedirs(airflow_home_path, exist_ok=True)
@@ -68,8 +69,14 @@ class AirflowEphemeralDatabase(AirflowDatabase):
         )
 
 
+@superseded(
+    additional_warn_text=(
+        "`make_ephemeral_airflow_db_resource` has been superseded "
+        "by the functionality in the `dagster-airlift` library."
+    )
+)
 def make_ephemeral_airflow_db_resource(
-    connections: List[Connection] = [], dag_run_config: Optional[dict] = None
+    connections: list[Connection] = [], dag_run_config: Optional[dict] = None
 ) -> ResourceDefinition:
     """Creates a Dagster resource that provides an ephemeral Airflow database.
 

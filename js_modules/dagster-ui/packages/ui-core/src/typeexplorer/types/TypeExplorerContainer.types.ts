@@ -103,6 +103,12 @@ export type TypeExplorerContainerQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -137,6 +143,7 @@ export type TypeExplorerContainerQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -159,6 +166,7 @@ export type TypeExplorerContainerQuery = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -1298,4 +1306,4 @@ export type TypeExplorerContainerQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const TypeExplorerContainerQueryVersion = '5d2f11df92b7138d1d4415354615f4329ccb84bbc4b0a5c98bb3f5e56f0c694b';
+export const TypeExplorerContainerQueryVersion = '40bdf55720a8542ddb727910ef82280a8e8e2300d3cc1fb9df11a7d8d957ee06';

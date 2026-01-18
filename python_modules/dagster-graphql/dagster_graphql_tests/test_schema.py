@@ -35,9 +35,9 @@ def test_schema_type_names_without_graphene(runner):
         for graphql_type in graphql_schema_types
         if "Graphene".casefold() in graphql_type["name"].casefold()
     ]
-    assert (
-        not violations
-    ), f"'Graphene' cannot be included in the GraphQL type name. Violating types: {violations}."
+    assert not violations, (
+        f"'Graphene' cannot be included in the GraphQL type name. Violating types: {violations}."
+    )
 
 
 def test_schema_types_have_descriptions(runner):
@@ -76,9 +76,9 @@ def test_schema_types_have_descriptions(runner):
         for graphql_type in filtered_graphql_schema_types
         if not graphql_type["description"]
     ]
-    assert (
-        not violations
-    ), f"Descriptions must be included in the GraphQL types. Violating types: {violations}."
+    assert not violations, (
+        f"Descriptions must be included in the GraphQL types. Violating types: {violations}."
+    )
 
     enum_violations = [
         f"{graphql_type['name']}.{enum_value['name']}"

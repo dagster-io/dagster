@@ -10,11 +10,12 @@ import {
   StaleStatus,
   buildAsset,
   buildAssetChecks,
-  buildAssetConnection,
   buildAssetFreshnessInfo,
   buildAssetKey,
   buildAssetLatestInfo,
   buildAssetNode,
+  buildAssetRecord,
+  buildAssetRecordConnection,
   buildFreshnessPolicy,
   buildMaterializationEvent,
   buildObservationEvent,
@@ -30,13 +31,13 @@ import {
   SingleNonSdaAssetQuery,
   SingleNonSdaAssetQueryVariables,
 } from '../../workspace/types/VirtualizedAssetRow.types';
-import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
+import {ASSET_CATALOG_GROUP_TABLE_QUERY} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableQuery,
   AssetCatalogGroupTableQueryVariables,
-  AssetCatalogTableQuery,
-  AssetCatalogTableQueryVariables,
 } from '../types/AssetsCatalogTable.types';
+import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
+import {ASSET_RECORDS_QUERY} from '../useAllAssets';
 
 export const AssetCatalogGroupTableMock = buildQueryMock<
   AssetCatalogGroupTableQuery,
@@ -141,10 +142,9 @@ export const SingleAssetQueryMaterializedStaleAndLate = buildQueryMock<
         opNames: ['late_asset'],
         repository,
         partitionStats: null,
-        assetKey: {
+        assetKey: buildAssetKey({
           path: ['late_asset'],
-          __typename: 'AssetKey',
-        },
+        }),
         assetChecksOrError: buildAssetChecks(),
         assetMaterializations: [
           buildMaterializationEvent({
@@ -247,7 +247,9 @@ export const AssetCatalogTableMockAssets: Asset[] = [
     key: buildAssetKey({path: ['good_asset']}),
     definition: buildAssetNode({
       id: 'test.py.repo.["good_asset"]',
+      assetKey: buildAssetKey({path: ['good_asset']}),
       groupName: 'GROUP2',
+      isExecutable: true,
       partitionDefinition: null,
       hasMaterializePermission: true,
       computeKind: 'snowflake',
@@ -261,6 +263,7 @@ export const AssetCatalogTableMockAssets: Asset[] = [
     key: buildAssetKey({path: ['late_asset']}),
     definition: buildAssetNode({
       id: 'test.py.repo.["late_asset"]',
+      assetKey: buildAssetKey({path: ['late_asset']}),
       groupName: 'GROUP2',
       partitionDefinition: null,
       freshnessPolicy: buildFreshnessPolicy({
@@ -269,6 +272,7 @@ export const AssetCatalogTableMockAssets: Asset[] = [
         cronScheduleTimezone: null,
       }),
       hasMaterializePermission: true,
+      isExecutable: true,
       computeKind: null,
       description: null,
       repository,
@@ -279,6 +283,7 @@ export const AssetCatalogTableMockAssets: Asset[] = [
     key: buildAssetKey({path: ['run_failing_asset']}),
     definition: buildAssetNode({
       id: 'test.py.repo.["run_failing_asset"]',
+      assetKey: buildAssetKey({path: ['run_failing_asset']}),
       groupName: 'GROUP4',
       partitionDefinition: buildPartitionDefinition({
         description:
@@ -295,6 +300,9 @@ export const AssetCatalogTableMockAssets: Asset[] = [
     key: buildAssetKey({path: ['asset_with_a_very_long_key_that_will_require_truncation']}),
     definition: buildAssetNode({
       id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
+      assetKey: buildAssetKey({
+        path: ['asset_with_a_very_long_key_that_will_require_truncation'],
+      }),
       groupName: 'GROUP4',
       partitionDefinition: null,
       description: 'This one should be in a loading state to demo that view',
@@ -305,15 +313,17 @@ export const AssetCatalogTableMockAssets: Asset[] = [
   }),
 ];
 
-export const AssetCatalogTableMock = buildQueryMock<
-  AssetCatalogTableQuery,
-  AssetCatalogTableQueryVariables
->({
-  query: ASSET_CATALOG_TABLE_QUERY,
+export const AssetCatalogTableMock = buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
+  query: ASSET_RECORDS_QUERY,
   variableMatcher: () => true,
   data: {
-    assetsOrError: buildAssetConnection({
-      nodes: AssetCatalogTableMockAssets,
+    assetRecordsOrError: buildAssetRecordConnection({
+      assets: AssetCatalogTableMockAssets.map((asset) =>
+        buildAssetRecord({
+          id: asset.id,
+          key: asset.key,
+        }),
+      ),
     }),
   },
 });

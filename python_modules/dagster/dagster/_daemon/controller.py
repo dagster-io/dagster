@@ -4,9 +4,10 @@ import sys
 import threading
 import time
 import uuid
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from types import TracebackType
-from typing import Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Type
+from typing import Optional
 
 from typing_extensions import Self
 
@@ -24,8 +25,10 @@ from dagster._daemon.daemon import (
     SchedulerDaemon,
     SensorDaemon,
 )
+from dagster._daemon.freshness import FreshnessDaemon
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
@@ -73,8 +76,10 @@ def create_daemon_grpc_server_registry(
 ) -> GrpcServerRegistry:
     return GrpcServerRegistry(
         instance_ref=instance.get_ref(),
+        server_command=GrpcServerCommand.API_GRPC,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
+        additional_timeout_msg=INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
         log_level=code_server_log_level,
         wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
     )
@@ -128,16 +133,16 @@ def daemon_controller_from_instance(
 
 class DagsterDaemonController(AbstractContextManager):
     _daemon_uuid: str
-    _daemons: Dict[str, DagsterDaemon]
+    _daemons: dict[str, DagsterDaemon]
     _grpc_server_registry: Optional[GrpcServerRegistry]
-    _daemon_threads: Dict[str, threading.Thread]
+    _daemon_threads: dict[str, threading.Thread]
     _workspace_process_context: IWorkspaceProcessContext
     _instance: DagsterInstance
     _heartbeat_interval_seconds: float
     _heartbeat_tolerance_seconds: float
     _daemon_shutdown_event: threading.Event
     _logger: logging.Logger
-    _last_healthy_heartbeat_times: Dict[str, float]
+    _last_healthy_heartbeat_times: dict[str, float]
     _start_time: datetime.datetime
 
     def __init__(
@@ -316,9 +321,9 @@ class DagsterDaemonController(AbstractContextManager):
                 self.check_daemon_heartbeats()
                 last_heartbeat_check_time = get_current_timestamp()
 
-    def __exit__(
+    def __exit__(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        exception_type: Type[BaseException],
+        exception_type: type[BaseException],
         exception_value: Exception,
         traceback: TracebackType,
     ) -> None:
@@ -360,7 +365,7 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
             interval_seconds=instance.run_coordinator.dequeue_interval_seconds  # type: ignore  # (??)
         )
     elif daemon_type == BackfillDaemon.daemon_type():
-        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+        return BackfillDaemon(settings=instance.get_backfill_settings())
     elif daemon_type == MonitoringDaemon.daemon_type():
         return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     elif daemon_type == EventLogConsumerDaemon.daemon_type():
@@ -374,6 +379,8 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
                 else DEFAULT_DAEMON_INTERVAL_SECONDS
             ),
         )
+    elif daemon_type == FreshnessDaemon.daemon_type():
+        return FreshnessDaemon()
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 
@@ -427,7 +434,7 @@ def get_daemon_statuses(
         curr_time_seconds, "curr_time_seconds", default=get_current_timestamp()
     )
 
-    daemon_statuses_by_type: Dict[str, DaemonStatus] = {}
+    daemon_statuses_by_type: dict[str, DaemonStatus] = {}
     heartbeats = instance.get_daemon_heartbeats()
 
     for daemon_type in daemon_types:

@@ -1,4 +1,3 @@
-import _thread as thread
 import contextlib
 import contextvars
 import datetime
@@ -16,49 +15,48 @@ import tempfile
 import threading
 import time
 import uuid
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from datetime import timezone
 from enum import Enum
 from pathlib import Path
 from signal import Signals
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Callable,
     ContextManager,
-    Dict,
-    Generator,
+    Dict,  # noqa: F401
     Generic,
-    Hashable,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
+    List,  # noqa: F401
+    Literal,
     NamedTuple,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
+    Set,  # noqa: F401
+    Tuple,  # noqa: F401
+    Type,  # noqa: F401
+    TypeAlias,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
     overload,
 )
 
-import packaging.version
+import dagster_shared.seven as seven
+from dagster_shared.ipc import send_interrupt as send_interrupt
+from dagster_shared.libraries import (
+    library_version_from_core_version as library_version_from_core_version,
+    parse_package_version as parse_package_version,
+)
+from dagster_shared.utils import find_free_port as find_free_port
+from dagster_shared.utils.hash import (
+    hash_collection as hash_collection,
+    make_hashable as make_hashable,
+)
 from filelock import FileLock
-from pydantic import BaseModel
-from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
-
-if sys.version_info > (3,):
-    from pathlib import Path
-else:
-    from pathlib2 import Path
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -102,34 +100,6 @@ def check_for_debug_crash(
     os.kill(os.getpid(), kill_signal_or_exception)
     time.sleep(10)
     raise Exception("Process didn't terminate after sending crash signal")
-
-
-# Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
-# version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
-def library_version_from_core_version(core_version: str) -> str:
-    parsed_version = parse_package_version(core_version)
-
-    release = parsed_version.release
-    if release[0] >= 1:
-        library_version = ".".join(["0", str(16 + release[1]), str(release[2])])
-
-        if parsed_version.is_prerelease:
-            library_version = library_version + "".join(
-                [str(pre) for pre in check.not_none(parsed_version.pre)]
-            )
-
-        if parsed_version.is_postrelease:
-            library_version = library_version + "post" + str(parsed_version.post)
-
-        return library_version
-    else:
-        return core_version
-
-
-def parse_package_version(version_str: str) -> packaging.version.Version:
-    parsed_version = packaging.version.parse(version_str)
-    assert isinstance(parsed_version, packaging.version.Version)
-    return parsed_version
 
 
 def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]) -> str:
@@ -201,7 +171,15 @@ def camelcase(string: str) -> str:
     )
 
 
-def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
+def snakecase(string: str) -> str:
+    # Add an underscore before capital letters and lower the case
+    string = re.sub(r"(?<!^)(?=[A-Z])", "_", string).lower()
+    # Replace any non-alphanumeric characters with underscores
+    string = re.sub(r"[^a-z0-9_]", "_", string)
+    return string
+
+
+def ensure_single_item(ddict: Mapping[T, U]) -> tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
     return next(iter(ddict.items()))
@@ -241,62 +219,6 @@ def mkdir_p(path: str) -> str:
             return path
         else:
             raise
-
-
-def hash_collection(
-    collection: Union[
-        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
-    ],
-) -> int:
-    """Hash a mutable collection or immutable collection containing mutable elements.
-
-    This is useful for hashing Dagster-specific NamedTuples that contain mutable lists or dicts.
-    The default NamedTuple __hash__ function assumes the contents of the NamedTuple are themselves
-    hashable, and will throw an error if they are not. This can occur when trying to e.g. compute a
-    cache key for the tuple for use with `lru_cache`.
-
-    This alternative implementation will recursively process collection elements to convert basic
-    lists and dicts to tuples prior to hashing. It is recommended to cache the result:
-
-    Example:
-        .. code-block:: python
-
-            def __hash__(self):
-                if not hasattr(self, '_hash'):
-                    self._hash = hash_named_tuple(self)
-                return self._hash
-    """
-    assert isinstance(
-        collection, (list, dict, set, tuple)
-    ), f"Cannot hash collection of type {type(collection)}"
-    return hash(make_hashable(collection))
-
-
-@overload
-def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]: ...
-
-
-@overload
-def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]: ...
-
-
-@overload
-def make_hashable(value: Any) -> Any: ...
-
-
-def make_hashable(value: Any) -> Any:
-    from dagster._record import as_dict, is_record
-
-    if isinstance(value, dict):
-        return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
-    elif is_record(value):
-        return tuple(make_hashable(value) for value in as_dict(value).values())
-    elif isinstance(value, (list, tuple, set)):
-        return tuple([make_hashable(x) for x in value])
-    elif isinstance(value, BaseModel):
-        return make_hashable(value.dict())
-    else:
-        return value
 
 
 def get_prop_or_key(elem: object, key: str) -> object:
@@ -396,7 +318,7 @@ def ensure_gen(
     thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
-        thing_or_gen = cast(T, thing_or_gen)
+        thing_or_gen = cast("T", thing_or_gen)
 
         def _gen_thing():
             yield thing_or_gen
@@ -436,16 +358,6 @@ def _termination_handler(
     if not is_done_event.is_set():
         # if we should stop but are not yet done, interrupt the MainThread
         send_interrupt()
-
-
-def send_interrupt() -> None:
-    if seven.IS_WINDOWS:
-        # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
-        # interrupt things like sleep()
-        thread.interrupt_main()
-    else:
-        # If on unix send an os level signal to interrupt any situation we may be stuck in
-        os.kill(os.getpid(), signal.SIGINT)
 
 
 # Function to be invoked by daemon thread in processes which seek to be cancellable.
@@ -506,11 +418,11 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
     def __init__(
         self,
         generator: Iterator[Union["DagsterEvent", T_GeneratedContext]],
-        object_cls: Type[T_GeneratedContext],
+        object_cls: type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
+        self.object_cls: type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
         self.object: Optional[T_GeneratedContext] = None
         self.did_setup = False
@@ -537,7 +449,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
     def get_object(self) -> T_GeneratedContext:
         if not self.did_setup:
             check.failed("Called `get_object` before `generate_setup_events`")
-        return cast(T_GeneratedContext, self.object)
+        return cast("T_GeneratedContext", self.object)
 
     def generate_teardown_events(self) -> Iterator["DagsterEvent"]:
         self.did_teardown = True
@@ -563,13 +475,6 @@ def segfault() -> None:
     ctypes.string_at(0)
 
 
-def find_free_port() -> int:
-    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
-
-
 def is_port_in_use(host, port) -> bool:
     # Similar to the socket options that uvicorn uses to bind ports:
     # https://github.com/encode/uvicorn/blob/62f19c1c39929c84968712c371c9b7b96a041dec/uvicorn/config.py#L565-L566
@@ -578,7 +483,7 @@ def is_port_in_use(host, port) -> bool:
     try:
         sock.bind((host, port))
         return False
-    except socket.error as e:
+    except OSError as e:
         return e.errno == errno.EADDRINUSE
     finally:
         sock.close()
@@ -653,7 +558,7 @@ def compose(*args: Callable[[object], object]) -> Callable[[object], object]:
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
 
 
-def dict_without_keys(ddict: Mapping[K, V], *keys: K) -> Dict[K, V]:
+def dict_without_keys(ddict: Mapping[K, V], *keys: K) -> dict[K, V]:
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
@@ -661,7 +566,7 @@ class Counter:
     def __init__(self):
         self._lock = threading.Lock()
         self._counts = {}
-        super(Counter, self).__init__()
+        super().__init__()
 
     def increment(self, key: str) -> None:
         with self._lock:
@@ -692,7 +597,7 @@ def traced(func: T_Callable) -> T_Callable:
 
         return func(*args, **kwargs)
 
-    return cast(T_Callable, inner)
+    return cast("T_Callable", inner)
 
 
 def get_terminate_signal() -> signal.Signals:
@@ -731,7 +636,7 @@ def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
     return isinstance(obj, tuple) and hasattr(obj, "_fields")
 
 
-def is_named_tuple_subclass(klass: Type[object]) -> TypeGuard[Type[NamedTuple]]:
+def is_named_tuple_subclass(klass: type[object]) -> TypeGuard[type[NamedTuple]]:
     return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
 
 
@@ -784,7 +689,7 @@ def xor(a: object, b: object) -> bool:
 
 
 def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
-    with open(path_or_fd, "r") as output_stream:
+    with open(path_or_fd) as output_stream:
         while True:
             line = output_stream.readline()
             if line:
@@ -836,3 +741,13 @@ def run_with_concurrent_update_guard(
             return
         update_fn(**kwargs)
         return
+
+
+def return_as_list(func: Callable[..., Iterable[T]]) -> Callable[..., list[T]]:
+    """A decorator that returns a list from the output of a function."""
+
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        return list(func(*args, **kwargs))
+
+    return inner

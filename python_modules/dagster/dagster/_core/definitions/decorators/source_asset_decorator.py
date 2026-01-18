@@ -1,10 +1,14 @@
-from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import experimental
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._annotations import beta, beta_param, hidden_param, public
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.asset_decorator import (
     resolve_asset_key_and_name_for_decorator,
 )
@@ -14,13 +18,13 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     create_check_specs_by_output_name,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
-from dagster._core.definitions.utils import validate_tags_strict
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 
@@ -43,13 +47,27 @@ def observable_source_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> "_ObservableSourceAsset": ...
 
 
-@experimental
+@beta_param(param="io_manager_def")
+@beta_param(param="resource_defs")
+@hidden_param(
+    param="auto_observe_interval_minutes",
+    breaking_version="1.10.0",
+    additional_warn_text="use `automation_condition` instead.",
+)
+@hidden_param(
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
+    additional_warn_text="use freshness checks instead.",
+)
+@public
+@beta
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
     *,
@@ -64,10 +82,10 @@ def observable_source_asset(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    auto_observe_interval_minutes: Optional[float] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
+    **kwargs,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
 
@@ -87,28 +105,26 @@ def observable_source_asset(
         metadata (Mapping[str, RawMetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the source asset when it's used as an input to other assets inside a job.
-        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
+        io_manager_def (Optional[IOManagerDefinition]): (Beta) The definition of the IOManager that will be used to load the contents of
             the source asset when it's used as an input to other assets inside a job.
         description (Optional[str]): The description of the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         required_resource_keys (Optional[Set[str]]): Set of resource keys required by the observe op.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Beta) resource
             definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in
             the `io_manager_def` argument.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
-            of the observation function for this asset will be launched at this interval.
-        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
-            with respect to its root data.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+        observe_fn (Optional[SourceAssetObserveFunction]): Observation function for the source asset.
+        automation_condition (Optional[AutomationCondition]): A condition describing when Dagster
+            should materialize this asset.
     """
     if observe_fn is not None:
         return _ObservableSourceAsset()(observe_fn)
@@ -125,10 +141,11 @@ def observable_source_asset(
         required_resource_keys,
         resource_defs,
         partitions_def,
-        auto_observe_interval_minutes,
-        freshness_policy,
+        kwargs.get("auto_observe_interval_minutes"),
+        kwargs.get("legacy_freshness_policy"),
+        automation_condition,
         op_tags,
-        tags=validate_tags_strict(tags),
+        tags=normalize_tags(tags, strict=True),
     )
 
 
@@ -147,7 +164,8 @@ class _ObservableSourceAsset:
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         op_tags: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
@@ -167,7 +185,8 @@ class _ObservableSourceAsset:
         self.resource_defs = resource_defs
         self.partitions_def = partitions_def
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
-        self.freshness_policy = freshness_policy
+        self.legacy_freshness_policy = legacy_freshness_policy
+        self.automation_condition = automation_condition
         self.op_tags = op_tags
         self.tags = tags
 
@@ -203,12 +222,15 @@ class _ObservableSourceAsset:
                 op_tags=self.op_tags,
                 partitions_def=self.partitions_def,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
-                freshness_policy=self.freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
+                automation_condition=self.automation_condition,
                 tags=self.tags,
             )
 
 
-@experimental
+@beta_param(param="resource_defs")
+@public
+@beta
 def multi_observable_source_asset(
     *,
     specs: Sequence[AssetSpec],
@@ -216,7 +238,7 @@ def multi_observable_source_asset(
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     can_subset: bool = False,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     group_name: Optional[str] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -232,14 +254,14 @@ def multi_observable_source_asset(
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
-            (Experimental) A mapping of resource keys to resources. These resources
+            (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
-        specs (Optional[Sequence[AssetSpec]]): (Experimental) The specifications for the assets
+        specs (Optional[Sequence[AssetSpec]]): The specifications for the assets
             observed by this function.
-        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+        check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after observing the assets.
 
     Examples:
@@ -258,7 +280,7 @@ def multi_observable_source_asset(
     args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
         op_description=description,
-        specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
+        specs=check.opt_sequence_param(specs, "specs", of_type=AssetSpec),
         check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
         asset_out_map={},
         upstream_asset_deps=None,
@@ -284,6 +306,8 @@ def multi_observable_source_asset(
         backfill_policy=None,
         decorator_name="@multi_observable_source_asset",
         execution_type=AssetExecutionType.OBSERVATION,
+        pool=None,
+        hooks=None,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

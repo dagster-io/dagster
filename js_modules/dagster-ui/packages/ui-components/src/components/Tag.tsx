@@ -1,15 +1,12 @@
-// eslint-disable-next-line no-restricted-imports
-import {Tag as BlueprintTag} from '@blueprintjs/core';
-import * as React from 'react';
+import {ReactNode, memo} from 'react';
 
-import {BaseTag} from './BaseTag';
+import {BaseTag, BaseTagProps} from './BaseTag';
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
+import {Intent} from './Intent';
 import {Spinner} from './Spinner';
 
-export type TagIntent = React.ComponentProps<typeof BlueprintTag>['intent'];
-
-const intentToFillColor = (intent: TagIntent) => {
+const intentToFillColor = (intent: Intent) => {
   switch (intent) {
     case 'primary':
       return Colors.backgroundBlue();
@@ -25,7 +22,7 @@ const intentToFillColor = (intent: TagIntent) => {
   }
 };
 
-const intentToTextColor = (intent: TagIntent) => {
+const intentToTextColor = (intent: Intent) => {
   switch (intent) {
     case 'primary':
       return Colors.textBlue();
@@ -41,7 +38,7 @@ const intentToTextColor = (intent: TagIntent) => {
   }
 };
 
-const intentToIconColor = (intent: TagIntent) => {
+const intentToIconColor = (intent: Intent) => {
   switch (intent) {
     case 'primary':
       return Colors.accentBlue();
@@ -57,27 +54,31 @@ const intentToIconColor = (intent: TagIntent) => {
   }
 };
 
-interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' | 'rightIcon'> {
-  children?: React.ReactNode;
-  icon?: IconName | 'spinner';
-  rightIcon?: IconName | 'spinner';
-  tooltipText?: string;
-}
-
 interface IconOrSpinnerProps {
   icon: IconName | 'spinner' | null;
   color: string;
 }
 
-const IconOrSpinner = React.memo(({icon, color}: IconOrSpinnerProps) => {
+const IconOrSpinner = memo(({icon, color}: IconOrSpinnerProps) => {
   if (icon === 'spinner') {
     return <Spinner fillColor={color} purpose="body-text" />;
   }
   return icon ? <Icon name={icon} color={color} /> : null;
 });
 
+IconOrSpinner.displayName = 'IconOrSpinner';
+
+interface Props extends Omit<BaseTagProps, 'label' | 'icon' | 'rightIcon'> {
+  children?: ReactNode;
+  intent?: Intent;
+  icon?: IconName | 'spinner';
+  rightIcon?: IconName | 'spinner';
+  tooltipText?: string;
+  disabled?: boolean;
+}
+
 export const Tag = (props: Props) => {
-  const {children, icon = null, rightIcon = null, intent, ...rest} = props;
+  const {children, icon = null, rightIcon = null, intent = 'none', ...rest} = props;
 
   const fillColor = intentToFillColor(intent);
   const textColor = intentToTextColor(intent);

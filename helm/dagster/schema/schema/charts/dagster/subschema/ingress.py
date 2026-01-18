@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -30,8 +30,8 @@ class WebserverIngressConfiguration(BaseModel):
     path: str
     pathType: IngressPathType
     tls: IngressTLSConfiguration
-    precedingPaths: List[IngressPath]
-    succeedingPaths: List[IngressPath]
+    precedingPaths: list[IngressPath]
+    succeedingPaths: list[IngressPath]
 
 
 class FlowerIngressConfiguration(BaseModel):
@@ -39,13 +39,17 @@ class FlowerIngressConfiguration(BaseModel):
     path: str
     pathType: IngressPathType
     tls: IngressTLSConfiguration
-    precedingPaths: List[IngressPath]
-    succeedingPaths: List[IngressPath]
+    precedingPaths: list[IngressPath]
+    succeedingPaths: list[IngressPath]
 
 
-class Ingress(BaseModel):
+# We have `extra="allow"` here to support passing `dagit` as an alias for `dagsterWebserver` when
+# constructing without validation. This can be removed in 2.0 since we will no longer support the
+# dagit alias. It is possible there is a better way to do this using Pydantic field aliases, but the
+# current solution does work.
+class Ingress(BaseModel, extra="allow"):
     enabled: bool
-    apiVersion: Optional[str]
+    apiVersion: Optional[str] = None
     labels: kubernetes.Labels
     annotations: kubernetes.Annotations
     flower: FlowerIngressConfiguration

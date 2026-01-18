@@ -82,7 +82,7 @@ export const HourCycleSelect = () => {
           <MenuItem
             active={props.modifiers.active}
             onClick={props.handleClick}
-            label={item.label}
+            right={item.label}
             key={item.key}
             text={item.text}
             style={{width: '300px'}}

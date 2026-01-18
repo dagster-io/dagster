@@ -1,7 +1,7 @@
 import inspect
 import json
 import textwrap
-from typing import Any, List, Type, Union, cast
+from typing import Any, Union, cast
 
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
@@ -21,7 +21,6 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
-
 from sphinx.ext.autodoc import DataDocumenter
 
 
@@ -41,13 +40,13 @@ def type_repr(config_type: ConfigType) -> str:
     elif config_type.kind == ConfigTypeKind.ANY:
         return "Any"
     elif config_type.kind == ConfigTypeKind.SCALAR:
-        config_type = cast(ConfigScalar, config_type)
+        config_type = cast("ConfigScalar", config_type)
         return config_type.scalar_kind.name.lower()
     elif config_type.kind == ConfigTypeKind.ENUM:
-        config_type = cast(Enum, config_type)
+        config_type = cast("Enum", config_type)
         return "Enum{" + ", ".join(str(val) for val in config_type.config_values) + "}"
     elif config_type.kind == ConfigTypeKind.ARRAY:
-        config_type = cast(Array, config_type)
+        config_type = cast("Array", config_type)
         return f"List[{type_repr(config_type.inner_type)}]"
     elif config_type.kind == ConfigTypeKind.SELECTOR:
         return "selector"
@@ -58,18 +57,18 @@ def type_repr(config_type: ConfigType) -> str:
     elif config_type.kind == ConfigTypeKind.MAP:
         return "dict"
     elif config_type.kind == ConfigTypeKind.SCALAR_UNION:
-        config_type = cast(ScalarUnion, config_type)
+        config_type = cast("ScalarUnion", config_type)
         return (
             f"Union[{type_repr(config_type.scalar_type)}, {type_repr(config_type.non_scalar_type)}]"
         )
     elif config_type.kind == ConfigTypeKind.NONEABLE:
-        config_type = cast(Noneable, config_type)
+        config_type = cast("Noneable", config_type)
         return f"Union[{type_repr(config_type.inner_type)}, None]"
     else:
         raise Exception(f"Unhandled config type {config_type}")
 
 
-def config_field_to_lines(field, name=None) -> List[str]:
+def config_field_to_lines(field, name=None) -> list[str]:
     """Given a config field, turn it into a list of lines to add to the documentation."""
     lines = [""]
 
@@ -121,13 +120,11 @@ class ConfigurableDocumenter(DataDocumenter):
     directivetype = "data"
 
     @classmethod
-    def can_document_member(
+    def can_document_member(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, member: Any, _membername: str, _isattr: bool, _parent: Any
     ) -> bool:
-        return (
-            isinstance(member, ConfigurableDefinition)
-            or isinstance(member, type)
-            and issubclass(member, ConfigurableClass)
+        return isinstance(member, ConfigurableDefinition) or (
+            isinstance(member, type) and issubclass(member, ConfigurableClass)
         )
 
     def add_content(self, more_content) -> None:
@@ -144,7 +141,7 @@ class ConfigurableDocumenter(DataDocumenter):
             obj = self.object
 
         obj = cast(
-            Union[ConfigurableDefinition, Type[ConfigurableClass], ConfigurableResource], obj
+            "Union[ConfigurableDefinition, type[ConfigurableClass], ConfigurableResource]", obj
         )
 
         config_field = None

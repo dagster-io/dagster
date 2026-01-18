@@ -1,0 +1,54 @@
+from pathlib import Path
+
+from setuptools import find_packages, setup
+
+
+def get_version() -> str:
+    version: dict[str, str] = {}
+    with open(Path(__file__).parent / "create_dagster/version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
+
+    return version["__version__"]
+
+
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
+setup(
+    name="create-dagster",
+    version=get_version(),
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
+    license="Apache-2.0",
+    description="CLI for creating a new dg project or workspace.",
+    url=(
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/create-dagster"
+    ),
+    classifiers=[
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+    ],
+    packages=find_packages(exclude=["create_dagster_tests*"]),
+    include_package_data=True,
+    install_requires=[
+        f"dagster-dg-core{pin}",
+    ],
+    extras_require={
+        "test": [
+            "pytest",
+            "flaky",
+            "psutil",
+        ],
+    },
+    zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "create-dagster = create_dagster.cli:main",
+        ]
+    },
+)

@@ -1,5 +1,16 @@
 import operator
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generic, NamedTuple, TypeVar, Union
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Generic,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import Self
 
@@ -10,7 +21,10 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
 )
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -46,6 +60,10 @@ class EntitySubset(Generic[T_EntityKey]):
     @property
     def key(self) -> T_EntityKey:
         return self._key
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self._asset_graph_view.asset_graph.get(self._key).partitions_def
 
     def convert_to_serializable_subset(self) -> SerializableEntitySubset[T_EntityKey]:
         return SerializableEntitySubset(key=self._key, value=self._value)
@@ -105,8 +123,10 @@ class EntitySubset(Generic[T_EntityKey]):
         return self._asset_graph_view.compute_child_subset(child_key, self)
 
     @cached_method
-    def compute_mapped_subset(self, to_key: U_EntityKey) -> "EntitySubset[U_EntityKey]":
-        return self._asset_graph_view.compute_mapped_subset(to_key, self)
+    def compute_mapped_subset(
+        self, to_key: U_EntityKey, direction: Literal["up", "down"]
+    ) -> "EntitySubset[U_EntityKey]":
+        return self._asset_graph_view.compute_mapped_subset(to_key, self, direction=direction)
 
     @property
     def size(self) -> int:

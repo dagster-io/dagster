@@ -1,5 +1,6 @@
 import sys
-from typing import Any, Dict, List, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster._config.config_type import ConfigType, ConfigTypeKind
@@ -9,8 +10,8 @@ from dagster._config.errors import (
     create_failed_post_processing_error,
 )
 from dagster._config.evaluate_value_result import EvaluateValueResult
-from dagster._config.stack import EvaluationStack
-from dagster._config.traversal_context import TraversalContext, TraversalType
+from dagster._config.stack import EvaluationStackRoot
+from dagster._config.traversal_context import TraversalContext
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -18,8 +19,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
-        stack=EvaluationStack(entries=[]),
-        traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS,
+        stack=EvaluationStackRoot(),
+        do_post_process=True,
     )
     return _recursively_process_config(ctx, config_value)
 
@@ -27,8 +28,8 @@ def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateV
 def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
-        stack=EvaluationStack(entries=[]),
-        traversal_type=TraversalType.RESOLVE_DEFAULTS,
+        stack=EvaluationStackRoot(),
+        do_post_process=False,
     )
 
     return _recursively_process_config(ctx, config_value)
@@ -143,7 +144,7 @@ def _recurse_in_to_shape(
 
     fields = context.config_type.fields  # type: ignore
 
-    field_aliases: Dict[str, str] = check.opt_dict_param(
+    field_aliases: dict[str, str] = check.opt_dict_param(
         getattr(context.config_type, "field_aliases", None),
         "field_aliases",
         key_type=str,
@@ -182,17 +183,18 @@ def _recurse_in_to_shape(
         for extra_field in extra_fields:
             processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
 
-    errors: List[EvaluationError] = []
-    for result in processed_fields.values():
+    errors: list[EvaluationError] = []
+    value = {}
+    for key, result in processed_fields.items():
         if not result.success:
             errors.extend(check.not_none(result.errors))
+        else:
+            value[key] = result.value
 
     if errors:
         return EvaluateValueResult.for_errors(errors)
 
-    return EvaluateValueResult.for_value(
-        {key: result.value for key, result in processed_fields.items()}
-    )
+    return EvaluateValueResult.for_value(value)
 
 
 def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
@@ -202,7 +204,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         return EvaluateValueResult.for_value([])
 
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
-        if any((cv is None for cv in config_value)):
+        if any(cv is None for cv in config_value):
             check.failed("Null array member not caught in validation")
 
     results = [
@@ -210,7 +212,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         for idx, item in enumerate(config_value)
     ]
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
     for result in results:
         if not result.success:
             errors.extend(check.not_none(result.errors))
@@ -230,12 +232,12 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
     if not config_value:
         return EvaluateValueResult.for_value({})
 
-    config_value = cast(Dict[object, object], config_value)
+    config_value = cast("dict[object, object]", config_value)
 
-    if any((ck is None for ck in config_value.keys())):
+    if any(ck is None for ck in config_value.keys()):
         check.failed("Null map key not caught in validation")
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
-        if any((cv is None for cv in config_value.values())):
+        if any(cv is None for cv in config_value.values()):
             check.failed("Null map member not caught in validation")
 
     results = {
@@ -243,7 +245,7 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
         for key, item in config_value.items()
     }
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
     for result in results.values():
         if not result.success:
             errors.extend(check.not_none(result.errors))

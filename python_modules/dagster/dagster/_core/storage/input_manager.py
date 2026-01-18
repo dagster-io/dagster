@@ -1,10 +1,19 @@
 from abc import ABC, abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast, overload
-
-from typing_extensions import TypeAlias, TypeGuard
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Callable,
+    Optional,
+    TypeAlias,
+    TypeGuard,
+    Union,
+    cast,
+    overload,
+)
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
@@ -23,6 +32,7 @@ InputLoadFn: TypeAlias = Union[
 ]
 
 
+@public
 class InputManager(ABC):
     """Base interface for classes that are responsible for loading solid inputs."""
 
@@ -47,6 +57,7 @@ class IInputManagerDefinition:
         """
 
 
+@public
 class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     """Definition of an input manager resource.
 
@@ -71,7 +82,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
-        super(InputManagerDefinition, self).__init__(
+        super().__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
@@ -113,6 +124,7 @@ def input_manager(
 ) -> Callable[[InputLoadFn], InputManagerDefinition]: ...
 
 
+@public
 def input_manager(
     config_schema: Union[InputLoadFn, Optional[CoercableToConfigSchema]] = None,
     description: Optional[str] = None,
@@ -138,7 +150,7 @@ def input_manager(
             If not set, Dagster will accept any config provided.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the input
             manager.
-        version (Optional[str]): (Experimental) the version of the input manager definition.
+        version (Optional[str]): The version of the input manager definition.
 
     **Examples:**
 
@@ -171,7 +183,7 @@ def input_manager(
 
     def _wrap(load_fn: InputLoadFn) -> InputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=cast(CoercableToConfigSchema, config_schema),
+            config_schema=cast("CoercableToConfigSchema", config_schema),
             description=description,
             version=version,
             input_config_schema=input_config_schema,

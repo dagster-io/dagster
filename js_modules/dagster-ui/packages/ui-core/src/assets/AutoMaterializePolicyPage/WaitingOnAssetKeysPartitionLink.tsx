@@ -23,6 +23,7 @@ export const WaitingOnAssetKeysPartitionLink = ({assetKeysByPartition}: Props) =
     return Object.fromEntries(
       filteredPartitionNames.map((partitionName) => [
         partitionName,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         [...assetKeysByPartition[partitionName]!].sort(sortAssetKeys),
       ]),
     );

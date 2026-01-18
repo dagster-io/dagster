@@ -16,8 +16,11 @@ Dagster runtime.
 """
 
 import sys
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional
+
+from dagster_shared.error import DagsterError
 
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as
@@ -33,18 +36,6 @@ class DagsterExecutionInterruptedError(BaseException):
     as to not be accidentally caught by code that catches Exception
     and thus prevent the interpreter from exiting.
     """
-
-
-class DagsterError(Exception):
-    """Base class for all errors thrown by the Dagster framework.
-
-    Users should not subclass this base class for their own exceptions.
-    """
-
-    @property
-    def is_user_code_error(self):
-        """Returns true if this error is attributable to user code."""
-        return False
 
 
 class DagsterInvalidDefinitionError(DagsterError):
@@ -84,7 +75,7 @@ If this config type represents a resource dependency, its annotation must either
 
 
 def _generate_pythonic_config_error_message(
-    config_class: Optional[Type],
+    config_class: Optional[type],
     field_name: Optional[str],
     invalid_type: Any,
     is_resource: bool = False,
@@ -113,7 +104,7 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
 
     def __init__(
         self,
-        config_class: Optional[Type],
+        config_class: Optional[type],
         field_name: Optional[str],
         invalid_type: Any,
         is_resource: bool = False,
@@ -122,7 +113,7 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
         self.invalid_type = invalid_type
         self.field_name = field_name
         self.config_class = config_class
-        super(DagsterInvalidPythonicConfigDefinitionError, self).__init__(
+        super().__init__(
             _generate_pythonic_config_error_message(
                 config_class=config_class,
                 field_name=field_name,
@@ -145,7 +136,7 @@ class DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(DagsterError):
         **kwargs,
     ):
         self.field_name = field_name
-        super(DagsterInvalidDagsterTypeInPythonicConfigDefinitionError, self).__init__(
+        super().__init__(
             f"""Error defining Dagster config class '{config_class_name}' on field '{field_name}'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
 {PYTHONIC_CONFIG_ERROR_VERBIAGE}""",
             **kwargs,
@@ -193,7 +184,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
         self.original_root = original_root
         self.current_value = current_value
         self.stack = stack
-        super(DagsterInvalidConfigDefinitionError, self).__init__(
+        super().__init__(
             (
                 "Error defining config. Original value passed: {original_root}. "
                 "{stack_str}{current_value} "
@@ -219,7 +210,7 @@ class DagsterExecutionStepNotFoundError(DagsterError):
 
     def __init__(self, *args, **kwargs):
         self.step_keys = check.list_param(kwargs.pop("step_keys"), "step_keys", str)
-        super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterExecutionPlanSnapshotNotFoundError(DagsterError):
@@ -231,7 +222,7 @@ class DagsterRunNotFoundError(DagsterError):
 
     def __init__(self, *args, **kwargs):
         self.invalid_run_id = check.str_param(kwargs.pop("invalid_run_id"), "invalid_run_id")
-        super(DagsterRunNotFoundError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterStepOutputNotFoundError(DagsterError):
@@ -242,7 +233,7 @@ class DagsterStepOutputNotFoundError(DagsterError):
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
         self.output_name = check.str_param(kwargs.pop("output_name"), "output_name")
-        super(DagsterStepOutputNotFoundError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 @contextmanager
@@ -253,7 +244,7 @@ def raise_execution_interrupts() -> Iterator[None]:
 
 @contextmanager
 def user_code_error_boundary(
-    error_cls: Type["DagsterUserCodeExecutionError"],
+    error_cls: type["DagsterUserCodeExecutionError"],
     msg_fn: Callable[[], str],
     log_manager: Optional["DagsterLogManager"] = None,
     **kwargs: object,
@@ -279,8 +270,9 @@ def user_code_error_boundary(
     """
     check.callable_param(msg_fn, "msg_fn")
     check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
+    from dagster._utils.error import redact_user_stacktrace_if_enabled
 
-    with raise_execution_interrupts():
+    with redact_user_stacktrace_if_enabled(), raise_execution_interrupts():
         if log_manager:
             log_manager.begin_python_log_capture()
         try:
@@ -320,13 +312,13 @@ class DagsterUserCodeExecutionError(DagsterError):
 
         check.invariant(original_exc_info[0] is not None)
 
-        super(DagsterUserCodeExecutionError, self).__init__(args[0], *args[1:], **kwargs)
+        super().__init__(args[0], *args[1:], **kwargs)
 
         self.user_exception = check.opt_inst_param(user_exception, "user_exception", Exception)
         self.original_exc_info = original_exc_info
 
     @property
-    def is_user_code_error(self) -> bool:
+    def is_user_code_error(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
 
@@ -342,7 +334,7 @@ class DagsterExecutionLoadInputError(DagsterUserCodeExecutionError):
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
         self.input_name = check.str_param(kwargs.pop("input_name"), "input_name")
-        super(DagsterExecutionLoadInputError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterExecutionHandleOutputError(DagsterUserCodeExecutionError):
@@ -351,7 +343,7 @@ class DagsterExecutionHandleOutputError(DagsterUserCodeExecutionError):
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
         self.output_name = check.str_param(kwargs.pop("output_name"), "output_name")
-        super(DagsterExecutionHandleOutputError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
@@ -361,7 +353,7 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
         self.op_name = check.str_param(kwargs.pop("op_name"), "op_name")
         self.op_def_name = check.str_param(kwargs.pop("op_def_name"), "op_def_name")
-        super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
@@ -397,7 +389,7 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
             f"Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
             "on the compute / config function that accessed it."
         )
-        super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
+        super().__init__(msg, *args, **kwargs)
 
 
 class DagsterInvalidInvocationError(DagsterError):
@@ -428,7 +420,7 @@ class DagsterInvalidConfigError(DagsterError):
         self.message = error_msg
         self.error_messages = error_messages
 
-        super(DagsterInvalidConfigError, self).__init__(error_msg, *args, **kwargs)
+        super().__init__(error_msg, *args, **kwargs)
 
 
 class DagsterUnmetExecutorRequirementsError(DagsterError):
@@ -448,7 +440,7 @@ class DagsterSubprocessError(DagsterError):
         self.subprocess_error_infos = check.list_param(
             kwargs.pop("subprocess_error_infos"), "subprocess_error_infos", SerializableErrorInfo
         )
-        super(DagsterSubprocessError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterUserCodeUnreachableError(DagsterError):
@@ -477,7 +469,7 @@ class DagsterUserCodeProcessError(DagsterError):
             "user_code_process_error_infos",
             SerializableErrorInfo,
         )
-        super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterMaxRetriesExceededError(DagsterError):
@@ -491,7 +483,7 @@ class DagsterMaxRetriesExceededError(DagsterError):
             "user_code_process_error_infos",
             SerializableErrorInfo,
         )
-        super(DagsterMaxRetriesExceededError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def from_error_info(error_info):
@@ -526,7 +518,7 @@ class DagsterCodeLocationLoadError(DagsterError):
             "load_error_infos",
             SerializableErrorInfo,
         )
-        super(DagsterCodeLocationLoadError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterLaunchFailedError(DagsterError):
@@ -540,7 +532,7 @@ class DagsterLaunchFailedError(DagsterError):
             "serializable_error_info",
             SerializableErrorInfo,
         )
-        super(DagsterLaunchFailedError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterBackfillFailedError(DagsterError):
@@ -554,7 +546,7 @@ class DagsterBackfillFailedError(DagsterError):
             "serializable_error_info",
             SerializableErrorInfo,
         )
-        super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DagsterRunAlreadyExists(DagsterError):
@@ -582,7 +574,7 @@ class DagsterTypeCheckDidNotPass(DagsterError):
         from dagster import DagsterType
         from dagster._core.definitions.metadata import normalize_metadata
 
-        super(DagsterTypeCheckDidNotPass, self).__init__(description)
+        super().__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -599,9 +591,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
 
     def __init__(self, run_id):
         self.run_id = check.str_param(run_id, "run_id")
-        super(DagsterEventLogInvalidForRun, self).__init__(
-            f"Event logs invalid for run id {run_id}"
-        )
+        super().__init__(f"Event logs invalid for run id {run_id}")
 
 
 class ScheduleExecutionError(DagsterUserCodeExecutionError):
@@ -684,5 +674,8 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """
 
 
-class DagsterPipesExecutionError(DagsterError):
+# Not a subclass of DagsterError, since DagsterError is treated as a framework error and bypasses
+# user error driven handling such as retries. This error is raised when user code in a pipes
+# execution raises an error.
+class DagsterPipesExecutionError(Exception):
     """Indicates that an error occurred during the execution of an external process."""

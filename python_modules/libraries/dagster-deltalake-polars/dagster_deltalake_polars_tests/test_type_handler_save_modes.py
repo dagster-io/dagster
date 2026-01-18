@@ -85,7 +85,7 @@ def test_deltalake_io_manager_with_ops_ignored(tmp_path, io_manager_ignore):
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == [1, 2, 3]
 
-    assert dt.version() == 0
+    assert dt.version() == 0  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @op(out=Out(metadata={"schema": "a_df", "mode": "append"}))

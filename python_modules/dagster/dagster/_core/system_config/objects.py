@@ -1,21 +1,9 @@
 """System-provided config objects and constructors."""
 
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-    cast,
-)
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
@@ -29,6 +17,9 @@ from dagster._core.errors import (
 )
 from dagster._utils import ensure_single_item
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.configurable import ConfigurableDefinition
+
 
 class OpConfig(
     NamedTuple(
@@ -41,7 +32,7 @@ class OpConfig(
     )
 ):
     def __new__(cls, config, inputs: Mapping[str, object], outputs: "OutputsConfig"):
-        return super(OpConfig, cls).__new__(
+        return super().__new__(
             cls,
             config,
             check.opt_mapping_param(inputs, "inputs", key_type=str),
@@ -64,7 +55,7 @@ class OutputsConfig(NamedTuple):
     output_config_schema, and a list otherwise.
     """
 
-    config: Optional[Union[Dict, List]]
+    config: Optional[Union[dict, list]]
 
     @property
     def output_names(self) -> AbstractSet[str]:
@@ -86,7 +77,7 @@ class ResourceConfig(NamedTuple):
     config: Any
 
     @staticmethod
-    def from_dict(config: Dict[str, object]) -> "ResourceConfig":
+    def from_dict(config: dict[str, object]) -> "ResourceConfig":
         check.dict_param(config, "config", key_type=str)
 
         return ResourceConfig(config=config.get("config"))
@@ -122,7 +113,7 @@ class ResolvedRunConfig(
         if execution is None:
             execution = ExecutionConfig(None, None)
 
-        return super(ResolvedRunConfig, cls).__new__(
+        return super().__new__(
             cls,
             ops=check.opt_mapping_param(ops, "ops", key_type=str, value_type=OpConfig),
             execution=execution,
@@ -172,7 +163,7 @@ class ResolvedRunConfig(
                 run_config,
             )
 
-        config_value = cast(Dict[str, Any], config_evr.value)
+        config_value = cast("dict[str, Any]", config_evr.value)
 
         # If using the `execute_in_process` executor, we ignore the execution config value, since it
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
@@ -203,9 +194,9 @@ class ResolvedRunConfig(
         )
 
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
-        env_dict: Dict[str, Mapping[str, object]] = {}
+        env_dict: dict[str, Mapping[str, object]] = {}
 
-        op_configs: Dict[str, object] = {}
+        op_configs: dict[str, object] = {}
         for op_name, op_config in self.ops.items():
             op_configs[op_name] = {
                 "config": op_config.config,
@@ -321,7 +312,7 @@ def config_map_objects(
     config_value: Any,
     defs: Sequence[ExecutorDefinition],
     keyed_by: str,
-    def_type: Type,
+    def_type: type,
     name_of_def_type: str,
 ) -> Optional[Mapping[str, Any]]:
     """This function executes the config mappings for executors definitions with respect to
@@ -346,7 +337,7 @@ def config_map_objects(
         f"Could not find a {def_type} definition on the selected mode that matches the "
         f'{def_type} "{obj_name}" given in run config',
     )
-    obj_def = cast(ConfigurableDefinition, obj_def)
+    obj_def = cast("ConfigurableDefinition", obj_def)
 
     obj_config_evr = obj_def.apply_config_mapping(obj_config)
     if not obj_config_evr.success:
@@ -373,7 +364,7 @@ class ExecutionConfig(
         execution_engine_name: Optional[str],
         execution_engine_config: Optional[Mapping[str, object]],
     ):
-        return super(ExecutionConfig, cls).__new__(
+        return super().__new__(
             cls,
             execution_engine_name=check.opt_str_param(
                 execution_engine_name,

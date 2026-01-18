@@ -1,4 +1,4 @@
 # dagster-dbt
 
 The docs for `dagster-dbt` can be found
-[here](https://docs.dagster.io/_apidocs/libraries/dagster-dbt).
+[here](https://docs.dagster.io/integrations/libraries/dbt/dagster-dbt).

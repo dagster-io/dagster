@@ -1,13 +1,14 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(
-        Path(__file__).parent / ".." / ".." / "dagster_airlift/version.py", encoding="utf8"
+        Path(__file__).parents[5]
+        / "python_modules/libraries/dagster-airlift/dagster_airlift/version.py",
+        encoding="utf8",
     ) as fp:
         exec(fp.read(), version)
 

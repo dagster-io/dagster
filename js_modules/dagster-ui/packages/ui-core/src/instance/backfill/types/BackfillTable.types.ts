@@ -2,33 +2,18 @@
 
 import * as Types from '../../../graphql/types';
 
-export type PartitionSetForBackfillTableFragment = {
-  __typename: 'PartitionSet';
-  id: string;
-  name: string;
-  mode: string;
-  pipelineName: string;
-  repositoryOrigin: {
-    __typename: 'RepositoryOrigin';
-    id: string;
-    repositoryName: string;
-    repositoryLocationName: string;
-  };
-};
-
 export type BackfillTableFragment = {
   __typename: 'PartitionBackfill';
   id: string;
   status: Types.BulkActionStatus;
   isAssetBackfill: boolean;
   isValidSerialization: boolean;
-  partitionNames: Array<string> | null;
   numPartitions: number | null;
   timestamp: number;
   partitionSetName: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
-  numCancelable: number;
+  partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';
     id: string;

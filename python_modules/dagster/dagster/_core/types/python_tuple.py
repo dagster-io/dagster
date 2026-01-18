@@ -10,12 +10,16 @@ from dagster._core.types.dagster_type import (
     resolve_dagster_type,
 )
 
-PythonTuple = PythonObjectDagsterType(tuple, "PythonTuple", description="Represents a python tuple")
+PythonTuple = PythonObjectDagsterType(
+    tuple, "PythonTuple", description="Represents a python tuple"
+)
 
 
 class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
     def __init__(self, dagster_types):
-        self._dagster_types = check.list_param(dagster_types, "dagster_types", of_type=DagsterType)
+        self._dagster_types = check.list_param(
+            dagster_types, "dagster_types", of_type=DagsterType
+        )
 
     @property
     def schema_type(self):
@@ -24,7 +28,9 @@ class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
     def construct_from_config_value(self, context, config_value):
         return tuple(
             (
-                self._dagster_types[idx].loader.construct_from_config_value(context, item)
+                self._dagster_types[idx].loader.construct_from_config_value(  # pyright: ignore[reportOptionalMemberAccess]
+                    context, item
+                )
                 for idx, item in enumerate(config_value)
             )
         )
@@ -32,13 +38,19 @@ class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
 
 class _TypedPythonTuple(DagsterType):
     def __init__(self, dagster_types):
-        all_have_input_configs = all((dagster_type.loader for dagster_type in dagster_types))
+        all_have_input_configs = all(
+            (dagster_type.loader for dagster_type in dagster_types)
+        )
         self.dagster_types = dagster_types
         typing_types = tuple(t.typing_type for t in dagster_types)
         super(_TypedPythonTuple, self).__init__(
-            key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),
+            key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),  # pyright: ignore[reportAttributeAccessIssue]
             name=None,
-            loader=(TypedTupleDagsterTypeLoader(dagster_types) if all_have_input_configs else None),
+            loader=(
+                TypedTupleDagsterTypeLoader(dagster_types)
+                if all_have_input_configs
+                else None
+            ),
             type_check_fn=self.type_check_method,
             typing_type=typing.Tuple[typing_types],
         )
@@ -89,7 +101,12 @@ def create_typed_tuple(*dagster_type_args):
     dagster_types = list(map(resolve_dagster_type, dagster_type_args))
 
     check.invariant(
-        not any((dagster_type.kind == DagsterTypeKind.NOTHING for dagster_type in dagster_types)),
+        not any(
+            (
+                dagster_type.kind == DagsterTypeKind.NOTHING
+                for dagster_type in dagster_types
+            )
+        ),
         "Cannot create a runtime tuple containing inner type Nothing. Use List for fan-in",
     )
 

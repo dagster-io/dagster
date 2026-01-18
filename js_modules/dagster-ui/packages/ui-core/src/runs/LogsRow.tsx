@@ -12,8 +12,8 @@ import {
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
-import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
 import {gql} from '../apollo-client';
+import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -123,12 +123,26 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         ...PythonErrorFragment
       }
     }
+    ... on FailedToMaterializeEvent {
+      partition
+      assetKey {
+        path
+      }
+    }
+    ... on HealthChangedEvent {
+      partition
+      assetKey {
+        path
+      }
+    }
     ... on MaterializationEvent {
+      partition
       assetKey {
         path
       }
     }
     ... on ObservationEvent {
+      partition
       assetKey {
         path
       }
@@ -197,6 +211,10 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       externalUrl
       externalStdoutUrl
       externalStderrUrl
+      shellCmd {
+        stdout
+        stderr
+      }
     }
     ... on AssetCheckEvaluationEvent {
       evaluation {
@@ -276,26 +294,24 @@ export const UnstructuredDialogContent = ({message}: {message: string}) => {
   );
 };
 
-export class Unstructured extends React.Component<UnstructuredProps> {
-  onExpand = () => {
+export const Unstructured = (props: UnstructuredProps) => {
+  const onExpand = () => {
     showCustomAlert({
       title: 'Log',
-      body: <UnstructuredDialogContent message={this.props.node.message} />,
+      body: <UnstructuredDialogContent message={props.node.message} />,
     });
   };
 
-  render() {
-    return (
-      <CellTruncationProvider style={this.props.style || {}} onExpand={this.onExpand}>
-        <UnstructuredMemoizedContent
-          node={this.props.node}
-          highlighted={this.props.highlighted}
-          metadata={this.props.metadata}
-        />
-      </CellTruncationProvider>
-    );
-  }
-}
+  return (
+    <CellTruncationProvider style={props.style || {}} onExpand={onExpand}>
+      <UnstructuredMemoizedContent
+        node={props.node}
+        highlighted={props.highlighted}
+        metadata={props.metadata}
+      />
+    </CellTruncationProvider>
+  );
+};
 
 export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   fragment LogsRowUnstructuredFragment on DagsterRunEvent {

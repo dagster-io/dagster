@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_airflow/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -24,18 +23,14 @@ setup(
     description="Airflow plugin for Dagster",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
-        "docker>=5.0.3,<6.0.0",
-        "urllib3<2",  # docker version pinned above requires this but has no pin
         "lazy_object_proxy",
         "setuptools<71.0.0",
         "pendulum",
@@ -47,7 +42,8 @@ setup(
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
         "test_airflow_2": [
-            "apache-airflow>=2.0.0,<2.8",
+            "apache-airflow>=2.0.0,<2.8",  # 2.8+ airflow breaks a bunch of tests
+            "pendulum<3.0.0",  # sub 2.8 blows up on pendulum 3
             "boto3>=1.26.7",
             # Flask-session 0.6 is incompatible with certain airflow-provided test
             # utilities.

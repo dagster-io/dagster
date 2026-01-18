@@ -2,40 +2,43 @@ from dagster_powerbi import (
     DagsterPowerBITranslator,
     PowerBIServicePrincipal,
     PowerBIWorkspace,
+    load_powerbi_asset_specs,
 )
-from dagster_powerbi.translator import PowerBIContentData
+from dagster_powerbi.translator import PowerBIContentType, PowerBITranslatorData
 
-from dagster import EnvVar
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+import dagster as dg
 
-resource = PowerBIWorkspace(
+power_bi_workspace = PowerBIWorkspace(
     credentials=PowerBIServicePrincipal(
-        client_id=EnvVar("POWER_BI_CLIENT_ID"),
-        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
-        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+        client_id=dg.EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=dg.EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=dg.EnvVar("POWER_BI_TENANT_ID"),
     ),
-    workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
+    workspace_id=dg.EnvVar("POWER_BI_WORKSPACE_ID"),
 )
 
 
 # A translator class lets us customize properties of the built
 # Power BI assets, such as the owners or asset key
 class MyCustomPowerBITranslator(DagsterPowerBITranslator):
-    def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
-        # We add a team owner tag to all reports
-        return super().get_report_spec(data)._replace(owners=["my_team"])
+    def get_asset_spec(self, data: PowerBITranslatorData) -> dg.AssetSpec:
+        # We create the default asset spec using super()
+        default_spec = super().get_asset_spec(data)
+        # We customize the team owner tag for all assets,
+        # and we customize the asset key prefix only for dashboards.
+        return default_spec.replace_attributes(
+            key=(
+                default_spec.key.with_prefix("prefix")
+                if data.content_type == PowerBIContentType.DASHBOARD
+                else default_spec.key
+            ),
+            owners=["team:my_team"],
+        )
 
-    def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
-        return super().get_semantic_model_spec(data)._replace(owners=["my_team"])
 
-    def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
-        return super().get_dashboard_spec(data)._replace(owners=["my_team"])
-
-    def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
-        # We prefix all dashboard asset keys with "powerbi" for organizational
-        # purposes
-        return super().get_dashboard_asset_key(data).with_prefix("powerbi")
-
-
-defs = resource.build_defs(dagster_powerbi_translator=MyCustomPowerBITranslator)
+power_bi_specs = load_powerbi_asset_specs(
+    power_bi_workspace, dagster_powerbi_translator=MyCustomPowerBITranslator()
+)
+defs = dg.Definitions(
+    assets=[*power_bi_specs], resources={"power_bi": power_bi_workspace}
+)

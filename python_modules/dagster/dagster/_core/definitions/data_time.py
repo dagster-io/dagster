@@ -13,11 +13,14 @@ materialization it was derived from.
 """
 
 import datetime
-from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Optional, cast  # noqa: UP035
+
+from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -25,15 +28,12 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
-from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
-    TimeWindowPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp, get_current_datetime
-from dagster._utils import make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -85,12 +85,10 @@ class CachingDataTimeResolver:
         partition_subset = partitions_def.empty_subset().with_partition_keys(
             partition_key
             for partition_key in self._instance_queryer.get_materialized_partitions(asset_key)
-            if partitions_def.has_partition_key(
-                partition_key, current_time=self._instance_queryer.evaluation_time
-            )
+            if partitions_def.has_partition_key(partition_key)
         )
 
-        if not isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
+        if not isinstance(partition_subset, TimeWindowPartitionsSubset):
             check.failed(f"Invalid partition subset {type(partition_subset)}")
 
         sorted_time_windows = sorted(partition_subset.included_time_windows)
@@ -125,9 +123,7 @@ class CachingDataTimeResolver:
         net_new_partitions = {
             partition_key
             for partition_key in (partitions - prev_partitions)
-            if partitions_def.has_partition_key(
-                partition_key, current_time=self._instance_queryer.evaluation_time
-            )
+            if partitions_def.has_partition_key(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions
@@ -177,7 +173,7 @@ class CachingDataTimeResolver:
     def _upstream_records_by_key(
         self, asset_key: AssetKey, record_id: int, record_tags_dict: Mapping[str, str]
     ) -> Mapping[AssetKey, "EventLogRecord"]:
-        upstream_records: Dict[AssetKey, EventLogRecord] = {}
+        upstream_records: dict[AssetKey, EventLogRecord] = {}
 
         for parent_key in self.asset_graph.get(asset_key).parent_keys:
             if not (
@@ -214,7 +210,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: int,
         record_timestamp: float,
-        record_tags: Tuple[Tuple[str, str]],
+        record_tags: tuple[tuple[str, str]],
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         # find the upstream times of each of the parents of this asset
@@ -232,7 +228,7 @@ class CachingDataTimeResolver:
             else:
                 return {}
 
-        data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
+        data_time_by_key: dict[AssetKey, Optional[datetime.datetime]] = {}
         for parent_key, parent_record in upstream_records_by_key.items():
             # recurse to find the data times of this parent
             for upstream_key, data_time in self._calculate_data_time_by_key(
@@ -274,7 +270,7 @@ class CachingDataTimeResolver:
         *,
         asset_key: AssetKey,
         record_id: int,
-        record_tags: Tuple[Tuple[str, str]],
+        record_tags: tuple[tuple[str, str]],
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         data_version_value = dict(record_tags).get(DATA_VERSION_TAG)
@@ -308,7 +304,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: Optional[int],
         record_timestamp: Optional[float],
-        record_tags: Tuple[Tuple[str, str]],  # for hashability
+        record_tags: tuple[tuple[str, str]],  # for hashability
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:
@@ -505,7 +501,7 @@ class CachingDataTimeResolver:
         if None in data_times or not data_times:
             return None
 
-        return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
+        return min(cast("AbstractSet[datetime.datetime]", data_times), default=None)
 
     def _get_source_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
@@ -528,7 +524,7 @@ class CachingDataTimeResolver:
             return None
         else:
             return datetime.datetime.fromtimestamp(
-                cast(float, data_time.value), datetime.timezone.utc
+                cast("float", data_time.value), datetime.timezone.utc
             )
 
     def get_minutes_overdue(
@@ -537,7 +533,7 @@ class CachingDataTimeResolver:
         evaluation_time: datetime.datetime,
     ) -> Optional[FreshnessMinutes]:
         asset = self.asset_graph.get(asset_key)
-        if asset.freshness_policy is None:
+        if asset.legacy_freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
@@ -547,7 +543,7 @@ class CachingDataTimeResolver:
         else:
             current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)
 
-        return asset.freshness_policy.minutes_overdue(
+        return asset.legacy_freshness_policy.minutes_overdue(
             data_time=current_data_time,
             evaluation_time=evaluation_time,
         )

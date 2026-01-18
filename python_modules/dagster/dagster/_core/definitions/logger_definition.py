@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._annotations import public
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
 
 
+@public
 class LoggerDefinition(AnonymousConfigurableDefinition):
     """Core class for defining loggers.
 
@@ -128,6 +130,7 @@ def logger(
 ) -> "LoggerDefinition": ...
 
 
+@public
 def logger(
     config_schema: Union[CoercableToConfigSchema, "InitLoggerFunction"] = None,
     description: Optional[str] = None,
@@ -158,6 +161,7 @@ def logger(
     return _wrap
 
 
+@public
 def build_init_logger_context(
     logger_config: Any = None,
     job_def: Optional["JobDefinition"] = None,

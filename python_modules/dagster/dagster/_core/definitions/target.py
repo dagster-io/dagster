@@ -1,6 +1,7 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, TypeAlias, Union
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import (
@@ -8,7 +9,7 @@ from dagster._core.definitions.asset_selection import (
     CoercibleToAssetSelection,
     is_coercible_to_asset_selection,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.source_asset import SourceAsset
@@ -55,7 +56,7 @@ class AutomationTarget(
 ):
     """An abstraction representing a job to be executed by an automation, i.e. schedule or sensor.
 
-    Attributes:
+    Args:
         resolvable_to_job (ResolvableToJob): An entity that is resolvable to a job at
             definition-resolution time.
         op_selection (Optional[Sequence[str]]): An optional list of op names to execute within the job.
@@ -100,6 +101,9 @@ class AutomationTarget(
             if isinstance(coercible, AssetsDefinition):
                 asset_selection = AssetSelection.assets(coercible)
                 assets_defs = [coercible]
+            elif isinstance(coercible, AssetSelection):
+                asset_selection = coercible
+                assets_defs = []
             elif is_coercible_to_asset_selection(coercible):
                 asset_selection = AssetSelection.from_coercible(coercible)
                 assets_defs = (

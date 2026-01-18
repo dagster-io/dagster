@@ -1,10 +1,10 @@
-from dagster import Definitions, asset, define_asset_job
+import dagster as dg
 
 
-@asset
+@dg.asset
 def my_other_asset() -> None: ...
 
 
-my_other_job = define_asset_job(name="my_other_job", selection="my_other_asset")
+my_other_job = dg.define_asset_job(name="my_other_job", selection="my_other_asset")
 
-defs = Definitions(assets=[my_other_asset], jobs=[my_other_job])
+defs = dg.Definitions(assets=[my_other_asset], jobs=[my_other_job])

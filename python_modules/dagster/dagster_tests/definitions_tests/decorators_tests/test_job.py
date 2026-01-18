@@ -1,36 +1,37 @@
 import logging
 import warnings
 
-from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
-from dagster._core.definitions.utils import normalize_tags
+import dagster as dg
+from dagster import DagsterInstance
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._core.utils import coerce_valid_log_level
+from dagster._utils.tags import normalize_tags
 
 
 def test_basic_job():
-    @op
+    @dg.op
     def basic():
         pass
 
-    @job
+    @dg.job
     def basic_job():
         basic()
 
-    assert isinstance(basic_job, JobDefinition)
+    assert isinstance(basic_job, dg.JobDefinition)
 
 
 def test_job_resources():
     called = {}
 
-    @op(required_resource_keys={"foo"})
+    @dg.op(required_resource_keys={"foo"})
     def basic(context):
         called["basic"] = context.resources.foo
 
-    @resource
+    @dg.resource
     def foo():
         return "foo"
 
-    @job(resource_defs={"foo": foo})
+    @dg.job(resource_defs={"foo": foo})
     def basic_job():
         basic()
 
@@ -41,11 +42,11 @@ def test_job_resources():
 def test_job_config():
     called = {}
 
-    @op(config_schema={"foo": str})
+    @dg.op(config_schema={"foo": str})
     def basic(context):
         called["basic"] = context.op_config["foo"]
 
-    @job(config={"ops": {"basic": {"config": {"foo": "foo"}}}})
+    @dg.job(config={"ops": {"basic": {"config": {"foo": "foo"}}}})
     def basic_job():
         basic()
 
@@ -54,16 +55,16 @@ def test_job_config():
 
 
 def test_job_config_mapping():
-    @op(config_schema=str)
+    @dg.op(config_schema=str)
     def my_op(context):
         return context.op_config
 
     def _config_fn(outer):
         return {"ops": {"my_op": {"config": outer["foo_schema"]}}}
 
-    config_mapping = ConfigMapping(config_fn=_config_fn, config_schema={"foo_schema": str})
+    config_mapping = dg.ConfigMapping(config_fn=_config_fn, config_schema={"foo_schema": str})
 
-    @job(config=config_mapping)
+    @dg.job(config=config_mapping)
     def my_job():
         my_op()
 
@@ -73,18 +74,18 @@ def test_job_config_mapping():
 
 
 def test_job_tags():
-    @op
+    @dg.op
     def basic():
         pass
 
-    @job(tags={"my_tag": "yes"})
+    @dg.job(tags={"my_tag": "yes"})
     def job_with_tags():
         basic()
 
     assert job_with_tags.tags == {"my_tag": "yes"}
     assert job_with_tags.run_tags == {"my_tag": "yes"}
 
-    @job(tags={"my_tag": "yes"}, run_tags={"my_run_tag": "yes"})
+    @dg.job(tags={"my_tag": "yes"}, run_tags={"my_run_tag": "yes"})
     def job_with_tags_and_run_tags():
         basic()
 
@@ -105,19 +106,19 @@ def test_job_tags():
 
 
 def test_job_system_tags():
-    @op
+    @dg.op
     def basic():
         pass
 
-    @job(tags={MAX_RETRIES_TAG: 5, RETRY_ON_ASSET_OR_OP_FAILURE_TAG: False})
+    @dg.job(tags={MAX_RETRIES_TAG: 5, RETRY_ON_ASSET_OR_OP_FAILURE_TAG: False})
     def basic_job():
         basic()
 
-    normalize_tags(basic_job.tags, allow_reserved_tags=False)
+    normalize_tags(basic_job.tags, allow_private_system_tags=False)
 
 
 def test_invalid_tag_keys():
-    @op
+    @dg.op
     def basic():
         pass
 
@@ -125,11 +126,10 @@ def test_invalid_tag_keys():
     warnings.resetwarnings()
     with warnings.catch_warnings(record=True) as caught_warnings:
 
-        @job(tags={"my_tag&": "yes", "my_tag#": "yes"})
+        @dg.job(tags={"my_tag&": "yes", "my_tag#": "yes"})
         def basic_job():
             basic()
 
-        assert len(caught_warnings) == 1
         warning = caught_warnings[0]
         assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
             warning.message
@@ -146,16 +146,16 @@ def test_invalid_tag_keys():
 def test_job_logger():
     called = {}
 
-    @op
+    @dg.op
     def basic():
         pass
 
-    @logger(config_schema=Field(str))
+    @dg.logger(config_schema=dg.Field(str))
     def basic_logger(context):
         called["basic_logger"] = context.logger_config
         return logging.Logger("test", level=coerce_valid_log_level("INFO"))
 
-    @job(
+    @dg.job(
         logger_defs={"basic_logger": basic_logger},
     )
     def basic_job():

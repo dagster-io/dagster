@@ -2,34 +2,57 @@ import {
   Box,
   Button,
   FontFamily,
-  Heading,
   Icon,
   MetadataTableWIP,
   PageHeader,
+  Subtitle1,
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
+import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
-import {SensorFragment} from './types/SensorFragment.types';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
+import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
+import {SensorFragment} from './types/SensorFragment.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
+
+/** Some cursors are persisted Python tuples, which come through as JSON. Examples:
+ * {"__class__": "AirflowPollingSensorCursor", "dag_query_offset": 0, "end_date_gte": 1743134332.087687, "end_date_lte": null}
+ * {"__class__": "RunStatusSensorCursor", "record_id": 1234, "update_timestamp": "1743134332.087687", "record_timestamp": null}
+ *
+ * For these, there are often empty / unused fields and we can pull just the cursor fields that are in use
+ * into a compact table-ready presentation:
+ *
+ * end_date_gte=1743134332.087687
+ */
+export const humanizeSensorCursor = (cursor: string | false | null) => {
+  if (cursor && cursor.startsWith('{"__class__"')) {
+    const cursorObj = JSON.parse(cursor);
+    delete cursorObj['__class__'];
+    return Object.entries(cursorObj)
+      .filter((pair) => pair[1] !== null && pair[1] !== 0)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(',');
+  }
+  return cursor;
+};
 
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {
@@ -72,13 +95,6 @@ export const SensorDetails = ({
     metadata,
   } = sensor;
 
-  const {
-    permissions,
-    disabledReasons,
-    loading: loadingPermissions,
-  } = usePermissionsForLocation(repoAddress.location);
-  const {canUpdateSensorCursor} = permissions;
-
   const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
     sensorName: sensor.name,
@@ -92,18 +108,17 @@ export const SensorDetails = ({
     sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
     sensor.sensorState.typeSpecificData.lastCursor;
 
-  const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
 
   return (
     <>
       <PageHeader
         title={
-          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Heading>
+          </Subtitle1>
         }
         icon="sensors"
         tags={
@@ -114,32 +129,15 @@ export const SensorDetails = ({
         right={
           <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <QueryRefreshCountdown refreshState={refreshState} />
-            <Tooltip
-              canShow={sensor.sensorType !== SensorType.STANDARD}
-              content="Testing not available for this sensor type"
-              placement="top-end"
-            >
-              <Button
-                disabled={sensor.sensorType !== SensorType.STANDARD}
-                onClick={() => {
-                  setShowTestTickDialog(true);
-                }}
-              >
-                Test sensor
-              </Button>
-            </Tooltip>
+            <EvaluateTickButtonSensor
+              cursor={cursor || ''}
+              name={sensor.name}
+              repoAddress={repoAddress}
+              jobName={sensor.targets?.[0]?.pipelineName || ''}
+              sensorType={sensor.sensorType}
+            />
           </Box>
         }
-      />
-      <SensorDryRunDialog
-        isOpen={showTestTickDialog}
-        onClose={() => {
-          setShowTestTickDialog(false);
-        }}
-        currentCursor={cursor || ''}
-        name={sensor.name}
-        repoAddress={repoAddress}
-        jobName={sensor.targets?.[0]?.pipelineName || ''}
       />
       <MetadataTableWIP>
         <tbody>
@@ -149,6 +147,14 @@ export const SensorDetails = ({
               <td>{sensor.description}</td>
             </tr>
           ) : null}
+          {sensor.owners.length > 0 && (
+            <tr>
+              <td>Owners</td>
+              <td>
+                <DefinitionOwners owners={sensor.owners} />
+              </td>
+            </tr>
+          )}
           <tr>
             <td>Latest tick</td>
             <td>
@@ -159,7 +165,7 @@ export const SensorDetails = ({
                     style={{marginTop: '-2px'}}
                   >
                     <TimestampDisplay timestamp={latestTick.timestamp} timeFormat={TIME_FORMAT} />
-                    <TickStatusTag tick={latestTick} />
+                    <TickStatusTag tick={latestTick} tickResultType="runs" />
                   </Box>
                 </>
               ) : (
@@ -171,6 +177,7 @@ export const SensorDetails = ({
             <tr>
               <td>Next tick</td>
               <td>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 <TimestampDisplay timestamp={sensor.nextTick.timestamp!} timeFormat={TIME_FORMAT} />
               </td>
             </tr>
@@ -227,18 +234,18 @@ export const SensorDetails = ({
               <td>
                 <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
                   <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
-                    {cursor ? cursor : 'None'}
+                    {cursor ? humanizeSensorCursor(cursor) : 'None'}
                   </span>
                   <Tooltip
-                    canShow={!canUpdateSensorCursor}
-                    content={disabledReasons.canUpdateSensorCursor}
+                    canShow={!sensor.hasCursorUpdatePermissions}
+                    content={DEFAULT_DISABLED_REASON}
                   >
                     <Button
                       icon={<Icon name="edit" />}
-                      disabled={!canUpdateSensorCursor || loadingPermissions}
+                      disabled={!sensor.hasCursorUpdatePermissions}
                       onClick={() => setCursorEditing(true)}
                     >
-                      Edit
+                      {cursor !== humanizeSensorCursor(cursor) ? 'View Raw / Edit' : 'Edit'}
                     </Button>
                   </Tooltip>
                 </Box>
@@ -251,6 +258,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
+          <SensorAlertDetails repoAddress={repoAddress} sensorName={name} />
         </tbody>
       </MetadataTableWIP>
     </>

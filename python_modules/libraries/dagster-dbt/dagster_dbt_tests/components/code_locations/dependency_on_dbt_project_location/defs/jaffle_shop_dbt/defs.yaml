@@ -1,0 +1,11 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: jaffle_shop
+
+  translation:
+    tags:
+      foo: bar
+    metadata:
+      something: 1
+    automation_condition: "{{ automation_condition.on_cron('@daily') }}"

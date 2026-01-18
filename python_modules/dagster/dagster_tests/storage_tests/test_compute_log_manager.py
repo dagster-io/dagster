@@ -1,15 +1,16 @@
+import random
 import tempfile
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence
+from typing import IO, Optional
 
+import dagster as dg
 import dagster._check as check
-from dagster import job, op
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.execution.compute_logs import create_compute_log_file_key
+from dagster._core.instance import InstanceRef, InstanceType
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
-    CapturedLogData,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
@@ -18,7 +19,7 @@ from dagster._core.storage.compute_log_manager import (
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 
 from dagster_tests.storage_tests.utils.compute_log_manager import TestComputeLogManager
 
@@ -45,13 +46,14 @@ class BrokenComputeLogManager(ComputeLogManager):
     def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         return True
 
-    def get_log_data(
+    def get_log_data_for_type(
         self,
         log_key: Sequence[str],
-        cursor: Optional[str] = None,
-        max_bytes: Optional[int] = None,
-    ) -> CapturedLogData:
-        return CapturedLogData(log_key=log_key)
+        io_type: ComputeIOType,
+        offset: int,
+        max_bytes: Optional[int],
+    ) -> tuple[Optional[bytes], int]:
+        return None, 0
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()
@@ -74,7 +76,7 @@ class BrokenComputeLogManager(ComputeLogManager):
 def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=False):
     with tempfile.TemporaryDirectory() as temp_dir:
         with environ({"DAGSTER_HOME": temp_dir}):
-            yield DagsterInstance(
+            yield dg.DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
                 local_artifact_storage=LocalArtifactStorage(temp_dir),
                 run_storage=SqliteRunStorage.from_local(temp_dir),
@@ -83,7 +85,7 @@ def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=Fa
                     fail_on_setup=fail_on_setup, fail_on_teardown=fail_on_teardown
                 ),
                 run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
+                run_launcher=dg.DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
             )
 
@@ -106,26 +108,26 @@ def _has_teardown_exception(execute_result):
     )
 
 
-@op
+@dg.op
 def yay(context):
     context.log.info("yay")
     print("HELLOOO")  # noqa: T201
     return "yay"
 
 
-@op
+@dg.op
 def boo(context):
     context.log.info("boo")
     print("HELLOOO")  # noqa: T201
     raise Exception("booo")
 
 
-@job
+@dg.job
 def yay_job():
     yay()
 
 
-@job
+@dg.job
 def boo_job():
     boo()
 
@@ -164,11 +166,11 @@ def test_broken_compute_log_manager():
 
 import os
 import sys
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generator, Mapping, Sequence
+from typing import Any
 
 import pytest
-from dagster import job, op
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
@@ -179,7 +181,7 @@ from typing_extensions import Self
 
 
 def test_compute_log_manager_instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         assert instance.compute_log_manager
         assert instance.compute_log_manager._instance  # noqa: SLF001
 
@@ -188,7 +190,7 @@ class TestLocalComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self):
+    def compute_log_manager(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory() as tmpdir_path:
             return LocalComputeLogManager(tmpdir_path)
 
@@ -217,16 +219,16 @@ class ExternalTestComputeLogManager(NoOpComputeLogManager):
 
 
 def test_external_compute_log_manager():
-    @op
+    @dg.op
     def my_op():
         print("hello out")  # noqa: T201
         print("hello error", file=sys.stderr)  # noqa: T201
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster_tests.storage_tests.test_compute_log_manager",
@@ -243,10 +245,10 @@ def test_external_compute_log_manager():
         assert len(captured_log_entries) == 1
         entry = captured_log_entries[0]
         assert (
-            entry.dagster_event.logs_captured_data.external_stdout_url == "https://fake.com/stdout"
+            entry.dagster_event.logs_captured_data.external_stdout_url == "https://fake.com/stdout"  # pyright: ignore[reportOptionalMemberAccess]
         )
         assert (
-            entry.dagster_event.logs_captured_data.external_stderr_url == "https://fake.com/stderr"
+            entry.dagster_event.logs_captured_data.external_stderr_url == "https://fake.com/stderr"  # pyright: ignore[reportOptionalMemberAccess]
         )
 
 
@@ -259,13 +261,13 @@ def test_get_log_keys_for_log_key_prefix():
         def write_log_file(file_id: int):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
-                f.write("foo")
+                f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
 
         for i in range(4):
             write_log_file(i)
 
         log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-        assert sorted(log_keys) == [
+        assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
             [*log_key_prefix, "0"],
             [*log_key_prefix, "1"],
             [*log_key_prefix, "2"],
@@ -289,9 +291,9 @@ def test_read_log_lines_for_log_key_prefix():
                 for j in range(num_lines):
                     msg = f"file: {file_id}, line: {j}"
                     all_logs.append(msg)
-                    f.write(msg)
+                    f.write(msg)  # pyright: ignore[reportOptionalMemberAccess]
                     if j < num_lines - 1:
-                        f.write("\n")
+                        f.write("\n")  # pyright: ignore[reportOptionalMemberAccess]
 
         for i in range(4):
             write_log_file(i)
@@ -304,46 +306,52 @@ def test_read_log_lines_for_log_key_prefix():
             log_key_prefix, cursor=None, io_type=ComputeIOType.STDERR
         )
         assert len(log_lines) == 10
-        assert cursor.has_more_now
-        assert cursor.log_key == [*log_key_prefix, "1"]
-        assert cursor.line == 0
+        assert cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.log_key == [*log_key_prefix, "1"]  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.line == 0  # pyright: ignore[reportOptionalMemberAccess]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
         # read half of the next log file
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "5"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
+            log_key_prefix,
+            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 5
-        assert cursor.has_more_now
-        assert cursor.log_key == [*log_key_prefix, "1"]
-        assert cursor.line == 5
+        assert cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.log_key == [*log_key_prefix, "1"]  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.line == 5  # pyright: ignore[reportOptionalMemberAccess]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
         # read the next ten lines, five will be in the second file, five will be in the third
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
+            log_key_prefix,
+            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 10
-        assert cursor.has_more_now
-        assert cursor.log_key == [*log_key_prefix, "2"]
-        assert cursor.line == 5
+        assert cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.log_key == [*log_key_prefix, "2"]  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.line == 5  # pyright: ignore[reportOptionalMemberAccess]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
         # read the remaining 15 lines, but request 20
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
+            log_key_prefix,
+            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 15
-        assert not cursor.has_more_now
-        assert cursor.log_key == [*log_key_prefix, "3"]
+        assert not cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.log_key == [*log_key_prefix, "3"]  # pyright: ignore[reportOptionalMemberAccess]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
-        assert cursor.line == -1
+        assert cursor.line == -1  # pyright: ignore[reportOptionalMemberAccess]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -353,12 +361,30 @@ def test_read_log_lines_for_log_key_prefix():
 
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "15"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
+            log_key_prefix,
+            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 10
-        assert not cursor.has_more_now
-        assert cursor.log_key == [*log_key_prefix, "4"]
+        assert not cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.log_key == [*log_key_prefix, "4"]  # pyright: ignore[reportOptionalMemberAccess]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
-        assert cursor.line == -1
+        assert cursor.line == -1  # pyright: ignore[reportOptionalMemberAccess]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
+
+
+def test_file_keys_unique_even_if_random_is_seeded():
+    assert create_compute_log_file_key() != create_compute_log_file_key()
+
+    random.seed(0)
+
+    seeded_state = random.getstate()
+    key1 = create_compute_log_file_key()
+
+    random.seed(0)
+    key2 = create_compute_log_file_key()
+
+    assert key1 != key2
+    # state returned to seeded version
+    assert random.getstate() == seeded_state

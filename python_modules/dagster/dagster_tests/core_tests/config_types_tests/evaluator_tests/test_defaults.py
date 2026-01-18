@@ -1,24 +1,18 @@
+import dagster as dg
 import pytest
-from dagster import Any, Enum, EnumValue, Field, Noneable, Permissive, String
 from dagster._check import CheckError, ParameterCheckError
-from dagster._config import (
-    ConfigType,
-    ConfigTypeKind,
-    Selector,
-    post_process_config,
-    resolve_to_config_type,
-)
+from dagster._config import ConfigType, ConfigTypeKind, post_process_config, resolve_to_config_type
 
 
 def test_post_process_config():
-    scalar_config_type = resolve_to_config_type(String)
+    scalar_config_type = resolve_to_config_type(dg.String)
     assert post_process_config(scalar_config_type, "foo").value == "foo"
     assert post_process_config(scalar_config_type, 3).value == 3
     assert post_process_config(scalar_config_type, {}).value == {}
     assert post_process_config(scalar_config_type, None).value is None
 
     enum_config_type = resolve_to_config_type(
-        Enum("an_enum", [EnumValue("foo"), EnumValue("bar", python_value=3)])
+        dg.Enum("an_enum", [dg.EnumValue("foo"), dg.EnumValue("bar", python_value=3)])
     )
     assert post_process_config(enum_config_type, "foo").value == "foo"
     assert post_process_config(enum_config_type, "bar").value == 3
@@ -33,29 +27,29 @@ def test_post_process_config():
     with pytest.raises(CheckError, match="Null array member not caught"):
         assert post_process_config(list_config_type, [None]).value == [None]
 
-    nullable_list_config_type = resolve_to_config_type([Noneable(str)])
+    nullable_list_config_type = resolve_to_config_type([dg.Noneable(str)])
     assert post_process_config(nullable_list_config_type, ["foo"]).value == ["foo"]
     assert post_process_config(nullable_list_config_type, [None]).value == [None]
     assert post_process_config(nullable_list_config_type, None).value == []
 
     map_config_type = resolve_to_config_type({str: int})
-    assert post_process_config(map_config_type, {"foo": 5}).value == {"foo": 5}
-    assert post_process_config(map_config_type, None).value == {}
+    assert post_process_config(map_config_type, {"foo": 5}).value == {"foo": 5}  # pyright: ignore[reportArgumentType]
+    assert post_process_config(map_config_type, None).value == {}  # pyright: ignore[reportArgumentType]
     with pytest.raises(CheckError, match="Null map member not caught"):
-        assert post_process_config(map_config_type, {"foo": None}).value == {"foo": None}
+        assert post_process_config(map_config_type, {"foo": None}).value == {"foo": None}  # pyright: ignore[reportArgumentType]
 
-    nullable_map_config_type = resolve_to_config_type({str: Noneable(int)})
-    assert post_process_config(nullable_map_config_type, {"foo": 5}).value == {"foo": 5}
-    assert post_process_config(nullable_map_config_type, {"foo": None}).value == {"foo": None}
-    assert post_process_config(nullable_map_config_type, None).value == {}
+    nullable_map_config_type = resolve_to_config_type({str: dg.Noneable(int)})
+    assert post_process_config(nullable_map_config_type, {"foo": 5}).value == {"foo": 5}  # pyright: ignore[reportArgumentType]
+    assert post_process_config(nullable_map_config_type, {"foo": None}).value == {"foo": None}  # pyright: ignore[reportArgumentType]
+    assert post_process_config(nullable_map_config_type, None).value == {}  # pyright: ignore[reportArgumentType]
 
     composite_config_type = resolve_to_config_type(
         {
-            "foo": String,
+            "foo": dg.String,
             "bar": {"baz": [str]},
-            "quux": Field(str, is_required=False, default_value="zip"),
-            "quiggle": Field(str, is_required=False),
-            "werty": Field({str: [int]}, is_required=False),
+            "quux": dg.Field(str, is_required=False, default_value="zip"),
+            "quiggle": dg.Field(str, is_required=False),
+            "werty": dg.Field({str: [int]}, is_required=False),
         }
     )
     with pytest.raises(CheckError, match="Missing required composite member"):
@@ -98,9 +92,9 @@ def test_post_process_config():
     nested_composite_config_type = resolve_to_config_type(
         {
             "fruts": {
-                "apple": Field(String),
-                "banana": Field(String, is_required=False),
-                "potato": Field(String, is_required=False, default_value="pie"),
+                "apple": dg.Field(dg.String),
+                "banana": dg.Field(dg.String, is_required=False),
+                "potato": dg.Field(dg.String, is_required=False, default_value="pie"),
             }
         }
     )
@@ -121,20 +115,20 @@ def test_post_process_config():
         nested_composite_config_type, {"fruts": {"apple": "a", "banana": "b", "potato": "c"}}
     ).value == {"fruts": {"apple": "a", "banana": "b", "potato": "c"}}
 
-    any_config_type = resolve_to_config_type(Any)
+    any_config_type = resolve_to_config_type(dg.Any)
 
-    assert post_process_config(any_config_type, {"foo": "bar"}).value == {"foo": "bar"}
+    assert post_process_config(any_config_type, {"foo": "bar"}).value == {"foo": "bar"}  # pyright: ignore[reportArgumentType]
 
     assert post_process_config(
         ConfigType("gargle", given_name="bargle", kind=ConfigTypeKind.ANY), 3
     )
 
     selector_config_type = resolve_to_config_type(
-        Selector(
+        dg.Selector(
             {
-                "one": Field(String),
-                "another": {"foo": Field(String, default_value="bar", is_required=False)},
-                "yet_another": Field(String, default_value="quux", is_required=False),
+                "one": dg.Field(dg.String),
+                "another": {"foo": dg.Field(dg.String, default_value="bar", is_required=False)},
+                "yet_another": dg.Field(dg.String, default_value="quux", is_required=False),
             }
         )
     )
@@ -162,14 +156,17 @@ def test_post_process_config():
     }
 
     singleton_selector_config_type = resolve_to_config_type(
-        Selector({"foo": Field(String, default_value="bar", is_required=False)})
+        dg.Selector({"foo": dg.Field(dg.String, default_value="bar", is_required=False)})
     )
 
     assert post_process_config(singleton_selector_config_type, None).value == {"foo": "bar"}
 
     permissive_dict_config_type = resolve_to_config_type(
-        Permissive(
-            {"foo": Field(String), "bar": Field(String, default_value="baz", is_required=False)}
+        dg.Permissive(
+            {
+                "foo": dg.Field(dg.String),
+                "bar": dg.Field(dg.String, default_value="baz", is_required=False),
+            }
         )
     )
 
@@ -183,13 +180,14 @@ def test_post_process_config():
     }
 
     noneable_permissive_config_type = resolve_to_config_type(
-        {"args": Field(Noneable(Permissive()), is_required=False, default_value=None)}
+        {"args": dg.Field(dg.Noneable(dg.Permissive()), is_required=False, default_value=None)}
     )
-    assert post_process_config(
-        noneable_permissive_config_type, {"args": {"foo": "wow", "mau": "mau"}}
+    assert post_process_config(  # pyright: ignore[reportOptionalSubscript]
+        noneable_permissive_config_type,
+        {"args": {"foo": "wow", "mau": "mau"}},
     ).value["args"] == {
         "foo": "wow",
         "mau": "mau",
     }
-    assert post_process_config(noneable_permissive_config_type, {"args": {}}).value["args"] == {}
-    assert post_process_config(noneable_permissive_config_type, None).value["args"] is None
+    assert post_process_config(noneable_permissive_config_type, {"args": {}}).value["args"] == {}  # pyright: ignore[reportOptionalSubscript]
+    assert post_process_config(noneable_permissive_config_type, None).value["args"] is None  # pyright: ignore[reportOptionalSubscript]

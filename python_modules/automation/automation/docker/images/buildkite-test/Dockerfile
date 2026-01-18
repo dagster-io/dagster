@@ -49,16 +49,17 @@ RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL
     && mv ./kind /usr/local/bin/kind \
     && curl "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3" | bash
 
-# Install libxmlsec to use xmlsec
+# Install libxmlsec to use xmlsec and libffi for cffi
 RUN apt-get update -yqq \
     && apt-get install -yqq --no-install-recommends \
+    libffi-dev \
     libxmlsec1-dev \
     pkg-config
 
-# Install Java (required by pyspark)
-COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
-ENV JAVA_HOME /usr/local/openjdk-8
-RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
+# Install Java (required by pyspark) - Java 17 for compatibility with both Spark 3 and 4
+COPY --from=eclipse-temurin:17-jdk-jammy /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME /opt/java/openjdk
+RUN update-alternatives --install /usr/bin/java java /opt/java/openjdk/bin/java 1
 
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
@@ -66,7 +67,7 @@ RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/ja
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
 # deb.nodesource script adds node source to apt
-RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
+RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
     gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
@@ -90,7 +91,6 @@ RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
     rabbitmq-server \
     rsync \
     ssh \
-    software-properties-common \
     unzip \
     wget \
     xz-utils \
@@ -107,8 +107,9 @@ RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}
 
 # Install Google Cloud SDK
 # https://cloud.google.com/sdk/docs/install#deb
-# Add Google Cloud GPG key and apt source
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+# Add Google Cloud GPG key and apt source (using modern method without deprecated apt-key)
+RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null \
     && apt-get -yqq update \
@@ -131,14 +132,22 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Install Python build deps
-RUN pip install -U pip setuptools wheel
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.5.4 /uv /bin/
 
 # Install redis
 RUN wget http://download.redis.io/redis-stable.tar.gz \
     && tar xvzf redis-stable.tar.gz \
     && cd redis-stable \
     && make install
+
+# Install the DuckDB CLI
+RUN curl --fail --silent --show-error --location \
+    --output duckdb_cli-linux-amd64.zip \
+    https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip \
+    && unzip duckdb_cli-linux-amd64.zip \
+    && mv duckdb /usr/local/bin/duckdb \
+    && chmod +x /usr/local/bin/duckdb
 
 # Clean up
 RUN apt-get remove -yqq \
@@ -159,7 +168,7 @@ WORKDIR dagster
 ENV VIRTUAL_ENV=/usr/local
 ENV UV_HTTP_TIMEOUT=300
 RUN python scripts/install_dev_python_modules.py --system awscli || exit 1
-RUN pip freeze --exclude-editable > /snapshot-reqs.txt
+RUN uv pip freeze --exclude-editable > /snapshot-reqs.txt
 
 # Final image includes both system deps and preinstalled non-Dagster python deps
 FROM system_base
@@ -168,7 +177,7 @@ COPY --from=snapshot_builder /snapshot-reqs.txt .
 
 # Preinstall non-Dagster packages in image so that the virtual environment
 # builds faster in Buildkite.
-RUN pip install -r /snapshot-reqs.txt \
+RUN uv pip install --system -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
 
 # New versions of debian require allowlisting folders where `git` can run

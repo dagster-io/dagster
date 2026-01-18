@@ -40,6 +40,9 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         ) as instance:
             yield instance
 
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
     @pytest.fixture(scope="function", name="storage")
     def event_log_storage(self, instance):
         event_log_storage = instance.event_log_storage
@@ -143,4 +146,4 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
             with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.mysql_url == from_explicit.mysql_url
+                assert from_url.mysql_url == from_explicit.mysql_url  # pyright: ignore[reportAttributeAccessIssue]

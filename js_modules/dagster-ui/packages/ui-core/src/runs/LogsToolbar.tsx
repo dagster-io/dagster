@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Checkbox,
   ExternalAnchorButton,
   Icon,
   IconName,
@@ -11,7 +10,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
@@ -77,14 +75,19 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
 
   const activeItems = React.useMemo(() => new Set([logType]), [logType]);
 
+  const noStepsStarted = React.useMemo(
+    () => Object.values(metadata.steps).every((step) => !step.start),
+    [metadata],
+  );
+
   return (
     <OptionsContainer style={{gap: 12}}>
       <ButtonGroup
         activeItems={activeItems}
         buttons={[
           {id: LogType.structured, icon: 'logs_structured', label: 'Events'},
-          {id: LogType.stdout, icon: 'logs_stdout', label: 'stdout'},
-          {id: LogType.stderr, icon: 'logs_stderr', label: 'stderr'},
+          {id: LogType.stdout, icon: 'logs_stdout', label: 'stdout', disabled: noStepsStarted},
+          {id: LogType.stderr, icon: 'logs_stderr', label: 'stderr', disabled: noStepsStarted},
         ]}
         onClick={(id) => onSetLogType(id)}
       />
@@ -170,7 +173,8 @@ export const ComputeLogToolbar = ({
           <div style={{width: 200}}>
             <Suggest
               resetOnClose
-              inputProps={{placeholder: 'Select a step…'}}
+              inputProps={{placeholder: 'Select a step…', style: {width: 500}}}
+              popoverProps={{matchTargetWidth: true}}
               activeItem={computeLogFileKey}
               selectedItem={computeLogFileKey}
               disabled={!steps.length}
@@ -180,14 +184,18 @@ export const ComputeLogToolbar = ({
               itemPredicate={(query, item) =>
                 fileKeyText(item).toLocaleLowerCase().includes(query.toLocaleLowerCase())
               }
-              itemRenderer={(item, itemProps) => (
-                <MenuItem
-                  active={itemProps.modifiers.active}
-                  onClick={(e) => itemProps.handleClick(e)}
-                  text={fileKeyText(item)}
-                  key={item}
-                />
-              )}
+              itemRenderer={(item, itemProps) => {
+                const text = fileKeyText(item);
+                return (
+                  <MenuItem
+                    active={itemProps.modifiers.active}
+                    onClick={(e) => itemProps.handleClick(e)}
+                    text={text}
+                    key={item}
+                  />
+                );
+              }}
+              menuWidth={500}
               onItemSelect={(fileKey) => {
                 onSetComputeLogKey(fileKey);
               }}
@@ -247,7 +255,6 @@ const StructuredLogToolbar = ({
   const [_, setStoredLogLevels] = useStateWithStorage(EnabledRunLogLevelsKey, validateLogLevels);
 
   const selectedStep = filter.logQuery.find((v) => v.token === 'step')?.value || null;
-  const filterText = filter.logQuery.reduce((accum, value) => accum + value.value, '');
 
   // Reset the query string if the filter is updated, allowing external behavior
   // (e.g. clicking a Gantt step) to set the input.
@@ -276,7 +283,11 @@ const StructuredLogToolbar = ({
 
       // When changing log level filters, update localStorage with the selected levels
       // so that it persists as the default.
-      enabled ? allEnabledFilters.add(level) : allEnabledFilters.delete(level);
+      if (enabled) {
+        allEnabledFilters.add(level);
+      } else {
+        allEnabledFilters.delete(level);
+      }
       setStoredLogLevels(Array.from(allEnabledFilters));
 
       // Then, update the querystring.
@@ -300,7 +311,9 @@ const StructuredLogToolbar = ({
       }, 2000);
     }
     return () => {
-      token && clearTimeout(token);
+      if (token) {
+        clearTimeout(token);
+      }
     };
   }, [copyIcon]);
 
@@ -324,31 +337,12 @@ const StructuredLogToolbar = ({
         suggestionProviders={getRunFilterProviders(steps)}
         onChange={onChange}
       />
-      {filterText ? (
-        <NonMatchCheckbox
-          checked={filter.hideNonMatches}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
-          }
-          label="Hide non-matches"
-        />
-      ) : null}
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} margin={{left: 12}}>
-        <LogFilterSelect
-          options={filterOptions as Record<LogLevel, FilterOption>}
-          onSetFilter={onChangeFilter}
-        />
-      </Box>
+      <LogFilterSelect
+        options={filterOptions as Record<LogLevel, FilterOption>}
+        onSetFilter={onChangeFilter}
+      />
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
     </>
   );
 };
-
-const NonMatchCheckbox = styled(Checkbox)`
-  &&& {
-    margin: 0 4px 0 12px;
-  }
-
-  white-space: nowrap;
-`;

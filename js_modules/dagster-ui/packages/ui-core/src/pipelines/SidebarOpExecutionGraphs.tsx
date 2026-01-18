@@ -3,11 +3,11 @@ import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {SidebarSection} from './SidebarComponents';
+import {gql, useQuery} from '../apollo-client';
 import {
   SidebarOpGraphsQuery,
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
-import {gql, useQuery} from '../apollo-client';
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
 import {linkToRunEvent} from '../runs/RunUtils';
@@ -60,6 +60,7 @@ export const SidebarOpExecutionGraphs = ({
           .map((s) => ({
             x: Number(s.startTime) * 1000,
             xNumeric: Number(s.startTime) * 1000,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             y: s.endTime! - s.startTime!,
           }))
       : [];

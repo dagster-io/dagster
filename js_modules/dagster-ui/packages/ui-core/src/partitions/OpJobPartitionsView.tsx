@@ -26,7 +26,7 @@ import {
 import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 import {QueryResult, gql, useQuery} from '../apollo-client';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {RunStatus} from '../graphql/types';
@@ -66,7 +66,7 @@ export const OpJobPartitionsView = React.memo(
     }, [cacheKey, currentQueryResult]);
     const queryResult = currentQueryResult.data
       ? currentQueryResult
-      : cachedResult ?? currentQueryResult;
+      : (cachedResult ?? currentQueryResult);
     const {data, loading} = queryResult;
 
     if (!data) {
@@ -144,12 +144,14 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
         return;
       }
       const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const lastRun = sortedRuns[sortedRuns.length - 1]!;
       stepDurationData[p.name] = {};
       runDurationData[p.name] =
         lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
 
       lastRun.stepStats.forEach((s) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         stepDurationData[p.name]![s.stepKey] = [
           s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
         ];
@@ -172,10 +174,6 @@ export const OpJobPartitionsViewContent = React.memo(
     repoAddress: RepoAddress;
     partitionsQueryResult: QueryResult<PartitionsStatusQuery, PartitionsStatusQueryVariables>;
   }) => {
-    const {
-      permissions: {canLaunchPartitionBackfill},
-      disabledReasons,
-    } = usePermissionsForLocation(repoAddress.location);
     const {viewport, containerProps} = useViewport();
 
     const [pageSize, setPageSize] = useState(60);
@@ -288,7 +286,7 @@ export const OpJobPartitionsViewContent = React.memo(
         >
           <Subheading>Status</Subheading>
           <Box flex={{gap: 8}}>
-            <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
+            <Button onClick={() => setShowSteps(!showSteps)}>
               {showSteps ? 'Hide per-step status' : 'Show per-step status'}
             </Button>
             <Button
@@ -298,19 +296,18 @@ export const OpJobPartitionsViewContent = React.memo(
             >
               Refresh
             </Button>
-            {canLaunchPartitionBackfill ? (
+            {partitionSet.hasLaunchBackfillPermission ? (
               <Button
+                icon={<Icon name="add_circle" />}
                 onClick={() => {
                   void partitionsQueryResult.refetch();
                   setShowBackfillSetup(!showBackfillSetup);
                 }}
-                icon={<Icon name="add_circle" />}
-                active={showBackfillSetup}
               >
                 Launch backfill…
               </Button>
             ) : (
-              <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
+              <Tooltip content={DEFAULT_DISABLED_REASON} display="block">
                 <Button icon={<Icon name="add_circle" />} disabled>
                   Launch backfill…
                 </Button>
@@ -475,6 +472,7 @@ const PARTITIONS_STATUS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+    hasLaunchBackfillPermission
   }
 
   fragment OpJobPartitionStatus on PartitionStatus {

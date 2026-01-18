@@ -20,6 +20,7 @@ import {
   displaySensorMutationErrors,
 } from './SensorMutations';
 import {SENSOR_STATE_QUERY} from './SensorStateQuery';
+import {useMutation, useQuery} from '../apollo-client';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
@@ -31,8 +32,7 @@ import {
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
 import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
-import {SensorSwitchFragment} from './types/SensorSwitch.types';
-import {gql, useMutation, useQuery} from '../apollo-client';
+import {SensorSwitchFragment} from './types/SensorSwitchFragment.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -49,12 +49,13 @@ interface Props {
 
 export const SensorSwitch = (props: Props) => {
   const {repoAddress, sensor, size = 'large'} = props;
-  const {
-    permissions: {canStartSensor, canStopSensor},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
-
   const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
+
+  // We retrieve the permissions for the sensor from the sensor state, but it doesn't include
+  // the reason for a permission being disabled. This is available on the permissions for the
+  // location, so use that.
+  const {disabledReasons} = usePermissionsForLocation(repoAddress.location);
+  const {canStartSensor: cannotStartReason, canStopSensor: cannotStopReason} = disabledReasons;
 
   const {id, name} = sensor;
 
@@ -79,6 +80,7 @@ export const SensorSwitch = (props: Props) => {
     refetchQueries: [{variables, query: SENSOR_STATE_QUERY}],
     awaitRefetchQueries: true,
   });
+
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
     StopRunningSensorMutation,
     StopRunningSensorMutationVariables
@@ -87,10 +89,12 @@ export const SensorSwitch = (props: Props) => {
     refetchQueries: [{variables, query: SENSOR_STATE_QUERY}],
     awaitRefetchQueries: true,
   });
+
   const [setSensorCursor, {loading: cursorMutationInFlight}] = useMutation<
     SetSensorCursorMutation,
     SetSensorCursorMutationVariables
   >(SET_CURSOR_MUTATION);
+
   const clearCursor = async () => {
     await setSensorCursor({
       variables: {
@@ -134,20 +138,22 @@ export const SensorSwitch = (props: Props) => {
   }
 
   // Status according to sensor object passed in (may be outdated if its from the workspace snapshot)
-  let status = sensor.sensorState.status;
+  let {status} = sensor.sensorState;
+
+  // If the sensor was never toggled before then InstigationStateNotFoundError is returned
+  // in this case we should rely on the data from the WorkspaceSnapshot.
   if (
-    // If the sensor was never toggled before then InstigationStateNotFoundError is returned
-    // in this case we should rely on the data from the WorkspaceSnapshot.
-    !['InstigationState', 'InstigationStateNotFoundError'].includes(
-      data?.instigationStateOrError.__typename as any,
-    )
+    data?.instigationStateOrError.__typename !== 'InstigationState' &&
+    data?.instigationStateOrError.__typename !== 'InstigationStateNotFoundError'
   ) {
     return (
       <Tooltip content="Error loading sensor state">
         <Icon name="error" color={Colors.accentRed()} />;
       </Tooltip>
     );
-  } else if (data?.instigationStateOrError.__typename === 'InstigationState') {
+  }
+
+  if (data?.instigationStateOrError.__typename === 'InstigationState') {
     // status according to latest data
     status = data?.instigationStateOrError.status;
   }
@@ -157,7 +163,7 @@ export const SensorSwitch = (props: Props) => {
 
   if (
     !running &&
-    canStartSensor &&
+    sensor.sensorState.hasStartPermission &&
     sensor.sensorType === SensorType.RUN_STATUS &&
     lastProcessedTimestamp &&
     isRunStatusSensorLagging(lastProcessedTimestamp)
@@ -225,7 +231,11 @@ export const SensorSwitch = (props: Props) => {
     );
   }
 
-  if (canStartSensor && canStopSensor) {
+  if (
+    sensor.sensorState &&
+    sensor.sensorState.hasStartPermission &&
+    sensor.sensorState.hasStopPermission
+  ) {
     return (
       <Checkbox
         format="switch"
@@ -237,28 +247,22 @@ export const SensorSwitch = (props: Props) => {
     );
   }
 
-  const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
+  const lacksPermission =
+    (running && !sensor.sensorState?.hasStopPermission) ||
+    (!running && !sensor.sensorState?.hasStartPermission);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
+  const disabledReason = running ? cannotStopReason : cannotStartReason;
 
-  const switchElement = (
-    <Checkbox
-      format="switch"
-      disabled={disabled}
-      checked={running || toggleOnInFlight}
-      onChange={onChangeSwitch}
-      size={size}
-    />
-  );
-
-  return lacksPermission ? (
-    <Tooltip
-      content={running ? disabledReasons.canStartSensor : disabledReasons.canStopSensor}
-      display="flex"
-    >
-      {switchElement}
+  return (
+    <Tooltip content={disabledReason} display="flex" canShow={lacksPermission}>
+      <Checkbox
+        format="switch"
+        disabled={disabled}
+        checked={running || toggleOnInFlight}
+        onChange={onChangeSwitch}
+        size={size}
+      />
     </Tooltip>
-  ) : (
-    switchElement
   );
 };
 
@@ -275,25 +279,7 @@ const parseRunStatusSensorCursor = (cursor: string | null) => {
     const cursorPayload = JSON.parse(cursor);
     const timestamp = cursorPayload.record_timestamp || cursorPayload.update_timestamp;
     return timestamp ? new Date(timestamp).getTime() : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
-
-export const SENSOR_SWITCH_FRAGMENT = gql`
-  fragment SensorSwitchFragment on Sensor {
-    id
-    name
-    sensorState {
-      id
-      selectorId
-      status
-      typeSpecificData {
-        ... on SensorData {
-          lastCursor
-        }
-      }
-    }
-    sensorType
-  }
-`;

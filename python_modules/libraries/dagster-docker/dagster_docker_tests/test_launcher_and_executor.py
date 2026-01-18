@@ -6,7 +6,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
+from dagster_shared.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
     find_local_test_image,
@@ -14,13 +14,13 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_job,
+    get_test_project_workspace_and_remote_job,
 )
 
-from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE
 
 
-@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(max_runs=2)
 @pytest.mark.parametrize(
     "from_pending_repository, asset_selection",
     [
@@ -30,13 +30,15 @@ from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
     ],
 )
 @pytest.mark.integration
-def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selection):
+def test_image_on_job(
+    monkeypatch, docker_postgres_instance, aws_env, from_pending_repository, asset_selection
+):
     monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -78,7 +80,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
         repository_load_data = recon_job.repository.get_definition().repository_load_data
         recon_job = recon_job.with_repository_load_data(repository_load_data)
 
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance,
             "demo_job_docker",
             container_image=docker_image,
@@ -87,15 +89,15 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(
+            remote_job = ReOriginatedExternalJobForTest(
                 orig_job, container_image=docker_image, filename=filename
             )
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
                 repository_load_data=repository_load_data,
                 asset_selection=frozenset(asset_selection) if asset_selection else None,
             )
@@ -111,7 +113,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
 
 
 @pytest.mark.integration
-def test_container_context_on_job(aws_env):
+def test_container_context_on_job(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -150,7 +152,7 @@ def test_container_context_on_job(aws_env):
             container_context={
                 "docker": {
                     "env_vars": aws_env,
-                    "networks": ["container:test-postgres-db-docker"],
+                    "networks": ["container:postgres"],
                     "container_kwargs": {
                         "auto_remove": True,
                         "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -158,18 +160,18 @@ def test_container_context_on_job(aws_env):
                 }
             },
         )
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
+            remote_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
 
@@ -184,12 +186,12 @@ def test_container_context_on_job(aws_env):
 
 
 @pytest.mark.integration
-def test_recovery(aws_env):
+def test_recovery(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -202,7 +204,7 @@ def test_recovery(aws_env):
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "ops": {
                 "multiply_the_word_slow": {
@@ -225,19 +227,19 @@ def test_recovery(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
+            remote_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             instance.launch_run(run.run_id, workspace)

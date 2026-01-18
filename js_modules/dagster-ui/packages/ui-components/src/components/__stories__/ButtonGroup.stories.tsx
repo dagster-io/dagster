@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useCallback, useState} from 'react';
 
 import {ButtonGroup, ButtonGroupItem} from '../ButtonGroup';
@@ -7,14 +6,18 @@ import {ButtonGroup, ButtonGroupItem} from '../ButtonGroup';
 export default {
   title: 'ButtonGroup',
   component: ButtonGroup,
-} as Meta;
+};
 
 export const Multiple = () => {
   const [activeItems, setActiveItems] = useState<Set<string>>(() => new Set());
   const onClick = useCallback((id: string) => {
     setActiveItems((current) => {
       const copy = new Set(current);
-      copy.has(id) ? copy.delete(id) : copy.add(id);
+      if (copy.has(id)) {
+        copy.delete(id);
+      } else {
+        copy.add(id);
+      }
       return copy;
     });
   }, []);

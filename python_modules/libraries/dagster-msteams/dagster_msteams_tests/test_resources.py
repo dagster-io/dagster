@@ -1,9 +1,9 @@
 import json
+from unittest.mock import patch
 
 from dagster import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_msteams import MSTeamsResource, msteams_resource
-from mock import patch
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")

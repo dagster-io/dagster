@@ -14,9 +14,11 @@ export type RunActionButtonsTestQuery = {
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
         canTerminate: boolean;
+        allPools: Array<string> | null;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
+        hasRunMetricsEnabled: boolean;
         status: Types.RunStatus;
         mode: string;
         rootRunId: string | null;
@@ -45,6 +47,7 @@ export type RunActionButtonsTestQuery = {
         executionPlan: {
           __typename: 'ExecutionPlan';
           artifactsPersisted: boolean;
+          assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
           steps: Array<{
             __typename: 'ExecutionStep';
             key: string;
@@ -55,25 +58,8 @@ export type RunActionButtonsTestQuery = {
             }>;
           }>;
         } | null;
-        stepStats: Array<{
-          __typename: 'RunStepStats';
-          stepKey: string;
-          status: Types.StepEventStatus | null;
-          startTime: number | null;
-          endTime: number | null;
-          attempts: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-          markers: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-        }>;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunActionButtonsTestQueryVersion = 'a10ee12da7843c87453578a2723bd3f9db19215ad9f50ac897d0979ac6187365';
+export const RunActionButtonsTestQueryVersion = '604a93ec19ca72ff504447fb4bae7309f0ae8ab24ec5d7b688d7312d3a00848d';

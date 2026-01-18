@@ -1,0 +1,6 @@
+type: .MyComponent
+
+attributes:
+  a_string: "hi"
+  an_int: 3
+  throw: true

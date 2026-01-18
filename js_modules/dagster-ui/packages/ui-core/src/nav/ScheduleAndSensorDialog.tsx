@@ -3,9 +3,9 @@ import {Link} from 'react-router-dom';
 
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
-import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment.types';
 import {SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -33,8 +33,8 @@ export const ScheduleAndSensorDialog = ({
     scheduleCount && sensorCount
       ? 'Schedules and sensors'
       : scheduleCount
-      ? 'Schedules'
-      : 'Sensors';
+        ? 'Schedules'
+        : 'Sensors';
 
   return (
     <Dialog
@@ -77,7 +77,9 @@ export const ScheduleAndSensorDialog = ({
                       </Link>
                     </td>
                     <td>
-                      {humanCronString(schedule.cronSchedule, schedule.executionTimezone || 'UTC')}
+                      {humanCronString(schedule.cronSchedule, {
+                        longTimezoneName: schedule.executionTimezone || 'UTC',
+                      })}
                     </td>
                   </tr>
                 ))}

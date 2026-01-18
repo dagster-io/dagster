@@ -13,6 +13,7 @@ import {Link} from 'react-router-dom';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
+import {gql, useQuery} from '../apollo-client';
 import {
   JobMetadataAssetNodeFragment,
   JobMetadataFragment,
@@ -20,13 +21,12 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
-import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitchFragment';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitchFragment';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
@@ -87,7 +87,7 @@ export const JobMetadata = (props: Props) => {
         <JobScheduleOrSensorTag job={metadata.job} repoAddress={repoAddress} />
       ) : null}
       <LatestRunTag pipelineName={pipelineName} repoAddress={repoAddress} />
-      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.autoMaterializePolicy) && (
+      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.automationCondition) && (
         <AutomaterializeDaemonStatusTag />
       )}
       {metadata.runsForAssetScan ? (
@@ -214,7 +214,7 @@ export const JOB_METADATA_QUERY = gql`
 
   fragment JobMetadataAssetNode on AssetNode {
     id
-    autoMaterializePolicy {
+    automationCondition {
       __typename
     }
     assetKey {

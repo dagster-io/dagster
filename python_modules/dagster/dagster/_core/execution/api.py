@@ -1,23 +1,10 @@
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
@@ -38,6 +25,7 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -46,9 +34,6 @@ from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
-
-if TYPE_CHECKING:
-    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -205,7 +190,7 @@ def execute_run(
             "execute_run requires a reconstructable job but received job definition directly"
             " instead. To support hand-off to other processes please wrap your definition in a call"
             " to reconstructable(). Learn more about reconstructable here:"
-            " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+            " https://docs.dagster.io/api/dagster/execution#dagster.reconstructable"
         )
 
     check.inst_param(job, "job", IJob)
@@ -247,8 +232,6 @@ def execute_run(
     if isinstance(job, ReconstructableJob):
         job = job.with_repository_load_data(execution_plan.repository_load_data)
 
-    output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
-
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
         iterator=job_execution_iterator,
@@ -261,7 +244,7 @@ def execute_run(
             run_config=dagster_run.run_config,
             raise_on_error=raise_on_error,
             executor_defs=None,
-            output_capture=output_capture,
+            output_capture=None,
         ),
     )
     event_list = list(_execute_run_iterable)
@@ -294,6 +277,7 @@ def ephemeral_instance_if_missing(
             yield ephemeral_instance
 
 
+@public
 class ReexecutionOptions(NamedTuple):
     """Reexecution options for python-based execution in Dagster.
 
@@ -332,6 +316,7 @@ class ReexecuteFromFailureOption(ReexecutionOptions):
     """Marker subclass used to calculate reexecution information later."""
 
 
+@public
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
@@ -407,8 +392,8 @@ def execute_job(
 
         instance = DagsterInstance.get()
 
-        options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance)
-        execute_job(reconstructable(job), instance, reexecution_options=options)
+        options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance=instance)
+        execute_job(reconstructable(job), instance=instance, reexecution_options=options)
 
     Parameters:
         job (ReconstructableJob): A reconstructable pointer to a :py:class:`JobDefinition`.
@@ -563,7 +548,7 @@ def _reexecute_job(
                 execute_instance,
                 job_arg,
                 run_config,
-                cast(DagsterRun, parent_dagster_run),
+                cast("DagsterRun", parent_dagster_run),
                 reexecution_options.step_selection,
             )
         # else all steps will be executed and parent state is not needed
@@ -604,6 +589,7 @@ def execute_plan_iterator(
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
+    step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)
@@ -626,6 +612,7 @@ def execute_plan_iterator(
                 run_config=run_config,
                 dagster_run=dagster_run,
                 instance=instance,
+                step_dependency_config=step_dependency_config,
             ),
         )
     )
@@ -747,15 +734,13 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    failed_steps: List[
+    failed_steps: list[
         DagsterEvent
     ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
-                failed_steps.append(event)
-            elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event)
 
             # Telemetry
@@ -905,7 +890,7 @@ def _check_execute_job_args(
     run_config: Optional[Mapping[str, object]],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]] = None,
-) -> Tuple[
+) -> tuple[
     IJob,
     Optional[Mapping],
     Mapping[str, str],
@@ -964,7 +949,7 @@ def _resolve_reexecute_step_selection(
 
 def _job_with_repository_load_data(
     job_arg: Union[JobDefinition, IJob],
-) -> Tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
+) -> tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
     """For ReconstructableJob, generate and return any required RepositoryLoadData, alongside
     a ReconstructableJob with this repository load data baked in.
     """

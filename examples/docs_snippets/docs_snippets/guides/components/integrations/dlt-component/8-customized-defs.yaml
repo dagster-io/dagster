@@ -1,0 +1,6 @@
+type: dagster_dlt.DltLoadCollectionComponent
+
+attributes:
+  loads:
+    - source: .loads.dlthub_dlt_stargazers_source
+      pipeline: .loads.dlthub_dlt_stargazers_pipeline

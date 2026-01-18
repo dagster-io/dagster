@@ -33,7 +33,7 @@ class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
     """Used to represent a cluster, returned by the cluster_provider fixture below."""
 
     def __new__(cls, name, kubeconfig_file):
-        return super(ClusterConfig, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             kubeconfig_file=check.str_param(kubeconfig_file, "kubeconfig_file"),
@@ -71,7 +71,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                             f"Found existing image tagged {docker_image}, skipping image build. To rebuild,"
                             f" first run: docker rmi {docker_image}"
                         )
-                    except docker.errors.ImageNotFound:
+                    except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
                         build_and_tag_test_image(docker_image)
                     kind_load_images(
                         cluster_name=cluster_config.name,
@@ -87,7 +87,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             yield ClusterConfig(name="from_system_kubeconfig", kubeconfig_file=kubeconfig_file)
 
         else:
-            raise Exception("unknown cluster provider %s" % provider)
+            raise Exception(f"unknown cluster provider {provider}")
 
     return _cluster_provider
 
@@ -140,7 +140,7 @@ def local_port_forward_postgres(namespace):
                 raise Exception("Timed out while waiting for postgres port forwarding")
 
             print(
-                "Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be"
+                "Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be"  # noqa: UP031
                 " available..." % (postgres_pod_name, forward_port)
             )
             try:
@@ -231,7 +231,7 @@ def check_export_runs(instance):
 
     # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
     current_test = (
-        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")
+        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")  # pyright: ignore[reportOptionalMemberAccess]
     )
 
     for run in instance.get_runs():

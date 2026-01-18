@@ -5,7 +5,8 @@ import styled from 'styled-components';
 import {OpEdges} from './OpEdges';
 import {OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT, OpNode} from './OpNode';
 import {ParentOpNode} from './ParentOpNode';
-import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
+import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM} from './SVGConsts';
+import {SVGViewport, SVGViewportRef} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {
   Edge,
@@ -15,8 +16,8 @@ import {
   isNodeOffscreen,
   isOpHighlighted,
 } from './common';
-import {OpGraphOpFragment} from './types/OpGraph.types';
 import {gql} from '../apollo-client';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 const NoOp = () => {};
@@ -31,12 +32,12 @@ interface OpGraphProps {
   selectedHandleID?: string;
   selectedOp?: OpGraphOpFragment;
   highlightedOps: Array<OpGraphOpFragment>;
-  interactor?: SVGViewportInteractor;
   onClickOp?: (arg: OpNameOrPath) => void;
   onDoubleClickOp?: (arg: OpNameOrPath) => void;
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
   onLeaveSubgraph?: () => void;
   onClickBackground?: () => void;
+  isExternal?: boolean;
 }
 
 interface OpGraphContentsProps extends OpGraphProps {
@@ -104,6 +105,7 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
       ))}
       <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
         {ops
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           .filter((op) => !isNodeOffscreen(layout.nodes[op.name]!.bounds, viewportRect))
           .map((op) => (
             <OpNode
@@ -115,6 +117,7 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
               onDoubleClick={() => onDoubleClickOp({name: op.name})}
               onEnterComposite={() => onEnterSubgraph({name: op.name})}
               onHighlightEdges={setHighlighted}
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               layout={layout.nodes[op.name]!}
               selected={selectedOp === op}
               focused={focusOps.includes(op)}
@@ -122,6 +125,7 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
                 isOpHighlighted(highlighted, op.name) ? highlighted : EmptyHighlightedArray
               }
               dim={highlightedOps.length > 0 && highlightedOps.indexOf(op) === -1}
+              isExternal={props.isExternal}
             />
           ))}
       </foreignObject>
@@ -136,9 +140,10 @@ OpGraphContents.displayName = 'OpGraphContents';
 const EmptyHighlightedArray: never[] = [];
 
 export class OpGraph extends React.Component<OpGraphProps> {
-  viewportEl: React.RefObject<SVGViewport> = React.createRef();
+  viewportEl: React.RefObject<SVGViewportRef> = React.createRef();
 
   argToOpLayout = (arg: OpNameOrPath) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
     return this.props.layout.nodes[lastName];
   };
@@ -158,16 +163,20 @@ export class OpGraph extends React.Component<OpGraphProps> {
   };
 
   unfocus = (e: React.MouseEvent<any>) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.viewportEl.current!.autocenter(true);
     e.stopPropagation();
   };
 
   componentDidUpdate(prevProps: OpGraphProps) {
     if (prevProps.parentOp !== this.props.parentOp) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.viewportEl.current!.cancelAnimations();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.viewportEl.current!.autocenter();
     }
     if (prevProps.layout !== this.props.layout) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.viewportEl.current!.autocenter();
     }
     if (prevProps.selectedOp !== this.props.selectedOp && this.props.selectedOp) {
@@ -183,7 +192,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
   };
 
   render() {
-    const {layout, interactor, jobName, onClickBackground, onDoubleClickOp} = this.props;
+    const {layout, jobName, onClickBackground, onDoubleClickOp} = this.props;
 
     return (
       <SVGViewport
@@ -191,7 +200,6 @@ export class OpGraph extends React.Component<OpGraphProps> {
         key={jobName}
         maxZoom={DEFAULT_MAX_ZOOM}
         defaultZoom="zoom-to-fit"
-        interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onClick={onClickBackground}

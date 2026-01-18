@@ -1,5 +1,7 @@
 from typing import Any, Optional, Union, cast, overload
 
+from dagster_shared.seven import is_subclass
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
@@ -8,7 +10,6 @@ from dagster._config.config_type import Array, ConfigAnyInstance, ConfigType, Co
 from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._serdes import serialize_value
-from dagster._seven import is_subclass
 from dagster._utils import is_enum_value
 from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
 
@@ -177,6 +178,7 @@ def has_implicit_default(config_type):
     return all_optional_type(config_type)
 
 
+@public
 class Field:
     """Defines the schema for a configuration field.
 
@@ -235,6 +237,9 @@ class Field:
         description (str):
             A human-readable description of this config field.
 
+        is_secret (bool):
+            Whether this field contains sensitive data that should be masked in UIs. Defaults to False.
+
     Examples:
         .. code-block:: python
 
@@ -266,6 +271,7 @@ class Field:
         default_value: Any = FIELD_NO_DEFAULT_PROVIDED,
         is_required: Optional[bool] = None,
         description: Optional[str] = None,
+        is_secret: bool = False,
     ):
         from dagster._config.post_process import resolve_defaults
         from dagster._config.validate import validate_config
@@ -273,6 +279,7 @@ class Field:
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
         self._description = check.opt_str_param(description, "description")
+        self._is_secret = check.bool_param(is_secret, "is_secret")
 
         check.opt_bool_param(is_required, "is_required")
 
@@ -299,12 +306,10 @@ class Field:
         if self.default_provided:
             if self.config_type.kind == ConfigTypeKind.ENUM and is_enum_value(default_value):
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "You have passed into a python enum value as the default value "
-                        f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
-                        "string represention as the default value. "
-                        f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
-                    )
+                    "You have passed into a python enum value as the default value "
+                    f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
+                    "string represention as the default value. "
+                    f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
                 )
 
             evr = validate_config(self.config_type, default_value)
@@ -367,6 +372,12 @@ class Field:
         """A human-readable description of this config field, if provided."""
         return self._description
 
+    @public
+    @property
+    def is_secret(self) -> bool:
+        """Whether this field contains sensitive data that should be masked in UIs."""
+        return self._is_secret
+
     @property
     def default_value_as_json_str(self) -> str:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
@@ -383,4 +394,4 @@ class Field:
 
 
 def check_opt_field_param(obj: object, param_name: str) -> Optional[Field]:
-    return check.opt_inst_param(cast(Optional[Field], obj), param_name, Field)
+    return check.opt_inst_param(cast("Optional[Field]", obj), param_name, Field)

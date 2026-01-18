@@ -4,8 +4,9 @@ import logging
 import random
 import string
 import uuid
+from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any, Mapping
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import mlflow
@@ -195,7 +196,7 @@ def test_cleanup_on_error(
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
     # When: a run is started
-    mlf.start_run()
+    mlf.start_run()  # pyright: ignore[reportAttributeAccessIssue]
 
     with patch("sys.exc_info", return_value=[0, any_error]):
         # When: cleanup_on_error is called
@@ -284,11 +285,13 @@ def test_setup(mock_atexit, context):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
 
-    with patch.object(
-        MlFlow, "_get_current_run_id", return_value="run_id_mock"
-    ) as mock_get_current_run_id, patch.object(
-        MlFlow, "_set_active_run"
-    ) as mock_set_active_run, patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags:
+    with (
+        patch.object(
+            MlFlow, "_get_current_run_id", return_value="run_id_mock"
+        ) as mock_get_current_run_id,
+        patch.object(MlFlow, "_set_active_run") as mock_set_active_run,
+        patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags,
+    ):
         # When _setup is called
         mlf._setup()  # noqa: SLF001
         # Then
@@ -299,7 +302,7 @@ def test_setup(mock_atexit, context):
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument
-    mock_atexit.assert_called_once_with(mlf.end_run)
+    mock_atexit.assert_called_once_with(mlf.end_run)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @patch("atexit.unregister")
@@ -311,11 +314,13 @@ def test_setup_with_passed_run_id(mock_atexit, context):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
 
-    with patch.object(
-        MlFlow, "_get_current_run_id", return_value="run_id_mock"
-    ) as mock_get_current_run_id, patch.object(
-        MlFlow, "_set_active_run"
-    ) as mock_set_active_run, patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags:
+    with (
+        patch.object(
+            MlFlow, "_get_current_run_id", return_value="run_id_mock"
+        ) as mock_get_current_run_id,
+        patch.object(MlFlow, "_set_active_run") as mock_set_active_run,
+        patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags,
+    ):
         # When _setup is called
         mlf._setup()  # noqa: SLF001
         # Then
@@ -326,7 +331,7 @@ def test_setup_with_passed_run_id(mock_atexit, context):
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument
-    mock_atexit.assert_called_once_with(mlf.end_run)
+    mock_atexit.assert_called_once_with(mlf.end_run)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])
@@ -415,11 +420,11 @@ def test_execute_op_with_mlflow_resource():
     @op(required_resource_keys={"mlflow"})
     def op1(_):
         mlflow.log_params(params)
-        run_id_holder["op1_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op1_run_id"] = mlflow.active_run().info.run_id  # type: ignore
 
     @op(required_resource_keys={"mlflow"})
     def op2(_, _arg1):
-        run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id  # type: ignore
 
     @job(resource_defs={"mlflow": mlflow_tracking})
     def mlf_job():

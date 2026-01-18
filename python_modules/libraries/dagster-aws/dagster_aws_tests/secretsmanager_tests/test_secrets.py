@@ -151,7 +151,7 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
     ) as secret_map:
         assert json.loads(secret_map["json_secret"]) == json_secret_obj
 
-        assert json.loads(os.getenv("json_secret")) == json_secret_obj
+        assert json.loads(os.getenv("json_secret")) == json_secret_obj  # pyright: ignore[reportArgumentType]
 
     # Binary secrets have a None value
     binary_secret = mock_secretsmanager_resource.create_secret(

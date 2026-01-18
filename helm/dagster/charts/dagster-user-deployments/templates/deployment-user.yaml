@@ -8,9 +8,16 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: user-deployments
     deployment: {{ $deployment.name }}
+    {{- with $deployment.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
   annotations: {{ $deployment.annotations | toYaml | nindent 4 }}
 spec:
   replicas: 1
+  {{- if $deployment.deploymentStrategy }}
+  strategy:
+    {{- toYaml $deployment.deploymentStrategy | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}
@@ -92,6 +99,17 @@ spec:
                 optional: true
             {{- end }}
           resources: {{ $deployment.resources | toYaml | nindent 12 }}
+          volumeMounts:
+        {{- if $.Values.includeInstance }}
+            - name: dagster-instance
+              mountPath: "{{ $.Values.global.dagsterHome | default $.Values.dagsterHome }}/dagster.yaml"
+              subPath: dagster.yaml
+        {{- end }}
+        {{- if $deployment.volumeMounts }}
+          {{- range $volumeMount := $deployment.volumeMounts }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
+          {{- end }}
+        {{- end }}
         # Only disable readiness if explicitly set to false
         {{- if not $deployment.readinessProbe }}
           readinessProbe:
@@ -127,7 +145,11 @@ spec:
               {{- toYaml $deployment.readinessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          readinessProbe: {{ $deployment.readinessProbe | toYaml | nindent 12 }}
+          readinessProbe:
+            {{- $readinessProbe := omit $deployment.readinessProbe "enabled" }}
+            {{- if $readinessProbe }}
+              {{- $readinessProbe | toYaml | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- if $deployment.livenessProbe }}
@@ -156,7 +178,11 @@ spec:
               {{- toYaml $deployment.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          livenessProbe: {{ $deployment.livenessProbe | toYaml | nindent 12 }}
+          livenessProbe:
+            {{- $livenessProbe := omit $deployment.livenessProbe "enabled" }}
+            {{- if $livenessProbe }}
+              {{- $livenessProbe | toYaml | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- if $deployment.startupProbe }}
@@ -172,24 +198,23 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}
-        {{- if $deployment.volumeMounts }}
-          volumeMounts:
-          {{- range $volumeMount := $deployment.volumeMounts }}
-            - {{- $volumeMount | toYaml | nindent 14 }}
-          {{- end }}
-        {{- end }}
         {{- if $deployment.sidecarContainers }}
         {{- toYaml $deployment.sidecarContainers | nindent 8 }}
         {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
       tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
-      {{- if $deployment.volumes }}
       volumes:
+        {{- if $.Values.includeInstance }}
+        - name: dagster-instance
+          configMap:
+            name: {{ $.Values.global.dagsterInstanceConfigMap | default (printf "%s-instance" $.Release.Name) }}
+        {{- end }}
+        {{- if $deployment.volumes }}
         {{- range $volume := $deployment.volumes }}
         - {{- $volume | toYaml | nindent 10 }}
         {{- end }}
-      {{- end }}
+        {{- end }}
       {{- if $deployment.schedulerName }}
       schedulerName: {{ $deployment.schedulerName }}
       {{- end }}

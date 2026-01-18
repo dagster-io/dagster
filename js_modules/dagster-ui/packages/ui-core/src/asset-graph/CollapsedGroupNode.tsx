@@ -5,11 +5,13 @@ import {
   Icon,
   Menu,
   MenuItem,
+  Subtitle,
   Tag,
   Tooltip,
   ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
@@ -20,10 +22,15 @@ import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {withMiddleTruncation} from '../app/Util';
+import {useFeatureFlags} from '../app/useFeatureFlags';
+import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
+import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {statusToIconAndColor} from '../assets/AssetHealthSummary';
 import {CalculateUnsyncedDialog} from '../assets/CalculateUnsyncedDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
+import {AssetHealthStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -31,6 +38,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
   const name = group.groupName;
   const nameWidth = group.bounds.width - 36; // padding and icon
   const maxLengthAtFontSize = (fontSize: number) => Math.floor(nameWidth / (fontSize * 0.53));
+  const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const location = repoAddressAsHumanString({
     name: group.repositoryName,
@@ -61,9 +69,11 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(20)})}
         </div>
       </Box>
-      <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
-        {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(16)})}
-      </Box>
+      {flagAssetGraphGroupsPerCodeLocation ? (
+        <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
+          {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(16)})}
+        </Box>
+      ) : null}
     </Box>
   );
 };
@@ -101,7 +111,7 @@ export const CollapsedGroupNode = ({
         }}
       >
         <CollapsedGroupNodeBox $minimal={minimal}>
-          <Box padding={{vertical: 8, left: 12, right: 8}} flex={{}}>
+          <Box padding={{top: 8, bottom: 4, left: 12, right: 8}} flex={{}}>
             <GroupNodeNameAndRepo group={group} minimal={minimal} />
             <Box padding={{vertical: 4}}>
               <Icon name="unfold_more" />
@@ -122,6 +132,93 @@ const GroupNodeAssetStatusCounts = ({
 }: {
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
 }) => {
+  if (assetHealthEnabled()) {
+    return <GroupNodeAssetStatusCountsAssetHealth group={group} />;
+  }
+  return <GroupNodeAssetStatusCountsNonAssetHealth group={group} />;
+};
+
+const GroupNodeAssetStatusCountsAssetHealth = ({
+  group,
+}: {
+  group: GroupLayout & {assetCount: number; assets: GraphNode[]};
+}) => {
+  const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
+
+  const {liveDataByNode} = useAssetsHealthData({assetKeys, thread: 'group-node'});
+  const statuses = React.useMemo(() => {
+    return Object.values(liveDataByNode).reduce(
+      (acc, liveData) => {
+        const health = liveData.assetHealth?.assetHealth ?? AssetHealthStatus.HEALTHY;
+        acc[health] = acc[health] ?? [];
+        if (liveData.assetHealth) {
+          acc[health].push(liveData.assetHealth);
+        }
+        return acc;
+      },
+      {} as Record<AssetHealthStatus, NonNullable<AssetHealthFragment['assetHealth']>[]>,
+    );
+  }, [liveDataByNode]);
+
+  return (
+    <Box padding={{horizontal: 12, bottom: 8}} flex={{direction: 'row', gap: 4}}>
+      {Object.keys(liveDataByNode).length !== assetKeys.length ? (
+        <AssetDescription $color={Colors.textLighter()}>
+          {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
+        </AssetDescription>
+      ) : (
+        <>
+          <>
+            {statuses[AssetHealthStatus.HEALTHY] ? (
+              <Tooltip
+                content={`${statuses[AssetHealthStatus.HEALTHY].length} ${ifPlural(
+                  statuses[AssetHealthStatus.HEALTHY].length,
+                  'asset is',
+                  'assets are',
+                )} healthy`}
+              >
+                <Tag
+                  icon={statusToIconAndColor[AssetHealthStatus.HEALTHY].iconName}
+                  intent="success"
+                >
+                  {numberFormatter.format(statuses[AssetHealthStatus.HEALTHY].length)}
+                </Tag>
+              </Tooltip>
+            ) : null}
+          </>
+          {statuses[AssetHealthStatus.WARNING] ? (
+            <Tooltip
+              content={`${statuses[AssetHealthStatus.WARNING].length} ${ifPlural(
+                statuses[AssetHealthStatus.WARNING].length,
+                'asset has',
+                'assets have',
+              )} a warning`}
+            >
+              <Tag icon={statusToIconAndColor[AssetHealthStatus.WARNING].iconName} intent="warning">
+                {numberFormatter.format(statuses[AssetHealthStatus.WARNING].length)}
+              </Tag>
+            </Tooltip>
+          ) : null}
+          {statuses[AssetHealthStatus.DEGRADED] ? (
+            <Tooltip
+              content={<DegradedStatusTooltip statuses={statuses[AssetHealthStatus.DEGRADED]} />}
+            >
+              <Tag icon={statusToIconAndColor[AssetHealthStatus.DEGRADED].iconName} intent="danger">
+                {numberFormatter.format(statuses[AssetHealthStatus.DEGRADED].length)}
+              </Tag>
+            </Tooltip>
+          ) : null}
+        </>
+      )}
+    </Box>
+  );
+};
+
+const GroupNodeAssetStatusCountsNonAssetHealth = ({
+  group,
+}: {
+  group: GroupLayout & {assetCount: number; assets: GraphNode[]};
+}) => {
   const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
 
   const {liveDataByNode} = useAssetsLiveData(assetKeys, 'group-node');
@@ -134,7 +231,7 @@ const GroupNodeAssetStatusCounts = ({
     [group.assets, liveDataByNode],
   );
   return (
-    <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
+    <Box padding={{horizontal: 12, bottom: 8}} flex={{direction: 'row', gap: 4}}>
       {Object.keys(liveDataByNode).length !== assetKeys.length ? (
         <AssetDescription $color={Colors.textLighter()}>
           {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
@@ -158,10 +255,10 @@ const GroupNodeAssetStatusCounts = ({
           </>
           {statuses.missing.length ? (
             <Tooltip
-              content={`${statuses.missing.length} asset${ifPlural(
+              content={`${statuses.missing.length} ${ifPlural(
                 statuses.missing.length,
-                ' has',
-                's have',
+                'asset has',
+                'assets have',
               )} never been materialized`}
             >
               <Tag icon="dot_filled" intent="warning">
@@ -257,6 +354,99 @@ export const useGroupNodeContextMenu = ({
   return {menu, dialog};
 };
 
+const DegradedStatusTooltip = ({
+  statuses,
+}: {
+  statuses: NonNullable<AssetHealthFragment['assetHealth']>[];
+}) => {
+  const checksFailed = statuses.reduce((acc, status) => {
+    if (status.assetChecksStatusMetadata?.__typename === 'AssetHealthCheckDegradedMeta') {
+      return acc + status.assetChecksStatusMetadata.numFailedChecks;
+    }
+    return acc;
+  }, 0);
+
+  const materializationsFailed = statuses.reduce((acc, status) => {
+    if (
+      status.materializationStatusMetadata?.__typename ===
+      'AssetHealthMaterializationDegradedNotPartitionedMeta'
+    ) {
+      return acc + 1;
+    }
+    return acc;
+  }, 0);
+
+  const partitionsFailed = statuses.reduce((acc, status) => {
+    if (
+      status.materializationStatusMetadata?.__typename ===
+      'AssetHealthMaterializationDegradedPartitionedMeta'
+    ) {
+      return acc + status.materializationStatusMetadata.numFailedPartitions;
+    }
+    return acc;
+  }, 0);
+
+  const partitionsMissing = statuses.reduce((acc, status) => {
+    if (
+      status.materializationStatusMetadata?.__typename ===
+      'AssetHealthMaterializationDegradedPartitionedMeta'
+    ) {
+      return acc + status.materializationStatusMetadata.numMissingPartitions;
+    }
+    return acc;
+  }, 0);
+
+  const freshnessPolicyViolations = statuses.reduce((acc, status) => {
+    if (status.freshnessStatusMetadata?.__typename === 'AssetHealthFreshnessMeta') {
+      return acc + 1;
+    }
+    return acc;
+  }, 0);
+
+  const degraded = statuses.length;
+
+  return (
+    <>
+      {degraded ? (
+        <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
+          <Subtitle>
+            {numberFormatter.format(degraded)} degraded asset{ifPlural(degraded, '', 's')}
+          </Subtitle>
+        </Box>
+      ) : null}
+      {checksFailed ? (
+        <div>
+          {numberFormatter.format(checksFailed)} failed asset check{ifPlural(checksFailed, '', 's')}
+        </div>
+      ) : null}
+      {materializationsFailed ? (
+        <div>
+          {numberFormatter.format(materializationsFailed)} materialization
+          {ifPlural(materializationsFailed, '', 's')} failed
+        </div>
+      ) : null}
+      {partitionsFailed ? (
+        <div>
+          {numberFormatter.format(partitionsFailed)} partition{ifPlural(partitionsFailed, '', 's')}{' '}
+          failed
+        </div>
+      ) : null}
+      {partitionsMissing ? (
+        <div>
+          {numberFormatter.format(partitionsMissing)} partition
+          {ifPlural(partitionsMissing, '', 's')} missing
+        </div>
+      ) : null}
+      {freshnessPolicyViolations ? (
+        <div>
+          {numberFormatter.format(freshnessPolicyViolations)} freshness policy violation
+          {ifPlural(freshnessPolicyViolations, '', 's')}
+        </div>
+      ) : null}
+    </>
+  );
+};
+
 const FailedStatusTooltip = ({
   statuses,
 }: {
@@ -273,17 +463,17 @@ const FailedStatusTooltip = ({
     <>
       {failed ? (
         <div>
-          {failed} failed asset{ifPlural(failed, '', 's')}
+          {numberFormatter.format(failed)} failed asset{ifPlural(failed, '', 's')}
         </div>
       ) : null}
       {checksFailed ? (
         <div>
-          {checksFailed} failed asset check{ifPlural(failed, '', 's')}
+          {numberFormatter.format(checksFailed)} failed asset check{ifPlural(checksFailed, '', 's')}
         </div>
       ) : null}
       {overdue ? (
         <div>
-          {overdue} overdue asset{ifPlural(overdue, '', 's')}
+          {numberFormatter.format(overdue)} overdue asset{ifPlural(overdue, '', 's')}
         </div>
       ) : null}
     </>

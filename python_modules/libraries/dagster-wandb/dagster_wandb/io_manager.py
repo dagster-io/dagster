@@ -3,11 +3,10 @@ import os
 import pickle
 import platform
 import shutil
-import sys
 import time
 import uuid
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import Optional, TypedDict
 
 from dagster import (
     Field,
@@ -39,11 +38,6 @@ from dagster_wandb.utils.pickling import (
 )
 from dagster_wandb.version import __version__
 
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
-
 UNIT_TEST_RUN_ID = "0ab2e48b-6d63-4ff5-b160-662cc60145f4"
 
 
@@ -54,7 +48,7 @@ class Config(TypedDict):
     wandb_project: str
     wandb_run_name: Optional[str]
     wandb_run_id: Optional[str]
-    wandb_run_tags: Optional[List[str]]
+    wandb_run_tags: Optional[list[str]]
     base_dir: str
     cache_duration_in_minutes: Optional[int]
 
@@ -295,7 +289,7 @@ class ArtifactsIOManager(IOManager):
                         context.log.warning(
                             "You've included a 'serialization_module' in the"
                             " 'wandb_artifact_configuration' settings. However, this doesn't have"
-                            " any impact when the output is already an W&B object like e.g Table or"
+                            " any impact when the output is already a W&B object like e.g Table or"
                             " Image."
                         )
                     # Adds the WBValue object using the class name as the name for the file
@@ -395,10 +389,10 @@ class ArtifactsIOManager(IOManager):
 
                 artifact_name = parameters.get("name")
                 if artifact_name is None:
-                    artifact_name = context.asset_key[0][0]  # name of asset
+                    artifact_name = context.asset_key.path[0]  # name of asset
 
                 partitions = [
-                    (key, f"{artifact_name}.{ str(key).replace('|', '-')}")
+                    (key, f"{artifact_name}.{str(key).replace('|', '-')}")
                     for key in context.asset_partition_keys
                 ]
 

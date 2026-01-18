@@ -22,6 +22,7 @@ describe('ExecutionSessionStorage', () => {
     return (
       <>
         <div>Current: {data.current}</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         <div>{`YAML: "${data.sessions[data.current]!.runConfigYaml}"`}</div>
       </>
     );
@@ -60,6 +61,7 @@ describe('ExecutionSessionStorage', () => {
       return (
         <>
           <div>Current: {data.current}</div>
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <div>{`YAML: "${data.sessions[data.current]!.runConfigYaml}"`}</div>
         </>
       );

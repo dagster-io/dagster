@@ -4,26 +4,15 @@ import tempfile
 import time
 from threading import Thread
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterEventType,
-    Failure,
-    Field,
-    RetryPolicy,
-    String,
-    _seven,
-    job,
-    op,
-    reconstructable,
-    resource,
-)
+from dagster import DagsterEventType
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
-from dagster._core.execution.api import execute_job, execute_run_iterator
-from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_run_iterator
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
+from dagster_shared import seven
 
 
 def _send_kbd_int(temp_files):
@@ -32,7 +21,7 @@ def _send_kbd_int(temp_files):
     send_interrupt()
 
 
-@op(config_schema={"tempfile": Field(String)})
+@dg.op(config_schema={"tempfile": dg.Field(dg.String)})
 def write_a_file(context):
     with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
         ff.write("yup")
@@ -44,12 +33,12 @@ def write_a_file(context):
     raise Exception("Timed out")
 
 
-@op
+@dg.op
 def should_not_start(_context):
     assert False
 
 
-@job
+@dg.job
 def write_files_job():
     write_a_file.alias("write_1")()
     write_a_file.alias("write_2")()
@@ -61,7 +50,7 @@ def write_files_job():
 
 
 def test_single_proc_interrupt():
-    @job
+    @dg.job
     def write_a_file_job():
         write_a_file()
 
@@ -93,10 +82,10 @@ def test_single_proc_interrupt():
         )
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_multiproc():
     with tempfile.TemporaryDirectory() as tempdir:
-        with instance_for_test(temp_dir=tempdir) as instance:
+        with dg.instance_for_test(temp_dir=tempdir) as instance:
             file_1 = os.path.join(tempdir, "file_1")
             file_2 = os.path.join(tempdir, "file_2")
             file_3 = os.path.join(tempdir, "file_3")
@@ -108,8 +97,8 @@ def test_interrupt_multiproc():
             # launch a job that writes a file and loops infinitely
             # next time the launched thread wakes up it will send a keyboard
             # interrupt
-            with execute_job(
-                reconstructable(write_files_job),
+            with dg.execute_job(
+                dg.reconstructable(write_files_job),
                 run_config={
                     "ops": {
                         "write_1": {"config": {"tempfile": file_1}},
@@ -133,7 +122,7 @@ def test_interrupt_resource_teardown():
     called = []
     cleaned = []
 
-    @resource
+    @dg.resource
     def resource_a(_):
         try:
             called.append("A")
@@ -141,7 +130,7 @@ def test_interrupt_resource_teardown():
         finally:
             cleaned.append("A")
 
-    @op(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
+    @dg.op(config_schema={"tempfile": dg.Field(dg.String)}, required_resource_keys={"a"})
     def write_a_file_resource_op(context):
         with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
@@ -149,11 +138,11 @@ def test_interrupt_resource_teardown():
         while True:
             time.sleep(0.1)
 
-    @job(resource_defs={"a": resource_a}, executor_def=in_process_executor)
+    @dg.job(resource_defs={"a": resource_a}, executor_def=in_process_executor)
     def write_a_file_job():
         write_a_file_resource_op()
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with safe_tempfile_path() as success_tempfile:
             # launch a thread the waits until the file is written to launch an interrupt
             Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
@@ -189,7 +178,7 @@ def _send_interrupt_to_self():
             raise Exception("Timed out waiting for interrupt to be received")
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_capture_interrupt():
     outer_interrupt = False
     inner_interrupt = False
@@ -228,29 +217,29 @@ def test_capture_interrupt():
     assert not inner_interrupt
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_raise_execution_interrupts():
     standard_interrupt = False
-    with raise_execution_interrupts():
+    with dg.raise_execution_interrupts():
         try:
             _send_interrupt_to_self()
-        except DagsterExecutionInterruptedError:
+        except dg.DagsterExecutionInterruptedError:
             standard_interrupt = True
 
     assert standard_interrupt
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_inside_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
 
     try:
         with capture_interrupts():
-            with raise_execution_interrupts():
+            with dg.raise_execution_interrupts():
                 try:
                     _send_interrupt_to_self()
-                except DagsterExecutionInterruptedError:
+                except dg.DagsterExecutionInterruptedError:
                     interrupt_inside_nested_raise = True
 
     except:
@@ -260,14 +249,14 @@ def test_interrupt_inside_nested_delay_and_raise():
     assert not interrupt_after_delay
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_no_interrupt_after_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
 
     try:
         with capture_interrupts():
-            with raise_execution_interrupts():
+            with dg.raise_execution_interrupts():
                 try:
                     time.sleep(5)
                 except:
@@ -281,7 +270,7 @@ def test_no_interrupt_after_nested_delay_and_raise():
     assert not interrupt_after_delay
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts():
     interrupt_from_raise_execution_interrupts = False
     interrupt_after_delay = False
@@ -289,9 +278,9 @@ def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts(
         with capture_interrupts():
             _send_interrupt_to_self()
             try:
-                with raise_execution_interrupts():
+                with dg.raise_execution_interrupts():
                     pass
-            except DagsterExecutionInterruptedError:
+            except dg.DagsterExecutionInterruptedError:
                 interrupt_from_raise_execution_interrupts = True
     except:
         interrupt_after_delay = True
@@ -300,7 +289,7 @@ def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts(
     assert not interrupt_after_delay
 
 
-@op(config_schema={"path": str})
+@dg.op(config_schema={"path": str})
 def write_and_spin_if_missing(context):
     target = context.op_config["path"]
     if os.path.exists(target):
@@ -315,15 +304,15 @@ def write_and_spin_if_missing(context):
         time.sleep(0.1)
 
     os.remove(target)
-    raise Failure("Timed out, file removed")
+    raise dg.Failure("Timed out, file removed")
 
 
-@job(op_retry_policy=RetryPolicy(max_retries=1), executor_def=in_process_executor)
+@dg.job(op_retry_policy=dg.RetryPolicy(max_retries=1), executor_def=in_process_executor)
 def policy_job():
     write_and_spin_if_missing()
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_retry_policy():
     """Start a thread which will interrupt the subprocess after it writes the file.
     On the retry the run will succeed since the op returns if the file already exists.
@@ -346,7 +335,7 @@ def test_retry_policy():
     with tempfile.TemporaryDirectory() as tempdir:
         path = os.path.join(tempdir, "target.tmp")
         Thread(target=_send_int, args=(path,)).start()
-        with instance_for_test(temp_dir=tempdir) as instance:
+        with dg.instance_for_test(temp_dir=tempdir) as instance:
             result = policy_job.execute_in_process(
                 run_config={"ops": {"write_and_spin_if_missing": {"config": {"path": path}}}},
                 instance=instance,

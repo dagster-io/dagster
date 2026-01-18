@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from dagster import (
     Definitions,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     ObserveResult,
     RepositoryDefinition,
     observable_source_asset,
@@ -29,7 +29,7 @@ GET_FRESHNESS_INFO = """
 """
 
 
-@observable_source_asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+@observable_source_asset(legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30))
 def source_asset_with_freshness(context):
     return ObserveResult(metadata={DATA_TIME_METADATA_KEY: float(context.run.tags["data_time"])})
 
@@ -54,7 +54,7 @@ def test_source_asset_freshness_info():
     with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo", instance) as graphql_context:
             result = execute_dagster_graphql(
-                graphql_context,
+                graphql_context.reset_for_test(),
                 GET_FRESHNESS_INFO,
                 variables={"assetKeys": [{"path": ["source_asset_with_freshness"]}]},
             )
@@ -68,7 +68,7 @@ def test_source_asset_freshness_info():
             )
 
             result = execute_dagster_graphql(
-                graphql_context,
+                graphql_context.reset_for_test(),
                 GET_FRESHNESS_INFO,
                 variables={"assetKeys": [{"path": ["source_asset_with_freshness"]}]},
             )
@@ -82,7 +82,7 @@ def test_source_asset_freshness_info():
             )
 
             result = execute_dagster_graphql(
-                graphql_context,
+                graphql_context.reset_for_test(),
                 GET_FRESHNESS_INFO,
                 variables={"assetKeys": [{"path": ["source_asset_with_freshness"]}]},
             )

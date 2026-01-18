@@ -3,11 +3,11 @@ import qs from 'qs';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
-import {gql, useQuery} from '../apollo-client';
 import {StepEventStatus} from '../graphql/types';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 
@@ -53,6 +53,7 @@ export const StepSummaryForRun = (props: Props) => {
 
   if (failedStatuses.has(status)) {
     if (stepCount === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const step = relevantSteps[0]!;
       const query = step.endTime
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
@@ -72,6 +73,7 @@ export const StepSummaryForRun = (props: Props) => {
 
   if (inProgressStatuses.has(status)) {
     if (stepCount === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const step = relevantSteps[0]!;
       const query = step.endTime
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})

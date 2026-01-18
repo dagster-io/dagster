@@ -1,8 +1,8 @@
-import {Button, Dialog, DialogBody, DialogFooter, FontFamily} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled, {createGlobalStyle} from 'styled-components';
 
 import {copyValue} from './DomUtils';
+import styles from './css/CustomAlertProvider.module.css';
 import {testId} from '../testing/testId';
 
 const CURRENT_ALERT_CHANGED = 'alert-changed';
@@ -54,6 +54,7 @@ export const CustomAlertProvider = () => {
 
   const onCopy = React.useCallback(
     (e: React.MouseEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const copyElement = copySelector ? body.current!.querySelector(copySelector) : body.current;
       const copyText =
         copyElement instanceof HTMLElement ? copyElement.innerText : copyElement?.textContent;
@@ -73,14 +74,16 @@ export const CustomAlertProvider = () => {
       onClose={() => setCustomAlert(null)}
       style={{width: 'auto', maxWidth: '80vw'}}
       isOpen={!!alert}
-      portalClassName="custom-alert-portal"
+      portalClassName={styles.customAlertPortal}
     >
       {alert ? (
         <DialogBody data-testid={testId('alert-body')}>
-          <Body ref={body}>{alert.body}</Body>
+          <div className={styles.body} ref={body}>
+            {alert.body}
+          </div>
         </DialogBody>
       ) : null}
-      <DialogFooter>
+      <DialogFooter topBorder>
         <Button autoFocus={false} onClick={onCopy}>
           Copy
         </Button>
@@ -91,16 +94,3 @@ export const CustomAlertProvider = () => {
     </Dialog>
   );
 };
-
-const Body = styled.div`
-  white-space: pre-line;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-variant-ligatures: none;
-`;
-
-export const GlobalCustomAlertPortalStyle = createGlobalStyle`
-  .custom-alert-portal {
-    z-index: 1000;
-  }
-`;

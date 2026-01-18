@@ -7,14 +7,12 @@ import {
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalToasterStyle,
-  GlobalTooltipStyle,
+  Toaster,
   themeToClassName,
 } from '@dagster-io/ui-components';
 import {useLayoutEffect} from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {GlobalCustomAlertPortalStyle} from './CustomAlertProvider';
 import {useThemeState} from './useThemeState';
 
 const GlobalStyle = createGlobalStyle`
@@ -26,6 +24,7 @@ const GlobalStyle = createGlobalStyle`
     color-scheme: ${Colors.browserColorScheme()};
     background-color: ${Colors.backgroundDefault()};
     color: ${Colors.textDefault()};
+    scrollbar-color: ${Colors.accentGrayHover()} ${Colors.backgroundDefault()};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -82,7 +81,7 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 export const GlobalStyleProvider = () => {
-  const theme = useThemeState();
+  const {theme} = useThemeState();
 
   // Given a theme setting, apply the appropriate class name to the body to set the
   // desired CSS var values. When the theme changes, the class name is updated.
@@ -102,12 +101,10 @@ export const GlobalStyleProvider = () => {
       <GlobalGeistMono />
       <GlobalStyle />
       <GlobalThemeStyle />
-      <GlobalToasterStyle />
-      <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
-      <GlobalCustomAlertPortalStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
     </>
   );
 };

@@ -1,42 +1,34 @@
 from typing import Union
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    DagsterInvalidDefinitionError,
-    IOManager,
-    IOManagerDefinition,
-    SourceAsset,
-    StaticPartitionsDefinition,
-    graph,
-    job,
-    op,
-)
+from dagster import IOManagerDefinition
 
 
-def make_io_manager(asset: Union[SourceAsset, AssetSpec], input_value=5, expected_metadata={}):
-    class MyIOManager(IOManager):
+def make_io_manager(
+    asset: Union[dg.SourceAsset, dg.AssetSpec], input_value=5, expected_metadata={}
+):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             self.loaded_input = True
             assert context.asset_key == asset.key
             for key, value in expected_metadata.items():
-                assert context.upstream_output.definition_metadata[key] == value
+                assert context.upstream_output.definition_metadata[key] == value  # pyright: ignore[reportOptionalMemberAccess]
             return input_value
 
     return MyIOManager()
 
 
 def test_source_asset_input_value():
-    asset1 = SourceAsset("asset1", metadata={"foo": "bar"})
+    asset1 = dg.SourceAsset("asset1", metadata={"foo": "bar"})
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
-    @graph
+    @dg.graph
     def graph1():
         op1(asset1)
 
@@ -46,13 +38,13 @@ def test_source_asset_input_value():
 
 
 def test_external_asset_input_value():
-    asset1 = AssetSpec("asset1", metadata={"foo": "bar"})
+    asset1 = dg.AssetSpec("asset1", metadata={"foo": "bar"})
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
-    @graph
+    @dg.graph
     def graph1():
         op1(asset1)
 
@@ -62,18 +54,18 @@ def test_external_asset_input_value():
 
 
 def test_one_input_source_asset_other_input_upstream_op():
-    asset1 = SourceAsset("asset1", io_manager_key="a")
+    asset1 = dg.SourceAsset("asset1", io_manager_key="a")
 
-    @op
+    @dg.op
     def op1():
         return 7
 
-    @op
+    @dg.op
     def op2(input1, input2):
         assert input1 == 5
         assert input2 == 7
 
-    @graph
+    @dg.graph
     def graph1():
         op2(asset1, op1())
 
@@ -83,10 +75,10 @@ def test_one_input_source_asset_other_input_upstream_op():
 
 
 def test_partitioned_source_asset_input_value():
-    partitions_def = StaticPartitionsDefinition(["foo", "bar"])
-    asset1 = SourceAsset("asset1", partitions_def=partitions_def)
+    partitions_def = dg.StaticPartitionsDefinition(["foo", "bar"])
+    asset1 = dg.SourceAsset("asset1", partitions_def=partitions_def)
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj): ...
 
         def load_input(self, context):
@@ -95,13 +87,13 @@ def test_partitioned_source_asset_input_value():
             assert context.partition_key == "foo"
             return 5
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
     io_manager = MyIOManager()
 
-    @job(
+    @dg.job(
         partitions_def=partitions_def,
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(io_manager)},
     )
@@ -113,10 +105,10 @@ def test_partitioned_source_asset_input_value():
 
 
 def test_non_partitioned_job_partitioned_source_asset():
-    partitions_def = StaticPartitionsDefinition(["foo", "bar"])
-    asset1 = SourceAsset("asset1", partitions_def=partitions_def)
+    partitions_def = dg.StaticPartitionsDefinition(["foo", "bar"])
+    asset1 = dg.SourceAsset("asset1", partitions_def=partitions_def)
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj): ...
 
         def load_input(self, context):
@@ -125,13 +117,13 @@ def test_non_partitioned_job_partitioned_source_asset():
             assert set(context.asset_partition_keys) == {"foo", "bar"}
             return 5
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
     io_manager = MyIOManager()
 
-    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(io_manager)})
+    @dg.job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(io_manager)})
     def job1():
         op1(asset1)
 
@@ -140,15 +132,15 @@ def test_non_partitioned_job_partitioned_source_asset():
 
 
 def test_multiple_source_asset_inputs():
-    asset1 = SourceAsset("asset1", io_manager_key="iomanager1")
-    asset2 = SourceAsset("asset2", io_manager_key="iomanager2")
+    asset1 = dg.SourceAsset("asset1", io_manager_key="iomanager1")
+    asset2 = dg.SourceAsset("asset2", io_manager_key="iomanager2")
 
-    @op
+    @dg.op
     def op1(input1, input2):
         assert input1 == 5
         assert input2 == 7
 
-    @graph
+    @dg.graph
     def graph1():
         op1(asset1, asset2)
 
@@ -161,17 +153,17 @@ def test_multiple_source_asset_inputs():
 
 
 def test_two_inputs_same_source_asset():
-    asset1 = SourceAsset("asset1")
+    asset1 = dg.SourceAsset("asset1")
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
-    @op
+    @dg.op
     def op2(input2):
         assert input2 == 5
 
-    @graph
+    @dg.graph
     def graph1():
         op1(asset1)
         op2(asset1)
@@ -182,17 +174,17 @@ def test_two_inputs_same_source_asset():
 
 
 def test_nested_source_asset_input_value():
-    asset1 = SourceAsset("asset1")
+    asset1 = dg.SourceAsset("asset1")
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
-    @graph
+    @dg.graph
     def inner_graph():
         op1(asset1)
 
-    @graph
+    @dg.graph
     def outer_graph():
         inner_graph()
 
@@ -202,17 +194,17 @@ def test_nested_source_asset_input_value():
 
 
 def test_nested_input_mapped_source_asset_input_value():
-    asset1 = SourceAsset("asset1")
+    asset1 = dg.SourceAsset("asset1")
 
-    @op
+    @dg.op
     def op1(input1):
         assert input1 == 5
 
-    @graph
+    @dg.graph
     def inner_graph(inputx):
         op1(inputx)
 
-    @graph
+    @dg.graph
     def outer_graph():
         inner_graph(asset1)
 
@@ -222,19 +214,19 @@ def test_nested_input_mapped_source_asset_input_value():
 
 
 def test_source_assets_list_input_value():
-    asset1 = SourceAsset("asset1")
-    asset2 = SourceAsset("asset2")
+    asset1 = dg.SourceAsset("asset1")
+    asset2 = dg.SourceAsset("asset2")
 
-    @op
+    @dg.op
     def op1(input1):
-        assert input1 == [AssetKey("asset1"), AssetKey("asset2")]
+        assert input1 == [dg.AssetKey("asset1"), dg.AssetKey("asset2")]
 
     # not yet supported
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="Lists can only contain the output from previous op invocations or input mappings",
     ):
 
-        @graph
+        @dg.graph
         def graph1():
             op1([asset1, asset2])

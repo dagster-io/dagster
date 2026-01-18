@@ -1,24 +1,21 @@
+import base64
 import os
+import zlib
+from unittest import mock
 
-import mock
+import dagster as dg
 import pytest
 from click.testing import CliRunner
-from dagster import DagsterEventType, job, op, reconstructable
+from dagster import DagsterEventType
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-from dagster._core.remote_representation import JobHandle
+from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import (
-    create_run_for_test,
-    ensure_dagster_tests_import,
-    environ,
-    instance_for_test,
-)
+from dagster._core.test_utils import create_run_for_test, ensure_dagster_tests_import, environ
 from dagster._core.utils import make_new_run_id
-from dagster._serdes import serialize_value
 
 ensure_dagster_tests_import()
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
@@ -30,7 +27,7 @@ def runner_execute_run(runner, cli_args):
         # CliRunner captures stdout so printing it out here
         raise Exception(
             f"dagster runner_execute_run commands with cli_args {cli_args} "
-            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}"'
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.output}"'
             f'\n exception: "\n{result.exception}"'
             f'\n and result as string: "{result}"'
         )
@@ -38,7 +35,7 @@ def runner_execute_run(runner, cli_args):
 
 
 def test_execute_run():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -55,7 +52,7 @@ def test_execute_run():
                 job_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run.run_id,
@@ -68,31 +65,31 @@ def test_execute_run():
                 [input_json],
             )
 
-            assert "RUN_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
 
             # Framework errors (e.g. running a run that has already run) still result in a non-zero error code
             result = runner.invoke(api.execute_run_command, [input_json])
             assert result.exit_code == 0
 
 
-@op
+@dg.op
 def needs_env_var():
     if os.getenv("FOO") != "BAR":
         raise Exception("Missing env var")
 
 
-@job
+@dg.job
 def needs_env_var_job():
     needs_env_var()
 
 
 def test_execute_run_with_secrets_loader(capfd):
-    recon_job = reconstructable(needs_env_var_job)
+    recon_job = dg.reconstructable(needs_env_var_job)
     runner = CliRunner()
 
     # Restore original env after test
-    with environ({"FOO": None}):
-        with instance_for_test(
+    with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
+        with dg.instance_for_test(
             overrides={
                 "compute_logs": {
                     "module": "dagster._core.storage.noop_compute_log_manager",
@@ -113,7 +110,7 @@ def test_execute_run_with_secrets_loader(capfd):
                 job_code_origin=recon_job.get_python_origin(),
             )
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=recon_job.get_python_origin(),
                     run_id=run.run_id,
@@ -126,14 +123,14 @@ def test_execute_run_with_secrets_loader(capfd):
                 [input_json],
             )
 
-            assert "RUN_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
 
             # Step subprocess is logged to capfd since its in a subprocess of the CLi command
             _, err = capfd.readouterr()
             assert "STEP_SUCCESS" in err, f"no match, result: {err}"
 
     # Without a secrets loader the run fails due to missing env var
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -147,7 +144,7 @@ def test_execute_run_with_secrets_loader(capfd):
             job_code_origin=recon_job.get_python_origin(),
         )
 
-        input_json = serialize_value(
+        input_json = dg.serialize_value(
             ExecuteRunArgs(
                 job_origin=recon_job.get_python_origin(),
                 run_id=run.run_id,
@@ -160,17 +157,17 @@ def test_execute_run_with_secrets_loader(capfd):
             [input_json],
         )
 
-        assert "RUN_FAILURE" in result.stdout, f"no match, result: {result.stdout}"
+        assert "RUN_FAILURE" in result.output, f"no match, result: {result.output}"
 
         # Step subprocess is logged to capfd since its in a subprocess of the CLi command
         _, err = capfd.readouterr()
-        assert (
-            "STEP_FAILURE" in err and "Exception: Missing env var" in err
-        ), f"no match, result: {err}"
+        assert "STEP_FAILURE" in err and "Exception: Missing env var" in err, (
+            f"no match, result: {err}"
+        )
 
 
 def test_execute_run_fail_job():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -179,7 +176,7 @@ def test_execute_run_fail_job():
         }
     ) as instance:
         with get_bar_repo_handle(instance) as repo_handle:
-            job_handle = JobHandle("fail", repo_handle)
+            job_handle = JobHandle("fail_job", repo_handle)
             runner = CliRunner()
 
             run = create_run_for_test(
@@ -188,7 +185,7 @@ def test_execute_run_fail_job():
                 job_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run.run_id,
@@ -202,7 +199,7 @@ def test_execute_run_fail_job():
             )
             assert result.exit_code == 0
 
-            assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
+            assert "RUN_FAILURE" in result.output, f"no match, result: {result}"
 
             run = create_run_for_test(
                 instance,
@@ -210,7 +207,7 @@ def test_execute_run_fail_job():
                 job_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json_raise_on_failure = serialize_value(
+            input_json_raise_on_failure = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run.run_id,
@@ -221,9 +218,9 @@ def test_execute_run_fail_job():
 
             result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
 
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
-            assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
+            assert "RUN_FAILURE" in result.output, f"no match, result: {result}"
 
             with mock.patch(
                 "dagster._core.execution.api.job_execution_iterator"
@@ -232,7 +229,7 @@ def test_execute_run_fail_job():
 
                 run = create_run_for_test(instance, job_name="foo")
 
-                input_json_raise_on_failure = serialize_value(
+                input_json_raise_on_failure = dg.serialize_value(
                     ExecuteRunArgs(
                         job_origin=job_handle.get_python_origin(),
                         run_id=run.run_id,
@@ -243,11 +240,11 @@ def test_execute_run_fail_job():
 
                 # Framework errors also result in a non-zero error code
                 result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
-                assert result.exit_code != 0, str(result.stdout)
+                assert result.exit_code != 0, str(result.output)
 
 
 def test_execute_run_cannot_load():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -259,7 +256,7 @@ def test_execute_run_cannot_load():
         with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run_id,
@@ -274,9 +271,9 @@ def test_execute_run_cannot_load():
 
             assert result.exit_code != 0
 
-            assert f"Run with id '{run_id}' not found for run execution" in str(
-                result.exception
-            ), f"no match, result: {result.stdout}"
+            assert f"Run with id '{run_id}' not found for run execution" in str(result.exception), (
+                f"no match, result: {result.output}"
+            )
 
 
 def runner_execute_step(runner: CliRunner, cli_args, env=None):
@@ -285,7 +282,7 @@ def runner_execute_step(runner: CliRunner, cli_args, env=None):
         # CliRunner captures stdout so printing it out here
         raise Exception(
             f"dagster runner_execute_step commands with cli_args {cli_args} "
-            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}"'
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.output}"'
             f'\n exception: "\n{result.exception}"'
             f'\n and result as string: "{result}"'
         )
@@ -293,7 +290,7 @@ def runner_execute_step(runner: CliRunner, cli_args, env=None):
 
 
 def test_execute_step_success():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -322,14 +319,14 @@ def test_execute_step_success():
                 args.get_command_args()[5:],
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
         assert (
-            '{"__class__": "StepSuccessData"' not in result.stdout
+            '{"__class__": "StepSuccessData"' not in result.output
         )  # does not include serialized DagsterEvents
 
 
 def test_execute_step_print_serialized_events():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -359,19 +356,19 @@ def test_execute_step_print_serialized_events():
                 args.get_command_args()[5:],
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
         assert (
-            '{"__class__": "StepSuccessData"' in result.stdout
+            '{"__class__": "StepSuccessData"' in result.output
         )  # includes serialized DagsterEvents
 
 
 def test_execute_step_with_secrets_loader():
-    recon_job = reconstructable(needs_env_var_job)
+    recon_job = dg.reconstructable(needs_env_var_job)
     runner = CliRunner()
 
     # Restore original env after test
-    with environ({"FOO": None}):
-        with instance_for_test(
+    with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
+        with dg.instance_for_test(
             overrides={
                 "compute_logs": {
                     "module": "dagster._core.storage.noop_compute_log_manager",
@@ -422,11 +419,11 @@ def test_execute_step_with_secrets_loader():
                 args.get_command_args()[3:],
             )
 
-            assert "STEP_SUCCESS" in result.stdout
+            assert "STEP_SUCCESS" in result.output
 
 
 def test_execute_step_with_env():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -456,11 +453,11 @@ def test_execute_step_with_env():
                 env={d["name"]: d["value"] for d in args.get_command_env()},
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
 
 
 def test_execute_step_non_compressed():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -484,9 +481,9 @@ def test_execute_step_non_compressed():
                 instance_ref=instance.get_ref(),
             )
 
-            result = runner_execute_step(runner, [serialize_value(args)])
+            result = runner_execute_step(runner, [dg.serialize_value(args)])
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
 
 
 @pytest.mark.parametrize(
@@ -498,7 +495,7 @@ def test_execute_step_non_compressed():
     ],
 )
 def test_execute_step_run_already_finished_or_canceling(status):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -523,7 +520,7 @@ def test_execute_step_run_already_finished_or_canceling(status):
                 instance_ref=instance.get_ref(),
             )
 
-            runner_execute_step(runner, [serialize_value(args)])
+            runner_execute_step(runner, [dg.serialize_value(args)])
 
         all_logs = instance.all_logs(run.run_id)
 
@@ -536,7 +533,7 @@ def test_execute_step_run_already_finished_or_canceling(status):
 
 
 def test_execute_step_1():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -565,11 +562,11 @@ def test_execute_step_1():
                 ],  # the runner doesn't take the `dagster api execute_step` section
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
 
 
 def test_execute_step_verify_step():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -626,7 +623,7 @@ def test_execute_step_verify_step():
 
 @mock.patch("dagster.cli.api.verify_step")
 def test_execute_step_verify_step_framework_error(mock_verify_step):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -676,5 +673,323 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             assert log_entry.step_key == "fake_step"
 
             assert "Unexpected framework error text" in str(
-                log_entry.dagster_event.event_specific_data.error
+                log_entry.dagster_event.event_specific_data.error  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            )
+
+
+def test_execute_run_with_env_var():
+    """Test that execute_run can receive input via DAGSTER_EXECUTE_RUN_ARGS environment variable."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Test with env var set - no command line argument
+            result = runner.invoke(
+                api.execute_run_command, [], env={"DAGSTER_EXECUTE_RUN_ARGS": input_json}
+            )
+
+            assert result.exit_code == 0
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
+
+
+def test_execute_run_with_compressed_input_json():
+    """Test that execute_run can receive compressed input via --compressed-input-json argument."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            result = runner_execute_run(
+                runner,
+                ["--compressed-input-json", compressed_input],
+            )
+
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
+
+
+def test_execute_run_with_compressed_env_var():
+    """Test that execute_run can receive compressed input via DAGSTER_COMPRESSED_EXECUTE_RUN_ARGS env var."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Test with compressed env var set - no command line argument
+            result = runner.invoke(
+                api.execute_run_command,
+                [],
+                env={"DAGSTER_COMPRESSED_EXECUTE_RUN_ARGS": compressed_input},
+            )
+
+            assert result.exit_code == 0
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
+
+
+def test_execute_run_with_both_inputs_fails():
+    """Test that providing both regular and compressed input fails."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Try to provide both inputs - should fail
+            result = runner.invoke(
+                api.execute_run_command,
+                [input_json, "--compressed-input-json", compressed_input],
+            )
+
+            assert result.exit_code != 0
+            assert "Must provide one of input_json or compressed_input_json" in str(
+                result.exception
+            )
+
+
+def test_execute_step_with_env_var():
+    """Test that execute_step can receive input via DAGSTER_EXECUTE_STEP_ARGS environment variable."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Test with env var set - no command line argument
+            result = runner.invoke(
+                api.execute_step_command, [], env={"DAGSTER_EXECUTE_STEP_ARGS": input_json}
+            )
+
+            assert result.exit_code == 0
+            assert "STEP_SUCCESS" in result.output
+
+
+def test_execute_step_with_compressed_input_json():
+    """Test that execute_step can receive compressed input via --compressed-input-json argument."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            result = runner_execute_step(
+                runner,
+                ["--compressed-input-json", compressed_input],
+            )
+
+            assert "STEP_SUCCESS" in result.output
+
+
+def test_execute_step_with_compressed_env_var():
+    """Test that execute_step can receive compressed input via DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS env var."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Test with compressed env var set - no command line argument
+            result = runner.invoke(
+                api.execute_step_command,
+                [],
+                env={"DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS": compressed_input},
+            )
+
+            assert result.exit_code == 0
+            assert "STEP_SUCCESS" in result.output
+
+
+def test_execute_step_with_both_inputs_fails():
+    """Test that providing both regular and compressed input fails for execute_step."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Try to provide both inputs - should fail
+            result = runner.invoke(
+                api.execute_step_command,
+                [input_json, "--compressed-input-json", compressed_input],
+            )
+
+            assert result.exit_code != 0
+            assert "Must provide one of input_json or compressed_input_json" in str(
+                result.exception
             )

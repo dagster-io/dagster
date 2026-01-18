@@ -1,8 +1,9 @@
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Generator, Optional, Union
+from typing import Optional, Union
 from weakref import WeakKeyDictionary
 
 from dagster import (
@@ -12,8 +13,9 @@ from dagster import (
     InitResourceContext,
     OpExecutionContext,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from openai import Client
 from pydantic import Field, PrivateAttr
 
@@ -36,7 +38,9 @@ context_to_counters = WeakKeyDictionary()
 
 
 def _add_to_asset_metadata(
-    context: AssetExecutionContext, usage_metadata: dict, output_name: Optional[str]
+    context: AssetExecutionContext,
+    usage_metadata: dict[str, int],
+    output_name: Optional[str],
 ):
     if context not in context_to_counters:
         context_to_counters[context] = defaultdict(lambda: 0)
@@ -44,16 +48,19 @@ def _add_to_asset_metadata(
 
     for metadata_key, delta in usage_metadata.items():
         counters[metadata_key] += delta
-    context.add_output_metadata(dict(counters), output_name)
+
+    context.add_output_metadata(
+        metadata=dict(counters),
+        output_name=output_name,
+    )
 
 
 @public
-@experimental
 def with_usage_metadata(
     context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
 ):
     """This wrapper can be used on any endpoint of the
-    `openai library <https://github.com/openai/openai-python>`
+    `openai library <https://github.com/openai/openai-python>`_
     to log the OpenAI API usage metadata in the asset metadata.
 
     Examples:
@@ -111,7 +118,7 @@ def with_usage_metadata(
             )
 
 
-            defs = Definitions(
+            Definitions(
                 assets=[openai_asset, openai_multi_asset],
                 jobs=[openai_asset_job, openai_multi_asset_job],
                 resources={
@@ -127,15 +134,24 @@ def with_usage_metadata(
     @wraps(func)
     def wrapper(*args, **kwargs):
         response = func(*args, **kwargs)
+        calls_key = f"openai.{response.model}.calls"
+        total_tokens_key = f"openai.{response.model}.total_tokens"
+        prompt_tokens_key = f"openai.{response.model}.prompt_tokens"
+        completion_tokens_key = f"openai.{response.model}.completion_tokens"
+
         usage = response.usage
         usage_metadata = {
-            "openai.calls": 1,
-            "openai.total_tokens": usage.total_tokens,
-            "openai.prompt_tokens": usage.prompt_tokens,
+            calls_key: 1,
+            total_tokens_key: usage.total_tokens,
+            prompt_tokens_key: usage.prompt_tokens,
         }
         if hasattr(usage, "completion_tokens"):
-            usage_metadata["openai.completion_tokens"] = usage.completion_tokens
-        _add_to_asset_metadata(context, usage_metadata, output_name)
+            usage_metadata[completion_tokens_key] = usage.completion_tokens
+        _add_to_asset_metadata(
+            context=context,
+            usage_metadata=usage_metadata,
+            output_name=output_name,
+        )
 
         return response
 
@@ -143,7 +159,6 @@ def with_usage_metadata(
 
 
 @public
-@experimental
 class OpenAIResource(ConfigurableResource):
     """This resource is wrapper over the
     `openai library <https://github.com/openai/openai-python>`_.
@@ -170,7 +185,7 @@ class OpenAIResource(ConfigurableResource):
 
             openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
 
-            defs = Definitions(
+            Definitions(
                 assets=[openai_asset],
                 jobs=[openai_asset_job],
                 resources={
@@ -225,7 +240,7 @@ class OpenAIResource(ConfigurableResource):
     @public
     @contextmanager
     def get_client(
-        self, context: Union[AssetExecutionContext, OpExecutionContext]
+        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext]
     ) -> Generator[Client, None, None]:
         """Yields an ``openai.Client`` for interacting with the OpenAI API.
 
@@ -275,7 +290,7 @@ class OpenAIResource(ConfigurableResource):
 
                 openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
 
-                defs = Definitions(
+                Definitions(
                     assets=[openai_asset],
                     jobs=[openai_asset_job, openai_op_job],
                     resources={
@@ -349,7 +364,7 @@ class OpenAIResource(ConfigurableResource):
                     name="openai_multi_asset_job", selection="openai_multi_asset"
                 )
 
-                defs = Definitions(
+                Definitions(
                     assets=[openai_asset, openai_multi_asset],
                     jobs=[openai_asset_job, openai_multi_asset_job],
                     resources={
@@ -361,7 +376,7 @@ class OpenAIResource(ConfigurableResource):
 
     def _get_client(
         self,
-        context: Union[AssetExecutionContext, OpExecutionContext],
+        context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext],
         asset_key: Optional[AssetKey] = None,
     ) -> Generator[Client, None, None]:
         if isinstance(context, AssetExecutionContext):

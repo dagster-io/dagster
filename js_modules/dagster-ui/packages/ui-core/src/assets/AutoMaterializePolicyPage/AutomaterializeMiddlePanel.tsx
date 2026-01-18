@@ -25,7 +25,7 @@ import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
   assetKey: AssetKey;
-  selectedEvaluationId: number | undefined;
+  selectedEvaluationId: string | undefined;
   selectedEvaluation?: AssetConditionEvaluationRecordFragment;
   definition?: AssetViewDefinitionNodeFragment | null;
 }
@@ -55,7 +55,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     {
       variables: {
         assetKey,
-        cursor: selectedEvaluationId ? `${selectedEvaluationId + 1}` : undefined,
+        cursor: selectedEvaluationId ? `${BigInt(selectedEvaluationId) + 1n}` : undefined,
         limit: 2,
       },
       skip,
@@ -72,7 +72,9 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
   >(GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY, {
     variables: {
       assetKey,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       evaluationId: selectedEvaluationId!,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partition: selectedPartition!,
     },
     skip: skipSpecificPartitionQuery,

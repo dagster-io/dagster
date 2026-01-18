@@ -1,17 +1,15 @@
+from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
-
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Optional
 
 from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-    from dagster._core.definitions.selector import RepositorySelector
-    from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
-    from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
+    from dagster._core.remote_origin import CodeLocationOrigin
+    from dagster._core.remote_representation.code_location import CodeLocation
 
 
 # For locations that are loaded asynchronously
@@ -20,17 +18,29 @@ class CodeLocationLoadStatus(Enum):
     LOADED = "LOADED"  # Finished loading (may be an error)
 
 
+class DefinitionsSource(Enum):
+    CODE_SERVER = "CODE_SERVER"
+    CONNECTION = "CONNECTION"
+
+
 @record
 class CodeLocationEntry:
-    origin: Annotated["CodeLocationOrigin", ImportFrom("dagster._core.remote_representation")]
+    origin: Annotated[
+        "CodeLocationOrigin",
+        ImportFrom("dagster._core.remote_origin"),
+    ]
     code_location: Optional[
-        Annotated["CodeLocation", ImportFrom("dagster._core.remote_representation")]
+        Annotated[
+            "CodeLocation",
+            ImportFrom("dagster._core.remote_representation.code_location"),
+        ]
     ]
     load_error: Optional[SerializableErrorInfo]
     load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float
     version_key: str
+    definitions_source: DefinitionsSource
 
 
 @record
@@ -46,40 +56,19 @@ class CodeLocationStatusEntry:
 
 
 @record
-class WorkspaceSnapshot:
+class CurrentWorkspace:
     code_location_entries: Mapping[str, CodeLocationEntry]
 
     @cached_property
-    def asset_graph(self) -> "RemoteAssetGraph":
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-
-        code_locations = (
-            location_entry.code_location
-            for location_entry in self.code_location_entries.values()
-            if location_entry.code_location
-        )
-        repos = (
-            repo
-            for code_location in code_locations
-            for repo in code_location.get_repositories().values()
+    def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
+        from dagster._core.definitions.assets.graph.remote_asset_graph import (
+            RemoteWorkspaceAssetGraph,
         )
 
-        repo_handle_assets: Sequence[Tuple["RepositorySelector", "AssetNodeSnap"]] = []
-        repo_handle_asset_checks: Sequence[Tuple["RepositorySelector", "AssetCheckNodeSnap"]] = []
+        return RemoteWorkspaceAssetGraph.build(self)
 
-        for repo in repos:
-            for asset_node_snap in repo.get_asset_node_snaps():
-                repo_handle_assets.append((repo.selector, asset_node_snap))
-            for asset_check_node_snap in repo.get_asset_check_node_snaps():
-                repo_handle_asset_checks.append((repo.selector, asset_check_node_snap))
-
-        return RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
-            repo_selector_assets=repo_handle_assets,
-            repo_selector_asset_checks=repo_handle_asset_checks,
-        )
-
-    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
-        return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
+    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "CurrentWorkspace":
+        return CurrentWorkspace(code_location_entries={**self.code_location_entries, name: entry})
 
 
 def location_status_from_location_entry(

@@ -1,29 +1,23 @@
-from typing import Iterable
+from collections.abc import Iterable
 
-from dagster import (
-    AssetCheckExecutionContext,
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    multi_asset_check,
-)
+import dagster as dg
 
 
-@multi_asset_check(
+@dg.multi_asset_check(
     specs=[
-        AssetCheckSpec(name="asset_check_one", asset="my_asset_one"),
-        AssetCheckSpec(name="asset_check_two", asset="my_asset_two"),
+        dg.AssetCheckSpec(name="asset_check_one", asset="my_asset_one"),
+        dg.AssetCheckSpec(name="asset_check_two", asset="my_asset_two"),
     ]
 )
-def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
-    yield AssetCheckResult(
+def the_check(context: dg.AssetCheckExecutionContext) -> Iterable[dg.AssetCheckResult]:
+    yield dg.AssetCheckResult(
         passed=False,
-        severity=AssetCheckSeverity.WARN,
+        severity=dg.AssetCheckSeverity.WARN,
         description="The asset is over 0.5",
         asset_key="asset_check_one",
     )
 
-    yield AssetCheckResult(
+    yield dg.AssetCheckResult(
         passed=True,
         description="The asset is fresh.",
         asset_key="asset_check_two",

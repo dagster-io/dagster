@@ -1,3 +1,24 @@
+## 1.0.21 (September 19, 2025)
+
+- Dependency upgrades
+
+## 1.0.20 (August 19, 2025)
+
+- Disallow TypeScript non-null assertions.
+- Guard against importing `dayjs` extensions directly from `dayjs`, to ensure that our configurations are used.
+
+## 1.0.19 (January 7, 2025)
+
+- Added custom rule to autocorrect `shared` paths to avoid internal build failures.
+- Added rule to lint against `window.open`.
+- Changed `react-hooks/exhaustive-deps` rule to be an error instead of a warning.
+- Changed `no-unused-vars` rule to be an error instead of a warning.
+- Fix tests.
+
+## 1.0.18 (October 15, 2024)
+
+- Dependency upgrades
+
 ## 1.0.17 (September 3, 2024)
 
 - Added no-react-router-route rule.

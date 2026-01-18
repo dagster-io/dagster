@@ -1,9 +1,9 @@
 from collections import namedtuple
+from collections.abc import Callable, Sequence
 
 import dagster._check as check
 import graphene
 from dagster._config import (
-    ConfigSchemaSnapshot,
     EvaluationError as DagsterEvaluationError,
     EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry,
@@ -16,6 +16,7 @@ from dagster._config import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
+from dagster._config.snap import ConfigTypeSnap
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._utils.error import SerializableErrorInfo
 from graphene.types.generic import GenericScalar
@@ -110,10 +111,7 @@ class GrapheneEvaluationStack(graphene.ObjectType):
     class Meta:
         name = "EvaluationStack"
 
-    def __init__(self, config_schema_snapshot, stack):
-        self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
-        )
+    def __init__(self, stack):
         self._stack = stack
         super().__init__()
 
@@ -133,25 +131,26 @@ class GrapheneEvaluationErrorReason(graphene.Enum):
         name = "EvaluationErrorReason"
 
 
-class GraphenePipelineConfigValidationError(graphene.Interface):
+class GrapheneConfigValidationError(graphene.Interface):
     message = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
     stack = graphene.NonNull(GrapheneEvaluationStack)
     reason = graphene.NonNull(GrapheneEvaluationErrorReason)
 
     class Meta:
-        name = "PipelineConfigValidationError"
+        name = "PipelineConfigValidationError"  # back-compat
 
     @staticmethod
-    def from_dagster_error(config_schema_snapshot, error):
-        check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
+    def from_dagster_error(
+        get_config_type: Callable[[str], ConfigTypeSnap], error: DagsterEvaluationError
+    ):
         check.inst_param(error, "error", DagsterEvaluationError)
 
         if isinstance(error.error_data, RuntimeMismatchErrorData):
             return GrapheneRuntimeMismatchConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
-                stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
+                stack=GrapheneEvaluationStack(error.stack),
                 reason=error.reason.value,
                 value_rep=error.error_data.value_rep,
             )
@@ -159,10 +158,10 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
             return GrapheneMissingFieldConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
-                stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
+                stack=GrapheneEvaluationStack(error.stack),
                 reason=error.reason.value,
                 field=GrapheneConfigTypeField(
-                    config_schema_snapshot=config_schema_snapshot,
+                    get_config_type,
                     field_snap=error.error_data.field_snap,
                 ),
             )
@@ -170,11 +169,11 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
             return GrapheneMissingFieldsConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
-                stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
+                stack=GrapheneEvaluationStack(error.stack),
                 reason=error.reason.value,
                 fields=[
                     GrapheneConfigTypeField(
-                        config_schema_snapshot=config_schema_snapshot,
+                        get_config_type,
                         field_snap=field_snap,
                     )
                     for field_snap in error.error_data.field_snaps
@@ -185,7 +184,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
             return GrapheneFieldNotDefinedConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
-                stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
+                stack=GrapheneEvaluationStack(error.stack),
                 reason=error.reason.value,
                 field_name=error.error_data.field_name,
             )
@@ -193,7 +192,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
             return GrapheneFieldsNotDefinedConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
-                stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
+                stack=GrapheneEvaluationStack(error.stack),
                 reason=error.reason.value,
                 field_names=error.error_data.field_names,
             )
@@ -201,7 +200,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
             return GrapheneSelectorTypeConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
-                stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
+                stack=GrapheneEvaluationStack(error.stack),
                 reason=error.reason.value,
                 incoming_fields=error.error_data.incoming_fields,
             )
@@ -213,7 +212,7 @@ class GrapheneRuntimeMismatchConfigError(graphene.ObjectType):
     value_rep = graphene.Field(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "RuntimeMismatchConfigError"
 
 
@@ -221,7 +220,7 @@ class GrapheneMissingFieldConfigError(graphene.ObjectType):
     field = graphene.NonNull(GrapheneConfigTypeField)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "MissingFieldConfigError"
 
 
@@ -229,7 +228,7 @@ class GrapheneMissingFieldsConfigError(graphene.ObjectType):
     fields = non_null_list(GrapheneConfigTypeField)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "MissingFieldsConfigError"
 
 
@@ -237,7 +236,7 @@ class GrapheneFieldNotDefinedConfigError(graphene.ObjectType):
     field_name = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "FieldNotDefinedConfigError"
 
 
@@ -245,7 +244,7 @@ class GrapheneFieldsNotDefinedConfigError(graphene.ObjectType):
     field_names = non_null_list(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "FieldsNotDefinedConfigError"
 
 
@@ -253,7 +252,7 @@ class GrapheneSelectorTypeConfigError(graphene.ObjectType):
     incoming_fields = non_null_list(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "SelectorTypeConfigError"
 
 
@@ -288,7 +287,7 @@ class GraphenePipelineConfigValidationValid(graphene.ObjectType):
 
 class GraphenePipelineConfigValidationInvalid(graphene.Interface):
     pipeline_name = graphene.NonNull(graphene.String)
-    errors = non_null_list(GraphenePipelineConfigValidationError)
+    errors = non_null_list(GrapheneConfigValidationError)
 
     class Meta:
         name = "PipelineConfigValidationInvalid"
@@ -296,21 +295,24 @@ class GraphenePipelineConfigValidationInvalid(graphene.Interface):
 
 class GrapheneRunConfigValidationInvalid(graphene.ObjectType):
     pipeline_name = graphene.NonNull(graphene.String)
-    errors = non_null_list(GraphenePipelineConfigValidationError)
+    errors = non_null_list(GrapheneConfigValidationError)
 
     class Meta:
         interfaces = (GraphenePipelineConfigValidationInvalid,)
         name = "RunConfigValidationInvalid"
 
     @staticmethod
-    def for_validation_errors(represented_pipeline, errors):
+    def for_validation_errors(
+        represented_pipeline: RepresentedJob, errors: Sequence[DagsterEvaluationError]
+    ) -> "GrapheneRunConfigValidationInvalid":
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
         check.list_param(errors, "errors", of_type=DagsterEvaluationError)
         return GrapheneRunConfigValidationInvalid(
             pipeline_name=represented_pipeline.name,
             errors=[
-                GraphenePipelineConfigValidationError.from_dagster_error(
-                    represented_pipeline.config_schema_snapshot, err
+                GrapheneConfigValidationError.from_dagster_error(
+                    represented_pipeline.config_schema_snapshot.get_config_snap,
+                    err,
                 )
                 for err in errors
             ],

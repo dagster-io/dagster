@@ -125,7 +125,7 @@ You can reload the code using the **Deployment** page:
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/more-reload-code.png" />
+    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/more-reload-code.png" />
 </p>
 
 </details>
@@ -135,7 +135,7 @@ Or from the left nav or on each job page:
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/more-reload-left-nav.png" />
+    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/more-reload-left-nav.png" />
 </p>
 
 </details>

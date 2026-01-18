@@ -187,7 +187,7 @@ def test_put_account_setting(ecs):
     assert task_arn_format_setting["value"] == "disabled"
 
 
-@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(max_runs=2)
 def test_register_task_definition(ecs):
     # Without memory
     with pytest.raises(ClientError):

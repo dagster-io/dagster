@@ -102,7 +102,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
   }
 
   if (type.__typename === 'ArrayConfigType') {
-    const ofTypeKey = type.typeParamKeys[0]!;
+    const ofTypeKey = type.typeParamKeys[0] ?? '';
     return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}]</>;
   }
 
@@ -111,8 +111,8 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
     // {
     //   [name_hint: String]: Int
     // }
-    const keyTypeKey = type.typeParamKeys[0]!;
-    const valueTypeKey = type.typeParamKeys[1]!;
+    const keyTypeKey = type.typeParamKeys[0] ?? '';
+    const valueTypeKey = type.typeParamKeys[1] ?? '';
     const innerIndent = '  '.repeat(depth + 1);
     return (
       <>
@@ -135,7 +135,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
   }
 
   if (type.__typename === 'NullableConfigType') {
-    const ofTypeKey = type.typeParamKeys[0]!;
+    const ofTypeKey = type.typeParamKeys[0] ?? '';
     return (
       <>
         {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}
@@ -173,7 +173,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
 export const tryPrettyPrintJSON = (jsonString: string) => {
   try {
     return JSON.stringify(JSON.parse(jsonString), null, 2);
-  } catch (err) {
+  } catch {
     // welp, looks like it's not valid JSON. This has happened at least once
     // in the wild - a user was able to build a metadata entry in Python with
     // a `NaN` number value: https://github.com/dagster-io/dagster/issues/8959

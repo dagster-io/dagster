@@ -1,5 +1,5 @@
-from dagster import Array, Enum, EnumValue, Field, Noneable, ScalarUnion, Selector, Shape, job, op
-from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
+import dagster as dg
+from dagster._config import ConfigTypeKind, resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.snap import (
@@ -8,7 +8,7 @@ from dagster._core.snap import (
     snap_from_config_type,
 )
 from dagster._core.types.dagster_type import DagsterType
-from dagster._serdes import deserialize_value, serialize_pp, serialize_value
+from dagster._serdes import serialize_pp
 
 
 def snap_from_dagster_type(dagster_type: DagsterType) -> ConfigTypeSnap:
@@ -17,12 +17,12 @@ def snap_from_dagster_type(dagster_type: DagsterType) -> ConfigTypeSnap:
 
 def test_enum_snap():
     enum_snap = snap_from_dagster_type(
-        Enum(
+        dg.Enum(  # pyright: ignore[reportArgumentType]
             "CowboyType",
             [
-                EnumValue("good"),
-                EnumValue("bad"),
-                EnumValue("ugly"),
+                dg.EnumValue("good"),
+                dg.EnumValue("bad"),
+                dg.EnumValue("ugly"),
             ],
         )
     )
@@ -36,7 +36,7 @@ def test_enum_snap():
 
 
 def test_basic_int_snap():
-    int_snap = snap_from_dagster_type(int)
+    int_snap = snap_from_dagster_type(int)  # pyright: ignore[reportArgumentType]
     assert int_snap.given_name == "Int"
     assert int_snap.key == "Int"
     assert int_snap.kind == ConfigTypeKind.SCALAR
@@ -45,7 +45,7 @@ def test_basic_int_snap():
 
 
 def test_basic_dict():
-    dict_snap = snap_from_dagster_type({"foo": int})
+    dict_snap = snap_from_dagster_type({"foo": int})  # pyright: ignore[reportArgumentType]
     assert dict_snap.key.startswith("Shape.")
     assert dict_snap.given_name is None
     child_type_keys = dict_snap.get_child_type_keys()
@@ -62,15 +62,16 @@ def test_basic_dict():
 
 def test_field_things():
     dict_snap = snap_from_dagster_type(
-        {
+        {  # pyright: ignore[reportArgumentType]
             "req": int,
-            "opt": Field(int, is_required=False),
-            "opt_with_default": Field(int, is_required=False, default_value=2),
-            "req_with_desc": Field(int, description="A desc"),
+            "opt": dg.Field(int, is_required=False),
+            "opt_with_default": dg.Field(int, is_required=False, default_value=2),
+            "req_with_desc": dg.Field(int, description="A desc"),
+            "secret_field": dg.Field(str, is_secret=True),
         }
     )
 
-    assert dict_snap.fields and len(dict_snap.fields) == 4
+    assert dict_snap.fields and len(dict_snap.fields) == 5
 
     field_snap_dict = {field_snap.name: field_snap for field_snap in dict_snap.fields}
 
@@ -81,14 +82,16 @@ def test_field_things():
     assert field_snap_dict["opt"].default_value_as_json_str is None
     assert field_snap_dict["opt_with_default"].is_required is False
     assert field_snap_dict["opt_with_default"].default_provided is True
-    assert deserialize_value(field_snap_dict["opt_with_default"].default_value_as_json_str) == 2
+    assert dg.deserialize_value(field_snap_dict["opt_with_default"].default_value_as_json_str) == 2  # pyright: ignore[reportArgumentType]
 
     assert field_snap_dict["req_with_desc"].is_required is True
     assert field_snap_dict["req_with_desc"].description == "A desc"
+    assert field_snap_dict["secret_field"].is_secret is True
+    assert not field_snap_dict["req"].is_secret
 
 
 def test_basic_list():
-    list_snap = snap_from_dagster_type(Array(int))
+    list_snap = snap_from_dagster_type(dg.Array(int))  # pyright: ignore[reportArgumentType]
     assert list_snap.key.startswith("Array")
     child_type_keys = list_snap.get_child_type_keys()
     assert child_type_keys
@@ -97,7 +100,7 @@ def test_basic_list():
 
 
 def test_basic_optional():
-    optional_snap = snap_from_dagster_type(Noneable(int))
+    optional_snap = snap_from_dagster_type(dg.Noneable(int))  # pyright: ignore[reportArgumentType]
     assert optional_snap.key.startswith("Noneable")
 
     child_type_keys = optional_snap.get_child_type_keys()
@@ -109,7 +112,7 @@ def test_basic_optional():
 
 
 def test_basic_list_list():
-    list_snap = snap_from_dagster_type([[int]])
+    list_snap = snap_from_dagster_type([[int]])  # pyright: ignore[reportArgumentType]
     assert list_snap.key.startswith("Array")
     child_type_keys = list_snap.get_child_type_keys()
     assert child_type_keys
@@ -119,8 +122,8 @@ def test_basic_list_list():
 
 
 def test_list_of_dict():
-    inner_dict_dagster_type = Shape({"foo": Field(str)})
-    list_of_dict_snap = snap_from_dagster_type([inner_dict_dagster_type])
+    inner_dict_dagster_type = dg.Shape({"foo": dg.Field(str)})
+    list_of_dict_snap = snap_from_dagster_type([inner_dict_dagster_type])  # pyright: ignore[reportArgumentType]
 
     assert list_of_dict_snap.key.startswith("Array")
     child_type_keys = list_of_dict_snap.get_child_type_keys()
@@ -130,7 +133,7 @@ def test_list_of_dict():
 
 
 def test_selector_of_things():
-    selector_snap = snap_from_dagster_type(Selector({"bar": Field(int)}))
+    selector_snap = snap_from_dagster_type(dg.Selector({"bar": dg.Field(int)}))  # pyright: ignore[reportArgumentType]
     assert selector_snap.key.startswith("Selector")
     assert selector_snap.kind == ConfigTypeKind.SELECTOR
     assert selector_snap.fields and len(selector_snap.fields) == 1
@@ -140,7 +143,7 @@ def test_selector_of_things():
 
 
 def test_basic_map():
-    map_snap = snap_from_dagster_type(Map(str, int))
+    map_snap = snap_from_dagster_type(dg.Map(str, int))  # pyright: ignore[reportArgumentType]
     assert map_snap.key.startswith("Map")
     child_type_keys = map_snap.get_child_type_keys()
     assert child_type_keys
@@ -150,7 +153,7 @@ def test_basic_map():
 
 
 def test_named_map():
-    map_snap = snap_from_dagster_type(Map(str, float, key_label_name="title"))
+    map_snap = snap_from_dagster_type(dg.Map(str, float, key_label_name="title"))  # pyright: ignore[reportArgumentType]
     assert map_snap.key.startswith("Map")
     assert map_snap.given_name == "title"
     child_type_keys = map_snap.get_child_type_keys()
@@ -161,7 +164,7 @@ def test_named_map():
 
 
 def test_basic_map_nested():
-    map_snap = snap_from_dagster_type({int: {str: int}})
+    map_snap = snap_from_dagster_type({int: {str: int}})  # pyright: ignore[reportArgumentType]
     assert map_snap.key.startswith("Map")
     child_type_keys = map_snap.get_child_type_keys()
     assert child_type_keys
@@ -172,8 +175,8 @@ def test_basic_map_nested():
 
 
 def test_map_of_dict():
-    inner_dict_dagster_type = Shape({"foo": Field(str)})
-    map_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})
+    inner_dict_dagster_type = dg.Shape({"foo": dg.Field(str)})
+    map_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})  # pyright: ignore[reportArgumentType]
 
     assert map_of_dict_snap.key.startswith("Map")
     child_type_keys = map_of_dict_snap.get_child_type_keys()
@@ -187,11 +190,11 @@ def test_kitchen_sink():
     kitchen_sink = resolve_to_config_type(
         [
             {
-                "opt_list_of_int": Field(int, is_required=False),
+                "opt_list_of_int": dg.Field(int, is_required=False),
                 "nested_dict": {
                     "list_list": [[int]],
-                    "nested_selector": Field(
-                        Selector({"some_field": int, "more_list": Noneable([bool])})
+                    "nested_selector": dg.Field(
+                        dg.Selector({"some_field": int, "more_list": dg.Noneable([bool])})
                     ),
                 },
                 "map": {
@@ -201,39 +204,39 @@ def test_kitchen_sink():
         ]
     )
 
-    kitchen_sink_snap = snap_from_dagster_type(kitchen_sink)
+    kitchen_sink_snap = snap_from_dagster_type(kitchen_sink)  # pyright: ignore[reportArgumentType]
 
-    rehydrated_snap = deserialize_value(serialize_value(kitchen_sink_snap), ConfigTypeSnap)
+    rehydrated_snap = dg.deserialize_value(dg.serialize_value(kitchen_sink_snap), ConfigTypeSnap)
     assert kitchen_sink_snap == rehydrated_snap
 
 
 def test_simple_job_smoke_test():
-    @op
+    @dg.op
     def op_without_config(_):
         pass
 
-    @job
+    @dg.job
     def single_op_job():
         op_without_config()
 
     config_schema_snapshot = build_config_schema_snapshot(single_op_job)
     assert config_schema_snapshot.all_config_snaps_by_key
 
-    serialized = serialize_value(config_schema_snapshot)
-    rehydrated_config_schema_snapshot = deserialize_value(serialized, ConfigSchemaSnapshot)
+    serialized = dg.serialize_value(config_schema_snapshot)
+    rehydrated_config_schema_snapshot = dg.deserialize_value(serialized, ConfigSchemaSnapshot)
     assert config_schema_snapshot == rehydrated_config_schema_snapshot
 
 
 def test_check_op_config_correct():
-    @op(config_schema={"foo": str})
+    @dg.op(config_schema={"foo": str})
     def op_with_config(_):
         pass
 
-    @job
+    @dg.job
     def single_op_job():
         op_with_config()
 
-    op_config_key = op_with_config.config_schema.config_type.key
+    op_config_key = op_with_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
@@ -242,33 +245,33 @@ def test_check_op_config_correct():
     op_config_snap = config_snaps[op_config_key]
 
     assert op_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
-    assert len(op_config_snap.fields) == 1
+    assert len(op_config_snap.fields) == 1  # pyright: ignore[reportArgumentType]
 
-    foo_field = op_config_snap.fields[0]
+    foo_field = op_config_snap.fields[0]  # pyright: ignore[reportOptionalSubscript]
 
     assert foo_field.name == "foo"
     assert foo_field.type_key == "String"
 
 
 def test_check_op_list_list_config_correct():
-    @op(config_schema={"list_list_int": [[{"bar": int}]]})
+    @dg.op(config_schema={"list_list_int": [[{"bar": int}]]})
     def op_with_config(_):
         pass
 
-    @job
+    @dg.job
     def single_op_job():
         op_with_config()
 
-    op_config_key = op_with_config.config_schema.config_type.key
+    op_config_key = op_with_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
     assert op_config_key in config_snaps
     op_config_snap = config_snaps[op_config_key]
 
     assert op_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
-    assert len(op_config_snap.fields) == 1
+    assert len(op_config_snap.fields) == 1  # pyright: ignore[reportArgumentType]
 
-    list_list_field = op_config_snap.fields[0]
+    list_list_field = op_config_snap.fields[0]  # pyright: ignore[reportOptionalSubscript]
 
     list_list_type_key = list_list_field.type_key
 
@@ -283,14 +286,14 @@ def test_check_op_list_list_config_correct():
 
 
 def test_kitchen_sink_break_out():
-    @op(
+    @dg.op(
         config_schema=[
             {
-                "opt_list_of_int": Field([int], is_required=False),
+                "opt_list_of_int": dg.Field([int], is_required=False),
                 "nested_dict": {
                     "list_list": [[int]],
-                    "nested_selector": Selector(
-                        {"some_field": int, "noneable_list": Noneable([bool])}
+                    "nested_selector": dg.Selector(
+                        {"some_field": int, "noneable_list": dg.Noneable([bool])}
                     ),
                 },
                 "map": {
@@ -302,13 +305,13 @@ def test_kitchen_sink_break_out():
     def op_with_kitchen_sink_config(_):
         pass
 
-    @job
+    @dg.job
     def single_op_job():
         op_with_kitchen_sink_config()
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
-    op_config_key = op_with_kitchen_sink_config.config_schema.config_type.key
+    op_config_key = op_with_kitchen_sink_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
     assert op_config_key in config_snaps
     op_config_snap = config_snaps[op_config_key]
 
@@ -316,7 +319,7 @@ def test_kitchen_sink_break_out():
 
     dict_within_list = config_snaps[op_config_snap.inner_type_key]
 
-    assert len(dict_within_list.fields) == 3
+    assert len(dict_within_list.fields) == 3  # pyright: ignore[reportArgumentType]
 
     opt_field = dict_within_list.get_field("opt_list_of_int")
 
@@ -324,7 +327,7 @@ def test_kitchen_sink_break_out():
     assert config_snaps[opt_field.type_key].kind == ConfigTypeKind.ARRAY
 
     nested_dict = config_snaps[dict_within_list.get_field("nested_dict").type_key]
-    assert len(nested_dict.fields) == 2
+    assert len(nested_dict.fields) == 2  # pyright: ignore[reportArgumentType]
     nested_selector = config_snaps[nested_dict.get_field("nested_selector").type_key]
     noneable_list_bool = config_snaps[nested_selector.get_field("noneable_list").type_key]
     assert noneable_list_bool.kind == ConfigTypeKind.NONEABLE
@@ -334,7 +337,7 @@ def test_kitchen_sink_break_out():
     amap = config_snaps[dict_within_list.get_field("map").type_key]
     assert amap.kind == ConfigTypeKind.MAP
     map_dict = config_snaps[amap.inner_type_key]
-    assert len(map_dict.fields) == 2
+    assert len(map_dict.fields) == 2  # pyright: ignore[reportArgumentType]
     map_a = config_snaps[map_dict.get_field("map_a").type_key]
     assert map_a.kind == ConfigTypeKind.SCALAR
 
@@ -345,19 +348,21 @@ def get_config_snap(job_def: JobDefinition, key: str) -> ConfigTypeSnap:
 
 def test_scalar_union():
     # Requiring resolve calls is bad: https://github.com/dagster-io/dagster/issues/2266
-    @op(
-        config_schema=ScalarUnion(resolve_to_config_type(str), resolve_to_config_type({"bar": str}))
+    @dg.op(
+        config_schema=dg.ScalarUnion(
+            resolve_to_config_type(str), resolve_to_config_type({"bar": str})
+        )
     )
     def op_with_config(_):
         pass
 
-    @job
+    @dg.job
     def single_op_job():
         op_with_config()
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
-    scalar_union_key = op_with_config.config_schema.config_type.key
+    scalar_union_key = op_with_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
 
     assert scalar_union_key in config_snaps
 
@@ -371,6 +376,6 @@ def test_scalar_union():
 def test_historical_config_type_snap(snapshot):
     old_snap_json = """{"__class__": "ConfigTypeSnap", "description": "", "enum_values": [], "fields": [], "given_name": "kjdkfjdkfjdkj", "key": "ksjdkfjdkfjd", "kind": {"__enum__": "ConfigTypeKind.STRICT_SHAPE"}, "type_param_keys": []}"""
 
-    old_snap = deserialize_value(old_snap_json, ConfigTypeSnap)
+    old_snap = dg.deserialize_value(old_snap_json, ConfigTypeSnap)
 
     snapshot.assert_match(serialize_pp(old_snap))

@@ -1,6 +1,8 @@
 import abc
-from typing import Mapping, Optional, Sequence, Set
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
@@ -19,6 +21,7 @@ from dagster._core.storage.sql import AlembicVersion
 from dagster._utils import PrintFn
 
 
+@public
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract class for managing persistance of scheduler artifacts."""
 
@@ -32,7 +35,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+        instigator_statuses: Optional[set[InstigatorStatus]] = None,
     ) -> Sequence[InstigatorState]:
         """Return all InstigationStates present in storage.
 
@@ -202,7 +205,9 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     def alembic_version(self) -> Optional[AlembicVersion]:

@@ -1,5 +1,5 @@
 import {Box, Button, ButtonGroup, Colors, Icon} from '@dagster-io/ui-components';
-import React, {useContext, useMemo} from 'react';
+import {useContext, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {AssetFeatureContext} from './AssetFeatureContext';
@@ -8,7 +8,8 @@ import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LineageDepthControl} from './LineageDepthControl';
 import {AssetLineageScope, AssetViewParams} from './types';
 import {GraphData} from '../asset-graph/Utils';
-import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
+import {AssetGraphQueryItem} from '../asset-graph/types';
+import {calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
 export const AssetNodeLineage = ({
@@ -37,8 +38,8 @@ export const AssetNodeLineage = ({
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
       : params.lineageScope === 'downstream'
-      ? maxDistances.downstream
-      : Math.max(maxDistances.upstream, maxDistances.downstream);
+        ? maxDistances.downstream
+        : Math.max(maxDistances.upstream, maxDistances.downstream);
 
   const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
 

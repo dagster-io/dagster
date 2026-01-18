@@ -1,11 +1,12 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Optional, cast
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -22,14 +23,14 @@ DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_duckdb_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             DuckDB tables and an in-memory type - e.g. a Pandas DataFrame. If only
-            one DbTypeHandler is provided, it will be used as teh default_load_type.
+            one DbTypeHandler is provided, it will be used as the default_load_type.
         default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
@@ -49,7 +50,7 @@ def build_duckdb_io_manager(
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={"io_manager" duckdb_io_manager.configured({"database": "my_db.duckdb"})}
             )
@@ -59,7 +60,7 @@ def build_duckdb_io_manager(
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table]
             resources={"io_manager" duckdb_io_manager.configured(
                 {"database": "my_db.duckdb", "schema": "my_schema"} # will be used as the schema
@@ -153,7 +154,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
@@ -163,7 +164,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb", schema="my_schema")}
         )
@@ -215,7 +216,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb",
                                                        connection_config={"arrow_large_buffer_size": True})}
@@ -224,7 +225,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     """
 
     database: str = Field(description="Path to the DuckDB database.")
-    connection_config: Dict[str, Any] = Field(
+    connection_config: dict[str, Any] = Field(
         description=(
             "DuckDB connection configuration options. See"
             " https://duckdb.org/docs/sql/configuration.html"
@@ -240,7 +241,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:
@@ -271,7 +272,7 @@ class DuckDbClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
             return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
@@ -279,7 +280,7 @@ class DuckDbClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, _):  # pyright: ignore[reportIncompatibleMethodOverride]
         config = context.resource_config["connection_config"]
 
         # support for `custom_user_agent` was added in v1.0.0
@@ -310,7 +311,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+    if table_slice.partition_dimensions:
         query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
         return query + _partition_where_clause(table_slice.partition_dimensions)
     else:
@@ -329,7 +330,7 @@ def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensi
 
 
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
-    partition = cast(TimeWindow, table_partition.partitions)
+    partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)

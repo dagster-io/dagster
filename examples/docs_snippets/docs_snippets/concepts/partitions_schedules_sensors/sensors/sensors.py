@@ -1,18 +1,5 @@
 # ruff: isort: skip_file
-
-
-from dagster import (
-    Definitions,
-    DefaultSensorStatus,
-    SkipReason,
-    asset,
-    define_asset_job,
-    JobSelector,
-    CodeLocationSelector,
-    DagsterRunStatus,
-    run_status_sensor,
-    run_failure_sensor,
-)
+import dagster as dg
 
 
 # start_sensor_job_marker
@@ -42,7 +29,7 @@ import os
 from dagster import sensor, RunRequest, RunConfig
 
 
-@sensor(job=log_file_job)
+@sensor(target=log_file_job)
 def my_directory_sensor():
     for filename in os.listdir(MY_DIRECTORY):
         filepath = os.path.join(MY_DIRECTORY, filename)
@@ -58,16 +45,13 @@ def my_directory_sensor():
 # end_directory_sensor_marker
 
 
-@asset
+@dg.asset
 def my_asset():
     return 1
 
 
 # start_asset_job_sensor_marker
-asset_job = define_asset_job("asset_job", "*")
-
-
-@sensor(job=asset_job)
+@sensor(target=[my_asset])
 def materializes_asset_sensor():
     yield RunRequest(...)
 
@@ -76,7 +60,7 @@ def materializes_asset_sensor():
 
 
 # start_running_in_code
-@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(target=[my_asset], default_status=dg.DefaultSensorStatus.RUNNING)
 def my_running_sensor(): ...
 
 
@@ -87,7 +71,7 @@ def my_running_sensor(): ...
 from dagster import validate_run_config
 
 
-@sensor(job=log_file_job)
+@sensor(target=log_file_job)
 def sensor_to_test():
     yield RunRequest(
         run_key="foo",
@@ -111,12 +95,12 @@ def my_job():
 # start_interval_sensors_maker
 
 
-@sensor(job=my_job, minimum_interval_seconds=30)
+@sensor(target=my_job, minimum_interval_seconds=30)
 def sensor_A():
     yield RunRequest(run_key=None, run_config={})
 
 
-@sensor(job=my_job, minimum_interval_seconds=45)
+@sensor(target=my_job, minimum_interval_seconds=45)
 def sensor_B():
     yield RunRequest(run_key=None, run_config={})
 
@@ -125,7 +109,7 @@ def sensor_B():
 
 
 # start_cursor_sensors_marker
-@sensor(job=log_file_job)
+@sensor(target=log_file_job)
 def my_directory_sensor_cursor(context):
     last_mtime = float(context.cursor) if context.cursor else 0
 
@@ -163,7 +147,7 @@ def test_my_directory_sensor_cursor():
 
 
 # start_skip_sensors_marker
-@sensor(job=log_file_job)
+@sensor(target=log_file_job)
 def my_directory_sensor_with_skip_reasons():
     has_files = False
     for filename in os.listdir(MY_DIRECTORY):
@@ -177,7 +161,7 @@ def my_directory_sensor_with_skip_reasons():
             )
             has_files = True
     if not has_files:
-        yield SkipReason(f"No files found in {MY_DIRECTORY}.")
+        yield dg.SkipReason(f"No files found in {MY_DIRECTORY}.")
 
 
 # end_skip_sensors_marker
@@ -186,12 +170,12 @@ def my_directory_sensor_with_skip_reasons():
 from dagster_aws.s3.sensor import get_s3_keys
 
 
-@sensor(job=my_job)
+@sensor(target=my_job)
 def my_s3_sensor(context):
     since_key = context.cursor or None
     new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
     if not new_s3_keys:
-        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
+        return dg.SkipReason("No new s3 files found for bucket my_s3_bucket.")
     last_key = new_s3_keys[-1]
     run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
     context.update_cursor(last_key)
@@ -208,7 +192,7 @@ def the_job(): ...
 def get_the_db_connection(_): ...
 
 
-defs = Definitions(
+defs = dg.Definitions(
     jobs=[my_job, log_file_job],
     sensors=[my_directory_sensor, sensor_A, sensor_B],
 )
@@ -221,18 +205,18 @@ def send_slack_alert():
 # start_cross_code_location_run_status_sensor
 
 
-@run_status_sensor(
-    monitored_jobs=[CodeLocationSelector(location_name="defs")],
-    run_status=DagsterRunStatus.SUCCESS,
+@dg.run_status_sensor(
+    monitored_jobs=[dg.CodeLocationSelector(location_name="defs")],
+    run_status=dg.DagsterRunStatus.SUCCESS,
 )
 def code_location_a_sensor():
     # when any job in code_location_a succeeds, this sensor will trigger
     send_slack_alert()
 
 
-@run_failure_sensor(
+@dg.run_failure_sensor(
     monitored_jobs=[
-        JobSelector(
+        dg.JobSelector(
             location_name="defs",
             repository_name="code_location_a",
             job_name="data_update",
@@ -248,9 +232,9 @@ def code_location_a_data_update_failure_sensor():
 
 
 # start_instance_sensor
-@run_status_sensor(
+@dg.run_status_sensor(
     monitor_all_code_locations=True,
-    run_status=DagsterRunStatus.SUCCESS,
+    run_status=dg.DagsterRunStatus.SUCCESS,
 )
 def sensor_monitor_all_code_locations():
     # when any job in the Dagster deployment succeeds, this sensor will trigger
@@ -261,10 +245,10 @@ def sensor_monitor_all_code_locations():
 
 
 # start_sensor_logging
-@sensor(job=the_job)
+@sensor(target=the_job)
 def logs_then_skips(context):
     context.log.info("Logging from a sensor!")
-    return SkipReason("Nothing to do")
+    return dg.SkipReason("Nothing to do")
 
 
 # end_sensor_logging

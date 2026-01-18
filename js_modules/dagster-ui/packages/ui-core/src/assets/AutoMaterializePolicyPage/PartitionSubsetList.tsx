@@ -6,7 +6,6 @@ import {
   MiddleTruncate,
   SpinnerWithText,
   TextInput,
-  TextInputContainer,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
@@ -26,7 +25,7 @@ interface Props {
   description: string;
   status?: AssetConditionEvaluationStatus;
   assetKeyPath: string[];
-  evaluationId: number;
+  evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
 }
@@ -114,12 +113,15 @@ export const PartitionSubsetList = ({
             <Menu>
               <Inner $totalHeight={totalHeight}>
                 {virtualItems.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const partitionKey = filteredKeys[index]!;
                   return (
                     <Row $height={size} $start={start} key={key}>
                       <MenuItem
                         onClick={() => {
-                          selectPartition && selectPartition(partitionKey);
+                          if (selectPartition) {
+                            selectPartition(partitionKey);
+                          }
                         }}
                         text={
                           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -181,7 +183,7 @@ const statusToColors: Record<AssetConditionEvaluationStatus, ColorConfig> = {
 
 const SearchContainer = styled(Box)`
   display: flex;
-  ${TextInputContainer} {
+  > * {
     flex: 1;
   }
 `;

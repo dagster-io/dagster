@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 import responses
 from dagster import Failure
-from dagster_airbyte import AirbyteCloudResource, AirbyteOutput, AirbyteState
+from dagster_airbyte import AirbyteCloudResource, AirbyteJobStatusType, AirbyteOutput
 
 
 @responses.activate
@@ -50,7 +50,12 @@ def test_trigger_connection_fail() -> None:
 @responses.activate
 @pytest.mark.parametrize(
     "state",
-    [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
+    [
+        AirbyteJobStatusType.SUCCEEDED,
+        AirbyteJobStatusType.CANCELLED,
+        AirbyteJobStatusType.ERROR,
+        "unrecognized",
+    ],
 )
 def test_sync_and_poll(state) -> None:
     ab_resource = AirbyteCloudResource(
@@ -83,11 +88,11 @@ def test_sync_and_poll(state) -> None:
             json={"jobId": 1, "status": "cancelled", "jobType": "sync"},
         )
 
-    if state == AirbyteState.ERROR:
+    if state == AirbyteJobStatusType.ERROR:
         with pytest.raises(Failure, match="Job failed"):
             ab_resource.sync_and_poll("some_connection", 0)
 
-    elif state == AirbyteState.CANCELLED:
+    elif state == AirbyteJobStatusType.CANCELLED:
         with pytest.raises(Failure, match="Job was cancelled"):
             ab_resource.sync_and_poll("some_connection", 0)
 
@@ -147,7 +152,7 @@ def test_refresh_access_token() -> None:
     test_time_first_call = datetime.datetime(2024, 1, 1, 0, 0, 0)
     test_time_before_expiration = datetime.datetime(2024, 1, 1, 0, 2, 0)
     test_time_after_expiration = datetime.datetime(2024, 1, 1, 0, 3, 0)
-    with mock.patch("dagster_airbyte.resources.datetime", wraps=datetime.datetime) as dt:
+    with mock.patch("dagster_airbyte.legacy_resources.datetime", wraps=datetime.datetime) as dt:
         # Test first call, must get the access token before calling the jobs api
         dt.now.return_value = test_time_first_call
         ab_resource.start_sync("some_connection")

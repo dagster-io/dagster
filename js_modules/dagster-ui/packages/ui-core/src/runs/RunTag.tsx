@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import {TagAction, TagActionsPopover} from '../ui/TagActions';
 
 export enum DagsterTag {
+  AutomationCondition = 'dagster/from_automation_condition',
   Automaterialize = 'dagster/auto_materialize',
   AutoObserve = 'dagster/auto_observe',
   Namespace = 'dagster/',
@@ -32,11 +33,12 @@ export enum DagsterTag {
   AssetEvaluationID = 'dagster/asset_evaluation_id',
   SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
   ReportingUser = 'dagster/reporting_user',
+  FromUI = 'dagster/from_ui',
   User = 'user',
-  RunMetrics = 'dagster/run_metrics',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
   RepositoryLabelTag = '.dagster/repository',
+  PoolTagPrefix = '.dagster/pool',
 }
 
 export type TagType = {

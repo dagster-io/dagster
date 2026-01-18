@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import Optional
 
 import pyarrow as pa
 import pyspark
@@ -39,7 +40,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
             def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
@@ -116,7 +117,7 @@ Examples:
         def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": duckdb_pyspark_io_manager.configured({"database": "my_db.duckdb"})}
         )
@@ -126,7 +127,7 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": duckdb_pyspark_io_manager.configured({"database": "my_db.duckdb", "schema": "my_schema"})}
         )
@@ -195,7 +196,7 @@ class DuckDBPySparkIOManager(DuckDBIOManager):
             def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": DuckDBPySparkIOManager(database="my_db.duckdb")}
             )
@@ -205,7 +206,7 @@ class DuckDBPySparkIOManager(DuckDBIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": DuckDBPySparkIOManager(database="my_db.duckdb", schema="my_schema")}
             )
@@ -263,5 +264,5 @@ class DuckDBPySparkIOManager(DuckDBIOManager):
         return [DuckDBPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pyspark.sql.DataFrame

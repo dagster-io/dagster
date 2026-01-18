@@ -48,5 +48,5 @@ export const LaunchpadConfigExpansionButton = ({
     />
   );
 
-  return <Button active={open} title="Toggle second pane" icon={icon} onClick={onClick} />;
+  return <Button title="Toggle second pane" icon={icon} onClick={onClick} />;
 };

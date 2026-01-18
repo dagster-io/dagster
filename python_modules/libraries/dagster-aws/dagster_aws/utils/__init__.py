@@ -20,7 +20,7 @@ def construct_boto_client_retry_config(max_attempts):
     retry_config = {"max_attempts": max_attempts}
     if version.parse(botocore_version) >= version.parse("1.15.0"):
         retry_config["mode"] = "standard"
-    return Config(retries=retry_config)
+    return Config(retries=retry_config)  # pyright: ignore[reportArgumentType]
 
 
 T = TypeVar("T")
@@ -65,7 +65,7 @@ class ResourceWithBoto3Configuration(ConfigurableResource):
 
 def ensure_dagster_aws_tests_import() -> None:
     dagster_package_root = (Path(dagster_aws_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_aws_tests"
-    ).exists(), "Could not find dagster_aws_tests where expected"
+    assert (dagster_package_root / "dagster_aws_tests").exists(), (
+        "Could not find dagster_aws_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())

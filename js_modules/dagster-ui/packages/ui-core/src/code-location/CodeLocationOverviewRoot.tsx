@@ -2,20 +2,25 @@ import {
   Box,
   Colors,
   FontFamily,
-  MiddleTruncate,
+  Icon,
   Mono,
   SpinnerWithText,
-  StyledRawCodeMirror,
   Table,
+  Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
+import {useCallback, useContext, useMemo, useState} from 'react';
+import {CodeLocationAlertsSection} from 'shared/code-location/CodeLocationAlertsSection.oss';
 import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
 import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
+import {CodeLocationDefsStateComparisonSection} from './CodeLocationDefsStateComparisonSection';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
+import {useCopyToClipboard} from '../app/browser';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
@@ -26,6 +31,7 @@ import {
 import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/CodeLocationOverviewRoot.module.css';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 
@@ -33,35 +39,61 @@ type MetadataRowKey = 'image';
 
 interface Props {
   repoAddress: RepoAddress;
-  locationEntry: WorkspaceRepositoryLocationNode;
-  locationStatus: LocationStatusEntryFragment;
+  locationEntry: WorkspaceRepositoryLocationNode | null;
+  locationStatus: LocationStatusEntryFragment | null;
 }
 
 export const CodeLocationOverviewRoot = (props: Props) => {
   const {repoAddress, locationStatus, locationEntry} = props;
 
-  const {displayMetadata} = locationEntry;
+  const {displayMetadata} = locationEntry || {};
   const metadataForDetails: Record<MetadataRowKey, {key: string; value: string} | null> =
     useMemo(() => {
       return {
-        image: displayMetadata.find(({key}) => key === 'image') || null,
+        image: displayMetadata?.find(({key}) => key === 'image') || null,
       };
     }, [displayMetadata]);
 
   const metadataAsYaml = useMemo(() => {
-    return yaml.stringify(Object.fromEntries(displayMetadata.map(({key, value}) => [key, value])));
+    return yaml.stringify(
+      Object.fromEntries((displayMetadata || []).map(({key, value}) => [key, value])),
+    );
   }, [displayMetadata]);
 
   const libraryVersions = useMemo(() => {
-    return locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
-      ? locationEntry.locationOrLoadError.dagsterLibraryVersions
+    return locationEntry?.locationOrLoadError?.__typename === 'RepositoryLocation'
+      ? locationEntry?.locationOrLoadError.dagsterLibraryVersions
       : null;
   }, [locationEntry]);
+
+  const copy = useCopyToClipboard();
+  const [didCopy, setDidCopy] = useState(false);
+
+  const onClickCopy = useCallback(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (metadataForDetails.image) {
+      copy(metadataForDetails.image.value);
+      setDidCopy(true);
+      timer = setTimeout(() => {
+        setDidCopy(false);
+      }, 3000);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [copy, metadataForDetails.image]);
 
   return (
     <>
       <Box padding={{horizontal: 24}} border="bottom">
-        <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
+        <CodeLocationTabs
+          selectedTab="overview"
+          repoAddress={repoAddress}
+          locationEntry={locationEntry}
+        />
       </Box>
       <CodeLocationOverviewSectionHeader label="Details" />
       {/* Fixed table layout to contain overflowing strings in right column */}
@@ -84,16 +116,28 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           <tr>
             <td>Updated</td>
             <td>
-              <div style={{whiteSpace: 'nowrap'}}>
-                <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
-              </div>
+              {locationStatus ? (
+                <div style={{whiteSpace: 'nowrap'}}>
+                  <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
+                </div>
+              ) : null}
             </td>
           </tr>
           {metadataForDetails.image ? (
             <tr>
               <td>Image</td>
               <td style={{fontFamily: FontFamily.monospace}}>
-                <MiddleTruncate text={metadataForDetails.image.value} />
+                <div className={styles.imageName}>
+                  <span style={{marginRight: '4px'}}>{metadataForDetails.image.value}</span>
+                  <Tooltip
+                    content={didCopy ? 'Copied!' : 'Click to copy image string'}
+                    placement="top"
+                  >
+                    <UnstyledButton onClick={onClickCopy}>
+                      <Icon name={didCopy ? 'done' : 'copy'} size={16} />
+                    </UnstyledButton>
+                  </Tooltip>
+                </div>
               </td>
             </tr>
           ) : null}
@@ -119,6 +163,8 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           </Table>
         </>
       ) : null}
+      <CodeLocationDefsStateComparisonSection locationName={repoAddress.location} />
+      <CodeLocationAlertsSection locationName={repoAddress.location} />
       <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
       <CodeLocationMetadataStyle />
       <div style={{height: '320px'}}>
@@ -133,7 +179,11 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 };
 
 const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
-  const {locationEntries, locationStatuses, loading} = useContext(WorkspaceContext);
+  const {
+    locationEntries,
+    locationStatuses,
+    loadingNonAssets: loading,
+  } = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
   const locationStatus = locationStatuses[repoAddress.location];
 
@@ -148,18 +198,20 @@ const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddre
         );
       }
 
-      return (
-        <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
-          <CodeLocationNotFound repoAddress={repoAddress} locationEntry={locationEntry || null} />
-        </Box>
-      );
+      if (!locationEntry && !locationStatus) {
+        return (
+          <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+            <CodeLocationNotFound repoAddress={repoAddress} locationEntry={locationEntry || null} />
+          </Box>
+        );
+      }
     }
 
     return (
       <CodeLocationOverviewRoot
         repoAddress={repoAddress}
-        locationEntry={locationEntry}
-        locationStatus={locationStatus}
+        locationEntry={locationEntry || null}
+        locationStatus={locationStatus || null}
       />
     );
   };

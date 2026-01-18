@@ -8,71 +8,31 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Any
 from unittest import mock
+from unittest.mock import patch
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    AssetSelection,
-    AutoMaterializePolicy,
-    CodeLocationSelector,
-    DagsterInstance,
-    DagsterRunStatus,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    Field,
-    HourlyPartitionsDefinition,
-    JobSelector,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    Output,
-    RepositorySelector,
-    SourceAsset,
-    StaticPartitionsDefinition,
-    WeeklyPartitionsDefinition,
-    asset,
-    asset_check,
-    define_asset_job,
-    graph,
-    load_asset_checks_from_current_module,
-    load_assets_from_current_module,
-    materialize,
-    multi_asset_sensor,
-    repository,
-    run_failure_sensor,
-)
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    AutomationConditionSensorDefinition,
-)
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
+from dagster import AssetSelection, AutoMaterializePolicy, DagsterInstance, DagsterRunStatus
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext,
 )
-from dagster._core.definitions.run_request import InstigatorType, SensorResult
-from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
+from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
-    RunRequest,
     SensorEvaluationContext,
     SensorType,
-    SkipReason,
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.remote_representation import (
-    ExternalSensor,
+from dagster._core.remote_origin import (
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation.external import RemoteRepository, RemoteSensor
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -84,7 +44,6 @@ from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
     freeze_time,
-    instance_for_test,
     wait_for_futures,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -94,87 +53,86 @@ from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iter
 from dagster._record import copy
 from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
-from mock import patch
 
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 
 
-@asset
+@dg.asset
 def a():
     return 1
 
 
-@asset
+@dg.asset
 def b(a):
     return a + 1
 
 
-@asset
+@dg.asset
 def c(a):
     return a + 2
 
 
-@asset_check(asset="a")
+@dg.asset_check(asset="a")
 def check_a():
-    return AssetCheckResult(passed=True)
+    return dg.AssetCheckResult(passed=True)
 
 
-asset_job = define_asset_job("abc", selection=AssetSelection.assets("c", "b").upstream())
+asset_job = dg.define_asset_job("abc", selection=AssetSelection.assets("c", "b").upstream())
 
-asset_and_check_job = define_asset_job(
+asset_and_check_job = dg.define_asset_job(
     "asset_and_check_job",
     selection=AssetSelection.assets(a),
 )
 
 
-@op
+@dg.op
 def the_op(_):
     return 1
 
 
-@job
+@dg.job
 def the_job():
     the_op()
 
 
-@job
+@dg.job
 def the_other_job():
     the_op()
 
 
-@op(config_schema=Field(Any))
+@dg.op(config_schema=dg.Field(Any))
 def config_op(_):
     return 1
 
 
-@job
+@dg.job
 def config_job():
     config_op()
 
 
-@op
+@dg.op
 def foo_op():
-    yield AssetMaterialization(asset_key=AssetKey("foo"))
-    yield Output(1)
+    yield dg.AssetMaterialization(asset_key=dg.AssetKey("foo"))
+    yield dg.Output(1)
 
 
-@job
+@dg.job
 def foo_job():
     foo_op()
 
 
-@op
+@dg.op
 def foo_observation_op():
-    yield AssetObservation(asset_key=AssetKey("foo"), metadata={"text": "FOO"})
-    yield Output(5)
+    yield dg.AssetObservation(asset_key=dg.AssetKey("foo"), metadata={"text": "FOO"})
+    yield dg.Output(5)
 
 
-@job
+@dg.job
 def foo_observation_job():
     foo_observation_op()
 
 
-@op
+@dg.op
 def hanging_op():
     start_time = time.time()
     while True:
@@ -183,22 +141,22 @@ def hanging_op():
         time.sleep(0.5)
 
 
-@job
+@dg.job
 def hanging_job():
     hanging_op()
 
 
-@op
+@dg.op
 def failure_op():
     raise Exception("womp womp")
 
 
-@job
+@dg.job
 def failure_job():
     failure_op()
 
 
-@job
+@dg.job
 def failure_job_2():
     failure_op()
 
@@ -206,26 +164,32 @@ def failure_job_2():
 @sensor(job_name="the_job")
 def simple_sensor(context):
     if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
-        return SkipReason()
+        return dg.SkipReason()
 
-    return RunRequest(run_key=None, run_config={}, tags={})
+    return dg.RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(job_name="the_job")
 def always_on_sensor(_context):
-    return RunRequest(run_key=None, run_config={}, tags={})
+    return dg.RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(job_name="the_job")
 def run_key_sensor(_context):
-    return RunRequest(run_key="only_once", run_config={}, tags={})
+    return dg.RunRequest(run_key="only_once", run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def dup_run_key_sensor(_context):
+    yield dg.RunRequest(run_key="only_once", tags={"foo": "bar"})
+    yield dg.RunRequest(run_key="only_once")
 
 
 @sensor(job_name="the_job")
 def only_once_cursor_sensor(context):
     if not context.cursor:
-        context.update_cursor(str("cursor"))
-        return RunRequest()
+        context.update_cursor("cursor")
+        return dg.RunRequest()
 
 
 @sensor(job_name="the_job")
@@ -234,14 +198,25 @@ def error_sensor(context):
     raise Exception("womp womp")
 
 
+NUM_CALLS = {"calls": 0}
+
+
+@sensor(job_name="the_job")
+def passes_on_retry_sensor(context):
+    NUM_CALLS["calls"] = NUM_CALLS["calls"] + 1
+    if NUM_CALLS["calls"] > 1:
+        return dg.RunRequest()
+    raise Exception("womp womp")
+
+
 @sensor(job_name="the_job")
 def wrong_config_sensor(_context):
-    return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
+    return dg.RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
 
 
 @sensor(job_name="the_job", minimum_interval_seconds=60)
 def custom_interval_sensor(_context):
-    return SkipReason()
+    return dg.SkipReason()
 
 
 @sensor(job_name="the_job")
@@ -252,7 +227,7 @@ def skip_cursor_sensor(context):
         cursor = int(context.cursor) + 1
 
     context.update_cursor(str(cursor))
-    return SkipReason()
+    return dg.SkipReason()
 
 
 @sensor(job_name="the_job")
@@ -263,7 +238,19 @@ def run_cursor_sensor(context):
         cursor = int(context.cursor) + 1
 
     context.update_cursor(str(cursor))
-    return RunRequest(run_key=None, run_config={}, tags={})
+    return dg.RunRequest(run_key=None, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def many_requests_cursor_sensor(context):
+    if not context.cursor:
+        cursor = 1
+    else:
+        cursor = int(context.cursor) + 1
+
+    context.update_cursor(str(cursor))
+    for _ in range(5):
+        yield dg.RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(job_name="the_job")
@@ -273,61 +260,69 @@ def start_skip_sensor(context: SensorEvaluationContext):
     )
     # skips the first tick after a start
     if context.is_first_tick_since_sensor_start:
-        return SkipReason()
-    return RunRequest()
+        return dg.SkipReason()
+    return dg.RunRequest()
 
 
-@asset
+@dg.asset
 def asset_a():
     return 1
 
 
-@asset
+@dg.asset
 def asset_b():
     return 2
 
 
-@asset
+@dg.asset
 def asset_c(asset_b):
     return 3
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@dg.multi_asset_sensor(
+    monitored_assets=[dg.AssetKey("asset_a"), dg.AssetKey("asset_b")], job=the_job
+)
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
-        return RunRequest(run_key=f"{context.cursor}", run_config={})
+        return dg.RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@dg.multi_asset_sensor(
+    monitored_assets=[dg.AssetKey("asset_a"), dg.AssetKey("asset_b")], job=the_job
+)
 def doesnt_update_cursor_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if any(asset_events.values()):
         # doesn't update cursor, should raise exception
-        return RunRequest(run_key=f"{context.cursor}", run_config={})
+        return dg.RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("asset_a")], job=the_job)
+@dg.multi_asset_sensor(monitored_assets=[dg.AssetKey("asset_a")], job=the_job)
 def backlog_sensor(context):
-    asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_a"), limit=2)
+    asset_events = context.materialization_records_for_key(
+        asset_key=dg.AssetKey("asset_a"), limit=2
+    )
     if len(asset_events) == 2:
-        context.advance_cursor({AssetKey("asset_a"): asset_events[-1]})
-        return RunRequest(run_key=f"{context.cursor}", run_config={})
+        context.advance_cursor({dg.AssetKey("asset_a"): asset_events[-1]})
+        return dg.RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(monitored_assets=AssetSelection.assets("asset_c").upstream(include_self=False))
+@dg.multi_asset_sensor(
+    monitored_assets=AssetSelection.assets("asset_c").upstream(include_self=False)
+)
 def asset_selection_sensor(context):
-    assert context.asset_keys == [AssetKey("asset_b")]
-    assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
+    assert context.asset_keys == [dg.AssetKey("asset_b")]
+    assert context.latest_materialization_records_by_key().keys() == {dg.AssetKey("asset_b")}
 
 
 @sensor(asset_selection=AssetSelection.assets("asset_a", "asset_b"))
 def targets_asset_selection_sensor():
-    return [RunRequest(), RunRequest(asset_selection=[AssetKey("asset_b")])]
+    return [dg.RunRequest(), dg.RunRequest(asset_selection=[dg.AssetKey("asset_b")])]
 
 
-@multi_asset_sensor(
+@dg.multi_asset_sensor(
     monitored_assets=AssetSelection.assets("asset_b"),
     request_assets=AssetSelection.assets("asset_c"),
 )
@@ -335,48 +330,48 @@ def multi_asset_sensor_targets_asset_selection(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
-        return RunRequest()
+        return dg.RunRequest()
 
 
-hourly_partitions_def_2022 = HourlyPartitionsDefinition(start_date="2022-08-01-00:00")
+hourly_partitions_def_2022 = dg.HourlyPartitionsDefinition(start_date="2022-08-01-00:00")
 
 
-@asset(partitions_def=hourly_partitions_def_2022)
+@dg.asset(partitions_def=hourly_partitions_def_2022)
 def hourly_asset():
     return 1
 
 
-@asset(partitions_def=hourly_partitions_def_2022)
+@dg.asset(partitions_def=hourly_partitions_def_2022)
 def hourly_asset_2():
     return 1
 
 
-@asset(partitions_def=hourly_partitions_def_2022)
+@dg.asset(partitions_def=hourly_partitions_def_2022)
 def hourly_asset_3():
     return 1
 
 
-hourly_asset_job = define_asset_job(
+hourly_asset_job = dg.define_asset_job(
     "hourly_asset_job",
     AssetSelection.assets("hourly_asset_3"),
     partitions_def=hourly_partitions_def_2022,
 )
 
 
-weekly_partitions_def = WeeklyPartitionsDefinition(start_date="2020-01-01")
+weekly_partitions_def = dg.WeeklyPartitionsDefinition(start_date="2020-01-01")
 
 
-@asset(partitions_def=weekly_partitions_def)
+@dg.asset(partitions_def=weekly_partitions_def)
 def weekly_asset():
     return 1
 
 
-weekly_asset_job = define_asset_job(
+weekly_asset_job = dg.define_asset_job(
     "weekly_asset_job", AssetSelection.assets("weekly_asset"), partitions_def=weekly_partitions_def
 )
 
 
-@multi_asset_sensor(monitored_assets=[hourly_asset.key], job=weekly_asset_job)
+@dg.multi_asset_sensor(monitored_assets=[hourly_asset.key], job=weekly_asset_job)
 def multi_asset_sensor_hourly_to_weekly(context):
     for partition, materialization in context.latest_materialization_records_by_partition(
         hourly_asset.key
@@ -392,7 +387,7 @@ def multi_asset_sensor_hourly_to_weekly(context):
         context.advance_cursor({hourly_asset.key: materialization})
 
 
-@multi_asset_sensor(monitored_assets=[hourly_asset.key], job=hourly_asset_job)
+@dg.multi_asset_sensor(monitored_assets=[hourly_asset.key], job=hourly_asset_job)
 def multi_asset_sensor_hourly_to_hourly(context):
     materialization_by_partition = context.latest_materialization_records_by_partition(
         hourly_asset.key
@@ -417,15 +412,19 @@ def multi_asset_sensor_hourly_to_hourly(context):
         context.advance_cursor({hourly_asset.key: materialization_by_partition[latest_partition]})
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@dg.multi_asset_sensor(
+    monitored_assets=[dg.AssetKey("asset_a"), dg.AssetKey("asset_b")], job=the_job
+)
 def sensor_result_multi_asset_sensor(context):
     context.advance_all_cursors()
-    return SensorResult([RunRequest("foo")])
+    return dg.SensorResult([dg.RunRequest("foo")])
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@dg.multi_asset_sensor(
+    monitored_assets=[dg.AssetKey("asset_a"), dg.AssetKey("asset_b")], job=the_job
+)
 def cursor_sensor_result_multi_asset_sensor(context):
-    return SensorResult([RunRequest("foo")], cursor="foo")
+    return dg.SensorResult([dg.RunRequest("foo")], cursor="foo")
 
 
 def _random_string(length):
@@ -445,7 +444,7 @@ def large_sensor(_context):
             _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
         }
         config = {"ops": {"config_op": {"config": {"foo": config_garbage}}}}
-        yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
+        yield dg.RunRequest(run_key=None, run_config=config, tags=tags_garbage)
 
 
 @sensor(job_name="config_job")
@@ -455,44 +454,46 @@ def many_request_sensor(_context):
 
     for _ in range(REQUEST_COUNT):
         config = {"ops": {"config_op": {"config": {"foo": "bar"}}}}
-        yield RunRequest(run_key=None, run_config=config)
+        yield dg.RunRequest(run_key=None, run_config=config)
 
 
 @sensor(job=asset_job)
 def run_request_asset_selection_sensor(_context):
-    yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
+    yield dg.RunRequest(run_key=None, asset_selection=[dg.AssetKey("a"), dg.AssetKey("b")])
 
 
 @sensor(job=asset_and_check_job)
 def run_request_check_only_sensor(_context):
-    yield RunRequest(asset_check_keys=[AssetCheckKey(AssetKey("a"), "check_a")])
+    yield dg.RunRequest(asset_check_keys=[dg.AssetCheckKey(dg.AssetKey("a"), "check_a")])
 
 
 @sensor(job=asset_job)
 def run_request_stale_asset_sensor(_context):
-    yield RunRequest(run_key=None, stale_assets_only=True)
+    yield dg.RunRequest(run_key=None, stale_assets_only=True)
 
 
 @sensor(job=hourly_asset_job)
 def partitioned_asset_selection_sensor(_context):
     return hourly_asset_job.run_request_for_partition(
-        partition_key="2022-08-01-00:00", run_key=None, asset_selection=[AssetKey("hourly_asset_3")]
+        partition_key="2022-08-01-00:00",
+        run_key=None,
+        asset_selection=[dg.AssetKey("hourly_asset_3")],
     )
 
 
-@asset_sensor(job_name="the_job", asset_key=AssetKey("foo"))
+@dg.asset_sensor(job_name="the_job", asset_key=dg.AssetKey("foo"))
 def asset_foo_sensor(context, _event):
-    return RunRequest(run_key=context.cursor, run_config={})
+    return dg.RunRequest(run_key=context.cursor, run_config={})
 
 
-@asset_sensor(asset_key=AssetKey("foo"), job=the_job)
+@dg.asset_sensor(asset_key=dg.AssetKey("foo"), job=the_job)
 def asset_job_sensor(context, _event):
-    return RunRequest(run_key=context.cursor, run_config={})
+    return dg.RunRequest(run_key=context.cursor, run_config={})
 
 
-@run_failure_sensor
+@dg.run_failure_sensor
 def my_run_failure_sensor(context):
-    assert isinstance(context.instance, DagsterInstance)
+    assert isinstance(context.instance, dg.DagsterInstance)
     if "failure_op" in context.failure_event.message:
         step_failure_events = context.get_step_failure_events()
         assert len(step_failure_events) == 1
@@ -503,33 +504,33 @@ def my_run_failure_sensor(context):
     assert context.repository_def.has_sensor_def("my_run_failure_sensor")
 
 
-@run_failure_sensor(job_selection=[failure_job])
+@dg.run_failure_sensor(job_selection=[failure_job])
 def my_run_failure_sensor_filtered(context):
-    assert isinstance(context.instance, DagsterInstance)
+    assert isinstance(context.instance, dg.DagsterInstance)
 
 
-@run_failure_sensor()
+@dg.run_failure_sensor()
 def my_run_failure_sensor_that_itself_fails(context):
     raise Exception("How meta")
 
 
-@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+@dg.run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_job_success_sensor(context):
-    assert isinstance(context.instance, DagsterInstance)
+    assert isinstance(context.instance, dg.DagsterInstance)
 
 
-@run_status_sensor(run_status=DagsterRunStatus.STARTED)
+@dg.run_status_sensor(run_status=DagsterRunStatus.STARTED)
 def my_job_started_sensor(context):
-    assert isinstance(context.instance, DagsterInstance)
+    assert isinstance(context.instance, dg.DagsterInstance)
 
 
 @sensor(jobs=[the_job, config_job])
 def two_job_sensor(context):
     counter = int(context.cursor) if context.cursor else 0
     if counter % 2 == 0:
-        yield RunRequest(run_key=str(counter), job_name=the_job.name)
+        yield dg.RunRequest(run_key=str(counter), job_name=the_job.name)
     else:
-        yield RunRequest(
+        yield dg.RunRequest(
             run_key=str(counter),
             job_name=config_job.name,
             run_config={"ops": {"config_op": {"config": {"foo": "blah"}}}},
@@ -539,27 +540,27 @@ def two_job_sensor(context):
 
 @sensor()
 def bad_request_untargeted(_ctx):
-    yield RunRequest(run_key=None, job_name="should_fail")
+    yield dg.RunRequest(run_key=None, job_name="should_fail")
 
 
 @sensor(job=the_job)
 def bad_request_mismatch(_ctx):
-    yield RunRequest(run_key=None, job_name="config_job")
+    yield dg.RunRequest(run_key=None, job_name="config_job")
 
 
 @sensor(jobs=[the_job, config_job])
 def bad_request_unspecified(_ctx):
-    yield RunRequest(run_key=None)
+    yield dg.RunRequest(run_key=None)
 
 
 @sensor(job=the_job)
 def request_list_sensor(_ctx):
-    return [RunRequest(run_key="1"), RunRequest(run_key="2")]
+    return [dg.RunRequest(run_key="1"), dg.RunRequest(run_key="2")]
 
 
-@run_status_sensor(
+@dg.run_status_sensor(
     monitored_jobs=[
-        JobSelector(
+        dg.JobSelector(
             location_name="test_location",
             repository_name="the_other_repo",
             job_name="the_job",
@@ -571,12 +572,12 @@ def request_list_sensor(_ctx):
 def cross_repo_job_sensor():
     from time import time
 
-    return RunRequest(run_key=str(time()))
+    return dg.RunRequest(run_key=str(time()))
 
 
-@run_status_sensor(
+@dg.run_status_sensor(
     monitored_jobs=[
-        RepositorySelector(
+        dg.RepositorySelector(
             location_name="test_location",
             repository_name="the_other_repo",
         )
@@ -584,10 +585,10 @@ def cross_repo_job_sensor():
     run_status=DagsterRunStatus.SUCCESS,
 )
 def cross_repo_sensor(context):
-    assert isinstance(context.instance, DagsterInstance)
+    assert isinstance(context.instance, dg.DagsterInstance)
 
 
-@run_status_sensor(
+@dg.run_status_sensor(
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
@@ -595,7 +596,7 @@ def instance_sensor():
     pass
 
 
-@run_status_sensor(
+@dg.run_status_sensor(
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
@@ -606,7 +607,7 @@ def all_code_locations_run_status_sensor():
 @sensor(job=the_job)
 def logging_sensor(context):
     class Handler(logging.Handler):
-        def handle(self, record):
+        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -625,13 +626,15 @@ def logging_sensor(context):
 
     context.log.removeHandler(handler)
 
-    return SkipReason()
+    return dg.SkipReason()
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
-def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> SkipReason:
+@dg.multi_asset_sensor(
+    monitored_assets=[dg.AssetKey("asset_a"), dg.AssetKey("asset_b")], job=the_job
+)
+def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> dg.SkipReason:
     class Handler(logging.Handler):
-        def handle(self, record):
+        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -649,7 +652,7 @@ def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> Sk
 
     context.log.removeHandler(handler)
 
-    return SkipReason()
+    return dg.SkipReason()
 
 
 @sensor(job=the_job)
@@ -659,7 +662,7 @@ def logging_fail_tick_sensor(context: "SensorEvaluationContext"):
     raise Exception("womp womp")
 
 
-@run_status_sensor(
+@dg.run_status_sensor(
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
@@ -667,20 +670,20 @@ def logging_status_sensor(context):
     context.log.info(f"run succeeded: {context.dagster_run.run_id}")
 
 
-quux = DynamicPartitionsDefinition(name="quux")
+quux = dg.DynamicPartitionsDefinition(name="quux")
 
 
-@asset(partitions_def=quux)
+@dg.asset(partitions_def=quux)
 def quux_asset(context):
     return 1
 
 
-quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def=quux)
+quux_asset_job = dg.define_asset_job("quux_asset_job", [quux_asset], partitions_def=quux)
 
 
 @sensor()
 def add_dynamic_partitions_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         dynamic_partitions_requests=[
             quux.build_add_request(["baz", "foo"]),
         ],
@@ -689,65 +692,65 @@ def add_dynamic_partitions_sensor(context):
 
 @sensor(job=quux_asset_job)
 def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         dynamic_partitions_requests=[
             quux.build_add_request(["1"]),
             quux.build_delete_request(["2", "3"]),
         ],
-        run_requests=[RunRequest(partition_key="1")],
+        run_requests=[dg.RunRequest(partition_key="1")],
     )
 
 
 @sensor(job=quux_asset_job)
 def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         dynamic_partitions_requests=[
             quux.build_delete_request(["2"]),
         ],
-        run_requests=[RunRequest(partition_key="2")],
+        run_requests=[dg.RunRequest(partition_key="2")],
     )
 
 
-dynamic1 = DynamicPartitionsDefinition(name="dynamic1")
-dynamic2 = DynamicPartitionsDefinition(name="dynamic2")
+dynamic1 = dg.DynamicPartitionsDefinition(name="dynamic1")
+dynamic2 = dg.DynamicPartitionsDefinition(name="dynamic2")
 
 
-@asset(partitions_def=MultiPartitionsDefinition({"dynamic1": dynamic1, "dynamic2": dynamic2}))
+@dg.asset(partitions_def=dg.MultiPartitionsDefinition({"dynamic1": dynamic1, "dynamic2": dynamic2}))
 def multipartitioned_with_two_dynamic_dims():
     pass
 
 
 @sensor(asset_selection=AssetSelection.assets(multipartitioned_with_two_dynamic_dims.key))
 def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         dynamic_partitions_requests=[
             dynamic1.build_add_request(["1"]),
             dynamic2.build_add_request(["2"]),
         ],
         run_requests=[
-            RunRequest(partition_key=MultiPartitionKey({"dynamic1": "1", "dynamic2": "2"}))
+            dg.RunRequest(partition_key=dg.MultiPartitionKey({"dynamic1": "1", "dynamic2": "2"}))
         ],
     )
 
 
 @sensor(asset_selection=AssetSelection.assets(multipartitioned_with_two_dynamic_dims.key))
 def error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         dynamic_partitions_requests=[
             dynamic1.build_add_request(["1"]),
             dynamic2.build_add_request(["2"]),
         ],
         run_requests=[
-            RunRequest(partition_key=MultiPartitionKey({"dynamic1": "2", "dynamic2": "1"}))
+            dg.RunRequest(partition_key=dg.MultiPartitionKey({"dynamic1": "2", "dynamic2": "1"}))
         ],
     )
 
 
-@asset(
-    partitions_def=MultiPartitionsDefinition(
+@dg.asset(
+    partitions_def=dg.MultiPartitionsDefinition(
         {
-            "static": StaticPartitionsDefinition(["a", "b", "c"]),
-            "time": DailyPartitionsDefinition("2023-01-01"),
+            "static": dg.StaticPartitionsDefinition(["a", "b", "c"]),
+            "time": dg.DailyPartitionsDefinition("2023-01-01"),
         }
     )
 )
@@ -759,44 +762,44 @@ def multipartitioned_asset_with_static_time_dimensions():
     asset_selection=AssetSelection.assets(multipartitioned_asset_with_static_time_dimensions.key)
 )
 def multipartitions_with_static_time_dimensions_run_requests_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         run_requests=[
-            RunRequest(partition_key=MultiPartitionKey({"static": "b", "time": "2023-01-05"}))
+            dg.RunRequest(partition_key=dg.MultiPartitionKey({"static": "b", "time": "2023-01-05"}))
         ],
     )
 
 
-daily_partitions_def = DailyPartitionsDefinition(start_date="2022-08-01")
+daily_partitions_def = dg.DailyPartitionsDefinition(start_date="2022-08-01")
 
 
-@asset(partitions_def=daily_partitions_def)
+@dg.asset(partitions_def=daily_partitions_def)
 def partitioned_asset():
     return 1
 
 
-daily_partitioned_job = define_asset_job(
+daily_partitioned_job = dg.define_asset_job(
     "daily_partitioned_job",
     partitions_def=daily_partitions_def,
 ).resolve(asset_graph=AssetGraph.from_assets([partitioned_asset]))
 
 
-@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, monitored_jobs=[daily_partitioned_job])
+@dg.run_status_sensor(run_status=DagsterRunStatus.SUCCESS, monitored_jobs=[daily_partitioned_job])
 def partitioned_pipeline_success_sensor(_context):
     assert _context.partition_key == "2022-08-01"
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@dg.asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def auto_materialize_asset():
     pass
 
 
-auto_materialize_sensor = AutomationConditionSensorDefinition(
+auto_materialize_sensor = dg.AutomationConditionSensorDefinition(
     "my_auto_materialize_sensor",
-    asset_selection=[auto_materialize_asset],
+    target=[auto_materialize_asset],
 )
 
 
-@graph
+@dg.graph
 def the_graph():
     the_op()
 
@@ -814,20 +817,20 @@ job_no_tags_with_run_tags = the_graph.to_job(
 
 @sensor(job=job_with_tags_with_run_tags)
 def job_with_tags_with_run_tags_sensor(context):
-    return RunRequest()
+    return dg.RunRequest()
 
 
 @sensor(job=job_with_tags_no_run_tags)
 def job_with_tags_no_run_tags_sensor(context):
-    return RunRequest()
+    return dg.RunRequest()
 
 
 @sensor(job=job_no_tags_with_run_tags)
 def job_no_tags_with_run_tags_sensor(context):
-    return RunRequest()
+    return dg.RunRequest()
 
 
-@repository
+@dg.repository
 def the_repo():
     return [
         the_job,
@@ -837,11 +840,14 @@ def the_repo():
         asset_and_check_job,
         large_sensor,
         many_request_sensor,
+        many_requests_cursor_sensor,
         simple_sensor,
         error_sensor,
+        passes_on_retry_sensor,
         wrong_config_sensor,
         always_on_sensor,
         run_key_sensor,
+        dup_run_key_sensor,
         only_once_cursor_sensor,
         custom_interval_sensor,
         skip_cursor_sensor,
@@ -868,8 +874,8 @@ def the_repo():
         cross_repo_sensor,
         cross_repo_job_sensor,
         instance_sensor,
-        load_assets_from_current_module(),
-        load_asset_checks_from_current_module(),
+        dg.load_assets_from_current_module(),
+        dg.load_asset_checks_from_current_module(),
         run_request_asset_selection_sensor,
         run_request_stale_asset_sensor,
         weekly_asset_job,
@@ -905,7 +911,7 @@ def the_repo():
     ]
 
 
-@repository
+@dg.repository
 def the_other_repo():
     return [
         the_job,
@@ -916,20 +922,20 @@ def the_other_repo():
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
     if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
-        return SkipReason()
+        return dg.SkipReason()
 
-    return RunRequest(run_key=None, run_config={}, tags={})
+    return dg.RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
     if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
-        return SkipReason()
+        return dg.SkipReason()
 
-    return RunRequest(run_key=None, run_config={}, tags={})
+    return dg.RunRequest(run_key=None, run_config={}, tags={})
 
 
-@repository
+@dg.repository
 def the_status_in_code_repo():
     return [
         the_job,
@@ -938,52 +944,52 @@ def the_status_in_code_repo():
     ]
 
 
-@asset
+@dg.asset
 def x():
     return 1
 
 
-@asset
+@dg.asset
 def y(x):
     return x + 1
 
 
-@asset
+@dg.asset
 def z():
     return 2
 
 
-@asset
+@dg.asset
 def d(x, z):
     return x + z
 
 
-@asset
+@dg.asset
 def e():
     return 3
 
 
-@asset
+@dg.asset
 def f(z, e):
     return z + e
 
 
-@asset
+@dg.asset
 def g(d, f):
     return d + f
 
 
-@asset
+@dg.asset
 def h():
     return 1
 
 
-@asset
+@dg.asset
 def i(h):
     return h + 1
 
 
-@asset
+@dg.asset
 def sleeper():
     from time import sleep
 
@@ -991,38 +997,38 @@ def sleeper():
     return 1
 
 
-@asset
+@dg.asset
 def waits_on_sleep(sleeper, x):
     return sleeper + x
 
 
-@asset
+@dg.asset
 def a_source_asset():
     return 1
 
 
-source_asset_source = SourceAsset(key=AssetKey("a_source_asset"))
+source_asset_source = dg.SourceAsset(key=dg.AssetKey("a_source_asset"))
 
 
-@asset
+@dg.asset
 def depends_on_source(a_source_asset):
     return a_source_asset + 1
 
 
-@repository
+@dg.repository
 def with_source_asset_repo():
     return [a_source_asset]
 
 
-@multi_asset_sensor(monitored_assets=[AssetKey("a_source_asset")], job=the_job)
+@dg.multi_asset_sensor(monitored_assets=[dg.AssetKey("a_source_asset")], job=the_job)
 def monitor_source_asset_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
-        return RunRequest(run_key=f"{context.cursor}", run_config={})
+        return dg.RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@repository
+@dg.repository
 def asset_sensor_repo():
     return [
         x,
@@ -1064,15 +1070,15 @@ def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=
 
 def validate_tick(
     tick,
-    external_sensor,
+    remote_sensor,
     expected_datetime,
     expected_status,
     expected_run_ids=None,
     expected_error=None,
 ):
     tick_data = tick.tick_data
-    assert tick_data.instigator_origin_id == external_sensor.get_remote_origin_id()
-    assert tick_data.instigator_name == external_sensor.name
+    assert tick_data.instigator_origin_id == remote_sensor.get_remote_origin_id()
+    assert tick_data.instigator_name == remote_sensor.name
     assert tick_data.instigator_type == InstigatorType.SENSOR
     assert tick_data.status == expected_status, tick_data.error
     if expected_datetime:
@@ -1109,7 +1115,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             break
 
 
-def wait_for_all_runs_to_finish(instance, timeout=10):
+def wait_for_all_runs_to_finish(instance, timeout=30):
     start_time = time.time()
     FINISHED_STATES = [
         DagsterRunStatus.SUCCESS,
@@ -1139,15 +1145,15 @@ def get_planned_asset_keys_for_run(instance: DagsterInstance, run_id: str):
     ]
 
 
-def test_ignore_auto_materialize_sensor(instance, workspace_context, external_repo, executor):
+def test_ignore_auto_materialize_sensor(instance, workspace_context, remote_repo, executor):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("my_auto_materialize_sensor")
-        assert external_sensor
+        sensor = remote_repo.get_sensor("my_auto_materialize_sensor")
+        assert sensor
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
@@ -1157,40 +1163,34 @@ def test_ignore_auto_materialize_sensor(instance, workspace_context, external_re
         )
         evaluate_sensors(workspace_context, executor)
         # No ticks because of the sensor type
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
 
-def test_simple_sensor(instance, workspace_context, external_repo, executor):
+def test_simple_sensor(instance, workspace_context, remote_repo, executor):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
         )
@@ -1203,33 +1203,96 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
         validate_run_started(run)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
         expected_datetime = create_datetime(year=2019, month=2, day=28, hour=0, minute=0, second=29)
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             expected_datetime,
             TickStatus.SUCCESS,
             [run.run_id],
         )
 
 
+def test_sensor_stopped_while_submitting_runs(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+    executor: ThreadPoolExecutor,
+):
+    sensor = remote_repo.get_sensor("many_requests_cursor_sensor")
+
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+
+    with freeze_time(freeze_datetime):
+        instance.start_sensor(sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        with mock.patch(
+            "dagster._daemon.sensor.SensorLaunchContext.sensor_is_enabled"
+        ) as sensor_enabled_mock:
+            sensor_enabled_mock.return_value = False
+
+            evaluate_sensors(workspace_context, executor)
+
+        # sensor is stopped after the first run is submitted, so only one run should exist
+        assert instance.get_runs_count() == 1
+        first_run = instance.get_runs()[0]
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+            [first_run.run_id],
+        )
+
+        assert ticks[0].run_requests and len(ticks[0].run_requests) == 5
+        assert len(ticks[0].unsubmitted_run_ids_with_requests) == 4
+        assert first_run.run_id not in [
+            run_id for run_id, _ in ticks[0].unsubmitted_run_ids_with_requests
+        ]
+        # if a tick is stopped mid-iteration we don't reset the cursor
+        assert ticks[0].cursor == "1"
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        wait_for_all_runs_to_start(instance)
+        assert instance.get_runs_count() == 6
+        runs = instance.get_runs()
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs if run.run_id != first_run.run_id],
+        )
+        assert ticks[0].cursor == "2"
+
+
 def test_sensors_keyed_on_selector_not_origin(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
 
-        existing_origin = external_sensor.get_remote_origin()
+        existing_origin = sensor.get_remote_origin()
 
         code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
@@ -1257,9 +1320,7 @@ def test_sensors_keyed_on_selector_not_origin(
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
 
 
@@ -1267,14 +1328,14 @@ def test_bad_load_sensor_repository(
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    remote_repo: RemoteRepository,
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
 
-        valid_origin = external_sensor.get_remote_origin()
+        valid_origin = sensor.get_remote_origin()
 
         # Swap out a new repository name
         invalid_repo_origin = RemoteInstigatorOrigin(
@@ -1300,13 +1361,13 @@ def test_bad_load_sensor_repository(
         assert len(ticks) == 0
 
 
-def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
+def test_bad_load_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
 
-        valid_origin = external_sensor.get_remote_origin()
+        valid_origin = sensor.get_remote_origin()
 
         # Swap out a new repository name
         invalid_repo_origin = RemoteInstigatorOrigin(
@@ -1329,44 +1390,40 @@ def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
         assert len(ticks) == 0
 
 
-def test_error_sensor(caplog, executor, instance, workspace_context, external_repo):
+def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("error_sensor")
+        sensor = remote_repo.get_sensor("error_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
 
-        state = instance.get_instigator_state(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        state = instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
         assert state.instigator_data is None
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.FAILURE,
             [],
             "Error occurred during the execution of evaluation_fn for sensor error_sensor",
         )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
 
         assert (
             "Error occurred during the execution of evaluation_fn for sensor error_sensor"
@@ -1374,15 +1431,94 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
         )
 
         # Tick updated the sensor's last tick time, but not its cursor (due to the failure)
-        state = instance.get_instigator_state(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        state = instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
         assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor error_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 2
 
-def test_wrong_config_sensor(caplog, executor, instance, workspace_context, external_repo):
+
+def test_passes_on_retry_sensor(caplog, instance, workspace_context, remote_repo):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo.get_sensor("passes_on_retry_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+
+        state = instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert state.instigator_data is None
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, None)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor passes_on_retry_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
+
+        assert (
+            "Error occurred during the execution of evaluation_fn for sensor passes_on_retry_sensor"
+            in caplog.text
+        )
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, None)
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 0
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, None)
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 3
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 0
+
+
+def test_wrong_config_sensor(caplog, executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(
         year=2019,
         month=2,
@@ -1392,30 +1528,26 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
         second=59,
     )
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("wrong_config_sensor")
+        sensor = remote_repo.get_sensor("wrong_config_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.FAILURE,
             [],
@@ -1431,14 +1563,12 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
 
         evaluate_sensors(workspace_context, executor)
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.FAILURE,
             [],
@@ -1448,43 +1578,40 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
         assert "Error in config for job" in caplog.text
 
 
-def test_launch_failure(caplog, executor, workspace_context, external_repo):
+def test_launch_failure(caplog, executor, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
         },
+        synchronous_run_coordinator=True,
     ) as instance:
         with freeze_time(freeze_datetime):
             exploding_workspace_context = workspace_context.copy_for_test_instance(instance)
-            external_sensor = external_repo.get_external_sensor("always_on_sensor")
+            sensor = remote_repo.get_sensor("always_on_sensor")
             instance.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_remote_origin(),
+                    sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 0
 
             evaluate_sensors(exploding_workspace_context, executor)
 
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
-                external_sensor,
+                sensor,
                 freeze_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id],
@@ -1495,7 +1622,7 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
             assert "The entire purpose of this is to throw on launch" in caplog.text
 
 
-def test_launch_once(caplog, executor, instance, workspace_context, external_repo):
+def test_launch_once(caplog, executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(
         year=2019,
         month=2,
@@ -1505,13 +1632,14 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         second=59,
     )
 
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
-        external_sensor = external_repo.get_external_sensor("run_key_sensor")
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(dg.DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
+        sensor = remote_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -1519,9 +1647,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         assert instance.get_runs_count() == 0
 
         assert mock_get_ticks.call_count == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert mock_get_ticks.call_count == 1
         assert len(ticks) == 0
 
@@ -1534,15 +1660,13 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
 
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert mock_get_ticks.call_count == 3
 
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
@@ -1550,22 +1674,21 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
 
     # run again (after 30 seconds), to ensure that the run key maintains idempotence
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(dg.DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         evaluate_sensors(workspace_context, executor)
         # did not need to get ticks on this call, as the preivous tick evaluated successfully
         assert mock_get_ticks.call_count == 0
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
         )
@@ -1589,56 +1712,105 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
 
         # Sensor loop still executes
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(dg.DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         evaluate_sensors(workspace_context, executor)
         # did not need to get ticks on this call either
         assert mock_get_ticks.call_count == 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
         assert len(ticks) == 3
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
         )
 
 
-def test_custom_interval_sensor(executor, instance, workspace_context, external_repo):
-    freeze_datetime = create_datetime(year=2019, month=2, day=28)
-    with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
+def test_duplicate_run_key_within_tick_launches_once(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    )
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(dg.DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
+        sensor = remote_repo.get_sensor("dup_run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        assert instance.get_runs_count() == 0
+
+        assert mock_get_ticks.call_count == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert mock_get_ticks.call_count == 1
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+
+        # call another time to get previous tick
+        assert mock_get_ticks.call_count == 2
+
+        wait_for_all_runs_to_start(instance)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.tags["foo"] == "bar"
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert mock_get_ticks.call_count == 3
+
         assert len(ticks) == 1
-        validate_tick(ticks[0], external_sensor, freeze_datetime, TickStatus.SKIPPED)
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            expected_run_ids=[run.run_id],
+        )
+
+
+def test_custom_interval_sensor(executor, instance, workspace_context, remote_repo):
+    freeze_datetime = create_datetime(year=2019, month=2, day=28)
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo.get_sensor("custom_interval_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(ticks[0], sensor, freeze_datetime, TickStatus.SKIPPED)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=30)
 
     with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         # no additional tick created after 30 seconds
         assert len(ticks) == 1
 
@@ -1646,13 +1818,11 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
 
     with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
         expected_datetime = create_datetime(year=2019, month=2, day=28, hour=0, minute=1)
-        validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
+        validate_tick(ticks[0], sensor, expected_datetime, TickStatus.SKIPPED)
 
 
 def test_sensor_spans(workspace_context):
@@ -1666,16 +1836,16 @@ def test_sensor_spans(workspace_context):
 
     for _i in range(10):
         next_span = next(loop)
-        assert (
-            next_span != SpanMarker.START_SPAN
-        ), "Started another span before finishing the previous one"
+        assert next_span != SpanMarker.START_SPAN, (
+            "Started another span before finishing the previous one"
+        )
 
         if next_span == SpanMarker.END_SPAN:
             break
 
 
 def test_custom_interval_sensor_with_offset(
-    monkeypatch, executor, instance, workspace_context, external_repo
+    monkeypatch, executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=28)
 
@@ -1694,11 +1864,11 @@ def test_custom_interval_sensor_with_offset(
         shutdown_event.wait.side_effect = fake_sleep
 
         # 60 second custom interval
-        external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
+        sensor = remote_repo.get_sensor("custom_interval_sensor")
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -1706,17 +1876,13 @@ def test_custom_interval_sensor_with_offset(
 
         # create a tick
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
 
         # calling for another iteration should not generate another tick because time has not
         # advanced
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
 
         # call the sensor_iteration_loop, which should loop, and call the monkeypatched sleep
@@ -1731,33 +1897,31 @@ def test_custom_interval_sensor_with_offset(
         )
 
         assert get_current_datetime() == freeze_datetime + relativedelta(seconds=65)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
         assert sum(sleeps) == 65
 
 
-def test_sensor_start_stop(executor, instance, workspace_context, external_repo):
+def test_sensor_start_stop(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("always_on_sensor")
-        remote_origin_id = external_sensor.get_remote_origin_id()
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("always_on_sensor")
+        remote_origin_id = sensor.get_remote_origin_id()
+        instance.start_sensor(sensor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             [run.run_id],
@@ -1769,17 +1933,17 @@ def test_sensor_start_stop(executor, instance, workspace_context, external_repo)
         evaluate_sensors(workspace_context, executor)
         # no new ticks, no new runs, we are below the 30 second min interval
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
 
         # stop / start
-        instance.stop_sensor(remote_origin_id, external_sensor.selector_id, external_sensor)
-        instance.start_sensor(external_sensor)
+        instance.stop_sensor(remote_origin_id, sensor.selector_id, sensor)
+        instance.start_sensor(sensor)
 
         evaluate_sensors(workspace_context, executor)
         # no new ticks, no new runs, we are below the 30 second min interval
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=16)
@@ -1788,51 +1952,47 @@ def test_sensor_start_stop(executor, instance, workspace_context, external_repo)
         evaluate_sensors(workspace_context, executor)
         # should have new tick, new run, we are after the 30 second min interval
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 2
 
 
-def test_large_sensor(executor, instance, workspace_context, external_repo):
+def test_large_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("large_sensor")
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("large_sensor")
+        instance.start_sensor(sensor)
         evaluate_sensors(workspace_context, executor, timeout=300)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
         )
 
 
-def test_many_request_sensor(executor, submit_executor, instance, workspace_context, external_repo):
+def test_many_request_sensor(executor, submit_executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("many_request_sensor")
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("many_request_sensor")
+        instance.start_sensor(sensor)
         evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
         )
 
 
-def test_cursor_sensor(executor, instance, workspace_context, external_repo):
+def test_cursor_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        skip_sensor = external_repo.get_external_sensor("skip_cursor_sensor")
-        run_sensor = external_repo.get_external_sensor("run_cursor_sensor")
+        skip_sensor = remote_repo.get_sensor("skip_cursor_sensor")
+        run_sensor = remote_repo.get_sensor("run_cursor_sensor")
         instance.start_sensor(skip_sensor)
         instance.start_sensor(run_sensor)
         evaluate_sensors(workspace_context, executor)
@@ -1882,61 +2042,61 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
         assert run_ticks[0].cursor == "2"
 
 
-def test_run_request_asset_selection_sensor(executor, instance, workspace_context, external_repo):
+def test_run_request_asset_selection_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_asset_selection_sensor")
-        remote_origin_id = external_sensor.get_remote_origin_id()
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("run_request_asset_selection_sensor")
+        remote_origin_id = sensor.get_remote_origin_id()
+        instance.start_sensor(sensor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
-        assert run.asset_selection == {AssetKey("a"), AssetKey("b")}
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        assert run.asset_selection == {dg.AssetKey("a"), dg.AssetKey("b")}
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             [run.run_id],
         )
         assert set(get_planned_asset_keys_for_run(instance, run.run_id)) == {
-            AssetKey("a"),
-            AssetKey("b"),
+            dg.AssetKey("a"),
+            dg.AssetKey("b"),
         }
 
 
 def test_run_request_check_selection_only_sensor(
-    executor, instance: DagsterInstance, workspace_context, external_repo
+    executor, instance: DagsterInstance, workspace_context, remote_repo
 ) -> None:
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_check_only_sensor")
-        remote_origin_id = external_sensor.get_remote_origin_id()
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("run_request_check_only_sensor")
+        remote_origin_id = sensor.get_remote_origin_id()
+        instance.start_sensor(sensor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
-        assert run.asset_check_selection == {AssetCheckKey(AssetKey("a"), "check_a")}
+        assert run.asset_check_selection == {dg.AssetCheckKey(dg.AssetKey("a"), "check_a")}
         assert run.asset_selection is None
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             [run.run_id],
@@ -1949,63 +2109,63 @@ def test_run_request_check_selection_only_sensor(
                 of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
             ).records
         }
-        assert planned_check_keys == {AssetCheckKey(AssetKey("a"), "check_a")}
+        assert planned_check_keys == {dg.AssetCheckKey(dg.AssetKey("a"), "check_a")}
 
 
 def test_run_request_stale_asset_selection_sensor_never_materialized(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("run_request_stale_asset_sensor")
+        instance.start_sensor(sensor)
         evaluate_sensors(workspace_context, executor)
         sensor_run = next((r for r in instance.get_runs() if r.job_name == "abc"), None)
         assert sensor_run is not None
-        assert sensor_run.asset_selection == {AssetKey("a"), AssetKey("b"), AssetKey("c")}
+        assert sensor_run.asset_selection == {dg.AssetKey("a"), dg.AssetKey("b"), dg.AssetKey("c")}
 
 
 def test_run_request_stale_asset_selection_sensor_empty(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
 
-    materialize([a, b, c], instance=instance)
+    dg.materialize([a, b, c], instance=instance)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("run_request_stale_asset_sensor")
+        instance.start_sensor(sensor)
         evaluate_sensors(workspace_context, executor)
         sensor_run = next((r for r in instance.get_runs() if r.job_name == "abc"), None)
         assert sensor_run is None
 
 
 def test_run_request_stale_asset_selection_sensor_subset(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
 
-    materialize([a], instance=instance)
+    dg.materialize([a], instance=instance)
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("run_request_stale_asset_sensor")
+        instance.start_sensor(sensor)
         evaluate_sensors(workspace_context, executor)
         sensor_run = next((r for r in instance.get_runs() if r.job_name == "abc"), None)
         assert sensor_run is not None
-        assert sensor_run.asset_selection == {AssetKey("b"), AssetKey("c")}
+        assert sensor_run.asset_selection == {dg.AssetKey("b"), dg.AssetKey("c")}
 
 
-def test_targets_asset_selection_sensor(executor, instance, workspace_context, external_repo):
+def test_targets_asset_selection_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("targets_asset_selection_sensor")
-        remote_origin_id = external_sensor.get_remote_origin_id()
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("targets_asset_selection_sensor")
+        remote_origin_id = sensor.get_remote_origin_id()
+        instance.start_sensor(sensor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
@@ -2017,17 +2177,17 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
                 [
                     run
                     for run in runs
-                    if run.asset_selection == {AssetKey("asset_a"), AssetKey("asset_b")}
+                    if run.asset_selection == {dg.AssetKey("asset_a"), dg.AssetKey("asset_b")}
                 ]
             )
             == 1
         )
-        assert len([run for run in runs if run.asset_selection == {AssetKey("asset_b")}]) == 1
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        assert len([run for run in runs if run.asset_selection == {dg.AssetKey("asset_b")}]) == 1
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             [run.run_id for run in runs],
@@ -2037,43 +2197,45 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
             *get_planned_asset_keys_for_run(instance, runs[1].run_id),
         ]
         assert len(planned_asset_keys) == 3
-        assert set(planned_asset_keys) == {AssetKey("asset_a"), AssetKey("asset_b")}
+        assert set(planned_asset_keys) == {dg.AssetKey("asset_a"), dg.AssetKey("asset_b")}
 
 
-def test_partitioned_asset_selection_sensor(executor, instance, workspace_context, external_repo):
+def test_partitioned_asset_selection_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("partitioned_asset_selection_sensor")
-        remote_origin_id = external_sensor.get_remote_origin_id()
-        instance.start_sensor(external_sensor)
+        sensor = remote_repo.get_sensor("partitioned_asset_selection_sensor")
+        remote_origin_id = sensor.get_remote_origin_id()
+        instance.start_sensor(sensor)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
-        assert run.asset_selection == {AssetKey("hourly_asset_3")}
+        assert run.asset_selection == {dg.AssetKey("hourly_asset_3")}
         assert run.tags["dagster/partition"] == "2022-08-01-00:00"
-        ticks = instance.get_ticks(remote_origin_id, external_sensor.selector_id)
+        ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             [run.run_id],
         )
 
-        assert get_planned_asset_keys_for_run(instance, run.run_id) == [AssetKey("hourly_asset_3")]
+        assert get_planned_asset_keys_for_run(instance, run.run_id) == [
+            dg.AssetKey("hourly_asset_3")
+        ]
 
 
-def test_asset_sensor(executor, instance, workspace_context, external_repo):
+def test_asset_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        foo_sensor = external_repo.get_external_sensor("asset_foo_sensor")
+        foo_sensor = remote_repo.get_sensor("asset_foo_sensor")
         instance.start_sensor(foo_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2108,10 +2270,10 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
         assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
+def test_asset_job_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        job_sensor = external_repo.get_external_sensor("asset_job_sensor")
+        job_sensor = remote_repo.get_sensor("asset_job_sensor")
         instance.start_sensor(job_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2148,11 +2310,11 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
 
 
 def test_asset_sensor_not_triggered_on_observation(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        foo_sensor = external_repo.get_external_sensor("asset_foo_sensor")
+        foo_sensor = remote_repo.get_sensor("asset_foo_sensor")
         instance.start_sensor(foo_sensor)
 
         # generates the foo asset observation
@@ -2191,10 +2353,10 @@ def test_asset_sensor_not_triggered_on_observation(
         assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-def test_multi_asset_sensor(executor, instance, workspace_context, external_repo):
+def test_multi_asset_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        a_and_b_sensor = external_repo.get_external_sensor("asset_a_and_b_sensor")
+        a_and_b_sensor = remote_repo.get_sensor("asset_a_and_b_sensor")
         instance.start_sensor(a_and_b_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2213,7 +2375,7 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         freeze_datetime = freeze_datetime + relativedelta(seconds=60)
     with freeze_time(freeze_datetime):
         # should generate asset_a
-        materialize([asset_a], instance=instance)
+        dg.materialize([asset_a], instance=instance)
 
         evaluate_sensors(workspace_context, executor)
 
@@ -2233,7 +2395,7 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
 
     with freeze_time(freeze_datetime):
         # should generate asset_b
-        materialize([asset_b], instance=instance)
+        dg.materialize([asset_b], instance=instance)
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2253,10 +2415,10 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         assert run.tags.get("dagster/sensor_name") == "asset_a_and_b_sensor"
 
 
-def test_asset_selection_sensor(executor, instance, workspace_context, external_repo):
+def test_asset_selection_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        asset_selection_sensor = external_repo.get_external_sensor("asset_selection_sensor")
+        asset_selection_sensor = remote_repo.get_sensor("asset_selection_sensor")
         instance.start_sensor(asset_selection_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2274,11 +2436,11 @@ def test_asset_selection_sensor(executor, instance, workspace_context, external_
 
 
 def test_multi_asset_sensor_targets_asset_selection(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        multi_asset_sensor_targets_asset_selection = external_repo.get_external_sensor(
+        multi_asset_sensor_targets_asset_selection = remote_repo.get_sensor(
             "multi_asset_sensor_targets_asset_selection"
         )
         instance.start_sensor(multi_asset_sensor_targets_asset_selection)
@@ -2300,7 +2462,7 @@ def test_multi_asset_sensor_targets_asset_selection(
         freeze_datetime = freeze_datetime + relativedelta(seconds=60)
     with freeze_time(freeze_datetime):
         # should generate asset_a
-        materialize([asset_a], instance=instance)
+        dg.materialize([asset_a], instance=instance)
 
         evaluate_sensors(workspace_context, executor)
 
@@ -2321,7 +2483,7 @@ def test_multi_asset_sensor_targets_asset_selection(
 
     with freeze_time(freeze_datetime):
         # should generate asset_b
-        materialize([asset_b], instance=instance)
+        dg.materialize([asset_b], instance=instance)
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2340,13 +2502,13 @@ def test_multi_asset_sensor_targets_asset_selection(
         assert run.run_config == {}
         assert run.tags
         assert run.tags.get("dagster/sensor_name") == "multi_asset_sensor_targets_asset_selection"
-        assert run.asset_selection == {AssetKey(["asset_c"])}
+        assert run.asset_selection == {dg.AssetKey(["asset_c"])}
 
 
-def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context, external_repo):
+def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        backlog_sensor = external_repo.get_external_sensor("backlog_sensor")
+        backlog_sensor = remote_repo.get_sensor("backlog_sensor")
         instance.start_sensor(backlog_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2365,7 +2527,7 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         freeze_datetime = freeze_datetime + relativedelta(seconds=60)
     with freeze_time(freeze_datetime):
         # should generate asset_a
-        materialize([asset_a], instance=instance)
+        dg.materialize([asset_a], instance=instance)
 
         # sensor should not fire
         evaluate_sensors(workspace_context, executor)
@@ -2384,7 +2546,7 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
 
     with freeze_time(freeze_datetime):
         # should generate asset_a
-        materialize([asset_a], instance=instance)
+        dg.materialize([asset_a], instance=instance)
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2404,12 +2566,10 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         assert run.tags.get("dagster/sensor_name") == "backlog_sensor"
 
 
-def test_multi_asset_sensor_w_no_cursor_update(
-    executor, instance, workspace_context, external_repo
-):
+def test_multi_asset_sensor_w_no_cursor_update(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        cursor_sensor = external_repo.get_external_sensor("doesnt_update_cursor_sensor")
+        cursor_sensor = remote_repo.get_sensor("doesnt_update_cursor_sensor")
         instance.start_sensor(cursor_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2426,7 +2586,7 @@ def test_multi_asset_sensor_w_no_cursor_update(
         freeze_datetime = freeze_datetime + relativedelta(seconds=60)
     with freeze_time(freeze_datetime):
         # should generate asset_a
-        materialize([asset_a], instance=instance)
+        dg.materialize([asset_a], instance=instance)
 
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
@@ -2439,11 +2599,11 @@ def test_multi_asset_sensor_w_no_cursor_update(
         )
 
 
-def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_context, external_repo):
+def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2022, month=8, day=2)
     with freeze_time(freeze_datetime):
-        materialize([hourly_asset], instance=instance, partition_key="2022-08-01-00:00")
-        cursor_sensor = external_repo.get_external_sensor("multi_asset_sensor_hourly_to_weekly")
+        dg.materialize([hourly_asset], instance=instance, partition_key="2022-08-01-00:00")
+        cursor_sensor = remote_repo.get_sensor("multi_asset_sensor_hourly_to_weekly")
         instance.start_sensor(cursor_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2463,11 +2623,11 @@ def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_conte
         assert run.tags.get("dagster/partition") == "2022-07-31"
 
 
-def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_context, external_repo):
+def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2022, month=8, day=3)
     with freeze_time(freeze_datetime):
-        materialize([hourly_asset], instance=instance, partition_key="2022-08-02-00:00")
-        cursor_sensor = external_repo.get_external_sensor("multi_asset_sensor_hourly_to_hourly")
+        dg.materialize([hourly_asset], instance=instance, partition_key="2022-08-02-00:00")
+        cursor_sensor = remote_repo.get_sensor("multi_asset_sensor_hourly_to_hourly")
         instance.start_sensor(cursor_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2490,7 +2650,7 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
         freeze_datetime = freeze_datetime + relativedelta(seconds=30)
 
     with freeze_time(freeze_datetime):
-        cursor_sensor = external_repo.get_external_sensor("multi_asset_sensor_hourly_to_hourly")
+        cursor_sensor = remote_repo.get_sensor("multi_asset_sensor_hourly_to_hourly")
         instance.start_sensor(cursor_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2500,10 +2660,10 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
         validate_tick(ticks[0], cursor_sensor, freeze_datetime, TickStatus.SKIPPED)
 
 
-def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context, external_repo):
+def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2022, month=8, day=3)
     with freeze_time(freeze_datetime):
-        cursor_sensor = external_repo.get_external_sensor("sensor_result_multi_asset_sensor")
+        cursor_sensor = remote_repo.get_sensor("sensor_result_multi_asset_sensor")
         instance.start_sensor(cursor_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2519,11 +2679,11 @@ def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context,
 
 
 def test_cursor_update_sensor_result_multi_asset_sensor(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     freeze_datetime = create_datetime(year=2022, month=8, day=3)
     with freeze_time(freeze_datetime):
-        cursor_sensor = external_repo.get_external_sensor("cursor_sensor_result_multi_asset_sensor")
+        cursor_sensor = remote_repo.get_sensor("cursor_sensor_result_multi_asset_sensor")
         instance.start_sensor(cursor_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2539,10 +2699,10 @@ def test_cursor_update_sensor_result_multi_asset_sensor(
         assert "Cannot set cursor in a multi_asset_sensor" in ticks[0].error.message
 
 
-def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
+def test_multi_job_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        job_sensor = external_repo.get_external_sensor("two_job_sensor")
+        job_sensor = remote_repo.get_sensor("two_job_sensor")
         instance.start_sensor(job_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2580,10 +2740,10 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
         assert run.job_name == "config_job"
 
 
-def test_bad_run_request_untargeted(executor, instance, workspace_context, external_repo):
+def test_bad_run_request_untargeted(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        job_sensor = external_repo.get_external_sensor("bad_request_untargeted")
+        job_sensor = remote_repo.get_sensor("bad_request_untargeted")
         instance.start_sensor(job_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2602,10 +2762,10 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
         )
 
 
-def test_bad_run_request_mismatch(executor, instance, workspace_context, external_repo):
+def test_bad_run_request_mismatch(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        job_sensor = external_repo.get_external_sensor("bad_request_mismatch")
+        job_sensor = remote_repo.get_sensor("bad_request_mismatch")
         instance.start_sensor(job_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2623,10 +2783,10 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
         )
 
 
-def test_bad_run_request_unspecified(executor, instance, workspace_context, external_repo):
+def test_bad_run_request_unspecified(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        job_sensor = external_repo.get_external_sensor("bad_request_unspecified")
+        job_sensor = remote_repo.get_sensor("bad_request_unspecified")
         instance.start_sensor(job_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -2651,13 +2811,13 @@ def test_status_in_code_sensor(executor, instance):
         create_workspace_load_target(attribute="the_status_in_code_repo"),
         instance=instance,
     ) as workspace_context:
-        external_repo = next(
+        remote_repo = next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         with freeze_time(freeze_datetime):
-            running_sensor = external_repo.get_external_sensor("always_running_sensor")
-            not_running_sensor = external_repo.get_external_sensor("never_running_sensor")
+            running_sensor = remote_repo.get_sensor("always_running_sensor")
+            not_running_sensor = remote_repo.get_sensor("never_running_sensor")
 
             always_running_origin = running_sensor.get_remote_origin()
             never_running_origin = not_running_sensor.get_remote_origin()
@@ -2729,9 +2889,9 @@ def test_status_in_code_sensor(executor, instance):
             assert reset_instigator_state
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
-            running_to_not_running_sensor = ExternalSensor(
-                external_sensor_data=copy(
-                    running_sensor._external_sensor_data,  # noqa: SLF001
+            running_to_not_running_sensor = RemoteSensor(
+                sensor_snap=copy(
+                    running_sensor._sensor_snap,  # noqa: SLF001
                     default_status=DefaultSensorStatus.STOPPED,
                 ),
                 handle=running_sensor.handle.repository_handle,
@@ -2786,63 +2946,53 @@ def test_status_in_code_sensor(executor, instance):
             )
 
 
-def test_run_request_list_sensor(executor, instance, workspace_context, external_repo):
+def test_run_request_list_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("request_list_sensor")
+        sensor = remote_repo.get_sensor("request_list_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
 
 
-def test_sensor_purge(executor, instance, workspace_context, external_repo):
+def test_sensor_purge(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         # create a tick
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         freeze_datetime = freeze_datetime + relativedelta(days=6)
 
     with freeze_time(freeze_datetime):
         # create another tick
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
         freeze_datetime = freeze_datetime + relativedelta(days=2)
@@ -2850,15 +3000,13 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
     with freeze_time(freeze_datetime):
         # create another tick, but the first tick should be purged
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
 
-def test_sensor_custom_purge(executor, workspace_context, external_repo):
+def test_sensor_custom_purge(executor, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "retention": {"sensor": {"purge_after_days": {"skipped": 14}}},
             "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"},
@@ -2866,25 +3014,21 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
     ) as instance:
         purge_ws_ctx = workspace_context.copy_for_test_instance(instance)
         with freeze_time(freeze_datetime):
-            external_sensor = external_repo.get_external_sensor("simple_sensor")
+            sensor = remote_repo.get_sensor("simple_sensor")
             instance.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_remote_origin(),
+                    sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
                 )
             )
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 0
 
             # create a tick
             evaluate_sensors(purge_ws_ctx, executor)
 
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 1
             freeze_datetime = freeze_datetime + relativedelta(days=8)
 
@@ -2892,9 +3036,7 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             # create another tick, and the first tick should not be purged despite the fact that the
             # default purge day offset is 7
             evaluate_sensors(purge_ws_ctx, executor)
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 2
 
             freeze_datetime = freeze_datetime + relativedelta(days=7)
@@ -2902,9 +3044,7 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
         with freeze_time(freeze_datetime):
             # create another tick, but the first tick should be purged
             evaluate_sensors(purge_ws_ctx, executor)
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 2
 
 
@@ -2918,7 +3058,7 @@ def test_repository_namespacing(executor):
         second=59,
     )
     with ExitStack() as exit_stack:
-        instance = exit_stack.enter_context(instance_for_test())
+        instance = exit_stack.enter_context(dg.instance_for_test())
         full_workspace_context = exit_stack.enter_context(
             create_test_daemon_workspace_context(
                 create_workspace_load_target(attribute=None),  # load all repos
@@ -2931,25 +3071,23 @@ def test_repository_namespacing(executor):
                 full_workspace_context.create_request_context().get_code_location_entries().values()
             )
         ).code_location
-        external_repo = full_location.get_repository("the_repo")
-        other_repo = full_location.get_repository("the_other_repo")
+        repo = full_location.get_repository("the_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        other_repo = full_location.get_repository("the_other_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         # stop always on sensor
-        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
-        running_sensor = status_in_code_repo.get_external_sensor("always_running_sensor")
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        running_sensor = status_in_code_repo.get_sensor("always_running_sensor")
         instance.stop_sensor(
             running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor
         )
 
-        external_sensor = external_repo.get_external_sensor("run_key_sensor")
-        other_sensor = other_repo.get_external_sensor("run_key_sensor")
+        sensor = repo.get_sensor("run_key_sensor")
+        other_sensor = other_repo.get_sensor("run_key_sensor")
 
         with freeze_time(freeze_datetime):
-            instance.start_sensor(external_sensor)
+            instance.start_sensor(sensor)
             assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 0
 
             instance.start_sensor(other_sensor)
@@ -2965,9 +3103,7 @@ def test_repository_namespacing(executor):
 
             assert instance.get_runs_count() == 2  # both copies of the sensor
 
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -2981,40 +3117,32 @@ def test_repository_namespacing(executor):
         with freeze_time(freeze_datetime):
             evaluate_sensors(full_workspace_context, executor)
             assert instance.get_runs_count() == 2  # still 2
-            ticks = instance.get_ticks(
-                external_sensor.get_remote_origin_id(), external_sensor.selector_id
-            )
+            ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 2
 
 
-def test_settings():
-    settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
-        assert thread_inst.get_settings("sensors") == settings
-
-
 @pytest.mark.parametrize("sensor_name", ["logging_sensor", "multi_asset_logging_sensor"])
-def test_sensor_logging(executor, instance, workspace_context, external_repo, sensor_name) -> None:
-    external_sensor = external_repo.get_external_sensor(sensor_name)
+def test_sensor_logging(executor, instance, workspace_context, remote_repo, sensor_name) -> None:
+    sensor = remote_repo.get_sensor(sensor_name)
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
     assert instance.get_runs_count() == 0
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 1
     tick = ticks[0]
     assert tick.log_key == [
-        external_sensor.handle.repository_name,
-        external_sensor.name,
+        sensor.handle.repository_name,
+        sensor.name,
         str(tick.tick_id),
     ]
     assert tick.status == TickStatus.SKIPPED
@@ -3032,24 +3160,24 @@ def test_sensor_logging_on_tick_failure(
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    remote_repo: RemoteRepository,
 ) -> None:
-    external_sensor = external_repo.get_external_sensor("logging_fail_tick_sensor")
+    sensor = remote_repo.get_sensor("logging_fail_tick_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
     assert instance.get_runs_count() == 0
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
     assert len(ticks) == 1
 
@@ -3058,8 +3186,8 @@ def test_sensor_logging_on_tick_failure(
     assert tick.status == TickStatus.FAILURE
     assert tick.log_key
     assert tick.log_key == [
-        external_sensor.handle.repository_name,
-        external_sensor.name,
+        sensor.handle.repository_name,
+        sensor.name,
         str(tick.tick_id),
     ]
 
@@ -3071,28 +3199,26 @@ def test_sensor_logging_on_tick_failure(
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
-def test_add_dynamic_partitions_sensor(
-    caplog, executor, instance, workspace_context, external_repo
-):
+def test_add_dynamic_partitions_sensor(caplog, executor, instance, workspace_context, remote_repo):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
     instance.add_dynamic_partitions("quux", ["foo"])
     assert set(instance.get_dynamic_partitions("quux")) == set(["foo"])
 
-    external_sensor = external_repo.get_external_sensor("add_dynamic_partitions_sensor")
+    sensor = remote_repo.get_sensor("add_dynamic_partitions_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
     assert set(instance.get_dynamic_partitions("quux")) == set(["baz", "foo"])
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
     assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
     assert (
@@ -3107,22 +3233,20 @@ def test_add_dynamic_partitions_sensor(
 
 
 def test_add_delete_skip_dynamic_partitions(
-    caplog, executor, instance, workspace_context, external_repo
+    caplog, executor, instance, workspace_context, remote_repo
 ):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
     instance.add_dynamic_partitions("quux", ["2"])
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
-    external_sensor = external_repo.get_external_sensor(
-        "add_delete_dynamic_partitions_and_yield_run_requests_sensor"
-    )
+    sensor = remote_repo.get_sensor("add_delete_dynamic_partitions_and_yield_run_requests_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 0
 
     freeze_datetime = create_datetime(
@@ -3137,9 +3261,7 @@ def test_add_delete_skip_dynamic_partitions(
     with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
 
@@ -3171,9 +3293,7 @@ def test_add_delete_skip_dynamic_partitions(
     with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
         assert ticks[0].tick_data.dynamic_partitions_request_results == [
@@ -3196,31 +3316,29 @@ def test_add_delete_skip_dynamic_partitions(
 
 
 def test_error_on_deleted_dynamic_partitions_run_request(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
     instance.add_dynamic_partitions("quux", ["2"])
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
-    external_sensor = external_repo.get_external_sensor(
-        "error_on_deleted_dynamic_partitions_run_requests_sensor"
-    )
+    sensor = remote_repo.get_sensor("error_on_deleted_dynamic_partitions_run_requests_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 1
     validate_tick(
         ticks[0],
-        external_sensor,
+        sensor,
         expected_datetime=None,
         expected_status=TickStatus.FAILURE,
         expected_run_ids=None,
@@ -3237,28 +3355,28 @@ def test_error_on_deleted_dynamic_partitions_run_request(
     ],
 )
 def test_multipartitions_with_dynamic_dims_run_request_sensor(
-    sensor_name, is_expected_success, executor, instance, workspace_context, external_repo
+    sensor_name, is_expected_success, executor, instance, workspace_context, remote_repo
 ):
-    external_sensor = external_repo.get_external_sensor(sensor_name)
+    sensor = remote_repo.get_sensor(sensor_name)
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 1
 
     if is_expected_success:
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             expected_datetime=None,
             expected_status=TickStatus.SUCCESS,
             expected_run_ids=None,
@@ -3266,7 +3384,7 @@ def test_multipartitions_with_dynamic_dims_run_request_sensor(
     else:
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             expected_datetime=None,
             expected_status=TickStatus.FAILURE,
             expected_run_ids=None,
@@ -3275,29 +3393,29 @@ def test_multipartitions_with_dynamic_dims_run_request_sensor(
 
 
 def test_multipartition_asset_with_static_time_dimensions_run_requests_sensor(
-    executor, instance, workspace_context, external_repo
+    executor, instance, workspace_context, remote_repo
 ):
-    external_sensor = external_repo.get_external_sensor(
+    sensor = remote_repo.get_sensor(
         "multipartitions_with_static_time_dimensions_run_requests_sensor"
     )
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_remote_origin(),
+            sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     assert len(ticks) == 1
 
     validate_tick(
         ticks[0],
-        external_sensor,
+        sensor,
         expected_datetime=None,
         expected_status=TickStatus.SUCCESS,
         expected_run_ids=None,
@@ -3306,9 +3424,9 @@ def test_multipartition_asset_with_static_time_dimensions_run_requests_sensor(
 
 def test_code_location_construction():
     # this just gets code coverage in in the run status sensor definition constructor
-    @run_status_sensor(
+    @dg.run_status_sensor(
         monitored_jobs=[
-            CodeLocationSelector(
+            dg.CodeLocationSelector(
                 location_name="test_location",
             )
         ],
@@ -3320,25 +3438,23 @@ def test_code_location_construction():
     assert cross_code_location_sensor
 
 
-def test_stale_request_context(instance, workspace_context, external_repo):
+def test_stale_request_context(instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
     executor = ThreadPoolExecutor()
     blocking_executor = BlockingThreadPoolExecutor()
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         futures = {}
@@ -3355,13 +3471,11 @@ def test_stale_request_context(instance, workspace_context, external_repo):
         wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
         )
@@ -3391,9 +3505,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
         blocking_executor.allow()
         wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
 
         wait_for_all_runs_to_start(instance)
@@ -3404,17 +3516,17 @@ def test_stale_request_context(instance, workspace_context, external_repo):
         expected_datetime = create_datetime(year=2019, month=2, day=28, hour=0, minute=0, second=29)
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             expected_datetime,
             TickStatus.SUCCESS,
             [run.run_id],
         )
 
 
-def test_start_tick_sensor(executor, instance, workspace_context, external_repo):
+def test_start_tick_sensor(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        start_skip_sensor = external_repo.get_external_sensor("start_skip_sensor")
+        start_skip_sensor = remote_repo.get_sensor("start_skip_sensor")
         instance.start_sensor(start_skip_sensor)
         evaluate_sensors(workspace_context, executor)
         last_tick = _get_last_tick(instance, start_skip_sensor)
@@ -3461,19 +3573,19 @@ def test_sensor_run_tags(
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    remote_repo: RemoteRepository,
 ) -> None:
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
-        job_with_tags_with_run_tags_sensor = external_repo.get_external_sensor(
+        job_with_tags_with_run_tags_sensor = remote_repo.get_sensor(
             "job_with_tags_with_run_tags_sensor"
         )
         instance.start_sensor(job_with_tags_with_run_tags_sensor)
-        job_with_tags_no_run_tags_sensor = external_repo.get_external_sensor(
+        job_with_tags_no_run_tags_sensor = remote_repo.get_sensor(
             "job_with_tags_no_run_tags_sensor"
         )
         instance.start_sensor(job_with_tags_no_run_tags_sensor)
-        job_no_tags_with_run_tags_sensor = external_repo.get_external_sensor(
+        job_no_tags_with_run_tags_sensor = remote_repo.get_sensor(
             "job_no_tags_with_run_tags_sensor"
         )
         instance.start_sensor(job_no_tags_with_run_tags_sensor)

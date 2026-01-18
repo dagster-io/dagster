@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import ConfigType
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.definitions.resource_requirement import (
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.system import DagsterTypeLoaderContext
 
 
+@public
 class DagsterTypeLoader(ABC):
     """Dagster type loaders are used to load unconnected inputs of the dagster type they are attached
     to.
@@ -38,7 +40,9 @@ class DagsterTypeLoader(ABC):
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
 
-    def get_resource_requirements(self, type_display_name: str) -> Iterator[ResourceRequirement]:
+    def get_resource_requirements(
+        self, type_display_name: str
+    ) -> Iterator[ResourceRequirement]:
         for resource_key in sorted(list(self.required_resource_keys())):
             yield TypeLoaderResourceRequirement(
                 key=resource_key, type_display_name=type_display_name
@@ -75,6 +79,7 @@ def _create_type_loader_for_decorator(
 DagsterTypeLoaderFn: TypeAlias = Callable[["DagsterTypeLoaderContext", Any], Any]
 
 
+@public
 def dagster_type_loader(
     config_schema: object, required_resource_keys: Optional[AbstractSet[str]] = None
 ) -> Callable[[DagsterTypeLoaderFn], DagsterTypeLoaderFromDecorator]:
@@ -97,9 +102,9 @@ def dagster_type_loader(
     from dagster._config import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
-    assert isinstance(
-        config_type, ConfigType
-    ), f"{config_schema} could not be resolved to config type"
+    assert isinstance(config_type, ConfigType), (
+        f"{config_schema} could not be resolved to config type"
+    )
     EXPECTED_POSITIONALS = ["context", "*"]
 
     def wrapper(func: DagsterTypeLoaderFn) -> DagsterTypeLoaderFromDecorator:
@@ -113,6 +118,8 @@ def dagster_type_loader(
                 " positional parameter named 'context'."
             )
 
-        return _create_type_loader_for_decorator(config_type, func, required_resource_keys)
+        return _create_type_loader_for_decorator(
+            config_type, func, required_resource_keys
+        )
 
     return wrapper

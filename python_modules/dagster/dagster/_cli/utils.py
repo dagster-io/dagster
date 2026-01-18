@@ -1,13 +1,35 @@
 import logging
 import os
 import tempfile
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
+import click
+
+import dagster._check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.secrets.env_file import get_env_var_dict
 from dagster._utils.env import environ
+
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.external import RemoteRepository
+
+
+def has_pyproject_dagster_block(path: str) -> bool:
+    import tomli  # defer for perf
+
+    if not os.path.exists(path):
+        return False
+    with open(path, "rb") as f:
+        data = tomli.load(f)
+        if not isinstance(data, dict):
+            return False
+
+        return "dagster" in data.get("tool", {}) or "dg" in data.get("tool", {})
 
 
 @contextmanager
@@ -25,11 +47,16 @@ def _inject_local_env_file(logger: logging.Logger) -> Iterator[None]:
         yield
 
 
+TMP_DAGSTER_HOME_PREFIX = ".tmp_dagster_home_"
+
+
 @contextmanager
 def _get_temporary_instance(cli_command: str, logger: logging.Logger) -> Iterator[DagsterInstance]:
     # make the temp dir in the cwd since default temp dir roots
     # have issues with FS notify-based event log watching
-    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
+    # use a fixed prefix so that consumer projects can reliably manage,
+    # e.g., add to .gitignore
+    with tempfile.TemporaryDirectory(prefix=TMP_DAGSTER_HOME_PREFIX, dir=os.getcwd()) as tempdir:
         logger.info(
             f"Using temporary directory {tempdir} for storage. This will be removed when"
             f" {cli_command} exits."
@@ -106,3 +133,38 @@ def get_instance_for_cli(
         else:
             with DagsterInstance.get() as instance:
                 yield instance
+
+
+def assert_no_remaining_opts(opts: Mapping[str, object]) -> None:
+    if opts:
+        check.failed(
+            f"Unexpected options remaining: {list(opts.keys())}. Ensure that all options are extracted."
+        )
+
+
+def serialize_sorted_quoted(strings: Iterable[str]) -> str:
+    return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"
+
+
+def validate_dagster_home_is_set() -> None:
+    if not is_dagster_home_set():
+        raise click.UsageError(
+            "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
+            "environment variable to be set to an existing directory in your filesystem "
+            "that contains your dagster instance configuration file (dagster.yaml).\n"
+            "You can resolve this error by exporting the environment variable."
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
+        )
+
+
+def validate_repo_has_defined_sensors(repo: "RemoteRepository") -> None:
+    if not repo.get_sensors():
+        raise click.UsageError(f"There are no sensors defined for repository {repo.name}.")
+
+
+def validate_repo_has_defined_schedules(repo: "RemoteRepository") -> None:
+    if not repo.get_schedules():
+        raise click.UsageError(f"There are no schedules defined for repository {repo.name}.")

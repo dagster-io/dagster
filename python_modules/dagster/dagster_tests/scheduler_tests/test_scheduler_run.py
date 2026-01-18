@@ -2,42 +2,24 @@ import datetime
 import random
 import string
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Dict, Optional, Sequence, cast
+from typing import Optional, cast
 
+import dagster as dg
 import pytest
-from dagster import (
-    Any,
-    AssetExecutionContext,
-    AssetKey,
-    DefaultScheduleStatus,
-    Field,
-    ScheduleDefinition,
-    StaticPartitionsDefinition,
-    asset,
-    build_schedule_from_partitioned_job,
-    define_asset_job,
-    graph,
-    job,
-    materialize,
-    op,
-    repository,
-    schedule,
-)
-from dagster._core.definitions.data_version import DataVersion
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster import AssetExecutionContext, AssetKey, DefaultScheduleStatus, schedule
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
+from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation.external import ExternalRepository, ExternalSchedule
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.external import RemoteRepository, RemoteSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -55,16 +37,20 @@ from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     freeze_time,
-    instance_for_test,
     wait_for_futures,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.server import open_server_process
 from dagster._record import copy
-from dagster._scheduler.scheduler import ScheduleIterationTimes, launch_scheduled_runs
+from dagster._scheduler.scheduler import (
+    RETAIN_ORPHANED_STATE_INTERVAL_SECONDS,
+    ScheduleIterationTimes,
+    launch_scheduled_runs,
+)
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp, get_timezone
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
@@ -115,7 +101,7 @@ def evaluate_schedules(
     debug_crash_flags: Optional[DebugCrashFlags] = None,
     timeout: int = FUTURES_TIMEOUT,
     submit_executor: Optional[ThreadPoolExecutor] = None,
-    iteration_times: Optional[Dict[str, ScheduleIterationTimes]] = None,
+    iteration_times: Optional[dict[str, ScheduleIterationTimes]] = None,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
     futures = {}
@@ -141,12 +127,12 @@ def evaluate_schedules(
     return iteration_times
 
 
-@op(config_schema={"time": str})
+@dg.op(config_schema={"time": str})
 def the_op(context):
     return "Ran at this time: {}".format(context.op_config["time"])
 
 
-@job
+@dg.job
 def the_job():
     the_op()
 
@@ -225,7 +211,7 @@ def daily_eastern_time_schedule(context):
 NUM_CALLS = {"sync": 0, "async": 0}
 
 
-def get_passes_on_retry_schedule(key: str) -> ScheduleDefinition:
+def get_passes_on_retry_schedule(key: str) -> dg.ScheduleDefinition:
     @schedule(
         cron_schedule="@daily",
         job_name="the_job",
@@ -316,7 +302,7 @@ def many_requests_schedule(context):
     REQUEST_COUNT = 15
 
     return [
-        RunRequest(run_key=str(i), run_config=_op_config(context.scheduled_execution_time))
+        dg.RunRequest(run_key=str(i), run_config=_op_config(context.scheduled_execution_time))
         for i in range(REQUEST_COUNT)
     ]
 
@@ -327,10 +313,10 @@ def many_requests_schedule(context):
     tags={"foo": "bar"},
 )
 def tags_and_eval_fn_schedule(context):
-    return RunRequest()
+    return dg.RunRequest()
 
 
-tags_and_no_eval_fn_schedule = ScheduleDefinition(
+tags_and_no_eval_fn_schedule = dg.ScheduleDefinition(
     cron_schedule="@daily",
     job_name="the_job",
     tags={"foo": "bar"},
@@ -344,11 +330,30 @@ def define_multi_run_schedule():
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
-        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
-        yield RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield dg.RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"})
 
-    return ScheduleDefinition(
+    return dg.ScheduleDefinition(
         name="multi_run_schedule",
+        cron_schedule="0 0 * * *",
+        job_name="the_job",
+        execution_timezone="UTC",
+        execution_fn=gen_runs,
+    )
+
+
+def define_dup_run_key_schedule():
+    def gen_runs(context):
+        if not context.scheduled_execution_time:
+            date = get_current_datetime() - relativedelta(days=1)
+        else:
+            date = context.scheduled_execution_time - relativedelta(days=1)
+
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "B"})
+
+    return dg.ScheduleDefinition(
+        name="dup_run_key_schedule",
         cron_schedule="0 0 * * *",
         job_name="the_job",
         execution_timezone="UTC",
@@ -368,8 +373,8 @@ def multi_run_list_schedule(context):
         date = context.scheduled_execution_time - relativedelta(days=1)
 
     return [
-        RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"}),
-        RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"}),
+        dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"}),
+        dg.RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"}),
     ]
 
 
@@ -380,10 +385,10 @@ def define_multi_run_schedule_with_missing_run_key():
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
-        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
-        yield RunRequest(run_key=None, run_config=_op_config(date), tags={"label": "B"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield dg.RunRequest(run_key=None, run_config=_op_config(date), tags={"label": "B"})
 
-    return ScheduleDefinition(
+    return dg.ScheduleDefinition(
         name="multi_run_schedule_with_missing_run_key",
         cron_schedule="0 0 * * *",
         job_name="the_job",
@@ -392,7 +397,7 @@ def define_multi_run_schedule_with_missing_run_key():
     )
 
 
-@repository
+@dg.repository
 def the_other_repo():
     return [
         the_job,
@@ -400,12 +405,12 @@ def the_other_repo():
     ]
 
 
-@op(config_schema=Field(Any))
+@dg.op(config_schema=dg.Field(dg.Any))
 def config_op(_):
     return 1
 
 
-@job
+@dg.job
 def config_job():
     config_op()
 
@@ -434,74 +439,89 @@ def large_schedule(_):
     }
 
 
-@op
+@dg.op
 def start(_, x):
     return x
 
 
-@op
+@dg.op
 def end(_, x=1):
     return x
 
 
-@job
+@dg.job
 def two_step_job():
     end(start())
 
 
 def define_default_config_job():
-    @op(config_schema=str)
+    @dg.op(config_schema=str)
     def my_op(context):
         assert context.op_config == "foo"
 
-    @job(config={"ops": {"my_op": {"config": "foo"}}})
+    @dg.job(config={"ops": {"my_op": {"config": "foo"}}})
     def default_config_job():
         my_op()
 
     return default_config_job
 
 
-default_config_schedule = ScheduleDefinition(
+default_config_schedule = dg.ScheduleDefinition(
     name="default_config_schedule",
     cron_schedule="* * * * *",
     job=define_default_config_job(),
 )
 
 
-@asset
+@dg.asset
 def asset1():
     return "asset1"
 
 
-@asset
+@dg.asset_check(asset=asset1)
+def asset_1_check_1():
+    return dg.AssetCheckResult(passed=True)
+
+
+@dg.asset_check(asset=asset1)
+def asset_1_check_2():
+    return dg.AssetCheckResult(passed=True)
+
+
+@dg.asset
 def asset2(asset1):
     return asset1 + "asset2"
 
 
-asset_job = define_asset_job("asset_job")
+asset_job = dg.define_asset_job("asset_job")
 
 
 @schedule(job=asset_job, cron_schedule="@daily")
 def asset_selection_schedule():
-    return RunRequest(asset_selection=[asset1.key])
+    return dg.RunRequest(asset_selection=[asset1.key])
+
+
+@schedule(job=asset_job, cron_schedule="@daily")
+def asset_check_selection_schedule():
+    return RunRequest(asset_selection=[asset1.key], asset_check_keys=[asset_1_check_1.check_key])
 
 
 @schedule(job=asset_job, cron_schedule="@daily")
 def stale_asset_selection_schedule():
-    return RunRequest(stale_assets_only=True)
+    return dg.RunRequest(stale_assets_only=True)
 
 
-static_partition_def = StaticPartitionsDefinition(["a", "b", "c"])
+static_partition_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
 
 
-@asset(partitions_def=static_partition_def)
+@dg.asset(partitions_def=static_partition_def)
 def static_partitioned_asset1(context: AssetExecutionContext):
     return f"static_partitioned_asset1[{context.partition_key}]"
 
 
-static_partitioned_asset1_schedule = build_schedule_from_partitioned_job(
+static_partitioned_asset1_schedule = dg.build_schedule_from_partitioned_job(
     name="static_partitioned_asset1_schedule",
-    job=define_asset_job(
+    job=dg.define_asset_job(
         "static_paritioned_asset1_job",
         selection=[static_partitioned_asset1],
         partitions_def=static_partition_def,
@@ -510,12 +530,12 @@ static_partitioned_asset1_schedule = build_schedule_from_partitioned_job(
 )
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def source_asset():
-    return DataVersion("foo")
+    return dg.DataVersion("foo")
 
 
-observable_source_asset_job = define_asset_job(
+observable_source_asset_job = dg.define_asset_job(
     "observable_source_asset_job", selection=[source_asset]
 )
 
@@ -523,15 +543,15 @@ observable_source_asset_job = define_asset_job(
 @schedule(job=observable_source_asset_job, cron_schedule="@daily")
 def source_asset_observation_schedule():
     # pp("EVAL")
-    return RunRequest(asset_selection=[source_asset.key])
+    return dg.RunRequest(asset_selection=[source_asset.key])
 
 
-@op
+@dg.op
 def basic_op():
     return 1
 
 
-@graph
+@dg.graph
 def the_graph():
     basic_op()
 
@@ -549,20 +569,20 @@ job_no_tags_with_run_tags = the_graph.to_job(
 
 @schedule(cron_schedule="@daily", job=job_with_tags_with_run_tags)
 def job_with_tags_with_run_tags_schedule():
-    return RunRequest()
+    return dg.RunRequest()
 
 
 @schedule(cron_schedule="@daily", job=job_with_tags_no_run_tags)
 def job_with_tags_no_run_tags_schedule():
-    return RunRequest()
+    return dg.RunRequest()
 
 
 @schedule(cron_schedule="@daily", job=job_no_tags_with_run_tags)
 def job_no_tags_with_run_tags_schedule():
-    return RunRequest()
+    return dg.RunRequest()
 
 
-@repository
+@dg.repository
 def the_repo():
     return [
         the_job,
@@ -585,6 +605,7 @@ def the_repo():
         define_multi_run_schedule(),
         multi_run_list_schedule,
         define_multi_run_schedule_with_missing_run_key(),
+        define_dup_run_key_schedule(),
         union_schedule,
         large_schedule,
         two_step_job,
@@ -592,8 +613,11 @@ def the_repo():
         empty_schedule,
         many_requests_schedule,
         [asset1, asset2, source_asset],
+        asset_1_check_1,
+        asset_1_check_2,
         asset_selection_schedule,
         stale_asset_selection_schedule,
+        asset_check_selection_schedule,
         source_asset_observation_schedule,
         static_partitioned_asset1,
         static_partitioned_asset1_schedule,
@@ -626,7 +650,7 @@ def never_running_schedule(context):
     return _op_config(context.scheduled_execution_time)
 
 
-@repository
+@dg.repository
 def the_status_in_code_repo():
     return [
         the_job,
@@ -641,17 +665,22 @@ def logger():
 
 def validate_tick(
     tick: InstigatorTick,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
     expected_datetime: datetime.datetime,
     expected_status: TickStatus,
     expected_run_ids: Sequence[str],
     expected_error: Optional[str] = None,
     expected_failure_count: int = 0,
     expected_skip_reason: Optional[str] = None,
+    expected_consecutive_failure_count=None,
 ) -> None:
     tick_data = tick.tick_data
-    assert tick_data.instigator_origin_id == external_schedule.get_remote_origin_id()
-    assert tick_data.instigator_name == external_schedule.name
+
+    if expected_consecutive_failure_count is None:
+        expected_consecutive_failure_count = expected_failure_count
+
+    assert tick_data.instigator_origin_id == remote_schedule.get_remote_origin_id()
+    assert tick_data.instigator_name == remote_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.status == expected_status
     assert len(tick_data.run_ids) == len(expected_run_ids) and set(tick_data.run_ids) == set(
@@ -661,6 +690,7 @@ def validate_tick(
         assert expected_error in str(tick_data.error)
     assert tick_data.failure_count == expected_failure_count
     assert tick_data.skip_reason == expected_skip_reason
+    assert tick_data.consecutive_failure_count == expected_consecutive_failure_count
 
 
 def validate_run_exists(
@@ -742,17 +772,18 @@ def _get_unloadable_workspace_load_target():
 
 def test_settings():
     settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"schedules": settings}) as thread_inst:
+    with dg.instance_for_test(overrides={"schedules": settings}) as thread_inst:
         assert thread_inst.get_settings("schedules") == settings
 
 
 @contextmanager
-def _grpc_server_external_repo(port: int, scheduler_instance: DagsterInstance):
+def _grpc_server_remote_repo(port: int, scheduler_instance: DagsterInstance):
     server_process = open_server_process(
         instance_ref=scheduler_instance.get_ref(),
         port=port,
         socket=None,
         loadable_target_origin=loadable_target_origin(),
+        server_command=GrpcServerCommand.API_GRPC,
     )
     try:
         location_origin: GrpcServerCodeLocationOrigin = GrpcServerCodeLocationOrigin(
@@ -802,6 +833,99 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
             assert len(ticks) == 0
 
 
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPoolExecutor):
+    initial_datetime = feb_27_2019_one_second_to_midnight()
+    with create_test_daemon_workspace_context(
+        workspace_load_target(attribute="the_repo"),
+        instance,
+    ) as workspace_context:
+        code_location = next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location
+        assert code_location
+        external_repo = code_location.get_repository("the_repo")
+        running_schedule = external_repo.get_schedule("simple_schedule")
+        stopped_schedule = external_repo.get_schedule("simple_schedule_no_timezone")
+
+        assert len(instance.all_instigator_state()) == 0
+
+        def _get_ticks(external_schedule):
+            return instance.get_ticks(
+                external_schedule.get_remote_origin().get_id(), external_schedule.selector_id
+            )
+
+        def _get_state(external_schedule):
+            return instance.get_instigator_state(
+                external_schedule.get_remote_origin().get_id(), external_schedule.selector_id
+            )
+
+        with freeze_time(initial_datetime):
+            instance.start_schedule(running_schedule)
+            instance.start_schedule(stopped_schedule)
+            instance.stop_schedule(
+                stopped_schedule.get_remote_origin().get_id(),
+                stopped_schedule.selector_id,
+                stopped_schedule,
+            )
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            assert len(_get_ticks(running_schedule)) == 0
+
+        successful_iteration_time = initial_datetime + relativedelta(days=1)
+        with freeze_time(successful_iteration_time):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            assert len(_get_ticks(running_schedule)) == 1
+
+        # Try with an error workspace - the job state should not be deleted
+        remove_datetime = successful_iteration_time + relativedelta(days=1)
+        with freeze_time(remove_datetime):
+            new_location_entry = copy(
+                workspace_context._current_workspace.code_location_entries["test_location"],  # noqa
+                code_location=None,
+                load_error=SerializableErrorInfo("error", [], "error"),
+            )
+
+            workspace_context._current_workspace = (  # noqa
+                workspace_context._current_workspace.with_code_location(  # noqa
+                    "test_location",
+                    new_location_entry,
+                )
+            )
+
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            # state preserved
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            # ticks preserved
+            assert len(_get_ticks(running_schedule)) == 1
+
+    # Try with an empty workspace, schedules do not exist anymore
+    retain_datetime = successful_iteration_time + relativedelta(
+        seconds=RETAIN_ORPHANED_STATE_INTERVAL_SECONDS - 1
+    )
+    with create_test_daemon_workspace_context(
+        EmptyWorkspaceTarget(), instance
+    ) as empty_workspace_ctx:
+        with freeze_time(retain_datetime):
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            # state preserved
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            # ticks preserved
+            assert len(_get_ticks(running_schedule)) == 1
+
+        with freeze_time(remove_datetime):
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            # state removed
+            assert not _get_state(running_schedule)
+            assert not _get_state(stopped_schedule)
+            # ticks preserved
+            assert len(_get_ticks(running_schedule)) == 1
+
+
 # Schedules with status defined in code have that status applied
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPoolExecutor):
@@ -814,11 +938,11 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location
-        external_repo = code_location.get_repository("the_status_in_code_repo")
+        remote_repo = code_location.get_repository("the_status_in_code_repo")
 
         with freeze_time(freeze_datetime):
-            running_schedule = external_repo.get_external_schedule("always_running_schedule")
-            not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
+            running_schedule = remote_repo.get_schedule("always_running_schedule")
+            not_running_schedule = remote_repo.get_schedule("never_running_schedule")
 
             always_running_origin = running_schedule.get_remote_origin()
             never_running_origin = not_running_schedule.get_remote_origin()
@@ -888,9 +1012,9 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert reset_instigator_state
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
-            running_to_not_running_schedule = ExternalSchedule(
-                external_schedule_data=copy(
-                    running_schedule._external_schedule_data,  # noqa: SLF001
+            running_to_not_running_schedule = RemoteSchedule(
+                schedule_snap=copy(
+                    running_schedule._schedule_snap,  # noqa: SLF001
                     default_status=DefaultScheduleStatus.STOPPED,
                 ),
                 handle=running_schedule.handle.repository_handle,
@@ -955,15 +1079,16 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
         # Now try with an error workspace - the job state should not be deleted
         # since its associated with an errored out location
-        with freeze_time(freeze_datetime):
+        day_after_last_evaluation = freeze_datetime + relativedelta(days=1)
+        with freeze_time(day_after_last_evaluation):
             new_location_entry = copy(
-                workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
+                workspace_context._current_workspace.code_location_entries["test_location"],  # noqa
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
-            workspace_context._workspace_snapshot = (  # noqa
-                workspace_context._workspace_snapshot.with_code_location(  # noqa
+            workspace_context._current_workspace = (  # noqa
+                workspace_context._current_workspace.with_code_location(  # noqa
                     "test_location",
                     new_location_entry,
                 )
@@ -980,9 +1105,8 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         EmptyWorkspaceTarget(), instance
     ) as empty_workspace_ctx:
         with freeze_time(freeze_datetime):
+            # The schedule remains, within the 12h grace period
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
-            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
-            assert len(ticks) == 2
             assert len(instance.all_instigator_state()) == 0
 
 
@@ -998,9 +1122,9 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location
-        external_repo = code_location.get_repository("the_status_in_code_repo")
+        remote_repo = code_location.get_repository("the_status_in_code_repo")
 
-        not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
+        not_running_schedule = remote_repo.get_schedule("never_running_schedule")
 
         never_running_origin = not_running_schedule.get_remote_origin()
 
@@ -1067,7 +1191,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
     ) as full_workspace_context:
         with freeze_time(freeze_datetime):
             full_location = cast(
-                CodeLocation,
+                "CodeLocation",
                 next(
                     iter(
                         full_workspace_context.create_request_context()
@@ -1076,29 +1200,29 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
                     )
                 ).code_location,
             )
-            external_repo = full_location.get_repository("the_repo")
+            remote_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")
 
             # stop always on schedule
             status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
-            running_sched = status_in_code_repo.get_external_schedule("always_running_schedule")
+            running_sched = status_in_code_repo.get_schedule("always_running_schedule")
             instance.stop_schedule(
                 running_sched.get_remote_origin_id(),
                 running_sched.selector_id,
                 running_sched,
             )
 
-            external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
-            schedule_origin = external_schedule.get_remote_origin()
-            instance.start_schedule(external_schedule)
+            schedule = remote_repo.get_schedule("multi_run_list_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            instance.start_schedule(schedule)
 
-            other_schedule = other_repo.get_external_schedule("multi_run_list_schedule")
-            other_origin = external_schedule.get_remote_origin()
+            other_schedule = other_repo.get_schedule("multi_run_list_schedule")
+            other_origin = schedule.get_remote_origin()
             instance.start_schedule(other_schedule)
 
             assert instance.get_runs_count() == 0
 
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
@@ -1108,7 +1232,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             evaluate_schedules(full_workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 0
 
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
@@ -1121,7 +1245,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             assert (
                 instance.get_runs_count() == 4
             )  # 2 from each copy of multi_run_schedule in each repo
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1132,7 +1256,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             # Verify run idempotence by dropping ticks
             instance.purge_ticks(
                 schedule_origin.get_id(),
-                external_schedule.selector_id,
+                schedule.selector_id,
                 get_current_timestamp(),
             )
             instance.purge_ticks(
@@ -1143,7 +1267,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
 
             evaluate_schedules(full_workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 4  # still 4
-            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1155,15 +1279,15 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
 def test_stale_request_context(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    remote_repo: RemoteRepository,
 ):
     freeze_datetime = feb_27_2019_start_of_day()
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+        schedule = remote_repo.get_schedule("many_requests_schedule")
 
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule_origin = schedule.get_remote_origin()
 
-        instance.start_schedule(external_schedule)
+        instance.start_schedule(schedule)
         executor = ThreadPoolExecutor()
         blocking_executor = BlockingThreadPoolExecutor()
 
@@ -1190,14 +1314,14 @@ def test_stale_request_context(
         blocking_executor.allow()
         wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
 
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
         runs = instance.get_runs()
         assert len(runs) == 15, ticks[0].error
         validate_tick(
             ticks[0],
-            external_schedule,
+            schedule,
             freeze_datetime,
             TickStatus.SUCCESS,
             [run.run_id for run in runs],
@@ -1207,24 +1331,25 @@ def test_stale_request_context(
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_launch_failure(
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
         },
+        synchronous_run_coordinator=True,
     ) as scheduler_instance:
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        schedule = remote_repo.get_schedule("simple_schedule")
 
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
             exploding_ctx = workspace_context.copy_for_test_instance(scheduler_instance)
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(exploding_ctx, executor, get_current_datetime())
 
@@ -1239,13 +1364,11 @@ def test_launch_failure(
                 expected_success=False,
             )
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -1269,10 +1392,10 @@ def test_schedule_mutation(
     ).code_location.get_repository(  # type: ignore
         "the_repo"
     )
-    schedule_one = repo_one.get_external_schedule("simple_schedule")
+    schedule_one = repo_one.get_schedule("simple_schedule")
     origin_one = schedule_one.get_remote_origin()
     assert schedule_one.cron_schedule == "0 2 * * *"
-    schedule_two = repo_two.get_external_schedule("simple_schedule")
+    schedule_two = repo_two.get_schedule("simple_schedule")
     origin_two = schedule_two.get_remote_origin()
     assert schedule_two.cron_schedule == "0 1 * * *"
 
@@ -1323,21 +1446,19 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            schedule = remote_repo.get_schedule("simple_schedule")
 
-            schedule_origin = external_schedule.get_remote_origin()
+            schedule_origin = schedule.get_remote_origin()
 
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
@@ -1346,19 +1467,14 @@ class TestSchedulerRun:
             )
 
             assert len(iteration_times) == 1
+            assert iteration_times[schedule.selector_id].cron_schedule == schedule.cron_schedule
             assert (
-                iteration_times[external_schedule.selector_id].cron_schedule
-                == external_schedule.cron_schedule
-            )
-            assert (
-                iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                iteration_times[schedule.selector_id].next_iteration_timestamp
                 == freeze_datetime.timestamp() + 1
             )
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -1371,33 +1487,28 @@ class TestSchedulerRun:
             )
 
             assert len(new_iteration_times) == 1
-            assert (
-                new_iteration_times[external_schedule.selector_id].cron_schedule
-                == external_schedule.cron_schedule
-            )
+            assert new_iteration_times[schedule.selector_id].cron_schedule == schedule.cron_schedule
 
             # Next iteration is planned for between 1 and 2 hours from now due to random jitter
 
             assert (
-                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                new_iteration_times[schedule.selector_id].next_iteration_timestamp
                 > freeze_datetime.timestamp()
             )
             assert (
-                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                new_iteration_times[schedule.selector_id].next_iteration_timestamp
                 < freeze_datetime.timestamp() + 3600 * 2
             )
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -1420,9 +1531,7 @@ class TestSchedulerRun:
             )
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1437,9 +1546,7 @@ class TestSchedulerRun:
             )
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1456,19 +1563,14 @@ class TestSchedulerRun:
             assert new_iteration_times
 
             assert len(new_iteration_times) == 1
+            assert new_iteration_times[schedule.selector_id].cron_schedule == schedule.cron_schedule
             assert (
-                new_iteration_times[external_schedule.selector_id].cron_schedule
-                == external_schedule.cron_schedule
-            )
-            assert (
-                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                new_iteration_times[schedule.selector_id].next_iteration_timestamp
                 >= freeze_datetime.timestamp() + 3600
             )
 
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
             assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
 
@@ -1480,9 +1582,7 @@ class TestSchedulerRun:
                 iteration_times=new_iteration_times,
             )
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
 
     # Verify that the scheduler uses selector and not origin to dedupe schedules
@@ -1491,11 +1591,11 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        existing_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("simple_schedule")
+        existing_origin = schedule.get_remote_origin()
 
         code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
@@ -1518,7 +1618,7 @@ class TestSchedulerRun:
                 modified_origin,
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
-                ScheduleInstigatorData(external_schedule.cron_schedule, get_current_timestamp()),
+                ScheduleInstigatorData(schedule.cron_schedule, get_current_timestamp()),
             )
             scheduler_instance.add_instigator_state(schedule_state)
 
@@ -1528,9 +1628,7 @@ class TestSchedulerRun:
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                existing_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(existing_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1538,36 +1636,34 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            schedule = remote_repo.get_schedule("simple_schedule")
 
             # Create an old tick from several days ago
             scheduler_instance.create_tick(
                 TickData(
-                    instigator_origin_id=external_schedule.get_remote_origin_id(),
+                    instigator_origin_id=schedule.get_remote_origin_id(),
                     instigator_name="simple_schedule",
                     instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
                     timestamp=(get_current_datetime() - relativedelta(days=3)).timestamp(),
-                    selector_id=external_schedule.selector_id,
+                    selector_id=schedule.selector_id,
                 )
             )
 
-            schedule_origin = external_schedule.get_remote_origin()
-            scheduler_instance.start_schedule(external_schedule)
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1575,18 +1671,16 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("simple_schedule")
+        schedule_origin = schedule.get_remote_origin()
 
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert scheduler_instance.get_runs_count() == 0
 
-        ticks = scheduler_instance.get_ticks(
-            schedule_origin.get_id(), external_schedule.selector_id
-        )
+        ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1600,21 +1694,19 @@ class TestSchedulerRun:
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location is not None
-        external_repo = code_location.get_repository("the_repo")
-        external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
-        schedule_origin = external_schedule.get_remote_origin()
+        remote_repo = code_location.get_repository("the_repo")
+        schedule = remote_repo.get_schedule("simple_schedule_no_timezone")
+        schedule_origin = schedule.get_remote_origin()
         initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
 
         with freeze_time(initial_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
 
             assert len(ticks) == 1
 
@@ -1622,7 +1714,7 @@ class TestSchedulerRun:
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -1638,9 +1730,7 @@ class TestSchedulerRun:
             # Verify idempotence
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1648,26 +1738,24 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("wrong_config_schedule")
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -1679,19 +1767,18 @@ class TestSchedulerRun:
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
                 "DagsterInvalidConfigError",
                 expected_failure_count=1,
+                expected_consecutive_failure_count=1,
             )
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -1699,19 +1786,18 @@ class TestSchedulerRun:
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
                 "DagsterInvalidConfigError",
                 expected_failure_count=1,
+                expected_consecutive_failure_count=2,
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1719,28 +1805,26 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("wrong_config_schedule")
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(
                 workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
@@ -1756,14 +1840,12 @@ class TestSchedulerRun:
             )
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
@@ -1775,14 +1857,12 @@ class TestSchedulerRun:
                 workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
@@ -1795,19 +1875,18 @@ class TestSchedulerRun:
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
                 "Missing required config entry",
                 expected_failure_count=1,
+                expected_consecutive_failure_count=4,
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1815,7 +1894,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         # We need to use different keys across sync and async executors, as the dictionary is persisted across processes.
@@ -1823,11 +1902,11 @@ class TestSchedulerRun:
             schedule_name = "passes_on_retry_schedule_sync"
         else:
             schedule_name = "passes_on_retry_schedule_async"
-        external_schedule = external_repo.get_external_schedule(schedule_name)
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule(schedule_name)
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
         expected_schedule_time = freeze_datetime
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -1839,23 +1918,21 @@ class TestSchedulerRun:
 
             assert len(iteration_times) == 1
             assert (
-                iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                iteration_times[schedule.selector_id].next_iteration_timestamp
                 == expected_schedule_time.timestamp()
             )
             assert (
-                iteration_times[external_schedule.selector_id].last_iteration_timestamp
+                iteration_times[schedule.selector_id].last_iteration_timestamp
                 == expected_schedule_time.timestamp()
             )
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_schedule_time,
                 TickStatus.FAILURE,
                 [],
@@ -1873,27 +1950,24 @@ class TestSchedulerRun:
 
             assert len(new_iteration_times) == 1
             assert (
-                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                new_iteration_times[schedule.selector_id].next_iteration_timestamp
                 > freeze_datetime.timestamp()
             )
             assert (
-                new_iteration_times[external_schedule.selector_id].last_iteration_timestamp
+                new_iteration_times[schedule.selector_id].last_iteration_timestamp
                 == freeze_datetime.timestamp()
             )
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_schedule_time,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
-                expected_failure_count=1,
             )
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -1904,14 +1978,12 @@ class TestSchedulerRun:
             )
 
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_schedule_time,
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
@@ -1923,11 +1995,11 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("bad_should_execute_schedule")
+        schedule_origin = schedule.get_remote_origin()
         initial_datetime = create_datetime(
             year=2019,
             month=2,
@@ -1937,19 +2009,17 @@ class TestSchedulerRun:
             second=0,
         )
         with freeze_time(initial_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 initial_datetime,
                 TickStatus.FAILURE,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -1963,25 +2033,23 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("skip_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("skip_schedule")
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.SKIPPED,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -1993,26 +2061,24 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("wrong_config_schedule")
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
@@ -2025,14 +2091,14 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("default_config_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("default_config_schedule")
+        schedule_origin = schedule.get_remote_origin()
         initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(initial_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
@@ -2049,13 +2115,11 @@ class TestSchedulerRun:
                 expected_success=True,
             )
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 initial_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -2068,15 +2132,13 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule(
-            "static_partitioned_asset1_schedule"
-        )
+        schedule = remote_repo.get_schedule("static_partitioned_asset1_schedule")
         initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(initial_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
@@ -2095,13 +2157,11 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        good_schedule = external_repo.get_external_schedule("simple_schedule")
-        bad_schedule = external_repo.get_external_schedule(
-            "bad_should_execute_on_odd_days_schedule"
-        )
+        good_schedule = remote_repo.get_schedule("simple_schedule")
+        bad_schedule = remote_repo.get_schedule("bad_should_execute_on_odd_days_schedule")
 
         good_origin = good_schedule.get_remote_origin()
         bad_origin = bad_schedule.get_remote_origin()
@@ -2145,6 +2205,8 @@ class TestSchedulerRun:
             assert len(bad_ticks) == 1
 
             assert bad_ticks[0].status == TickStatus.FAILURE
+            assert bad_ticks[0].tick_data.consecutive_failure_count == 1
+            assert bad_ticks[0].tick_data.failure_count == 1
 
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule"
@@ -2211,28 +2273,38 @@ class TestSchedulerRun:
             )
             assert len(unloadable_ticks) == 0
 
+        freeze_datetime = (
+            freeze_datetime + relativedelta(days=2)
+        )  # 2 days to ensure its an odd day so the next tick will pass too and the consecutive failure count will recover
+        with freeze_time(freeze_datetime):
+            new_now = get_current_datetime()
+            evaluate_schedules(workspace_context, executor, new_now)
+            bad_ticks = scheduler_instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
+            assert len(bad_ticks) == 3
+            assert bad_ticks[0].status == TickStatus.SUCCESS
+            assert bad_ticks[0].tick_data.failure_count == 0
+            assert bad_ticks[0].consecutive_failure_count == 0
+
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_run_scheduled_on_time_boundary(
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        schedule = remote_repo.get_schedule("simple_schedule")
 
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule_origin = schedule.get_remote_origin()
         freeze_datetime = feb_27_2019_start_of_day()  # 00:00:00
         with freeze_time(freeze_datetime):
             # Start schedule exactly at midnight
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -2241,13 +2313,13 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
-            valid_schedule_origin = external_schedule.get_remote_origin()
+            schedule = remote_repo.get_schedule("simple_schedule")
+            valid_schedule_origin = schedule.get_remote_origin()
 
             # Swap out a new repository name
             invalid_repo_origin = RemoteInstigatorOrigin(
@@ -2272,9 +2344,7 @@ class TestSchedulerRun:
 
             assert scheduler_instance.get_runs_count() == 0
 
-            ticks = scheduler_instance.get_ticks(
-                invalid_repo_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(invalid_repo_origin.get_id(), schedule.selector_id)
 
             assert len(ticks) == 0
 
@@ -2283,13 +2353,13 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
-            valid_schedule_origin = external_schedule.get_remote_origin()
+            schedule = remote_repo.get_schedule("simple_schedule")
+            valid_schedule_origin = schedule.get_remote_origin()
 
             # Swap out a new schedule name
             invalid_repo_origin = RemoteInstigatorOrigin(
@@ -2322,7 +2392,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = create_datetime(
@@ -2330,8 +2400,8 @@ class TestSchedulerRun:
         ).astimezone(get_timezone("US/Central"))
 
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
-            valid_schedule_origin = external_schedule.get_remote_origin()
+            schedule = remote_repo.get_schedule("simple_schedule")
+            valid_schedule_origin = schedule.get_remote_origin()
 
             code_location_origin = valid_schedule_origin.repository_origin.code_location_origin
             assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
@@ -2370,15 +2440,15 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        external_hourly_schedule = external_repo.get_external_schedule("simple_hourly_schedule")
+        schedule = remote_repo.get_schedule("simple_schedule")
+        hourly_schedule = remote_repo.get_schedule("simple_hourly_schedule")
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
-            scheduler_instance.start_schedule(external_hourly_schedule)
+            scheduler_instance.start_schedule(schedule)
+            scheduler_instance.start_schedule(hourly_schedule)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
@@ -2386,14 +2456,14 @@ class TestSchedulerRun:
 
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
-                external_schedule.get_remote_origin_id(), external_schedule.selector_id
+                schedule.get_remote_origin_id(), schedule.selector_id
             )
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
             hourly_ticks = scheduler_instance.get_ticks(
-                external_hourly_schedule.get_remote_origin_id(),
-                external_hourly_schedule.selector_id,
+                hourly_schedule.get_remote_origin_id(),
+                hourly_schedule.selector_id,
             )
             assert len(hourly_ticks) == 1
             assert hourly_ticks[0].status == TickStatus.SUCCESS
@@ -2405,14 +2475,14 @@ class TestSchedulerRun:
             assert scheduler_instance.get_runs_count() == 3
 
             ticks = scheduler_instance.get_ticks(
-                external_schedule.get_remote_origin_id(), external_schedule.selector_id
+                schedule.get_remote_origin_id(), schedule.selector_id
             )
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
             hourly_ticks = scheduler_instance.get_ticks(
-                external_hourly_schedule.get_remote_origin_id(),
-                external_hourly_schedule.selector_id,
+                hourly_schedule.get_remote_origin_id(),
+                hourly_schedule.selector_id,
             )
             assert len(hourly_ticks) == 2
             assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2
@@ -2422,24 +2492,22 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         # This is a Wednesday.
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("union_schedule")
-            schedule_origin = external_schedule.get_remote_origin()
-            scheduler_instance.start_schedule(external_schedule)
+            schedule = remote_repo.get_schedule("union_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
 
         # No new runs should be launched
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -2449,14 +2517,12 @@ class TestSchedulerRun:
 
             wait_for_all_runs_to_start(scheduler_instance)
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 create_datetime(year=2019, month=2, day=28),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
@@ -2476,14 +2542,12 @@ class TestSchedulerRun:
 
             wait_for_all_runs_to_start(scheduler_instance)
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 create_datetime(year=2019, month=3, day=1),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
@@ -2502,14 +2566,12 @@ class TestSchedulerRun:
 
             wait_for_all_runs_to_start(scheduler_instance)
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 3
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 create_datetime(year=2019, month=3, day=1, hour=12),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
@@ -2528,9 +2590,7 @@ class TestSchedulerRun:
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 3
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 3
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2538,36 +2598,30 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("multi_run_schedule")
-            schedule_origin = external_schedule.get_remote_origin()
-            scheduler_instance.start_schedule(external_schedule)
+            schedule = remote_repo.get_schedule("multi_run_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             expected_datetime = create_datetime(year=2019, month=2, day=28)
@@ -2575,7 +2629,7 @@ class TestSchedulerRun:
             runs = scheduler_instance.get_runs()
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in runs],
@@ -2593,9 +2647,7 @@ class TestSchedulerRun:
             # Verify idempotence
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -2604,48 +2656,83 @@ class TestSchedulerRun:
             # Traveling one more day in the future before running results in a tick
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 4
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
             assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
             runs = scheduler_instance.get_runs()
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_multi_run_dup_key(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        remote_repo: RemoteRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with freeze_time(freeze_datetime):
+            schedule = remote_repo.get_schedule("dup_run_key_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime + relativedelta(seconds=2)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 1
+
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
+
+            runs = scheduler_instance.get_runs()
+            validate_tick(
+                ticks[0],
+                schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in runs],
+            )
+            assert runs[0].tags["label"] == "A"
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_multi_run_list(
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
-            schedule_origin = external_schedule.get_remote_origin()
-            scheduler_instance.start_schedule(external_schedule)
+            schedule = remote_repo.get_schedule("multi_run_list_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 0
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             expected_datetime = create_datetime(year=2019, month=2, day=28)
@@ -2653,7 +2740,7 @@ class TestSchedulerRun:
             runs = scheduler_instance.get_runs()
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in runs],
@@ -2671,9 +2758,7 @@ class TestSchedulerRun:
             # Verify idempotence
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -2682,9 +2767,7 @@ class TestSchedulerRun:
             # Traveling one more day in the future before running results in a tick
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 4
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 2
             assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
             runs = scheduler_instance.get_runs()
@@ -2694,27 +2777,23 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule(
-                "multi_run_schedule_with_missing_run_key"
-            )
-            schedule_origin = external_schedule.get_remote_origin()
-            scheduler_instance.start_schedule(external_schedule)
+            schedule = remote_repo.get_schedule("multi_run_schedule_with_missing_run_key")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
@@ -2728,14 +2807,14 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("large_schedule")
-            schedule_origin = external_schedule.get_remote_origin()
-            scheduler_instance.start_schedule(external_schedule)
+            schedule = remote_repo.get_schedule("large_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
 
             freeze_datetime = freeze_datetime + relativedelta(seconds=2)
 
@@ -2743,9 +2822,7 @@ class TestSchedulerRun:
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2753,28 +2830,26 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("empty_schedule")
+            schedule = remote_repo.get_schedule("empty_schedule")
 
-            schedule_origin = external_schedule.get_remote_origin()
+            schedule_origin = schedule.get_remote_origin()
 
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.SKIPPED,
                 [],
@@ -2786,17 +2861,17 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
         submit_executor: Optional[ThreadPoolExecutor],
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+            schedule = remote_repo.get_schedule("many_requests_schedule")
 
-            schedule_origin = external_schedule.get_remote_origin()
+            schedule_origin = schedule.get_remote_origin()
 
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
             evaluate_schedules(
                 workspace_context,
@@ -2805,59 +2880,54 @@ class TestSchedulerRun:
                 submit_executor=submit_executor,
             )
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             runs = scheduler_instance.get_runs()
             assert len(runs) == 15
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 freeze_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in runs],
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
-    def test_asset_selection(
+    def test_asset_check_selection(
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
+        # TestSchedulerRun::test_asset_check_selection
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("asset_selection_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("asset_check_selection_schedule")
+        schedule_origin = schedule.get_remote_origin()
 
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
 
             # launch_scheduled_runs does nothing before the first tick
             evaluate_schedules(workspace_context, executor, get_current_datetime())
-            scheduler_instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -2866,6 +2936,54 @@ class TestSchedulerRun:
             wait_for_all_runs_to_start(scheduler_instance)
             run = next(iter(scheduler_instance.get_runs()))
             assert run.asset_selection == {AssetKey("asset1")}
+            assert run.asset_check_selection == {asset_1_check_1.check_key}
+
+            validate_run_started(
+                scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_asset_selection(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        remote_repo: RemoteRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        schedule = remote_repo.get_schedule("asset_selection_schedule")
+        schedule_origin = schedule.get_remote_origin()
+
+        with freeze_time(freeze_datetime):
+            scheduler_instance.start_schedule(schedule)
+
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+
+        freeze_datetime = freeze_datetime + relativedelta(seconds=2)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 1
+
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
+
+            validate_tick(
+                ticks[0],
+                schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            run = next(iter(scheduler_instance.get_runs()))
+            assert run.asset_selection == {dg.AssetKey("asset1")}
 
             validate_run_started(
                 scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
@@ -2876,14 +2994,14 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+        schedule = remote_repo.get_schedule("stale_asset_selection_schedule")
 
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
         # never materialized so all assets stale
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -2894,7 +3012,7 @@ class TestSchedulerRun:
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
             )
             assert schedule_run is not None
-            assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
+            assert schedule_run.asset_selection == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}
             validate_run_started(
                 scheduler_instance, schedule_run, execution_time=create_datetime(2019, 2, 28)
             )
@@ -2904,16 +3022,16 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+        schedule = remote_repo.get_schedule("stale_asset_selection_schedule")
 
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
-        materialize([asset1, asset2], instance=scheduler_instance)
+        dg.materialize([asset1, asset2], instance=scheduler_instance)
 
         # assets previously materialized so we expect empy set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -2930,16 +3048,16 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+        schedule = remote_repo.get_schedule("stale_asset_selection_schedule")
 
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
-        materialize([asset1], instance=scheduler_instance)
+        dg.materialize([asset1], instance=scheduler_instance)
 
         # assets previously materialized so we expect empy set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -2950,45 +3068,41 @@ class TestSchedulerRun:
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
             )
             assert schedule_run is not None
-            assert schedule_run.asset_selection == {AssetKey("asset2")}
+            assert schedule_run.asset_selection == {dg.AssetKey("asset2")}
             validate_run_started(
                 scheduler_instance, schedule_run, execution_time=create_datetime(2019, 2, 28)
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_source_asset_observation(
-        self, scheduler_instance: DagsterInstance, workspace_context, external_repo, executor
+        self, scheduler_instance: DagsterInstance, workspace_context, remote_repo, executor
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("source_asset_observation_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule = remote_repo.get_schedule("source_asset_observation_schedule")
+        schedule_origin = schedule.get_remote_origin()
 
         with freeze_time(freeze_datetime):
-            scheduler_instance.start_schedule(external_schedule)
+            scheduler_instance.start_schedule(schedule)
 
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
 
             # launch_scheduled_runs does nothing before the first tick
             evaluate_schedules(workspace_context, executor, get_current_datetime())
-            scheduler_instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
-            ticks = scheduler_instance.get_ticks(
-                schedule_origin.get_id(), external_schedule.selector_id
-            )
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
             assert len(ticks) == 1
 
             expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
-                external_schedule,
+                schedule,
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
@@ -2996,7 +3110,7 @@ class TestSchedulerRun:
 
             wait_for_all_runs_to_start(scheduler_instance)
             run = next(iter(scheduler_instance.get_runs()))
-            assert run.asset_selection == {AssetKey("source_asset")}
+            assert run.asset_selection == {dg.AssetKey("source_asset")}
 
             validate_run_started(
                 scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
@@ -3007,23 +3121,23 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ) -> None:
         freeze_datetime = feb_27_2019_one_second_to_midnight()
 
         with freeze_time(freeze_datetime):
-            job_with_tags_with_run_tags_schedule = external_repo.get_external_schedule(
+            job_with_tags_with_run_tags_schedule = remote_repo.get_schedule(
                 "job_with_tags_with_run_tags_schedule"
             )
             scheduler_instance.start_schedule(job_with_tags_with_run_tags_schedule)
 
-            job_with_tags_no_run_tags_schedule = external_repo.get_external_schedule(
+            job_with_tags_no_run_tags_schedule = remote_repo.get_schedule(
                 "job_with_tags_no_run_tags_schedule"
             )
             scheduler_instance.start_schedule(job_with_tags_no_run_tags_schedule)
 
-            job_no_tags_with_run_tags_schedule = external_repo.get_external_schedule(
+            job_no_tags_with_run_tags_schedule = remote_repo.get_schedule(
                 "job_no_tags_with_run_tags_schedule"
             )
             scheduler_instance.start_schedule(job_no_tags_with_run_tags_schedule)

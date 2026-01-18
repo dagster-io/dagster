@@ -1,7 +1,0 @@
-- id: view-freshness-check.png
-  workspace: examples/docs_snippets/docs_snippets/concepts/assets/asset_checks/source_data_freshness_complete.py
-  steps:
-    - click on the assets tab
-    - click on the charges asset
-    - click on the checks tab
-  vetted: false 

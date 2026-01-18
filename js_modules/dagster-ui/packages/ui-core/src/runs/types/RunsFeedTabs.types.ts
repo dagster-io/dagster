@@ -5,6 +5,7 @@ import * as Types from '../../graphql/types';
 export type RunFeedTabsCountQueryVariables = Types.Exact<{
   queuedFilter: Types.RunsFilter;
   inProgressFilter: Types.RunsFilter;
+  view: Types.RunsFeedView;
 }>;
 
 export type RunFeedTabsCountQuery = {
@@ -13,4 +14,4 @@ export type RunFeedTabsCountQuery = {
   inProgressCount: {__typename: 'PythonError'} | {__typename: 'RunsFeedCount'; count: number};
 };
 
-export const RunFeedTabsCountQueryVersion = '5ddccded028ae94b64bda3c2b850bcc8f384de9851c0dd393f158b2a53469262';
+export const RunFeedTabsCountQueryVersion = '5bf6c4d00cebf6817ce69cc4fc6d25c99b98f7a9031934b61187f95020880b4a';

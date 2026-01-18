@@ -1,4 +1,5 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions.job_definition import JobDefinition
@@ -43,7 +44,7 @@ class DagsterTypeNamespaceSnapshot(
     )
 ):
     def __new__(cls, all_dagster_type_snaps_by_key: Mapping[str, "DagsterTypeSnap"]):
-        return super(DagsterTypeNamespaceSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             all_dagster_type_snaps_by_key=check.mapping_param(
                 all_dagster_type_snaps_by_key,
@@ -93,7 +94,7 @@ class DagsterTypeSnap(
         materializer_schema_key=None,
         metadata=None,
     ):
-        return super(DagsterTypeSnap, cls).__new__(
+        return super().__new__(
             cls,
             kind=check.inst_param(kind, "kind", DagsterTypeKind),
             key=check.str_param(key, "key"),

@@ -1,10 +1,15 @@
 import pytest
 import yaml
-from dagster._core.instance.config import schedules_daemon_config, sensors_daemon_config
+from dagster._core.instance.config import (
+    backfills_daemon_config,
+    schedules_daemon_config,
+    sensors_daemon_config,
+)
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.daemon import (
+    Backfills,
     Daemon,
     QueuedRunCoordinatorConfig,
     RunCoordinator,
@@ -195,7 +200,9 @@ def test_queued_run_coordinator_unique_values(
                     queuedRunCoordinator=QueuedRunCoordinatorConfig.construct(
                         tagConcurrencyLimits=[
                             TagConcurrencyLimit.construct(
-                                key="foo", value={"applyLimitPerUniqueValue": True}, limit=1
+                                key="foo",
+                                value={"applyLimitPerUniqueValue": True},
+                                limit=1,
                             )
                         ]
                     ),
@@ -298,7 +305,24 @@ def test_run_monitoring_set_max_resume_run_attempts(
     assert instance["run_monitoring"]["max_resume_run_attempts"] == 2
 
 
-def test_sensor_schedule_threading_default(
+def test_run_monitoring_set_max_runtime_seconds(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True, "maxRuntimeSeconds": 2})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_monitoring"]["enabled"] is True
+    assert instance["run_monitoring"]["max_runtime_seconds"] == 2
+
+
+def test_sensor_schedule_backfill_threading_default(
     instance_template: HelmTemplate,
 ):
     helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
@@ -314,6 +338,8 @@ def test_sensor_schedule_threading_default(
 
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
+
+    assert "backfills" not in instance
 
 
 def test_schedule_threading_disabled(
@@ -351,6 +377,27 @@ def test_sensor_threading_disabled(
     assert instance["schedules"]["num_workers"] == 4
 
     assert "sensors" not in instance
+
+
+def test_backfill_threading_disabled(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(backfills={"useThreads": False})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+
+    assert instance["backfills"]["use_threads"] is False
 
 
 def test_run_retries_default(
@@ -428,7 +475,11 @@ def test_run_retries_retry_on_asset_op_op_failure(
 
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            runRetries={"enabled": True, "maxRetries": 4, "retryOnAssetOrOpFailure": True}
+            runRetries={
+                "enabled": True,
+                "maxRetries": 4,
+                "retryOnAssetOrOpFailure": True,
+            }
         )
     )
 
@@ -462,7 +513,10 @@ def test_daemon_labels(template: HelmTemplate):
 def test_daemon_volumes(template: HelmTemplate):
     volumes = [
         {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
-        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+        {
+            "name": "test-pvc",
+            "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False},
+        },
     ]
 
     volume_mounts = [
@@ -491,7 +545,8 @@ def test_daemon_volumes(template: HelmTemplate):
     deployed_volumes = daemon_deployment.spec.template.spec.volumes
     assert deployed_volumes[2:] == [
         k8s_model_from_dict(
-            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+            k8s_client.models.V1Volume,
+            k8s_snake_case_dict(k8s_client.models.V1Volume, volume),
         )
         for volume in volumes
     ]
@@ -510,7 +565,6 @@ def test_sensor_threading(instance_template: HelmTemplate):
     configmaps = instance_template.render(helm_values)
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-    sensors_config = instance["sensors"]
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
     assert "num_submit_workers" not in instance["sensors"]
@@ -548,7 +602,6 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     configmaps = instance_template.render(helm_values)
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-    schedules_config = instance["schedules"]
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
     assert "num_submit_workers" not in instance["schedules"]
@@ -569,6 +622,39 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     assert instance["schedules"]["num_submit_workers"] == 8
 
 
+def test_backfill_threading(instance_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            backfills=Backfills.construct(
+                useThreads=True,
+                numWorkers=4,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["backfills"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            backfills=Backfills.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    backfills_config = instance["backfills"]
+    assert backfills_config.keys() == backfills_daemon_config().config_type.fields.keys()
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
+    assert instance["backfills"]["num_submit_workers"] == 8
+
+
 def test_scheduler_name(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(schedulerName="custom")
@@ -580,9 +666,14 @@ def test_scheduler_name(template: HelmTemplate):
 
 
 def test_init_container_resources(template: HelmTemplate):
-    init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
+    init_container_resources = {
+        "limits": {"cpu": "200m"},
+        "requests": {"memory": "1Gi"},
+    }
     helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct(initContainerResources=init_container_resources)
+        dagsterDaemon=Daemon.construct(
+            initContainerResources=kubernetes.Resources.parse_obj(init_container_resources)
+        )
     )
 
     [webserver_deployment] = template.render(helm_values)
@@ -677,3 +768,70 @@ def test_env_configmap(env_configmap_template):
     assert len(cm.data) == 6
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert cm.data["TEST_ENV"] == "test_value"
+
+
+def test_check_db_container_toggle(template: HelmTemplate):
+    # Off test
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(checkDbReadyInitContainer=False)
+    )
+    [daemon_deployment] = template.render(helm_values)
+    assert daemon_deployment.spec.template.spec.init_containers is None or "check-db-ready" not in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]
+
+    # On test
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(checkDbReadyInitContainer=True)
+    )
+    [daemon_deployment] = template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]
+
+    # Default test
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+    [daemon_deployment] = template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]
+
+
+def test_daemon_extra_containers(template: HelmTemplate):
+    extra_containers = [
+        {
+            "name": "extra-container",
+            "image": "busybox",
+        }
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(extraContainers=extra_containers)
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert any(
+        container.name == "extra-container" and container.image == "busybox"
+        for container in daemon_deployment.spec.template.spec.containers
+    )
+
+
+def test_daemon_extra_prepend_init_containers(template: HelmTemplate):
+    extra_init_containers = [
+        {
+            "name": "extra-init-container",
+            "image": "busybox",
+        }
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(extraPrependedInitContainers=extra_init_containers)
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert any(
+        container.name == "extra-init-container" and container.image == "busybox"
+        for container in daemon_deployment.spec.template.spec.init_containers
+    )

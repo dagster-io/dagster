@@ -1,0 +1,46 @@
+.loadingBar {
+  z-index: 1;
+  height: 0px;
+  width: 100%;
+  flex-shrink: 0;
+  border-radius: 0 0 8px 8px;
+  position: relative;
+  &::before {
+    position: absolute;
+    top: calc(var(--height) * -1);
+    content: '';
+    display: block;
+    height: var(--height);
+    width: 100%;
+    background: var(--color-background-gray);
+  }
+}
+
+.loading {
+  &::after {
+    position: absolute;
+    top: calc(var(--height) * -1); 
+    content: ' ';
+    display: block;
+    height: var(--height);
+    width: 100%;
+    background: var(--color-text-disabled);
+    transform-origin: left center;
+    will-change: transform;
+    animation: load 2s infinite;
+    contain: layout style size;
+    isolation: isolate;
+  }
+}
+
+@keyframes load {
+  0% {
+    transform: scaleX(0);
+  }
+  50% {
+    transform: scaleX(0.5);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}

@@ -1,6 +1,6 @@
 import pytest
-from dagster._model import DagsterModel
-from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 from pydantic import ValidationError
 
 
@@ -69,10 +69,10 @@ def test_non_model_param():
     assert MyModel(some_class=SomeClass())
 
     with pytest.raises(ValidationError):
-        MyModel(some_class=OtherClass())  # wrong class
+        MyModel(some_class=OtherClass())  # wrong class  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(ValidationError):
-        MyModel(some_class=SomeClass)  # forgot ()
+        MyModel(some_class=SomeClass)  # forgot ()  # pyright: ignore[reportArgumentType]
 
 
 def test_cached_method() -> None:

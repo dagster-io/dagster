@@ -7,16 +7,17 @@ import {
   MiddleTruncate,
   Tag,
   Tooltip,
+  useDelayedState,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {gql, useLazyQuery} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';
@@ -26,7 +27,8 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
-import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
+import {SensorSwitch} from '../sensors/SensorSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitchFragment';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
@@ -60,20 +62,24 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     height,
   } = props;
 
-  const [querySensor, sensorQueryResult] = useLazyQuery<
-    SingleSensorQuery,
-    SingleSensorQueryVariables
-  >(SINGLE_SENSOR_QUERY, {
-    variables: {
-      selector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-        sensorName: name,
-      },
-    },
-  });
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
 
-  const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
+  const sensorQueryResult = useQuery<SingleSensorQuery, SingleSensorQueryVariables>(
+    SINGLE_SENSOR_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          sensorName: name,
+        },
+      },
+      skip: !shouldQuery,
+    },
+  );
+
+  const sensorAssetSelectionQueryResult = useQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
   >(SENSOR_ASSET_SELECTIONS_QUERY, {
@@ -84,14 +90,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         sensorName: name,
       },
     },
+    skip: !shouldQuery,
   });
-
-  useDelayedRowQuery(
-    React.useCallback(() => {
-      querySensor();
-      querySensorAssetSelection();
-    }, [querySensor, querySensorAssetSelection]),
-  );
 
   useQueryRefreshAtInterval(sensorQueryResult, FIFTEEN_SECONDS);
   useQueryRefreshAtInterval(sensorAssetSelectionQueryResult, FIFTEEN_SECONDS);
@@ -220,7 +220,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         <RowCell>
           {tick ? (
             <div>
-              <TickStatusTag tick={tick} />
+              <TickStatusTag tick={tick} tickResultType="runs" />
             </div>
           ) : (
             <LoadingOrNone queryResult={sensorQueryResult} />
@@ -284,14 +284,15 @@ export const SENSOR_TYPE_META: Record<
   },
   [SensorType.AUTO_MATERIALIZE]: {
     name: 'Automation condition sensor',
-    icon: 'auto_materialize_policy',
+    icon: 'automation_condition',
     description:
-      'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
+      'Automation condition sensors trigger runs based on conditions defined on assets or checks.',
   },
   [SensorType.AUTOMATION]: {
     name: 'Automation condition sensor',
-    icon: 'auto_materialize_policy',
-    description: 'Automation sensors trigger runs based on conditions defined on assets.',
+    icon: 'automation_condition',
+    description:
+      'Automation condition sensors trigger runs based on conditions defined on assets or checks.',
   },
   [SensorType.FRESHNESS_POLICY]: {
     name: 'Freshness policy sensor',
@@ -338,7 +339,6 @@ export const SINGLE_SENSOR_QUERY = gql`
           }
         }
         minIntervalSeconds
-        description
         sensorState {
           id
           runningCount

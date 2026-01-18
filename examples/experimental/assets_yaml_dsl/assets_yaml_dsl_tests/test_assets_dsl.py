@@ -1,5 +1,3 @@
-from typing import List
-
 import yaml
 from assets_yaml_dsl.pure_assets_dsl.assets_dsl import from_asset_entries
 from dagster import AssetsDefinition
@@ -8,7 +6,7 @@ from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 
-def assets_defs_from_yaml(yaml_string) -> List[AssetsDefinition]:
+def assets_defs_from_yaml(yaml_string) -> list[AssetsDefinition]:
     return from_asset_entries(yaml.safe_load(yaml_string))
 
 

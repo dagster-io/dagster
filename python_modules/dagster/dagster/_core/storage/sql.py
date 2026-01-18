@@ -1,6 +1,6 @@
 import threading
 from functools import lru_cache
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, TypeAlias, Union
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -10,7 +10,6 @@ from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.compiler import compiles
-from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
 
@@ -25,7 +24,7 @@ SqlAlchemyQuery: TypeAlias = Any
 # Stand-in for a typed row object, which is only available in sqlalchemy 2+
 SqlAlchemyRow: TypeAlias = Any
 
-AlembicVersion: TypeAlias = Tuple[Optional[str], Optional[Union[str, Tuple[str, ...]]]]
+AlembicVersion: TypeAlias = tuple[Optional[str], Optional[Union[str, tuple[str, ...]]]]
 
 
 @lru_cache(maxsize=3)  # run, event, and schedule storages
@@ -76,6 +75,16 @@ def check_alembic_revision(alembic_config: Config, conn: Connection) -> AlembicV
         head_revision = script.as_revision_number("head")
 
     return (db_revision, head_revision)
+
+
+def safe_commit(conn: Connection) -> None:
+    """Commits to a connection if it is in a transaction. Supports compatibility across SQLAlchemy versions,
+    since older versions (1.3) have autocommit on transactions, instead of explicit commits.
+    """
+    if not conn.in_transaction():
+        return
+    if hasattr(conn, "commit"):
+        conn.commit()  # type: ignore
 
 
 def run_migrations_offline(

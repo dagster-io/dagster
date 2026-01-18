@@ -1,0 +1,26 @@
+[project]
+name = "{{ project_name }}"
+requires-python = ">=3.10,<3.15"
+version = "0.1.0"
+{{ dependencies }}
+
+[dependency-groups]
+{{ dev_dependencies }}
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+force-include = { "pyproject.toml" = "pyproject.toml" }
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "{{ project_name }}"
+registry_modules = [
+    "{{ project_name }}.components.*",
+]
+
+{{ uv_sources }}

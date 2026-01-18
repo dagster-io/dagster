@@ -1,11 +1,11 @@
+import dagster as dg
 import pytest
-from dagster import ConfigMapping, Field, graph, op
 from dagster._check import CheckError
 from dagster._config import ConfigAnyInstance
 
 
 def test_op_field_backcompat():
-    @op
+    @dg.op
     def op_without_schema(_):
         pass
 
@@ -13,7 +13,7 @@ def test_op_field_backcompat():
     assert field.config_type == ConfigAnyInstance
     assert not field.is_required
 
-    @op(config_schema=Field(str))
+    @dg.op(config_schema=dg.Field(str))
     def op_with_schema(_):
         pass
 
@@ -27,7 +27,7 @@ def test_op_field_backcompat():
     with pytest.raises(CheckError):
         op_with_schema.config_schema.default_value_as_json_str  # noqa: B018
 
-    @op(config_schema=Field(int, default_value=4, description="foo"))
+    @dg.op(config_schema=dg.Field(int, default_value=4, description="foo"))
     def op_with_all_properties(_):
         pass
 
@@ -39,17 +39,17 @@ def test_op_field_backcompat():
 
 
 def test_composite_field_backwards_compat():
-    @op
+    @dg.op
     def noop(_):
         pass
 
-    @graph
+    @dg.graph
     def bare_graph():
         noop()
 
     assert bare_graph.config_schema is None
 
-    @graph(config=ConfigMapping(config_schema=int, config_fn=lambda _: 4))
+    @dg.graph(config=dg.ConfigMapping(config_schema=int, config_fn=lambda _: 4))
     def graph_with_int():
         noop()
 
@@ -63,9 +63,9 @@ def test_composite_field_backwards_compat():
     with pytest.raises(CheckError):
         graph_with_int.config_schema.default_value_as_json_str  # noqa: B018
 
-    @graph(
-        config=ConfigMapping(
-            config_schema=Field(int, default_value=2, description="bar"),
+    @dg.graph(
+        config=dg.ConfigMapping(
+            config_schema=dg.Field(int, default_value=2, description="bar"),
             config_fn=lambda _: 4,
         )
     )

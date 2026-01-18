@@ -1,4 +1,5 @@
-import mock
+from unittest import mock
+
 import pytest
 from dagster import (
     DagsterEvent,
@@ -91,8 +92,8 @@ def test_longitudinal_job(executor_def):
         result = longitudinal.to_job(
             resource_defs={"io_manager": fs_io_manager},
             executor_def=executor_def,
-            config=longitudinal_schedule().job.partitioned_config,
-        ).execute_in_process(partition_key=partitions_def.get_partition_keys()[0])
+            config=longitudinal_schedule().job.partitioned_config,  # pyright: ignore[reportAttributeAccessIssue]
+        ).execute_in_process(partition_key=partitions_def.get_partition_keys()[0])  # pyright: ignore[reportOptionalMemberAccess]
         assert result.success
     except IntentionalRandomFailure:
         pass
@@ -323,7 +324,7 @@ def test_software_defined_assets_job():
             assets=software_defined_assets,
             jobs=[define_asset_job("all_assets")],
         )
-        .get_job_def("all_assets")
+        .resolve_job_def("all_assets")
         .execute_in_process()
         .success
     )

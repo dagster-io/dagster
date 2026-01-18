@@ -1,0 +1,14 @@
+functions:
+  - name: is_positive_int # required
+    description: My UDF that returns 1 if a string represents a naked positive integer (like "10", "+8" is not allowed). # optional
+    config:
+      runtime_version: "3.11"
+      entry_point: main
+      volatility: deterministic
+    arguments:
+      - name: a_string
+        data_type: string
+        description: The string that I want to check if it's representing a positive integer (like "10")
+        default_value: "'1'"
+    returns:
+      data_type: integer

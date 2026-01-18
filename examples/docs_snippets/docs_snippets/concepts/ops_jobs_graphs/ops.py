@@ -3,7 +3,7 @@
 
 import requests
 
-from dagster import DagsterType, In, Nothing, Out, op, OpExecutionContext, Config
+import dagster as dg
 
 
 class MockResponse:
@@ -21,7 +21,7 @@ requests = MockRequest()
 # start_op_marker
 
 
-@op
+@dg.op
 def my_op():
     return "hello"
 
@@ -30,14 +30,14 @@ def my_op():
 
 
 # start_configured_op_marker
-from dagster import Config
+import dagster as dg
 
 
-class MyOpConfig(Config):
+class MyOpConfig(dg.Config):
     api_endpoint: str
 
 
-@op
+@dg.op
 def my_configurable_op(config: MyOpConfig):
     data = requests.get(f"{config.api_endpoint}/data").json()
     return data
@@ -45,10 +45,9 @@ def my_configurable_op(config: MyOpConfig):
 
 # end_configured_op_marker
 
+
 # start_input_op_marker
-
-
-@op
+@dg.op
 def my_input_op(abc, xyz):
     pass
 
@@ -57,14 +56,12 @@ def my_input_op(abc, xyz):
 
 
 # start_typed_input_op_marker
-
-
-MyDagsterType = DagsterType(
+MyDagsterType = dg.DagsterType(
     type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
 )
 
 
-@op(ins={"abc": In(dagster_type=MyDagsterType)})
+@dg.op(ins={"abc": dg.In(dagster_type=MyDagsterType)})
 def my_typed_input_op(abc):
     pass
 
@@ -73,19 +70,16 @@ def my_typed_input_op(abc):
 
 
 # start_output_op_marker
-
-
-@op
+@dg.op
 def my_output_op():
     return 5
 
 
 # end_output_op_marker
 
+
 # start_multi_output_op_marker
-
-
-@op(out={"first_output": Out(), "second_output": Out()})
+@dg.op(out={"first_output": dg.Out(), "second_output": dg.Out()})
 def my_multi_output_op():
     return 5, 6
 
@@ -94,8 +88,8 @@ def my_multi_output_op():
 
 
 # start_op_context_marker
-@op
-def context_op(context: OpExecutionContext):
+@dg.op
+def context_op(context: dg.OpExecutionContext):
     context.log.info(f"My run ID is {context.run_id}")
 
 
@@ -116,7 +110,7 @@ def my_op_factory(
         function: The new op.
     """
 
-    @op(name=name, ins=ins or {"start": In(Nothing)}, **kwargs)
+    @dg.op(name=name, ins=ins or {"start": dg.In(dg.Nothing)}, **kwargs)
     def my_inner_op(**kwargs):
         # Op logic here
         pass
@@ -127,34 +121,32 @@ def my_op_factory(
 # end_op_factory_pattern_marker
 
 # start_return_annotation
-from dagster import op
+import dagster as dg
 
 
-@op
+@dg.op
 def return_annotation_op() -> int:
     return 5
 
 
 # end_return_annotation
 # start_tuple_return
-from dagster import op
-from typing import Tuple
+import dagster as dg
 
 
-@op(out={"int_output": Out(), "str_output": Out()})
-def my_multiple_output_annotation_op() -> Tuple[int, str]:
+@dg.op(out={"int_output": dg.Out(), "str_output": dg.Out()})
+def my_multiple_output_annotation_op() -> tuple[int, str]:
     return (5, "foo")
 
 
 # end_tuple_return
 
 # start_single_output_tuple
-from dagster import op
-from typing import Tuple
+import dagster as dg
 
 
-@op
-def my_single_tuple_output_op() -> Tuple[int, str]:
+@dg.op
+def my_single_tuple_output_op() -> tuple[int, str]:
     return (5, "foo")  # Will be viewed as one output
 
 

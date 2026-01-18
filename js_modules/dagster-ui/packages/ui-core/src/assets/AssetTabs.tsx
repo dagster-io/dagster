@@ -1,9 +1,8 @@
-import {Tab, Tabs} from '@dagster-io/ui-components';
+import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
 
 import {AssetViewParams} from './types';
-import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {TabLink} from '../ui/TabLink';
 
 interface Props {
@@ -18,9 +17,20 @@ export const AssetTabs = (props: Props) => {
     <Tabs size="large" selectedTabId={selectedTab}>
       {tabs
         .filter((tab) => !tab.hidden)
-        .map(({id, title, to, disabled}) => {
+        .map(({id, title, to, tooltip, disabled}) => {
           if (disabled) {
-            return <Tab disabled key={id} id={id} title={title} />;
+            return (
+              <Tab
+                disabled
+                key={id}
+                id={id}
+                title={
+                  <Tooltip content={tooltip || ''} canShow={!!tooltip} placement="top">
+                    {title}
+                  </Tooltip>
+                }
+              />
+            );
           }
           return <TabLink key={id} id={id} title={title} to={to} disabled={disabled} />;
         })}
@@ -38,7 +48,15 @@ export const DEFAULT_ASSET_TAB_ORDER = [
 ] as const;
 
 export type AssetTabConfigInput = {
-  definition: AssetViewDefinitionNodeFragment | null;
+  definition:
+    | {
+        isMaterializable: boolean;
+        isObservable: boolean;
+        automationCondition: {__typename: 'AutomationCondition'} | null | undefined;
+        partitionDefinition: {__typename: 'PartitionDefinition'} | null | undefined;
+      }
+    | null
+    | undefined;
   params: AssetViewParams;
 };
 
@@ -47,48 +65,49 @@ export type AssetTabConfig = {
   title: string;
   to: string;
   disabled?: boolean;
+  tooltip?: string;
   hidden?: boolean;
 };
 
 export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringify(params)}`;
 
 export const buildAssetTabMap = (input: AssetTabConfigInput) => {
-  const {definition, params} = input;
+  const {definition} = input;
 
   return {
     overview: {
       id: 'overview',
       title: 'Overview',
-      to: buildAssetViewParams({...params, view: 'overview'}),
+      to: buildAssetViewParams({view: 'overview'}),
     } as AssetTabConfig,
     partitions: {
       id: 'partitions',
       title: 'Partitions',
-      to: buildAssetViewParams({...params, view: 'partitions'}),
-      hidden: !definition?.partitionDefinition || !definition?.isMaterializable,
+      to: buildAssetViewParams({view: 'partitions'}),
+      hidden: !definition?.partitionDefinition,
     } as AssetTabConfig,
     checks: {
       id: 'checks',
       title: 'Checks',
-      to: buildAssetViewParams({...params, view: 'checks'}),
+      to: buildAssetViewParams({view: 'checks'}),
     } as AssetTabConfig,
     events: {
       id: 'events',
       title: 'Events',
-      to: buildAssetViewParams({...params, view: 'events', partition: undefined}),
+      to: buildAssetViewParams({view: 'events', partition: undefined}),
     } as AssetTabConfig,
     lineage: {
       id: 'lineage',
       title: 'Lineage',
-      to: buildAssetViewParams({...params, view: 'lineage'}),
+      to: buildAssetViewParams({view: 'lineage'}),
       disabled: !definition,
     } as AssetTabConfig,
     automation: {
       id: 'automation',
       title: 'Automation',
-      to: buildAssetViewParams({...params, view: 'automation'}),
+      to: buildAssetViewParams({view: 'automation'}),
       disabled: !definition,
-      hidden: !definition?.autoMaterializePolicy,
+      hidden: !definition?.automationCondition,
     } as AssetTabConfig,
   };
 };

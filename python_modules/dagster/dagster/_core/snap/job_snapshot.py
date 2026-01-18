@@ -1,4 +1,8 @@
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Union, cast
+from collections.abc import Mapping, Sequence
+from functools import cached_property
+from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+
+from dagster_shared.serdes.serdes import RecordSerializer
 
 from dagster import _check as check
 from dagster._config import (
@@ -21,7 +25,7 @@ from dagster._config import (
     Shape,
     get_builtin_scalar_by_name,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
@@ -49,15 +53,13 @@ from dagster._core.snap.node import (
 from dagster._core.utils import toposort_flatten
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
-from dagster._serdes.serdes import RecordSerializer
 
 
-def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:
-    check.inst_param(snapshot, "snapshot", JobSnapshot)
-    return create_snapshot_id(snapshot)
+def _create_job_snapshot_id(job_snap: "JobSnap"):
+    return create_snapshot_id(job_snap)
 
 
-class JobSnapshotSerializer(RecordSerializer["JobSnapshot"]):
+class JobSnapSerializer(RecordSerializer["JobSnap"]):
     # v0
     # v1:
     #     - lineage added
@@ -75,7 +77,7 @@ class JobSnapshotSerializer(RecordSerializer["JobSnapshot"]):
         self,
         context,
         unpacked_dict: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if unpacked_dict.get("graph_def_name") is None:
             unpacked_dict["graph_def_name"] = unpacked_dict["name"]
         if unpacked_dict.get("metadata") is None:
@@ -92,14 +94,14 @@ class JobSnapshotSerializer(RecordSerializer["JobSnapshot"]):
 # serialization.
 @whitelist_for_serdes(
     storage_name="PipelineSnapshot",
-    serializer=JobSnapshotSerializer,
+    serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
-    skip_when_none_fields={"run_tags"},
+    skip_when_none_fields={"run_tags", "owners"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
 @record_custom
-class JobSnapshot(IHaveNew):
+class JobSnap(IHaveNew):
     name: str
     description: Optional[str]
     tags: Mapping[str, Any]
@@ -114,9 +116,10 @@ class JobSnapshot(IHaveNew):
     node_defs_snapshot: NodeDefsSnapshot
     dep_structure_snapshot: DependencyStructureSnapshot
     mode_def_snaps: Sequence[ModeDefSnap]
-    lineage_snapshot: Optional["JobLineageSnapshot"]
+    lineage_snapshot: Optional["JobLineageSnap"]
     graph_def_name: str
     metadata: Mapping[str, MetadataValue]
+    owners: Optional[Sequence[str]]
 
     def __new__(
         cls,
@@ -129,9 +132,10 @@ class JobSnapshot(IHaveNew):
         node_defs_snapshot: NodeDefsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
-        lineage_snapshot: Optional["JobLineageSnapshot"],
+        lineage_snapshot: Optional["JobLineageSnap"],
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
+        owners: Optional[Sequence[str]] = None,
     ):
         return super().__new__(
             cls,
@@ -149,30 +153,27 @@ class JobSnapshot(IHaveNew):
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
+            owners=owners,
         )
 
     @classmethod
-    def from_job_def(cls, job_def: JobDefinition) -> "JobSnapshot":
+    def from_job_def(cls, job_def: JobDefinition) -> "JobSnap":
         check.inst_param(job_def, "job_def", JobDefinition)
         lineage = None
         if job_def.op_selection_data:
-            lineage = JobLineageSnapshot(
-                parent_snapshot_id=create_job_snapshot_id(
-                    cls.from_job_def(job_def.op_selection_data.parent_job_def)
-                ),
+            lineage = JobLineageSnap(
+                parent_snapshot_id=job_def.op_selection_data.parent_job_def.get_job_snapshot_id(),
                 op_selection=sorted(job_def.op_selection_data.op_selection),
                 resolved_op_selection=job_def.op_selection_data.resolved_op_selection,
             )
         if job_def.asset_selection_data:
-            lineage = JobLineageSnapshot(
-                parent_snapshot_id=create_job_snapshot_id(
-                    cls.from_job_def(job_def.asset_selection_data.parent_job_def)
-                ),
+            lineage = JobLineageSnap(
+                parent_snapshot_id=job_def.asset_selection_data.parent_job_def.get_job_snapshot_id(),
                 asset_selection=job_def.asset_selection_data.asset_selection,
                 asset_check_selection=job_def.asset_selection_data.asset_check_selection,
             )
 
-        return JobSnapshot(
+        return JobSnap(
             name=job_def.name,
             description=job_def.description,
             tags=job_def.tags,
@@ -185,7 +186,12 @@ class JobSnapshot(IHaveNew):
             mode_def_snaps=[build_mode_def_snap(job_def)],
             lineage_snapshot=lineage,
             graph_def_name=job_def.graph.name,
+            owners=job_def.owners,
         )
+
+    @cached_property
+    def snapshot_id(self) -> str:
+        return _create_job_snapshot_id(self)
 
     def get_node_def_snap(self, node_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
         check.str_param(node_def_name, "node_def_name")
@@ -257,12 +263,12 @@ def _construct_fields(
 ) -> Mapping[str, Field]:
     fields = check.not_none(config_type_snap.fields)
     return {
-        cast(str, field.name): Field(
+        cast("str", field.name): Field(
             construct_config_type_from_snap(config_snap_map[field.type_key], config_snap_map),
             description=field.description,
             is_required=field.is_required,
             default_value=(
-                deserialize_value(cast(str, field.default_value_as_json_str))
+                deserialize_value(cast("str", field.default_value_as_json_str))
                 if field.default_provided
                 else FIELD_NO_DEFAULT_PROVIDED
             ),
@@ -398,7 +404,7 @@ def construct_config_type_from_snap(
     },
 )
 @record
-class JobLineageSnapshot:
+class JobLineageSnap:
     parent_snapshot_id: str
     op_selection: Optional[Sequence[str]] = None
     resolved_op_selection: Optional[AbstractSet[str]] = None

@@ -1,6 +1,4 @@
-from typing import Dict, List, Optional, Union
-
-from pydantic import Extra
+from typing import Optional, Union
 
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel
@@ -9,46 +7,48 @@ from schema.charts.utils.utils import BaseModel
 class Server(BaseModel):
     host: str
     port: int
-    name: Optional[str]
-    ssl: Optional[bool]
+    name: Optional[str] = None
+    ssl: Optional[bool] = None
 
 
 class Workspace(BaseModel):
     enabled: bool
-    servers: List[Server]
-    externalConfigmap: Optional[str]
+    servers: list[Server]
+    externalConfigmap: Optional[str] = None
 
 
-class Webserver(BaseModel):
+class Webserver(BaseModel, extra="forbid"):
     replicaCount: int
     image: kubernetes.Image
     nameOverride: str
-    pathPrefix: Optional[str]
+    pathPrefix: Optional[str] = None
     service: kubernetes.Service
     workspace: Workspace
-    env: Union[Dict[str, str], List[kubernetes.EnvVar]]
-    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
-    envSecrets: List[kubernetes.SecretEnvSource]
-    deploymentLabels: Dict[str, str]
-    labels: Dict[str, str]
+    env: Union[dict[str, str], list[kubernetes.EnvVar]]
+    envConfigMaps: list[kubernetes.ConfigMapEnvSource]
+    envSecrets: list[kubernetes.SecretEnvSource]
+    deploymentLabels: dict[str, str]
+    labels: dict[str, str]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
+    checkDbReadyInitContainer: Optional[bool] = None
     resources: kubernetes.Resources
     readinessProbe: kubernetes.ReadinessProbe
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     enableReadOnly: bool
-    dbStatementTimeout: Optional[int]
-    dbPoolRecycle: Optional[int]
-    logLevel: Optional[str]
-    schedulerName: Optional[str]
-    volumeMounts: Optional[List[kubernetes.VolumeMount]]
-    volumes: Optional[List[kubernetes.Volume]]
-    initContainerResources: Optional[kubernetes.Resources]
-
-    class Config:
-        extra = Extra.forbid
+    dbStatementTimeout: Optional[int] = None
+    dbPoolRecycle: Optional[int] = None
+    dbPoolMaxOverflow: Optional[int] = None
+    logLevel: Optional[str] = None
+    logFormat: Optional[str] = None
+    schedulerName: Optional[str] = None
+    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
+    volumes: Optional[list[kubernetes.Volume]] = None
+    initContainerResources: Optional[kubernetes.Resources] = None
+    extraContainers: Optional[list[kubernetes.Container]] = None
+    extraPrependedInitContainers: Optional[list[kubernetes.InitContainer]] = None

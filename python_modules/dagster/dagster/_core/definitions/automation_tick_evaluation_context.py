@@ -1,31 +1,18 @@
 import datetime
 import logging
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    cast,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -37,7 +24,8 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.context import use_partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
@@ -61,7 +49,7 @@ class AutomationTickEvaluationContext:
         auto_observe_asset_keys: AbstractSet[AssetKey],
         asset_selection: AssetSelection,
         logger: logging.Logger,
-        allow_backfills: bool,
+        emit_backfills: bool,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
@@ -72,20 +60,23 @@ class AutomationTickEvaluationContext:
             )
             if default_condition or asset_graph.get(entity_key).automation_condition is not None
         }
+        self._total_keys = len(resolved_entity_keys)
         self._evaluation_id = evaluation_id
         self._evaluator = AutomationConditionEvaluator(
             entity_keys=resolved_entity_keys,
             default_condition=default_condition,
             instance=instance,
             asset_graph=asset_graph,
-            allow_backfills=allow_backfills,
+            emit_backfills=emit_backfills,
             cursor=cursor,
             evaluation_time=evaluation_time,
             logger=logger,
+            evaluation_id=self._evaluation_id,
         )
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
+        self._partition_loading_context = self._evaluator.asset_graph_view.partition_loading_context
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -95,9 +86,13 @@ class AutomationTickEvaluationContext:
     def asset_graph(self) -> BaseAssetGraph:
         return self._evaluator.asset_graph
 
+    @property
+    def total_keys(self) -> int:
+        return self._total_keys
+
     def _legacy_build_auto_observe_run_requests(self) -> Sequence[RunRequest]:
         current_timestamp = self._evaluator.evaluation_time.timestamp()
-        assets_to_auto_observe: Set[AssetKey] = set()
+        assets_to_auto_observe: set[AssetKey] = set()
         for asset_key in self._auto_observe_asset_keys:
             last_observe_request_timestamp = (
                 self.cursor.last_observe_request_timestamp_by_asset_key.get(asset_key)
@@ -116,7 +111,7 @@ class AutomationTickEvaluationContext:
                 assets_to_auto_observe.add(asset_key)
 
         # create groups of asset keys that share the same repository AND the same partitions definition
-        partitions_def_and_asset_key_groups: List[Sequence[AssetKey]] = []
+        partitions_def_and_asset_key_groups: list[Sequence[AssetKey]] = []
         for repository_asset_keys in self.asset_graph.split_entity_keys_by_repository(
             assets_to_auto_observe
         ):
@@ -137,7 +132,7 @@ class AutomationTickEvaluationContext:
             entity_subsets=entity_subsets,
             asset_graph=self.asset_graph,
             run_tags=self._materialize_run_tags,
-            allow_backfills=self._evaluator.allow_backfills,
+            emit_backfills=self._evaluator.emit_backfills,
         )
 
     def _get_updated_cursor(
@@ -150,11 +145,12 @@ class AutomationTickEvaluationContext:
                 asset_key
                 for run_request in observe_run_requests
                 for asset_key in cast(
-                    Sequence[AssetKey],
+                    "Sequence[AssetKey]",
                     run_request.asset_selection,  # auto-observe run requests always have asset_selection
                 )
             ],
             evaluation_timestamp=self._evaluator.evaluation_time.timestamp(),
+            asset_graph=self.asset_graph,
         )
 
     def _get_updated_evaluations(
@@ -172,9 +168,25 @@ class AutomationTickEvaluationContext:
                 updated_evaluations.append(result.serializable_evaluation)
         return updated_evaluations
 
+    @use_partition_loading_context
+    async def async_evaluate(
+        self,
+    ) -> tuple[
+        Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation[EntityKey]]
+    ]:
+        observe_run_requests = self._legacy_build_auto_observe_run_requests()
+        results, entity_subsets = await self._evaluator.async_evaluate()
+
+        return (
+            [*self._build_run_requests(entity_subsets), *observe_run_requests],
+            self._get_updated_cursor(results, observe_run_requests),
+            self._get_updated_evaluations(results),
+        )
+
+    @use_partition_loading_context
     def evaluate(
         self,
-    ) -> Tuple[
+    ) -> tuple[
         Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation[EntityKey]]
     ]:
         observe_run_requests = self._legacy_build_auto_observe_run_requests()
@@ -187,22 +199,9 @@ class AutomationTickEvaluationContext:
         )
 
 
-_PartitionsDefKeyMapping = Dict[
-    Tuple[Optional[PartitionsDefinition], Optional[str]], Set[EntityKey]
+_PartitionsDefKeyMapping = dict[
+    tuple[Optional[PartitionsDefinition], Optional[str]], set[EntityKey]
 ]
-
-
-def _get_mapping_from_asset_partitions(
-    asset_partitions: AbstractSet[AssetKeyPartitionKey], asset_graph: BaseAssetGraph
-) -> _PartitionsDefKeyMapping:
-    mapping: _PartitionsDefKeyMapping = defaultdict(set)
-
-    for asset_partition in asset_partitions:
-        mapping[
-            asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
-        ].add(asset_partition.asset_key)
-
-    return mapping
 
 
 def _get_mapping_from_entity_subsets(
@@ -231,31 +230,19 @@ def _get_mapping_from_entity_subsets(
     return mapping
 
 
-def build_run_requests_from_asset_partitions(
-    asset_partitions: AbstractSet[AssetKeyPartitionKey],
-    asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
-) -> Sequence[RunRequest]:
-    return _build_run_requests_from_partitions_def_mapping(
-        _get_mapping_from_asset_partitions(asset_partitions, asset_graph),
-        asset_graph,
-        run_tags,
-    )
-
-
 def _build_backfill_request(
     entity_subsets: Sequence[EntitySubset[EntityKey]],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
-) -> Tuple[Optional[RunRequest], Sequence[EntitySubset[EntityKey]]]:
+) -> tuple[Optional[RunRequest], Sequence[EntitySubset[EntityKey]]]:
     """Determines a set of entity subsets that can be executed using a backfill.
     If any entity subset has size greater than 1, then it and all assets connected
     to it will be grouped into the backfill. Returns the corresponding backfill
     run request, and all entity subsets not handled in this process.
     """
     entity_subsets_by_key = {es.key: es for es in entity_subsets}
-    visited: Set[EntityKey] = set()
-    backfill_subsets: List[EntitySubset[AssetKey]] = []
+    visited: set[EntityKey] = set()
+    backfill_subsets: list[EntitySubset[AssetKey]] = []
 
     def _flood_fill_asset_subsets(k: EntityKey):
         if k in visited or k not in entity_subsets_by_key:
@@ -263,7 +250,10 @@ def _build_backfill_request(
         visited.add(k)
         if isinstance(k, AssetKey):
             node = asset_graph.get(k)
-            subset = cast(EntitySubset[AssetKey], entity_subsets_by_key.pop(k))
+            if not node.is_materializable:
+                # if the asset is not materializable, it cannot be included in a backfill
+                return
+            subset = cast("EntitySubset[AssetKey]", entity_subsets_by_key.pop(k))
             backfill_subsets.append(subset)
             for sk in [
                 # include all parent and child assets
@@ -304,9 +294,12 @@ def build_run_requests(
     entity_subsets: Sequence[EntitySubset],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
-    allow_backfills: bool,
+    emit_backfills: bool,
 ) -> Sequence[RunRequest]:
-    if allow_backfills:
+    """For a single asset in a given tick, the asset will only be part of a run or a backfill, not both.
+    If the asset is targetd by a backfill, there will only be one backfill that targets the asset.
+    """
+    if emit_backfills:
         backfill_run_request, entity_subsets = _build_backfill_request(
             entity_subsets, asset_graph, run_tags
         )
@@ -368,12 +361,10 @@ def build_run_requests_with_backfill_policies(
     asset_graph: BaseAssetGraph,
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
-    """If all assets have backfill policies, we should respect them and materialize them according
-    to their backfill policies.
-    """
+    """Build run requests for a selection of asset partitions based on the associated BackfillPolicies."""
     run_requests = []
 
-    asset_partition_keys: Mapping[AssetKey, Set[str]] = {
+    asset_partition_keys: Mapping[AssetKey, set[str]] = {
         asset_key_partition.asset_key: set() for asset_key_partition in asset_partitions
     }
     for asset_partition in asset_partitions:
@@ -381,8 +372,8 @@ def build_run_requests_with_backfill_policies(
             asset_partition_keys[asset_partition.asset_key].add(asset_partition.partition_key)
 
     assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy: Mapping[
-        Tuple[Optional[PartitionsDefinition], Optional[FrozenSet[str]], Optional[BackfillPolicy]],
-        Set[AssetKey],
+        tuple[Optional[PartitionsDefinition], Optional[frozenset[str]], Optional[BackfillPolicy]],
+        set[AssetKey],
     ] = defaultdict(set)
 
     # here we are grouping assets by their partitions def, selected partition keys, and backfill policy.
@@ -398,17 +389,34 @@ def build_run_requests_with_backfill_policies(
         partition_keys,
         backfill_policy,
     ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy.items():
+        asset_check_keys = asset_graph.get_check_keys_for_assets(asset_keys)
         if partitions_def is None and partition_keys is not None:
             check.failed("Partition key provided for unpartitioned asset")
-        if partitions_def is not None and partition_keys is None:
+        elif partitions_def is not None and partition_keys is None:
             check.failed("Partition key missing for partitioned asset")
-        if partitions_def is None and partition_keys is None:
+        elif partitions_def is None and partition_keys is None:
             # non partitioned assets will be backfilled in a single run
-            run_requests.append(RunRequest(asset_selection=list(asset_keys), tags={}))
+            run_requests.append(
+                RunRequest(
+                    asset_selection=list(asset_keys),
+                    asset_check_keys=list(asset_check_keys),
+                    tags={},
+                )
+            )
+        elif backfill_policy is None:
+            # just use the normal single-partition behavior
+            entity_keys = cast("set[EntityKey]", asset_keys)
+            mapping: _PartitionsDefKeyMapping = {
+                (partitions_def, pk): entity_keys for pk in (partition_keys or [None])
+            }
+            run_requests.extend(
+                _build_run_requests_from_partitions_def_mapping(mapping, asset_graph, run_tags={})
+            )
         else:
             run_requests.extend(
                 _build_run_requests_with_backfill_policy(
                     list(asset_keys),
+                    list(asset_check_keys),
                     check.not_none(backfill_policy),
                     check.not_none(partition_keys),
                     check.not_none(partitions_def),
@@ -421,17 +429,16 @@ def build_run_requests_with_backfill_policies(
 
 def _build_run_requests_with_backfill_policy(
     asset_keys: Sequence[AssetKey],
+    asset_check_keys: Sequence[AssetCheckKey],
     backfill_policy: BackfillPolicy,
-    partition_keys: FrozenSet[str],
+    partition_keys: frozenset[str],
     partitions_def: PartitionsDefinition,
-    tags: Dict[str, Any],
+    tags: dict[str, Any],
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
-    partition_key_ranges = partition_subset.get_partition_key_ranges(
-        partitions_def, dynamic_partitions_store=dynamic_partitions_store
-    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(partitions_def)
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
@@ -439,6 +446,7 @@ def _build_run_requests_with_backfill_policy(
             run_requests.append(
                 _build_run_request_for_partition_key_range(
                     asset_keys=list(asset_keys),
+                    asset_check_keys=list(asset_check_keys),
                     partition_range_start=partition_key_range.start,
                     partition_range_end=partition_key_range.end,
                     run_tags=tags,
@@ -448,6 +456,7 @@ def _build_run_requests_with_backfill_policy(
             run_requests.extend(
                 _build_run_requests_for_partition_key_range(
                     asset_keys=list(asset_keys),
+                    asset_check_keys=list(asset_check_keys),
                     partitions_def=partitions_def,
                     partition_key_range=partition_key_range,
                     max_partitions_per_run=check.int_param(
@@ -462,18 +471,17 @@ def _build_run_requests_with_backfill_policy(
 
 def _build_run_requests_for_partition_key_range(
     asset_keys: Sequence[AssetKey],
+    asset_check_keys: Sequence[AssetCheckKey],
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
     max_partitions_per_run: int,
-    run_tags: Dict[str, str],
+    run_tags: dict[str, str],
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     """Builds multiple run requests for the given partition key range. Each run request will have at most
     max_partitions_per_run partitions.
     """
-    partition_keys = partitions_def.get_partition_keys_in_range(
-        partition_key_range, dynamic_partitions_store=dynamic_partitions_store
-    )
+    partition_keys = partitions_def.get_partition_keys_in_range(partition_key_range)
     partition_range_start_index = partition_keys.index(partition_key_range.start)
     partition_range_end_index = partition_keys.index(partition_key_range.end)
 
@@ -487,7 +495,11 @@ def _build_run_requests_for_partition_key_range(
         partition_chunk_end_key = partition_keys[partition_chunk_end_index]
         run_requests.append(
             _build_run_request_for_partition_key_range(
-                asset_keys, partition_chunk_start_key, partition_chunk_end_key, run_tags
+                asset_keys,
+                asset_check_keys,
+                partition_chunk_start_key,
+                partition_chunk_end_key,
+                run_tags,
             )
         )
         partition_chunk_start_index = partition_chunk_end_index + 1
@@ -496,9 +508,10 @@ def _build_run_requests_for_partition_key_range(
 
 def _build_run_request_for_partition_key_range(
     asset_keys: Sequence[AssetKey],
+    asset_check_keys: Sequence[AssetCheckKey],
     partition_range_start: str,
     partition_range_end: str,
-    run_tags: Dict[str, str],
+    run_tags: dict[str, str],
 ) -> RunRequest:
     """Builds a single run request for the given asset key and partition key range."""
     tags = {
@@ -506,5 +519,9 @@ def _build_run_request_for_partition_key_range(
         ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
         ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
     }
-    partition_key = partition_range_start if partition_range_start == partition_range_end else None
-    return RunRequest(asset_selection=asset_keys, partition_key=partition_key, tags=tags)
+    return RunRequest(
+        asset_selection=asset_keys,
+        partition_key=None,
+        tags=tags,
+        asset_check_keys=asset_check_keys,
+    )

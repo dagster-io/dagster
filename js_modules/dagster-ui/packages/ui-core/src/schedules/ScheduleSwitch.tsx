@@ -6,19 +6,16 @@ import {
   STOP_SCHEDULE_MUTATION,
   displayScheduleMutationErrors,
 } from './ScheduleMutations';
+import {gql, useMutation, useQuery} from '../apollo-client';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   StartThisScheduleMutation,
   StartThisScheduleMutationVariables,
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
-import {
-  ScheduleStateQuery,
-  ScheduleStateQueryVariables,
-  ScheduleSwitchFragment,
-} from './types/ScheduleSwitch.types';
-import {gql, useMutation, useQuery} from '../apollo-client';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {ScheduleStateQuery, ScheduleStateQueryVariables} from './types/ScheduleSwitch.types';
+import {ScheduleSwitchFragment} from './types/ScheduleSwitchFragment.types';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -34,12 +31,6 @@ export const ScheduleSwitch = (props: Props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
   const {id} = scheduleState;
-
-  const {
-    permissions: {canStartSchedule, canStopRunningSchedule},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
-
   const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
 
   const variables = {
@@ -116,7 +107,7 @@ export const ScheduleSwitch = (props: Props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSchedule && canStopRunningSchedule) {
+  if (schedule.scheduleState.hasStartPermission && schedule.scheduleState.hasStopPermission) {
     return (
       <Checkbox
         format="switch"
@@ -128,7 +119,9 @@ export const ScheduleSwitch = (props: Props) => {
     );
   }
 
-  const lacksPermission = (running && !canStopRunningSchedule) || (!running && !canStartSchedule);
+  const lacksPermission =
+    (running && !schedule.scheduleState.hasStopPermission) ||
+    (!running && !schedule.scheduleState.hasStartPermission);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
@@ -145,30 +138,12 @@ export const ScheduleSwitch = (props: Props) => {
     return switchElement;
   }
 
-  const disabledReason = running
-    ? disabledReasons.canStopRunningSchedule
-    : disabledReasons.canStartSchedule;
-
   return (
-    <Tooltip content={disabledReason} display="flex">
+    <Tooltip content={DEFAULT_DISABLED_REASON} display="flex">
       {switchElement}
     </Tooltip>
   );
 };
-
-export const SCHEDULE_SWITCH_FRAGMENT = gql`
-  fragment ScheduleSwitchFragment on Schedule {
-    id
-    name
-    cronSchedule
-    executionTimezone
-    scheduleState {
-      id
-      selectorId
-      status
-    }
-  }
-`;
 
 const SCHEDULE_STATE_QUERY = gql`
   query ScheduleStateQuery($id: String!, $selector: InstigationSelector!) {

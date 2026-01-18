@@ -1,16 +1,18 @@
 import datetime
 import os
+import sys
 import time
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import dagster._check as check
+import kubernetes
 import pytest
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
@@ -28,6 +30,7 @@ from dagster_k8s_test_infra.integration_utils import (
     launch_run_over_graphql,
     terminate_run_over_graphql,
 )
+from dagster_shared.yaml_utils import load_yaml_from_path
 from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
@@ -51,8 +54,8 @@ def test_k8s_run_launcher_default(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -79,7 +82,7 @@ def test_k8s_run_launcher_volume_mounts(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -109,8 +112,8 @@ def test_k8s_executor_get_config_from_run_launcher(
 ):
     # Verify that if you do not specify executor config it is delegated by the run launcher
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {"config": {"job_image": dagster_docker_image}},
         },
@@ -134,8 +137,8 @@ def test_k8s_executor_combine_configs(
     # from run launcher config and executor config. Also includes each executor secret
     # twice to verify that duplicates within the combined config are acceptable
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -213,7 +216,7 @@ def _launch_executor_run(
     run_id = launch_run_over_graphql(webserver_url, run_config=run_config, job_name=job_name)
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -242,8 +245,8 @@ def test_k8s_run_launcher_image_from_origin(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -261,7 +264,7 @@ def test_k8s_run_launcher_image_from_origin(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -280,7 +283,7 @@ def test_k8s_run_launcher_terminate(
     job_name = "slow_job_k8s"
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -299,7 +302,7 @@ def test_k8s_run_launcher_terminate(
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
@@ -344,7 +347,7 @@ def test_k8s_executor_resource_requirements(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -365,13 +368,258 @@ def test_k8s_executor_resource_requirements(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
+
+
+def _does_namespaced_job_exist(job_name: str, namespace: str) -> bool:
+    try:
+        DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
+            name=job_name, namespace=namespace
+        )
+        return True
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            return False
+        raise
+
+
+def _does_namespaced_pod_exist(pod_name: str, namespace: str) -> bool:
+    try:
+        DagsterKubernetesClient.production_client().core_api.read_namespaced_pod(
+            name=pod_name, namespace=namespace
+        )
+        return True
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            return False
+        raise
+
+
+def _does_pod_in_job_exist(job_name: str, namespace: str) -> bool:
+    try:
+        pods = DagsterKubernetesClient.production_client().get_pods_in_job(
+            job_name=job_name, namespace=namespace
+        )
+        return len(pods) > 0
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            return False
+        raise
+
+
+@pytest.mark.integration
+@pytest.mark.skip(reason="Flaky/timing out")
+def test_k8s_executor_owner_references_garbage_collection(
+    dagster_instance_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
+    dagster_docker_image,
+    webserver_url_for_k8s_run_launcher,
+):
+    """Test that owner references are properly set when enable_owner_references is True, and that owner references properly
+    allow for garbage collection of the step job and step pod when a run pod is deleted.
+    """
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        {
+            "execution": {
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
+                    "enable_owner_references": True,
+                }
+            },
+        },
+    )
+
+    # Job in question runs indefinitely, but we'll clean up the step once the run pod is deleted
+    run_id = launch_run_over_graphql(
+        webserver_url_for_k8s_run_launcher,
+        run_config=run_config,
+        job_name="spin_forever_job_k8s",
+    )
+
+    run_job_name = f"dagster-run-{run_id}"
+    DagsterKubernetesClient.production_client().wait_for_job(
+        job_name=run_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+
+    run_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
+        job_name=run_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    assert len(run_pods) == 1
+    run_pod = run_pods[0]
+
+    step_job_key = get_k8s_job_name(run_id, "spin_forever_op")
+    step_job_name = f"dagster-step-{step_job_key}"
+
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for step job creation"
+        )
+        if _does_namespaced_job_exist(
+            step_job_name, user_code_namespace_for_k8s_run_launcher
+        ) and _does_pod_in_job_exist(step_job_name, user_code_namespace_for_k8s_run_launcher):
+            break
+        time.sleep(1)
+    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
+        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    step_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
+        job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    assert len(step_pods) == 1
+    step_pod = step_pods[0]
+
+    # Verify that the step job has an owner reference to the run pod
+    step_job_owner_references = step_job.metadata.owner_references
+    assert step_job_owner_references is not None
+
+    pod_owner_ref = next((ref for ref in step_job_owner_references if ref.kind == "Pod"), None)
+    assert pod_owner_ref is not None, "Step job should have an owner reference to a Pod"
+    assert pod_owner_ref.name == run_pod.metadata.name, (
+        f"Step job owner reference should point to run pod {run_pod.metadata.name}, but points to {pod_owner_ref.name}"
+    )
+    assert pod_owner_ref.uid == run_pod.metadata.uid, (
+        "Step job owner reference UID should match run pod UID"
+    )
+
+    # Kill the run pod and wait for it to be deleted
+    DagsterKubernetesClient.production_client().core_api.delete_namespaced_pod(
+        name=run_pod.metadata.name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for run pod deletion"
+        )
+        if not _does_namespaced_pod_exist(
+            run_pod.metadata.name, user_code_namespace_for_k8s_run_launcher
+        ):
+            break
+        time.sleep(1)
+
+    # Wait for the step job and pod to be garbage collected
+    timeout = datetime.timedelta(0, 120)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for step job garbage collection"
+        )
+        if not _does_namespaced_job_exist(
+            step_job_name, user_code_namespace_for_k8s_run_launcher
+        ) and not _does_namespaced_pod_exist(
+            step_pod.metadata.name, user_code_namespace_for_k8s_run_launcher
+        ):
+            break
+        time.sleep(1)
+
+
+@pytest.mark.skipif(sys.version_info > (3, 12), reason="Flaky on Python 3.13")
+@pytest.mark.integration
+def test_k8s_executor_owner_references_disabled(
+    dagster_instance_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
+    dagster_docker_image,
+    webserver_url_for_k8s_run_launcher,
+):
+    """Test that owner references are NOT set when enable_owner_references is False, and that garbage collection does NOT happen when the run pod is deleted."""
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        {
+            "execution": {
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
+                    "enable_owner_references": False,
+                }
+            },
+        },
+    )
+
+    # Job in question runs indefinitely, but we'll verify that step resources persist when run pod is deleted
+    run_id = launch_run_over_graphql(
+        webserver_url_for_k8s_run_launcher,
+        run_config=run_config,
+        job_name="spin_forever_job_k8s",
+    )
+
+    run_job_name = f"dagster-run-{run_id}"
+    DagsterKubernetesClient.production_client().wait_for_job(
+        job_name=run_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+
+    run_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
+        job_name=run_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    assert len(run_pods) == 1
+    run_pod = run_pods[0]
+
+    step_job_key = get_k8s_job_name(run_id, "spin_forever_op")
+    step_job_name = f"dagster-step-{step_job_key}"
+
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for step job creation"
+        )
+        if _does_namespaced_job_exist(
+            step_job_name, user_code_namespace_for_k8s_run_launcher
+        ) and _does_pod_in_job_exist(step_job_name, user_code_namespace_for_k8s_run_launcher):
+            break
+        time.sleep(1)
+    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
+        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    step_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
+        job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    assert len(step_pods) == 1
+    step_pod = step_pods[0]
+
+    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
+        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+
+    # Verify that the step job does NOT have owner references
+    step_job_owner_references = step_job.metadata.owner_references
+    assert step_job_owner_references is None or len(step_job_owner_references) == 0
+
+    # Kill the run pod and wait for it to be deleted
+    DagsterKubernetesClient.production_client().core_api.delete_namespaced_pod(
+        name=run_pod.metadata.name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for run pod deletion"
+        )
+        if not _does_namespaced_pod_exist(
+            run_pod.metadata.name, user_code_namespace_for_k8s_run_launcher
+        ):
+            break
+        time.sleep(1)
+
+    # Wait a bit and verify that the step job and pod are NOT garbage collected
+    time.sleep(10)
+    assert _does_namespaced_job_exist(step_job_name, user_code_namespace_for_k8s_run_launcher), (
+        "Step job should NOT be garbage collected when owner references are disabled"
+    )
+    assert _does_namespaced_pod_exist(
+        step_pod.metadata.name, user_code_namespace_for_k8s_run_launcher
+    ), "Step pod should NOT be garbage collected when owner references are disabled"
 
 
 @pytest.mark.integration
@@ -382,7 +630,7 @@ def test_execute_on_k8s_retry_job(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -403,7 +651,7 @@ def test_execute_on_k8s_retry_job(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"

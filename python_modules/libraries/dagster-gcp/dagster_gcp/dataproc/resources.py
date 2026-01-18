@@ -1,11 +1,13 @@
 import json
 import time
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Optional
 
 import dagster._check as check
 import yaml
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
@@ -33,8 +35,9 @@ class DataprocClient:
 
         self.config = config
 
-        (self.project_id, self.region, self.cluster_name, self.cluster_config) = (
-            self.config.get(k) for k in ("projectId", "region", "clusterName", "cluster_config")
+        (self.project_id, self.region, self.cluster_name, self.cluster_config, self.labels) = (
+            self.config.get(k)
+            for k in ("projectId", "region", "clusterName", "cluster_config", "labels")
         )
 
     @property
@@ -60,6 +63,7 @@ class DataprocClient:
                     "projectId": self.project_id,
                     "clusterName": self.cluster_name,
                     "config": self.cluster_config,
+                    "labels": self.labels,
                 },
             ).execute()
         )
@@ -74,7 +78,7 @@ class DataprocClient:
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
-                "Could not provision cluster -- status: %s" % str(cluster["status"])
+                "Could not provision cluster -- status: {}".format(str(cluster["status"]))
             )
 
     def get_cluster(self):
@@ -107,7 +111,7 @@ class DataprocClient:
 
             # Handle exceptions
             if result["status"]["state"] in {"CANCELLED", "ERROR"}:
-                raise DataprocError("Job error: %s" % str(result["status"]))
+                raise DataprocError("Job error: {}".format(str(result["status"])))
 
             if result["status"]["state"] == "DONE":
                 return True
@@ -117,7 +121,7 @@ class DataprocClient:
         done = DataprocClient._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
-            raise DataprocError("Job run timed out: %s" % str(job["status"]))
+            raise DataprocError("Job run timed out: {}".format(str(job["status"])))
 
     @staticmethod
     def _iter_and_sleep_until_ready(
@@ -151,6 +155,7 @@ class DataprocClient:
             self.delete_cluster()
 
 
+@beta
 class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """Resource for connecting to a Dataproc cluster.
 
@@ -177,6 +182,17 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " deleted clusters can be reused."
         )
     )
+    labels: Optional[dict[str, str]] = Field(
+        default=None,
+        description=(
+            "Optional. The labels to associate with this cluster. Label keys must"
+            " contain 1 to 63 characters, and must conform to RFC 1035"
+            " (https://www.ietf.org/rfc/rfc1035.txt). Label values may be empty, but, if"
+            " present, must contain 1 to 63 characters, and must conform to RFC 1035"
+            " (https://www.ietf.org/rfc/rfc1035.txt). No more than 32 labels can be associated"
+            " with a cluster."
+        ),
+    )
     cluster_config_yaml_path: Optional[str] = Field(
         default=None,
         description=(
@@ -195,7 +211,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
-    cluster_config_dict: Optional[Dict[str, Any]] = Field(
+    cluster_config_dict: Optional[dict[str, Any]] = Field(
         default=None,
         description=(
             "Python dictionary containing cluster configuration. See"
@@ -210,11 +226,11 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         return True
 
     def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
-        with open(path, "r", encoding="utf8") as f:
+        with open(path, encoding="utf8") as f:
             return yaml.safe_load(f)
 
     def _read_json_config(self, path: str) -> Mapping[str, Any]:
-        with open(path, "r", encoding="utf8") as f:
+        with open(path, encoding="utf8") as f:
             return json.load(f)
 
     def _get_cluster_config(self) -> Optional[Mapping[str, Any]]:
@@ -249,6 +265,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             "region": self.region,
             "clusterName": self.cluster_name,
             "cluster_config": cluster_config,
+            "labels": self.labels,
         }
 
         return DataprocClient(config=client_config_dict)
@@ -257,6 +274,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         return self.get_client()
 
 
+@beta
 @dagster_maintained_resource
 @resource(
     config_schema=define_dataproc_create_cluster_config(),

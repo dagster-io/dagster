@@ -2,22 +2,15 @@ import shutil
 
 import pandas as pd
 
-from dagster import (
-    AssetExecutionContext,
-    Definitions,
-    Output,
-    PipesSubprocessClient,
-    asset,
-    file_relative_path,
-)
+import dagster as dg
 
 
-@asset
+@dg.asset
 def subprocess_asset(
-    context: AssetExecutionContext,
-    pipes_subprocess_client: PipesSubprocessClient,
-) -> Output[pd.DataFrame]:
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
+    context: dg.AssetExecutionContext,
+    pipes_subprocess_client: dg.PipesSubprocessClient,
+) -> dg.Output[pd.DataFrame]:
+    cmd = [shutil.which("python"), dg.file_relative_path(__file__, "external_code.py")]
     result = pipes_subprocess_client.run(
         command=cmd,
         context=context,
@@ -34,13 +27,14 @@ def subprocess_asset(
     metadata = result.get_materialize_result().metadata
 
     # return the summary table to be loaded by Dagster for downstream assets
-    return Output(
+    return dg.Output(
         value=summary_df,
         metadata=metadata,
     )
 
 
-defs = Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": PipesSubprocessClient()},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"pipes_subprocess_client": dg.PipesSubprocessClient()}
+    )

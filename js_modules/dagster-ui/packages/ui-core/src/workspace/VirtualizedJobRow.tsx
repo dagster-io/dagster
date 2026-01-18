@@ -1,131 +1,129 @@
-import {Box, MiddleTruncate} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {Box, MiddleTruncate, useDelayedState} from '@dagster-io/ui-components';
+import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {SINGLE_JOB_QUERY} from './SingleJobQuery';
+import {CaptionText, LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
-import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
+import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {gql, useLazyQuery} from '../apollo-client';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {RunStatusPezList} from '../runs/RunStatusPez';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 
 interface JobRowProps {
   name: string;
+  index: number;
   isJob: boolean;
   repoAddress: RepoAddress;
-  height: number;
-  start: number;
 }
 
-export const VirtualizedJobRow = (props: JobRowProps) => {
-  const {name, isJob, repoAddress, start, height} = props;
+export const VirtualizedJobRow = forwardRef(
+  (props: JobRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+    const {name, isJob, repoAddress, index} = props;
 
-  const [queryJob, queryResult] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
-    SINGLE_JOB_QUERY,
-    {
+    // Wait 100ms before querying in case we're scrolling the table really fast
+    const shouldQuery = useDelayedState(100);
+    const queryResult = useQuery<SingleJobQuery, SingleJobQueryVariables>(SINGLE_JOB_QUERY, {
       variables: {
         selector: buildPipelineSelector(repoAddress, name),
       },
-    },
-  );
-  useDelayedRowQuery(queryJob);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+      skip: !shouldQuery,
+    });
+    useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {data} = queryResult;
-  const pipeline =
-    data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError : undefined;
+    const {data} = queryResult;
+    const pipeline =
+      data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError : undefined;
 
-  const {schedules, sensors} = useMemo(() => {
-    if (pipeline) {
-      const {schedules, sensors} = pipeline;
-      return {schedules, sensors};
-    }
-    return {schedules: [], sensors: []};
-  }, [pipeline]);
-
-  const latestRuns = useMemo(() => {
-    if (pipeline) {
-      const {runs} = pipeline;
-      if (runs.length) {
-        return [...runs];
+    const {schedules, sensors} = useMemo(() => {
+      if (pipeline) {
+        const {schedules, sensors} = pipeline;
+        return {schedules, sensors};
       }
-    }
-    return [];
-  }, [pipeline]);
+      return {schedules: [], sensors: []};
+    }, [pipeline]);
 
-  return (
-    <Row $height={height} $start={start}>
-      <RowGrid border="bottom">
-        <RowCell>
-          <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
-            <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
-              <MiddleTruncate text={name} />
-            </Link>
-          </div>
-          <CaptionText>{pipeline?.description || ''}</CaptionText>
-        </RowCell>
-        <RowCell>
-          {schedules.length || sensors.length ? (
-            <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-              <ScheduleSensorTagContainer>
-                <ScheduleOrSensorTag
-                  schedules={schedules}
-                  sensors={sensors}
-                  repoAddress={repoAddress}
-                />
-              </ScheduleSensorTagContainer>
+    const latestRuns = useMemo(() => {
+      if (pipeline) {
+        const {runs} = pipeline;
+        if (runs.length) {
+          return [...runs];
+        }
+      }
+      return [];
+    }, [pipeline]);
+
+    return (
+      <div data-index={index} ref={ref}>
+        <RowGrid border="bottom">
+          <RowCell>
+            <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
+              <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
+                <MiddleTruncate text={name} />
+              </Link>
+            </div>
+            <CaptionText>{pipeline?.description || ''}</CaptionText>
+          </RowCell>
+          <RowCell>
+            {schedules.length || sensors.length ? (
+              <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
+                <ScheduleSensorTagContainer>
+                  <ScheduleOrSensorTag
+                    schedules={schedules}
+                    sensors={sensors}
+                    repoAddress={repoAddress}
+                  />
+                </ScheduleSensorTagContainer>
+              </Box>
+            ) : (
+              <LoadingOrNone queryResult={queryResult} />
+            )}
+          </RowCell>
+          <RowCell>
+            {latestRuns[0] ? (
+              <LastRunSummary
+                run={latestRuns[0]}
+                showButton={false}
+                showHover
+                showSummary={false}
+                name={name}
+              />
+            ) : (
+              <LoadingOrNone queryResult={queryResult} />
+            )}
+          </RowCell>
+          <RowCell>
+            {latestRuns.length ? (
+              <Box padding={{top: 4}}>
+                <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+              </Box>
+            ) : (
+              <LoadingOrNone queryResult={queryResult} />
+            )}
+          </RowCell>
+          <RowCell>
+            <Box flex={{justifyContent: 'flex-end'}} style={{marginTop: '-2px'}}>
+              <JobMenu
+                job={{name, isJob, runs: latestRuns}}
+                isAssetJob={pipeline ? pipeline.isAssetJob : 'loading'}
+                repoAddress={repoAddress}
+              />
             </Box>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          {latestRuns[0] ? (
-            <LastRunSummary
-              run={latestRuns[0]}
-              showButton={false}
-              showHover
-              showSummary={false}
-              name={name}
-            />
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          {latestRuns.length ? (
-            <Box padding={{top: 4}}>
-              <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
-            </Box>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          <Box flex={{justifyContent: 'flex-end'}} style={{marginTop: '-2px'}}>
-            <JobMenu
-              job={{name, isJob, runs: latestRuns}}
-              isAssetJob={pipeline ? pipeline.isAssetJob : 'loading'}
-              repoAddress={repoAddress}
-            />
-          </Box>
-        </RowCell>
-      </RowGrid>
-    </Row>
-  );
-};
+          </RowCell>
+        </RowGrid>
+      </div>
+    );
+  },
+);
 
 export const VirtualizedJobHeader = () => {
   return (
@@ -151,34 +149,4 @@ const ScheduleSensorTagContainer = styled.div`
   > .bp5-popover-target {
     width: 100%;
   }
-`;
-
-const SINGLE_JOB_QUERY = gql`
-  query SingleJobQuery($selector: PipelineSelector!) {
-    pipelineOrError(params: $selector) {
-      ... on Pipeline {
-        id
-        name
-        isJob
-        isAssetJob
-        description
-        runs(limit: 5) {
-          id
-          ...RunTimeFragment
-        }
-        schedules {
-          id
-          ...ScheduleSwitchFragment
-        }
-        sensors {
-          id
-          ...SensorSwitchFragment
-        }
-      }
-    }
-  }
-
-  ${RUN_TIME_FRAGMENT}
-  ${SCHEDULE_SWITCH_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
 `;

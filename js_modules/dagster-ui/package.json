@@ -10,8 +10,9 @@
     "lint": "yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui-components lint",
     "remove-cloud-resolutions": "rm -rf ./packages/ui-core/src/tsconfig.json",
     "start": "yarn remove-cloud-resolutions && yarn workspace @dagster-io/app-oss start",
-    "ts": "yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-components ts",
-    "postinstall": "patch-package"
+    "ts": "yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-core ts && yarn workspace @dagster-io/ui-components ts",
+    "tsgo": "yarn workspace @dagster-io/app-oss tsgo && yarn workspace @dagster-io/ui-core tsgo && yarn workspace @dagster-io/ui-components tsgo",
+    "jest": "yarn workspace @dagster-io/ui-core jest-all-silent && yarn workspace @dagster-io/ui-components jest-all-silent"
   },
   "workspaces": {
     "packages": [
@@ -19,11 +20,9 @@
     ]
   },
   "dependencies": {
-    "graphql.macro": "^1.4.2",
-    "patch-package": "^8.0.0",
-    "postinstall-postinstall": "^2.1.0"
+    "graphql.macro": "^1.4.2"
   },
-  "packageManager": "yarn@4.1.1",
+  "packageManager": "yarn@4.10.3",
   "engines": {
     "node": ">=20.x"
   },

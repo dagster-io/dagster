@@ -1,7 +1,12 @@
+// eslint-disable-next-line no-restricted-imports
+import {Radio as BlueprintRadio} from '@blueprintjs/core';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
+
+// Re-export Radio from Blueprint so that we don't have to deal with the lint
+// error elsewhere.
+export const Radio = BlueprintRadio;
 
 export const RadioContainer = styled.div`
   .bp5-control {
@@ -20,10 +25,10 @@ export const RadioContainer = styled.div`
 
   .bp5-control.bp5-radio.bp5-disabled {
     cursor: default;
-    color: ${Colors.backgroundDisabled()};
+    color: ${Colors.textDisabled()};
 
-    ${IconWrapper} {
-      opacity: 0.3;
+    .iconGlobal {
+      opacity: 0.4;
     }
   }
 
@@ -39,6 +44,7 @@ export const RadioContainer = styled.div`
   .bp5-control.bp5-radio input:disabled ~ .bp5-control-indicator {
     cursor: default;
     opacity: 0.7;
+    box-shadow: inset 0 0 1px ${Colors.accentPrimary()};
   }
 
   .bp5-control.bp5-radio input:disabled:checked ~ .bp5-control-indicator {

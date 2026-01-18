@@ -1,8 +1,10 @@
 from abc import abstractmethod
-from typing import Any, Generic, Mapping, Optional, Type, Union, cast
+from collections.abc import Mapping
+from typing import Any, Generic, Optional, Union, cast
 
 from typing_extensions import TypeVar
 
+from dagster._annotations import public
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
@@ -22,42 +24,34 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.cached_method import cached_method
 
-try:
-    from functools import cached_property  # type: ignore  # (py37 compat)
-except ImportError:
-
-    class cached_property:
-        pass
-
-
 TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
 
 
-class ConfigurableIOManagerFactoryResourceDefinition(
+class ConfigurableIOManagerFactoryResourceDefinition(  # pyright: ignore[reportIncompatibleMethodOverride]
     NestedResourcesResourceDefinition,
     IOManagerDefinition,
 ):
     def __init__(
         self,
-        configurable_resource_cls: Type,
+        configurable_resource_cls: type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
         nested_resources: Mapping[str, Any],
         nested_partial_resources: Mapping[str, Any],
-        input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
-        output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
+        input_config_schema: Optional[Union[CoercableToConfigSchema, type[Config]]] = None,
+        output_config_schema: Optional[Union[CoercableToConfigSchema, type[Config]]] = None,
         dagster_maintained: bool = False,
     ):
         input_config_schema_resolved: CoercableToConfigSchema = (
-            cast(Type[Config], input_config_schema).to_config_schema()
+            cast("type[Config]", input_config_schema).to_config_schema()
             if safe_is_subclass(input_config_schema, Config)
-            else cast(CoercableToConfigSchema, input_config_schema)
+            else cast("CoercableToConfigSchema", input_config_schema)
         )
         output_config_schema_resolved: CoercableToConfigSchema = (
-            cast(Type[Config], output_config_schema).to_config_schema()
+            cast("type[Config]", output_config_schema).to_config_schema()
             if safe_is_subclass(output_config_schema, Config)
-            else cast(CoercableToConfigSchema, output_config_schema)
+            else cast("CoercableToConfigSchema", output_config_schema)
         )
         super().__init__(
             resource_fn=resource_fn,
@@ -72,7 +66,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(
         self._dagster_maintained = dagster_maintained
 
     @property
-    def configurable_resource_cls(self) -> Type:
+    def configurable_resource_cls(self) -> type:
         return self._configurable_resource_cls
 
     @property
@@ -88,6 +82,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(
         return self._nested_partial_resources
 
 
+@public
 class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -121,7 +116,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
                 with database.connect(username, password) as connection:
                     return MyExternalIOManager(connection)
 
-        defs = Definitions(
+        Definitions(
             ...,
             resources={
                 "io_manager": ConfigurableExternalIOManager(
@@ -145,14 +140,14 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         return self.create_io_manager(context)
 
     @classmethod
-    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialIOManager[T_Self]":
+    def configure_at_launch(cls: "type[T_Self]", **kwargs) -> "PartialIOManager[T_Self]":
         """Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
         return PartialIOManager(resource_cls=cls, data=kwargs)
 
     @cached_method
-    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:  # pyright: ignore[reportIncompatibleMethodOverride]
         return ConfigurableIOManagerFactoryResourceDefinition(
             self.__class__,
             resource_fn=self._get_initialize_and_run_fn(),
@@ -168,13 +163,13 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
     @classmethod
     def input_config_schema(
         cls,
-    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+    ) -> Optional[Union[CoercableToConfigSchema, type[Config]]]:
         return None
 
     @classmethod
     def output_config_schema(
         cls,
-    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+    ) -> Optional[Union[CoercableToConfigSchema, type[Config]]]:
         return None
 
 
@@ -183,12 +178,12 @@ class PartialIOManager(
     Generic[TResValue],
 ):
     @cached_method
-    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:  # pyright: ignore[reportIncompatibleMethodOverride]
         input_config_schema = None
         output_config_schema = None
         if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):
-            factory_cls: Type[ConfigurableIOManagerFactory] = cast(
-                Type[ConfigurableIOManagerFactory], self.resource_cls
+            factory_cls: type[ConfigurableIOManagerFactory] = cast(
+                "type[ConfigurableIOManagerFactory]", self.resource_cls
             )
             input_config_schema = factory_cls.input_config_schema()
             output_config_schema = factory_cls.output_config_schema()
@@ -206,6 +201,7 @@ class PartialIOManager(
         )
 
 
+@public
 class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
     """Base class for Dagster IO managers that utilize structured config.
 
@@ -229,7 +225,7 @@ class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
             def load_input(self, context):
                 return read_csv(self._get_path(context))
 
-        defs = Definitions(
+        Definitions(
             ...,
             resources={
                 "io_manager": MyIOManager(path_prefix=["my", "prefix"])

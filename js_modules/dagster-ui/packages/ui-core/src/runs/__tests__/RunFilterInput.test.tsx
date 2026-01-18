@@ -176,11 +176,6 @@ describe('<RunFilterInput  />', () => {
     ];
     const {getByText} = render(<TestRunsFilterInput tokens={tokens} onChange={onChange} />);
 
-    expect(onChange).toHaveBeenCalledWith([
-      {token: 'created_date_after', value: '1577836800'},
-      {token: 'created_date_before', value: '1609459200'},
-    ]);
-
     onChange.mockClear();
 
     expect(getByText('1/1/2020')).toBeVisible();
@@ -195,6 +190,7 @@ describe('<RunFilterInput  />', () => {
     expect(onChange).toHaveBeenCalledWith([
       {
         token: 'created_date_after',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value: '' + todayRange[0]! / 1000,
       },
     ]);

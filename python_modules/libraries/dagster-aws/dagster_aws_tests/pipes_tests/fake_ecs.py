@@ -4,9 +4,10 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from subprocess import PIPE, Popen
-from typing import Dict, List, Optional, cast
+from typing import Optional, cast
 
 import boto3
+import botocore
 
 
 @dataclass
@@ -24,13 +25,19 @@ class SimulatedTaskRun:
 
 
 class LocalECSMockClient:
+    CONTAINER_NAME = "test-container"
+
     def __init__(self, ecs_client: boto3.client, cloudwatch_client: boto3.client):  # pyright: ignore (reportGeneralTypeIssues)
         self.ecs_client = ecs_client
         self.cloudwatch_client = cloudwatch_client
 
-        self._task_runs: Dict[
+        self._task_runs: dict[
             str, SimulatedTaskRun
         ] = {}  # mapping of TaskDefinitionArn to TaskDefinition
+
+    @property
+    def meta(self):
+        return self.ecs_client.meta
 
     def get_waiter(self, waiter_name: str):
         return WaiterMock(self, waiter_name)
@@ -40,9 +47,9 @@ class LocalECSMockClient:
 
     def describe_task_definition(self, **kwargs):
         response = self.ecs_client.describe_task_definition(**kwargs)
-        assert (
-            len(response["taskDefinition"]["containerDefinitions"]) == 1
-        ), "Only 1 container is supported in tests"
+        assert len(response["taskDefinition"]["containerDefinitions"]) == 1, (
+            "Only 1 container is supported in tests"
+        )
         # unlike real ECS, moto doesn't use cloudwatch logging by default
         # so let's add it here
         response["taskDefinition"]["containerDefinitions"][0]["logConfiguration"] = (
@@ -60,6 +67,16 @@ class LocalECSMockClient:
     def run_task(self, **kwargs):
         response = self.ecs_client.run_task(**kwargs)
 
+        # inject container name in case it's missing
+        response["tasks"][0]["containers"] = response["tasks"][0].get("containers") or []
+
+        if len(response["tasks"][0]["containers"]) == 0:
+            response["tasks"][0]["containers"].append({})
+
+        response["tasks"][0]["containers"][0]["name"] = (
+            response["tasks"][0]["containers"][0].get("name") or self.CONTAINER_NAME
+        )
+
         task_arn = response["tasks"][0]["taskArn"]
         task_definition_arn = response["tasks"][0]["taskDefinitionArn"]
 
@@ -67,16 +84,16 @@ class LocalECSMockClient:
             "taskDefinition"
         ]
 
-        assert (
-            len(task_definition["containerDefinitions"]) == 1
-        ), "Only 1 container is supported in tests"
+        assert len(task_definition["containerDefinitions"]) == 1, (
+            "Only 1 container is supported in tests"
+        )
 
         # execute in a separate process
         command = task_definition["containerDefinitions"][0]["command"]
 
-        assert (
-            command[0] == sys.executable
-        ), "Only the current Python interpreter is supported in tests"
+        assert command[0] == sys.executable, (
+            "Only the current Python interpreter is supported in tests"
+        )
 
         created_at = datetime.now()
 
@@ -110,12 +127,14 @@ class LocalECSMockClient:
             runtime_id=str(uuid.uuid4()),
         )
 
+        self._create_cloudwatch_streams(task_arn)
+
         return response
 
-    def describe_tasks(self, cluster: str, tasks: List[str]):
+    def describe_tasks(self, cluster: str, tasks: list[str]):
         assert len(tasks) == 1, "Only 1 task is supported in tests"
 
-        simulated_task = cast(SimulatedTaskRun, self._task_runs[tasks[0]])
+        simulated_task = cast("SimulatedTaskRun", self._task_runs[tasks[0]])
 
         response = self.ecs_client.describe_tasks(cluster=cluster, tasks=tasks)
 
@@ -125,9 +144,9 @@ class LocalECSMockClient:
             taskDefinition=response["tasks"][0]["taskDefinitionArn"]
         )["taskDefinition"]
 
-        assert (
-            len(task_definition["containerDefinitions"]) == 1
-        ), "Only 1 container is supported in tests"
+        assert len(task_definition["containerDefinitions"]) == 1, (
+            "Only 1 container is supported in tests"
+        )
 
         # need to inject container name since moto doesn't return it
 
@@ -179,16 +198,11 @@ class LocalECSMockClient:
         else:
             raise RuntimeError(f"Task {task} was not found")
 
-    def _upload_logs_to_cloudwatch(self, task: str):
+    def _create_cloudwatch_streams(self, task: str):
         simulated_task = self._task_runs[task]
-
-        if simulated_task.logs_uploaded:
-            return
 
         log_group = simulated_task.log_group
         log_stream = simulated_task.log_stream
-
-        stdout, stderr = self._task_runs[task].popen.communicate()
 
         try:
             self.cloudwatch_client.create_log_group(
@@ -205,6 +219,17 @@ class LocalECSMockClient:
         except self.cloudwatch_client.exceptions.ResourceAlreadyExistsException:
             pass
 
+    def _upload_logs_to_cloudwatch(self, task: str):
+        simulated_task = self._task_runs[task]
+
+        if simulated_task.logs_uploaded:
+            return
+
+        log_group = simulated_task.log_group
+        log_stream = simulated_task.log_stream
+
+        stdout, stderr = self._task_runs[task].popen.communicate()
+
         for out in [stderr, stdout]:
             for line in out.decode().split("\n"):
                 if line:
@@ -214,7 +239,7 @@ class LocalECSMockClient:
                         logEvents=[{"timestamp": int(time.time() * 1000), "message": str(line)}],
                     )
 
-        time.sleep(0.01)
+        time.sleep(0.1)
 
         simulated_task.logs_uploaded = True
 
@@ -225,12 +250,27 @@ class WaiterMock:
         self.waiter_name = waiter_name
 
     def wait(self, **kwargs):
+        waiter_config = kwargs.pop("WaiterConfig", {"MaxAttempts": 100, "Delay": 6})
+        max_attempts = int(waiter_config.get("MaxAttempts", 100))
+        delay = int(waiter_config.get("Delay", 6))
+        num_attempts = 0
+
         if self.waiter_name == "tasks_stopped":
             while True:
                 response = self.client.describe_tasks(**kwargs)
+                num_attempts += 1
+
                 if all(task["lastStatus"] == "STOPPED" for task in response["tasks"]):
                     return
-                time.sleep(0.1)
+
+                if num_attempts >= max_attempts:
+                    raise botocore.exceptions.WaiterError(  # pyright: ignore[reportAttributeAccessIssue]
+                        name=self.waiter_name,
+                        reason="Max attempts exceeded",
+                        last_response=response,
+                    )
+
+                time.sleep(delay)
 
         else:
             raise NotImplementedError(f"Waiter {self.waiter_name} is not implemented")

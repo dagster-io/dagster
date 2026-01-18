@@ -246,6 +246,54 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'asset_3_asset_3_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'failure_assets_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'asset_3_asset_3_other_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_other_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'failure_assets_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_other_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'asset_one',
           }),
           'invocations': list([
@@ -335,6 +383,22 @@
               }),
               'solidHandle': dict({
                 'handleID': 'asset_with_compute_storage_kinds',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'asset_with_custom_automation_condition',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_with_custom_automation_condition',
               }),
             }),
           ]),
@@ -463,6 +527,86 @@
               }),
               'solidHandle': dict({
                 'handleID': 'collect',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'concurrency_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'concurrency_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'concurrency_graph_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'concurrency_graph_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'concurrency_multi_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'concurrency_multi_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'concurrency_op_1',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'concurrency_graph_asset.concurrency_op_1',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'concurrency_op_2',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'concurrency_graph_asset.concurrency_op_2',
               }),
             }),
           ]),
@@ -1150,6 +1294,86 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'grouping_prefix__asset_with_prefix_1',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'grouping_prefix__asset_with_prefix_1',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'grouping_prefix__asset_with_prefix_2',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'grouping_prefix__asset_with_prefix_2',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'grouping_prefix__asset_with_prefix_3',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'grouping_prefix__asset_with_prefix_3',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'grouping_prefix__asset_with_prefix_4',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'grouping_prefix__asset_with_prefix_4',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'grouping_prefix__asset_with_prefix_5',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'grouping_prefix__asset_with_prefix_5',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'hanging_asset',
           }),
           'invocations': list([
@@ -1215,6 +1439,14 @@
               }),
               'solidHandle': dict({
                 'handleID': 'hanging_graph.hanging_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'hanging_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'hanging_op',
               }),
             }),
           ]),
@@ -1571,6 +1803,14 @@
             }),
             dict({
               'pipeline': dict({
+                'name': 'hanging_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'my_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
                 'name': 'static_partitioned_job',
               }),
               'solidHandle': dict({
@@ -1735,6 +1975,38 @@
               }),
               'solidHandle': dict({
                 'handleID': 'simple_graph.noop_op',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'not_included_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'not_included_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'observable_asset_same_version',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'observable_asset_same_version',
               }),
             }),
           ]),
@@ -2038,6 +2310,54 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'owned_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'owned_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'owned_asset_owned_asset_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'owned_asset_owned_asset_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'owned_partitioned_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'owned_partitioned_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'passthrough',
           }),
           'invocations': list([
@@ -2047,6 +2367,54 @@
               }),
               'solidHandle': dict({
                 'handleID': 'child_fail',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'permission_partitioned_op',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': 'owned_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'permission_partitioned_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'unowned_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'permission_partitioned_op',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'permission_test_op',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': 'owned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'permission_test_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'unowned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'permission_test_op',
               }),
             }),
           ]),
@@ -2494,6 +2862,70 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'table_asset_1',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'table_asset_1',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'table_asset_2',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'table_asset_2',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'table_asset_3',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'table_asset_3',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'table_asset_4',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'table_asset_4',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'tag_asset_op',
           }),
           'invocations': list([
@@ -2671,6 +3103,54 @@
               }),
               'solidHandle': dict({
                 'handleID': 'ungrouped_asset_5',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'unowned_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'unowned_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'unowned_asset_unowned_asset_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'unowned_asset_unowned_asset_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'unowned_partitioned_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'unowned_partitioned_asset',
               }),
             }),
           ]),

@@ -1,17 +1,17 @@
-from threading import Lock
-from typing import Any, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
-from dagster._core.snap import DependencyStructureIndex, JobSnapshot, create_job_snapshot_id
+from dagster._core.snap import DependencyStructureIndex, JobSnap
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 
 
 class JobIndex:
-    job_snapshot: JobSnapshot
-    parent_job_snapshot: Optional[JobSnapshot]
+    job_snapshot: JobSnap
+    parent_job_snapshot: Optional[JobSnap]
     _node_defs_snaps_index: Mapping[str, Union[OpDefSnap, GraphDefSnap]]
     _dagster_type_snaps_by_name_index: Mapping[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
@@ -20,12 +20,12 @@ class JobIndex:
 
     def __init__(
         self,
-        job_snapshot: JobSnapshot,
-        parent_job_snapshot: Optional[JobSnapshot],
+        job_snapshot: JobSnap,
+        parent_job_snapshot: Optional[JobSnap],
     ):
-        self.job_snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+        self.job_snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         self.parent_job_snapshot = check.opt_inst_param(
-            parent_job_snapshot, "parent_job_snapshot", JobSnapshot
+            parent_job_snapshot, "parent_job_snapshot", JobSnap
         )
 
         node_def_snaps: Sequence[Union[OpDefSnap, GraphDefSnap]] = [
@@ -47,9 +47,6 @@ class JobIndex:
             for comp_snap in job_snapshot.node_defs_snapshot.graph_def_snaps
         }
 
-        self._memo_lock = Lock()
-        self._job_snapshot_id = None
-
     @property
     def name(self) -> str:
         return self.job_snapshot.name
@@ -67,11 +64,12 @@ class JobIndex:
         return self.job_snapshot.metadata
 
     @property
+    def owners(self):
+        return self.job_snapshot.owners
+
+    @property
     def job_snapshot_id(self) -> str:
-        with self._memo_lock:
-            if not self._job_snapshot_id:
-                self._job_snapshot_id = create_job_snapshot_id(self.job_snapshot)
-            return self._job_snapshot_id
+        return self.job_snapshot.snapshot_id
 
     def has_dagster_type_name(self, type_name: str) -> bool:
         return type_name in self._dagster_type_snaps_by_name_index

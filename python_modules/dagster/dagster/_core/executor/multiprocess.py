@@ -2,10 +2,13 @@ import multiprocessing
 import os
 import sys
 import threading
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional
+
+from dagster_shared.utils.timing import format_duration
 
 from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -26,6 +29,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
 from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
@@ -37,7 +41,7 @@ from dagster._core.executor.child_process_executor import (
 from dagster._core.instance import DagsterInstance
 from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
+from dagster._utils.timing import TimerResult, time_execution_scope
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef
@@ -112,11 +116,16 @@ class MultiprocessExecutor(Executor):
         self,
         retries: RetryMode,
         max_concurrent: Optional[int],
-        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
+        self._step_dependency_config = check.inst_param(
+            step_dependency_config, "step_dependency_config", StepDependencyConfig
+        )
+
         if not max_concurrent:
             env_var_default = os.getenv("DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT")
             max_concurrent = (
@@ -144,6 +153,10 @@ class MultiprocessExecutor(Executor):
     @property
     def retries(self) -> RetryMode:
         return self._retries
+
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_dependency_config
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -200,12 +213,13 @@ class MultiprocessExecutor(Executor):
                     max_concurrent=limit,
                     tag_concurrency_limits=tag_concurrency_limits,
                     instance_concurrency_context=instance_concurrency_context,
+                    step_dependency_config=self._step_dependency_config,
                 )
             )
-            active_iters: Dict[str, Iterator[Optional[DagsterEvent]]] = {}
-            errors: Dict[int, SerializableErrorInfo] = {}
-            processes: Dict[str, BaseProcess] = {}
-            term_events: Dict[str, Any] = {}
+            active_iters: dict[str, Iterator[Optional[DagsterEvent]]] = {}
+            errors: dict[int, SerializableErrorInfo] = {}
+            processes: dict[str, BaseProcess] = {}
+            term_events: dict[str, Any] = {}
             stopping: bool = False
 
             try:
@@ -220,8 +234,10 @@ class MultiprocessExecutor(Executor):
                         stopping = True
                         active_execution.mark_interrupted()
                         for key, term_event in term_events.items():
-                            if processes.get(key) and processes[key].is_alive():
-                                term_event.set()
+                            if key in processes:
+                                if processes[key].is_alive():
+                                    term_event.set()
+                                del processes[key]
 
                     while not stopping:
                         steps = active_execution.get_steps_to_execute(
@@ -256,9 +272,27 @@ class MultiprocessExecutor(Executor):
                             event_or_none = next(step_iter)
                             if event_or_none is None:
                                 continue
-                            else:
-                                yield event_or_none
-                                active_execution.handle_event(event_or_none)
+
+                            yield event_or_none
+                            active_execution.handle_event(event_or_none)
+
+                            if event_or_none.is_resource_init_failure:
+                                step_context = plan_context.for_step(
+                                    active_execution.get_step_by_key(key)
+                                )
+                                assert isinstance(
+                                    event_or_none.engine_event_data.error, SerializableErrorInfo
+                                )
+
+                                failure_or_retry_event = (
+                                    self.log_failure_or_retry_event_after_error(
+                                        step_context,
+                                        event_or_none.engine_event_data.error,
+                                        active_execution.get_known_state(),
+                                    )
+                                )
+                                yield failure_or_retry_event
+                                active_execution.handle_event(failure_or_retry_event)
 
                         except ChildProcessCrashException as crash:
                             serializable_error = serializable_error_info_from_exc_info(
@@ -271,18 +305,19 @@ class MultiprocessExecutor(Executor):
                                 step_context,
                                 get_run_crash_explanation(
                                     prefix=f"Multiprocess executor: child process for step {key}",
-                                    exit_code=crash.exit_code,
+                                    exit_code=crash.exit_code,  # pyright: ignore[reportArgumentType]
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )
-                            failure_or_retry_event = self.get_failure_or_retry_event_after_crash(
+                            failure_or_retry_event = self.log_failure_or_retry_event_after_error(
                                 step_context, serializable_error, active_execution.get_known_state()
                             )
 
                             active_execution.handle_event(failure_or_retry_event)
                             yield failure_or_retry_event
                             empty_iters.append(key)
-                            errors[crash.pid] = serializable_error
+                            if failure_or_retry_event.is_step_failure:
+                                errors[crash.pid] = serializable_error
                         except StopIteration:
                             empty_iters.append(key)
 
@@ -290,6 +325,7 @@ class MultiprocessExecutor(Executor):
                     for key in empty_iters:
                         del active_iters[key]
                         del term_events[key]
+                        processes.pop(key, None)
                         active_execution.verify_complete(plan_context, key)
 
                     # process skipped and abandoned steps
@@ -310,8 +346,10 @@ class MultiprocessExecutor(Executor):
                         ),
                     )
                     for key, term_event in term_events.items():
-                        if processes.get(key) and processes[key].is_alive():
-                            term_event.set()
+                        if key in processes:
+                            if processes[key].is_alive():
+                                term_event.set()
+                            del processes[key]
 
                 raise
 
@@ -360,9 +398,9 @@ def execute_step_out_of_process(
     recon_job: ReconstructableJob,
     step_context: IStepContext,
     step: ExecutionStep,
-    errors: Dict[int, SerializableErrorInfo],
-    processes: Dict[str, BaseProcess],
-    term_events: Dict[str, Any],
+    errors: dict[int, SerializableErrorInfo],
+    processes: dict[str, BaseProcess],
+    term_events: dict[str, Any],
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: Optional[RepositoryLoadData],

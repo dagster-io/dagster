@@ -1,9 +1,6 @@
-/* eslint-disable */
-const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+const {RuleTester} = require('@typescript-eslint/rule-tester');
 
-const ruleTester = new ESLintUtils.RuleTester({
-  parser: '@typescript-eslint/parser',
-});
+const ruleTester = new RuleTester();
 
 const rule = require('../no-apollo-client');
 
@@ -23,7 +20,7 @@ ruleTester.run('rule', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.ImportDeclaration,
+          type: 'ImportDeclaration',
           messageId: 'useWrappedApolloClient',
         },
       ],

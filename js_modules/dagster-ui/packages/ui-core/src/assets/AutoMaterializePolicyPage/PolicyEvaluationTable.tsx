@@ -1,44 +1,82 @@
-import {Box, Button, Colors, Dialog, Icon, Table, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  ButtonLink,
+  Colors,
+  Dialog,
+  DialogFooter,
+  Icon,
+  Table,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 
-import {EvaluationConditionalLabel, EvaluationUserLabel} from './EvaluationConditionalLabel';
+import {
+  EvaluationConditionalLabel,
+  EvaluationSinceLabel,
+  EvaluationUserLabel,
+} from './EvaluationConditionalLabel';
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-import {Evaluation, FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
 import {
+  Evaluation,
+  FlattenedConditionEvaluation,
+  defaultExpanded,
+  displayNameForEntityKey,
+  entityKeyMatches,
+  flattenEvaluations,
+  statusForEvaluation,
+  tokenForEntityKey,
+} from './flattenEvaluations';
+import {
+  AssetLastEvaluationFragment,
   NewEvaluationNodeFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
-import {AssetConditionEvaluationStatus} from '../../graphql/types';
+import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
+import {AssetConditionEvaluationStatus, AssetKey, EntityKey} from '../../graphql/types';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
+import {EvaluationHistoryStackItem} from './types';
 
 interface Props {
   assetKeyPath: string[] | null;
+  assetCheckName?: string;
   evaluationNodes: Evaluation[];
-  evaluationId: number;
+  evaluationId: string;
   rootUniqueId: string;
   isLegacyEvaluation: boolean;
   selectPartition: (partitionKey: string | null) => void;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
+  lastEvaluationsByEntityKey?: {[entityKeyToken: string]: AssetLastEvaluationFragment};
 }
 
 export const PolicyEvaluationTable = (props: Props) => {
   const {
     assetKeyPath,
+    assetCheckName,
     evaluationNodes,
     evaluationId,
     rootUniqueId,
     isLegacyEvaluation,
     selectPartition,
+    pushHistory,
+    lastEvaluationsByEntityKey,
   } = props;
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => {
-    const list = isLegacyEvaluation ? evaluationNodes.map((node) => node.uniqueId) : [];
+    const list = isLegacyEvaluation
+      ? evaluationNodes.map((node) => node.uniqueId)
+      : defaultExpanded({
+          evaluationNodes,
+          rootUniqueId,
+        });
     return new Set(list);
   });
 
@@ -66,10 +104,13 @@ export const PolicyEvaluationTable = (props: Props) => {
     return (
       <NewPolicyEvaluationTable
         assetKeyPath={assetKeyPath}
+        assetCheckName={assetCheckName}
         evaluationId={evaluationId}
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
+        pushHistory={pushHistory}
+        lastEvaluationsByEntityKey={lastEvaluationsByEntityKey}
       />
     );
   }
@@ -104,20 +145,44 @@ export const PolicyEvaluationTable = (props: Props) => {
 };
 
 const NewPolicyEvaluationTable = ({
-  assetKeyPath,
+  assetKeyPath: rootAssetKeyPath,
+  assetCheckName: rootAssetCheckName,
   evaluationId,
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  pushHistory,
+  lastEvaluationsByEntityKey,
 }: {
   assetKeyPath: string[] | null;
-  evaluationId: number;
+  assetCheckName?: string;
+  evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
+  lastEvaluationsByEntityKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   const isPartitioned = !!flattenedRecords[0]?.evaluation.isPartitioned;
+  const rootEntityKey = useMemo(() => {
+    if (!rootAssetKeyPath) {
+      return null;
+    }
+    const rootAssetKey: AssetKey = {
+      __typename: 'AssetKey',
+      path: rootAssetKeyPath,
+    };
+    const entityKey: EntityKey = rootAssetCheckName
+      ? {
+          __typename: 'AssetCheckhandle',
+          name: rootAssetCheckName,
+          assetKey: rootAssetKey,
+        }
+      : rootAssetKey;
+    return entityKey;
+  }, [rootAssetKeyPath, rootAssetCheckName]);
+
   return (
     <VeryCompactTable>
       <thead>
@@ -129,21 +194,66 @@ const NewPolicyEvaluationTable = ({
         </tr>
       </thead>
       <tbody>
-        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
-          const {userLabel, uniqueId, numTrue, numCandidates, expandedLabel} = evaluation;
-          const anyCandidatePartitions = typeof numCandidates === 'number' && numCandidates > 0;
-          const status =
-            numTrue === 0 && !anyCandidatePartitions
-              ? AssetConditionEvaluationStatus.SKIPPED
-              : numTrue > 0
-              ? AssetConditionEvaluationStatus.TRUE
-              : AssetConditionEvaluationStatus.FALSE;
-
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type, entityKey}) => {
+          const {userLabel, uniqueId, numTrue, numCandidates} = evaluation;
+          const status = statusForEvaluation(evaluation);
           let endTimestamp, startTimestamp;
           if ('endTimestamp' in evaluation) {
             endTimestamp = evaluation.endTimestamp;
             startTimestamp = evaluation.startTimestamp;
           }
+
+          const assetKey =
+            entityKey && entityKey.__typename === 'AssetCheckhandle'
+              ? entityKey.assetKey
+              : entityKey;
+          const checkName =
+            entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+          const entityDisplayName = entityKey ? displayNameForEntityKey(entityKey) : '';
+          const lastEvaluationForEntityKey =
+            entityKey &&
+            lastEvaluationsByEntityKey &&
+            tokenForEntityKey(entityKey) in lastEvaluationsByEntityKey
+              ? lastEvaluationsByEntityKey[tokenForEntityKey(entityKey)]
+              : null;
+
+          const isReferencedEntityKey = entityKey && !entityKeyMatches(rootEntityKey, entityKey);
+          const canLinkToAssetEvaluation =
+            isReferencedEntityKey && pushHistory && lastEvaluationForEntityKey;
+          const entityEvaluationLink = canLinkToAssetEvaluation ? (
+            <Tooltip
+              content={
+                lastEvaluationForEntityKey.evaluationId === evaluationId
+                  ? `Navigate to evaluation details for \`${entityDisplayName}\` for this tick`
+                  : `Navigate to evaluation details for \`${entityDisplayName}\` for a previous tick`
+              }
+            >
+              <a
+                onClick={(e) => {
+                  e?.stopPropagation();
+                  pushHistory({
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    assetKeyPath: assetKey!.path,
+                    assetCheckName: checkName,
+                    evaluationID: lastEvaluationForEntityKey.evaluationId,
+                  });
+                }}
+              >
+                <div style={{whiteSpace: 'nowrap'}}>
+                  View evaluation
+                  {lastEvaluationForEntityKey.evaluationId !== evaluationId ? (
+                    <>
+                      {' @ '}
+                      <TimestampDisplay
+                        timestamp={lastEvaluationForEntityKey.timestamp}
+                        timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
+                      />
+                    </>
+                  ) : null}
+                </div>
+              </a>
+            </Tooltip>
+          ) : null;
 
           return (
             <EvaluationRow
@@ -166,13 +276,8 @@ const NewPolicyEvaluationTable = ({
                       <Icon name="cancel" color={Colors.accentGray()} />
                     )
                   }
-                  label={
-                    userLabel ? (
-                      <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />
-                    ) : (
-                      <EvaluationConditionalLabel segments={expandedLabel} />
-                    )
-                  }
+                  evaluationLink={entityEvaluationLink}
+                  label={<EvaluationLabel evaluation={evaluation} pushHistory={pushHistory} />}
                   skipped={status === AssetConditionEvaluationStatus.SKIPPED}
                   depth={depth}
                   type={type}
@@ -180,7 +285,7 @@ const NewPolicyEvaluationTable = ({
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
-              {isPartitioned && assetKeyPath ? (
+              {isPartitioned && rootAssetKeyPath ? (
                 <td style={{width: 0}}>
                   <Box
                     flex={{direction: 'row', alignItems: 'center', gap: 2}}
@@ -193,7 +298,7 @@ const NewPolicyEvaluationTable = ({
                           ? '1 partition'
                           : `${numberFormatter.format(numTrue)} partitions`)
                       }
-                      assetKeyPath={assetKeyPath}
+                      assetKeyPath={rootAssetKeyPath}
                       evaluationId={evaluationId}
                       nodeUniqueId={evaluation.uniqueId}
                       numTrue={numTrue}
@@ -202,10 +307,11 @@ const NewPolicyEvaluationTable = ({
                 </td>
               ) : (
                 <td>
-                  <PolicyEvaluationStatusTag status={status} />
+                  {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                  <PolicyEvaluationStatusTag status={status!} />
                 </td>
               )}
-              {isPartitioned ? <td>{numCandidates || '0'}</td> : null}
+              {isPartitioned ? <td>{numCandidates === null ? 'All' : numCandidates}</td> : null}
               <td>
                 {startTimestamp && endTimestamp ? (
                   <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
@@ -219,6 +325,31 @@ const NewPolicyEvaluationTable = ({
       </tbody>
     </VeryCompactTable>
   );
+};
+
+const EvaluationLabel = ({
+  evaluation,
+  pushHistory,
+}: {
+  evaluation: NewEvaluationNodeFragment;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
+}) => {
+  const {userLabel, expandedLabel} = evaluation;
+  if (userLabel) {
+    return <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />;
+  }
+  if (evaluation.sinceMetadata && expandedLabel.length === 3 && expandedLabel[1] === 'SINCE') {
+    return (
+      <EvaluationSinceLabel
+        pushHistory={pushHistory}
+        entityKey={evaluation.entityKey}
+        sinceMetadata={evaluation.sinceMetadata}
+        triggerCondition={expandedLabel[0]}
+        resetCondition={expandedLabel[2]}
+      />
+    );
+  }
+  return <EvaluationConditionalLabel segments={expandedLabel} />;
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
@@ -318,15 +449,20 @@ const ViewDetailsButton = ({
           setShowDetails(false);
         }}
       >
-        <AssetEventMetadataEntriesTable showDescriptions event={evaluation} repoAddress={null} />
+        <Box padding={8}>
+          <AssetEventMetadataEntriesTable showDescriptions event={evaluation} repoAddress={null} />
+        </Box>
+        <DialogFooter>
+          <Button onClick={() => setShowDetails(false)}>Done</Button>
+        </DialogFooter>
       </Dialog>
-      <Button
+      <ButtonLink
         onClick={() => {
           setShowDetails(true);
         }}
       >
         View details
-      </Button>
+      </ButtonLink>
     </>
   );
 };
@@ -343,7 +479,7 @@ export const PartitionedPolicyEvaluationTable = ({
   selectPartition,
 }: {
   assetKeyPath: string[] | null;
-  evaluationId: number;
+  evaluationId: string;
   rootUniqueId: string;
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   expandedRecords: Set<string>;

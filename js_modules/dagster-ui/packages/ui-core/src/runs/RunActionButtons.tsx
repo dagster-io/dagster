@@ -1,4 +1,4 @@
-import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Icon} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -15,6 +15,7 @@ import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
+import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 interface RunActionButtonsProps {
@@ -127,16 +128,16 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
       repositoryLocationName: repoMatch.match.repositoryLocation.name,
       repositoryName: repoMatch.match.repository.name,
     });
-    await reexecute(run, executionParams);
+    await reexecute.onClick(run, executionParams, false);
   };
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
     title: 'All steps in root run',
-    tooltip: 'Re-execute the pipeline run from scratch',
+    tooltip: 'Re-execute the pipeline run from scratch. Shift-click to adjust tags.',
     disabled: !canRunAllSteps(run),
-    onClick: () => reexecute(run, ReexecutionStrategy.ALL_STEPS),
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey),
   };
 
   const same: LaunchButtonConfiguration = {
@@ -149,11 +150,12 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         {!currentRunSelection || !currentRunSelection.present
           ? 'Re-executes the same step subset used for this run if one was present.'
           : !currentRunSelection.finished
-          ? 'Wait for all of the steps to finish to re-execute the same subset.'
-          : 'Re-execute the same step subset used for this run:'}
+            ? 'Wait for all of the steps to finish to re-execute the same subset.'
+            : 'Re-execute the same step subset used for this run:'}
         <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     onClick: () => reexecuteWithSelection(currentRunSelection!),
   };
 
@@ -167,8 +169,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         {!selection.present
           ? 'Select a step or type a step subset to re-execute.'
           : !selection.finished
-          ? 'Wait for the steps to finish to re-execute them.'
-          : 'Re-execute the selected steps with existing configuration:'}
+            ? 'Wait for the steps to finish to re-execute them.'
+            : 'Re-execute the selected steps with existing configuration:'}
         <StepSelectionDescription selection={selection} />
       </div>
     ),
@@ -179,20 +181,23 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     icon: 'arrow_forward',
     title: 'From selected',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
-    tooltip: 'Re-execute the pipeline downstream from the selected steps',
+    tooltip: 'Re-execute the pipeline downstream from the selected steps.',
     onClick: async () => {
       if (!run.executionPlan) {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
-      const selectionAndDownstreamQuery = selection.keys.map((k) => `${k}*`).join(',');
-      const selectionKeys = filterByQuery(graph, selectionAndDownstreamQuery).all.map(
+
+      const selectionForPythonFiltering = selection.keys.map((k) => `${k}*`).join(',');
+      const selectionForUIFiltering = selection.keys.map((k) => `name:"${k}"+`).join(' or ');
+
+      const selectionKeys = filterRunSelectionByQuery(graph, selectionForUIFiltering).all.map(
         (node) => node.name,
       );
 
       await reexecuteWithSelection({
         keys: selectionKeys,
-        query: selectionAndDownstreamQuery,
+        query: selectionForPythonFiltering,
       });
     },
   };
@@ -205,8 +210,18 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
       ? 'Retry is only enabled when the pipeline has failed.'
-      : 'Retry the pipeline run, skipping steps that completed successfully',
-    onClick: () => reexecute(run, ReexecutionStrategy.FROM_FAILURE),
+      : 'Retry the pipeline run, skipping steps that completed successfully. Shift-click to adjust tags.',
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey),
+  };
+
+  const fromAssetFailure: LaunchButtonConfiguration = {
+    icon: 'arrow_forward',
+    title: 'From asset failure',
+    disabled: !fromFailureEnabled,
+    tooltip: !fromFailureEnabled
+      ? 'Retry is only enabled when the pipeline has failed.'
+      : 'Retry the pipeline run, selecting only assets that did not complete successfully. Shift-click to adjust tags.',
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_ASSET_FAILURE, e.shiftKey),
   };
 
   if (!artifactsPersisted) {
@@ -217,14 +232,21 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     });
   }
 
-  const options = [full, same, selected, fromSelected, fromFailure];
+  const options = [
+    full,
+    same,
+    selected,
+    fromSelected,
+    fromFailure,
+    run.executionPlan?.assetKeys.length ? fromAssetFailure : null,
+  ].filter(Boolean) as LaunchButtonConfiguration[];
   const preferredRerun = selection.present
     ? selected
     : fromFailureEnabled && currentRunIsFromFailure
-    ? fromFailure
-    : currentRunSelection?.present
-    ? same
-    : null;
+      ? fromFailure
+      : currentRunSelection?.present
+        ? same
+        : null;
 
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
@@ -236,7 +258,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   };
 
   return (
-    <Group direction="row" spacing={8}>
+    <Box flex={{direction: 'row', gap: 8}}>
       <Box flex={{direction: 'row'}}>
         <LaunchButtonDropdown
           runCount={1}
@@ -246,8 +268,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             primary.scope === '*'
               ? `Re-execute all (*)`
               : primary.scope
-              ? `Re-execute (${primary.scope})`
-              : `Re-execute ${primary.title}`
+                ? `Re-execute (${primary.scope})`
+                : `Re-execute ${primary.title}`
           }
           tooltip={tooltip()}
           icon={jobError?.icon}
@@ -255,7 +277,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         />
       </Box>
       {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}
-    </Group>
+      {reexecute.launchpadElement}
+    </Box>
   );
 };
 

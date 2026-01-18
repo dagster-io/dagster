@@ -1,19 +1,20 @@
+import {useMemo} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {gql, useQuery} from '../apollo-client';
 import {
   ConfigForRunQuery,
   ConfigForRunQueryVariables,
 } from './types/LaunchpadSetupFromRunRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {
   IExecutionSession,
   applyCreateSession,
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
@@ -23,21 +24,33 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
-  const {
-    permissions: {canLaunchPipelineExecution},
-    loading,
-  } = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath, runId} = useParams<{
     repoPath: string;
     pipelinePath: string;
     runId: string;
   }>();
 
-  useBlockTraceUntilTrue('Permissions', loading);
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineName} = explorerPath;
+  const pipelineSelector = useMemo(
+    () => ({
+      pipelineName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    }),
+    [pipelineName, repoAddress.name, repoAddress.location],
+  );
+
+  const {hasLaunchExecutionPermission, loading} = useJobPermissions(
+    pipelineSelector,
+    repoAddress.location,
+  );
+
+  useBlockTraceUntilTrue('Permissions', !loading);
   if (loading) {
     return null;
   }
-  if (!canLaunchPipelineExecution) {
+  if (!hasLaunchExecutionPermission) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return (

@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Box} from '../Box';
@@ -11,7 +10,7 @@ import {TextInput} from '../TextInput';
 export default {
   title: 'TextInput',
   component: TextInput,
-} as Meta;
+};
 
 export const Default = () => {
   const [value, setValue] = useState('');
@@ -74,6 +73,15 @@ export const NextToButton = () => {
         rightElement={<Icon name="info" color={Colors.accentPrimary()} />}
       />
       <Button>Hello</Button>
+    </Box>
+  );
+};
+
+export const Disabled = () => {
+  return (
+    <Box flex={{direction: 'column', gap: 8}} style={{width: '300px'}}>
+      <TextInput icon="layers" placeholder="Disabled input…" value="" disabled />
+      <TextInput icon="layers" placeholder="Enabled input…" value="" />
     </Box>
   );
 };

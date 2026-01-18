@@ -2,31 +2,6 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunActionsMenuRunFragment = {
-  __typename: 'Run';
-  id: string;
-  hasReExecutePermission: boolean;
-  hasTerminatePermission: boolean;
-  hasDeletePermission: boolean;
-  canTerminate: boolean;
-  mode: string;
-  status: Types.RunStatus;
-  pipelineName: string;
-  pipelineSnapshotId: string | null;
-  assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  assetCheckSelection: Array<{
-    __typename: 'AssetCheckhandle';
-    name: string;
-    assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  }> | null;
-  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  repositoryOrigin: {
-    __typename: 'RepositoryOrigin';
-    repositoryName: string;
-    repositoryLocationName: string;
-  } | null;
-};
-
 export type PipelineEnvironmentQueryVariables = Types.Exact<{
   runId: Types.Scalars['ID']['input'];
 }>;
@@ -42,14 +17,19 @@ export type PipelineEnvironmentQuery = {
         pipelineSnapshotId: string | null;
         runConfigYaml: string;
         parentPipelineSnapshotId: string | null;
+        hasRunMetricsEnabled: boolean;
         repositoryOrigin: {
           __typename: 'RepositoryOrigin';
           id: string;
           repositoryName: string;
           repositoryLocationName: string;
         } | null;
+        executionPlan: {
+          __typename: 'ExecutionPlan';
+          assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+        } | null;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineEnvironmentQueryVersion = '762f0cd2639e98c470cecdb3d2f7ca4609bd77be7f916e0134021bd0b589da59';
+export const PipelineEnvironmentQueryVersion = '6bd5598ee7119d0e6f403247c78c1d0670e198985b809a4bf1ddafe81c534d7e';

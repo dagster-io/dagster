@@ -10,56 +10,37 @@ from enum import Enum
 from gzip import GzipFile
 from typing import NamedTuple, Optional, Union
 
+import dagster as dg
 import pytest
 import sqlalchemy as db
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    Output,
-    _check as check,
-    asset,
-    file_relative_path,
-    job,
-    op,
-)
+from dagster import _check as check
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.events import DagsterEvent, StepMaterializationData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.definitions.partitions.snap import StaticPartitionsSnap
+from dagster._core.events import DagsterEventType, StepMaterializationData
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import StaticPartitionsSnap
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster._core.snap.job_snapshot import JobSnapshot
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.storage.runs.migration import BACKFILL_JOB_NAME_AND_TAGS, RUN_BACKFILL_ID
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import (
-    COMPUTE_KIND_TAG,
-    LEGACY_COMPUTE_KIND_TAG,
-    REPOSITORY_LABEL_TAG,
-)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, REPOSITORY_LABEL_TAG
+from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
-from dagster._serdes.serdes import (
-    WhitelistMap,
-    _whitelist_for_serdes,
-    deserialize_value,
-    pack_value,
-    serialize_value,
-)
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
+from dagster_shared.serdes.serdes import WhitelistMap, _whitelist_for_serdes, pack_value
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
@@ -95,16 +76,17 @@ def _event_log_migration_regex(_run_id, current_revision, expected_revision=None
 
 
 def test_event_log_step_key_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
-    with copy_directory(src_dir) as test_dir:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
+    with (
+        copy_directory(src_dir) as test_dir,
+        DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance,
+    ):
         # Make sure the schema is migrated
         instance.upgrade()
 
         runs = instance.get_runs()
         assert len(runs) == 1
-        run_ids = instance._event_storage.get_all_run_ids()
+        run_ids = instance._event_storage.get_all_run_ids()  # pyright: ignore[reportAttributeAccessIssue]
         assert run_ids == ["6405c4a0-3ccc-4600-af81-b5ee197f8528"]
         assert isinstance(instance._event_storage, SqlEventLogStorage)
         records = instance._event_storage.get_records_for_run(
@@ -117,7 +99,7 @@ def test_event_log_step_key_migration():
             row_data = instance._event_storage.get_event_log_table_data(
                 "6405c4a0-3ccc-4600-af81-b5ee197f8528", record.storage_id
             )
-            if row_data.step_key is not None:
+            if row_data.step_key is not None:  # pyright: ignore[reportOptionalMemberAccess]
                 step_key_records.append(row_data)
         assert len(step_key_records) == 0
 
@@ -129,7 +111,7 @@ def test_event_log_step_key_migration():
             row_data = instance._event_storage.get_event_log_table_data(
                 "6405c4a0-3ccc-4600-af81-b5ee197f8528", record.storage_id
             )
-            if row_data.step_key is not None:
+            if row_data.step_key is not None:  # pyright: ignore[reportOptionalMemberAccess]
                 step_key_records.append(row_data)
         assert len(step_key_records) > 0
 
@@ -138,33 +120,49 @@ def get_sqlite3_tables(db_path):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    return [r[0] for r in cursor.fetchall()]
+    res = [r[0] for r in cursor.fetchall()]
+    con.close()
+    return res
 
 
 def get_current_alembic_version(db_path):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute("SELECT * FROM alembic_version")
-    return cursor.fetchall()[0][0]
+    res = cursor.fetchall()[0][0]
+    con.close()
+    return res
 
 
 def get_sqlite3_columns(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute(f'PRAGMA table_info("{table_name}");')
-    return [r[1] for r in cursor.fetchall()]
+    res = [r[1] for r in cursor.fetchall()]
+    con.close()
+    return res
 
 
 def get_sqlite3_indexes(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute(f'PRAGMA index_list("{table_name}");')
-    return [r[1] for r in cursor.fetchall()]
+    res = [r[1] for r in cursor.fetchall()]
+    con.close()
+    return res
 
 
 def test_snapshot_0_7_6_pre_add_job_snapshot():
+    @dg.op
+    def noop_op(_):
+        pass
+
+    @dg.job
+    def noop_job():
+        noop_op()
+
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:
         # invariant check to make sure migration has not been run yet
 
@@ -174,54 +172,45 @@ def test_snapshot_0_7_6_pre_add_job_snapshot():
 
         assert "snapshots" not in get_sqlite3_tables(db_path)
 
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            with pytest.raises(
+                (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
+            ):
+                noop_job.execute_in_process(instance=instance)
 
-        @op
-        def noop_op(_):
-            pass
+            assert len(instance.get_runs()) == 1
 
-        @job
-        def noop_job():
-            noop_op()
+            # Make sure the schema is migrated
+            instance.upgrade()
 
-        with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
-        ):
-            noop_job.execute_in_process(instance=instance)
+            assert "snapshots" in get_sqlite3_tables(db_path)
+            assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
+                get_sqlite3_columns(db_path, "snapshots")
+            )
 
-        assert len(instance.get_runs()) == 1
+            assert len(instance.get_runs()) == 1
 
-        # Make sure the schema is migrated
-        instance.upgrade()
+            run = instance.get_run_by_id(run_id)
 
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
+            assert run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
+            assert run.job_snapshot_id is None  # pyright: ignore[reportOptionalMemberAccess]
 
-        assert len(instance.get_runs()) == 1
+            result = noop_job.execute_in_process(instance=instance)
 
-        run = instance.get_run_by_id(run_id)
+            assert result.success
 
-        assert run.run_id == run_id
-        assert run.job_snapshot_id is None
+            runs = instance.get_runs()
+            assert len(runs) == 2
 
-        result = noop_job.execute_in_process(instance=instance)
+            new_run_id = result.run_id
 
-        assert result.success
+            new_run = instance.get_run_by_id(new_run_id)
 
-        runs = instance.get_runs()
-        assert len(runs) == 2
-
-        new_run_id = result.run_id
-
-        new_run = instance.get_run_by_id(new_run_id)
-
-        assert new_run.job_snapshot_id
+            assert new_run.job_snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_downgrade_and_upgrade():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:
         # invariant check to make sure migration has not been run yet
 
@@ -231,42 +220,39 @@ def test_downgrade_and_upgrade():
 
         assert "snapshots" not in get_sqlite3_tables(db_path)
 
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert len(instance.get_runs()) == 1
 
-        assert len(instance.get_runs()) == 1
+            # Make sure the schema is migrated
+            instance.upgrade()
 
-        # Make sure the schema is migrated
-        instance.upgrade()
+            assert "snapshots" in get_sqlite3_tables(db_path)
+            assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
+                get_sqlite3_columns(db_path, "snapshots")
+            )
 
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
+            assert len(instance.get_runs()) == 1
 
-        assert len(instance.get_runs()) == 1
+            instance._run_storage._alembic_downgrade(rev="9fe9e746268c")  # pyright: ignore[reportAttributeAccessIssue]
 
-        instance._run_storage._alembic_downgrade(rev="9fe9e746268c")
+            assert get_current_alembic_version(db_path) == "9fe9e746268c"
 
-        assert get_current_alembic_version(db_path) == "9fe9e746268c"
+            assert "snapshots" not in get_sqlite3_tables(db_path)
 
-        assert "snapshots" not in get_sqlite3_tables(db_path)
+            assert len(instance.get_runs()) == 1
 
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+            instance.upgrade()
 
-        assert len(instance.get_runs()) == 1
+            assert "snapshots" in get_sqlite3_tables(db_path)
+            assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
+                get_sqlite3_columns(db_path, "snapshots")
+            )
 
-        instance.upgrade()
-
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
-
-        assert len(instance.get_runs()) == 1
+            assert len(instance.get_runs()) == 1
 
 
 def test_event_log_asset_key_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_8_pre_asset_key_migration/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_7_8_pre_asset_key_migration/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(
             test_dir, "history", "runs", "722183e4-119f-4a00-853f-e1257be82ddb.db"
@@ -275,8 +261,8 @@ def test_event_log_asset_key_migration():
         assert "asset_key" not in set(get_sqlite3_columns(db_path, "event_logs"))
 
         # Make sure the schema is migrated
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
 
         assert "asset_key" in set(get_sqlite3_columns(db_path, "event_logs"))
 
@@ -286,7 +272,7 @@ def instance_from_debug_payloads(payload_files):
     for input_file in payload_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_value(blob, DebugRunPayload)
+            debug_payload = dg.deserialize_value(blob, DebugRunPayload)
 
             debug_payloads.append(debug_payload)
 
@@ -297,11 +283,11 @@ def test_object_store_operation_result_data_new_fields():
     """We added address and version fields to ObjectStoreOperationResultData.
     Make sure we can still deserialize old ObjectStoreOperationResultData without those fields.
     """
-    instance_from_debug_payloads([file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")])
+    instance_from_debug_payloads([dg.file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")])
 
 
 def test_event_log_asset_partition_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_9_22_pre_asset_partition/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_9_22_pre_asset_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(
             test_dir, "history", "runs", "1a1d3c4b-1284-4c74-830c-c8988bd4d779.db"
@@ -310,17 +296,17 @@ def test_event_log_asset_partition_migration():
         assert "partition" not in set(get_sqlite3_columns(db_path, "event_logs"))
 
         # Make sure the schema is migrated
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
 
         assert "partition" in set(get_sqlite3_columns(db_path, "event_logs"))
 
 
 def test_mode_column_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
     with copy_directory(src_dir) as test_dir:
 
-        @job
+        @dg.job
         def _test():
             pass
 
@@ -329,26 +315,26 @@ def test_mode_column_migration():
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # this migration was optional, so make sure things work before migrating
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance.upgrade()
+            instance.upgrade()
 
-        # Make sure the schema is migrated
-        assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+            # Make sure the schema is migrated
+            assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance._run_storage._alembic_downgrade(rev="72686963a802")
+            instance._run_storage._alembic_downgrade(rev="72686963a802")  # pyright: ignore[reportAttributeAccessIssue]
 
-        assert get_current_alembic_version(db_path) == "72686963a802"
-        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert get_current_alembic_version(db_path) == "72686963a802"
+            assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
 
 
 def test_run_partition_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
         assert get_current_alembic_version(db_path) == "224640159acf"
@@ -356,21 +342,23 @@ def test_run_partition_migration():
         assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # Make sure the schema is migrated
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
 
-        assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
-        assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
 
-        instance._run_storage._alembic_downgrade(rev="224640159acf")
-        assert get_current_alembic_version(db_path) == "224640159acf"
+            instance._run_storage._alembic_downgrade(rev="224640159acf")  # pyright: ignore[reportAttributeAccessIssue]
+            assert get_current_alembic_version(db_path) == "224640159acf"
 
-        assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
 
 
 def test_run_partition_data_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         from dagster._core.storage.runs.migration import RUN_PARTITIONS
         from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
@@ -385,7 +373,7 @@ def test_run_partition_data_migration():
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             with upgrading_instance(instance):
-                instance._run_storage.upgrade()
+                instance._run_storage.upgrade()  # pyright: ignore[reportAttributeAccessIssue]
 
         run_storage = instance._run_storage
         assert isinstance(run_storage, SqlRunStorage)
@@ -413,7 +401,7 @@ def test_run_partition_data_migration():
 
 
 def test_0_10_0_schedule_wipe():
-    src_dir = file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
 
@@ -439,7 +427,7 @@ def test_0_10_0_schedule_wipe():
 
 
 def test_0_10_6_add_bulk_actions_table():
-    src_dir = file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
         assert get_current_alembic_version(db_path) == "0da417ae1b81"
@@ -450,7 +438,7 @@ def test_0_10_6_add_bulk_actions_table():
 
 
 def test_0_11_0_add_asset_columns():
-    src_dir = file_relative_path(__file__, "snapshot_0_11_0_pre_asset_details/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_11_0_pre_asset_details/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
         assert get_current_alembic_version(db_path) == "0da417ae1b81"
@@ -466,22 +454,22 @@ def test_0_11_0_add_asset_columns():
 
 def test_rename_event_log_entry():
     old_event_record = """{"__class__":"EventRecord","dagster_event":{"__class__":"DagsterEvent","event_specific_data":null,"event_type_value":"PIPELINE_SUCCESS","logging_tags":{},"message":"Finished execution of pipeline.","pid":71356,"pipeline_name":"error_monster","solid_handle":null,"step_handle":null,"step_key":null,"step_kind_value":null},"error_info":null,"level":10,"message":"error_monster - 4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7 - 71356 - PIPELINE_SUCCESS - Finished execution of pipeline.","pipeline_name":"error_monster","run_id":"4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7","step_key":null,"timestamp":1622659924.037028,"user_message":"Finished execution of pipeline."}"""
-    event_log_entry = deserialize_value(old_event_record, EventLogEntry)
+    event_log_entry = dg.deserialize_value(old_event_record, dg.EventLogEntry)
     dagster_event = event_log_entry.dagster_event
-    assert isinstance(dagster_event, DagsterEvent)
+    assert isinstance(dagster_event, dg.DagsterEvent)
     assert dagster_event.event_type_value == "PIPELINE_SUCCESS"
 
 
 def test_0_12_0_extract_asset_index_cols():
-    src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
 
-    @op
+    @dg.op
     def asset_op(_):
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
-        yield AssetMaterialization(asset_key=AssetKey(["b"]))
-        yield Output(1)
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey(["a"]), partition="partition_1")
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey(["b"]))
+        yield dg.Output(1)
 
-    @job
+    @dg.job
     def asset_job():
         asset_op()
 
@@ -498,20 +486,20 @@ def test_0_12_0_extract_asset_index_cols():
 
             # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
-            assert storage.has_asset_key(AssetKey(["a"]))
-            assert storage.has_asset_key(AssetKey(["b"]))
+            assert storage.has_asset_key(dg.AssetKey(["a"]))
+            assert storage.has_asset_key(dg.AssetKey(["b"]))
 
             # make sure that wiping works
-            storage.wipe_asset(AssetKey(["a"]))
-            assert not storage.has_asset_key(AssetKey(["a"]))
-            assert storage.has_asset_key(AssetKey(["b"]))
+            storage.wipe_asset(dg.AssetKey(["a"]))
+            assert not storage.has_asset_key(dg.AssetKey(["a"]))
+            assert storage.has_asset_key(dg.AssetKey(["b"]))
 
             asset_job.execute_in_process(instance=instance)
-            assert storage.has_asset_key(AssetKey(["a"]))
+            assert storage.has_asset_key(dg.AssetKey(["a"]))
 
             # wipe and leave asset wiped
-            storage.wipe_asset(AssetKey(["b"]))
-            assert not storage.has_asset_key(AssetKey(["b"]))
+            storage.wipe_asset(dg.AssetKey(["b"]))
+            assert not storage.has_asset_key(dg.AssetKey(["b"]))
 
             old_keys = storage.all_asset_keys()
 
@@ -523,8 +511,8 @@ def test_0_12_0_extract_asset_index_cols():
             assert "wipe_timestamp" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "tags" in set(get_sqlite3_columns(db_path, "asset_keys"))
 
-            assert storage.has_asset_key(AssetKey(["a"]))
-            assert not storage.has_asset_key(AssetKey(["b"]))
+            assert storage.has_asset_key(dg.AssetKey(["a"]))
+            assert not storage.has_asset_key(dg.AssetKey(["b"]))
 
             new_keys = storage.all_asset_keys()
             assert set(old_keys) == set(new_keys)
@@ -533,14 +521,14 @@ def test_0_12_0_extract_asset_index_cols():
             asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
-            storage.wipe_asset(AssetKey(["a"]))
-            assert not storage.has_asset_key(AssetKey(["a"]))
+            storage.wipe_asset(dg.AssetKey(["a"]))
+            assert not storage.has_asset_key(dg.AssetKey(["a"]))
 
 
 def test_op_handle_node_handle():
     # serialize in current code
     test_handle = NodeHandle("test", None)
-    test_str = serialize_value(test_handle)
+    test_str = dg.serialize_value(test_handle)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -549,15 +537,15 @@ def test_op_handle_node_handle():
     class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         pass
 
-    result = deserialize_value(test_str, whitelist_map=legacy_env)
+    result = dg.deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, SolidHandle)
     assert result.name == test_handle.name
 
 
 def test_job_run_dagster_run():
     # serialize in current code
-    test_run = DagsterRun(job_name="test")
-    test_str = serialize_value(test_run)
+    test_run = dg.DagsterRun(job_name="test")
+    test_str = dg.serialize_value(test_run)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -579,15 +567,15 @@ def test_job_run_dagster_run():
         QUEUED = "QUEUED"
         NOT_STARTED = "NOT_STARTED"
 
-    result = deserialize_value(test_str, whitelist_map=legacy_env)
+    result = dg.deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRun)
     assert result.pipeline_name == test_run.job_name
 
 
 def test_job_run_status_dagster_run_status():
     # serialize in current code
-    test_status = DagsterRunStatus("QUEUED")
-    test_str = serialize_value(test_status)
+    test_status = dg.DagsterRunStatus("QUEUED")
+    test_str = dg.serialize_value(test_status)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -596,16 +584,16 @@ def test_job_run_status_dagster_run_status():
     class PipelineRunStatus(Enum):
         QUEUED = "QUEUED"
 
-    result = deserialize_value(test_str, whitelist_map=legacy_env)
+    result = dg.deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRunStatus)
     assert result.value == test_status.value
 
 
 def test_start_time_end_time():
-    src_dir = file_relative_path(__file__, "snapshot_0_13_12_pre_add_start_time_and_end_time")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_13_12_pre_add_start_time_and_end_time")
     with copy_directory(src_dir) as test_dir:
 
-        @job
+        @dg.job
         def _test():
             pass
 
@@ -615,26 +603,26 @@ def test_start_time_end_time():
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # this migration was optional, so make sure things work before migrating
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance.upgrade()
+            instance.upgrade()
 
-        # Make sure the schema is migrated
-        assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+            # Make sure the schema is migrated
+            assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
+            instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")  # pyright: ignore[reportAttributeAccessIssue]
 
-        assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
-        assert True
+            assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
+            assert True
 
 
-def test_external_job_origin_instigator_origin():
+def test_remote_job_origin_instigator_origin():
     def build_legacy_whitelist_map():
         legacy_env = WhitelistMap.create()
 
@@ -663,9 +651,7 @@ def test_external_job_origin_instigator_origin():
             ),
         ):
             def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
-                return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
-                    cls, host, port, socket, location_name, use_ssl
-                )
+                return super().__new__(cls, host, port, socket, location_name, use_ssl)
 
         return (
             legacy_env,
@@ -676,7 +662,7 @@ def test_external_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemoteInstigatorOrigin,
         RemoteRepositoryOrigin,
@@ -692,8 +678,8 @@ def test_external_job_origin_instigator_origin():
         ),
         instigator_name="simple_schedule",
     )
-    instigator_origin_str = serialize_value(instigator_origin)
-    instigator_to_job = deserialize_value(instigator_origin_str, whitelist_map=legacy_env)
+    instigator_origin_str = dg.serialize_value(instigator_origin)
+    instigator_to_job = dg.deserialize_value(instigator_origin_str, whitelist_map=legacy_env)
     assert isinstance(instigator_to_job, klass)
     # ensure that the origin id is stable
     assert instigator_to_job.get_id() == instigator_origin.get_id()
@@ -708,15 +694,15 @@ def test_external_job_origin_instigator_origin():
         ),
         job_name="simple_schedule",
     )
-    job_origin_str = serialize_value(job_origin, legacy_env)
+    job_origin_str = dg.serialize_value(job_origin, legacy_env)
 
-    job_to_instigator = deserialize_value(job_origin_str, RemoteInstigatorOrigin)
+    job_to_instigator = dg.deserialize_value(job_origin_str, RemoteInstigatorOrigin)
     # ensure that the origin id is stable
     assert job_to_instigator.get_id() == job_origin.get_id()
 
 
 def test_schedule_namedtuple_job_instigator_backcompat():
-    src_dir = file_relative_path(__file__, "snapshot_0_13_19_instigator_named_tuples/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_13_19_instigator_named_tuples/sqlite")
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             states = instance.all_instigator_state()
@@ -755,7 +741,7 @@ def test_legacy_event_log_load():
                 ("timestamp", float),
                 ("step_key", Optional[str]),
                 ("pipeline_name", Optional[str]),
-                ("dagster_event", Optional[DagsterEvent]),
+                ("dagster_event", Optional[dg.DagsterEvent]),
             ],
         )
     ):
@@ -783,11 +769,11 @@ def test_legacy_event_log_load():
                 check.float_param(timestamp, "timestamp"),
                 check.opt_str_param(step_key, "step_key"),
                 check.opt_str_param(pipeline_name, "pipeline_name"),
-                check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
+                check.opt_inst_param(dagster_event, "dagster_event", dg.DagsterEvent),
             )
 
     # current event log entry
-    new_event = EventLogEntry(
+    new_event = dg.EventLogEntry(
         user_message="test 1 2 3",
         error_info=None,
         level="debug",
@@ -795,14 +781,14 @@ def test_legacy_event_log_load():
         timestamp=time.time(),
     )
 
-    storage_str = serialize_value(new_event)
+    storage_str = dg.serialize_value(new_event)
 
-    result = deserialize_value(storage_str, OldEventLogEntry, whitelist_map=legacy_env)
+    result = dg.deserialize_value(storage_str, OldEventLogEntry, whitelist_map=legacy_env)
     assert result.message is not None
 
 
 def test_schedule_secondary_index_table_backcompat():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_schedule_migration_table/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_14_6_schedule_migration_table/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
 
@@ -817,7 +803,7 @@ def test_schedule_secondary_index_table_backcompat():
 
 
 def test_instigators_table_backcompat():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_instigators_table/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_14_6_instigators_table/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
 
@@ -836,7 +822,9 @@ def test_instigators_table_backcompat():
 
 
 def test_jobs_selector_id_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite"
+    )
 
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
@@ -849,27 +837,27 @@ def test_jobs_selector_id_migration():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             # runs the required data migrations
             instance.upgrade()
-            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
+            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             legacy_count = len(instance.all_instigator_state())
-            migrated_instigator_count = instance.schedule_storage.execute(
+            migrated_instigator_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
-            migrated_job_count = instance.schedule_storage.execute(
+            migrated_job_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
-            legacy_tick_count = instance.schedule_storage.execute(
+            legacy_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
-            migrated_tick_count = instance.schedule_storage.execute(
+            migrated_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
@@ -879,7 +867,7 @@ def test_jobs_selector_id_migration():
             # run the optional migrations
             instance.reindex()
 
-            migrated_tick_count = instance.schedule_storage.execute(
+            migrated_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
@@ -888,7 +876,9 @@ def test_jobs_selector_id_migration():
 
 
 def test_tick_selector_index_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite"
+    )
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
@@ -902,11 +892,11 @@ def test_tick_selector_index_migration():
 
 
 def test_repo_label_tag_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_14_pre_repo_label_tags/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_14_14_pre_repo_label_tags/sqlite")
 
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            job_repo_filter = RunsFilter(
+            job_repo_filter = dg.RunsFilter(
                 job_name="hammer",
                 tags={REPOSITORY_LABEL_TAG: "toys_repository@dagster_test.graph_job_op_toys.repo"},
             )
@@ -921,14 +911,14 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemotePartitionSetOrigin,
         RemoteRepositoryOrigin,
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
-    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -949,13 +939,14 @@ def test_add_bulk_actions_columns():
                 "body",
                 "action_type",
                 "selector_id",
+                "job_name",
             } == set(get_sqlite3_columns(db_path, "bulk_actions"))
             assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(db_path, "bulk_actions")
             assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(db_path, "bulk_actions")
 
             # check data migration
             backfill_count = len(instance.get_backfills())
-            migrated_row_count = instance._run_storage.fetchone(
+            migrated_row_count = instance._run_storage.fetchone(  # pyright: ignore[reportAttributeAccessIssue]
                 db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.isnot(None))
@@ -983,7 +974,7 @@ def test_add_bulk_actions_columns():
                     backfill_timestamp=get_current_timestamp(),
                 )
             )
-            unmigrated_row_count = instance._run_storage.fetchone(
+            unmigrated_row_count = instance._run_storage.fetchone(  # pyright: ignore[reportAttributeAccessIssue]
                 db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.is_(None))
@@ -991,7 +982,7 @@ def test_add_bulk_actions_columns():
             assert unmigrated_row_count == 0
 
             # test downgrade
-            instance._run_storage._alembic_downgrade(rev="721d858e1dda")
+            instance._run_storage._alembic_downgrade(rev="721d858e1dda")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert get_current_alembic_version(db_path) == "721d858e1dda"
             assert {"id", "key", "status", "timestamp", "body"} == set(
@@ -1006,7 +997,7 @@ def test_add_bulk_actions_columns():
 
 
 def test_add_kvs_table():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -1019,23 +1010,25 @@ def test_add_kvs_table():
 
             assert "kvs" in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == ["idx_kvs_keys_unique"]
-            instance._run_storage._alembic_downgrade(rev="6860f830e40c")
+            instance._run_storage._alembic_downgrade(rev="6860f830e40c")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert "kvs" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == []
 
 
 def test_add_asset_event_tags_table():
-    @op
+    @dg.op
     def yields_materialization_w_tags(_):
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
-        yield Output(1)
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
+        yield dg.Output(1)
 
-    @job
+    @dg.job
     def asset_job():
         yields_materialization_w_tags()
 
-    src_dir = file_relative_path(__file__, "snapshot_1_0_12_pre_add_asset_event_tags_table/sqlite")
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_1_0_12_pre_add_asset_event_tags_table/sqlite"
+    )
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -1045,9 +1038,9 @@ def test_add_asset_event_tags_table():
 
             asset_job.execute_in_process(instance=instance)
             with pytest.raises(
-                DagsterInvalidInvocationError, match="In order to search for asset event tags"
+                dg.DagsterInvalidInvocationError, match="In order to search for asset event tags"
             ):
-                instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
+                instance._event_storage.get_event_tags_for_asset(asset_key=dg.AssetKey(["a"]))
 
             assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
 
@@ -1056,22 +1049,22 @@ def test_add_asset_event_tags_table():
             assert "asset_event_tags" in get_sqlite3_tables(db_path)
 
             asset_job.execute_in_process(instance=instance)
-            assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
-                {DATA_VERSION_TAG: "bar"}
-            ]
+            assert instance._event_storage.get_event_tags_for_asset(
+                asset_key=dg.AssetKey(["a"])
+            ) == [{DATA_VERSION_TAG: "bar"}]
 
             indexes = get_sqlite3_indexes(db_path, "asset_event_tags")
             assert "idx_asset_event_tags_event_id" in indexes
             assert "idx_asset_event_tags" in indexes
 
-            instance._run_storage._alembic_downgrade(rev="a00dd8d936a1")
+            instance._run_storage._alembic_downgrade(rev="a00dd8d936a1")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert "asset_event_tags" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
 
 
 def test_1_0_17_add_cached_status_data_column():
-    src_dir = file_relative_path(
+    src_dir = dg.file_relative_path(
         __file__, "snapshot_1_0_17_pre_add_cached_status_data_column/sqlite"
     )
     with copy_directory(src_dir) as test_dir:
@@ -1085,7 +1078,7 @@ def test_1_0_17_add_cached_status_data_column():
 
 
 def test_add_dynamic_partitions_table():
-    src_dir = file_relative_path(
+    src_dir = dg.file_relative_path(
         __file__, "snapshot_1_0_17_pre_add_cached_status_data_column/sqlite"
     )
 
@@ -1098,7 +1091,7 @@ def test_add_dynamic_partitions_table():
 
             instance.wipe()
 
-            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+            with pytest.raises(dg.DagsterInvalidInvocationError, match="does not exist"):
                 instance.get_dynamic_partitions("foo")
 
             instance.upgrade()
@@ -1122,7 +1115,7 @@ def test_add_primary_keys():
         KeyValueStoreTable,
     )
 
-    src_dir = file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key/sqlite")
+    src_dir = dg.file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key/sqlite")
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -1154,25 +1147,409 @@ def test_add_primary_keys():
             instance.upgrade()
 
             assert "id" in set(get_sqlite3_columns(db_path, "kvs"))
-            with instance.run_storage.connect():
+            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
                 kvs_id_count = _get_table_row_count(
                     instance.run_storage, KeyValueStoreTable, with_non_null_id=True
                 )
             assert kvs_id_count == kvs_row_count
 
             assert "id" in set(get_sqlite3_columns(db_path, "instance_info"))
-            with instance.run_storage.connect():
+            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
                 instance_info_id_count = _get_table_row_count(
                     instance.run_storage, InstanceInfo, with_non_null_id=True
                 )
             assert instance_info_id_count == instance_info_row_count
 
             assert "id" in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
-            with instance.run_storage.connect():
+            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
                 daemon_heartbeats_id_count = _get_table_row_count(
                     instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
                 )
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
+
+
+def test_add_backfill_id_column():
+    from dagster._core.storage.runs.schema import RunsTable
+
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        columns = get_sqlite3_columns(db_path, "runs")
+        assert {
+            "id",
+            "run_id",
+            "snapshot_id",
+            "pipeline_name",
+            "mode",
+            "status",
+            "run_body",
+            "partition",
+            "partition_set",
+            "create_timestamp",
+            "update_timestamp",
+            "start_time",
+            "end_time",
+        } == set(columns)
+        assert "backfill_id" not in columns
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            # these runs won't have an entry for backfill_id until after the data migration
+            run_not_in_backfill_pre_migration = instance.run_storage.add_run(
+                dg.DagsterRun(
+                    job_name="first_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_pre_migration = instance.run_storage.add_run(
+                dg.DagsterRun(
+                    job_name="first_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # exclude_subruns filter works before migration
+            assert len(instance.get_runs(filters=dg.RunsFilter(exclude_subruns=True))) == 2
+
+            instance.upgrade()
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)  # pyright: ignore[reportAttributeAccessIssue]
+
+            columns = get_sqlite3_columns(db_path, "runs")
+            assert {
+                "id",
+                "run_id",
+                "snapshot_id",
+                "pipeline_name",
+                "mode",
+                "status",
+                "run_body",
+                "partition",
+                "partition_set",
+                "create_timestamp",
+                "update_timestamp",
+                "start_time",
+                "end_time",
+                "backfill_id",
+            } == set(columns)
+
+            run_not_in_backfill_post_migration = instance.run_storage.add_run(
+                dg.DagsterRun(
+                    job_name="second_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_post_migration = instance.run_storage.add_run(
+                dg.DagsterRun(
+                    job_name="second_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            backfill_ids = {
+                row["run_id"]: row["backfill_id"]
+                for row in instance._run_storage.fetchall(  # pyright: ignore[reportAttributeAccessIssue]
+                    db_select([RunsTable.c.run_id, RunsTable.c.backfill_id]).select_from(RunsTable)
+                )
+            }
+            assert backfill_ids[run_not_in_backfill_pre_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_pre_migration.run_id] == "backfillid"
+            assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
+
+            # exclude_subruns filter works after migration, but should use new column
+            assert len(instance.get_runs(filters=dg.RunsFilter(exclude_subruns=True))) == 3
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="284a732df317")  # pyright: ignore[reportAttributeAccessIssue]
+
+            assert get_current_alembic_version(db_path) == "284a732df317"
+            columns = get_sqlite3_columns(db_path, "runs")
+            assert {
+                "id",
+                "run_id",
+                "snapshot_id",
+                "pipeline_name",
+                "mode",
+                "status",
+                "run_body",
+                "partition",
+                "partition_set",
+                "create_timestamp",
+                "update_timestamp",
+                "start_time",
+                "end_time",
+            } == set(columns)
+            assert "backfill_id" not in columns
+
+
+def test_add_runs_by_backfill_id_idx():
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
+            instance.upgrade()
+            assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+
+
+def test_bad_alembic_stamp():
+    # same snapshot file as above, but with sqlite db that was not alembic stamped
+    src_dir = dg.file_relative_path(__file__, "snapshot_1_8_12_bad_alembic_stamp/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM alembic_version")
+        rows = cursor.fetchall()
+        conn.close()
+
+        assert len(rows) == 0
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
+            instance.upgrade()
+            assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+            alembic_version = instance.run_storage.alembic_version()
+            assert alembic_version
+            db_revision, head_revision = alembic_version
+            assert db_revision == head_revision
+
+
+def test_add_backfill_tags():
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert "backfill_tags" not in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            before_migration = PartitionBackfill(
+                "before_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"before": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+            # filtering pre-migration relies on filtering runs, so add a run with the expected tags
+            pre_migration_run = instance.run_storage.add_run(
+                dg.DagsterRun(
+                    job_name="foo",
+                    run_id=make_new_run_id(),
+                    tags={"before": "migration", BACKFILL_ID_TAG: before_migration.backfill_id},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # filtering by tags works before migration
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"before": "migration"}))[
+                    0
+                ].backfill_id
+                == before_migration.backfill_id
+            )
+
+            instance.upgrade()
+            assert "backfill_tags" in get_sqlite3_tables(db_path)
+
+            after_migration = PartitionBackfill(
+                "after_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"after": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+                rows = conn.execute(
+                    db.text("SELECT backfill_id, key, value FROM backfill_tags")
+                ).fetchall()
+
+            assert len(rows) == 2
+            ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
+            assert ids_to_tags.get(before_migration.backfill_id) == before_migration.tags
+            assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
+
+            # filtering by tags works after migration
+            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # pyright: ignore[reportAttributeAccessIssue]
+            # delete the run that was added pre-migration to prove that tags filtering is happening on the
+            # backfill_tags table
+            instance.delete_run(pre_migration_run.run_id)
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"before": "migration"}))[
+                    0
+                ].backfill_id
+                == before_migration.backfill_id
+            )
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"after": "migration"}))[
+                    0
+                ].backfill_id
+                == after_migration.backfill_id
+            )
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="1aca709bba64")  # pyright: ignore[reportAttributeAccessIssue]
+            assert get_current_alembic_version(db_path) == "1aca709bba64"
+            assert "backfill_tags" not in get_sqlite3_tables(db_path)
+
+
+def test_add_bulk_actions_job_name_column():
+    from dagster._core.remote_origin import (
+        GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
+    )
+
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+        assert "job_name" not in backfill_columns
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("before_migration"),
+            )
+            before_migration = PartitionBackfill(
+                "before_job_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+            # filtering pre-migration relies on filtering runs, so add a run with the expected job_name
+            pre_migration_run = instance.run_storage.add_run(
+                dg.DagsterRun(
+                    job_name=before_migration.job_name,  # pyright: ignore[reportArgumentType]
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: before_migration.backfill_id},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # filtering by job_name works before migration
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=before_migration.job_name)
+                )[0].backfill_id
+                == before_migration.backfill_id
+            )
+
+            instance.upgrade()
+
+            backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+            assert "job_name" in backfill_columns
+
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("after_migration"),
+            )
+            after_migration = PartitionBackfill(
+                "after_job_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+                rows = conn.execute(db.text("SELECT key, job_name FROM bulk_actions")).fetchall()
+
+            assert len(rows) == 3  # a backfill exists in the db snapshot
+            ids_to_job_name = {row[0]: row[1] for row in rows}
+            assert ids_to_job_name[before_migration.backfill_id] == before_migration.job_name
+            assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
+
+            # filtering by job_name works after migration
+            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # pyright: ignore[reportAttributeAccessIssue]
+            # delete the run that was added pre-migration to prove that tags filtering is happening on the
+            # backfill_tags table
+            instance.delete_run(pre_migration_run.run_id)
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=before_migration.job_name)
+                )[0].backfill_id
+                == before_migration.backfill_id
+            )
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=after_migration.job_name)
+                )[0].backfill_id
+                == after_migration.backfill_id
+            )
+
+            # test downgrade
+            instance.run_storage._alembic_downgrade(rev="1aca709bba64")  # pyright: ignore[reportAttributeAccessIssue]
+
+            assert get_current_alembic_version(db_path) == "1aca709bba64"
+            backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+            assert "job_name" not in backfill_columns
+
+
+def test_add_run_tags_run_id_idx():
+    src_dir = dg.file_relative_path(__file__, "snapshot_1_9_3_add_run_tags_run_id_idx/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        # Before migration
+        assert get_current_alembic_version(db_path) == "16e3655b4d9b"
+        assert "run_tags" in get_sqlite3_tables(db_path)
+        assert "idx_run_tags" in get_sqlite3_indexes(db_path, "run_tags")
+        assert "idx_run_tags_run_id" not in get_sqlite3_indexes(db_path, "run_tags")
+
+        # After upgrade
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert get_current_alembic_version(db_path) != "16e3655b4d9b"
+        assert "run_tags" in get_sqlite3_tables(db_path)
+        assert "idx_run_tags" not in get_sqlite3_indexes(db_path, "run_tags")
+        assert "idx_run_tags_run_id" in get_sqlite3_indexes(db_path, "run_tags")
+
+        # After downgrade (same as before migration)
+        instance._run_storage._alembic_downgrade(rev="16e3655b4d9b")  # pyright: ignore[reportAttributeAccessIssue]
+        assert get_current_alembic_version(db_path) == "16e3655b4d9b"
+        assert "run_tags" in get_sqlite3_tables(db_path)
+        assert "idx_run_tags" in get_sqlite3_indexes(db_path, "run_tags")
+        assert "idx_run_tags_run_id" not in get_sqlite3_indexes(db_path, "run_tags")
 
 
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
@@ -1181,10 +1558,12 @@ def test_add_primary_keys():
 # In the future, we will need to enable the runtime null check on `AssetMaterialization` and
 # introduce a dummy asset key when deserializing old `Materialization` events.
 @pytest.mark.parametrize(
-    "asset_key", [AssetKey(["foo", "bar"]), None, "__missing__"], ids=("defined", "none", "missing")
+    "asset_key",
+    [dg.AssetKey(["foo", "bar"]), None, "__missing__"],
+    ids=("defined", "none", "missing"),
 )
-def test_load_old_materialization(asset_key: Optional[AssetKey]):
-    packed_asset_key = pack_value(asset_key) if isinstance(asset_key, AssetKey) else None
+def test_load_old_materialization(asset_key: Optional[dg.AssetKey]):
+    packed_asset_key = pack_value(asset_key) if isinstance(asset_key, dg.AssetKey) else None
     delete_asset_key = asset_key == "__missing__"
     packed_old_materialization = {
         "__class__": "StepMaterializationData",
@@ -1216,21 +1595,23 @@ def test_load_old_materialization(asset_key: Optional[AssetKey]):
     }
     if delete_asset_key:
         del packed_old_materialization["materialization"]["asset_key"]
-    old_materialization = serialize_value(packed_old_materialization)
+    old_materialization = dg.serialize_value(packed_old_materialization)
 
     deserialized_asset_key = (
-        AssetKey(UNDEFINED_ASSET_KEY_PATH) if asset_key in (None, "__missing__") else asset_key
+        dg.AssetKey(UNDEFINED_ASSET_KEY_PATH) if asset_key in (None, "__missing__") else asset_key
     )
-    assert deserialize_value(
+    assert dg.deserialize_value(
         old_materialization, StepMaterializationData
     ) == StepMaterializationData(
-        materialization=AssetMaterialization(
+        materialization=dg.AssetMaterialization(
             description="bar",
             metadata={"baz": MetadataValue.text("quux")},
             partition="alpha",
             asset_key=deserialized_asset_key,
         ),
-        asset_lineage=[AssetLineageInfo(asset_key=AssetKey(["foo", "bar"]), partitions={"alpha"})],
+        asset_lineage=[
+            AssetLineageInfo(asset_key=dg.AssetKey(["foo", "bar"]), partitions={"alpha"})
+        ],
     )
 
 
@@ -1239,11 +1620,11 @@ def test_load_old_materialization(asset_key: Optional[AssetKey]):
 # `MetadataFieldSerializer` to serialize the dictionary as a list of `MetadataEntry` for backcompat.
 def test_metadata_serialization():
     # We use `AssetMaterialization` as a stand-in for all classes using `MetadataFieldSerializer`.
-    mat = AssetMaterialization(
-        AssetKey(["foo"]),
+    mat = dg.AssetMaterialization(
+        dg.AssetKey(["foo"]),
         metadata={"alpha": MetadataValue.text("beta"), "delta": MetadataValue.int(1)},
     )
-    serialized_mat = serialize_value(mat)
+    serialized_mat = dg.serialize_value(mat)
     assert json.loads(serialized_mat)["metadata_entries"] == [
         {
             "__class__": "EventMetadataEntry",
@@ -1258,7 +1639,7 @@ def test_metadata_serialization():
             "entry_data": {"__class__": "IntMetadataEntryData", "value": 1},
         },
     ]
-    assert deserialize_value(serialized_mat, AssetMaterialization) == mat
+    assert dg.deserialize_value(serialized_mat, dg.AssetMaterialization) == mat
 
 
 # When receiving pre-1.4 static partitions definitions from user code, it is possible they contain
@@ -1266,7 +1647,7 @@ def test_metadata_serialization():
 # partitions definition in the host process to avoid an error.
 def test_static_partitions_definition_dup_keys_backcompat():
     received_from_user = StaticPartitionsSnap(partition_keys=["a", "b", "a"])
-    assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
+    assert received_from_user.get_partitions_definition() == dg.StaticPartitionsDefinition(
         partition_keys=["a", "b"]
     )
 
@@ -1280,7 +1661,7 @@ def test_known_execution_state_step_output_version_serialization() -> None:
         step_output_versions={StepOutputHandle("foo", "bar"): "1"},
     )
 
-    serialized = serialize_value(known_state)
+    serialized = dg.serialize_value(known_state)
     assert json.loads(serialized)["step_output_versions"] == [
         {
             "__class__": "StepOutputVersionData",
@@ -1294,29 +1675,125 @@ def test_known_execution_state_step_output_version_serialization() -> None:
         }
     ]
 
-    assert deserialize_value(serialized, KnownExecutionState) == known_state
+    assert dg.deserialize_value(serialized, KnownExecutionState) == known_state
 
 
-def test_legacy_compute_kind_tag_backcompat() -> None:
-    legacy_tags = {LEGACY_COMPUTE_KIND_TAG: "foo"}
-    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
+def test_add_backfill_end_timestamp():
+    src_dir = dg.file_relative_path(__file__, "snapshot_1_9_3_add_run_tags_run_id_idx/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            completed_backfill = PartitionBackfill(
+                "before_end_timestamp_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.COMPLETED_SUCCESS,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(completed_backfill)
+            in_progress_backfill = PartitionBackfill(
+                "in_progress_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(in_progress_backfill)
+            no_runs_backfill = PartitionBackfill(
+                "no_runs_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.CANCELED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(no_runs_backfill)
+            # before migration, backfill end timestamps will be None
+            completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
+            assert completed_backfill
+            assert completed_backfill.backfill_end_timestamp is None
+            in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
+            assert in_progress_backfill
+            assert in_progress_backfill.backfill_end_timestamp is None
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp is None
 
-        @asset(op_tags=legacy_tags)
-        def legacy_asset():
-            pass
+            for _ in range(3):
+                instance.run_storage.add_run(
+                    dg.DagsterRun(
+                        job_name="foo",
+                        run_id=make_new_run_id(),
+                        tags={BACKFILL_ID_TAG: completed_backfill.backfill_id},
+                        status=DagsterRunStatus.NOT_STARTED,
+                    )
+                )
+                instance.run_storage.add_run(
+                    dg.DagsterRun(
+                        job_name="foo",
+                        run_id=make_new_run_id(),
+                        tags={BACKFILL_ID_TAG: in_progress_backfill.backfill_id},
+                        status=DagsterRunStatus.NOT_STARTED,
+                    )
+                )
+            completed_backfill_run_end_times = []
+            for run in instance.get_runs(
+                filters=RunsFilter.for_backfill(completed_backfill.backfill_id)
+            ):
+                dagster_event = dg.DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                    job_name=run.job_name,
+                    message="yay run success",
+                    step_key="bar",
+                )
+                instance.report_dagster_event(dagster_event, run_id=run.run_id)
+                updated_run = instance.get_run_record_by_id(run.run_id)
+                completed_backfill_run_end_times.append(
+                    updated_run.end_time if updated_run else None
+                )
 
-        assert legacy_asset.op.tags[COMPUTE_KIND_TAG] == "foo"
+            for run in instance.get_runs(
+                filters=RunsFilter.for_backfill(in_progress_backfill.backfill_id)
+            ):
+                dagster_event = dg.DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                    job_name=run.job_name,
+                    message="yay run success",
+                    step_key="bar",
+                )
+                instance.report_dagster_event(dagster_event, run_id=run.run_id)
 
-    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
+            instance.upgrade()
 
-        @op(tags=legacy_tags)
-        def legacy_op():
-            pass
+            completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
+            assert completed_backfill
+            assert (
+                completed_backfill.backfill_end_timestamp is not None
+                and completed_backfill.backfill_end_timestamp
+                == max(completed_backfill_run_end_times)
+            )
 
-        assert legacy_op.tags[COMPUTE_KIND_TAG] == "foo"
+            in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
+            assert in_progress_backfill
+            assert in_progress_backfill.backfill_end_timestamp is None
 
-    legacy_snap_path = file_relative_path(__file__, "1_7_9_kind_op_job_snap.gz")
-    legacy_snap = deserialize_value(
-        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnapshot
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp == no_runs_backfill.backfill_timestamp
+
+
+def test_add_default_concurrency_limit_col():
+    src_dir = dg.file_relative_path(
+        __file__, "snapshot_1_9_11_add_concurrency_limits_default/sqlite"
     )
-    assert create_snapshot_id(legacy_snap) == "8db90f128b7eaa5c229bdde372e39d5cbecdc7e4"
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.event_log_storage.get_pool_limits()
+            instance.event_log_storage.set_concurrency_slots("foo", 1)
+            instance.event_log_storage.initialize_concurrency_limit_to_default("bar")
+            instance.upgrade()
+            instance.event_log_storage.get_pool_limits()
+            instance.event_log_storage.set_concurrency_slots("foo", 2)
+            instance.event_log_storage.set_concurrency_slots("new_foo", 1)
+            instance.event_log_storage.initialize_concurrency_limit_to_default("baz")

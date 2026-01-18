@@ -56,9 +56,12 @@ export const assetPartitionStatusesToStyle = (status: AssetPartitionStatus[]): C
     return {background: Colors.backgroundLight()};
   }
   if (status.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return {background: assetPartitionStatusToColor(status[0]!)};
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const a = assetPartitionStatusToColor(status[0]!);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const b = assetPartitionStatusToColor(status[1]!);
 
   return {

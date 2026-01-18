@@ -28,10 +28,10 @@ interface ActiveSuggestionInfo {
   idx: number;
 }
 
-export interface TokenizingFieldValue {
+export type TokenizingFieldValue = {
   token?: string;
   value: string;
-}
+};
 
 interface TokenizingFieldProps {
   values: TokenizingFieldValue[];
@@ -40,6 +40,7 @@ interface TokenizingFieldProps {
   onChangeBeforeCommit?: boolean;
   addOnBlur?: boolean;
   onFocus?: () => void;
+  onBlur?: () => void;
 
   placeholder?: string;
   loading?: boolean;
@@ -124,6 +125,7 @@ export const TokenizingField = ({
   onChange,
   onChangeBeforeCommit,
   onFocus,
+  onBlur,
   onTextChange,
   placeholder,
   addOnBlur,
@@ -223,7 +225,9 @@ export const TokenizingField = ({
 
   const _onTextChange = (text: string) => {
     setTyped(text);
-    onTextChange && onTextChange(text);
+    if (onTextChange) {
+      onTextChange(text);
+    }
   };
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
@@ -420,7 +424,9 @@ export const TokenizingField = ({
         inputProps={{
           onFocus: () => {
             setOpen(true);
-            onFocus && onFocus();
+            if (onFocus) {
+              onFocus();
+            }
           },
           onBlur: () => {
             // Emulate behavior of addOnBlur for TagInput
@@ -429,6 +435,9 @@ export const TokenizingField = ({
               onConfirmText(typed);
             }
             setOpen(false);
+            if (onBlur) {
+              onBlur();
+            }
           },
         }}
         $maxWidth={fullwidth ? '100%' : undefined}

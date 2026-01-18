@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {IBounds, IPoint} from './common';
+import type {IBounds, IPoint} from './common';
 import {titleOfIO} from '../app/titleOfIO';
 
 export type OpLayoutEdgeSide = {
@@ -215,7 +215,9 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], opts: LayoutOpGraphOptio
     const conn = edges.find((c) => c.from.opName === e.v && c.to.opName === e.w);
     const points = g.edge(e).points;
     if (conn && points.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       conn.from.point = points[0]!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       conn.to.point = points[points.length - 1]!;
     }
   });

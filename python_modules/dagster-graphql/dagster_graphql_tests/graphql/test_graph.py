@@ -1,5 +1,9 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    main_repo_location_name,
+)
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     NonLaunchableGraphQLContextTestMatrix,
@@ -74,12 +78,17 @@ class TestGraphs(NonLaunchableGraphQLContextTestMatrix):
         repo_locations = {
             blob["name"]: blob for blob in result.data["workspaceOrError"]["locationEntries"]
         }
-        assert "test" in repo_locations
-        assert repo_locations["test"]["locationOrLoadError"]["__typename"] == "RepositoryLocation"
+        assert main_repo_location_name() in repo_locations
+        assert (
+            repo_locations[main_repo_location_name()]["locationOrLoadError"]["__typename"]
+            == "RepositoryLocation"
+        )
 
         jobs = {
             blob["name"]: blob
-            for blob in repo_locations["test"]["locationOrLoadError"]["repositories"][0]["jobs"]
+            for blob in repo_locations[main_repo_location_name()]["locationOrLoadError"][
+                "repositories"
+            ][0]["jobs"]
         }
 
         assert "simple_job_a" in jobs

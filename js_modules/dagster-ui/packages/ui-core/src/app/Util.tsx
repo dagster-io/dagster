@@ -1,10 +1,10 @@
-import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
-import {featureEnabled} from './Flags';
 import {timeByParts} from './timeByParts';
+import {hashObject} from '../util/hashObject';
+import {cache} from '../util/idb-lru-cache';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
@@ -78,7 +78,7 @@ const msecFormatter = memoize((locale: string) => {
  * Return an i18n-formatted millisecond in seconds as a decimal, with no leading zero.
  */
 const formatMsecMantissa = (msec: number) =>
-  msecFormatter(navigator.language)
+  msecFormatter(typeof navigator !== 'undefined' ? navigator.language : 'en-US')
     .format(msec / 1000)
     .slice(-4);
 
@@ -110,23 +110,31 @@ export function breakOnUnderscores(str: string) {
 }
 
 export function patchCopyToRemoveZeroWidthUnderscores() {
-  document.addEventListener('copy', (event) => {
-    if (!event.clipboardData) {
-      // afaik this is always defined, but the TS field is optional
-      return;
-    }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('copy', (event) => {
+      if (!event.clipboardData) {
+        // afaik this is always defined, but the TS field is optional
+        return;
+      }
 
-    // Note: This returns the text of the current selection if DOM
-    // nodes are selected. If the selection on the page is text within
-    // codemirror or an input or textarea, this returns "" and we fall
-    // through to the default pasteboard content.
-    const text = (window.getSelection() || '').toString().replace(/_\u200b/g, '_');
+      // Note: This returns the text of the current selection if DOM
+      // nodes are selected. If the selection on the page is text within
+      // codemirror or an input or textarea, this returns "" and we fall
+      // through to the default pasteboard content.
+      const text =
+        (typeof window !== 'undefined'
+          ? window
+              .getSelection()
+              ?.toString()
+              ?.replace(/_\u200b/g, '_')
+          : '') || '';
 
-    if (text.length) {
-      event.preventDefault();
-      event.clipboardData.setData('Text', text);
-    }
-  });
+      if (text.length) {
+        event.preventDefault();
+        event.clipboardData.setData('Text', text);
+      }
+    });
+  }
 }
 
 export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => PromiseLike<R>>(
@@ -134,7 +142,7 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   hashFn?: (arg: T, ...rest: any[]) => any,
   hashSize?: number,
 ): U {
-  const cache = new LRU(hashSize || 50);
+  const cache = new LRU<any, R>(hashSize || 50);
   return (async (arg: T, ...rest: any[]) => {
     const key = hashFn ? hashFn(arg, ...rest) : arg;
     if (cache.has(key)) {
@@ -146,95 +154,86 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
-export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
+export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R>>(
   fn: U,
-  hashFn?: (arg: T, ...rest: any[]) => any,
+  key: string,
+  hashFn?: (...args: Parameters<U>) => any,
 ): U & {
-  isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
-} {
-  let lru: ReturnType<typeof cache<string, R>> | undefined;
+  isCached: (...args: Parameters<U>) => Promise<boolean>;
+  clearEntry: (...args: Parameters<U>) => Promise<void>;
+} => {
+  let lru: ReturnType<typeof cache<R>> | undefined;
   try {
-    lru = cache<string, R>({
-      dbName: 'indexDBAsyncMemoizeDB',
+    lru = cache<R>({
+      dbName: `indexDBAsyncMemoizeDB${key}`,
       maxCount: 50,
     });
-  } catch (e) {}
+  } catch {}
 
-  async function genHashKey(arg: T, ...rest: any[]) {
-    const hash = hashFn ? hashFn(arg, ...rest) : arg;
+  const hashToPromise: Record<string, Promise<R>> = {};
 
-    const encoder = new TextEncoder();
-    // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
-    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
-    if (crypto.subtle?.digest) {
-      const data = encoder.encode(hash.toString());
-      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-    }
-    return hash.toString();
-  }
+  const genHashKey = weakMapMemoize(async (...args: Parameters<U>) => {
+    return hashFn ? hashFn(...args) : hashObject(args);
+  });
 
-  const ret = (async (arg: T, ...rest: any[]) => {
-    return new Promise<R>(async (resolve) => {
-      const hashKey = await genHashKey(arg, ...rest);
+  const ret = weakMapMemoize(async (...args: Parameters<U>) => {
+    return new Promise<R>(async (resolve, reject) => {
+      const hashKey = await genHashKey(...args);
       if (lru && (await lru.has(hashKey))) {
-        const {value} = await lru.get(hashKey);
-        resolve(value);
+        const entry = await lru.get(hashKey);
+        const value = entry?.value;
+        if (value) {
+          resolve(value);
+        } else {
+          reject(new Error('No value found'));
+        }
         return;
-      }
-
-      const result = await fn(arg, ...rest);
-      // Resolve the promise before storing the result in IndexedDB
-      resolve(result);
-      if (lru) {
-        await lru.set(hashKey, result, {
-          // Some day in the year 2050...
-          expiry: new Date(9 ** 13),
+      } else if (!hashToPromise[hashKey]) {
+        hashToPromise[hashKey] = new Promise(async (res, rej) => {
+          try {
+            const result = await fn(...args);
+            // Resolve the promise before storing the result in IndexedDB
+            res(result);
+            if (lru) {
+              await lru.set(hashKey, result);
+              delete hashToPromise[hashKey];
+            }
+          } catch (e) {
+            delete hashToPromise[hashKey];
+            rej(e);
+          }
         });
+      }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const result = await hashToPromise[hashKey]!;
+        resolve(result);
+      } catch (e) {
+        delete hashToPromise[hashKey];
+        reject(e);
       }
     });
   }) as any;
-  ret.isCached = async (arg: T, ...rest: any) => {
-    const hashKey = await genHashKey(arg, ...rest);
+  ret.isCached = async (...args: Parameters<U>) => {
+    const hashKey = await genHashKey(...args);
     if (!lru) {
       return false;
     }
     return await lru.has(hashKey);
   };
-  return ret;
-}
-
-// Simple memoization function for methods that take a single object argument.
-// Returns a memoized copy of the provided function which retrieves the result
-// from a cache after the first invocation with a given object.
-//
-// Uses WeakMap to tie the lifecycle of the cache to the lifecycle of the
-// object argument.
-//
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function weakmapMemoize<T extends object, R>(
-  fn: (arg: T, ...rest: any[]) => R,
-): (arg: T, ...rest: any[]) => R {
-  const cache = new WeakMap();
-  return (arg: T, ...rest: any[]) => {
-    if (cache.has(arg)) {
-      return cache.get(arg);
+  ret.clearEntry = async (...args: Parameters<U>) => {
+    if (!lru) {
+      return;
     }
-    const r = fn(arg, ...rest);
-    cache.set(arg, r);
-    return r;
+    const hashKey = await genHashKey(...args);
+    delete hashToPromise[hashKey];
+    await lru.delete(hashKey);
   };
-}
+  return ret;
+};
 
 export function assertUnreachable(value: never): never {
   throw new Error(`Didn't expect to get here with value: ${JSON.stringify(value)}`);
-}
-
-export function debugLog(...args: any[]) {
-  if (featureEnabled(FeatureFlag.flagDebugConsoleLogging)) {
-    console.log(...args);
-  }
 }
 
 export function colorHash(str: string) {
@@ -263,4 +262,4 @@ export const gqlTypePredicate =
     return node.__typename === typename;
   };
 
-export const COMMON_COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base'});
+export {COMMON_COLLATOR} from './commonCollator';

@@ -8,5 +8,6 @@ SDA[s]
 subprocess
 todo
 ui
+uv
 webserver
 yaml

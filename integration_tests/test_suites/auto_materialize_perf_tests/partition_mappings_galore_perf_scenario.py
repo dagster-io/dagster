@@ -1,16 +1,19 @@
-from typing import Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Optional, Union, cast
 
 from dagster import (
     AssetDep,
     AssetsDefinition,
     AutoMaterializePolicy,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
     PartitionsDefinition,
     RunRequest,
     TimeWindowPartitionMapping,
     asset,
+)
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -76,7 +79,7 @@ defs = Definitions(assets)
 
 
 def build_run_request_for_all_partitions(asset_def: AssetsDefinition) -> RunRequest:
-    partitions_def = cast(PartitionsDefinition, asset_def.partitions_def)
+    partitions_def = cast("PartitionsDefinition", asset_def.partitions_def)
     return RunRequest(
         asset_selection=[asset_def.key],
         tags={

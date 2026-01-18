@@ -41,16 +41,25 @@ def test_get_parameters_by_path(mock_ssm_client):
     mock_ssm_client.put_parameter(Name="path/not/matching/param3", Value="param3", Type="String")
 
     result = get_parameters_by_paths(
-        mock_ssm_client, ["path/based"], with_decryption=True, recursive=True
+        mock_ssm_client,
+        ["path/based"],  # pyright: ignore[reportArgumentType]
+        with_decryption=True,
+        recursive=True,
     )
     assert result == {"path/based/param1": "param1", "path/based/nested/param2": "param2"}
 
     result = get_parameters_by_paths(
-        mock_ssm_client, ["path/based"], with_decryption=True, recursive=False
+        mock_ssm_client,
+        ["path/based"],  # pyright: ignore[reportArgumentType]
+        with_decryption=True,
+        recursive=False,
     )
     assert result == {"path/based/param1": "param1"}
 
     result = get_parameters_by_paths(
-        mock_ssm_client, ["path/"], with_decryption=False, recursive=False
+        mock_ssm_client,
+        ["path/"],  # pyright: ignore[reportArgumentType]
+        with_decryption=False,
+        recursive=False,
     )
     assert result == {}

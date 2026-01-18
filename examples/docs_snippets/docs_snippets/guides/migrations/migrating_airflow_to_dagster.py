@@ -1,5 +1,6 @@
 # ruff: isort: skip_file
 # ruff: noqa: T201,D415
+# type: ignore # problematic imports in example code
 
 
 def scope_simple_airflow_task():
@@ -156,7 +157,6 @@ def scope_run_docker_image_with_airflow():
     from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
         KubernetesPodOperator,
     )
-    from pendulum import datetime
 
     with DAG(
         dag_id="example_kubernetes_dag", schedule_interval=None, catchup=False

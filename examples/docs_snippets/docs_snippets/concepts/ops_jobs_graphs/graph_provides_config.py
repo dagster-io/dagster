@@ -1,24 +1,26 @@
-from dagster import Config, graph, op
+import dagster as dg
 
 
-class AddNConfig(Config):
+class AddNConfig(dg.Config):
     n: float
 
 
-@op
+@dg.op
 def add_n(config: AddNConfig, number):
     return number + config.n
 
 
-class MultiplyByMConfig(Config):
+class MultiplyByMConfig(dg.Config):
     m: float
 
 
-@op
+@dg.op
 def multiply_by_m(config: MultiplyByMConfig, number):
     return number * config.m
 
 
-@graph(config={"multiply_by_m": {"config": {"m": 1.8}}, "add_n": {"config": {"n": 32}}})
+@dg.graph(
+    config={"multiply_by_m": {"config": {"m": 1.8}}, "add_n": {"config": {"n": 32}}}
+)
 def celsius_to_fahrenheit(number):
     return multiply_by_m(add_n(number))

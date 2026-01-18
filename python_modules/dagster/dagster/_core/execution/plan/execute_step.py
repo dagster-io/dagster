@@ -1,5 +1,7 @@
 import inspect
-from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
+from collections import defaultdict
+from collections.abc import Iterable, Iterator, Mapping
+from typing import Any, Optional, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -15,9 +17,9 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -32,12 +34,13 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
-from dagster._core.definitions.multi_dimensional_partitions import (
+from dagster._core.definitions.partitions.utils import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
-from dagster._core.definitions.result import AssetResult
+from dagster._core.definitions.result import AssetResult, MaterializeResult
 from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
@@ -57,18 +60,16 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.plan.utils import op_execution_error_boundary
+from dagster._core.storage.dagster_run import assets_are_externally_managed
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
-from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
+from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 
 
 class AssetResultOutput(Output):
     """This is a marker subclass that represents an Output that was produced from an AssetResult."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 def _process_asset_results_to_events(
@@ -100,8 +101,12 @@ def _process_user_event(
             yield from _process_user_event(step_context, check_result)
 
         with disable_dagster_warnings():
+            if isinstance(user_event, MaterializeResult):
+                value = user_event.value
+            else:
+                value = None
             yield AssetResultOutput(
-                value=None,
+                value=value,
                 output_name=output_name,
                 metadata=user_event.metadata,
                 data_version=user_event.data_version,
@@ -109,31 +114,26 @@ def _process_user_event(
             )
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+        assets_def = _get_assets_def_for_step(step_context, user_event)
         spec = check.not_none(
-            step_context.job_def.asset_layer.asset_graph.get_check_spec(
-                asset_check_evaluation.asset_check_key
-            ),
+            assets_def.get_spec_for_check_key(asset_check_evaluation.asset_check_key),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
         )
-
-        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-            asset_check_evaluation.asset_check_key
-        )
-        output = Output(value=None, output_name=output_name)
-
+        # If the check is explicitly selected, we need to yield an Output event for it.
+        if spec.key in assets_def.check_keys:
+            output_name = check.not_none(
+                step_context.job_def.asset_layer.get_op_output_name(spec.key),
+                f"No output name found for check key {spec.key} in step {step_context.step.key}. This likely indicates that the currently executing AssetsDefinition has no check specified for the key.",
+            )
+            output = Output(value=None, output_name=output_name)
+            yield output
+        else:
+            step_context.log.warning(
+                f"AssetCheckResult for check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' was yielded which is not selected. Letting it through."
+            )
         yield asset_check_evaluation
 
-        if (
-            not asset_check_evaluation.passed
-            and asset_check_evaluation.severity == AssetCheckSeverity.ERROR
-            and spec.blocking
-        ):
-            raise DagsterAssetCheckFailedError(
-                f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
-                " ERROR severity."
-            )
-        yield output
     else:
         yield user_event
 
@@ -141,7 +141,7 @@ def _process_user_event(
 def _get_assets_def_for_step(
     step_context: StepExecutionContext, user_event: OpOutputUnion
 ) -> AssetsDefinition:
-    assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
+    assets_def = step_context.job_def.asset_layer.get_assets_def_for_node(step_context.node_handle)
     if not assets_def:
         raise DagsterInvariantViolationError(
             f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
@@ -187,7 +187,7 @@ def _step_output_error_checked_user_event_sequence(
 
         # do additional processing on Outputs
         output = user_event
-        if not step.has_step_output(cast(str, output.output_name)):
+        if not step.has_step_output(cast("str", output.output_name)):
             raise DagsterInvariantViolationError(
                 f'Core compute for {op_label} returned an output "{output.output_name}" that does '
                 f"not exist. The available outputs are {output_names}"
@@ -199,7 +199,7 @@ def _step_output_error_checked_user_event_sequence(
                 f"not selected. The selected outputs are {selected_output_names}"
             )
 
-        step_output = step.step_output_named(cast(str, output.output_name))
+        step_output = step.step_output_named(cast("str", output.output_name))
         output_def = step_context.job_def.get_node(step_output.node_handle).output_def_named(
             step_output.name
         )
@@ -228,8 +228,10 @@ def _step_output_error_checked_user_event_sequence(
             # contrast, if both A and B are yielded, A should never precede B.
             asset_layer = step_context.job_def.asset_layer
             node_handle = step_context.node_handle
-            asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
-            if asset_key is not None and asset_key in asset_layer.asset_keys_for_node(node_handle):
+            asset_key = asset_layer.get_asset_key_for_node_output(node_handle, output_def.name)
+            if asset_key is not None and asset_key in asset_layer.get_selected_entity_keys_for_node(
+                node_handle
+            ):
                 asset_node = asset_layer.get(asset_key)
                 assets_def = asset_node.assets_def
                 all_dependent_keys = asset_node.child_keys
@@ -282,7 +284,7 @@ def _step_output_error_checked_user_event_sequence(
         step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             asset_layer = step_context.job_def.asset_layer
-            asset_key = asset_layer.asset_key_for_output(
+            asset_key = asset_layer.get_asset_key_for_node_output(
                 step_context.node_handle, step_output_def.name
             )
             # We require explicitly returned/yielded for asset observations
@@ -447,9 +449,10 @@ def core_dagster_event_sequence_for_step(
     else:
         yield DagsterEvent.step_start_event(step_context)
 
-    with time_execution_scope() as timer_result, enter_execution_context(
-        step_context
-    ) as compute_context:
+    with (
+        time_execution_scope() as timer_result,
+        enter_execution_context(step_context) as compute_context,
+    ):
         inputs = {}
 
         if step_context.is_sda_step:
@@ -494,6 +497,8 @@ def core_dagster_event_sequence_for_step(
             compute_context,
         )
 
+        failed_blocking_asset_check_evaluations = []
+
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
         for user_event in _step_output_error_checked_user_event_sequence(
@@ -512,11 +517,31 @@ def core_dagster_event_sequence_for_step(
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, AssetCheckEvaluation):
+                if (
+                    not user_event.passed
+                    and user_event.severity == AssetCheckSeverity.ERROR
+                    and user_event.blocking
+                ):
+                    failed_blocking_asset_check_evaluations.append(user_event)
                 yield DagsterEvent.asset_check_evaluation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
                 check.failed(f"Unexpected event {user_event}, should have been caught earlier")
+
+    if failed_blocking_asset_check_evaluations:
+        grouped_by_asset_key: dict[AssetKey, list[AssetCheckEvaluation]] = defaultdict(list)
+        for failed_check in failed_blocking_asset_check_evaluations:
+            grouped_by_asset_key.setdefault(failed_check.asset_key, []).append(failed_check)
+
+        grouped_by_asset_key_str = "\n".join(
+            f"{asset_key.to_user_string()}: {','.join(failed_check.check_name for failed_check in checks)}"
+            for asset_key, checks in grouped_by_asset_key.items()
+        )
+
+        raise DagsterAssetCheckFailedError(
+            f"{len(failed_blocking_asset_check_evaluations)} blocking asset check{'s' if len(failed_blocking_asset_check_evaluations) > 1 else ''} failed with ERROR severity:\n{grouped_by_asset_key_str}"
+        )
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)
@@ -547,11 +572,9 @@ def _type_check_and_store_output(
         step_context.step_output_capture[step_output_handle] = output.value
         step_context.step_output_metadata_capture[step_output_handle] = output.metadata
 
-    for output_event in _type_check_output(step_context, step_output_handle, output):
-        yield output_event
+    yield from _type_check_output(step_context, step_output_handle, output)
 
-    for evt in _store_output(step_context, step_output_handle, output):
-        yield evt
+    yield from _store_output(step_context, step_output_handle, output)
 
 
 def _get_output_asset_events(
@@ -563,12 +586,13 @@ def _get_output_asset_events(
     step_context: StepExecutionContext,
     execution_type: AssetExecutionType,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-    all_metadata = {**output.metadata, **io_manager_metadata}
+    # Metadata scoped to all events for this asset.
+    key_scoped_metadata = {**output.metadata, **io_manager_metadata}
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
-    tags: Dict[str, str]
+    tags: dict[str, str]
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
@@ -622,10 +646,26 @@ def _get_output_asset_events(
     else:
         check.failed(f"Unexpected asset execution type {execution_type}")
 
+    unpartitioned_asset_metadata = step_context.get_asset_metadata(asset_key=asset_key)
+    all_unpartitioned_asset_metadata = {
+        **key_scoped_metadata,
+        **(unpartitioned_asset_metadata or {}),
+    }
     if asset_partitions:
         for partition in asset_partitions:
             with disable_dagster_warnings():
-                all_tags.update(
+                partition_scoped_metadata = step_context.get_asset_metadata(
+                    asset_key=asset_key, partition_key=partition
+                )
+                all_metadata_for_partitioned_event = {
+                    **all_unpartitioned_asset_metadata,
+                    **(partition_scoped_metadata or {}),
+                }
+                # copy the tags dictionary before setting the partition key tags. Otherwise
+                # all asset materialization events will point to the same dictionary with the
+                # partition key tags of the last partition processed.
+                tags_for_event = {**all_tags}
+                tags_for_event.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
                     else {}
@@ -634,12 +674,14 @@ def _get_output_asset_events(
                 yield event_class(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata=all_metadata,
-                    tags=all_tags,
+                    metadata=all_metadata_for_partitioned_event,
+                    tags=tags_for_event,
                 )
     else:
         with disable_dagster_warnings():
-            yield event_class(asset_key=asset_key, metadata=all_metadata, tags=all_tags)
+            yield event_class(
+                asset_key=asset_key, metadata=all_unpartitioned_asset_metadata, tags=all_tags
+            )
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
@@ -657,7 +699,7 @@ class _InputProvenanceData(TypedDict):
 def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
-    input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
+    input_provenance: dict[AssetKey, _InputProvenanceData] = {}
     deps = step_context.job_def.asset_layer.get(asset_key).parent_keys
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
@@ -687,8 +729,8 @@ def _build_data_version_tags(
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
     data_version_is_user_provided: bool,
-) -> Dict[str, str]:
-    tags: Dict[str, str] = {}
+) -> dict[str, str]:
+    tags: dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
     for key, meta in input_provenance_data.items():
         tags[get_input_data_version_tag(key)] = meta["data_version"].value
@@ -701,7 +743,7 @@ def _build_data_version_tags(
     return tags
 
 
-def _build_data_version_observation_tags(data_version: DataVersion) -> Dict[str, str]:
+def _build_data_version_observation_tags(data_version: DataVersion) -> dict[str, str]:
     return {
         DATA_VERSION_TAG: data_version.value,
         DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
@@ -718,16 +760,29 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle, output.metadata)
 
     manager_materializations = []
-    manager_metadata: Dict[str, MetadataValue] = {}
+    manager_metadata: dict[str, MetadataValue] = {}
 
     # don't store asset check outputs, asset observation outputs, asset result outputs, or Nothing
     # type outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
+
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
-        or isinstance(output, AssetResultOutput)
         or output_context.dagster_type.is_nothing
+        or (
+            # FIXME: currently, when an output type is unset, this quickly gets coerced to the Any type,
+            # making it impossible to distinguish between a user declaring that they expect an output
+            # of any type, and a user not declaring any expectation at all.
+            #
+            # For now, we assume that if the output type is Any AND the user has not explicitly set a
+            # value for their materialize result, that they do not expect the IO manager to be invoked.
+            # In contrast, if the user does explicitly set the output value to any value (including None),
+            # the IO manager *will* be invoked.
+            output_context.dagster_type.is_any
+            and isinstance(output, AssetResultOutput)
+            and output.value is NoValueSentinel
+        )
     ):
         yield from _log_materialization_or_observation_events_for_asset(
             step_context=step_context,
@@ -746,8 +801,7 @@ def _store_output(
 
             def _gen_fn():
                 gen_output = output_manager.handle_output(output_context, output.value)
-                for event in output_context.consume_events():
-                    yield event
+                yield from output_context.consume_events()
                 if gen_output:
                     yield gen_output
 
@@ -774,9 +828,7 @@ def _store_output(
             elif isinstance(elt, AssetMaterialization):
                 manager_materializations.append(elt)
             elif isinstance(elt, dict):  # should remove this?
-                experimental_warning(
-                    "Yielding metadata from an IOManager's handle_output() function"
-                )
+                beta_warning("Yielding metadata from an IOManager's handle_output() function")
                 manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
             else:
                 raise DagsterInvariantViolationError(
@@ -853,7 +905,7 @@ def _log_materialization_or_observation_events_for_asset(
 
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
+        assets_def = asset_layer.get_assets_def_for_node(step_context.node_handle)
         execution_type = check.not_none(assets_def).execution_type
 
         check.invariant(
@@ -866,17 +918,20 @@ def _log_materialization_or_observation_events_for_asset(
             f"Unexpected asset execution type {execution_type}",
         )
 
-        asset_events = list(
-            _get_output_asset_events(
-                asset_key,
-                partitions,
-                output,
-                output_def,
-                manager_metadata,
-                step_context,
-                execution_type,
+        if assets_are_externally_managed(step_context.dagster_run):
+            asset_events = []
+        else:
+            asset_events = list(
+                _get_output_asset_events(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                    execution_type,
+                )
             )
-        )
 
         batch_id = generate_event_batch_id()
         last_index = len(asset_events) - 1

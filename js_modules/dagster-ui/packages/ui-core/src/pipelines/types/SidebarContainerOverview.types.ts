@@ -4530,6 +4530,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  externalJobSource: string | null;
   id: string;
   name: string;
   description: string | null;
@@ -4602,6 +4603,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -4637,6 +4639,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -4659,6 +4662,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -4677,6 +4681,11 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
         description: string | null;
       }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
+  >;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+  owners: Array<
+    | {__typename: 'TeamDefinitionOwner'; team: string}
+    | {__typename: 'UserDefinitionOwner'; email: string}
   >;
   modes: Array<{
     __typename: 'Mode';

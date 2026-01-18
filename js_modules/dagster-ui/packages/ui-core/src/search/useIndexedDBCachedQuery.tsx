@@ -1,6 +1,4 @@
-import {cache} from 'idb-lru-cache';
-import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext, useEffect} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {
   ApolloClient,
@@ -9,18 +7,21 @@ import {
   OperationVariables,
   useApolloClient,
 } from '../apollo-client';
+import {usePreviousDistinctValue} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {cache} from '../util/idb-lru-cache';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
-type CacheData<TQuery> = {
+export type CacheData<TQuery> = {
   data: TQuery;
   version: number | string;
 };
 
 export const KEY_PREFIX = 'indexdbQueryCache:';
 
-export class CacheManager<TQuery> {
-  private cache: ReturnType<typeof cache<string, CacheData<TQuery>>> | undefined;
+class CacheManager<TQuery> {
+  private cache: ReturnType<typeof cache<CacheData<TQuery>>> | undefined;
   private key: string;
   private current?: CacheData<TQuery>;
   private currentAwaitable?: Promise<TQuery | undefined>;
@@ -28,8 +29,8 @@ export class CacheManager<TQuery> {
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
     try {
-      this.cache = cache<string, CacheData<TQuery>>({dbName: this.key, maxCount: 1});
-    } catch (e) {}
+      this.cache = cache<CacheData<TQuery>>({dbName: this.key, maxCount: 1});
+    } catch {}
   }
 
   async get(version: number | string): Promise<TQuery | undefined> {
@@ -43,7 +44,8 @@ export class CacheManager<TQuery> {
           return;
         }
         if (await this.cache.has('cache')) {
-          const {value} = await this.cache.get('cache');
+          const entry = await this.cache.get('cache');
+          const value = entry?.value;
           if (value && version === value.version) {
             this.current = value;
             res(value.data);
@@ -61,15 +63,14 @@ export class CacheManager<TQuery> {
   async set(data: TQuery, version: number | string): Promise<void> {
     if (
       this.current?.data === data ||
-      (JSON.stringify(this.current?.data) === JSON.stringify(data) &&
-        this.current?.version === version)
+      (stringified(this.current?.data) === stringified(data) && this.current?.version === version)
     ) {
       return;
     }
     if (!this.cache) {
       return;
     }
-    return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
+    return this.cache.set('cache', {data, version});
   }
 
   async clear() {
@@ -77,6 +78,136 @@ export class CacheManager<TQuery> {
       return;
     }
     await this.cache.delete('cache');
+  }
+}
+
+const globalFetchStates: Record<string, {onFetched: ((value: any) => void)[]}> = {};
+
+export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> {
+  private cacheManager: CacheManager<TQuery>;
+  private key: string;
+  private version: number | string;
+  private queryFn: (variables?: TVariables) => Promise<{data: TQuery | undefined; error: any}>;
+  private variables?: TVariables;
+  private queryId: number;
+
+  constructor({
+    key,
+    version,
+    variables,
+    queryFn,
+  }: {
+    key: string;
+    version: number | string;
+    variables?: TVariables;
+    queryFn: (variables?: TVariables) => Promise<{data: TQuery | undefined; error: any}>;
+  }) {
+    this.key = key;
+    this.queryId = 0;
+    this.version = version;
+    this.variables = variables;
+    this.queryFn = queryFn;
+    this.cacheManager = getCacheManager(key);
+
+    // Try to get cached data immediately (but don't await it in constructor)
+    this.getCachedData();
+  }
+
+  async getCachedData(): Promise<TQuery | undefined> {
+    return await this.cacheManager.get(this.version);
+  }
+
+  async fetchData(bypassCache = false): Promise<{data: TQuery | undefined; error: any}> {
+    if (!bypassCache) {
+      const cachedData = await this.getCachedData();
+      if (cachedData !== undefined) {
+        return {data: cachedData, error: undefined};
+      }
+    }
+    const globalKey = `${this.key}-${JSON.stringify(this.variables)}-${this.version}`;
+
+    const currentState = globalFetchStates[globalKey];
+    if (currentState) {
+      return new Promise((resolve) => {
+        currentState.onFetched.push(resolve as any);
+      });
+    }
+
+    const state = {onFetched: [] as ((value: {data: TQuery | undefined; error: any}) => void)[]};
+    globalFetchStates[globalKey] = state;
+
+    const result = await this.queryFn(this.variables);
+
+    if (result.data && !result.error) {
+      const dataToCache = result.data;
+      setTimeout(() => {
+        // Let the UI render before setting the cache since it could be slow
+        this.cacheManager.set(dataToCache, this.version);
+      }, 1);
+    }
+
+    const onFetchedHandlers = state.onFetched;
+    if (globalFetchStates[globalKey] === state) {
+      delete globalFetchStates[globalKey]; // Clean up fetch state after handling
+    }
+
+    onFetchedHandlers.forEach((handler) => {
+      try {
+        handler(result);
+      } catch (e) {
+        console.error('Error in onFetched handler', e);
+      }
+    }); // Notify all waiting fetches
+
+    return result;
+  }
+
+  async clearCache(): Promise<void> {
+    await this.cacheManager.clear();
+  }
+
+  updateVariables(variables: TVariables): void {
+    this.variables = variables;
+    this.queryId++;
+  }
+
+  updateVersion(version: number | string): void {
+    this.version = version;
+    this.queryId++;
+  }
+}
+
+export class ApolloIndexedDBQueryCache<
+  TQuery,
+  TVariables extends OperationVariables,
+> extends IndexedDBQueryCache<TQuery, TVariables> {
+  constructor({
+    client,
+    key,
+    query,
+    version,
+    variables,
+  }: {
+    client: ApolloClient<any>;
+    key: string;
+    query: DocumentNode;
+    version: number | string;
+    variables?: TVariables;
+  }) {
+    const queryFn = async (vars?: TVariables) => {
+      try {
+        const queryResult = await client.query<TQuery, TVariables>({
+          query,
+          variables: vars,
+          fetchPolicy: 'no-cache',
+        });
+        return {data: queryResult.data, error: queryResult.error};
+      } catch (error) {
+        return {data: undefined, error};
+      }
+    };
+
+    super({key, version, variables, queryFn});
   }
 }
 
@@ -99,57 +230,62 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   const [data, setData] = React.useState<TQuery | undefined>(undefined);
   const [error, setError] = React.useState<ApolloError | undefined>(undefined);
   const [loading, setLoading] = React.useState(true);
-
   const dataRef = useUpdatingRef(data);
 
-  const getData = useGetData();
-  const getCachedData = useGetCachedData();
+  const cacheRef = useMemo(() => {
+    return new ApolloIndexedDBQueryCache<TQuery, TVariables>({
+      client,
+      key,
+      query,
+      version,
+      variables,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, query, client]);
 
   const fetch = useCallback(
     async (bypassCache = false) => {
       setLoading(true);
-      const {data, error} = await getData<TQuery, TVariables>({
-        client,
-        key,
-        query,
-        variables,
-        version,
-        bypassCache,
-      });
+      const {data, error} = await cacheRef.fetchData(bypassCache);
+
       if (
         data &&
         // Work around a weird jest issue where it returns an empty object if no mocks are found...
         Object.keys(data).length &&
-        (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))
+        (!dataRef.current || stringified(dataRef.current) !== stringified(data))
       ) {
         setData(data);
       }
       setError(error);
       setLoading(false);
     },
-    // exclude variables, instead JSON stringify it to avoid changing this reference if the caller hasn't memoized it
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [getData, client, key, query, JSON.stringify(variables), version, dataRef],
+    [dataRef, cacheRef],
   );
 
   React.useEffect(() => {
     if (skip) {
       return;
     }
-    getCachedData<TQuery>({key, version}).then((data) => {
+
+    cacheRef.getCachedData().then((data) => {
       if (data && !dataRef.current) {
         setData(data);
         setLoading(false);
       }
     });
-  }, [key, version, getCachedData, dataRef, skip]);
+  }, [dataRef, skip, cacheRef]);
+
+  // JSON stringify variables to avoid refetching if the caller hasn't memoized it
+  const stringifiedVariables = useMemo(() => JSON.stringify(variables ?? {}), [variables]);
 
   React.useEffect(() => {
     if (skip) {
       return;
     }
+    cacheRef.updateVariables(JSON.parse(stringifiedVariables));
+    cacheRef.updateVersion(version);
     fetch(true);
-  }, [fetch, skip]);
+  }, [fetch, skip, version, cacheRef, stringifiedVariables]);
 
   const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data, {
     skip,
@@ -160,8 +296,11 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     }
   }, [error, dep]);
 
+  const previousData = usePreviousDistinctValue(data);
+
   return {
     data,
+    previousData,
     called: true, // Add called for compatibility with useBlockTraceOnQueryResult
     error,
     loading,
@@ -169,115 +308,88 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   };
 }
 
-interface FetchParams<TVariables extends OperationVariables> {
-  client: ApolloClient<any>;
-  key: string;
-  query: DocumentNode;
-  variables?: TVariables;
-  version: number | string;
-  bypassCache?: boolean;
-}
-
 export function useGetData() {
-  const {getCacheManager, fetchState} = useContext(IndexedDBCacheContext);
+  const apolloClient = useApolloClient();
 
   return useCallback(
-    async <TQuery, TVariables extends OperationVariables>({
+    async <TData, TVariables extends OperationVariables>({
       client,
-      key,
       query,
-      variables,
+      key,
       version,
+      variables,
       bypassCache = false,
-    }: FetchParams<TVariables>): Promise<{data: TQuery; error: ApolloError | undefined}> => {
-      const cacheManager = getCacheManager<TQuery>(key);
+    }: {
+      client?: ApolloClient<any>;
+      query: DocumentNode;
+      key: string;
+      version: number | string;
+      variables?: TVariables;
+      bypassCache?: boolean;
+    }) => {
+      const clientToUse = client || apolloClient;
 
-      if (!bypassCache) {
-        const cachedData = await cacheManager.get(version);
-        if (cachedData !== undefined) {
-          return {data: cachedData, error: undefined};
-        }
-      }
-
-      const currentState = fetchState[key];
-      // Handle concurrent fetch requests
-      if (currentState) {
-        return new Promise((resolve) => {
-          currentState!.onFetched.push(resolve as any);
-        });
-      }
-
-      const state = {
-        onFetched: [] as ((value: Pick<typeof queryResult, 'data' | 'error'>) => void)[],
-      };
-      fetchState[key] = state;
-
-      const queryResult = await client.query<TQuery, TVariables>({
+      // Create a cache instance or reuse an existing one
+      const queryCache = new ApolloIndexedDBQueryCache<TData, TVariables>({
+        client: clientToUse,
+        key,
         query,
+        version,
         variables,
-        fetchPolicy: 'no-cache',
       });
 
-      const {data, error} = queryResult;
+      const result = await queryCache.fetchData(bypassCache);
 
-      if (data && !error) {
-        await cacheManager.set(data, version);
-      }
-
-      const onFetchedHandlers = state.onFetched;
-      if (fetchState[key] === state) {
-        delete fetchState[key]; // Clean up fetch state after handling
-      }
-
-      onFetchedHandlers.forEach((handler) => handler({data, error})); // Notify all waiting fetches
-
-      return {data, error};
+      return {
+        data: result.data,
+        error: result.error,
+      };
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [apolloClient],
   );
 }
 
-export function useGetCachedData() {
-  const {getCacheManager} = useContext(IndexedDBCacheContext);
-
-  return useCallback(
-    async <TQuery,>({key, version}: {key: string; version: number | string}) => {
-      const cacheManager = getCacheManager<TQuery>(key);
-      return await cacheManager.get(version);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-}
-export function useClearCachedData() {
-  const {getCacheManager} = useContext(IndexedDBCacheContext);
-  return useCallback(
-    async <TQuery,>({key}: {key: string}) => {
-      const cacheManager = getCacheManager<TQuery>(key);
-      await cacheManager.clear();
-    },
-    [getCacheManager],
-  );
+export async function getCachedData<TQuery>({
+  key,
+  version,
+}: {
+  key: string;
+  version: number | string;
+}) {
+  return await getCacheManager<TQuery>(key).get(version);
 }
 
-const contextValue = createIndexedDBCacheContextValue();
-export const IndexedDBCacheContext = createContext(contextValue);
-
-export function createIndexedDBCacheContextValue() {
-  return {
-    getCacheManager: memoize(<TQuery,>(key: string) => {
-      return new CacheManager<TQuery>(key);
-    }),
-    fetchState: {} as Record<
-      string,
-      {
-        onFetched: ((value: any) => void)[];
-      }
-    >,
-  };
+export async function setCachedData<TQuery>({
+  key,
+  version,
+  data,
+}: {
+  key: string;
+  version: number | string;
+  data: TQuery;
+}) {
+  await getCacheManager<TQuery>(key).set(data, version);
 }
+
+export async function clearCachedData<TQuery>({key}: {key: string}) {
+  await getCacheManager<TQuery>(key).clear();
+}
+
+export let getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {
+  return new CacheManager<TQuery>(key);
+});
 
 export const __resetForJest = () => {
-  Object.assign(contextValue, createIndexedDBCacheContextValue());
+  Object.keys(globalFetchStates).forEach((key) => delete globalFetchStates[key]);
+  getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {
+    return new CacheManager<TQuery>(key);
+  });
 };
+
+const stringified = weakMapMemoize((data: any) => {
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return '';
+  }
+});

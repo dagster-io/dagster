@@ -2,29 +2,20 @@ import contextlib
 import enum
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
+import dagster as dg
 import pytest
-from dagster import (
-    ConfigurableResource,
-    Definitions,
-    Field,
-    ResourceDependency,
-    ResourceParam,
-    asset,
-    job,
-    resource,
-)
-from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster import Definitions
+from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.storage.io_manager import IOManager
 
 
 def test_nested_resources() -> None:
     out_txt = []
 
-    class Writer(ConfigurableResource, ABC):
+    class Writer(dg.ConfigurableResource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
@@ -45,10 +36,10 @@ def test_nested_resources() -> None:
         base_writer: Writer
         indent: int
 
-        def output(self, obj: Any) -> None:
+        def output(self, obj: Any) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             self.base_writer.output(json.dumps(obj, indent=self.indent))
 
-    @asset
+    @dg.asset
     def hello_world_asset(writer: JsonWriterResource):
         writer.output({"hello": "world"})
 
@@ -57,13 +48,13 @@ def test_nested_resources() -> None:
     json_writer_resource = JsonWriterResource(indent=2, base_writer=writer_resource)
 
     assert (
-        Definitions(
+        dg.Definitions(
             assets=[hello_world_asset],
             resources={
                 "writer": json_writer_resource,
             },
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -78,13 +69,13 @@ def test_nested_resources() -> None:
     )
 
     assert (
-        Definitions(
+        dg.Definitions(
             assets=[hello_world_asset],
             resources={
                 "writer": prefixed_json_writer_resource,
             },
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -93,20 +84,20 @@ def test_nested_resources() -> None:
 
 
 def test_nested_resources_multiuse() -> None:
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         username: str
         password: str
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(dg.ConfigurableResource):
         aws_credentials: AWSCredentialsResource
         bucket_name: str
 
-    class EC2Resource(ConfigurableResource):
+    class EC2Resource(dg.ConfigurableResource):
         aws_credentials: AWSCredentialsResource
 
     completed = {}
 
-    @asset
+    @dg.asset
     def my_asset(s3: S3Resource, ec2: EC2Resource):
         assert s3.aws_credentials.username == "foo"
         assert s3.aws_credentials.password == "bar"
@@ -118,7 +109,7 @@ def test_nested_resources_multiuse() -> None:
         completed["yes"] = True
 
     aws_credentials = AWSCredentialsResource(username="foo", password="bar")
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "s3": S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials),
@@ -126,25 +117,25 @@ def test_nested_resources_multiuse() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert completed["yes"]
 
 
 def test_nested_resources_runtime_config() -> None:
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(dg.ConfigurableResource):
         username: str
         password: str
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(dg.ConfigurableResource):
         aws_credentials: AWSCredentialsResource
         bucket_name: str
 
-    class EC2Resource(ConfigurableResource):
+    class EC2Resource(dg.ConfigurableResource):
         aws_credentials: AWSCredentialsResource
 
     completed = {}
 
-    @asset
+    @dg.asset
     def my_asset(s3: S3Resource, ec2: EC2Resource):
         assert s3.aws_credentials.username == "foo"
         assert s3.aws_credentials.password == "bar"
@@ -159,7 +150,7 @@ def test_nested_resources_runtime_config() -> None:
     s3_resource = S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials)
     ec2_resource = EC2Resource(aws_credentials=aws_credentials)
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "aws_credentials": aws_credentials,
@@ -169,7 +160,7 @@ def test_nested_resources_runtime_config() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -186,7 +177,7 @@ def test_nested_resources_runtime_config() -> None:
     )
     assert completed["yes"]
 
-    @job(
+    @dg.job(
         resource_defs={
             "random_key": aws_credentials,
             "s3": s3_resource,
@@ -211,21 +202,21 @@ def test_nested_resources_runtime_config() -> None:
 
 
 def test_nested_resources_runtime_config_complex() -> None:
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(dg.ConfigurableResource):
         username: str
         password: str
 
-    class DBConfigResource(ConfigurableResource):
+    class DBConfigResource(dg.ConfigurableResource):
         creds: CredentialsResource
         host: str
         database: str
 
-    class DBResource(ConfigurableResource):
+    class DBResource(dg.ConfigurableResource):
         config: DBConfigResource
 
     completed = {}
 
-    @asset
+    @dg.asset
     def my_asset(db: DBResource):
         assert db.config.creds.username == "foo"
         assert db.config.creds.password == "bar"
@@ -237,7 +228,7 @@ def test_nested_resources_runtime_config_complex() -> None:
     db_config = DBConfigResource.configure_at_launch(creds=credentials)
     db = DBResource(config=db_config)
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "credentials": credentials,
@@ -247,7 +238,7 @@ def test_nested_resources_runtime_config_complex() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -274,7 +265,7 @@ def test_nested_resources_runtime_config_complex() -> None:
     db_config = DBConfigResource(creds=credentials, host="localhost", database="my_db")
     db = DBResource(config=db_config)
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "credentials": credentials,
@@ -283,7 +274,7 @@ def test_nested_resources_runtime_config_complex() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -304,7 +295,7 @@ def test_nested_resources_runtime_config_complex() -> None:
 def test_nested_function_resource() -> None:
     out_txt = []
 
-    @resource
+    @dg.resource
     def writer_resource(context):
         def output(text: str) -> None:
             out_txt.append(text)
@@ -312,7 +303,7 @@ def test_nested_function_resource() -> None:
         return output
 
     class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
-        writer: ResourceDependency[Callable[[str], None]]
+        writer: dg.ResourceDependency[Callable[[str], None]]
         postfix: str
 
         def create_resource(self, context) -> Callable[[str], None]:
@@ -321,26 +312,26 @@ def test_nested_function_resource() -> None:
 
             return output
 
-    @asset
-    def my_asset(writer: ResourceParam[Callable[[str], None]]):
+    @dg.asset
+    def my_asset(writer: dg.ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["foo!", "bar!"]
 
 
 def test_nested_function_resource_configured() -> None:
     out_txt = []
 
-    @resource(config_schema={"prefix": Field(str, default_value="")})
+    @dg.resource(config_schema={"prefix": dg.Field(str, default_value="")})
     def writer_resource(context):
         prefix = context.resource_config["prefix"]
 
@@ -350,7 +341,7 @@ def test_nested_function_resource_configured() -> None:
         return output
 
     class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
-        writer: ResourceDependency[Callable[[str], None]]
+        writer: dg.ResourceDependency[Callable[[str], None]]
         postfix: str
 
         def create_resource(self, context) -> Callable[[str], None]:
@@ -359,24 +350,24 @@ def test_nested_function_resource_configured() -> None:
 
             return output
 
-    @asset
-    def my_asset(writer: ResourceParam[Callable[[str], None]]):
+    @dg.asset
+    def my_asset(writer: dg.ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["foo!", "bar!"]
 
     out_txt.clear()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "writer": PostfixWriterResource(
@@ -385,14 +376,14 @@ def test_nested_function_resource_configured() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["msg: foo!", "msg: bar!"]
 
 
 def test_nested_function_resource_runtime_config() -> None:
     out_txt = []
 
-    @resource(config_schema={"prefix": str})
+    @dg.resource(config_schema={"prefix": str})
     def writer_resource(context):
         prefix = context.resource_config["prefix"]
 
@@ -402,7 +393,7 @@ def test_nested_function_resource_runtime_config() -> None:
         return output
 
     class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
-        writer: ResourceDependency[Callable[[str], None]]
+        writer: dg.ResourceDependency[Callable[[str], None]]
         postfix: str
 
         def create_resource(self, context) -> Callable[[str], None]:
@@ -411,19 +402,19 @@ def test_nested_function_resource_runtime_config() -> None:
 
             return output
 
-    @asset
-    def my_asset(writer: ResourceParam[Callable[[str], None]]):
+    @dg.asset
+    def my_asset(writer: dg.ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="Any partially configured, nested resources must be provided as a top level resource.",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions
         Definitions.validate_loadable(
-            Definitions(
+            dg.Definitions(
                 assets=[my_asset],
                 resources={
                     "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
@@ -431,7 +422,7 @@ def test_nested_function_resource_runtime_config() -> None:
             )
         )
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "base_writer": writer_resource,
@@ -440,7 +431,7 @@ def test_nested_function_resource_runtime_config() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -458,43 +449,43 @@ def test_nested_function_resource_runtime_config() -> None:
 
 
 def test_nested_resource_raw_value() -> None:
-    class MyResourceWithDep(ConfigurableResource):
-        a_string: ResourceDependency[str]
+    class MyResourceWithDep(dg.ConfigurableResource):
+        a_string: dg.ResourceDependency[str]
 
-    @resource
+    @dg.resource
     def string_resource(context) -> str:
         return "foo"
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset(my_resource: MyResourceWithDep):
         assert my_resource.a_string == "foo"
         executed["yes"] = True
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "my_resource": MyResourceWithDep(a_string=string_resource),
         },
     )
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
     executed.clear()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={"my_resource": MyResourceWithDep(a_string="foo")},
     )
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 
 def test_nested_resource_raw_value_io_manager() -> None:
-    class MyMultiwriteIOManager(ConfigurableIOManager):
-        base_io_manager: ResourceDependency[IOManager]
-        mirror_io_manager: ResourceDependency[IOManager]
+    class MyMultiwriteIOManager(dg.ConfigurableIOManager):
+        base_io_manager: dg.ResourceDependency[dg.IOManager]
+        mirror_io_manager: dg.ResourceDependency[dg.IOManager]
 
         def handle_output(self, context, obj) -> None:
             self.base_io_manager.handle_output(context, obj)
@@ -505,8 +496,8 @@ def test_nested_resource_raw_value_io_manager() -> None:
 
     log = []
 
-    class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+    class ConfigIOManager(dg.ConfigurableIOManager):
+        path_prefix: list[str]
 
         def handle_output(self, context, obj) -> None:
             log.append(
@@ -521,7 +512,7 @@ def test_nested_resource_raw_value_io_manager() -> None:
             )
             return "foo"
 
-    class RawIOManager(IOManager):
+    class RawIOManager(dg.IOManager):
         def handle_output(self, context, obj) -> None:
             log.append("RawIOManager handle_output " + "/".join(list(context.asset_key.path)))
 
@@ -529,15 +520,15 @@ def test_nested_resource_raw_value_io_manager() -> None:
             log.append("RawIOManager load_input " + "/".join(list(context.asset_key.path)))
             return "foo"
 
-    @asset
+    @dg.asset
     def my_asset() -> str:
         return "foo"
 
-    @asset
+    @dg.asset
     def my_downstream_asset(my_asset: str) -> str:
         return my_asset + "bar"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset, my_downstream_asset],
         resources={
             "io_manager": MyMultiwriteIOManager(
@@ -547,7 +538,7 @@ def test_nested_resource_raw_value_io_manager() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "ConfigIOManager handle_output base/my_asset",
         "RawIOManager handle_output my_asset",
@@ -562,17 +553,17 @@ def test_enum_nested_resource_no_run_config() -> None:
         A = "a_value"
         B = "b_value"
 
-    class ResourceWithEnum(ConfigurableResource):
+    class ResourceWithEnum(dg.ConfigurableResource):
         my_enum: MyEnum
 
-    class OuterResourceWithResourceWithEnum(ConfigurableResource):
+    class OuterResourceWithResourceWithEnum(dg.ConfigurableResource):
         resource_with_enum: ResourceWithEnum
 
-    @asset
+    @dg.asset
     def asset_with_outer_resource(outer_resource: OuterResourceWithResourceWithEnum):
         return outer_resource.resource_with_enum.my_enum.value
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[asset_with_outer_resource],
         resources={
             "outer_resource": OuterResourceWithResourceWithEnum(
@@ -581,7 +572,7 @@ def test_enum_nested_resource_no_run_config() -> None:
         },
     )
 
-    a_job = defs.get_implicit_global_asset_job_def()
+    a_job = defs.resolve_implicit_global_asset_job_def()
 
     result = a_job.execute_in_process()
     assert result.success
@@ -593,18 +584,18 @@ def test_enum_nested_resource_run_config_override() -> None:
         A = "a_value"
         B = "b_value"
 
-    class ResourceWithEnum(ConfigurableResource):
+    class ResourceWithEnum(dg.ConfigurableResource):
         my_enum: MyEnum
 
-    class OuterResourceWithResourceWithEnum(ConfigurableResource):
+    class OuterResourceWithResourceWithEnum(dg.ConfigurableResource):
         resource_with_enum: ResourceWithEnum
 
-    @asset
+    @dg.asset
     def asset_with_outer_resource(outer_resource: OuterResourceWithResourceWithEnum):
         return outer_resource.resource_with_enum.my_enum.value
 
     resource_with_enum = ResourceWithEnum.configure_at_launch()
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[asset_with_outer_resource],
         resources={
             "resource_with_enum": resource_with_enum,
@@ -614,7 +605,7 @@ def test_enum_nested_resource_run_config_override() -> None:
         },
     )
 
-    a_job = defs.get_implicit_global_asset_job_def()
+    a_job = defs.resolve_implicit_global_asset_job_def()
 
     # Case: I'm re-specifying the nested enum at runtime - expect the runtime config to override the resource config
     result = a_job.execute_in_process(
@@ -627,9 +618,9 @@ def test_enum_nested_resource_run_config_override() -> None:
 def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
     log = []
 
-    class MyMultiwriteIOManager(ConfigurableIOManager):
-        base_io_manager: ResourceDependency[IOManager]
-        mirror_io_manager: ResourceDependency[IOManager]
+    class MyMultiwriteIOManager(dg.ConfigurableIOManager):
+        base_io_manager: dg.ResourceDependency[dg.IOManager]
+        mirror_io_manager: dg.ResourceDependency[dg.IOManager]
 
         def handle_output(self, context, obj) -> None:
             self.base_io_manager.handle_output(context, obj)
@@ -644,8 +635,8 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("MyMultiwriteIOManager teardown_after_execution")
 
-    class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+    class ConfigIOManager(dg.ConfigurableIOManager):
+        path_prefix: list[str]
 
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("ConfigIOManager setup_for_execution")
@@ -666,7 +657,7 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
             )
             return "foo"
 
-    class RawIOManager(IOManager):
+    class RawIOManager(dg.IOManager):
         def handle_output(self, context, obj) -> None:
             log.append("RawIOManager handle_output " + "/".join(list(context.asset_key.path)))
 
@@ -674,15 +665,15 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
             log.append("RawIOManager load_input " + "/".join(list(context.asset_key.path)))
             return "foo"
 
-    @asset
+    @dg.asset
     def my_asset() -> str:
         return "foo"
 
-    @asset
+    @dg.asset
     def my_downstream_asset(my_asset: str) -> str:
         return my_asset + "bar"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset, my_downstream_asset],
         resources={
             "io_manager": MyMultiwriteIOManager(
@@ -692,7 +683,7 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "ConfigIOManager setup_for_execution",
         "MyMultiwriteIOManager setup_for_execution",
@@ -709,9 +700,9 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
 def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
     log = []
 
-    class MyMultiwriteIOManager(ConfigurableIOManager):
-        base_io_manager: ResourceDependency[IOManager]
-        mirror_io_manager: ResourceDependency[IOManager]
+    class MyMultiwriteIOManager(dg.ConfigurableIOManager):
+        base_io_manager: dg.ResourceDependency[dg.IOManager]
+        mirror_io_manager: dg.ResourceDependency[dg.IOManager]
 
         def handle_output(self, context, obj) -> None:
             self.base_io_manager.handle_output(context, obj)
@@ -726,8 +717,8 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("MyMultiwriteIOManager teardown_after_execution")
 
-    class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+    class ConfigIOManager(dg.ConfigurableIOManager):
+        path_prefix: list[str]
 
         @contextlib.contextmanager
         def yield_for_execution(self, context: InitResourceContext):
@@ -748,7 +739,7 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
             )
             return "foo"
 
-    class RawIOManager(IOManager):
+    class RawIOManager(dg.IOManager):
         def handle_output(self, context, obj) -> None:
             log.append("RawIOManager handle_output " + "/".join(list(context.asset_key.path)))
 
@@ -756,22 +747,22 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
             log.append("RawIOManager load_input " + "/".join(list(context.asset_key.path)))
             return "foo"
 
-    @resource
+    @dg.resource
     @contextlib.contextmanager
     def raw_io_manager(context):
         log.append("RawIOManager cm setup")
         yield RawIOManager()
         log.append("RawIOManager cm teardown")
 
-    @asset
+    @dg.asset
     def my_asset() -> str:
         return "foo"
 
-    @asset
+    @dg.asset
     def my_downstream_asset(my_asset: str) -> str:
         return my_asset + "bar"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset, my_downstream_asset],
         resources={
             "io_manager": MyMultiwriteIOManager(
@@ -781,7 +772,7 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "ConfigIOManager cm setup",
         "RawIOManager cm setup",
@@ -798,44 +789,44 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
 
 
 def test_multiple_nested_optional_resources() -> None:
-    class InnerResource(ConfigurableResource):
+    class InnerResource(dg.ConfigurableResource):
         a_string: str = "foo"
 
-    class OuterResource(ConfigurableResource):
+    class OuterResource(dg.ConfigurableResource):
         inner: InnerResource
 
-    class MainResource(ConfigurableResource):
+    class MainResource(dg.ConfigurableResource):
         outer: Optional[OuterResource]
 
     executed = {}
 
-    @asset
+    @dg.asset
     def expects_none_asset(main: MainResource):
         assert main.outer is None
         executed["expects_none_asset"] = True
 
     assert (
-        Definitions(
+        dg.Definitions(
             assets=[expects_none_asset],
             resources={"main": MainResource(outer=None)},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
     assert executed["expects_none_asset"]
 
-    @asset
+    @dg.asset
     def hello_world_asset(main: MainResource):
         assert main.outer and main.outer.inner.a_string == "foo"
         executed["hello_world_asset"] = True
 
     assert (
-        Definitions(
+        dg.Definitions(
             assets=[hello_world_asset],
             resources={"main": MainResource(outer=OuterResource(inner=InnerResource()))},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -843,21 +834,21 @@ def test_multiple_nested_optional_resources() -> None:
 
 
 def test_multiple_nested_optional_resources_complex() -> None:
-    class InnermostResource(ConfigurableResource):
+    class InnermostResource(dg.ConfigurableResource):
         a_string: str = "foo"
 
-    class InnerResource(ConfigurableResource):
+    class InnerResource(dg.ConfigurableResource):
         innermost: Optional[InnermostResource]
 
-    class OuterResource(ConfigurableResource):
+    class OuterResource(dg.ConfigurableResource):
         inner: Optional[InnerResource]
 
-    class MainResource(ConfigurableResource):
+    class MainResource(dg.ConfigurableResource):
         outer: Optional[OuterResource]
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset(main: MainResource):
         if main.outer and main.outer.inner and main.outer.inner.innermost:
             executed["my_asset"] = main.outer.inner.innermost.a_string
@@ -870,11 +861,11 @@ def test_multiple_nested_optional_resources_complex() -> None:
         MainResource(outer=OuterResource(inner=InnerResource(innermost=None))),
     ]:
         assert (
-            Definitions(
+            dg.Definitions(
                 assets=[my_asset],
                 resources={"main": main_resource},
             )
-            .get_implicit_global_asset_job_def()
+            .resolve_implicit_global_asset_job_def()
             .execute_in_process()
             .success
         )
@@ -885,11 +876,11 @@ def test_multiple_nested_optional_resources_complex() -> None:
         outer=OuterResource(inner=InnerResource(innermost=InnermostResource(a_string="bar")))
     )
     assert (
-        Definitions(
+        dg.Definitions(
             assets=[my_asset],
             resources={"main": main_resource},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -900,22 +891,22 @@ def test_multiple_nested_optional_resources_complex() -> None:
 def test_nested_resource_setup_teardown_inner() -> None:
     log = []
 
-    class MyBoringOuterResource(ConfigurableResource):
-        more_interesting_inner_resource: ResourceDependency["SetupTeardownInnerResource"]
+    class MyBoringOuterResource(dg.ConfigurableResource):
+        more_interesting_inner_resource: dg.ResourceDependency["SetupTeardownInnerResource"]
 
-    class SetupTeardownInnerResource(ConfigurableResource):
+    class SetupTeardownInnerResource(dg.ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("SetupTeardownInnerResource setup_for_execution")
 
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("SetupTeardownInnerResource teardown_after_execution")
 
-    @asset
+    @dg.asset
     def my_asset(outer: MyBoringOuterResource) -> str:
         log.append("my_asset")
         return "foo"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "outer": MyBoringOuterResource(
@@ -924,7 +915,7 @@ def test_nested_resource_setup_teardown_inner() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "SetupTeardownInnerResource setup_for_execution",
         "my_asset",
@@ -935,22 +926,22 @@ def test_nested_resource_setup_teardown_inner() -> None:
 def test_nested_resource_yield_inner() -> None:
     log = []
 
-    class MyBoringOuterResource(ConfigurableResource):
-        more_interesting_inner_resource: ResourceDependency["SetupTeardownInnerResource"]
+    class MyBoringOuterResource(dg.ConfigurableResource):
+        more_interesting_inner_resource: dg.ResourceDependency["SetupTeardownInnerResource"]
 
-    class SetupTeardownInnerResource(ConfigurableResource):
+    class SetupTeardownInnerResource(dg.ConfigurableResource):
         @contextlib.contextmanager
         def yield_for_execution(self, context: InitResourceContext):
             log.append("SetupTeardownInnerResource yield_for_execution")
             yield self
             log.append("SetupTeardownInnerResource yield_for_execution done")
 
-    @asset
+    @dg.asset
     def my_asset(outer: MyBoringOuterResource) -> str:
         log.append("my_asset")
         return "foo"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "outer": MyBoringOuterResource(
@@ -959,9 +950,165 @@ def test_nested_resource_yield_inner() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "SetupTeardownInnerResource yield_for_execution",
         "my_asset",
         "SetupTeardownInnerResource yield_for_execution done",
     ]
+
+
+def test_nested_resources_runtime_config_fully_populated() -> None:
+    """Ensures that nested resources which have default values for all
+    fields can be overridden at runtime.
+    """
+
+    class InnermostResource(dg.ConfigurableResource):
+        username: str = "default_username"
+        password: str = "default_password"
+
+    class NestedResource(dg.ConfigurableResource):
+        creds: InnermostResource
+        host: str = "default_host"
+        database: str = "default_database"
+
+    class TopLevelResource(dg.ConfigurableResource):
+        config: NestedResource
+
+    completed = {}
+
+    @dg.asset
+    def my_asset(db: TopLevelResource):
+        assert db.config.creds.username == "foo"
+        assert db.config.creds.password == "bar"
+        assert db.config.host == "localhost"
+        assert db.config.database == "my_db"
+        completed["yes"] = True
+
+    credentials = InnermostResource.configure_at_launch()
+    db_config = NestedResource.configure_at_launch(creds=credentials)
+    db = TopLevelResource(config=db_config)
+
+    defs = dg.Definitions(
+        assets=[my_asset],
+        resources={
+            "credentials": credentials,
+            "db_config": db_config,
+            "db": db,
+        },
+    )
+
+    assert (
+        defs.resolve_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "credentials": {
+                        "config": {
+                            "username": "foo",
+                            "password": "bar",
+                        }
+                    },
+                    "db_config": {
+                        "config": {
+                            "host": "localhost",
+                            "database": "my_db",
+                        }
+                    },
+                }
+            }
+        )
+        .success
+    )
+    assert completed["yes"]
+
+
+def test_nested_resources_direct_config_fully_populated() -> None:
+    """Covers regression introduced in pydantic v2.5.0 where union validation changed to Smart
+    and direct initialization of nested ConfigurableResources stopped working.
+    """
+    import pydantic
+
+    class Inner(dg.ConfigurableResource):
+        b: str
+
+    class Outer(dg.ConfigurableResource):
+        a: str = pydantic.Field(default="a")
+        inner: Inner
+
+    # model_validate() on NESTED ConfigurableResource worked with pydantic v2.4.2, but stopped working on v2.5.0.
+    result = Outer.model_validate(dict(a="a", inner=dict(b="b")))
+    # >> TypeError: PartialResource.__init__() got an unexpected keyword argument 'b'
+    assert isinstance(result, Outer)
+    assert result.a == "a"
+    assert isinstance(result.inner, Inner)
+    assert result.inner.b == "b"
+
+
+def test_nested_resources_with_default_set_in_configure_at_launch() -> None:
+    class SmallResource(dg.ConfigurableResource):
+        small_field: str
+
+    class MediumResource(dg.ConfigurableResource):
+        medium_field: str
+        nested_resource: dg.ResourceDependency[SmallResource]
+
+    class LargeResource(dg.ConfigurableResource):
+        large_field: str
+        nested_resource: dg.ResourceDependency[MediumResource]
+
+    completed = {}
+
+    @dg.asset()
+    def the_asset(large_resource: LargeResource) -> None:
+        assert large_resource.large_field == "large_field"
+        assert large_resource.nested_resource.medium_field == "medium_field"
+        assert large_resource.nested_resource.nested_resource.small_field == "set_at_runtime"
+        completed["yes"] = True
+
+    small_resource = SmallResource.configure_at_launch(small_field="small_field")
+    medium_resource = MediumResource.configure_at_launch(
+        medium_field="medium_field", nested_resource=small_resource
+    )
+    large_resource = LargeResource.configure_at_launch(
+        large_field="large_field", nested_resource=medium_resource
+    )
+    defs = dg.Definitions(
+        assets=[the_asset],
+        resources={
+            "small_resource": small_resource,
+            "medium_resource": medium_resource,
+            "large_resource": large_resource,
+        },
+    )
+    job_def = defs.resolve_implicit_global_asset_job_def()
+    config_schema_type = job_def.run_config_schema.run_config_schema_type
+    assert isinstance(config_schema_type, dg.Shape)
+    config_schema_defaults = config_schema_type.fields["resources"].default_value
+    assert config_schema_defaults.get("small_resource") == {
+        "config": {
+            "small_field": "small_field",
+        }
+    }
+    assert config_schema_defaults.get("medium_resource") == {
+        "config": {
+            "medium_field": "medium_field",
+        }
+    }
+    assert config_schema_defaults.get("large_resource") == {
+        "config": {
+            "large_field": "large_field",
+        }
+    }
+    assert job_def.execute_in_process(
+        {
+            "resources": {
+                "small_resource": {
+                    "config": {
+                        "small_field": "set_at_runtime",
+                    }
+                },
+            }
+        }
+    ).success
+    assert completed["yes"]

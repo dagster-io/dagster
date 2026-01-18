@@ -3,7 +3,7 @@ import {AssetKey} from '../types';
 
 export type NoConditionsMetEvaluation = {
   __typename: 'no_conditions_met';
-  evaluationId: number;
+  evaluationId: string;
   amount: number;
   endTimestamp: number | 'now';
   startTimestamp: number;
@@ -71,4 +71,10 @@ export type SpecificPartitionAssetConditionEvaluation = {
   // metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus;
   childEvaluations: UnpartitionedAssetConditionEvaluation[] | null;
+};
+
+export type EvaluationHistoryStackItem = {
+  evaluationID: string;
+  assetKeyPath: string[];
+  assetCheckName?: string;
 };

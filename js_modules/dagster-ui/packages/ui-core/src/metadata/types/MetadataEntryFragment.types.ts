@@ -96,6 +96,13 @@ export type MetadataEntryFragment_PipelineRunMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_PoolMetadataEntry = {
+  __typename: 'PoolMetadataEntry';
+  pool: string;
+  label: string;
+  description: string | null;
+};
+
 export type MetadataEntryFragment_PythonArtifactMetadataEntry = {
   __typename: 'PythonArtifactMetadataEntry';
   module: string;
@@ -133,6 +140,7 @@ export type MetadataEntryFragment_TableMetadataEntry = {
         name: string;
         description: string | null;
         type: string;
+        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
         constraints: {
           __typename: 'TableColumnConstraints';
           nullable: boolean;
@@ -156,6 +164,7 @@ export type MetadataEntryFragment_TableSchemaMetadataEntry = {
       name: string;
       description: string | null;
       type: string;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       constraints: {
         __typename: 'TableColumnConstraints';
         nullable: boolean;
@@ -201,6 +210,7 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_NullMetadataEntry
   | MetadataEntryFragment_PathMetadataEntry
   | MetadataEntryFragment_PipelineRunMetadataEntry
+  | MetadataEntryFragment_PoolMetadataEntry
   | MetadataEntryFragment_PythonArtifactMetadataEntry
   | MetadataEntryFragment_TableColumnLineageMetadataEntry
   | MetadataEntryFragment_TableMetadataEntry
@@ -208,6 +218,32 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_TextMetadataEntry
   | MetadataEntryFragment_TimestampMetadataEntry
   | MetadataEntryFragment_UrlMetadataEntry;
+
+export type TableMetadataEntryFragment = {
+  __typename: 'TableMetadataEntry';
+  label: string;
+  table: {
+    __typename: 'Table';
+    records: Array<string>;
+    schema: {
+      __typename: 'TableSchema';
+      columns: Array<{
+        __typename: 'TableColumn';
+        name: string;
+        description: string | null;
+        type: string;
+        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+        constraints: {
+          __typename: 'TableColumnConstraints';
+          nullable: boolean;
+          unique: boolean;
+          other: Array<string>;
+        };
+      }>;
+      constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
+    };
+  };
+};
 
 export type TableSchemaForMetadataEntryFragment = {
   __typename: 'TableSchemaMetadataEntry';
@@ -218,6 +254,7 @@ export type TableSchemaForMetadataEntryFragment = {
       name: string;
       description: string | null;
       type: string;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       constraints: {
         __typename: 'TableColumnConstraints';
         nullable: boolean;

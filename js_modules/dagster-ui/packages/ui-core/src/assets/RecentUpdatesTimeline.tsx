@@ -1,15 +1,16 @@
 import {
   Box,
   Caption,
+  CaptionMono,
   Colors,
+  FontFamily,
   Icon,
   Popover,
-  Spinner,
+  Skeleton,
   Subtitle2,
-  Tag,
   useViewport,
 } from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {memo, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -20,191 +21,207 @@ import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {TimestampMetadataEntry} from '../graphql/types';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {titleForRun} from '../runs/RunUtils';
+import {batchRunsForTimeline} from '../runs/batchRunsForTimeline';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 const INNER_TICK_WIDTH = 4;
-const MIN_TICK_WIDTH = 5;
-const BUCKETS = 50;
 
-type MaterializationType = ReturnType<typeof useRecentAssetEvents>['materializations'][0];
-type ObservationType = ReturnType<typeof useRecentAssetEvents>['observations'][0];
+type AssetEventType = ReturnType<typeof useRecentAssetEvents>['events'][0];
 type Props = {
   assetKey: AssetKey;
-  materializations?: MaterializationType[];
-  observations?: ObservationType[];
+  events?: AssetEventType[];
   loading: boolean;
 };
 
-export const RecentUpdatesTimeline = ({
-  assetKey,
-  observations,
-  materializations,
-  loading,
-}: Props) => {
+export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey}) => {
+  const data = useRecentAssetEvents(props.assetKey, 100, [
+    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    AssetEventHistoryEventTypeSelector.OBSERVATION,
+  ]);
+  return (
+    <RecentUpdatesTimeline assetKey={props.assetKey} events={data.events} loading={data.loading} />
+  );
+});
+
+export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
   const {containerProps, viewport} = useViewport();
-  const widthAvailablePerTick = viewport.width / BUCKETS;
 
-  const tickWidth = Math.max(widthAvailablePerTick, MIN_TICK_WIDTH);
+  const enrichedEvents = useMemo(() => {
+    const seenTimestamps = new Set();
+    return (events ?? [])
+      .map((event) => {
+        if (
+          event.__typename === 'MaterializationEvent' ||
+          event.__typename === 'FailedToMaterializeEvent'
+        ) {
+          return event;
+        }
 
-  const buckets = Math.floor(viewport.width / tickWidth);
+        const timestampEntries = event.metadataEntries.filter(
+          (entry) => entry.__typename === 'TimestampMetadataEntry',
+        );
 
-  const sortedMaterializations = useMemo(() => {
-    if (!materializations && observations) {
-      const seenTimestamps = new Set();
-      return observations
-        .map((obs) => {
-          const lastUpdated = obs.metadataEntries.find(
-            (entry) =>
-              entry.__typename === 'TimestampMetadataEntry' &&
-              entry.label === 'dagster/last_updated_timestamp',
-          );
-          const ts = (lastUpdated as TimestampMetadataEntry).timestamp;
+        const lastUpdated = timestampEntries.find(
+          (entry) => entry.label === 'dagster/last_updated_timestamp',
+        );
 
-          if (!seenTimestamps.has(ts)) {
-            seenTimestamps.add(ts);
-            return {
-              ...obs,
-              timestamp: `${ts}`,
-              obsTimestamp: obs.timestamp,
-            };
-          }
-          return null;
-        })
-        .filter((o) => o) as ObservationType[];
-    }
-    return [...(materializations ?? [])].sort(
-      (a, b) => parseInt(a.timestamp) - parseInt(b.timestamp),
-    );
-  }, [materializations, observations]);
+        // The metadata timestamp is in seconds.
+        const lastUpdatedSec = lastUpdated?.timestamp;
+        const ts = lastUpdatedSec ? lastUpdatedSec * 1000 : event.timestamp;
 
-  const endTimestamp = parseInt(
-    sortedMaterializations[sortedMaterializations.length - 1]?.timestamp ?? '0',
-  );
-  const startTimestamp = Math.min(
-    parseInt(sortedMaterializations[0]?.timestamp ?? '0'),
-    endTimestamp - 100,
-  );
-  const timeRange = endTimestamp - startTimestamp;
-  const bucketTimeRange = timeRange / buckets;
+        if (!seenTimestamps.has(ts)) {
+          seenTimestamps.add(ts);
+          return {
+            ...event,
+            timestamp: `${ts}`,
+          };
+        }
 
-  const bucketedMaterializations = useMemo(() => {
-    if (!viewport.width) {
+        return null;
+      })
+      .filter((e): e is AssetEventType => e !== null)
+      .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
+  }, [events]);
+
+  const [startTimestamp, endTimestamp] = getTimelineBounds(enrichedEvents);
+
+  const batchedEvents = useMemo(() => {
+    if (!viewport.width || !enrichedEvents.length) {
       return [];
     }
-    const bucketsArr: Array<{
-      start: number;
-      end: number;
-      materializations: (MaterializationType | ObservationType)[];
-    }> = new Array(buckets);
 
-    sortedMaterializations.forEach((materialization) => {
-      const bucketIndex = Math.min(
-        Math.floor((parseInt(materialization.timestamp) - startTimestamp) / bucketTimeRange),
-        buckets - 1,
-      );
-      bucketsArr[bucketIndex] = bucketsArr[bucketIndex] || {
-        start: bucketIndex,
-        end: bucketIndex + 1,
-        materializations: [],
-      };
-      bucketsArr[bucketIndex]!.materializations.push(materialization);
+    // Convert events to runs with synthetic 1ms duration
+    const eventsAsRuns = enrichedEvents.map((event) => ({
+      ...event,
+      startTime: parseInt(event.timestamp),
+      endTime: parseInt(event.timestamp) + 1,
+    }));
+
+    // Use shared batching logic
+    return batchRunsForTimeline({
+      runs: eventsAsRuns,
+      start: startTimestamp,
+      end: endTimestamp,
+      width: viewport.width,
+      minChunkWidth: 1, // INNER_TICK_WIDTH
+      minMultipleWidth: 10,
     });
-
-    return bucketsArr;
-  }, [viewport.width, buckets, sortedMaterializations, startTimestamp, bucketTimeRange]);
+  }, [viewport.width, enrichedEvents, startTimestamp, endTimestamp]);
 
   const formatDateTime = useFormatDateTime();
 
   if (loading) {
     return (
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        <Subtitle2>Recent updates</Subtitle2>
-        <Spinner purpose="body-text" />
+      <Box flex={{direction: 'column', gap: 4}}>
+        <Box flex={{direction: 'row'}}>
+          <Subtitle2>Recent updates</Subtitle2>
+        </Box>
+        <Skeleton $width="100%" $height={36} />
+        <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
+          <Skeleton $width={70} $height="1em" style={{minHeight: '1em'}} />
+          <Skeleton $width={70} $height="1em" style={{minHeight: '1em'}} />
+        </Box>
       </Box>
     );
   }
 
-  if (!materializations?.length) {
-    return (
-      <Box flex={{direction: 'column', gap: 8}}>
-        <Subtitle2>Recent updates</Subtitle2>
-        <Caption color={Colors.textLighter()}>No materialization events found</Caption>
-      </Box>
-    );
-  }
+  const count = enrichedEvents.length;
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
         <Subtitle2>Recent updates</Subtitle2>
         <Caption color={Colors.textLighter()}>
-          {materializations.length === 100
+          {count === 100
             ? 'Last 100 updates'
-            : `Showing all ${materializations.length} updates`}
+            : count === 0
+              ? 'No materialization events found'
+              : count === 1
+                ? 'Showing one update'
+                : `Showing all ${count} updates`}
         </Caption>
       </Box>
-      <Box border="all" padding={6 as any} style={{height: 32, overflow: 'hidden'}}>
-        <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
-          {bucketedMaterializations.map((bucket) => {
-            const width = bucket.end - bucket.start;
-            return (
-              <>
-                <TickWrapper
-                  key={bucket.start}
-                  style={{
-                    left: (100 * bucket.start) / buckets + '%',
-                    width: (100 * width) / buckets + '%',
-                  }}
-                >
-                  {bucket.materializations.map(({timestamp}) => {
-                    const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
-                    const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
-                    const bucketRange = bucketEndTimestamp - bucketStartTime;
-                    const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
+      <Box border="all" padding={6 as any} style={{height: 36, overflow: 'hidden'}}>
+        <div {...containerProps} style={{width: '100%', height: 24, position: 'relative'}}>
+          {batchedEvents.map((batch) => {
+            const [firstRun] = batch.runs;
+            if (!firstRun) {
+              return null;
+            }
 
-                    return (
-                      <InnerTick
-                        key={timestamp}
-                        style={{
-                          // Make sure there's enough room to see the last tick.
-                          left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
-                        }}
-                      />
-                    );
-                  })}
-                  <Popover
-                    position="top"
-                    interactionKind="hover"
-                    content={
-                      <Box flex={{direction: 'column', gap: 8}}>
-                        <Box padding={8} border="bottom">
-                          <Subtitle2>Updates</Subtitle2>
-                        </Box>
-                        <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
-                          {bucket.materializations
-                            .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
-                            .map((materialization, index) => (
-                              <AssetUpdate
-                                assetKey={assetKey}
-                                event={materialization}
-                                key={index}
-                              />
-                            ))}
-                        </div>
+            // Compute batch status flags
+            const hasFailedMaterializations = batch.runs.some(
+              (e) =>
+                e.__typename === 'FailedToMaterializeEvent' &&
+                e.materializationFailureType === 'FAILED',
+            );
+            const hasMaterializations = batch.runs.some(
+              (e) => e.__typename === 'MaterializationEvent',
+            );
+            const hasSkippedMaterializations = batch.runs.some(
+              (e) =>
+                e.__typename === 'FailedToMaterializeEvent' &&
+                e.materializationFailureType !== 'FAILED',
+            );
+
+            const timestamp = parseInt(firstRun.timestamp);
+            const batchRange = batch.endTime - batch.startTime;
+            const percent =
+              batchRange > 0 ? (100 * (timestamp - batch.startTime)) / batchRange : 50;
+
+            return (
+              <TickWrapper
+                key={firstRun.timestamp}
+                style={{
+                  left: `${batch.left}px`,
+                  width: `${Math.max(batch.width, 12)}px`,
+                }}
+              >
+                <InnerTick
+                  key={batch.startTime}
+                  style={{
+                    // Make sure there's enough room to see the last tick.
+                    left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%)`,
+                  }}
+                  $hasError={hasFailedMaterializations}
+                  $hasSuccess={hasMaterializations}
+                  $hasSkipped={hasSkippedMaterializations}
+                />
+                <Popover
+                  position="top"
+                  interactionKind="hover"
+                  content={
+                    <div style={{width: 400}}>
+                      <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
+                        <Subtitle2>Updates</Subtitle2>
                       </Box>
-                    }
+                      <Box style={{maxHeight: '300px', overflowY: 'auto'}}>
+                        {[...batch.runs]
+                          .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+                          .map((event, index) => (
+                            <AssetUpdate
+                              assetKey={assetKey}
+                              event={event}
+                              key={event.timestamp}
+                              last={index === batch.runs.length - 1}
+                            />
+                          ))}
+                      </Box>
+                    </div>
+                  }
+                >
+                  <Tick
+                    $hasError={hasFailedMaterializations}
+                    $hasSuccess={hasMaterializations}
+                    $hasSkipped={hasSkippedMaterializations}
                   >
-                    <>
-                      <Tick>
-                        <TickText>{bucket.materializations.length}</TickText>
-                      </Tick>
-                    </>
-                  </Popover>
-                </TickWrapper>
-              </>
+                    <TickText>{batch.runs.length}</TickText>
+                  </Tick>
+                </Popover>
+              </TickWrapper>
             );
           })}
           <TickLines />
@@ -223,19 +240,49 @@ export const RecentUpdatesTimeline = ({
 const AssetUpdate = ({
   assetKey,
   event,
+  last,
 }: {
   assetKey: AssetKey;
-  event: MaterializationType | ObservationType;
+  event: AssetEventType;
+  last: boolean;
 }) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
-  return (
-    <Box padding={4} border="bottom" flex={{justifyContent: 'space-between', gap: 8}}>
-      <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-        {event.__typename === 'MaterializationEvent' ? (
-          <Icon name="materialization" />
+  const icon = () => {
+    switch (event.__typename) {
+      case 'MaterializationEvent':
+        return <Icon name="run_success" color={Colors.accentGreen()} />;
+      case 'ObservationEvent':
+        return <Icon name="observation" color={Colors.accentGreen()} />;
+      case 'FailedToMaterializeEvent':
+        return event.materializationFailureType === 'FAILED' ? (
+          <Icon name="run_failed" color={Colors.accentRed()} />
         ) : (
-          <Icon name="observation" />
-        )}
+          <Icon name="status" color={Colors.accentGray()} />
+        );
+    }
+  };
+
+  const label = () => {
+    switch (event.__typename) {
+      case 'MaterializationEvent':
+        return 'Materialized at';
+      case 'ObservationEvent':
+        return 'Observed at';
+      case 'FailedToMaterializeEvent':
+        return 'Failed to materialize at';
+    }
+  };
+
+  return (
+    <Box
+      padding={{vertical: 8, horizontal: 12}}
+      border={last ? null : 'bottom'}
+      flex={{gap: 4, wrap: 'wrap'}}
+      style={{fontSize: 12}}
+    >
+      <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+        {icon()}
+        {label()}
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
@@ -249,18 +296,16 @@ const AssetUpdate = ({
       </Box>
       <div>
         {event && run ? (
-          <Tag>
+          <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+            <div>in run</div>
             <AssetRunLink
               runId={run.id}
               assetKey={assetKey}
               event={{stepKey: event.stepKey, timestamp: event.timestamp}}
             >
-              <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
-                {titleForRun(run)}
-              </Box>
+              <CaptionMono>{titleForRun(run)}</CaptionMono>
             </AssetRunLink>
-          </Tag>
+          </Box>
         ) : event && isRunlessEvent(event) ? (
           <RunlessEventTag tags={event.tags} />
         ) : undefined}
@@ -269,9 +314,13 @@ const AssetUpdate = ({
   );
 };
 
-const Tick = styled.div`
+const Tick = styled.div<{
+  $hasError: boolean;
+  $hasSuccess: boolean;
+  $hasSkipped: boolean;
+}>`
   position: absolute;
-  width 100%;
+  width: 100%;
   top: 0;
   bottom: 0;
   overflow: hidden;
@@ -279,9 +328,22 @@ const Tick = styled.div`
   cursor: pointer;
   border-radius: 2px;
   &:hover {
-    background-color: ${Colors.accentGreenHover()};
+    background: ${({$hasError, $hasSuccess, $hasSkipped}) => {
+      if ($hasError && $hasSuccess) {
+        return `linear-gradient(90deg, ${Colors.accentRed()} 50%, ${Colors.accentGreen()} 50%)`;
+      }
+      if ($hasError) {
+        return Colors.accentRed();
+      }
+      if ($hasSuccess) {
+        return Colors.accentGreen();
+      }
+      if ($hasSkipped) {
+        return Colors.accentGray();
+      }
+      return Colors.accentGreen();
+    }};
   }
-
 `;
 
 const TickText = styled.div`
@@ -292,31 +354,51 @@ const TickText = styled.div`
   bottom: 0;
   display: grid;
   place-content: center;
+  font-family: ${FontFamily.monospace};
+  font-size: 12px;
   color: transparent;
   background: none;
   user-select: none;
   &:hover {
     user-select: initial;
-    color: ${Colors.textLight()};
+    color: ${Colors.accentReversed()};
   }
 `;
 
 const TickWrapper = styled.div`
   position: absolute;
-  height: 20px;
+  height: 24px;
   * {
-    height: 20px;
+    height: 24px;
   }
 `;
 
-const InnerTick = styled.div`
-  width: ${INNER_TICK_WIDTH}px;
-  background-color: ${Colors.accentGreen()};
+const InnerTick = styled.div<{
+  $hasError: boolean;
+  $hasSuccess: boolean;
+  $hasSkipped: boolean;
+}>`
+  width: 8px;
   top: 0;
   bottom: 0;
   position: absolute;
   pointer-events: none;
   border-radius: 1px;
+  background: ${({$hasError, $hasSuccess, $hasSkipped}) => {
+    if ($hasError && $hasSuccess) {
+      return `linear-gradient(90deg, ${Colors.accentRed()} 50%, ${Colors.accentGreen()} 50%)`;
+    }
+    if ($hasError) {
+      return Colors.accentRed();
+    }
+    if ($hasSuccess) {
+      return Colors.accentGreen();
+    }
+    if ($hasSkipped) {
+      return Colors.accentGray();
+    }
+    return Colors.accentGreen();
+  }};
 `;
 
 const TickLines = styled.div`
@@ -334,3 +416,23 @@ const TickLines = styled.div`
     transparent 5% /* spacing between lines */
   );
 `;
+
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
+function getTimelineBounds(sortedMaterializations: {timestamp: string}[]): [number, number] {
+  if (!sortedMaterializations.length) {
+    const nowUnix = Math.floor(Date.now());
+    return [nowUnix - 7 * ONE_DAY, nowUnix];
+  }
+
+  const endTimestamp = parseInt(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    sortedMaterializations[sortedMaterializations.length - 1]!.timestamp,
+  );
+  const startTimestamp = Math.min(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    parseInt(sortedMaterializations[0]!.timestamp),
+    endTimestamp - 100,
+  );
+  return [startTimestamp, endTimestamp];
+}

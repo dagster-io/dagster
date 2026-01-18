@@ -11,7 +11,6 @@ from dagster_airflow import (
 )
 
 from dagster_airflow_tests.airflow_utils import test_make_from_dagbag_inputs_airflow_2
-from dagster_airflow_tests.marks import requires_local_db, requires_no_db
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
@@ -19,7 +18,7 @@ from dagster_airflow_tests.marks import requires_local_db, requires_no_db
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_from_dagbag_inputs_airflow_2,
 )
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_make_definition(
     path_and_content_tuples,
     fn_arg_path,
@@ -42,7 +41,7 @@ def test_make_definition(
         for job_name in expected_job_names:
             assert repo.has_job(job_name)
 
-            job = definitions.get_job_def(job_name)
+            job = definitions.resolve_job_def(job_name)
             result = job.execute_in_process()
             assert result.success
             for event in result.all_events:
@@ -94,7 +93,7 @@ def get_examples_airflow_repo_params():
     "job_name, exclude_from_execution_tests",
     get_examples_airflow_repo_params(),
 )
-@requires_local_db
+@pytest.mark.requires_local_db
 def test_airflow_example_dags(
     airflow_examples_repo,
     job_name,
@@ -132,7 +131,7 @@ with models.DAG(
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
-@requires_local_db
+@pytest.mark.requires_local_db
 def test_retry_conversion():
     with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
@@ -142,7 +141,7 @@ def test_retry_conversion():
         retry_dag = dag_bag.get_dag(dag_id="retry_dag")
 
         job = make_dagster_job_from_airflow_dag(
-            dag=retry_dag,
+            dag=retry_dag,  # pyright: ignore[reportArgumentType]
         )
         result = job.execute_in_process()
         assert result.success

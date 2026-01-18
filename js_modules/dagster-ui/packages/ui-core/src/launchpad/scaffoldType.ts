@@ -1,14 +1,17 @@
+import {ConfigSchema} from '@dagster-io/ui-components/editor';
+
 import {assertUnreachable} from '../app/Util';
-import {
-  AllConfigTypesForEditorFragment,
-  ConfigEditorRunConfigSchemaFragment,
-} from '../configeditor/types/ConfigEditorUtils.types';
+
+export type AllConfigTypes = ConfigSchema['allConfigTypes'][number];
 
 export const scaffoldType = (
   configTypeKey: string,
-  typeLookup: {[key: string]: AllConfigTypesForEditorFragment},
-): any => {
-  const type = typeLookup[configTypeKey]!;
+  typeLookup: {[key: string]: AllConfigTypes},
+): object | string | number | boolean | null | undefined => {
+  const type = typeLookup[configTypeKey];
+  if (!type) {
+    return undefined;
+  }
 
   switch (type.__typename) {
     case 'CompositeConfigType':
@@ -18,15 +21,11 @@ export const scaffoldType = (
         return '<selector>';
       }
 
-      const config = {};
-      for (const field of type.fields) {
-        const {name, isRequired, configTypeKey} = field;
-        if (isRequired) {
-          (config as any)[name] = scaffoldType(configTypeKey, typeLookup);
-        }
-      }
-
-      return config;
+      return Object.fromEntries(
+        type.fields
+          .filter((field) => field.isRequired)
+          .map((field) => [field.name, scaffoldType(field.configTypeKey, typeLookup)]),
+      );
     case 'ArrayConfigType':
       return [];
     case 'MapConfigType':
@@ -34,7 +33,10 @@ export const scaffoldType = (
     case 'NullableConfigType':
       // If a type is nullable we include it in the scaffolded config anyway
       // by using the inner type
-      const innerType = type.typeParamKeys[0]!;
+      const [innerType] = type.typeParamKeys;
+      if (!innerType) {
+        return undefined;
+      }
       return scaffoldType(innerType, typeLookup);
     case 'EnumConfigType':
       // Here we just join all the potential enum values with a |. The user needs to delete
@@ -58,18 +60,12 @@ export const scaffoldType = (
   }
 };
 
-export const createTypeLookup = (allConfigTypes: AllConfigTypesForEditorFragment[]) => {
-  const typeLookup: {[key: string]: AllConfigTypesForEditorFragment} = {};
-  for (const type of allConfigTypes) {
-    typeLookup[type.key] = type;
-  }
-
-  return typeLookup;
+export const createTypeLookup = (allConfigTypes: AllConfigTypes[]) => {
+  return Object.fromEntries(allConfigTypes.map((type) => [type.key, type]));
 };
 
-export const scaffoldPipelineConfig = (configSchema: ConfigEditorRunConfigSchemaFragment) => {
+export const scaffoldConfig = (configSchema: ConfigSchema) => {
   const {allConfigTypes, rootConfigType} = configSchema;
   const typeLookup = createTypeLookup(allConfigTypes);
-  const config = scaffoldType(rootConfigType.key, typeLookup);
-  return config;
+  return scaffoldType(rootConfigType.key, typeLookup);
 };

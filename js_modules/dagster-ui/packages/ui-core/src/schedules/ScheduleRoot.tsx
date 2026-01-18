@@ -1,4 +1,4 @@
-import {NonIdealState, Page, Tab, Tabs} from '@dagster-io/ui-components';
+import {Page, Tab, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -6,27 +6,21 @@ import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {gql, useQuery} from '../apollo-client';
 import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
 } from './types/ScheduleAssetSelectionsQuery.types';
-import {
-  PreviousRunsForScheduleQuery,
-  PreviousRunsForScheduleQueryVariables,
-  ScheduleRootQuery,
-  ScheduleRootQueryVariables,
-} from './types/ScheduleRoot.types';
-import {ScheduleFragment} from './types/ScheduleUtils.types';
-import {gql, useQuery} from '../apollo-client';
+import {ScheduleRootQuery, ScheduleRootQueryVariables} from './types/ScheduleRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
-import {RunTable} from '../runs/RunTable';
-import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {Loading} from '../ui/Loading';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -82,6 +76,16 @@ export const ScheduleRoot = (props: Props) => {
       ? selectionQueryResult.data.scheduleOrError.assetSelection
       : null;
 
+  const runsFilter: RunsFilter = React.useMemo(
+    () => ({
+      tags: [
+        {key: DagsterTag.ScheduleName, value: scheduleName},
+        {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
+      ],
+    }),
+    [repoAddress, scheduleName],
+  );
+
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
       {({scheduleOrError, instance}) => {
@@ -106,71 +110,23 @@ export const ScheduleRoot = (props: Props) => {
               />
             ) : null}
             {selectedTab === 'ticks' ? (
-              <TicksTable tabs={tabs} repoAddress={repoAddress} name={scheduleOrError.name} />
-            ) : (
-              <SchedulePreviousRuns
-                repoAddress={repoAddress}
-                schedule={scheduleOrError}
+              <TicksTable
                 tabs={tabs}
+                tickResultType="runs"
+                repoAddress={repoAddress}
+                name={scheduleOrError.name}
+              />
+            ) : (
+              <RunsFeedTableWithFilters
+                filter={runsFilter}
+                actionBarComponents={tabs}
+                includeRunsFromBackfills={true}
               />
             )}
           </Page>
         );
       }}
     </Loading>
-  );
-};
-
-const SchedulePreviousRuns = ({
-  repoAddress,
-  schedule,
-  highlightedIds,
-  tabs,
-}: {
-  repoAddress: RepoAddress;
-  schedule: ScheduleFragment;
-  tabs?: React.ReactElement;
-  highlightedIds?: string[];
-}) => {
-  const queryResult = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
-    PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
-    {
-      variables: {
-        limit: 20,
-        filter: {
-          tags: [
-            {key: DagsterTag.ScheduleName, value: schedule.name},
-            {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
-          ],
-        },
-      },
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  const {data} = queryResult;
-
-  if (!data) {
-    return null;
-  } else if (data.pipelineRunsOrError.__typename !== 'Runs') {
-    return (
-      <NonIdealState
-        icon="error"
-        title="Query Error"
-        description={data.pipelineRunsOrError.message}
-      />
-    );
-  }
-
-  const runs = data?.pipelineRunsOrError.results;
-  return (
-    <RunTable
-      actionBarComponents={tabs}
-      runs={runs}
-      highlightedIds={highlightedIds}
-      hideCreatedBy={true}
-    />
   );
 };
 
@@ -202,24 +158,4 @@ const SCHEDULE_ROOT_QUERY = gql`
   ${SCHEDULE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
-  query PreviousRunsForScheduleQuery($filter: RunsFilter, $limit: Int) {
-    pipelineRunsOrError(filter: $filter, limit: $limit) {
-      ... on Runs {
-        results {
-          id
-          ... on PipelineRun {
-            ...RunTableRunFragment
-          }
-        }
-      }
-      ... on Error {
-        message
-      }
-    }
-  }
-
-  ${RUN_TABLE_RUN_FRAGMENT}
 `;

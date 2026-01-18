@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.workspace.permissions import Permissions
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 def _repository_contains_dynamic_partitions_def(
     graphene_info, repository_selector: RepositorySelector, partitions_def_name: str
 ) -> bool:
-    from dagster._core.remote_representation.external_data import (
+    from dagster._core.definitions.partitions.snap import (
         DynamicPartitionsSnap,
         MultiPartitionsSnap,
         PartitionsSnap,
@@ -44,7 +45,7 @@ def _repository_contains_dynamic_partitions_def(
             repository = repo_loc.get_repository(repository_selector.repository_name)
             found_partitions_defs = [
                 asset_node_snap.partitions
-                for asset_node_snap in repository.external_repository_data.external_asset_graph_data
+                for asset_node_snap in repository.repository_snap.asset_nodes
                 if asset_node_snap.partitions
             ]
             return any(

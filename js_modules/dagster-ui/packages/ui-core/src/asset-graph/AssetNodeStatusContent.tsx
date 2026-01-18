@@ -1,4 +1,5 @@
-import {Body, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
@@ -17,6 +18,8 @@ import {
   AssetKeyInput,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {AssetNodeFragment} from './types/AssetNode.types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 export enum StatusCase {
   LOADING = 'LOADING',
@@ -268,8 +271,8 @@ export function _buildAssetNodeStatusContent({
             {numMaterializing === 1
               ? `Materializing 1 partition...`
               : numMaterializing
-              ? `Materializing ${numMaterializing} partitions...`
-              : `Materializing...`}
+                ? `Materializing ${numMaterializing} partitions...`
+                : `Materializing...`}
           </span>
           {expanded && <SpacerDot />}
           {!numMaterializing || numMaterializing === 1 ? (
@@ -288,15 +291,15 @@ export function _buildAssetNodeStatusContent({
         overdue || numFailed || checksFailed
           ? AssetPartitionStatus.FAILED
           : numMissing
-          ? AssetPartitionStatus.MISSING
-          : AssetPartitionStatus.MATERIALIZED
+            ? AssetPartitionStatus.MISSING
+            : AssetPartitionStatus.MATERIALIZED
       ];
     const statusCase =
       overdue || numFailed || checksFailed
         ? (StatusCase.PARTITIONS_FAILED as const)
         : numMissing
-        ? (StatusCase.PARTITIONS_MISSING as const)
-        : (StatusCase.PARTITIONS_MATERIALIZED as const);
+          ? (StatusCase.PARTITIONS_MISSING as const)
+          : (StatusCase.PARTITIONS_MATERIALIZED as const);
 
     return {
       case: statusCase,
@@ -358,10 +361,10 @@ export function _buildAssetNodeStatusContent({
         <>
           {expanded && (
             <Icon
-              name="partition_failure"
+              name="check_failed"
               color={Colors.accentRed()}
               style={{marginRight: -2}}
-              size={12}
+              size={16}
             />
           )}
 
@@ -412,19 +415,19 @@ export function _buildAssetNodeStatusContent({
   if (!lastMaterialization) {
     return {
       case: StatusCase.NEVER_MATERIALIZED as const,
-      background: Colors.backgroundYellow(),
-      border: Colors.accentYellow(),
+      background: Colors.backgroundGray(),
+      border: Colors.accentGray(),
       content: (
         <>
           {expanded && (
             <Icon
-              name="partition_missing"
-              color={Colors.accentYellow()}
+              name="check_missing"
+              color={Colors.accentGray()}
               style={{marginRight: -2}}
-              size={12}
+              size={16}
             />
           )}
-          <span style={{color: Colors.textYellow()}}>Never materialized</span>
+          <span style={{color: Colors.textDefault()}}>Never materialized</span>
         </>
       ),
     };
@@ -436,13 +439,50 @@ export function _buildAssetNodeStatusContent({
     border: Colors.accentGreen(),
     content: (
       <>
-        {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
+        {expanded && (
+          <Icon
+            name="check_passed"
+            color={Colors.accentGreen()}
+            style={{marginRight: -2}}
+            size={16}
+          />
+        )}
         <span style={{color: Colors.textGreen()}}>Materialized</span>
         {expanded && <SpacerDot />}
         {lastMaterializationLink}
       </>
     ),
   };
+}
+
+export function assetNodeLatestEventContent({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}): React.ReactNode | null {
+  if (!liveData) {
+    return null;
+  }
+  const {lastMaterialization, lastObservation, inProgressRunIds, unstartedRunIds} = liveData;
+  const lastEvent = definition.isMaterializable ? lastMaterialization : lastObservation;
+  const runId = inProgressRunIds[0] || unstartedRunIds[0];
+
+  return (
+    <Box flex={{gap: 4}}>
+      {runId ? <Spinner purpose="caption-text" /> : null}
+      {lastEvent ? (
+        <AssetRunLink
+          assetKey={definition.assetKey}
+          runId={lastEvent.runId}
+          event={{stepKey: stepKeyForAsset(definition), timestamp: lastEvent.timestamp}}
+        >
+          <TimeFromNow unixTimestamp={Number(lastEvent.timestamp) / 1000} />
+        </AssetRunLink>
+      ) : null}
+    </Box>
+  );
 }
 
 const SpacerDot = () => (

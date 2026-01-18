@@ -84,7 +84,7 @@ function parseOptions(_cm, options) {
 }
 
 function clearMarks(cm) {
-  const state = cm.state.lint;
+  const state = cm.state.patchedLint;
   if (state.hasGutter) {
     cm.clearGutter(GUTTER_ID);
   }
@@ -146,7 +146,7 @@ function annotationTooltip(ann) {
 
 function updateLinting(cm, annotationsNotSorted) {
   clearMarks(cm);
-  const state = cm.state.lint,
+  const state = cm.state.patchedLint,
     options = state.options;
 
   const annotations = groupByLine(annotationsNotSorted);
@@ -199,7 +199,7 @@ function updateLinting(cm, annotationsNotSorted) {
 }
 
 function lintAsync(cm, getAnnotations, passOptions) {
-  const state = cm.state.lint;
+  const state = cm.state.patchedLint;
   let id = ++state.waitingFor;
   function abort() {
     id = -1;
@@ -226,7 +226,7 @@ function lintAsync(cm, getAnnotations, passOptions) {
 }
 
 function startLinting(cm) {
-  const state = cm.state.lint,
+  const state = cm.state.patchedLint,
     options = state.options;
   /*
    * Passing rules in `options` property prevents JSHint (and other linters) from complaining
@@ -259,7 +259,7 @@ function startLinting(cm) {
 }
 
 function onChange(cm) {
-  const state = cm.state.lint;
+  const state = cm.state.patchedLint;
   if (!state) {
     return;
   }
@@ -328,15 +328,15 @@ function LintState(cm, options, hasGutter) {
 }
 
 export const patchLint = () => {
-  CodeMirror.defineOption('lint', false, function (cm, val, old) {
+  CodeMirror.defineOption('patchedLint', false, function (cm, val, old) {
     if (old && old !== CodeMirror.Init) {
       clearMarks(cm);
-      if (cm.state.lint.options.lintOnChange !== false) {
+      if (cm.state.patchedLint.options.lintOnChange !== false) {
         cm.off('change', onChange);
       }
-      CodeMirror.off(cm.getWrapperElement(), 'mouseover', cm.state.lint.onMouseOver);
-      clearTimeout(cm.state.lint.timeout);
-      delete cm.state.lint;
+      CodeMirror.off(cm.getWrapperElement(), 'mouseover', cm.state.patchedLint.onMouseOver);
+      clearTimeout(cm.state.patchedLint.timeout);
+      delete cm.state.patchedLint;
     }
 
     if (val) {
@@ -347,7 +347,11 @@ export const patchLint = () => {
           hasLintGutter = true;
         }
       }
-      const state = (cm.state.lint = new LintState(cm, parseOptions(cm, val), hasLintGutter));
+      const state = (cm.state.patchedLint = new LintState(
+        cm,
+        parseOptions(cm, val),
+        hasLintGutter,
+      ));
       if (state.options.lintOnChange !== false) {
         cm.on('change', onChange);
       }
@@ -357,8 +361,8 @@ export const patchLint = () => {
     }
   });
 
-  CodeMirror.defineExtension('performLint', function () {
-    if (this.state.lint) {
+  CodeMirror.defineExtension('performPatchedLint', function () {
+    if (this.state.patchedLint) {
       startLinting(this);
     }
   });

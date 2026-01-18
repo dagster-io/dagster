@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
@@ -43,12 +44,12 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
                     return [BigQueryPySparkTypeHandler()]
 
             @asset(
-                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
+                key_prefix=["my_dataset"],  # my_dataset will be used as the dataset in BigQuery
             )
             def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": MyBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
@@ -57,7 +58,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     """
 
-    def handle_output(
+    def handle_output(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_bigquery_write_options(context.resource_config, table_slice)
@@ -77,7 +78,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # pyright: ignore[reportIncompatibleMethodOverride]
         options = _get_bigquery_read_options(table_slice)
         spark = SparkSession.builder.getOrCreate()  # type: ignore
 
@@ -114,16 +115,16 @@ Examples:
         from dagster import Definitions
 
         @asset(
-            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+            key_prefix=["my_dataset"],  # will be used as the dataset in BigQuery
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                 "io_manager": bigquery_pyspark_io_manager.configured({
-                    "project" : {"env": "GCP_PROJECT"}
+                    "project": {"env": "GCP_PROJECT"}
                 })
             }
         )
@@ -133,11 +134,11 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
-                    "io_manager": bigquery_pandas_io_manager.configured({
-                        "project" : {"env": "GCP_PROJECT"}
+                    "io_manager": bigquery_pyspark_io_manager.configured({
+                        "project": {"env": "GCP_PROJECT"},
                         "dataset": "my_dataset"
                     })
                 }
@@ -215,7 +216,7 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
             def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": BigQueryPySparkIOManager(project=EnvVar("GCP_PROJECT"))
@@ -227,10 +228,10 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
-                        "io_manager": BigQueryPySparkIOManager(project=EnvVar("GCP_PROJECT", dataset="my_dataset")
+                        "io_manager": BigQueryPySparkIOManager(project=EnvVar("GCP_PROJECT"), dataset="my_dataset")
                     }
             )
 
@@ -296,5 +297,5 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
         return [BigQueryPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return DataFrame

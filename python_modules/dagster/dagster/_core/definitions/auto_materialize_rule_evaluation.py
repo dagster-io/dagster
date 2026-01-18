@@ -1,6 +1,14 @@
 from abc import ABC, abstractproperty
 from enum import Enum
-from typing import Dict, FrozenSet, NamedTuple, Optional, Tuple
+from typing import NamedTuple, Optional
+
+from dagster_shared.serdes.serdes import (
+    NamedTupleSerializer,
+    UnpackContext,
+    UnpackedValue,
+    WhitelistMap,
+    whitelist_for_serdes,
+)
 
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -11,13 +19,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._serdes.serdes import (
-    NamedTupleSerializer,
-    UnpackContext,
-    UnpackedValue,
-    WhitelistMap,
-    whitelist_for_serdes,
-)
 
 
 @whitelist_for_serdes
@@ -42,7 +43,7 @@ class AutoMaterializeRuleEvaluationData(ABC):
         raise NotImplementedError()
 
     @property
-    def frozen_metadata(self) -> FrozenSet[Tuple[str, MetadataValue]]:
+    def frozen_metadata(self) -> frozenset[tuple[str, MetadataValue]]:
         return frozenset(self.metadata.items())
 
 
@@ -62,8 +63,8 @@ class ParentUpdatedRuleEvaluationData(
     NamedTuple(
         "_ParentUpdatedRuleEvaluationData",
         [
-            ("updated_asset_keys", FrozenSet[AssetKey]),
-            ("will_update_asset_keys", FrozenSet[AssetKey]),
+            ("updated_asset_keys", frozenset[AssetKey]),
+            ("will_update_asset_keys", frozenset[AssetKey]),
         ],
     ),
 ):
@@ -71,11 +72,11 @@ class ParentUpdatedRuleEvaluationData(
     def metadata(self) -> MetadataMapping:
         return {
             **{
-                f"updated_parent_{i+1}": MetadataValue.asset(k)
+                f"updated_parent_{i + 1}": MetadataValue.asset(k)
                 for i, k in enumerate(sorted(self.updated_asset_keys))
             },
             **{
-                f"will_update_parent_{i+1}": MetadataValue.asset(k)
+                f"will_update_parent_{i + 1}": MetadataValue.asset(k)
                 for i, k in enumerate(sorted(self.will_update_asset_keys))
             },
         }
@@ -86,14 +87,14 @@ class WaitingOnAssetsRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
         "_WaitingOnParentRuleEvaluationData",
-        [("waiting_on_asset_keys", FrozenSet[AssetKey])],
+        [("waiting_on_asset_keys", frozenset[AssetKey])],
     ),
 ):
     @property
     def metadata(self) -> MetadataMapping:
         return {
             **{
-                f"waiting_on_ancestor_{i+1}": MetadataValue.asset(k)
+                f"waiting_on_ancestor_{i + 1}": MetadataValue.asset(k)
                 for i, k in enumerate(sorted(self.waiting_on_asset_keys))
             },
         }
@@ -105,9 +106,9 @@ class WaitingOnAssetsRuleEvaluationData(
 class BackcompatNullSerializer(NamedTupleSerializer):
     """Unpacks an arbitrary object into None."""
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        unpacked_dict: Dict[str, UnpackedValue],
+        unpacked_dict: dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> None:
@@ -119,9 +120,9 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     AutomationConditionEvaluationWithRunIds.
     """
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        unpacked_dict: Dict[str, UnpackedValue],
+        unpacked_dict: dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AutomationConditionEvaluationWithRunIds":

@@ -53,7 +53,7 @@ def get_github_docs(repo_owner, repo_name):
         repo_path = pathlib.Path(d)
         markdown_files = list(repo_path.glob("*/*.md")) + list(repo_path.glob("*/*.mdx"))
         for index, markdown_file in enumerate(markdown_files):
-            with open(markdown_file, "r") as f:
+            with open(markdown_file) as f:
                 relative_path = markdown_file.relative_to(repo_path)
                 github_url = (
                     f"https://github.com/{repo_owner}/{repo_name}/blob/{git_sha}/{relative_path}"

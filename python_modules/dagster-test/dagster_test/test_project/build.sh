@@ -36,19 +36,21 @@ mkdir -p modules
 cp $GOOGLE_APPLICATION_CREDENTIALS ./modules/gac.json
 
 echo -e "--- \033[32m:truck: Copying files...\033[0m"
-alias copy_py="rsync -av \
-      --progress \
-      --exclude *.egginfo \
-      --exclude *.tox \
-      --exclude dist \
-      --exclude __pycache__ \
-      --exclude *.pyc \
-      --exclude .coverage"
 
-copy_py $ROOT/python_modules/dagster \
+rsync \
+        -av \
+        --progress \
+        --exclude *.egginfo \
+        --exclude *.tox \
+        --exclude dist \
+        --exclude __pycache__ \
+        --exclude *.pyc \
+        --exclude .coverage \
+        $ROOT/python_modules/dagster \
         $ROOT/python_modules/dagster-webserver \
         $ROOT/python_modules/dagster-graphql \
         $ROOT/python_modules/dagster-pipes \
+        $ROOT/python_modules/libraries/dagster-shared \
         $ROOT/python_modules/libraries/dagster-airflow \
         $ROOT/python_modules/libraries/dagster-aws \
         $ROOT/python_modules/libraries/dagster-celery \

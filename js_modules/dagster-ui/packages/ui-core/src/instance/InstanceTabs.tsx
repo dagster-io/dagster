@@ -31,9 +31,7 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
           icon={<WorkspaceStatus placeholder={false} />}
         />
         <TabLink id="health" title={healthTitle} to="/health" icon={<InstanceWarningIcon />} />
-        {canSeeConfig ? (
-          <TabLink id="concurrency" title="Concurrency limits" to="/concurrency" />
-        ) : null}
+        {canSeeConfig ? <TabLink id="concurrency" title="Concurrency" to="/concurrency" /> : null}
         {canSeeConfig ? <TabLink id="config" title="Configuration" to="/config" /> : null}
       </Tabs>
       {refreshState ? (

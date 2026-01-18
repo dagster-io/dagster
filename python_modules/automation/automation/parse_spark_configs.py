@@ -7,14 +7,14 @@ and codegens a file that contains dagster configurations for these parameters.
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, Union, cast
 
 import click
 import requests
 
 from automation.printer import IndentingBufferPrinter
 
-SPARK_VERSION = "v2.4.0"
+SPARK_VERSION = "v3.5.5"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
 WHITESPACE_REGEX = r"\s+"
 
@@ -154,7 +154,7 @@ CONFIG_TYPES = {
 class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), ("meaning", str)])):
     def __new__(cls, path: str, default: object, meaning: str):
         # The original documentation strings include extraneous newlines, spaces
-        return super(SparkConfig, cls).__new__(
+        return super().__new__(
             cls,
             path,
             re.sub(WHITESPACE_REGEX, " ", str(default)).strip(),
@@ -162,7 +162,7 @@ class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), (
         )
 
     @property
-    def split_path(self) -> List[str]:
+    def split_path(self) -> list[str]:
         return self.path.split(".")
 
     def write(self, printer: IndentingBufferPrinter) -> None:
@@ -183,7 +183,7 @@ class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), (
 
 class SparkConfigNode:
     value: Optional[SparkConfig]
-    children: Dict[str, Any]
+    children: dict[str, Any]
 
     def __init__(self, value: Optional[SparkConfig] = None):
         self.value = value
@@ -194,8 +194,8 @@ class SparkConfigNode:
             assert self.value
             self.value.write(printer)
         else:
-            self.children = cast(Dict[str, Union[SparkConfig, SparkConfigNode]], self.children)
-            retdict: Dict[str, Union[SparkConfig, SparkConfigNode]]
+            self.children = cast("dict[str, Union[SparkConfig, SparkConfigNode]]", self.children)
+            retdict: dict[str, Union[SparkConfig, SparkConfigNode]]
             if self.value:
                 retdict = {"root": self.value}
                 retdict.update(self.children)
@@ -279,8 +279,8 @@ def run() -> None:
     serialized = serialize(result)
 
     output_files = [
-        "python_modules/libraries/dagster-spark/dagster_spark/configs_spark.py",
-        "python_modules/libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
+        "../libraries/dagster-spark/dagster_spark/configs_spark.py",
+        "../libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
     ]
     for output_file in output_files:
         with open(output_file, "wb") as f:

@@ -10,7 +10,11 @@ const nextConfig = {
   output: 'export',
   productionBrowserSourceMaps: true,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
-  transpilePackages: ['@dagster-io/ui-components', '@dagster-io/ui-core'],
+  transpilePackages: [
+    '@dagster-io/ui-components',
+    '@dagster-io/ui-core',
+    '@dagster-io/dg-docs-components',
+  ],
   webpack: (config, {dev, isServer}) => {
     // Unset client-side javascript that only works server-side
     config.resolve.fallback = {fs: false, module: false};
@@ -56,7 +60,6 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
-  distDir: 'build',
   assetPrefix: 'BUILDTIME_ASSETPREFIX_REPLACE_ME',
 };
 
@@ -84,5 +87,10 @@ module.exports = (phase) => {
       },
     };
   }
-  return nextConfig;
+
+  // The prod build outputs to `build`. The post-build script copies from there.
+  return {
+    ...nextConfig,
+    distDir: 'build',
+  };
 };

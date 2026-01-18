@@ -9,9 +9,9 @@ from dagster import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._serdes import unpack_value
-from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.version import __version__ as dagster_graphql_version
+from dagster_shared.seven import json
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.version import __version__ as dagster_webserver_version
 from starlette.testclient import TestClient
@@ -299,3 +299,12 @@ def test_download_captured_logs_not_found(test_client: TestClient):
 def test_download_captured_logs_invalid_path(test_client: TestClient):
     with pytest.raises(ValueError, match="Invalid path"):
         test_client.get("/logs/%2e%2e/secret/txt")
+
+
+def test_no_leak(test_client: TestClient):
+    res = test_client.get("/test_request_context")
+    assert res.status_code == 200
+    data = res.json()
+    assert data
+    gc.collect()
+    assert len(objgraph.by_type(data["name"])) == 0

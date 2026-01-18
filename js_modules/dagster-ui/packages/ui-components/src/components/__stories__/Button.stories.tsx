@@ -1,8 +1,6 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Button, JoinedButtons} from '../Button';
-import {Group} from '../Group';
+import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {Menu, MenuItem} from '../Menu';
 import {Popover} from '../Popover';
@@ -11,11 +9,11 @@ import {Popover} from '../Popover';
 export default {
   title: 'Button',
   component: Button,
-} as Meta;
+};
 
 export const Default = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <Button>Button</Button>
       <Button icon={<Icon name="star" />}>Button</Button>
       <Button rightIcon={<Icon name="close" />}>Button</Button>
@@ -23,13 +21,23 @@ export const Default = () => {
         Button
       </Button>
       <Button icon={<Icon name="cached" />} />
-    </Group>
+      <Box
+        background={Colors.backgroundLight()}
+        padding={16}
+        flex={{direction: 'column', alignItems: 'stretch'}}
+        style={{width: 320}}
+      >
+        <Button>
+          <div style={{width: '100%', textAlign: 'center'}}>Full-width Flex Child</div>
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
 export const Intent = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
       <Button icon={<Icon name="star" />}>Intent not defined</Button>
       <Button icon={<Icon name="star" />} intent="primary">
         Primary
@@ -46,13 +54,13 @@ export const Intent = () => {
       <Button icon={<Icon name="star" />} intent="none">
         None
       </Button>
-    </Group>
+    </Box>
   );
 };
 
 export const Outlined = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <Button outlined icon={<Icon name="star" />}>
         Intent not defined
       </Button>
@@ -71,13 +79,13 @@ export const Outlined = () => {
       <Button outlined icon={<Icon name="star" />} intent="none">
         None
       </Button>
-    </Group>
+    </Box>
   );
 };
 
 export const Disabled = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <Button icon={<Icon name="star" />} intent="primary">
         Enabled
       </Button>
@@ -113,25 +121,25 @@ export const Disabled = () => {
       <Button outlined icon={<Icon name="cancel" />} loading intent="danger">
         Loading outlined, danger
       </Button>
-    </Group>
+    </Box>
   );
 };
 
 export const Truncation = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <Button>Normal</Button>
       <Button style={{maxWidth: '250px'}}>Normal with max-width</Button>
       <Button style={{maxWidth: '250px'}}>
         Four score and seven years ago our fathers brought forth on this continent
       </Button>
-    </Group>
+    </Box>
   );
 };
 
 export const Joined = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <JoinedButtons>
         <Button>Main Action</Button>
         <Popover
@@ -167,7 +175,7 @@ export const Joined = () => {
         <Button icon={<Icon name="wysiwyg" />}></Button>
         <Button icon={<Icon name="close" />}></Button>
       </JoinedButtons>
-    </Group>
+    </Box>
   );
 };
 

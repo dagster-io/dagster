@@ -28,6 +28,7 @@ export type SensorRootQuery = {
         sensorType: Types.SensorType;
         defaultStatus: Types.InstigationStatus;
         canReset: boolean;
+        hasCursorUpdatePermissions: boolean;
         nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         sensorState: {
           __typename: 'InstigationState';
@@ -85,6 +86,10 @@ export type SensorRootQuery = {
           __typename: 'SensorMetadata';
           assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         };
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
       }
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
@@ -152,6 +157,11 @@ export type SensorAssetSelectionQuery = {
         assetSelection: {
           __typename: 'AssetSelection';
           assetSelectionString: string | null;
+          assetChecks: Array<{
+            __typename: 'AssetCheckhandle';
+            name: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
           assetsOrError:
             | {
                 __typename: 'AssetConnection';
@@ -162,7 +172,7 @@ export type SensorAssetSelectionQuery = {
                   definition: {
                     __typename: 'AssetNode';
                     id: string;
-                    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+                    automationCondition: {__typename: 'AutomationCondition'} | null;
                   } | null;
                 }>;
               }
@@ -182,6 +192,6 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
+export const SensorRootQueryVersion = '64eee51b33cd29c69fc5e5eb5c88187a5b55bd61fada886bbcf3981e56531147';
 
-export const SensorAssetSelectionQueryVersion = 'a3410d20906553473a54e9045ecb19e92d08defefc17c2d9f1802338147ed470';
+export const SensorAssetSelectionQueryVersion = '2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3';

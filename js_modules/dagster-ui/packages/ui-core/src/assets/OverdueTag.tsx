@@ -1,7 +1,5 @@
 import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
 
 import {
@@ -9,8 +7,8 @@ import {
   AssetMaterializationUpstreamTable,
   TimeSinceWithOverdueColor,
 } from './AssetMaterializationUpstreamData';
-import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
 import {gql, useQuery} from '../apollo-client';
+import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
@@ -19,11 +17,10 @@ import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 import {LoadingSpinner} from '../ui/Loading';
 
+import '../util/dayjsExtensions';
+
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 const locale = navigator.language;
-
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
 
 type LiveDataWithMinutesLate = LiveDataForNode & {
   freshnessInfo: NonNullable<LiveDataForNode['freshnessInfo']> & {currentMinutesLate: number};
@@ -166,8 +163,8 @@ const OverdueLineagePopoverContent = ({
             ? `The latest materialization contains all data up to ${maxLagMinutesStr} before ${lastEvaluationStr}. `
             : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `
           : cronSchedule
-          ? `The latest materialization${derivedStr} was ${lagMinutesStr} old on ${lastEvaluationStr}. `
-          : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `}
+            ? `The latest materialization${derivedStr} was ${lagMinutesStr} old on ${lastEvaluationStr}. `
+            : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `}
 
         {hasUpstreams
           ? `The asset's freshness policy requires it to be derived from data ${policyStr}`
@@ -223,7 +220,7 @@ export const freshnessPolicyDescription = (
   const {cronSchedule, maximumLagMinutes, cronScheduleTimezone} = freshnessPolicy;
   const nbsp = '\xa0';
   const cronDesc = cronSchedule
-    ? humanCronString(cronSchedule, cronScheduleTimezone ? cronScheduleTimezone : 'UTC').replace(
+    ? humanCronString(cronSchedule, {longTimezoneName: cronScheduleTimezone || 'UTC'}).replace(
         /^At /,
         '',
       )
@@ -232,8 +229,8 @@ export const freshnessPolicyDescription = (
     maximumLagMinutes % (24 * 60) === 0
       ? `${maximumLagMinutes / (24 * 60)} day${maximumLagMinutes / (24 * 60) !== 1 ? 's' : ''}`
       : maximumLagMinutes % 30 === 0
-      ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
-      : `${maximumLagMinutes} min`;
+        ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
+        : `${maximumLagMinutes} min`;
 
   if (format === 'short') {
     if (cronDesc) {
@@ -265,6 +262,12 @@ export const OVERDUE_POPOVER_QUERY = gql`
           cronScheduleTimezone
           lastEvaluationTimestamp
           maximumLagMinutes
+        }
+        internalFreshnessPolicy {
+          ... on TimeWindowFreshnessPolicy {
+            failWindowSeconds
+            warnWindowSeconds
+          }
         }
         ...AssetMaterializationUpstreamTableFragment
       }

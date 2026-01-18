@@ -1,37 +1,22 @@
+import dagster as dg
+
 """Repository of test jobs."""
 
 import pytest
-from dagster import (
-    AssetKey,
-    GraphDefinition,
-    Int,
-    IntMetadataValue,
-    IOManager,
-    JobDefinition,
-    TextMetadataValue,
-    asset,
-    graph,
-    io_manager,
-    job,
-    multiprocess_executor,
-    op,
-    repository,
-    resource,
-    with_resources,
-)
+from dagster import Int, multiprocess_executor
 from dagster._check import CheckError
 
 
 def define_empty_job():
-    return JobDefinition(name="empty_job", graph_def=GraphDefinition(name="empty_graph"))
+    return dg.JobDefinition(name="empty_job", graph_def=dg.GraphDefinition(name="empty_graph"))
 
 
 def define_simple_job():
-    @op
+    @dg.op
     def return_two():
         return 2
 
-    @job
+    @dg.job
     def simple_job():
         return_two()
 
@@ -39,15 +24,15 @@ def define_simple_job():
 
 
 def define_with_resources_job():
-    @resource(config_schema=Int)
+    @dg.resource(config_schema=Int)
     def adder_resource(init_context):
         return lambda x: x + init_context.resource_config
 
-    @resource(config_schema=Int)
+    @dg.resource(config_schema=Int)
     def multer_resource(init_context):
         return lambda x: x * init_context.resource_config
 
-    @resource(config_schema={"num_one": Int, "num_two": Int})
+    @dg.resource(config_schema={"num_one": dg.Int, "num_two": dg.Int})
     def double_adder_resource(init_context):
         return (
             lambda x: x
@@ -55,11 +40,11 @@ def define_with_resources_job():
             + init_context.resource_config["num_two"]
         )
 
-    @op(required_resource_keys={"modifier"})
+    @dg.op(required_resource_keys={"modifier"})
     def apply_to_three(context):
         return context.resources.modifier(3)
 
-    @graph
+    @dg.graph
     def my_graph():
         apply_to_three()
 
@@ -75,7 +60,7 @@ def define_with_resources_job():
     return [adder_job, multer_job, double_adder_job, multi_job]
 
 
-@repository
+@dg.repository
 def dagster_test_repository():
     return [
         define_empty_job(),
@@ -88,19 +73,19 @@ def test_repository_construction():
     assert dagster_test_repository
 
 
-@repository(metadata={"string": "foo", "integer": 123})
+@dg.repository(metadata={"string": "foo", "integer": 123})
 def metadata_repository():
     return []
 
 
 def test_repository_metadata():
     assert metadata_repository.metadata == {
-        "string": TextMetadataValue("foo"),
-        "integer": IntMetadataValue(123),
+        "string": dg.TextMetadataValue("foo"),
+        "integer": dg.IntMetadataValue(123),
     }
 
 
-@repository
+@dg.repository
 def empty_repository():
     return []
 
@@ -108,36 +93,36 @@ def empty_repository():
 def test_invalid_repository():
     with pytest.raises(CheckError):
 
-        @repository
+        @dg.repository  # pyright: ignore[reportArgumentType]
         def invalid_repository(_invalid_arg: str):
             return []
 
 
 def test_asset_value_loader():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             assert False
 
         def load_input(self, context):
             return 5
 
-    @io_manager()
+    @dg.io_manager()
     def my_io_manager():
         return MyIOManager()
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @repository
+    @dg.repository
     def repo():
-        return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
+        return dg.with_resources([asset1], resource_defs={"io_manager": my_io_manager})
 
-    value = repo.load_asset_value(AssetKey("asset1"))
+    value = repo.load_asset_value(dg.AssetKey("asset1"))
     assert value == 5
 
 
 def test_asset_value_loader_with_config():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def __init__(self, key):
             self.key = key
 
@@ -147,54 +132,54 @@ def test_asset_value_loader_with_config():
         def load_input(self, context):
             return self.key
 
-    @io_manager(config_schema={"key": int})
+    @dg.io_manager(config_schema={"key": int})
     def my_io_manager(context):
         return MyIOManager(context.resource_config["key"])
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @repository
+    @dg.repository
     def repo():
-        return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
+        return dg.with_resources([asset1], resource_defs={"io_manager": my_io_manager})
 
     resource_config = {"io_manager": {"config": {"key": 5}}}
-    value = repo.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
+    value = repo.load_asset_value(dg.AssetKey("asset1"), resource_config=resource_config)
     assert value == 5
 
 
 def test_asset_value_loader_with_resources():
-    @resource(config_schema={"key": int})
+    @dg.resource(config_schema={"key": int})
     def io_resource(context):
         return context.resource_config["key"]
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             assert False
 
         def load_input(self, context):
             return context.resources.io_resource
 
-    @io_manager(required_resource_keys={"io_resource"})
+    @dg.io_manager(required_resource_keys={"io_resource"})
     def my_io_manager():
         return MyIOManager()
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @repository
+    @dg.repository
     def repo():
-        return with_resources(
+        return dg.with_resources(
             [asset1], resource_defs={"io_manager": my_io_manager, "io_resource": io_resource}
         )
 
     resource_config = {"io_resource": {"config": {"key": 5}}}
-    value = repo.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
+    value = repo.load_asset_value(dg.AssetKey("asset1"), resource_config=resource_config)
     assert value == 5
 
 
 def test_asset_value_loader_with_metadata():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             assert False
 
@@ -202,25 +187,25 @@ def test_asset_value_loader_with_metadata():
             assert context.definition_metadata is not None
             return context.definition_metadata.get("return") or 5
 
-    @io_manager()
+    @dg.io_manager()
     def my_io_manager():
         return MyIOManager()
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @asset(metadata={"return": 20})
+    @dg.asset(metadata={"return": 20})
     def asset2(): ...
 
-    @repository
+    @dg.repository
     def repo():
-        return with_resources([asset1, asset2], resource_defs={"io_manager": my_io_manager})
+        return dg.with_resources([asset1, asset2], resource_defs={"io_manager": my_io_manager})
 
-    value = repo.load_asset_value(AssetKey("asset1"))
+    value = repo.load_asset_value(dg.AssetKey("asset1"))
     assert value == 5
 
-    value = repo.load_asset_value(AssetKey("asset1"), metadata={"return": 10})
+    value = repo.load_asset_value(dg.AssetKey("asset1"), metadata={"return": 10})
     assert value == 10
 
-    value = repo.load_asset_value(AssetKey("asset2"))
+    value = repo.load_asset_value(dg.AssetKey("asset2"))
     assert value == 5

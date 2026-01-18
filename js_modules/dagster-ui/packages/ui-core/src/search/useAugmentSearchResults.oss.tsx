@@ -1,4 +1,4 @@
 export const useAugmentSearchResults =
   () =>
-  <T,>(results: T, _searchContext: any) =>
+  <T,>(results: T) =>
     results;

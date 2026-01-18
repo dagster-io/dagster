@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING, TypeVar, Union
-
-from typing_extensions import TypeAlias
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, TypeAlias, TypeVar, Union
 
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -11,8 +10,10 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
-    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-    from dagster._core.definitions.partitioned_schedule import (
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+        CacheableAssetsDefinition,
+    )
+    from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
 
@@ -31,7 +32,7 @@ T_RepositoryLevelDefinition = TypeVar(
     SensorDefinition,
 )
 
-RepositoryListDefinition: TypeAlias = Union[
+RepositoryElementDefinition: TypeAlias = Union[
     "AssetsDefinition",
     GraphDefinition,
     JobDefinition,
@@ -42,7 +43,8 @@ RepositoryListDefinition: TypeAlias = Union[
     "UnresolvedPartitionedAssetScheduleDefinition",
 ]
 
-PendingRepositoryListDefinition: TypeAlias = Union[
-    RepositoryListDefinition,
-    "CacheableAssetsDefinition",
+RepositoryDictSpec: TypeAlias = dict[str, dict[str, RepositoryElementDefinition]]
+
+RepositoryListSpec: TypeAlias = Sequence[
+    Union[RepositoryElementDefinition, "CacheableAssetsDefinition"]
 ]

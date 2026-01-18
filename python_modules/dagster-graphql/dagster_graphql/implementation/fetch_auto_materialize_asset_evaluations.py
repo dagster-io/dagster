@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster import AssetKey
@@ -9,7 +10,6 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecord,
     GrapheneAutoMaterializeAssetEvaluationRecords,
 )
-from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -45,7 +45,7 @@ def _get_graphene_records_from_evaluations(
 
 def fetch_auto_materialize_asset_evaluations(
     graphene_info: "ResolveInfo",
-    graphene_asset_key: GrapheneAssetKeyInput,
+    asset_key: AssetKey,
     limit: int,
     cursor: Optional[str],
 ):
@@ -53,8 +53,6 @@ def fetch_auto_materialize_asset_evaluations(
     migration_error = _get_migration_error(graphene_info)
     if migration_error:
         return migration_error
-
-    asset_key = AssetKey.from_graphql_input(graphene_asset_key)
 
     schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
     return _get_graphene_records_from_evaluations(

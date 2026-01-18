@@ -2,8 +2,11 @@ import React, {useContext} from 'react';
 
 import {HIDDEN_REPO_KEYS, WorkspaceContext} from './WorkspaceContext';
 import {
+  PartialWorkspaceLocationNodeFragment,
+  WorkspaceLocationAssetsEntryFragment,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
+  WorkspaceRepositoryAssetsFragment,
   WorkspaceRepositoryFragment,
 } from './types/WorkspaceQueries.types';
 import {AppContext} from '../../app/AppContext';
@@ -18,10 +21,6 @@ type RepositoryLocation = WorkspaceLocationFragment;
 export interface DagsterRepoOption {
   repositoryLocation: RepositoryLocation;
   repository: Repository;
-}
-
-export function locationWorkspaceKey(name: string) {
-  return `/LocationWorkspace/${name}`;
 }
 
 /**
@@ -112,23 +111,23 @@ export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
 export const useRepositoryOptions = () => {
-  const {allRepos: options, loading} = React.useContext(WorkspaceContext);
+  const {allRepos: options, loadingNonAssets: loading} = React.useContext(WorkspaceContext);
   return {options, loading};
 };
 
-export const useRepository = (repoAddress: RepoAddress | null) => {
+export const useRepository = (repoAddress: RepoAddress | null | undefined) => {
   const {options} = useRepositoryOptions();
   return findRepositoryAmongOptions(options, repoAddress) || null;
 };
 
-export const useJob = (repoAddress: RepoAddress | null, jobName: string | null) => {
+export const useJob = (repoAddress: RepoAddress | null | undefined, jobName: string | null) => {
   const repo = useRepository(repoAddress);
   return repo?.repository.pipelines.find((pipelineOrJob) => pipelineOrJob.name === jobName) || null;
 };
 
 export const findRepositoryAmongOptions = (
   options: DagsterRepoOption[],
-  repoAddress: RepoAddress | null,
+  repoAddress: RepoAddress | null | undefined,
 ) => {
   return repoAddress
     ? options.find(
@@ -187,6 +186,16 @@ export const isThisThingAnAssetJob = (
   return !!pipelineOrJob?.isAssetJob;
 };
 
+export const isThisThingAnExternalJob = (
+  repo: DagsterRepoOption | null,
+  pipelineOrJobName: string,
+) => {
+  const pipelineOrJob = repo?.repository.pipelines.find(
+    (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
+  );
+  return !!pipelineOrJob?.externalJobSource;
+};
+
 export const buildPipelineSelector = (
   repoAddress: RepoAddress | null,
   pipelineName: string,
@@ -211,4 +220,54 @@ export function repoLocationToRepos(repositoryLocation: RepositoryLocation) {
   return repositoryLocation.repositories.map((repository) => {
     return {repository, repositoryLocation};
   });
+}
+
+export function mergeWorkspaceData(
+  workspaceLocationEntry: PartialWorkspaceLocationNodeFragment,
+  workspaceLocationAssetsEntry: WorkspaceLocationAssetsEntryFragment,
+) {
+  const {locationOrLoadError, ...rest} = workspaceLocationEntry;
+  const result: Partial<WorkspaceLocationNodeFragment> = rest;
+  if (locationOrLoadError?.__typename === 'RepositoryLocation') {
+    const {repositories, ...rest} = locationOrLoadError;
+    result.locationOrLoadError = {
+      ...rest,
+      repositories: repositories
+        ? repositories.map((repo) => {
+            const assetsAndGroups = getAssetsAndGroupsByRepo(workspaceLocationAssetsEntry);
+            return {
+              ...repo,
+              ...(assetsAndGroups[repo.id] || {
+                assetNodes: [],
+                assetGroups: [],
+              }),
+            };
+          })
+        : [],
+    };
+  } else {
+    result.locationOrLoadError = locationOrLoadError;
+  }
+
+  return result as WorkspaceLocationNodeFragment;
+}
+
+function getAssetsAndGroupsByRepo(
+  workspaceLocationAssetsEntry: WorkspaceLocationAssetsEntryFragment,
+): Record<string, WorkspaceRepositoryAssetsFragment> {
+  if (workspaceLocationAssetsEntry.__typename !== 'WorkspaceLocationEntry') {
+    return {};
+  }
+
+  if (workspaceLocationAssetsEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
+    return {};
+  }
+
+  return workspaceLocationAssetsEntry.locationOrLoadError.repositories.reduce(
+    (acc, repo) => {
+      acc[repo.id] = repo;
+      return acc;
+    },
+    {} as Record<string, WorkspaceRepositoryAssetsFragment>,
+  );
 }

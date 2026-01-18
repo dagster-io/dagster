@@ -22,5 +22,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "exclude": ["node_modules", "lib"],
-  "include": ["src", "custom-next-env.d.ts"]
+  "include": ["src", "typings.d.ts"]
 }

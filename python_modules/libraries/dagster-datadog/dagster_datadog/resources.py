@@ -1,4 +1,7 @@
+from typing import Optional
+
 from dagster import ConfigurableResource, resource
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from datadog import DogStatsd, api, initialize, statsd
 from pydantic import Field
@@ -13,10 +16,47 @@ class DatadogClient:
         DogStatsd.UNKNOWN,
     )
 
-    def __init__(self, api_key: str, app_key: str):
+    def __init__(
+        self,
+        api_key: Optional[str],
+        app_key: Optional[str],
+        host_name: Optional[str] = None,
+        api_host: Optional[str] = None,
+        statsd_host: Optional[str] = None,
+        statsd_port: Optional[int] = None,
+        statsd_disable_aggregation: bool = True,
+        statsd_disable_buffering: bool = True,
+        statsd_aggregation_flush_interval: float = 0.3,
+        statsd_use_default_route: bool = False,
+        statsd_socket_path: Optional[str] = None,
+        statsd_namespace: Optional[str] = None,
+        statsd_max_samples_per_context: Optional[int] = 0,
+        statsd_constant_tags: Optional[list[str]] = None,
+        return_raw_response: bool = False,
+        hostname_from_config: bool = True,
+        cardinality: Optional[str] = None,
+    ):
         self.api_key = api_key
         self.app_key = app_key
-        initialize(api_key=api_key, app_key=app_key)
+        initialize(
+            api_key=api_key,
+            app_key=app_key,
+            host_name=host_name,
+            api_host=api_host,
+            statsd_host=statsd_host,
+            statsd_port=statsd_port,
+            statsd_disable_aggregation=statsd_disable_aggregation,
+            statsd_disable_buffering=statsd_disable_buffering,
+            statsd_aggregation_flush_interval=statsd_aggregation_flush_interval,
+            statsd_use_default_route=statsd_use_default_route,
+            statsd_socket_path=statsd_socket_path,
+            statsd_namespace=statsd_namespace,
+            statsd_max_samples_per_context=statsd_max_samples_per_context,
+            statsd_constant_tags=statsd_constant_tags,
+            return_raw_response=return_raw_response,
+            hostname_from_config=hostname_from_config,
+            cardinality=cardinality,
+        )
 
         # Pull in methods from the dogstatsd library
         for method in [
@@ -30,12 +70,15 @@ class DatadogClient:
             "service_check",
             "timed",
             "timing",
+            "flush",
+            "wait_for_pending",
         ]:
             setattr(self, method, getattr(statsd, method))
 
         self.api = api
 
 
+@beta
 class DatadogResource(ConfigurableResource):
     """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
@@ -88,15 +131,49 @@ class DatadogResource(ConfigurableResource):
             " https://docs.datadoghq.com/account_management/api-app-keys/."
         )
     )
+    host_name: Optional[str] = None
+    api_host: Optional[str] = None
+    statsd_host: Optional[str] = None
+    statsd_port: Optional[int] = None
+    statsd_disable_aggregation: bool = True
+    statsd_disable_buffering: bool = True
+    statsd_aggregation_flush_interval: float = 0.3
+    statsd_use_default_route: bool = False
+    statsd_socket_path: Optional[str] = None
+    statsd_namespace: Optional[str] = None
+    statsd_max_samples_per_context: Optional[int] = 0
+    statsd_constant_tags: Optional[list[str]] = None
+    return_raw_response: bool = False
+    hostname_from_config: bool = True
+    cardinality: Optional[str] = None
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return True
 
     def get_client(self) -> DatadogClient:
-        return DatadogClient(self.api_key, self.app_key)
+        return DatadogClient(
+            api_key=self.api_key,
+            app_key=self.app_key,
+            host_name=self.host_name,
+            api_host=self.api_host,
+            statsd_host=self.statsd_host,
+            statsd_port=self.statsd_port,
+            statsd_disable_aggregation=self.statsd_disable_aggregation,
+            statsd_disable_buffering=self.statsd_disable_buffering,
+            statsd_aggregation_flush_interval=self.statsd_aggregation_flush_interval,
+            statsd_use_default_route=self.statsd_use_default_route,
+            statsd_socket_path=self.statsd_socket_path,
+            statsd_namespace=self.statsd_namespace,
+            statsd_max_samples_per_context=self.statsd_max_samples_per_context,
+            statsd_constant_tags=self.statsd_constant_tags,
+            return_raw_response=self.return_raw_response,
+            hostname_from_config=self.hostname_from_config,
+            cardinality=self.cardinality,
+        )
 
 
+@beta
 @dagster_maintained_resource
 @resource(
     config_schema=DatadogResource.to_config_schema(),

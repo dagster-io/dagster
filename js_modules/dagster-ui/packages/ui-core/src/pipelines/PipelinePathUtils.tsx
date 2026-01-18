@@ -2,13 +2,13 @@ import {CaptionMono, Mono} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-export interface ExplorerPath {
+export type ExplorerPath = {
   pipelineName: string;
   snapshotId?: string;
   opsQuery: string;
   explodeComposites?: boolean;
   opNames: string[];
-}
+};
 
 export const explorerPathSeparator = '~';
 
@@ -36,13 +36,14 @@ export function explorerPathToString(path: ExplorerPath) {
 function tryDecodeURIComponent(str: string) {
   try {
     return decodeURIComponent(str);
-  } catch (err) {
+  } catch {
     return str;
   }
 }
 
 export function explorerPathFromString(path: string): ExplorerPath {
   const rootAndOps = path.split('/');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const root = rootAndOps[0]!;
   const opNames = rootAndOps.length === 1 ? [''] : rootAndOps.slice(1);
 

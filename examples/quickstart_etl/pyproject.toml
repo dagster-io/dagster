@@ -1,7 +1,32 @@
+[project]
+name = "quickstart_etl"
+requires-python = ">=3.10,<3.15"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "boto3",
+    "pandas",
+    "matplotlib",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-dg-cli>=1.11.11",
+    "dagster-webserver",
+    "pytest",
+]
+
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.dagster]
 module_name = "quickstart_etl.definitions"
 code_location_name = "quickstart_etl"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "quickstart_etl"

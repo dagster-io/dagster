@@ -10,10 +10,12 @@ WORKDIR /tmp
 RUN pip install \
     -e python_modules/dagster \
     -e python_modules/dagster-pipes \
+    -e python_modules/libraries/dagster-shared \
     -e python_modules/dagster-graphql \
     -e python_modules/dagster-webserver \
     -e python_modules/libraries/dagster-postgres \
-    -e python_modules/libraries/dagster-docker
+    -e python_modules/libraries/dagster-docker \
+    tzdata
 
 # Set $DAGSTER_HOME and copy dagster instance and workspace YAML there
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/

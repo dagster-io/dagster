@@ -3,7 +3,7 @@ import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getJSONForKey} from '../util/getJSONForKey';
 
 export const SHORTCUTS_STORAGE_KEY = 'keyboard-shortcuts-enabled';
 
@@ -89,7 +89,7 @@ interface ShortcutHandlerProps {
   shortcutFilter?: (event: KeyboardEvent) => boolean;
 
   // Pass a shortcutLabel for the item to be highlighted during shortcut preview.
-  shortcutLabel?: string;
+  shortcutLabel?: React.ReactNode;
 }
 
 interface ShortcutHandlerState {

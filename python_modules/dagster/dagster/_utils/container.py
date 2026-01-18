@@ -10,6 +10,10 @@ from dagster._time import get_current_timestamp
 UNCONSTRAINED_CGROUP_MEMORY_LIMIT = 9223372036854000000
 
 
+def compatible_cgroup_version_detected() -> bool:
+    return _retrieve_cgroup_version(logger=None) is not None
+
+
 def cpu_usage_path_cgroup_v1() -> str:
     """Path to the cgroup file containing the CPU time in nanoseconds.
 
@@ -321,7 +325,7 @@ def _retrieve_containerized_cpu_cfs_quota_us_v1(
             return float(f.read())
     except:
         if logger:
-            logger.exception("Failed to retrieve CPU quota from cgroup")
+            logger.debug("Failed to retrieve CPU quota from cgroup", exc_info=True)
         return None
 
 
@@ -335,7 +339,8 @@ def _retrieve_containerized_cpu_cfs_quota_us_v2(
             return float(line.split()[0])
     except:
         if logger:
-            logger.exception(
-                "Failed to retrieve CPU quota from cgroup. There might be not limit set on the container."
+            logger.debug(
+                "Failed to retrieve CPU quota from cgroup. There might not be a limit set on the container.",
+                exc_info=True,
             )
         return None

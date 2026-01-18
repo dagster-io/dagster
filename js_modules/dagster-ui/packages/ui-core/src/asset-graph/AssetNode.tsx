@@ -1,84 +1,441 @@
-import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, FontFamily, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled, {CSSObject} from 'styled-components';
 
-import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
-import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {LiveDataForNode} from './Utils';
-import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNode.types';
 import {gql} from '../apollo-client';
+import {labelForFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
+import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
+import {AssetNodeHealthRow} from './AssetNodeHealthRow';
+import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
+import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
+import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
-import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
+import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
+import {statusToIconAndColor} from '../assets/AssetHealthSummary';
+import {EvaluationUserLabel} from '../assets/AutoMaterializePolicyPage/EvaluationConditionalLabel';
+import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
 import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {compactNumber} from '../ui/formatters';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import styles from './css/AssetNode.module.css';
+import {ASSET_NODE_NAME_MAX_LENGTH, ASSET_NODE_TAGS_HEIGHT} from './layout';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
-interface Props {
+interface Props2025 {
   definition: AssetNodeFragment;
   selected: boolean;
-  kindFilter?: StaticSetFilter<string>;
+  facets: Set<AssetNodeFacet>;
+  onChangeAssetSelection?: (selection: string) => void;
 }
 
-export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
-  const {liveData} = useAssetLiveData(definition.assetKey);
+export const ASSET_NODE_HOVER_EXPAND_HEIGHT = 3;
+
+export const AssetNode = React.memo((props: Props2025) => {
+  const {liveData} = useAssetLiveData(props.definition.assetKey);
   return (
-    <AssetInsetForHoverEffect>
-      <Box
-        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-        style={{minHeight: 24}}
-      >
-        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
-        <ChangedReasonsTag
-          changedReasons={definition.changedReasons}
-          assetKey={definition.assetKey}
-        />
-      </Box>
-      <AssetNodeContainer $selected={selected}>
-        <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
-          <AssetNameRow definition={definition} />
-          <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
+    <AssetNodeWithLiveData
+      {...props}
+      liveData={liveData}
+      assetHealthEnabled={assetHealthEnabled()}
+    />
+  );
+}, isEqual);
+
+export const AssetNodeWithLiveData = ({
+  definition,
+  selected,
+  facets,
+  onChangeAssetSelection,
+  liveData,
+  automationData,
+  assetHealthEnabled,
+}: Props2025 & {liveData: LiveDataForNodeWithStaleData | undefined} & {
+  automationData?: AssetAutomationFragment | undefined;
+  assetHealthEnabled: boolean;
+}) => {
+  return (
+    <AssetNodeContainer $selected={selected}>
+      {facets.has(AssetNodeFacet.UnsyncedTag) ? (
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
+        >
+          <div>
+            <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+          </div>
+          <ChangedReasonsTag
+            changedReasons={definition.changedReasons}
+            assetKey={definition.assetKey}
+          />
+        </Box>
+      ) : (
+        <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
+      )}
+      <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+        <AssetNameRow definition={definition} />
+        {facets.has(AssetNodeFacet.Description) && (
+          <AssetNodeRow label={null}>
             {definition.description ? (
               <AssetDescription $color={Colors.textDefault()}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
               </AssetDescription>
             ) : (
-              <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
+              <AssetDescription $color={Colors.textDefault()}>No description</AssetDescription>
             )}
-            {definition.isPartitioned && definition.isMaterializable && (
-              <PartitionCountTags definition={definition} liveData={liveData} />
-            )}
-          </Box>
-
-          <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          {(liveData?.assetChecks || []).length > 0 && (
-            <AssetNodeChecksRow definition={definition} liveData={liveData} />
-          )}
-        </AssetNodeBox>
-        <Box flex={{direction: 'row-reverse', gap: 8}}>
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Owner) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.Owner)}>
+            {definition.owners.length > 0 ? (
+              <SingleOwnerOrTooltip owners={definition.owners} />
+            ) : null}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.LatestEvent) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.LatestEvent)}>
+            {assetNodeLatestEventContent({definition, liveData})}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Checks) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.Checks)}>
+            {liveData && liveData.assetChecks.length > 0 ? (
+              <Link
+                to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AssetChecksStatusSummary
+                  liveData={liveData}
+                  rendering="dag2025"
+                  assetKey={definition.assetKey}
+                />
+              </Link>
+            ) : null}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Partitions) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.Partitions)}>
+            <PartitionsFacetContent definition={definition} liveData={liveData} />
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Freshness) &&
+          (assetHealthEnabled ? (
+            <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
+          ) : (
+            <AssetNodeFreshnessRowOld liveData={liveData} />
+          ))}
+        {facets.has(AssetNodeFacet.Automation) && (
+          <AssetNodeAutomationRow definition={definition} automationData={automationData} />
+        )}
+        {facets.has(AssetNodeFacet.Status) &&
+          (assetHealthEnabled ? (
+            <AssetNodeHealthRow definition={definition} liveData={liveData} />
+          ) : (
+            <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          ))}
+      </AssetNodeBox>
+      {facets.has(AssetNodeFacet.KindTag) && (
+        <Box
+          style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
+          flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
+        >
           {definition.kinds.map((kind) => (
             <AssetKind
               key={kind}
               kind={kind}
-              style={{position: 'relative', paddingTop: 7, margin: 0}}
-              currentPageFilter={kindFilter}
+              style={{position: 'relative', margin: 0}}
+              onChangeAssetSelection={onChangeAssetSelection}
             />
           ))}
         </Box>
-      </AssetNodeContainer>
-    </AssetInsetForHoverEffect>
+      )}
+    </AssetNodeContainer>
   );
-}, isEqual);
+};
+
+const AssetNodeStatusRow = ({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}) => {
+  const {content, background} = buildAssetNodeStatusContent({
+    assetKey: definition.assetKey,
+    definition,
+    liveData,
+  });
+  return (
+    <AssetNodeRowBox
+      background={background}
+      padding={{horizontal: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+    >
+      {content}
+    </AssetNodeRowBox>
+  );
+};
+
+export const AssetNodeAutomationRow = ({
+  definition,
+  automationData,
+}: {
+  definition: AssetNodeFragment;
+  automationData?: AssetAutomationFragment;
+}) => {
+  return automationData ? (
+    <AssetNodeAutomationRowWithData definition={definition} automationData={automationData} />
+  ) : (
+    <AssetNodeAutomationRowWithoutData definition={definition} />
+  );
+};
+
+const AssetNodeAutomationRowWithoutData = ({definition}: {definition: AssetNodeFragment}) => {
+  const {liveData: liveAutomationData} = useAssetAutomationData(definition.assetKey, 'asset-graph');
+  return (
+    <AssetNodeAutomationRowWithData definition={definition} automationData={liveAutomationData} />
+  );
+};
+
+export const AssetNodeAutomationRowWithData = ({
+  definition,
+  automationData,
+}: {
+  definition: AssetNodeFragment;
+  automationData: AssetAutomationFragment | undefined;
+}) => {
+  const hasAutomationCondition = !!automationData?.automationCondition;
+  const sensors = automationData?.targetingInstigators.filter(
+    (instigator) => instigator.__typename === 'Sensor',
+  );
+  const hasSensors = !!sensors?.length;
+  const sensorsEnabled = !!sensors?.some((sensor) => sensor.sensorState.status === 'RUNNING');
+  const firstSensor = hasSensors ? sensors[0] : null;
+  const schedules = automationData?.targetingInstigators.filter(
+    (instigator) => instigator.__typename === 'Schedule',
+  );
+  const hasSchedules = !!schedules?.length;
+  const firstSchedule = hasSchedules ? schedules[0] : null;
+  const schedulesEnabled = schedules?.some(
+    (schedule) => schedule.scheduleState.status === 'RUNNING',
+  );
+  const automationSensors = sensors?.filter((sensor) => sensor.sensorType === 'AUTOMATION');
+  const automationSensorsEnabled = automationSensors?.some(
+    (sensor) => sensor.sensorState.status === 'RUNNING',
+  );
+
+  const content = () => {
+    if (hasAutomationCondition && !hasSchedules && !hasSensors) {
+      return (
+        <AutomationConditionEvaluationLink definition={definition} automationData={automationData}>
+          <EvaluationUserLabel
+            userLabel={automationData.automationCondition?.label ?? 'condition'}
+            expandedLabel={automationData.automationCondition?.expandedLabel ?? []}
+            small
+          />
+        </AutomationConditionEvaluationLink>
+      );
+    }
+
+    if (!hasAutomationCondition && !hasSensors && !hasSchedules) {
+      return null;
+    }
+
+    return (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        {firstSensor ? (
+          <Tooltip
+            content={sensors?.length === 1 ? firstSensor.name : 'Multiple sensors'}
+            placement="top"
+          >
+            <Icon
+              name="sensor"
+              color={sensorsEnabled ? Colors.accentGreen() : Colors.textLight()}
+            />
+          </Tooltip>
+        ) : null}
+        {firstSchedule ? (
+          <Tooltip
+            content={schedules?.length === 1 ? firstSchedule.name : 'Multiple schedules'}
+            placement="top"
+          >
+            <Icon
+              name="schedule"
+              color={schedulesEnabled ? Colors.accentGreen() : Colors.textLight()}
+            />
+          </Tooltip>
+        ) : null}
+        {hasAutomationCondition ? (
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          <Tooltip content={automationData.automationCondition!.label!} placement="top">
+            <AutomationConditionEvaluationLink
+              definition={definition}
+              automationData={automationData}
+            >
+              <Icon
+                name="automation"
+                color={automationSensorsEnabled ? Colors.accentGreen() : Colors.textLight()}
+              />
+            </AutomationConditionEvaluationLink>
+          </Tooltip>
+        ) : null}
+      </Box>
+    );
+  };
+
+  return <AssetNodeRow label={labelForFacet(AssetNodeFacet.Automation)}>{content()}</AssetNodeRow>;
+};
+
+const PartitionsFacetContent = ({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}) => {
+  // If asset is not partitioned, show "Not partitioned"
+  if (!definition.isPartitioned) {
+    return <span style={{color: Colors.textLighter()}}>–</span>;
+  }
+
+  const partitionStats = liveData?.partitionStats;
+  if (!partitionStats || partitionStats.numPartitions === 0) {
+    return null;
+  }
+
+  const {numMaterialized, numPartitions, numFailed} = partitionStats;
+  const filledPct = Math.round((numMaterialized / numPartitions) * 100);
+  const displayText =
+    numFailed > 0
+      ? `${filledPct}% filled (${compactNumber(numFailed)} failed)`
+      : `${filledPct}% filled`;
+
+  return (
+    <Link
+      to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {displayText}
+    </Link>
+  );
+};
+
+export const AssetNodeRow = ({
+  label,
+  children,
+}: {
+  label: string | null;
+  children: React.ReactNode | null;
+}) => {
+  return (
+    <AssetNodeRowBox
+      padding={{horizontal: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+      border="bottom"
+    >
+      {label ? <span style={{color: Colors.textLight()}}>{label}</span> : undefined}
+      {children ? children : <span style={{color: Colors.textLighter()}}>–</span>}
+    </AssetNodeRowBox>
+  );
+};
+
+const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) => {
+  if (owners.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const owner = owners[0]!;
+    return (
+      <div className={styles.UserDisplayWrapNoPadding}>
+        {owner.__typename === 'UserAssetOwner' ? (
+          <UserDisplay email={owner.email} size="very-small" />
+        ) : (
+          <Tag icon="people">{owner.team}</Tag>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Tooltip
+      placement="top"
+      content={
+        <Box flex={{wrap: 'wrap', gap: 12}} style={{maxWidth: 300, lineHeight: 0}}>
+          {owners.map((o, idx) => (
+            <div
+              key={idx}
+              className={clsx(styles.UserDisplayWrapNoPadding, styles.UserDisplayInTooltip)}
+            >
+              {o.__typename === 'UserAssetOwner' ? (
+                <UserDisplay email={o.email} size="very-small" />
+              ) : (
+                <Tag icon="people">{o.team}</Tag>
+              )}
+            </div>
+          ))}
+        </Box>
+      }
+    >
+      {`${owners.length} owners`}
+    </Tooltip>
+  );
+};
+
+export const AutomationConditionEvaluationLink = ({
+  definition,
+  automationData,
+  children,
+}: {
+  definition: AssetNodeFragment;
+  automationData?: AssetAutomationFragment;
+  children: React.ReactNode;
+}) => {
+  const [isOpen, setOpen] = React.useState(false);
+  if (automationData?.lastAutoMaterializationEvaluationRecord) {
+    return (
+      <>
+        <ButtonLink
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          {children}
+        </ButtonLink>
+        <EvaluationDetailDialog
+          isOpen={isOpen}
+          onClose={() => setOpen(false)}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          evaluationID={automationData.lastAutoMaterializationEvaluationRecord!.evaluationId}
+          assetKeyPath={definition.assetKey.path}
+        />
+      </>
+    );
+  }
+
+  return (
+    <Link
+      to={assetDetailsPathForKey(definition.assetKey, {view: 'automation'})}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </Link>
+  );
+};
 
 export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
@@ -100,7 +457,7 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   );
 };
 
-const AssetNodeRowBox = styled(Box)`
+export const AssetNodeRowBox = styled(Box)`
   white-space: nowrap;
   line-height: 12px;
   font-size: 12px;
@@ -113,28 +470,6 @@ const AssetNodeRowBox = styled(Box)`
     border-bottom-right-radius: 8px;
   }
 `;
-
-interface StatusRowProps {
-  definition: AssetNodeFragment;
-  liveData: LiveDataForNode | undefined;
-}
-
-const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
-  const {content, background} = buildAssetNodeStatusContent({
-    assetKey: definition.assetKey,
-    definition,
-    liveData,
-  });
-  return (
-    <AssetNodeRowBox
-      background={background}
-      padding={{horizontal: 8}}
-      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-    >
-      {content}
-    </AssetNodeRowBox>
-  );
-};
 
 export const AssetNodeContextMenuWrapper = React.memo(
   ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
@@ -150,52 +485,105 @@ export const AssetNodeContextMenuWrapper = React.memo(
   },
 );
 
-const AssetNodeChecksRow = ({
-  definition,
-  liveData,
-}: {
+type AssetNodeMinimalProps = {
+  selected: boolean;
   definition: AssetNodeFragment;
-  liveData: LiveDataForNode | undefined;
-}) => {
-  if (!liveData || !liveData.assetChecks.length) {
-    return <span />;
-  }
+  facets: Set<AssetNodeFacet> | null;
+  height: number;
+};
 
-  return (
-    <AssetNodeRowBox
-      padding={{horizontal: 8}}
-      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-      border="top"
-      background={Colors.backgroundLight()}
-    >
-      Checks
-      <Link
-        to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <AssetChecksStatusSummary
-          liveData={liveData}
-          rendering="dag"
-          assetKey={definition.assetKey}
-        />
-      </Link>
-    </AssetNodeRowBox>
+export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
+  return assetHealthEnabled() ? (
+    <AssetNodeMinimalWithHealth {...props} />
+  ) : (
+    <AssetNodeMinimalWithoutHealth {...props} />
   );
 };
 
-export const AssetNodeMinimal = ({
-  selected,
+export const AssetNodeMinimalWithHealth = ({
   definition,
+  facets,
   height,
-}: {
-  selected: boolean;
-  definition: AssetNodeFragment;
-  height: number;
-}) => {
+  selected,
+}: AssetNodeMinimalProps) => {
+  const {isMaterializable, assetKey} = definition;
+  const {liveData} = useAssetLiveData(assetKey);
+  const {liveData: healthData} = useAssetHealthData(assetKey);
+  const health = healthData?.assetHealth;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const displayName = assetKey.path[assetKey.path.length - 1]!;
+  const isChanged = definition.changedReasons.length;
+  const isStale = isAssetStale(liveData);
+
+  const queuedRuns = liveData?.unstartedRunIds.length;
+  const inProgressRuns = liveData?.inProgressRunIds.length;
+  const numMaterializing = liveData?.partitionStats?.numMaterializing;
+  const isMaterializing = numMaterializing || inProgressRuns || queuedRuns;
+
+  const {borderColor, backgroundColor} = React.useMemo(() => {
+    if (isMaterializing) {
+      return {backgroundColor: Colors.backgroundBlue(), borderColor: Colors.accentBlue()};
+    }
+    return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
+  }, [health, isMaterializing]);
+
+  // old design
+  let paddingTop = height / 2 - 52;
+  let nodeHeight = 86;
+
+  if (facets !== null) {
+    const topTagsPresent = facets.has(AssetNodeFacet.UnsyncedTag);
+    const bottomTagsPresent = facets.has(AssetNodeFacet.KindTag);
+    paddingTop = ASSET_NODE_VERTICAL_MARGIN + (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+    nodeHeight =
+      height -
+      ASSET_NODE_VERTICAL_MARGIN * 2 -
+      (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : ASSET_NODE_HOVER_EXPAND_HEIGHT) -
+      (bottomTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+
+    // Ensure that we have room for the label, even if it makes the minimal format larger.
+    if (nodeHeight < 38) {
+      nodeHeight = 38;
+    }
+  }
+
+  return (
+    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+      <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
+        <MinimalAssetNodeBox
+          $selected={selected}
+          $isMaterializable={isMaterializable}
+          $background={backgroundColor}
+          $border={borderColor}
+          $inProgress={!!inProgressRuns}
+          $isQueued={!!queuedRuns}
+          $height={nodeHeight}
+        >
+          {isChanged ? (
+            <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
+          ) : null}
+          {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
+          <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
+            {withMiddleTruncation(displayName, {maxLength: 18})}
+          </MinimalName>
+        </MinimalAssetNodeBox>
+      </Tooltip>
+    </MinimalAssetNodeContainer>
+  );
+};
+
+export const AssetNodeMinimalWithoutHealth = ({
+  definition,
+  facets,
+  height,
+  selected,
+}: AssetNodeMinimalProps) => {
   const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;
@@ -204,37 +592,48 @@ export const AssetNodeMinimal = ({
   const queuedRuns = liveData?.unstartedRunIds.length;
   const inProgressRuns = liveData?.inProgressRunIds.length;
 
+  // old design
+  let paddingTop = height / 2 - 52;
+  let nodeHeight = 86;
+
+  if (facets !== null) {
+    const topTagsPresent = facets.has(AssetNodeFacet.UnsyncedTag);
+    const bottomTagsPresent = facets.has(AssetNodeFacet.KindTag);
+    paddingTop = ASSET_NODE_VERTICAL_MARGIN + (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+    nodeHeight =
+      height -
+      ASSET_NODE_VERTICAL_MARGIN * 2 -
+      (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : ASSET_NODE_HOVER_EXPAND_HEIGHT) -
+      (bottomTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+
+    // Ensure that we have room for the label, even if it makes the minimal format larger.
+    if (nodeHeight < 38) {
+      nodeHeight = 38;
+    }
+  }
+
   return (
-    <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 52}}>
-        <TooltipStyled
-          content={displayName}
-          canShow={displayName.length > 14}
-          targetTagName="div"
-          position="top"
+    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+      <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
+        <MinimalAssetNodeBox
+          $selected={selected}
+          $isMaterializable={isMaterializable}
+          $background={background}
+          $border={border}
+          $inProgress={!!inProgressRuns}
+          $isQueued={!!queuedRuns}
+          $height={nodeHeight}
         >
-          <MinimalAssetNodeBox
-            $selected={selected}
-            $isMaterializable={isMaterializable}
-            $background={background}
-            $border={border}
-            $inProgress={!!inProgressRuns}
-            $isQueued={!!queuedRuns}
-          >
-            {isChanged ? (
-              <MinimalNodeChangedDot
-                changedReasons={definition.changedReasons}
-                assetKey={assetKey}
-              />
-            ) : null}
-            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-            <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
-              {withMiddleTruncation(displayName, {maxLength: 18})}
-            </MinimalName>
-          </MinimalAssetNodeBox>
-        </TooltipStyled>
-      </MinimalAssetNodeContainer>
-    </AssetInsetForHoverEffect>
+          {isChanged ? (
+            <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
+          ) : null}
+          {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
+          <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
+            {withMiddleTruncation(displayName, {maxLength: 18})}
+          </MinimalName>
+        </MinimalAssetNodeBox>
+      </Tooltip>
+    </MinimalAssetNodeContainer>
   );
 };
 
@@ -256,6 +655,15 @@ export const ASSET_NODE_FRAGMENT = gql`
     isPartitioned
     isObservable
     isMaterializable
+    isAutoCreatedStub
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     assetKey {
       ...AssetNodeKey
     }
@@ -271,20 +679,15 @@ export const ASSET_NODE_FRAGMENT = gql`
   }
 `;
 
-export const AssetInsetForHoverEffect = styled.div`
-  padding: 10px 4px 2px 4px;
-  height: 100%;
-
-  & *:focus {
-    outline: 0;
-  }
-`;
+export const ASSET_NODE_VERTICAL_MARGIN = 6;
 
 export const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: pointer;
-  padding: 6px;
-  overflow: clip;
+
+  & *:focus {
+    outline: 0;
+  }
 `;
 
 const AssetNodeShowOnHover = styled.span`
@@ -307,6 +710,7 @@ export const AssetNodeBox = styled.div<{
   background: ${Colors.backgroundDefault()};
   border-radius: 10px;
   position: relative;
+  margin: ${ASSET_NODE_VERTICAL_MARGIN}px 0;
   transition: all 150ms linear;
   &:hover {
     ${(p) => !p.$selected && `border: 2px solid ${Colors.lineageNodeBorderHover()};`};
@@ -322,6 +726,7 @@ export const AssetNodeBox = styled.div<{
 const NameCSS: CSSObject = {
   padding: '3px 0 3px 6px',
   color: Colors.textDefault(),
+  fontSize: 14,
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
 };
@@ -366,6 +771,7 @@ const MinimalAssetNodeBox = styled.div<{
   $border: string;
   $inProgress: boolean;
   $isQueued: boolean;
+  $height: number;
 }>`
   background: ${(p) => p.$background};
   overflow: hidden;
@@ -420,8 +826,7 @@ const MinimalAssetNodeBox = styled.div<{
   border-radius: 16px;
   position: relative;
   padding: 2px;
-  height: 100%;
-  min-height: 86px;
+  height: ${(p) => p.$height}px;
   &:hover {
     box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
   }
@@ -441,10 +846,6 @@ export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${Colors.textLighter()};
+  color: ${(p) => p.$color};
   font-size: 12px;
-`;
-
-const TooltipStyled = styled(Tooltip)`
-  height: 100%;
 `;

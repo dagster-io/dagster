@@ -1,67 +1,56 @@
 import json
 from collections import defaultdict
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from inspect import isfunction
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import dagster._check as check
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import (
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.job.asset_job import (
     IMPLICIT_ASSET_JOB_NAME,
     get_base_asset_job_lambda,
-    is_base_asset_job_name,
+    is_reserved_asset_job_name,
 )
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.repository_definition.repository_data import CachingRepositoryData
 from dagster._core.definitions.repository_definition.valid_definitions import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
-    RepositoryListDefinition,
+    RepositoryElementDefinition,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.utils import get_default_automation_condition_sensor
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
+    from dagster.components.core.component_tree import ComponentTree
 
 # We throw an error if the user attaches an instance of a custom `PartitionsDefinition` subclass to
 # a definition-- we can't support custom PartitionsDefinition subclasses due to us needing to load
@@ -74,7 +63,7 @@ VALID_PARTITIONS_DEFINITION_CLASSES = (
 )
 
 
-def _find_env_vars(config_entry: Any) -> Set[str]:
+def _find_env_vars(config_entry: Any) -> set[str]:
     """Given a part of a config dictionary, return a set of environment variables that are used in
     that part of the config.
     """
@@ -85,14 +74,14 @@ def _find_env_vars(config_entry: Any) -> Set[str]:
     elif isinstance(config_entry, Mapping):
         return set().union(*[_find_env_vars(v) for v in config_entry.values()])
     # Recurse into list of config items
-    elif isinstance(config_entry, List):
+    elif isinstance(config_entry, list):
         return set().union(*[_find_env_vars(v) for v in config_entry])
 
     # Otherwise, raw config value which is not an env var, so return empty set
     return set()
 
 
-def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
+def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> set[str]:
     """Given a resource definition, return a set of environment variables that are used in the
     resource's default config. This is used to extract environment variables from the top-level
     resources in a Definitions object.
@@ -100,7 +89,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
     from dagster._core.execution.build_resources import wrap_resource_for_execution
 
     config_schema_default = cast(
-        Mapping[str, Any],
+        "Mapping[str, Any]",
         (
             json.loads(resource_def.config_schema.default_value_as_json_str)
             if resource_def.config_schema.default_provided
@@ -134,12 +123,17 @@ def _resolve_unresolved_job_def_lambda(
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
 ) -> Callable[[], JobDefinition]:
     def resolve_unresolved_job_def() -> JobDefinition:
-        job_def = unresolved_job_def.resolve(
-            asset_graph=asset_graph,
-            default_executor_def=default_executor_def,
-            resource_defs=top_level_resources,
-        )
-        return _process_resolved_job(job_def, default_executor_def, default_logger_defs)
+        try:
+            job_def = unresolved_job_def.resolve(
+                asset_graph=asset_graph,
+                default_executor_def=default_executor_def,
+                resource_defs=top_level_resources,
+            )
+            return _process_resolved_job(job_def, default_executor_def, default_logger_defs)
+        except Exception as e:
+            raise DagsterInvalidDefinitionError(
+                f"Failed to resolve asset job {unresolved_job_def.name}"
+            ) from e
 
     return resolve_unresolved_job_def
 
@@ -161,32 +155,33 @@ def _process_resolved_job(
 
 
 def build_caching_repository_data_from_list(
-    repository_definitions: Sequence[RepositoryListDefinition],
+    repository_definitions: Sequence[RepositoryElementDefinition],
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     resource_key_mapping: Optional[Mapping[int, str]] = None,
+    component_tree: Optional["ComponentTree"] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetsDefinition
-    from dagster._core.definitions.partitioned_schedule import (
+    from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
 
-    schedule_and_sensor_names: Set[str] = set()
-    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
-    coerced_graphs: Dict[str, JobDefinition] = {}
-    unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
-    schedules: Dict[str, ScheduleDefinition] = {}
-    unresolved_partitioned_asset_schedules: Dict[
+    schedule_and_sensor_names: set[str] = set()
+    jobs: dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
+    coerced_graphs: dict[str, JobDefinition] = {}
+    unresolved_jobs: dict[str, UnresolvedAssetJobDefinition] = {}
+    schedules: dict[str, ScheduleDefinition] = {}
+    unresolved_partitioned_asset_schedules: dict[
         str, UnresolvedPartitionedAssetScheduleDefinition
     ] = {}
-    sensors: Dict[str, SensorDefinition] = {}
-    assets_defs: List[AssetsDefinition] = []
-    asset_keys: Set[AssetKey] = set()
-    asset_check_keys: Set["AssetCheckKey"] = set()
-    source_assets: List[SourceAsset] = []
-    asset_checks_defs: List[AssetsDefinition] = []
-    partitions_defs: Set[PartitionsDefinition] = set()
+    sensors: dict[str, SensorDefinition] = {}
+    assets_defs: list[AssetsDefinition] = []
+    asset_keys: set[AssetKey] = set()
+    asset_check_keys: set[AssetCheckKey] = set()
+    source_assets: list[SourceAsset] = []
+    asset_checks_defs: list[AssetsDefinition] = []
+    partitions_defs: set[PartitionsDefinition] = set()
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
@@ -195,7 +190,7 @@ def build_caching_repository_data_from_list(
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate job definition found for {definition.describe_target()}"
                 )
-            if is_base_asset_job_name(definition.name):
+            if is_reserved_asset_job_name(definition.name):
                 raise DagsterInvalidDefinitionError(
                     f"Attempted to provide job called {definition.name} to repository, which "
                     "is a reserved name. Please rename the job."
@@ -255,14 +250,15 @@ def build_caching_repository_data_from_list(
             asset_check_keys.update(definition.check_keys)
             asset_checks_defs.append(definition)
         elif isinstance(definition, AssetsDefinition):
-            for key in definition.keys:
-                if key in asset_keys:
-                    raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+            for spec in definition.specs:
+                if spec.key in asset_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset key: {spec.key}")
+
+                if spec.partitions_def is not None:
+                    partitions_defs.add(spec.partitions_def)
             for key in definition.check_keys:
                 if key in asset_check_keys:
                     raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
-            if definition.partitions_def is not None:
-                partitions_defs.add(definition.partitions_def)
 
             asset_keys.update(definition.keys)
             asset_check_keys.update(definition.check_keys)
@@ -319,12 +315,21 @@ def build_caching_repository_data_from_list(
     assets_without_keys = [ad for ad in assets_defs if not ad.keys]
     asset_graph = AssetGraph.from_assets(
         [
-            *assets_defs_by_key.values(),
+            # Ensure that the same AssetsDefinition doesn't need to be considered twice by the graph if
+            # it produces multiple asset keys
+            *set(assets_defs_by_key.values()),
             *assets_without_keys,
             *asset_checks_defs,
-            *source_assets_by_key.values(),
+            *source_assets_by_key.values(),  # only ever one key per source asset so no need to dedupe
         ]
     )
+    # add a default automation condition sensor if necessary
+    default_automation_condition_sensor = get_default_automation_condition_sensor(
+        list(sensors.values()), asset_graph
+    )
+    if default_automation_condition_sensor:
+        sensors[default_automation_condition_sensor.name] = default_automation_condition_sensor
+
     if assets_defs or asset_checks_defs or source_assets:
         jobs[IMPLICIT_ASSET_JOB_NAME] = get_base_asset_job_lambda(
             asset_graph=asset_graph,
@@ -353,7 +358,7 @@ def build_caching_repository_data_from_list(
             job_def
             if isfunction(job_def)
             else _process_resolved_job(
-                cast(JobDefinition, job_def), default_executor_def, default_logger_defs
+                cast("JobDefinition", job_def), default_executor_def, default_logger_defs
             )
         )
         for name, job_def in jobs.items()
@@ -361,7 +366,7 @@ def build_caching_repository_data_from_list(
 
     top_level_resources = top_level_resources or {}
 
-    utilized_env_vars: Dict[str, Set[str]] = defaultdict(set)
+    utilized_env_vars: dict[str, set[str]] = defaultdict(set)
 
     for resource_key, resource_def in top_level_resources.items():
         used_env_vars = _env_vars_from_resource_defaults(resource_def)
@@ -378,11 +383,12 @@ def build_caching_repository_data_from_list(
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
+        component_tree=component_tree,
     )
 
 
 def build_caching_repository_data_from_dict(
-    repository_definitions: Dict[str, Dict[str, Any]],
+    repository_definitions: dict[str, dict[str, Any]],
 ) -> "CachingRepositoryData":
     check.dict_param(repository_definitions, "repository_definitions", key_type=str)
     check.invariant(
@@ -440,6 +446,7 @@ def build_caching_repository_data_from_dict(
         top_level_resources={},
         utilized_env_vars={},
         unresolved_partitioned_asset_schedules={},
+        component_tree=None,
     )
 
 
@@ -447,8 +454,8 @@ def _process_and_validate_target_job(
     instigator_def: Union[
         SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
     ],
-    unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
-    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
+    unresolved_jobs: dict[str, UnresolvedAssetJobDefinition],
+    jobs: dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
     job_def: Union[JobDefinition, UnresolvedAssetJobDefinition],
 ):
     """This function modifies the state of unresolved_jobs, and jobs."""
@@ -475,7 +482,7 @@ def _process_and_validate_target_job(
             )
         unresolved_jobs[job_def.name] = job_def
     else:
-        if job_def.name in jobs and jobs[job_def.name].graph != job_def.graph:
+        if job_def.name in jobs and jobs[job_def.name].graph != job_def.graph:  # pyright: ignore[reportFunctionMemberAccess]
             dupe_target_type = "unresolved asset job" if job_def.name in unresolved_jobs else "job"
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", job_def.name, dupe_target_type)
@@ -487,8 +494,8 @@ def _process_and_validate_target_assets(
     instigator_def: Union[
         SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
     ],
-    assets_defs_by_key: Dict["AssetKey", AssetsDefinition],
-    source_assets_by_key: Dict["AssetKey", SourceAsset],
+    assets_defs_by_key: dict["AssetKey", AssetsDefinition],
+    source_assets_by_key: dict["AssetKey", SourceAsset],
     target_assets_defs: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> None:
     for ad in target_assets_defs:
@@ -522,7 +529,7 @@ def _validate_auto_materialize_sensors(
     sensors: Iterable[SensorDefinition], asset_graph: BaseAssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
-    sensor_names_by_asset_key: Dict["AssetKey", str] = {}
+    sensor_names_by_asset_key: dict[AssetKey, str] = {}
     for sensor in sensors:
         if isinstance(sensor, AutomationConditionSensorDefinition):
             asset_keys = sensor.asset_selection.resolve(asset_graph)
@@ -541,10 +548,8 @@ def _validate_auto_materialize_sensors(
 def _validate_partitions_definition(partitions_def: PartitionsDefinition) -> None:
     if not isinstance(partitions_def, VALID_PARTITIONS_DEFINITION_CLASSES):
         valid_names = ", ".join([cls.__name__ for cls in VALID_PARTITIONS_DEFINITION_CLASSES])
-        deprecation_warning(
-            "Support for custom PartitionsDefinition subclasses",
-            breaking_version="1.9.0",
-            additional_warn_text="All passed-in PartitionsDefinition"
+        raise DagsterInvalidDefinitionError(
+            "Custom PartitionsDefinition subclasses are not supported. All passed-in PartitionsDefinition"
             f" objects must be an instance of one of ({valid_names})."
             f" Found instance of {type(partitions_def).__name__}",
         )

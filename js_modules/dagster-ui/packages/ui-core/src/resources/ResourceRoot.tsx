@@ -4,7 +4,6 @@ import {
   ButtonLink,
   CaptionMono,
   Colors,
-  Group,
   Heading,
   Icon,
   MiddleTruncate,
@@ -14,6 +13,7 @@ import {
   PageHeader,
   SplitPanelContainer,
   Subheading,
+  Subtitle1,
   Table,
   Tag,
   Tooltip,
@@ -22,12 +22,12 @@ import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
 
 import {ResourceTabs} from './ResourceTabs';
+import {gql, useQuery} from '../apollo-client';
 import {
   ResourceDetailsFragment,
   ResourceRootQuery,
   ResourceRootQueryVariables,
 } from './types/ResourceRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
@@ -123,7 +123,7 @@ export const ResourceRoot = (props: Props) => {
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
-        title={<Heading>{displayName}</Heading>}
+        title={<Subtitle1>{displayName}</Subtitle1>}
         tags={
           <Tag icon="resource">
             Resource in <RepositoryLink repoAddress={repoAddress} />
@@ -145,7 +145,7 @@ export const ResourceRoot = (props: Props) => {
               <Alert
                 intent="warning"
                 title={
-                  <Group direction="row" spacing={4}>
+                  <Box flex={{direction: 'row', gap: 4}}>
                     <div>Could not load resource.</div>
                     {message && (
                       <ButtonLink
@@ -161,7 +161,7 @@ export const ResourceRoot = (props: Props) => {
                         View error
                       </ButtonLink>
                     )}
-                  </Group>
+                  </Box>
                 }
               />
             );
@@ -311,10 +311,12 @@ const ResourceConfig = (props: {
               resourceDetails.configFields.map((field) => {
                 const defaultValue = field.defaultValueAsJson;
                 const type = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name]!.type
+                  ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    configuredValues[field.name]!.type
                   : null;
                 const actualValue = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name]!.value
+                  ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    configuredValues[field.name]!.value
                   : defaultValue;
 
                 const isDefault = type === 'VALUE' && defaultValue === actualValue;
@@ -339,6 +341,7 @@ const ResourceConfig = (props: {
                         </Tooltip>
                         {isDefault && <Tag>Default</Tag>}
                         {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
+                        {type === 'SECRET' && <Tag intent="warning">Secret</Tag>}
                       </Box>
                     </td>
                   </tr>
@@ -593,6 +596,7 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
 
 const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
+    id
     name
     description
     configFields {
@@ -611,6 +615,7 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
       name
       type
       resource {
+        id
         name
         resourceType
         description
@@ -619,6 +624,7 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     parentResources {
       name
       resource {
+        id
         name
         resourceType
         description

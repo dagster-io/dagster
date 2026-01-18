@@ -66,7 +66,7 @@ AssetKeyTable = db.Table(
     ),  # guarded by secondary index check
     db.Column("tags", db.TEXT),  # guarded by secondary index check
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
-    db.Column("cached_status_data", db.TEXT),
+    db.Column("cached_status_data", MySQLCompatabilityTypes.LongText),
 )
 
 AssetEventTagsTable = db.Table(
@@ -114,6 +114,9 @@ ConcurrencyLimitsTable = db.Table(
     ),
     db.Column("concurrency_key", MySQLCompatabilityTypes.UniqueText, nullable=False, unique=True),
     db.Column("limit", db.Integer, nullable=False),
+    db.Column(
+        "using_default_limit", db.Boolean, nullable=False, default=False, server_default=db.false()
+    ),
     db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )

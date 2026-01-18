@@ -1,5 +1,12 @@
-import {Button, Icon, Menu, MenuItem, Select} from '@dagster-io/ui-components';
-import {DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
+import {
+  Button,
+  DagsterTheme,
+  Icon,
+  IconName,
+  Menu,
+  MenuItem,
+  Select,
+} from '@dagster-io/ui-components';
 
 interface Props {
   theme: DagsterTheme;
@@ -11,14 +18,32 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
     {
       key: DagsterTheme.Light,
       label: 'Light',
+      icon: 'sun',
     },
     {
       key: DagsterTheme.Dark,
       label: 'Dark',
+      icon: 'nightlight',
     },
     {
       key: DagsterTheme.System,
-      label: 'System setting',
+      label: 'Use system setting',
+      icon: 'daemon',
+    },
+    {
+      key: DagsterTheme.LightNoRedGreen,
+      label: 'Light (no red or green)',
+      icon: 'sun',
+    },
+    {
+      key: DagsterTheme.DarkNoRedGreen,
+      label: 'Dark (no red or green)',
+      icon: 'nightlight',
+    },
+    {
+      key: DagsterTheme.SystemNoRedGreen,
+      label: 'Use system setting (no red or green)',
+      icon: 'daemon',
     },
   ];
 
@@ -40,6 +65,7 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
             key={item.key}
             text={item.label}
             style={{width: '300px'}}
+            icon={item.icon as IconName}
           />
         );
       }}
@@ -50,6 +76,7 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       onItemSelect={(item) => onChange(item.key)}
     >
       <Button
+        icon={<Icon name={activeItem?.icon as IconName} />}
         rightIcon={<Icon name="arrow_drop_down" />}
         style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
       >

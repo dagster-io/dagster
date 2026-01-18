@@ -1,8 +1,8 @@
 import styled from 'styled-components';
 
+import {Box} from './Box';
 import {Colors} from './Color';
-import {Group} from './Group';
-import {Icon, IconWrapper} from './Icon';
+import {Icon} from './Icon';
 import {Tooltip} from './Tooltip';
 import {secondsToCountdownTime} from './secondsToCountdownTime';
 
@@ -16,7 +16,7 @@ interface Props {
 export const RefreshableCountdown = (props: Props) => {
   const {refreshing, seconds, onRefresh, dataDescription = 'data'} = props;
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       <span
         style={{
           color: Colors.textLight(),
@@ -27,15 +27,15 @@ export const RefreshableCountdown = (props: Props) => {
         {refreshing
           ? `Refreshing ${dataDescription}…`
           : seconds === undefined
-          ? null
-          : secondsToCountdownTime(seconds)}
+            ? null
+            : secondsToCountdownTime(seconds)}
       </span>
       <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="top">
         <RefreshButton onClick={onRefresh}>
           <Icon name="refresh" color={Colors.accentGray()} />
         </RefreshButton>
       </Tooltip>
-    </Group>
+    </Box>
   );
 };
 
@@ -49,7 +49,7 @@ export const RefreshButton = styled.button`
   position: relative;
   top: 1px;
 
-  & ${IconWrapper} {
+  & .iconGlobal {
     display: block;
     transition: color 100ms linear;
 

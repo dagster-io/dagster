@@ -1,19 +1,12 @@
-from typing import List
-
+import dagster as dg
 import pytest
 from dagster import (
     DagsterEventType,
-    GraphDefinition,
     _check as check,
-    job,
-    op,
-    reconstructable,
-    resource,
 )
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, RunFailureReason
+from dagster._core.events import RunFailureReason
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import (
     create_execution_plan,
@@ -22,11 +15,10 @@ from dagster._core.execution.api import (
     execute_run_iterator,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import instance_for_test
 from dagster._grpc.impl import core_execute_run
 
 
-@resource
+@dg.resource
 def resource_a(context):
     context.log.info("CALLING A")
     yield "A"
@@ -34,7 +26,7 @@ def resource_a(context):
     yield  # add the second yield here to test teardown generator exit handling
 
 
-@resource
+@dg.resource
 def resource_b(context):
     context.log.info("CALLING B")
     yield "B"
@@ -42,30 +34,30 @@ def resource_b(context):
     yield  # add the second yield here to test teardown generator exit handling
 
 
-@op(required_resource_keys={"a", "b"})
+@dg.op(required_resource_keys={"a", "b"})
 def resource_op(_):
     return "A"
 
 
-@op
+@dg.op
 def simple_op():
     pass
 
 
-@job
+@dg.job
 def simple_job():
     simple_op()
 
 
 def test_execute_run_iterator():
-    records: List[EventLogEntry] = []
+    records: list[dg.EventLogEntry] = []
 
     def event_callback(record: EventLogEntry) -> None:
-        assert isinstance(record, EventLogEntry)
+        assert isinstance(record, dg.EventLogEntry)
         records.append(record)
 
-    with instance_for_test() as instance:
-        job_def = GraphDefinition(
+    with dg.instance_for_test() as instance:
+        job_def = dg.GraphDefinition(
             name="basic_resource_job",
             node_defs=[resource_op],
         ).to_job(
@@ -90,12 +82,12 @@ def test_execute_run_iterator():
             event = next(iterator)
             event_type = event.event_type_value
 
-        iterator.close()
+        iterator.close()  # pyright: ignore[reportAttributeAccessIssue]
         events = [record.dagster_event for record in records if record.is_dagster_event]
         messages = [record.user_message for record in records if not record.is_dagster_event]
-        job_failure_events = [event for event in events if event.is_job_failure]
+        job_failure_events = [event for event in events if event.is_job_failure]  # pyright: ignore[reportOptionalMemberAccess]
         assert len(job_failure_events) == 1
-        assert "GeneratorExit" in job_failure_events[0].job_failure_data.error.message
+        assert "GeneratorExit" in job_failure_events[0].job_failure_data.error.message  # pyright: ignore[reportOptionalMemberAccess]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -113,7 +105,7 @@ def test_execute_run_iterator():
             ]
         )
 
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "run_launcher": {
                     "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
@@ -134,7 +126,7 @@ def test_execute_run_iterator():
                     instance=run_monitoring_instance,
                 )
             )
-            assert (
+            assert (  # pyright: ignore[reportOperatorIssue]
                 "Ignoring a duplicate run that was started from somewhere other than the run"
                 " monitor daemon" in event.message
             )
@@ -169,8 +161,8 @@ def test_restart_running_run_worker():
     def event_callback(_record):
         pass
 
-    with instance_for_test() as instance:
-        job_def = GraphDefinition(
+    with dg.instance_for_test() as instance:
+        job_def = dg.GraphDefinition(
             name="basic_resource_pipeline",
             node_defs=[resource_op],
         ).to_job(
@@ -186,7 +178,7 @@ def test_restart_running_run_worker():
 
         assert any(
             [
-                f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"
+                f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"  # pyright: ignore[reportOperatorIssue]
                 " while the run was already in state DagsterRunStatus.STARTED. " in event.message
                 for event in events
             ]
@@ -200,15 +192,15 @@ def test_restart_running_run_worker():
             ]
         )
 
-        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.FAILURE
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_start_run_worker_after_run_failure():
     def event_callback(_record):
         pass
 
-    with instance_for_test() as instance:
-        job_def = GraphDefinition(
+    with dg.instance_for_test() as instance:
+        job_def = dg.GraphDefinition(
             name="basic_resource_pipeline",
             node_defs=[resource_op],
         ).to_job(
@@ -221,7 +213,7 @@ def test_start_run_worker_after_run_failure():
         ).with_status(DagsterRunStatus.FAILURE)
 
         event = next(execute_run_iterator(InMemoryJob(job_def), dagster_run, instance=instance))
-        assert (
+        assert (  # pyright: ignore[reportOperatorIssue]
             "Ignoring a run worker that started after the run had already finished."
             in event.message
         )
@@ -231,8 +223,8 @@ def test_execute_canceled_state():
     def event_callback(_record):
         pass
 
-    with instance_for_test() as instance:
-        job_def = GraphDefinition(
+    with dg.instance_for_test() as instance:
+        job_def = dg.GraphDefinition(
             name="basic_resource_pipeline",
             node_defs=[resource_op],
         ).to_job(
@@ -244,7 +236,7 @@ def test_execute_canceled_state():
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.CANCELED)
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(dg.DagsterInvariantViolationError):
             execute_run(
                 InMemoryJob(job_def),
                 dagster_run,
@@ -267,7 +259,7 @@ def test_execute_canceled_state():
         iter_events = list(execute_run_iterator(InMemoryJob(job_def), iter_run, instance=instance))
 
         assert len(iter_events) == 1
-        assert (
+        assert (  # pyright: ignore[reportOperatorIssue]
             "Not starting execution since the run was canceled before execution could start"
             in iter_events[0].message
         )
@@ -277,11 +269,11 @@ def test_execute_run_bad_state():
     records = []
 
     def event_callback(record):
-        assert isinstance(record, EventLogEntry)
+        assert isinstance(record, dg.EventLogEntry)
         records.append(record)
 
-    with instance_for_test() as instance:
-        job_def = GraphDefinition(
+    with dg.instance_for_test() as instance:
+        job_def = dg.GraphDefinition(
             name="basic_resource_pipeline",
             node_defs=[resource_op],
         ).to_job(
@@ -305,11 +297,11 @@ def test_execute_plan_iterator():
     records = []
 
     def event_callback(record):
-        assert isinstance(record, EventLogEntry)
+        assert isinstance(record, dg.EventLogEntry)
         records.append(record)
 
-    with instance_for_test() as instance:
-        job_def = GraphDefinition(
+    with dg.instance_for_test() as instance:
+        job_def = dg.GraphDefinition(
             name="basic_resource_pipeline",
             node_defs=[resource_op],
         ).to_job(
@@ -338,15 +330,15 @@ def test_execute_plan_iterator():
             event = next(iterator)
             event_type = event.event_type_value
 
-        iterator.close()
+        iterator.close()  # pyright: ignore[reportAttributeAccessIssue]
         messages = [record.user_message for record in records if not record.is_dagster_event]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
 
 def test_run_fails_while_loading_code():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(simple_job)
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(simple_job)
         run = instance.create_run_for_job(
             job_def=simple_job,
             run_config={},
@@ -357,7 +349,7 @@ def test_run_fails_while_loading_code():
         # Run is moved to failure while the code is still loading
         instance.run_storage.handle_run_event(
             run.run_id,  # fail one after two has fails and three has succeeded
-            DagsterEvent(
+            dg.DagsterEvent(
                 message="run monitoring killed it",
                 event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
                 job_name="simple_job",
@@ -367,4 +359,4 @@ def test_run_fails_while_loading_code():
         list(gen_execute_run)
 
         # Execution is stopped, stays in failure state
-        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]

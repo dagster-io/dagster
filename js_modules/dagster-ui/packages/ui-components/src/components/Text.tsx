@@ -12,16 +12,16 @@ const Text = styled.span<TextProps>`
 `;
 
 export const Title = styled(Text)`
-  font-size: 24px;
+  font-size: 32px;
+  line-height: 36px;
   font-weight: 600;
-  line-height: 30px;
   -webkit-font-smoothing: antialiased;
 `;
 
 export const Heading = styled(Text)`
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 20px;
   line-height: 24px;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 `;
 
@@ -56,6 +56,8 @@ export const Subtitle2 = styled(Text)`
 export const Body = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
 `;
 
 export const Body1 = styled(Text)`
@@ -71,9 +73,11 @@ export const Body2 = styled(Text)`
   font-weight: 400;
 `;
 
+//Deprecated – Use BodySmall moving forward
 export const Caption = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
+  line-height: 16px;
 `;
 
 export const CaptionSubtitle = styled(Text)`
@@ -86,6 +90,7 @@ export const CaptionBolded = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
   font-weight: 700;
+  line-height: 16px;
 `;
 
 export const Code = styled(Text)`
@@ -101,10 +106,59 @@ export const Mono = styled(Text)`
   font-family: ${FontFamily.monospace};
   font-variant-ligatures: none;
   font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
 `;
 
 export const CaptionMono = styled(Text)`
   font-family: ${FontFamily.monospace};
   font-variant-ligatures: none;
   font-size: 12px;
+  line-height: 16px;
+`;
+export const SubtitleLarge = styled(Text)`
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+`;
+
+export const Subtitle = styled(Text)`
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+`;
+
+export const SubtitleSmall = styled(Text)`
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+`;
+
+export const BodyLarge = styled(Text)`
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+`;
+
+export const BodySmall = styled(Text)`
+  font-family: ${FontFamily.default};
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+`;
+
+export const MonoLarge = styled(Text)`
+  font-family: ${FontFamily.monospace};
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+`;
+
+export const MonoSmall = styled(Text)`
+  font-family: ${FontFamily.monospace};
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
 `;

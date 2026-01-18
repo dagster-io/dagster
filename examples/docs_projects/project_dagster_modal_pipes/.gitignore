@@ -1,0 +1,9 @@
+*.egg-info/*
+*.mp3
+*.pyc
+.DS_Store
+.direnv/
+.env
+.envrc
+__pycache__/
+tmp*/

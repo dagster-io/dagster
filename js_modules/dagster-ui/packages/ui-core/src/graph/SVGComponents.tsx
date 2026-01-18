@@ -46,6 +46,7 @@ export class SVGMonospaceText extends React.PureComponent<
 
     if (allowTwoLines) {
       const parts = text.split('_');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       while (parts.length && line1.length + parts[0]!.length <= lineChars) {
         line1 += parts.shift() + (parts.length > 0 ? '_' : '');
       }

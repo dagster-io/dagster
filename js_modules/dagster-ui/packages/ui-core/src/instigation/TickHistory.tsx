@@ -5,13 +5,12 @@ import {
   Button,
   ButtonLink,
   Caption,
-  Colors,
   CursorHistoryControls,
   FontFamily,
   Icon,
-  IconWrapper,
   Menu,
   MenuItem,
+  MiddleTruncate,
   NonIdealState,
   Select,
   Spinner,
@@ -22,6 +21,7 @@ import {
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
+import {useState} from 'react';
 import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
@@ -30,13 +30,11 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {countPartitionsAddedOrDeleted, isStuckStartedTick, truncate} from './util';
+import {countPartitionsAddedOrDeleted, isStuckStartedTick} from './util';
 import {gql, useQuery} from '../apollo-client';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useCopyToClipboard} from '../app/browser';
 import {
   DynamicPartitionsRequestType,
   InstigationSelector,
@@ -47,8 +45,10 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {humanizeSensorCursor} from '../sensors/SensorDetails';
 import {TickLogDialog} from '../ticks/TickLogDialog';
-import {TickStatusTag} from '../ticks/TickStatusTag';
+import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
+import {CopyIconButton} from '../ui/CopyButton';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -79,11 +79,13 @@ export const TicksTable = ({
   name,
   repoAddress,
   tabs,
+  tickResultType,
   setTimerange,
   setParentStatuses,
 }: {
   name: string;
   repoAddress: RepoAddress;
+  tickResultType: TickResultType;
   tabs?: React.ReactElement;
   setTimerange?: (range?: [number, number]) => void;
   setParentStatuses?: (statuses?: InstigationTickStatus[]) => void;
@@ -92,6 +94,9 @@ export const TicksTable = ({
     queryKey: 'status',
     defaults: {status: TickStatusDisplay.ALL},
   });
+
+  const [showDetailsForTick, setShowDetailsForTick] = useState<HistoryTickFragment | null>(null);
+  const [showLogsForTick, setShowLogsForTick] = useState<HistoryTickFragment | null>(null);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = React.useMemo(
@@ -119,7 +124,7 @@ export const TicksTable = ({
       instigationSelector,
       statuses,
     },
-    query: JOB_TICK_HISTORY_QUERY,
+    query: TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
 
@@ -161,7 +166,6 @@ export const TicksTable = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticks, queryResult.loading, paginationProps.hasPrevCursor]);
 
-  const [logTick, setLogTick] = React.useState<InstigationTick>();
   const {data} = queryResult;
 
   if (!data) {
@@ -192,14 +196,7 @@ export const TicksTable = ({
 
   return (
     <>
-      {logTick ? (
-        <TickLogDialog
-          tick={logTick}
-          instigationSelector={instigationSelector}
-          onClose={() => setLogTick(undefined)}
-        />
-      ) : null}
-      <Box padding={{vertical: 8, horizontal: 24}}>
+      <Box padding={{vertical: 12, horizontal: 24}}>
         <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           {tabs}
           <Box flex={{direction: 'row', gap: 16}}>
@@ -218,6 +215,7 @@ export const TicksTable = ({
                 <th style={{width: 120}}>Cursor</th>
               ) : null}
               <th style={{width: 180}}>Result</th>
+              <th style={{width: 80}}>Logs</th>
             </tr>
           </thead>
           <tbody>
@@ -225,8 +223,11 @@ export const TicksTable = ({
               <TickRow
                 key={tick.id}
                 tick={tick}
+                tickResultType={tickResultType}
                 instigationSelector={instigationSelector}
                 index={index}
+                onShowDetails={setShowDetailsForTick}
+                onShowLogs={setShowLogsForTick}
               />
             ))}
           </tbody>
@@ -241,6 +242,20 @@ export const TicksTable = ({
           <CursorHistoryControls {...paginationProps} />
         </div>
       ) : null}
+      <TickDetailsDialog
+        isOpen={!!showDetailsForTick}
+        tickId={showDetailsForTick?.tickId}
+        tickResultType={tickResultType}
+        instigationSelector={instigationSelector}
+        onClose={() => setShowDetailsForTick(null)}
+      />
+      <TickLogDialog
+        isOpen={!!showLogsForTick}
+        tickId={showLogsForTick?.tickId ?? null}
+        timestamp={showLogsForTick?.timestamp}
+        instigationSelector={instigationSelector}
+        onClose={() => setShowLogsForTick(null)}
+      />
     </>
   );
 };
@@ -294,6 +309,7 @@ const StatusFilter = ({
 export const TickHistoryTimeline = ({
   name,
   repoAddress,
+  tickResultType,
   onHighlightRunIds,
   beforeTimestamp,
   afterTimestamp,
@@ -305,28 +321,26 @@ export const TickHistoryTimeline = ({
   beforeTimestamp?: number;
   afterTimestamp?: number;
   statuses?: InstigationTickStatus[];
+  tickResultType: TickResultType;
 }) => {
   const [selectedTickId, setSelectedTickId] = useQueryPersistedState<string | undefined>({
     encode: (tickId) => ({tickId}),
-    decode: (qs) => qs['tickId'] ?? undefined,
+    decode: (qs) => (typeof qs.tickId === 'string' ? qs.tickId : undefined),
   });
 
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(
-    JOB_TICK_HISTORY_QUERY,
-    {
-      variables: {
-        instigationSelector,
-        beforeTimestamp,
-        afterTimestamp,
-        statuses,
-        limit: beforeTimestamp ? undefined : 15,
-      },
-      notifyOnNetworkStatusChange: true,
+  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(TICK_HISTORY_QUERY, {
+    variables: {
+      instigationSelector,
+      beforeTimestamp,
+      afterTimestamp,
+      statuses,
+      limit: beforeTimestamp ? undefined : 15,
     },
-  );
+    notifyOnNetworkStatusChange: true,
+  });
 
   useQueryRefreshAtInterval(
     queryResult,
@@ -368,7 +382,9 @@ export const TickHistoryTimeline = ({
       pausePolling(false);
     }
     if (tick?.runIds) {
-      onHighlightRunIds && onHighlightRunIds(tick.runIds);
+      if (onHighlightRunIds) {
+        onHighlightRunIds(tick.runIds);
+      }
       pausePolling(true);
     }
   };
@@ -378,6 +394,7 @@ export const TickHistoryTimeline = ({
       <TickDetailsDialog
         isOpen={!!selectedTickId}
         tickId={selectedTickId}
+        tickResultType={tickResultType}
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />
@@ -387,6 +404,7 @@ export const TickHistoryTimeline = ({
       <Box border="top">
         <LiveTickTimeline
           ticks={ticks}
+          tickResultType={tickResultType}
           onHoverTick={onTickHover}
           onSelectTick={onTickClick}
           exactRange={
@@ -400,16 +418,18 @@ export const TickHistoryTimeline = ({
 
 function TickRow({
   tick,
-  instigationSelector,
+  tickResultType,
   index,
+  onShowDetails,
+  onShowLogs,
 }: {
   tick: HistoryTickFragment;
+  tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
   index: number;
+  onShowDetails: (tick: HistoryTickFragment) => void;
+  onShowLogs: (tick: HistoryTickFragment) => void;
 }) {
-  const copyToClipboard = useCopyToClipboard();
-  const [showResults, setShowResults] = React.useState(false);
-
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
     const requests = tick.dynamicPartitionsRequestResults;
     const added = countPartitionsAddedOrDeleted(
@@ -434,7 +454,11 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag tick={tick} isStuckStarted={isStuckStarted} />
+        <TickStatusTag
+          tick={tick}
+          tickResultType={tickResultType}
+          isStuckStarted={isStuckStarted}
+        />
       </td>
       <td>
         {isStuckStarted ? (
@@ -447,23 +471,20 @@ function TickRow({
         )}
       </td>
       {tick.instigationType === InstigationType.SENSOR ? (
-        <td style={{width: 120}}>
+        <td>
           {tick.cursor ? (
             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <div style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
-                {truncate(tick.cursor || '')}
-              </div>
-              <CopyButton
-                onClick={async () => {
-                  copyToClipboard(tick.cursor || '');
-                  await showSharedToaster({
-                    message: <div>Copied value</div>,
-                    intent: 'success',
-                  });
+              <div
+                style={{
+                  fontFamily: FontFamily.monospace,
+                  fontSize: '14px',
+                  maxWidth: '400px',
+                  overflow: 'hidden',
                 }}
               >
-                <Icon name="assignment" />
-              </CopyButton>
+                <MiddleTruncate text={humanizeSensorCursor(tick.cursor) || ''} />
+              </div>
+              <CopyIconButton value={tick.cursor || ''} />
             </Box>
           ) : (
             <>&mdash;</>
@@ -472,24 +493,30 @@ function TickRow({
       ) : null}
       <td>
         <Box flex={{direction: 'column', gap: 6}}>
-          <Box flex={{alignItems: 'center', gap: 8}}>
-            <ButtonLink
-              onClick={() => {
-                setShowResults(true);
-              }}
-            >
-              {tick.runIds.length === 1
-                ? '1 run requested'
-                : `${tick.runIds.length} runs requested`}
-            </ButtonLink>
-            {tick.runs.length === 1
-              ? tick.runs.map((run) => (
-                  <React.Fragment key={run.id}>
-                    <RunStatusLink run={run} />
-                  </React.Fragment>
-                ))
-              : null}
-          </Box>
+          {tickResultType === 'runs' ? (
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <ButtonLink onClick={() => onShowDetails(tick)}>
+                {tick.runIds.length === 1
+                  ? '1 run requested'
+                  : `${tick.runIds.length} runs requested`}
+              </ButtonLink>
+              {tick.runs.length === 1
+                ? tick.runs.map((run) => (
+                    <React.Fragment key={run.id}>
+                      <RunStatusLink run={run} />
+                    </React.Fragment>
+                  ))
+                : null}
+            </Box>
+          ) : (
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <ButtonLink onClick={() => onShowDetails(tick)}>
+                {tick.requestedAssetMaterializationCount === 1
+                  ? '1 materialization requested'
+                  : `${tick.requestedAssetMaterializationCount} materializations requested`}
+              </ButtonLink>
+            </Box>
+          )}
           {addedPartitions || deletedPartitions ? (
             <Caption>
               (
@@ -507,21 +534,16 @@ function TickRow({
               )
             </Caption>
           ) : null}
-          <TickDetailsDialog
-            isOpen={showResults}
-            tickId={tick.tickId}
-            instigationSelector={instigationSelector}
-            onClose={() => {
-              setShowResults(false);
-            }}
-          />
         </Box>
+      </td>
+      <td>
+        <Button onClick={() => onShowLogs(tick)}>View logs</Button>
       </td>
     </tr>
   );
 }
 
-const JOB_TICK_HISTORY_QUERY = gql`
+const TICK_HISTORY_QUERY = gql`
   query TickHistoryQuery(
     $instigationSelector: InstigationSelector!
     $dayRange: Int
@@ -555,28 +577,6 @@ const JOB_TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
-`;
-
-const CopyButton = styled.button`
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 8px;
-  margin: -6px;
-  outline: none;
-
-  ${IconWrapper} {
-    background-color: ${Colors.accentGray()};
-    transition: background-color 100ms;
-  }
-
-  :hover ${IconWrapper} {
-    background-color: ${Colors.accentGrayHover()};
-  }
-
-  :focus ${IconWrapper} {
-    background-color: ${Colors.linkDefault()};
-  }
 `;
 
 const TableWrapper = styled(Table)`

@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import kubernetes
 from dagster import _check as check
@@ -17,6 +18,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
+from dagster_k8s.utils import get_deployment_id_label
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -230,9 +232,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             "dagster/job": job_origin.job_name,
             "dagster/run-id": run.run_id,
         }
-        if run.external_job_origin:
+        deployment_name_env_var = get_deployment_id_label(user_defined_k8s_config)
+        if deployment_name_env_var:
+            labels["dagster/deployment-name"] = deployment_name_env_var
+        if run.remote_job_origin:
             labels["dagster/code-location"] = (
-                run.external_job_origin.repository_origin.code_location_origin.location_name
+                run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
 
         job = construct_dagster_k8s_job(
@@ -313,7 +318,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._launch_k8s_job_with_args(job_name, args, run)
 
-    def terminate(self, run_id):
+    def _get_resume_attempt_number(self, run: DagsterRun) -> Optional[int]:
+        if not self.supports_run_worker_crash_recovery:
+            return None
+        return self._instance.count_resume_run_attempts(run.run_id)
+
+    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
 
@@ -325,7 +335,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         container_context = self.get_container_context_for_run(run)
 
         job_name = get_job_name_from_run_id(
-            run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+            run_id, resume_attempt_number=self._get_resume_attempt_number(run)
         )
 
         try:
@@ -367,12 +377,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self, run: DagsterRun, include_container_logs: Optional[bool] = True
     ) -> Optional[str]:
         container_context = self.get_container_context_for_run(run)
-        if self.supports_run_worker_crash_recovery:
-            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
-        else:
-            resume_attempt_number = None
 
-        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
+        )
         namespace = container_context.namespace
         pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
         full_msg = ""
@@ -397,7 +405,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
-            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)  # pyright: ignore[reportArgumentType]
             full_msg = (
                 full_msg
                 + "\n\n"
@@ -411,15 +419,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
 
-        if self.supports_run_worker_crash_recovery:
-            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
-        else:
-            resume_attempt_number = None
-
-        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
+        )
         try:
             status = self._api_client.get_job_status(
-                namespace=container_context.namespace,
+                namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
                 job_name=job_name,
             )
         except Exception:
@@ -444,8 +449,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
             )
 
-        if status.failed:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        if status.failed and not status.active:
+            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         return CheckRunHealthResult(WorkerStatus.RUNNING)

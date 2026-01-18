@@ -1,15 +1,8 @@
 import datetime
-from typing import Any, Dict
+from typing import Any
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterTypeCheckDidNotPass,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    asset,
-    materialize,
-)
-from dagster._core.instance_for_test import instance_for_test
 from pytest import fixture
 
 
@@ -20,35 +13,35 @@ def start():
 
 @fixture
 def hourly(start):
-    return HourlyPartitionsDefinition(start_date=f"{start:%Y-%m-%d-%H:%M}")
+    return dg.HourlyPartitionsDefinition(start_date=f"{start:%Y-%m-%d-%H:%M}")
 
 
 @fixture
 def daily(start):
-    return DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
+    return dg.DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
 
 
 def test_partitioned_io_manager(hourly, daily):
-    @asset(partitions_def=hourly)
+    @dg.asset(partitions_def=hourly)
     def hourly_asset():
         return 42
 
-    @asset(partitions_def=daily)
-    def daily_asset(hourly_asset: Dict[str, Any]):
+    @dg.asset(partitions_def=daily)
+    def daily_asset(hourly_asset: dict[str, Any]):
         return hourly_asset
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         # Build hourly materializations
         hourly_keys = [f"2022-01-01-{hour:02d}:00" for hour in range(0, 24)]
         for key in hourly_keys:
-            materialize(
+            dg.materialize(
                 [hourly_asset],
                 partition_key=key,
                 instance=instance,
             )
 
         # Materialize daily asset that depends on hourlies
-        result = materialize(
+        result = dg.materialize(
             [*hourly_asset.to_source_assets(), daily_asset],
             partition_key="2022-01-01",
             instance=instance,
@@ -58,15 +51,15 @@ def test_partitioned_io_manager(hourly, daily):
 
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(daily):
-    @asset(partitions_def=daily)
+    @dg.asset(partitions_def=daily)
     def upstream_asset():
         return 42
 
-    @asset(partitions_def=daily)
+    @dg.asset(partitions_def=daily)
     def daily_asset(upstream_asset: int):
         return upstream_asset
 
-    result = materialize(
+    result = dg.materialize(
         [upstream_asset, daily_asset],
         partition_key="2022-01-01",
     )
@@ -74,13 +67,13 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(daily):
 
 
 def test_partitioned_io_manager_single_partition_dependency_errors_with_wrong_typing(daily):
-    @asset(partitions_def=daily)
+    @dg.asset(partitions_def=daily)
     def upstream_asset():
         return 42
 
-    @asset(partitions_def=daily)
-    def daily_asset(upstream_asset: Dict[str, Any]):
+    @dg.asset(partitions_def=daily)
+    def daily_asset(upstream_asset: dict[str, Any]):
         return upstream_asset
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        materialize([upstream_asset, daily_asset], partition_key="2022-01-01")
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
+        dg.materialize([upstream_asset, daily_asset], partition_key="2022-01-01")

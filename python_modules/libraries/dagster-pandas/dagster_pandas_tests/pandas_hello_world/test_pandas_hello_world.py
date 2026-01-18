@@ -1,6 +1,7 @@
 import os
 
 from dagster._cli.job import do_execute_command
+from dagster._cli.workspace.cli_target import get_run_config_from_file_list
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
@@ -50,12 +51,14 @@ def test_cli_execute():
                     "dagster_pandas.examples", "pandas_hello_world_test"
                 ),
                 instance=instance,
-                config=[
-                    file_relative_path(
-                        __file__,
-                        "../../dagster_pandas/examples/pandas_hello_world/*.yaml",
-                    )
-                ],
+                run_config=get_run_config_from_file_list(
+                    [
+                        file_relative_path(
+                            __file__,
+                            "../../dagster_pandas/examples/pandas_hello_world/*.yaml",
+                        )
+                    ]
+                ),
             )
     finally:
         # restore cwd
@@ -76,12 +79,14 @@ def test_cli_execute_failure():
                     "pandas_hello_world_fails_test",
                 ),
                 instance=instance,
-                config=[
-                    file_relative_path(
-                        __file__,
-                        "../../dagster_pandas/examples/pandas_hello_world/*.yaml",
-                    )
-                ],
+                run_config=get_run_config_from_file_list(
+                    [
+                        file_relative_path(
+                            __file__,
+                            "../../dagster_pandas/examples/pandas_hello_world/*.yaml",
+                        )
+                    ]
+                ),
             )
         failures = [event for event in result.all_node_events if event.is_failure]
     finally:
@@ -89,4 +94,4 @@ def test_cli_execute_failure():
         os.chdir(cwd)
 
     assert len(failures) == 1
-    assert "I am a programmer and I make error" in failures[0].step_failure_data.error.cause.message
+    assert "I am a programmer and I make error" in failures[0].step_failure_data.error.cause.message  # pyright: ignore[reportOptionalMemberAccess]

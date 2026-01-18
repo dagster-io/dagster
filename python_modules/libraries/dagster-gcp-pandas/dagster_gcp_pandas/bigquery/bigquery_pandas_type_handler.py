@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import Optional
 
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -27,12 +28,12 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                     return [BigQueryPandasTypeHandler()]
 
             @asset(
-                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
+                key_prefix=["my_dataset"],  # my_dataset will be used as the dataset in BigQuery
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": MyBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
@@ -114,16 +115,16 @@ Examples:
         from dagster import Definitions
 
         @asset(
-            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+            key_prefix=["my_dataset"],  # will be used as the dataset in BigQuery
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                 "io_manager": bigquery_pandas_io_manager.configured({
-                    "project" : {"env": "GCP_PROJECT"}
+                    "project": {"env": "GCP_PROJECT"}
                 })
             }
         )
@@ -133,11 +134,11 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                     "io_manager": bigquery_pandas_io_manager.configured({
-                        "project" : {"env": "GCP_PROJECT"}
+                        "project": {"env": "GCP_PROJECT"},
                         "dataset": "my_dataset"
                     })
                 }
@@ -215,7 +216,7 @@ class BigQueryPandasIOManager(BigQueryIOManager):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"))
@@ -227,10 +228,10 @@ class BigQueryPandasIOManager(BigQueryIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
-                        "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT", dataset="my_dataset")
+                        "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"), dataset="my_dataset")
                     }
             )
 
@@ -296,5 +297,5 @@ class BigQueryPandasIOManager(BigQueryIOManager):
         return [BigQueryPandasTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pd.DataFrame

@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useMemo} from 'react';
 
@@ -12,7 +11,7 @@ import {TimelineRow} from '../RunTimelineTypes';
 export default {
   title: 'RunTimeline',
   component: RunTimeline,
-} as Meta;
+};
 
 const makeRepoAddress = () =>
   buildRepoAddress(faker.random.words(1).toLowerCase(), faker.random.words(1).toLowerCase());
@@ -54,6 +53,7 @@ export const RowWithOverlappingRuns = () => {
         type: 'job',
         path: `/${rowKey}`,
         repoAddress,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         runs: [{...first!}, {...first!}, {...second!}, {...second!}, {...second!}, third!],
       },
     ];
@@ -83,6 +83,7 @@ export const OverlapWithRunning = () => {
             startTime: twoHoursAgo + 20 * 60 * 1000,
             endTime: twoHoursAgo + 95 * 60 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -90,6 +91,7 @@ export const OverlapWithRunning = () => {
             startTime: twoHoursAgo + 90 * 60 * 1000,
             endTime: twoHoursAgo + 110 * 60 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -97,6 +99,7 @@ export const OverlapWithRunning = () => {
             startTime: twoHoursAgo + 60 * 60 * 1000,
             endTime: now,
             automation: null,
+            externalJobSource: null,
           },
         ],
       },
@@ -155,6 +158,7 @@ export const VeryLongRunning = () => {
             startTime: twoDaysAgo,
             endTime: sixHoursAgo,
             automation: null,
+            externalJobSource: null,
           },
         ],
       },
@@ -171,6 +175,7 @@ export const VeryLongRunning = () => {
             startTime: twoDaysAgo,
             endTime: Date.now(),
             automation: null,
+            externalJobSource: null,
           },
         ],
       },
@@ -201,6 +206,7 @@ export const MultipleStatusesBatched = () => {
             startTime: twoHoursAgo + 20 * 60 * 1000,
             endTime: twoHoursAgo + 95 * 60 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -208,6 +214,7 @@ export const MultipleStatusesBatched = () => {
             startTime: twoHoursAgo + 90 * 60 * 1000,
             endTime: twoHoursAgo + 110 * 60 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -215,6 +222,7 @@ export const MultipleStatusesBatched = () => {
             startTime: twoHoursAgo + 60 * 60 * 1000,
             endTime: now,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -222,6 +230,7 @@ export const MultipleStatusesBatched = () => {
             startTime: twoHoursAgo + 60 * 60 * 1000,
             endTime: now,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -229,6 +238,7 @@ export const MultipleStatusesBatched = () => {
             startTime: twoHoursAgo + 60 * 60 * 1000,
             endTime: now,
             automation: null,
+            externalJobSource: null,
           },
         ],
       },
@@ -259,6 +269,7 @@ export const BatchThresholdTesting = () => {
             startTime: now,
             endTime: now + 5 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -266,6 +277,7 @@ export const BatchThresholdTesting = () => {
             startTime: now + 60 * 2 * 1000,
             endTime: now + 60 * 2 * 1000 + 5 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -273,6 +285,7 @@ export const BatchThresholdTesting = () => {
             startTime: now + 60 * 4 * 1000,
             endTime: now + 60 * 4 * 1000 + 5 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -280,6 +293,7 @@ export const BatchThresholdTesting = () => {
             startTime: now + 60 * 6 * 1000,
             endTime: now + 60 * 6 * 1000 + 5 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -287,6 +301,7 @@ export const BatchThresholdTesting = () => {
             startTime: now + 60 * 8 * 1000,
             endTime: now + 60 * 8 * 1000 + 5 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -294,6 +309,7 @@ export const BatchThresholdTesting = () => {
             startTime: threeHoursAgo + 24 * 60 * 1000,
             endTime: threeHoursAgo + 26 * 60 * 1000,
             automation: null,
+            externalJobSource: null,
           },
           {
             id: faker.datatype.uuid(),
@@ -301,6 +317,7 @@ export const BatchThresholdTesting = () => {
             startTime: threeHoursAgo + 28 * 60 * 1000,
             endTime: threeHoursAgo + 30 * 60 * 1000,
             automation: null,
+            externalJobSource: null,
           },
         ],
       },

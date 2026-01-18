@@ -1,9 +1,8 @@
 import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
-import {getMainDefinition} from '@apollo/client/utilities';
+import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useContext} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
@@ -12,7 +11,6 @@ import {v4 as uuidv4} from 'uuid';
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
-import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 import {GlobalStyleProvider} from './GlobalStyleProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
@@ -21,7 +19,6 @@ import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
-import {TimeProvider} from './time/TimeContext';
 import {
   ApolloClient,
   ApolloLink,
@@ -30,6 +27,7 @@ import {
   InMemoryCache,
   split,
 } from '../apollo-client';
+import {TimeProvider} from './time/TimeContext';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
@@ -55,6 +53,8 @@ const idempotencyLink = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
+const httpStatusCodesToRetry = new Set([502, 503, 504, 429, 409]);
+
 export interface AppProviderProps {
   children: React.ReactNode;
   appCache: InMemoryCache;
@@ -65,6 +65,7 @@ export interface AppProviderProps {
     origin: string;
     telemetryEnabled?: boolean;
     statusPolling: Set<DeploymentStatusType>;
+    idempotentMutations?: boolean;
   };
 
   // Used for localStorage/IndexedDB caching to be isolated between instances/deployments
@@ -80,6 +81,7 @@ export const AppProvider = (props: AppProviderProps) => {
     origin,
     telemetryEnabled = false,
     statusPolling,
+    idempotentMutations = true,
   } = config;
 
   // todo dish: Change `deleteExisting` to true soon. (Current: 1.4.5)
@@ -109,16 +111,25 @@ export const AppProvider = (props: AppProviderProps) => {
   const retryLink = React.useMemo(() => {
     return new RetryLink({
       attempts: {
-        max: 2,
-        retryIf: (error, _operation) => {
-          return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
+        max: 3,
+        retryIf: async (error, operation) => {
+          if (!idempotentMutations && isMutationOperation(operation.query)) {
+            return false;
+          }
+          if (error && error.statusCode && httpStatusCodesToRetry.has(error.statusCode)) {
+            return true;
+          }
+          return false;
         },
       },
-      delay: {
-        initial: 300,
+
+      delay: (_retryCount, _operation, error) => {
+        // Retry-after header is in seconds, concert to ms by multiplying by 1000.
+        const wait = parseFloat(error?.response?.headers?.get?.('retry-after') ?? '0.3') * 1000;
+        return wait;
       },
     });
-  }, []);
+  }, [idempotentMutations]);
 
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
@@ -169,23 +180,20 @@ export const AppProvider = (props: AppProviderProps) => {
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
-        <GlobalStyleProvider />
         <ApolloProvider client={apolloClient}>
-          <AssetLiveDataProvider>
-            <PermissionsProvider>
-              <BrowserRouter basename={basePath || ''}>
-                <CompatRouter>
-                  <TimeProvider>
-                    <CodeLinkProtocolProvider>
-                      <WorkspaceProvider>
+          <PermissionsProvider>
+            <BrowserRouter basename={basePath || ''}>
+              <GlobalStyleProvider />
+              <CompatRouter>
+                <TimeProvider>
+                  <CodeLinkProtocolProvider>
+                    <WorkspaceProvider>
+                      <AssetLiveDataProvider>
                         <DeploymentStatusProvider include={statusPolling}>
                           <CustomConfirmationProvider>
                             <AnalyticsContext.Provider value={analytics}>
                               <InstancePageContext.Provider value={instancePageValue}>
-                                <LayoutProvider>
-                                  <DagsterPlusLaunchPromotion />
-                                  {props.children}
-                                </LayoutProvider>
+                                <LayoutProvider>{props.children}</LayoutProvider>
                               </InstancePageContext.Provider>
                             </AnalyticsContext.Provider>
                           </CustomConfirmationProvider>
@@ -193,20 +201,15 @@ export const AppProvider = (props: AppProviderProps) => {
                           <CustomAlertProvider />
                           <AssetRunLogObserver />
                         </DeploymentStatusProvider>
-                      </WorkspaceProvider>
-                    </CodeLinkProtocolProvider>
-                  </TimeProvider>
-                </CompatRouter>
-              </BrowserRouter>
-            </PermissionsProvider>
-          </AssetLiveDataProvider>
+                      </AssetLiveDataProvider>
+                    </WorkspaceProvider>
+                  </CodeLinkProtocolProvider>
+                </TimeProvider>
+              </CompatRouter>
+            </BrowserRouter>
+          </PermissionsProvider>
         </ApolloProvider>
       </WebSocketProvider>
     </AppContext.Provider>
   );
-};
-
-export const usePrefixedCacheKey = (key: string) => {
-  const {localCacheIdPrefix} = useContext(AppContext);
-  return `${localCacheIdPrefix}/${key}`;
 };

@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include dagster_dg_cli/py.typed
+recursive-include dagster_dg_cli/templates *
+recursive-include dagster_dg_cli/docs *
+recursive-exclude dagster_dg_cli/docs/.next *
+recursive-exclude dagster_dg_cli/docs/node_modules *
+include dagster_dg_cli/cli/scaffold/scaffold_prompt.md
+recursive-include dagster_dg_cli/cli/scaffold/branch/prompts *.md
+include dagster_dg_cli/cli/scaffold/branch/CLAUDE.md
+include dagster_dg_cli/cli/scaffold/branch/dg_scaffold_pr_sequencing_plan.md
+include dagster_dg_cli/cli/scaffold/branch/pr1_diagnostics_implementation_plan.md
+recursive-exclude dagster_dg_cli/cli/plus *.md
+recursive-exclude dagster_dg_cli/dagster_plus_api *.md
+exclude dagster_dg_cli/cli/plus/schema.graphql

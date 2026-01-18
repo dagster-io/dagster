@@ -1,66 +1,51 @@
 import os
+import re
 import shutil
 import uuid
 from argparse import ArgumentParser, Namespace
-from contextlib import suppress
+from collections.abc import Sequence
+from functools import cache, cached_property
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from subprocess import check_output
+from typing import Any, Optional, Union, cast
 
 import yaml
 from dagster import (
-    AssetCheckKey,
     AssetExecutionContext,
-    AssetsDefinition,
     ConfigurableResource,
     OpExecutionContext,
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
-from dbt.adapters.base.impl import BaseAdapter
-from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
-from dbt.config import RuntimeConfig
-from dbt.config.runtime import load_profile, load_project
-from dbt.config.utils import parse_cli_vars
-from dbt.flags import get_flags, set_from_args
-from dbt.version import __version__ as dbt_version
 from packaging import version
-from pydantic import Field, validator
-from typing_extensions import Final
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
-    DAGSTER_DBT_SELECT_METADATA_KEY,
-    dagster_name_fn,
-    get_manifest_and_translator_from_dbt_assets,
+    DBT_INDIRECT_SELECTION_ENV,
+    get_updated_cli_invocation_params_for_context,
 )
+from dagster_dbt.compat import DBT_PYTHON_VERSION, BaseAdapter
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
-from dagster_dbt.utils import (
-    ASSET_RESOURCE_TYPES,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-)
-
-IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
-if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
-    from dbt.events.functions import cleanup_event_logger  # type: ignore
-else:
-    from dbt_common.events.event_manager_client import cleanup_event_logger
 
 logger = get_dagster_logger()
 
 
-DBT_EXECUTABLE = "dbt"
+@cache
+def _get_dbt_executable() -> str:
+    if shutil.which("dbtf"):
+        return "dbtf"
+    else:
+        return "dbt"
+
+
+DBT_EXECUTABLE = _get_dbt_executable()
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
-
-DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
-DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 
 
 DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
@@ -69,7 +54,7 @@ DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
-        List[Dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
+        "list[dict[str, Any]]", yaml.safe_load(packages_file.read_text()).get("packages", [])
     )
     return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
 
@@ -77,7 +62,7 @@ def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
 class DbtCliResource(ConfigurableResource):
     """A resource used to execute dbt CLI commands.
 
-    Attributes:
+    Args:
         project_dir (str): The path to the dbt project directory. This directory should contain a
             `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more
             information.
@@ -160,7 +145,7 @@ class DbtCliResource(ConfigurableResource):
             " information."
         ),
     )
-    global_config_flags: List[str] = Field(
+    global_config_flags: list[str] = Field(
         default=[],
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
@@ -194,21 +179,22 @@ class DbtCliResource(ConfigurableResource):
     )
     dbt_executable: str = Field(
         default=DBT_EXECUTABLE,
-        description="The path to the dbt executable.",
+        description="The path to the dbt executable. Defaults to `dbtf` if available, otherwise `dbt`.",
     )
     state_path: Optional[str] = Field(
+        default=None,
         description=(
             "The path, relative to the project directory, to a directory of dbt artifacts to be"
             " used with --state / --defer-state."
             " This can be used with methods such as get_defer_args to allow for a @dbt_assets to"
             " use defer in the appropriate environments."
-        )
+        ),
     )
 
     def __init__(
         self,
         project_dir: Union[str, Path, DbtProject],
-        global_config_flags: Optional[List[str]] = None,
+        global_config_flags: Optional[list[str]] = None,
         profiles_dir: Optional[Union[str, Path]] = None,
         profile: Optional[str] = None,
         target: Optional[str] = None,
@@ -220,10 +206,21 @@ class DbtCliResource(ConfigurableResource):
             if not state_path and project_dir.state_path:
                 state_path = project_dir.state_path
 
+            if not profiles_dir and project_dir.profiles_dir:
+                profiles_dir = project_dir.profiles_dir
+
+            if not profile and project_dir.profile:
+                profile = project_dir.profile
+
             if not target and project_dir.target:
                 target = project_dir.target
 
             project_dir = project_dir.project_dir
+
+        # DbtProject handles making state_path relative to project_dir
+        # when directly instantiated we have to join it
+        elif state_path and not Path(state_path).is_absolute():
+            state_path = os.path.join(project_dir, state_path)
 
         project_dir = os.fspath(project_dir)
         state_path = state_path and os.fspath(state_path)
@@ -255,7 +252,7 @@ class DbtCliResource(ConfigurableResource):
         if not path.joinpath(file_name).exists():
             raise ValueError(error_message)
 
-    @validator("project_dir", "profiles_dir", "dbt_executable", pre=True)
+    @field_validator("project_dir", "profiles_dir", "dbt_executable", mode="before")
     def convert_path_to_str(cls, v: Any) -> Any:
         """Validate that the path is converted to a string."""
         if isinstance(v, Path):
@@ -270,7 +267,7 @@ class DbtCliResource(ConfigurableResource):
 
         return v
 
-    @validator("project_dir")
+    @field_validator("project_dir")
     def validate_project_dir(cls, project_dir: str) -> str:
         resolved_project_dir = cls._validate_absolute_path_exists(project_dir)
 
@@ -285,7 +282,7 @@ class DbtCliResource(ConfigurableResource):
 
         return os.fspath(resolved_project_dir)
 
-    @validator("profiles_dir")
+    @field_validator("profiles_dir")
     def validate_profiles_dir(cls, profiles_dir: Optional[str]) -> Optional[str]:
         if profiles_dir is None:
             return None
@@ -303,7 +300,7 @@ class DbtCliResource(ConfigurableResource):
 
         return os.fspath(resolved_profiles_dir)
 
-    @validator("dbt_executable")
+    @field_validator("dbt_executable")
     def validate_dbt_executable(cls, dbt_executable: str) -> str:
         resolved_dbt_executable = shutil.which(dbt_executable)
         if not resolved_dbt_executable:
@@ -314,30 +311,35 @@ class DbtCliResource(ConfigurableResource):
 
         return dbt_executable
 
-    @compat_model_validator(mode="before")
-    def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    def validate_dbt_version(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that the dbt version is supported."""
-        if version.parse(dbt_version) < version.parse("1.7.0"):
+        if DBT_PYTHON_VERSION is None:
+            # dbt-core is not installed, so assume fusion is installed
+            return values
+
+        if DBT_PYTHON_VERSION < version.parse("1.7.0"):
             raise ValueError(
-                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.7.0`. Currently,"
-                f" you are using `dbt-core=={dbt_version}`. Please install a compatible dbt-core"
-                " version."
+                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.7.0` or dbt Fusion. Currently,"
+                f" you are using `dbt-core=={DBT_PYTHON_VERSION.base_version}`. Please install a compatible dbt engine."
             )
 
         return values
 
-    @validator("state_path")
-    def validate_state_path(cls, state_path: Optional[str]) -> Optional[str]:
+    @field_validator("state_path")
+    def validate_state_path(cls, state_path: Optional[str], info: ValidationInfo) -> Optional[str]:
         if state_path is None:
             return None
 
         return os.fspath(Path(state_path).absolute().resolve())
 
-    def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
+    def _get_unique_target_path(
+        self, *, context: Optional[Union[OpExecutionContext, AssetExecutionContext]]
+    ) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
         Args:
-            context (Optional[OpExecutionContext]): The execution context.
+            context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context.
 
         Returns:
             str: A unique target path for the dbt CLI invocation.
@@ -345,14 +347,28 @@ class DbtCliResource(ConfigurableResource):
         unique_id = str(uuid.uuid4())[:7]
         path = unique_id
         if context:
-            path = f"{context.op.name}-{context.run.run_id[:7]}-{unique_id}"
+            path = f"{context.op_execution_context.op.name}-{context.run.run_id[:7]}-{unique_id}"
 
         current_target_path = _get_dbt_target_path()
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self, cli_vars) -> BaseAdapter:
-        if not IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+    def _initialize_dbt_core_adapter(self, args: Sequence[str]) -> BaseAdapter:
+        from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
+        from dbt.config import RuntimeConfig
+        from dbt.config.runtime import load_profile, load_project
+        from dbt.config.utils import parse_cli_vars
+        from dbt.flags import get_flags, set_from_args
+
+        parser = ArgumentParser(description="Parse cli vars from dbt command")
+        parser.add_argument("--vars")
+        var_args, _ = parser.parse_known_args(args)
+        if not var_args.vars:
+            cli_vars = {}
+        else:
+            cli_vars = parse_cli_vars(var_args.vars)
+
+        if DBT_PYTHON_VERSION >= version.parse("1.8.0"):
             from dbt_common.context import set_invocation_context
 
             set_invocation_context(os.environ.copy())
@@ -391,33 +407,51 @@ class DbtCliResource(ConfigurableResource):
                 with pushd(self.project_dir):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
 
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
+            from dbt.events.functions import cleanup_event_logger  # type: ignore
+        else:
+            from dbt_common.events.event_manager_client import cleanup_event_logger
+
         cleanup_event_logger()
 
         # reset adapters list in case we have instantiated an adapter before in this process
         reset_adapters()
-        if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
             register_adapter(config)  # type: ignore
         else:
-            from dbt.adapters.protocol import MacroContextGeneratorCallable
+            from dbt.adapters.protocol import MacroContextGeneratorCallable  # noqa: TC002
             from dbt.context.providers import generate_runtime_macro_context
             from dbt.mp_context import get_mp_context
             from dbt.parser.manifest import ManifestLoader
 
             register_adapter(config, get_mp_context())
-            adapter = cast(BaseAdapter, get_adapter(config))
+            adapter = get_adapter(config)
             manifest = ManifestLoader.load_macros(
                 config,
-                adapter.connections.set_query_header,  # type: ignore
+                adapter.connections.set_query_header,
                 base_macros_only=True,
             )
             adapter.set_macro_resolver(manifest)
             adapter.set_macro_context_generator(
-                cast(MacroContextGeneratorCallable, generate_runtime_macro_context)
+                cast("MacroContextGeneratorCallable", generate_runtime_macro_context)
             )
 
-        adapter = cast(BaseAdapter, get_adapter(config))
+        adapter = cast("BaseAdapter", get_adapter(config))
 
         return adapter
+
+    @cached_property
+    def _cli_version(self) -> version.Version:
+        """Gets the version of the currently-installed dbt executable.
+
+        This may differ from the version of the dbt-core package, most obviously if dbt-core is not
+        installed due to the fusion engine being used.
+        """
+        raw_output = check_output([self.dbt_executable, "--version"]).decode("utf-8").strip()
+        match = re.search(r"(\d+\.\d+\.\d+)", raw_output)
+        if not match:
+            raise ValueError(f"Could not parse dbt version from output: {raw_output}")
+        return version.parse(match.group(1))
 
     @public
     def get_defer_args(self) -> Sequence[str]:
@@ -583,16 +617,22 @@ class DbtCliResource(ConfigurableResource):
                     yield from dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).stream()
         """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
+        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+        manifest = validate_manifest(manifest) if manifest else {}
 
-        assets_def: Optional[AssetsDefinition] = None
-        with suppress(DagsterInvalidPropertyError):
-            assets_def = context.assets_def if context else None
-
-        context = (
-            context.op_execution_context if isinstance(context, AssetExecutionContext) else context
+        updated_params = get_updated_cli_invocation_params_for_context(
+            context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
         )
-
+        manifest = updated_params.manifest
+        dagster_dbt_translator = updated_params.dagster_dbt_translator
+        selection_args = updated_params.selection_args
+        indirect_selection = updated_params.indirect_selection
         target_path = target_path or self._get_unique_target_path(context=context)
+        project_dir = Path(
+            updated_params.dbt_project.project_dir
+            if updated_params.dbt_project
+            else self.project_dir
+        )
         env = {
             # Allow IO streaming when running in Windows.
             # Also, allow it to be overriden by the current environment.
@@ -623,35 +663,17 @@ class DbtCliResource(ConfigurableResource):
             **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
             # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
             # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
-            **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
+            "DBT_PROJECT_DIR": str(project_dir),
         }
 
-        selection_args: List[str] = []
-        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
-        if context and assets_def is not None:
-            manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
-                [assets_def]
-            )
-
-            selection_args, indirect_selection = _get_subset_selection_for_context(
-                context=context,
-                manifest=manifest,
-                select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
-                exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
-                dagster_dbt_translator=dagster_dbt_translator,
-                current_dbt_indirect_selection_env=env.get(DBT_INDIRECT_SELECTION_ENV, None),
-            )
-
-            # set dbt indirect selection if needed to execute specific dbt tests due to asset check
-            # selection
-            if indirect_selection:
-                env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
-        else:
-            manifest = validate_manifest(manifest) if manifest else {}
+        # set dbt indirect selection if needed to execute specific dbt tests due to asset check
+        # selection
+        if indirect_selection:
+            env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
-        profile_args: List[str] = []
+        profile_args: list[str] = []
         if self.profile:
             profile_args = ["--profile", self.profile]
 
@@ -665,22 +687,22 @@ class DbtCliResource(ConfigurableResource):
             *profile_args,
             *selection_args,
         ]
-        project_dir = Path(self.project_dir)
 
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
+        # run dbt --version to get the dbt core version
         adapter: Optional[BaseAdapter] = None
-        with pushd(self.project_dir):
-            try:
-                cli_vars = parse_cli_vars_from_args(args)
-                adapter = self._initialize_adapter(cli_vars)
-
-            except:
-                logger.warning(
-                    "An error was encountered when creating a handle to the dbt adapter in Dagster.",
-                    exc_info=True,
-                )
+        with pushd(str(project_dir)):
+            # we do not need to initialize the adapter if we are using the fusion engine
+            if self._cli_version.major < 2:
+                try:
+                    adapter = self._initialize_dbt_core_adapter(args)
+                except:
+                    logger.warning(
+                        "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                        exc_info=True,
+                    )
 
             return DbtCliInvocation.run(
                 args=full_dbt_args,
@@ -692,6 +714,8 @@ class DbtCliResource(ConfigurableResource):
                 raise_on_error=raise_on_error,
                 context=context,
                 adapter=adapter,
+                cli_version=self._cli_version,
+                dbt_project=updated_params.dbt_project,
             )
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
@@ -707,217 +731,3 @@ class DbtCliResource(ConfigurableResource):
                 " removed in dagster-dbt 0.24.0. Use the `fetch_column_metadata` method in your asset definition"
                 " to fetch column metadata instead."
             )
-
-
-def parse_cli_vars_from_args(args: Sequence[str]) -> Dict[str, Any]:
-    parser = ArgumentParser(description="Parse cli vars from dbt command")
-    parser.add_argument("--vars")
-    var_args, _ = parser.parse_known_args(args)
-    if not var_args.vars:
-        return {}
-    return parse_cli_vars(var_args.vars)
-
-
-def _get_subset_selection_for_context(
-    context: OpExecutionContext,
-    manifest: Mapping[str, Any],
-    select: Optional[str],
-    exclude: Optional[str],
-    dagster_dbt_translator: DagsterDbtTranslator,
-    current_dbt_indirect_selection_env: Optional[str],
-) -> Tuple[List[str], Optional[str]]:
-    """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
-    resources in a subsetted execution context.
-
-    See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
-
-    Args:
-        context (OpExecutionContext): The execution context for the current execution step.
-        manifest (Mapping[str, Any]): The dbt manifest blob.
-        select (Optional[str]): A dbt selection string to select resources to materialize.
-        exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
-        dagster_dbt_translator (DagsterDbtTranslator): The translator to link dbt nodes to Dagster
-            assets.
-        current_dbt_indirect_selection_env (Optional[str]): The user's value for the DBT_INDIRECT_SELECTION
-            environment variable.
-
-
-    Returns:
-        List[str]: dbt CLI arguments to materialize the selected resources in a
-            subsetted execution context.
-
-            If the current execution context is not performing a subsetted execution,
-            return CLI arguments composed of the inputed selection and exclusion arguments.
-        Optional[str]: A value for the DBT_INDIRECT_SELECTION environment variable. If None, then
-            the environment variable is not set and will either use dbt's default (eager) or the
-            user's setting.
-    """
-    default_dbt_selection = []
-    if select:
-        default_dbt_selection += ["--select", select]
-    if exclude:
-        default_dbt_selection += ["--exclude", exclude]
-
-    assets_def = context.assets_def
-    is_asset_subset = assets_def.keys_by_output_name != assets_def.node_keys_by_output_name
-    is_checks_subset = (
-        assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
-    )
-
-    # It's nice to use the default dbt selection arguments when not subsetting for readability. We
-    # also use dbt indirect selection to avoid hitting cli arg length limits.
-    # https://github.com/dagster-io/dagster/issues/16997#issuecomment-1832443279
-    # A biproduct is that we'll run singular dbt tests (not currently modeled as asset checks) in
-    # cases when we can use indirection selection, an not when we need to turn it off.
-    if not (is_asset_subset or is_checks_subset):
-        logger.info(
-            "A dbt subsetted execution is not being performed. Using the default dbt selection"
-            f" arguments `{default_dbt_selection}`."
-        )
-        # default eager indirect selection. This means we'll also run any singular tests (which
-        # aren't modeled as asset checks currently).
-        return default_dbt_selection, None
-
-    # Explicitly select a dbt resource by its path. Selecting a resource by path is more terse
-    # than selecting it by its fully qualified name.
-    # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
-    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
-    selected_dbt_non_test_resources = get_dbt_resource_names_for_output_names(
-        output_names=context.selected_output_names,
-        dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
-        dagster_dbt_translator=dagster_dbt_translator,
-    )
-
-    # if all asset checks for the subsetted assets are selected, then we can just select the
-    # assets and use indirect selection for the tests. We verify that
-    # 1. all the selected checks are for selected assets
-    # 2. no checks for selected assets are excluded
-    # This also means we'll run any singular tests.
-    checks_on_non_selected_assets = [
-        check_key
-        for check_key in context.selected_asset_check_keys
-        if check_key.asset_key not in context.selected_asset_keys
-    ]
-    all_check_keys = {
-        check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
-    }
-    excluded_checks = all_check_keys.difference(context.selected_asset_check_keys)
-    excluded_checks_on_selected_assets = [
-        check_key
-        for check_key in excluded_checks
-        if check_key.asset_key in context.selected_asset_keys
-    ]
-
-    # note that this will always be false if checks are disabled (which means the assets_def has no
-    # check specs)
-    if excluded_checks_on_selected_assets:
-        # select all assets and tests explicitly, and turn off indirect selection. This risks
-        # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
-        # (all checks disabled, only one check and no assets) it's not a concern.
-        # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
-        selected_dbt_resources = [
-            *selected_dbt_non_test_resources,
-            *get_dbt_test_names_for_asset_checks(
-                check_keys=context.selected_asset_check_keys,
-                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
-                dagster_dbt_translator=dagster_dbt_translator,
-            ),
-        ]
-        indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
-        logger.info(
-            "Overriding default `DBT_INDIRECT_SELECTION` "
-            f"{current_dbt_indirect_selection_env or 'eager'} with "
-            f"`{indirect_selection_override}` due to additional checks "
-            f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
-            f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
-        )
-    elif checks_on_non_selected_assets:
-        # explicitly select the tests that won't be run via indirect selection
-        selected_dbt_resources = [
-            *selected_dbt_non_test_resources,
-            *get_dbt_test_names_for_asset_checks(
-                check_keys=checks_on_non_selected_assets,
-                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
-                dagster_dbt_translator=dagster_dbt_translator,
-            ),
-        ]
-        indirect_selection_override = None
-    else:
-        selected_dbt_resources = selected_dbt_non_test_resources
-        indirect_selection_override = None
-
-    logger.info(
-        "A dbt subsetted execution is being performed. Overriding default dbt selection"
-        f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
-    )
-
-    # Take the union of all the selected resources.
-    # https://docs.getdbt.com/reference/node-selection/set-operators#unions
-    union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
-
-    return union_selected_dbt_resources, indirect_selection_override
-
-
-def get_dbt_resource_props_by_output_name(
-    manifest: Mapping[str, Any],
-) -> Mapping[str, Mapping[str, Any]]:
-    node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
-
-    return {
-        dagster_name_fn(node): node
-        for node in node_info_by_dbt_unique_id.values()
-        if node["resource_type"] in ASSET_RESOURCE_TYPES
-    }
-
-
-def get_dbt_resource_props_by_test_name(
-    manifest: Mapping[str, Any],
-) -> Mapping[str, Mapping[str, Any]]:
-    return {
-        dbt_resource_props["name"]: dbt_resource_props
-        for unique_id, dbt_resource_props in manifest["nodes"].items()
-        if unique_id.startswith("test")
-    }
-
-
-def get_dbt_resource_names_for_output_names(
-    output_names: Iterable[str],
-    dbt_resource_props_by_output_name: Mapping[str, Any],
-    dagster_dbt_translator: DagsterDbtTranslator,
-) -> Sequence[str]:
-    dbt_resource_props_gen = (
-        dbt_resource_props_by_output_name[output_name]
-        for output_name in output_names
-        # output names corresponding to asset checks won't be in this dict
-        if output_name in dbt_resource_props_by_output_name
-    )
-
-    # Explicitly select a dbt resource by its file name.
-    # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
-    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
-        return [
-            Path(dbt_resource_props["original_file_path"]).stem
-            for dbt_resource_props in dbt_resource_props_gen
-        ]
-
-    # Explictly select a dbt resource by its fully qualified name (FQN).
-    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-    return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
-
-
-def get_dbt_test_names_for_asset_checks(
-    check_keys: Iterable[AssetCheckKey],
-    dbt_resource_props_by_test_name: Mapping[str, Any],
-    dagster_dbt_translator: DagsterDbtTranslator,
-) -> Sequence[str]:
-    # Explicitly select a dbt test by its test name.
-    # https://docs.getdbt.com/reference/node-selection/test-selection-examples#more-complex-selection.
-    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
-        return [asset_check_key.name for asset_check_key in check_keys]
-
-    # Explictly select a dbt test by its fully qualified name (FQN).
-    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-    return [
-        ".".join(dbt_resource_props_by_test_name[asset_check_key.name]["fqn"])
-        for asset_check_key in check_keys
-    ]

@@ -10,7 +10,7 @@ export const formatRepositoryUrl = (url: string): string => {
     if (org && repo && tag) {
       return `${org}/${repo}@${tag}`;
     }
-  } catch (error) {
+  } catch {
     return url;
   }
   return url;

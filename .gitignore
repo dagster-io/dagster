@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Claude context file
+**/CLAUDE.local.md
+**/.claude/settings.local.json
 # C extensions
 *.so
 
@@ -15,8 +18,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -24,6 +25,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+!docs/docs/guides/build
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -80,8 +83,8 @@ celerybeat-schedule
 *.sage.py
 
 # dotenv
-.env
-.envrc
+.env*
+!.env.example
 
 # virtualenv
 .direnv/
@@ -135,11 +138,6 @@ docs/gatsby/**/public
 # Next stuff
 docs/next/.mdx-data
 docs/next/public/sitemap.xml
-# Data
-data
-# Don't ignore data folders in examples
-!examples/*/data
-!examples/**/**/data
 
 # Dask
 dask-worker-space
@@ -169,6 +167,9 @@ pythonenv*/
 # DuckDB
 *.duckdb
 
+# Cursorrules
+.cursor
+
 # PyRight config
 pyrightconfig*
 
@@ -177,3 +178,15 @@ scripts/.build
 
 # dbt .user files
 .user.yml
+
+# exponent config
+exponent.txt
+
+# google cloud storage emulater
+.cloudstorage/
+
+# personal claude files
+.claude/**/*.local.md
+.claude/.local
+
+.workstack

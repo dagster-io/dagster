@@ -39,7 +39,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[sensorKansasCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -58,7 +57,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[scheduleAlaskaCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -77,7 +75,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[sensorKansasCurrentlyStopped, sensorLouisianaCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -96,7 +93,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -120,7 +116,6 @@ describe('AutomationStateChangeDialog', () => {
               scheduleColoradoCurrentlyStopped,
             ]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -139,7 +134,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[sensorMinnesotaCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -158,7 +152,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[sensorMinnesotaCurrentlyRunning, sensorOregonCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -177,7 +170,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[scheduleHawaiiCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -196,7 +188,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[scheduleHawaiiCurrentlyRunning, scheduleDelawareCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -219,7 +210,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[sensorKansasCurrentlyStopped, sensorLouisianaCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -247,7 +237,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[sensorKansasCurrentlyStopped, sensorLouisianaCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -281,7 +270,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -309,7 +297,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="start"
             automations={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -353,7 +340,6 @@ describe('AutomationStateChangeDialog', () => {
               scheduleColoradoCurrentlyStopped,
             ]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -391,7 +377,6 @@ describe('AutomationStateChangeDialog', () => {
               scheduleColoradoCurrentlyStopped,
             ]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -411,9 +396,13 @@ describe('AutomationStateChangeDialog', () => {
       expect(screen.getByText(/could not start 2 automations/i)).toBeVisible();
       const errorItems = screen.getAllByRole('listitem');
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/louisiana/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/lol u cannot/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/colorado/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/lol u cannot/i);
     });
   });
@@ -428,7 +417,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[sensorMinnesotaCurrentlyRunning, sensorOregonCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -456,7 +444,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[sensorMinnesotaCurrentlyRunning, sensorOregonCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -490,7 +477,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -518,7 +504,6 @@ describe('AutomationStateChangeDialog', () => {
             openWithIntent="stop"
             automations={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -562,7 +547,6 @@ describe('AutomationStateChangeDialog', () => {
               scheduleHawaiiCurrentlyRunning,
             ]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -600,7 +584,6 @@ describe('AutomationStateChangeDialog', () => {
               scheduleHawaiiCurrentlyRunning,
             ]}
             onClose={jest.fn()}
-            onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
@@ -621,9 +604,13 @@ describe('AutomationStateChangeDialog', () => {
       expect(screen.getByText(/could not stop 2 automations/i)).toBeVisible();
       const errorItems = screen.getAllByRole('listitem');
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/oregon/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/lol u cannot/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/hawaii/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/lol u cannot/i);
     });
   });

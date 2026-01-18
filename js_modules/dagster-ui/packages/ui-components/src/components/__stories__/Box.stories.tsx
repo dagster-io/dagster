@@ -1,9 +1,7 @@
-import {Meta} from '@storybook/react';
 import styled from 'styled-components';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {
   AlignItems,
   BorderSide,
@@ -17,18 +15,18 @@ import {
 export default {
   title: 'Box',
   component: Box,
-} as Meta;
+};
 
 export const Padding = () => {
   const spacings: Spacing[] = [0, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64];
   return (
-    <Group spacing={2} direction="row">
+    <Box flex={{direction: 'row', gap: 2}}>
       {spacings.map((spacing) => (
         <Box key={`${spacing}`} background={Colors.backgroundGray()} padding={spacing}>
           {spacing}
         </Box>
       ))}
-    </Group>
+    </Box>
   );
 };
 
@@ -44,11 +42,11 @@ export const BorderSides = () => {
   ];
   const widths: BorderWidth[] = [1, 2];
   return (
-    <Group direction="column" spacing={16}>
+    <Box flex={{direction: 'column', gap: 16}}>
       {widths.map((width) => (
-        <Group spacing={8} direction="column" key={`width-${width}`}>
+        <Box flex={{direction: 'column', gap: 8}} key={`width-${width}`}>
           <div>{`Width ${width}:`}</div>
-          <Group spacing={8} direction="row">
+          <Box flex={{direction: 'row', gap: 8}}>
             {sides.map((side) => (
               <Box
                 key={side}
@@ -60,10 +58,10 @@ export const BorderSides = () => {
                 {side}
               </Box>
             ))}
-          </Group>
-        </Group>
+          </Box>
+        </Box>
       ))}
-    </Group>
+    </Box>
   );
 };
 
@@ -72,11 +70,11 @@ export const FlexDirections = () => {
   const alignItems: AlignItems[] = ['stretch', 'center', 'flex-start', 'flex-end'];
 
   return (
-    <Group direction="column" spacing={16}>
+    <Box flex={{direction: 'column', gap: 16}}>
       <div>Flex direction:</div>
-      <Group spacing={24} direction="row">
+      <Box flex={{direction: 'row', gap: 24}}>
         {directions.map((direction) => (
-          <Group key={direction} direction="column" spacing={12}>
+          <Box flex={{direction: 'column', gap: 12}} key={direction}>
             <ExampleText>{direction}</ExampleText>
             <Box background={Colors.backgroundGray()} flex={{direction}} padding={8}>
               <Box padding={12} background={Colors.accentBlue()} />
@@ -85,13 +83,13 @@ export const FlexDirections = () => {
               <Box padding={12} background={Colors.accentYellow()} />
               <Box padding={12} background={Colors.accentRed()} />
             </Box>
-          </Group>
+          </Box>
         ))}
-      </Group>
+      </Box>
       <div>Align items:</div>
-      <Group spacing={24} direction="row">
+      <Box flex={{direction: 'row', gap: 24}}>
         {alignItems.map((alignment) => (
-          <Group key={alignment} direction="column" spacing={12}>
+          <Box flex={{direction: 'column', gap: 12}} key={alignment}>
             <ExampleText>{alignment}</ExampleText>
             <Box
               background={Colors.backgroundGray()}
@@ -104,10 +102,10 @@ export const FlexDirections = () => {
               <Box padding={4} background={Colors.accentYellow()} />
               <Box padding={16} background={Colors.accentRed()} />
             </Box>
-          </Group>
+          </Box>
         ))}
-      </Group>
-    </Group>
+      </Box>
+    </Box>
   );
 };
 
@@ -122,11 +120,11 @@ export const JustifyContent = () => {
   ];
 
   return (
-    <Group direction="column" spacing={16}>
+    <Box flex={{direction: 'column', gap: 16}}>
       <div>Justify content:</div>
-      <Group spacing={24} direction="column">
+      <Box flex={{direction: 'column', gap: 24}}>
         {justifyContent.map((option) => (
-          <Group key={option} direction="column" spacing={12}>
+          <Box flex={{direction: 'column', gap: 12}} key={option}>
             <ExampleText>{option}</ExampleText>
             <Box
               background={Colors.backgroundGray()}
@@ -139,10 +137,10 @@ export const JustifyContent = () => {
               <Box padding={12} background={Colors.accentYellow()} />
               <Box padding={12} background={Colors.accentRed()} />
             </Box>
-          </Group>
+          </Box>
         ))}
-      </Group>
-    </Group>
+      </Box>
+    </Box>
   );
 };
 

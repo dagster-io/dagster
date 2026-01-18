@@ -1,8 +1,9 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 import responses
-from dagster_powerbi.resource import BASE_API_URL
+from dagster._core.instance_for_test import instance_for_test
+from dagster_powerbi.resource import BASE_API_URL, generate_data_source_id
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
 SAMPLE_DASH = {
@@ -39,6 +40,7 @@ SAMPLE_REPORT = {
     "datasetWorkspaceId": "a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
     "users": [],
     "subscriptions": [],
+    "createdBy": "ben@dagsterlabs.com",
 }
 
 SAMPLE_SEMANTIC_MODEL = {
@@ -46,7 +48,6 @@ SAMPLE_SEMANTIC_MODEL = {
     "name": "Sales & Returns Sample v201912",
     "webUrl": "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20",
     "addRowsAPIEnabled": False,
-    "configuredBy": "ben@elementl.com",
     "isRefreshable": True,
     "isEffectiveIdentityRequired": False,
     "isEffectiveIdentityRolesRequired": False,
@@ -58,6 +59,19 @@ SAMPLE_SEMANTIC_MODEL = {
     "upstreamDatasets": [],
     "users": [],
     "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
+    "configuredBy": "chris@dagsterlabs.com",
+    "tables": [
+        {
+            "name": "sales",
+            "columns": [
+                {"name": "order_id", "dataType": "Int64"},
+                {"name": "product_id", "dataType": "Int64"},
+                {"name": "quantity", "dataType": "Int64"},
+                {"name": "price", "dataType": "Decimal"},
+                {"name": "order_date", "dataType": "DateTime"},
+            ],
+        }
+    ],
 }
 
 
@@ -78,6 +92,26 @@ OTHER_SAMPLE_SEMANTIC_MODEL = {
     "upstreamDatasets": [],
     "users": [],
     "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
+    "tables": [
+        {
+            "name": "sales",
+            "columns": [
+                {"name": "order_id", "dataType": "Int64"},
+                {"name": "product_id", "dataType": "Int64"},
+                {"name": "quantity", "dataType": "Int64"},
+                {"name": "price", "dataType": "Decimal"},
+                {"name": "order_date", "dataType": "DateTime"},
+            ],
+        },
+        {
+            "name": "customers",
+            "columns": [
+                {"name": "customer_id", "dataType": "Int64"},
+                {"name": "customer_name", "dataType": "String"},
+                {"name": "customer_email", "dataType": "String"},
+            ],
+        },
+    ],
 }
 
 
@@ -91,7 +125,6 @@ SAMPLE_DATA_SOURCES = [
     {
         "datasourceType": "File",
         "connectionDetails": {"path": "c:\\users\\mimyersm\\desktop\\sales & marketing datas.xlsx"},
-        "datasourceId": "46c83f90-3eaa-4658-b716-2307bc56e74d",
         "gatewayId": "40800873-8e0d-4152-86e3-e6edeb2a738c",
     },
 ]
@@ -118,7 +151,11 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
     sample_semantic_model = SAMPLE_SEMANTIC_MODEL.copy()
 
     sample_data_sources = SAMPLE_DATA_SOURCES
-    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in sample_data_sources]
+    data_sources = [
+        ds if "datasourceId" in ds else {"datasourceId": generate_data_source_id(ds), **ds}
+        for ds in sample_data_sources
+    ]
+    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in data_sources]
 
     return PowerBIWorkspaceData(
         workspace_id=workspace_id,
@@ -141,16 +178,58 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
             ds["datasourceId"]: PowerBIContentData(
                 content_type=PowerBIContentType.DATA_SOURCE, properties=ds
             )
-            for ds in sample_data_sources
+            for ds in data_sources
         },
     )
+
+
+@pytest.fixture(
+    name="workspace_scan_data_api_mocks",
+)
+def workspace_scan_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:
+    with responses.RequestsMock() as response:
+        scan_id = "1234"
+        response.add(
+            method=responses.POST,
+            url=f"{BASE_API_URL}/admin/workspaces/getInfo?lineage=true&datasourceDetails=true&datasetSchema=true&datasetExpressions=true",
+            json={"id": scan_id},
+            status=200,
+        )
+
+        response.add(
+            method=responses.GET,
+            url=f"{BASE_API_URL}/admin/workspaces/scanStatus/{scan_id}",
+            json={"status": "Succeeded"},
+            status=200,
+        )
+
+        response.add(
+            method=responses.GET,
+            url=f"{BASE_API_URL}/admin/workspaces/scanResult/{scan_id}",
+            json={
+                "workspaces": [
+                    {
+                        "dashboards": [SAMPLE_DASH],
+                        "reports": [SAMPLE_REPORT],
+                        "datasets": [SAMPLE_SEMANTIC_MODEL],
+                        "datasourceInstances": SAMPLE_DATA_SOURCES,
+                    }
+                ]
+            },
+            status=200,
+        )
+
+        yield response
 
 
 @pytest.fixture(
     name="workspace_data_api_mocks",
 )
 def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:
-    with responses.RequestsMock() as response:
+    with (
+        responses.RequestsMock(assert_all_requests_are_fired=False) as response,
+        instance_for_test(),
+    ):
         response.add(
             method=responses.GET,
             url=f"{BASE_API_URL}/groups/{workspace_id}/dashboards",
@@ -224,3 +303,21 @@ def second_workspace_data_api_mocks_fixture(
     )
 
     yield workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="second_workspace_data",
+)
+def second_workspace_data_fixture(second_workspace_id: str) -> PowerBIWorkspaceData:
+    return PowerBIWorkspaceData(
+        workspace_id=second_workspace_id,
+        dashboards_by_id={},
+        reports_by_id={},
+        semantic_models_by_id={
+            OTHER_SAMPLE_SEMANTIC_MODEL["id"]: PowerBIContentData(
+                content_type=PowerBIContentType.SEMANTIC_MODEL,
+                properties=OTHER_SAMPLE_SEMANTIC_MODEL,
+            )
+        },
+        data_sources_by_id={},
+    )

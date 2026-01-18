@@ -1,7 +1,8 @@
 import os
 import subprocess
 import uuid
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import click
 import dagster._check as check
@@ -10,7 +11,7 @@ from dagster._config import post_process_config, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
-from dagster._utils.yaml_utils import load_yaml_from_path
+from dagster_shared.yaml_utils import load_yaml_from_path
 
 from dagster_celery.executor import CeleryExecutor, celery_executor
 from dagster_celery.make_app import make_app
@@ -247,7 +248,7 @@ def status_command(
 def worker_list_command(config_yaml=None):
     app = get_app(config_yaml)
 
-    print(app.control.inspect(timeout=1).active())  # noqa: T201
+    print(app.control.inspect(timeout=1).active())  # noqa: T201  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @click.command(
@@ -279,9 +280,9 @@ def worker_terminate_command(name="dagster", config_yaml=None, all_=False):
     app = get_app(config_yaml)
 
     if all_:
-        app.control.broadcast("shutdown")
+        app.control.broadcast("shutdown")  # pyright: ignore[reportAttributeAccessIssue]
     else:
-        app.control.broadcast(
+        app.control.broadcast(  # pyright: ignore[reportAttributeAccessIssue]
             "shutdown", destination=[host_format(default_nodename(get_worker_name(name)))]
         )
 

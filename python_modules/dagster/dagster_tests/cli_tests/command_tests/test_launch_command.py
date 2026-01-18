@@ -1,39 +1,38 @@
+from typing import Any, Optional
+
 import click
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
 from dagster._core.utils import make_new_run_id
-from dagster._utils import file_relative_path
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     default_cli_test_instance,
     launch_command_contexts,
     non_existant_python_file_workspace_args,
     python_bar_cli_args,
-    valid_external_job_target_cli_args,
+    valid_remote_job_target_cli_args,
 )
 
 
-def run_launch(kwargs, instance, expected_count=None):
-    run = execute_launch_command(instance, kwargs)
+def run_launch(
+    parsed_args: dict[str, Any], instance: DagsterInstance, expected_count: Optional[int] = None
+):
+    run = execute_launch_command(instance=instance, **parsed_args)
     assert run
     if expected_count:
         assert instance.get_runs_count() == expected_count
     instance.run_launcher.join()
 
 
-def run_launch_cli(execution_args, instance, expected_count=None):
-    runner = CliRunner()
-    result = runner.invoke(job_launch_command, execution_args)
-    assert result.exit_code == 0, result.stdout
-    if expected_count:
-        assert instance.get_runs_count() == expected_count
-
-
-def run_job_launch_cli(execution_args, instance, expected_count=None):
+def run_job_launch_cli(
+    execution_args: list[str], instance: DagsterInstance, expected_count: Optional[int] = None
+):
     runner = CliRunner()
     result = runner.invoke(job_launch_command, execution_args)
     assert result.exit_code == 0, result.stdout
@@ -55,7 +54,7 @@ def test_launch_non_existant_file():
             run_launch(kwargs, instance)
 
 
-@pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
+@pytest.mark.parametrize("job_cli_args", valid_remote_job_target_cli_args())
 def test_launch_job_cli(job_cli_args):
     with default_cli_test_instance() as instance:
         run_job_launch_cli(job_cli_args, instance, expected_count=1)
@@ -205,7 +204,7 @@ def test_default_working_directory():
                 job_launch_command,
                 [
                     "-f",
-                    file_relative_path(__file__, "file_with_local_import.py"),
+                    dg.file_relative_path(__file__, "file_with_local_import.py"),
                     "-a",
                     "qux_job",
                 ],

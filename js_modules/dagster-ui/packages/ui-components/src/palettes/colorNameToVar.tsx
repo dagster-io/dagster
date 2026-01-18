@@ -1,6 +1,6 @@
 import {ColorName} from './ColorName';
 
-export const colorNameToVar = {
+export const colorNameToVar: Record<ColorName, string> = {
   [ColorName.BrowserColorScheme]: 'var(--browser-color-scheme)',
   [ColorName.KeylineDefault]: 'var(--color-keyline-default)',
   [ColorName.LinkDefault]: 'var(--color-link-default)',
@@ -74,6 +74,9 @@ export const colorNameToVar = {
   [ColorName.PopoverBackground]: 'var(--color-popover-background)',
   [ColorName.PopoverBackgroundHover]: 'var(--color-popover-background-hover)',
   [ColorName.ShadowDefault]: 'var(--color-shadow-default)',
+  [ColorName.CheckboxUnchecked]: 'var(--color-checkbox-unchecked)',
+  [ColorName.CheckboxChecked]: 'var(--color-checkbox-checked)',
+  [ColorName.CheckboxDisabled]: 'var(--color-checkbox-disabled)',
 
   // Header
   [ColorName.NavBackground]: 'var(--color-nav-background)',

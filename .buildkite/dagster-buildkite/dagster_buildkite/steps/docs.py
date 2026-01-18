@@ -1,72 +1,78 @@
-from typing import List
-
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import CommandStepBuilder
-from dagster_buildkite.steps.packages import (
-    build_dagster_ui_screenshot_steps,
-    build_example_packages_steps,
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
 )
-from dagster_buildkite.steps.tox import build_tox_step
-from dagster_buildkite.utils import (
-    BuildkiteLeafStep,
-    BuildkiteStep,
-    GroupStep,
-    skip_if_no_docs_changes,
-)
+from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.uv import UV_PIN
+from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.utils import skip_if_no_docs_changes
 
 
-def build_docs_steps() -> List[BuildkiteStep]:
-    steps: List[BuildkiteStep] = []
-
-    docs_steps: List[BuildkiteLeafStep] = [
-        # Make sure snippets in built docs match source.
-        # If this test is failing, it's because you may have either:
-        #   (1) Updated the code that is referenced by a literal include in the documentation
-        #   (2) Directly modified the inline snapshot of a literalinclude instead of updating
-        #       the underlying code that the literalinclude is pointing to.
-        # To fix this, run 'make mdx-format' in the /docs directory to update the snapshots.
-        # Be sure to check the diff to make sure the literalincludes are as you expect them."
-        CommandStepBuilder("docs code snippets")
-        .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
-        .with_skip(skip_if_no_docs_changes())
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
-        # Make sure the docs site can build end-to-end.
-        CommandStepBuilder("docs next")
-        .run(
-            "cd docs/next",
-            "yarn install",
-            "yarn test",
-            "yarn build-master",
+def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
+    return (
+        add_test_image(
+            CommandStepBuilder(":notebook: yarn format_check"),
+            AvailablePythonVersion.get_default(),
         )
-        .with_skip(skip_if_no_docs_changes())
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
-        # Make sure docs sphinx build runs.
-        CommandStepBuilder("docs apidoc build")
         .run(
             "cd docs",
-            "pip install -U uv",
-            "make apidoc-build",
-            # "echo '--- Checking git diff (ignoring whitespace) after docs build...'",
-            # "git diff --ignore-all-space --stat",
-            # "git diff --exit-code --ignore-all-space --no-patch",
+            "yarn install",
+            "yarn format_check",
         )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
-        # Verify screenshot integrity.
-        build_tox_step("docs", "audit-screenshots", skip_reason=skip_if_no_docs_changes()),
-    ]
+        .skip_if(skip_if_no_docs_changes())
+        .build()
+    )
 
-    steps += [
-        GroupStep(
-            group=":book: docs",
+
+def build_build_docs_step():
+    return (
+        add_test_image(CommandStepBuilder("build docs"), AvailablePythonVersion.get_default())
+        .run(
+            "cd docs",
+            f'pip install -U "{UV_PIN}"',
+            "yarn install",
+            "yarn test",
+            "yarn build-api-docs",
+            "yarn build",
+        )
+        .skip_if(skip_if_no_docs_changes())
+        .build()
+    )
+
+
+def build_docstring_validation_step() -> GroupLeafStepConfiguration:
+    python_version = AvailablePythonVersion.get_default()
+    tox_env = f"py{python_version.value.replace('.', '')}"
+    return (
+        add_test_image(
+            CommandStepBuilder(
+                f":pytest: docstring validation {python_version.value}", retry_automatically=False
+            ),
+            python_version,
+        )
+        .run(
+            "cd python_modules/automation",
+            f'pip install -U "{UV_PIN}"',
+            "uv pip install --system -e .[buildkite]",
+            f"echo -e '--- \\033[0;32m:pytest: Running tox env: {tox_env}\\033[0m'",
+            f"tox -vv -e {tox_env}",
+            "python -m automation.dagster_docs.main check docstrings --all",
+        )
+        .build()
+    )
+
+
+def build_docs_steps() -> list[StepConfiguration]:
+    return [
+        GroupStepBuilder(
+            name=":book: docs",
             key="docs",
-            steps=docs_steps,
-        )
+            steps=[
+                build_build_docs_step(),
+                build_repo_wide_format_docs_step(),
+                build_docstring_validation_step(),
+            ],
+        ).build()
     ]
-
-    steps += build_example_packages_steps()
-    steps += build_dagster_ui_screenshot_steps()
-
-    return steps

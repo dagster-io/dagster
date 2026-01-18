@@ -14,25 +14,65 @@ import styled, {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {Icon, IconName, IconWrapper} from './Icon';
-import {TextInputContainerStyles, TextInputStyles} from './TextInput';
+import {Icon, IconName} from './Icon';
 import {Container, Inner, Row} from './VirtualizedTable';
+import {FontFamily} from './styles';
 
 export const GlobalSuggestStyle = createGlobalStyle`
   .dagster-suggest-input.bp5-input-group {
-    ${TextInputContainerStyles}
+    /* Inline TextInputContainerStyles */
+    align-items: center;
+    color: ${Colors.textLight()};
+    display: inline-flex;
+    flex-direction: row;
+    flex: 1;
+    flex-grow: 0;
+    font-family: ${FontFamily.default};
+    font-size: 14px;
+    font-weight: 400;
+    position: relative;
 
-    &:disabled ${IconWrapper}:first-child {
+    &:disabled .iconGlobal:first-child {
       background-color: ${Colors.accentGray()};
     }
 
     .bp5-input {
-      ${TextInputStyles}
+      /* Inline TextInputStyles */
+      background-color: ${Colors.backgroundDefault()};
+      border: none;
+      box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+      outline: none;
+      border-radius: 8px;
+      color: ${Colors.textDefault()};
+      flex-grow: 1;
+      font-size: 14px;
+      line-height: 20px;
+      padding: 6px 6px 6px 12px;
+      margin: 0;
+      transition: box-shadow 150ms;
 
       height: auto;
 
       ::placeholder {
         color: ${Colors.textDisabled()};
+      }
+
+      :disabled {
+        box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
+        background-color: ${Colors.backgroundLight()};
+        color: ${Colors.textDisabled()};
+      }
+
+      :disabled::placeholder {
+        color: ${Colors.textDisabled()};
+      }
+
+      :focus {
+        box-shadow:
+          ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+          ${Colors.keylineDefault()} inset 2px 2px 1.5px,
+          ${Colors.focusRing()} 0 0 0 2px;
+        outline: none;
       }
     }
 
@@ -148,7 +188,11 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
       <Container ref={parentRef} style={{maxHeight: MAX_MENU_HEIGHT, width: menuWidth}}>
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
-            const item = filteredItems[index]!;
+            const item = filteredItems[index];
+            if (!item) {
+              return null;
+            }
+
             return (
               <Row key={key} $height={size} $start={start}>
                 {props.renderItem(item, index)}

@@ -44,6 +44,7 @@ RunsTable = db.Table(
     # columns in favor of DateTime / Timestamp columns.
     db.Column("start_time", db.Float),
     db.Column("end_time", db.Float),
+    db.Column("backfill_id", db.String(255)),
 )
 
 # Secondary Index migration table, used to track data migrations, both for event_logs and runs.
@@ -117,9 +118,24 @@ BulkActionsTable = db.Table(
     db.Column("key", db.String(32), unique=True, nullable=False),
     db.Column("status", db.String(255), nullable=False),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
-    db.Column("body", db.Text),
+    db.Column("body", MySQLCompatabilityTypes.LongText),
     db.Column("action_type", db.String(32)),
     db.Column("selector_id", db.Text),
+    db.Column("job_name", db.Text, nullable=True),
+)
+
+BackfillTagsTable = db.Table(
+    "backfill_tags",
+    RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("backfill_id", db.String(255)),
+    db.Column("key", db.Text),
+    db.Column("value", db.Text),
 )
 
 InstanceInfo = db.Table(
@@ -177,3 +193,17 @@ db.Index(
     },
 )
 db.Index("idx_kvs_keys_unique", KeyValueStoreTable.c.key, unique=True, mysql_length=64)
+
+db.Index(
+    "idx_runs_by_backfill_id",
+    RunsTable.c.backfill_id,
+    RunsTable.c.id,
+    mysql_length={
+        "backfill_id": 255,
+    },
+)
+db.Index(
+    "idx_backfill_tags_backfill_id",
+    BackfillTagsTable.c.backfill_id,
+    BackfillTagsTable.c.id,
+)

@@ -1,12 +1,15 @@
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.execution.context.hook import HookContext
 from dagster._utils.warnings import normalize_renamed_param
 
+from dagster_msteams.adaptive_card import AdaptiveCard
 from dagster_msteams.card import Card
 from dagster_msteams.resources import MSTeamsResource
+from dagster_msteams.utils import MSTeamsHyperlink, build_message_with_link
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
@@ -71,15 +74,20 @@ def teams_on_failure(
 
     @failure_hook(required_resource_keys={"msteams"})
     def _hook(context: HookContext):
-        text = message_fn(context)
-        if webserver_base_url:
-            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in Dagster UI</a>"
-        card = Card()
-        card.add_attachment(text_message=text)
         if isinstance(context.resources.msteams, MSTeamsResource):
-            context.resources.msteams.get_client().post_message(payload=card.payload)
+            client = context.resources.msteams.get_client()
         else:
-            context.resources.msteams.post_message(payload=card.payload)
+            client = context.resources.msteams
+
+        message = message_fn(context)
+        link = (
+            MSTeamsHyperlink("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
+            if webserver_base_url
+            else None
+        )
+        card = Card() if client.is_legacy_webhook() else AdaptiveCard()
+        card.add_attachment(build_message_with_link(client.is_legacy_webhook(), message, link))
+        client.post_message(card.payload)
 
     return _hook
 
@@ -131,14 +139,19 @@ def teams_on_success(
 
     @success_hook(required_resource_keys={"msteams"})
     def _hook(context: HookContext):
-        text = message_fn(context)
-        if webserver_base_url:
-            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in webserver</a>"
-        card = Card()
-        card.add_attachment(text_message=text)
         if isinstance(context.resources.msteams, MSTeamsResource):
-            context.resources.msteams.get_client().post_message(payload=card.payload)
+            client = context.resources.msteams.get_client()
         else:
-            context.resources.msteams.post_message(payload=card.payload)
+            client = context.resources.msteams
+
+        message = message_fn(context)
+        link = (
+            MSTeamsHyperlink("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
+            if webserver_base_url
+            else None
+        )
+        card = Card() if client.is_legacy_webhook() else AdaptiveCard()
+        card.add_attachment(build_message_with_link(client.is_legacy_webhook(), message, link))
+        client.post_message(card.payload)
 
     return _hook

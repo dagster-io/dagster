@@ -1,21 +1,19 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from types import FunctionType
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Mapping,
     Optional,
-    Sequence,
     TypeVar,
     Union,
 )
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
@@ -23,7 +21,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.repository_definition.caching_index import CacheingDefinitionIndex
 from dagster._core.definitions.repository_definition.valid_definitions import (
-    RepositoryListDefinition,
+    RepositoryElementDefinition,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -33,15 +31,17 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
-    from dagster._core.definitions.asset_checks import AssetChecksDefinition
-    from dagster._core.definitions.partitioned_schedule import (
+    from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+    from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
+    from dagster.components.core.component_tree import ComponentTree
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
 
 
+@public
 class RepositoryData(ABC):
     """Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
@@ -198,6 +198,9 @@ class RepositoryData(ABC):
         """Mapping[AssetCheckKey, AssetChecksDefinition]: Get the asset checks definitions for the repository."""
         return {}
 
+    def get_component_tree(self) -> Optional["ComponentTree"]:
+        return None
+
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self.get_all_jobs()
@@ -225,6 +228,7 @@ class CachingRepositoryData(RepositoryData):
         unresolved_partitioned_asset_schedules: Mapping[
             str, "UnresolvedPartitionedAssetScheduleDefinition"
         ],
+        component_tree: Optional["ComponentTree"],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -315,6 +319,7 @@ class CachingRepositoryData(RepositoryData):
         self._assets_checks_defs_by_key = asset_checks_defs_by_key
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
+        self._component_tree = component_tree
 
         self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
@@ -338,7 +343,7 @@ class CachingRepositoryData(RepositoryData):
         return resolve_partitioned_asset_schedule
 
     @staticmethod
-    def from_dict(repository_definitions: Dict[str, Dict[str, Any]]) -> "CachingRepositoryData":
+    def from_dict(repository_definitions: dict[str, dict[str, Any]]) -> "CachingRepositoryData":
         """Static constructor.
 
         Args:
@@ -362,10 +367,11 @@ class CachingRepositoryData(RepositoryData):
     @classmethod
     def from_list(
         cls,
-        repository_definitions: Sequence[RepositoryListDefinition],
+        repository_definitions: Sequence[RepositoryElementDefinition],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        component_tree: Optional["ComponentTree"] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -384,6 +390,7 @@ class CachingRepositoryData(RepositoryData):
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
+            component_tree=component_tree,
         )
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
@@ -500,7 +507,9 @@ class CachingRepositoryData(RepositoryData):
         return self._assets_defs_by_key
 
     def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
-        from dagster._core.definitions.asset_checks import AssetChecksDefinition
+        from dagster._core.definitions.asset_checks.asset_checks_definition import (
+            AssetChecksDefinition,
+        )
 
         return {
             key: (
@@ -512,6 +521,9 @@ class CachingRepositoryData(RepositoryData):
             )
             for key, ad in self._assets_checks_defs_by_key.items()
         }
+
+    def get_component_tree(self) -> Optional["ComponentTree"]:
+        return self._component_tree
 
     def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
         node_defs = {}

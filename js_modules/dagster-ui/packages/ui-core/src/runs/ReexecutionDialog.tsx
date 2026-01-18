@@ -1,31 +1,35 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
+  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   Mono,
+  ProgressBar,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
+import {Link} from 'react-router-dom';
 
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
+import {useMutation} from '../apollo-client';
+import {getBackfillPath} from './RunsFeedUtils';
+import {EditableTagList, validateTagEditState} from '../launchpad/TagEditor';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {useMutation} from '../apollo-client';
-import {ReexecutionStrategy} from '../graphql/types';
+import {ExecutionTag, ReexecutionStrategy} from '../graphql/types';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 
-interface Props {
+export interface ReexecutionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
   selectedRuns: {[id: string]: string};
+  selectedRunBackfillIds: string[];
   reexecutionStrategy: ReexecutionStrategy;
 }
 
@@ -76,6 +80,7 @@ type ReexecutionDialogState = {
   frozenRuns: SelectedRuns;
   step: 'initial' | 'reexecuting' | 'completed';
   reexecution: ReexecutionState;
+  extraTags: ExecutionTag[];
 };
 
 type SelectedRuns = {[id: string]: string};
@@ -85,11 +90,13 @@ const initializeState = (selectedRuns: SelectedRuns): ReexecutionDialogState => 
     frozenRuns: selectedRuns,
     step: 'initial',
     reexecution: {completed: 0, errors: {}},
+    extraTags: [],
   };
 };
 
 type ReexecutionDialogAction =
   | {type: 'reset'; frozenRuns: SelectedRuns}
+  | {type: 'set-extra-tags'; tags: ExecutionTag[]}
   | {type: 'start'}
   | {type: 'reexecution-success'}
   | {type: 'reexecution-error'; id: string; error: Error}
@@ -102,6 +109,8 @@ const reexecutionDialogReducer = (
   switch (action.type) {
     case 'reset':
       return initializeState(action.frozenRuns);
+    case 'set-extra-tags':
+      return {...prevState, extraTags: action.tags};
     case 'start':
       return {...prevState, step: 'reexecuting'};
     case 'reexecution-success': {
@@ -129,8 +138,9 @@ const reexecutionDialogReducer = (
   }
 };
 
-export const ReexecutionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns} = props;
+export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
+  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns, selectedRunBackfillIds} =
+    props;
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
@@ -142,6 +152,7 @@ export const ReexecutionDialog = (props: Props) => {
     initializeState,
   );
 
+  const extraTagsValidated = validateTagEditState(state.extraTags);
   const count = Object.keys(state.frozenRuns).length;
 
   // If the dialog is newly open, update state to match the frozen list.
@@ -168,12 +179,15 @@ export const ReexecutionDialog = (props: Props) => {
     dispatch({type: 'start'});
 
     const runList = Object.keys(state.frozenRuns);
+    const extraTags = tagsWithUIExecutionTags(extraTagsValidated.toSave);
+
     for (const runId of runList) {
       const {data} = await reexecute({
         variables: {
           reexecutionParams: {
             parentRunId: runId,
             strategy: reexecutionStrategy,
+            extraTags,
           },
         },
       });
@@ -194,10 +208,10 @@ export const ReexecutionDialog = (props: Props) => {
       case 'initial':
         if (!count) {
           return (
-            <Group direction="column" spacing={16}>
+            <Box flex={{direction: 'column', gap: 16}}>
               <div>No runs selected for re-execution.</div>
               <div>The runs you selected may already have finished executing.</div>
-            </Group>
+            </Box>
           );
         }
 
@@ -219,20 +233,50 @@ export const ReexecutionDialog = (props: Props) => {
         };
 
         return (
-          <Group direction="column" spacing={16}>
+          <Box flex={{direction: 'column', gap: 16}}>
             <div>{message()}</div>
-          </Group>
+            <div>
+              Re-executed runs inherit tags from the parent runs automatically. To change tag values
+              or add additional tags, add them below.
+            </div>
+            <EditableTagList
+              editState={state.extraTags}
+              setEditState={(cb) =>
+                dispatch({
+                  type: 'set-extra-tags',
+                  tags: cb instanceof Array ? cb : cb(state.extraTags),
+                })
+              }
+            />
+            {selectedRunBackfillIds.length > 0 ? (
+              <div>
+                {selectedRunBackfillIds.length > 1 ? (
+                  <>One or more of these runs is part of a backfill</>
+                ) : (
+                  <>
+                    One or more of these runs is part of backfill{' '}
+                    {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, 'runs')}>
+                      {selectedRunBackfillIds[0]}
+                    </Link>
+                  </>
+                )}
+                . If the backfill has completed, re-executing these runs will not update the
+                backfill status or launch runs of downstream dependencies.
+              </div>
+            ) : undefined}
+          </Box>
         );
       case 'reexecuting':
       case 'completed':
         const value = count > 0 ? state.reexecution.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
-            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+          <Box flex={{direction: 'column', gap: 8}}>
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'reexecuting' ? (
               <NavigationBlock message="Re-execution in progress, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -255,7 +299,11 @@ export const ReexecutionDialog = (props: Props) => {
             <Button intent="none" onClick={onClose}>
               Cancel
             </Button>
-            <Button intent="primary" onClick={mutate}>
+            <Button
+              intent="primary"
+              onClick={mutate}
+              disabled={extraTagsValidated.toError.length > 0}
+            >
               {`Re-execute ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
             </Button>
           </>
@@ -289,40 +337,40 @@ export const ReexecutionDialog = (props: Props) => {
     const successCount = state.reexecution.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {`Successfully requested re-execution for ${successCount} ${
                 successCount === 1 ? 'run' : `runs`
               }.`}
             </div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {`Could not request re-execution for ${errorCount} ${
                   errorCount === 1 ? 'run' : 'runs'
                 }:`}
               </div>
-            </Group>
+            </Box>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Group direction="row" spacing={8} alignItems="baseline">
+                  <Box flex={{direction: 'row', gap: 8, alignItems: 'baseline'}}>
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errorText(errors[runId])}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -330,6 +378,7 @@ export const ReexecutionDialog = (props: Props) => {
 
   return (
     <Dialog
+      style={{minWidth: 590}}
       isOpen={isOpen}
       title={
         reexecutionStrategy === ReexecutionStrategy.ALL_STEPS
@@ -341,10 +390,10 @@ export const ReexecutionDialog = (props: Props) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

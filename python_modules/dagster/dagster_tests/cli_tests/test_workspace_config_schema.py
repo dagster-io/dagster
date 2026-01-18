@@ -254,3 +254,23 @@ def test_load_from_grpc_server_env():
     """
 
         assert _validate_yaml_contents(valid_socket_yaml).success
+
+
+def test_autoload_module():
+    terse_workspace_yaml = """
+load_from:
+    - autoload_defs_module: foo.defs
+"""
+
+    assert _validate_yaml_contents(terse_workspace_yaml).success
+
+
+def test_autoload_module_obj():
+    terse_workspace_yaml = """
+load_from:
+    - autoload_defs_module:
+        module_name: foo.defs
+        working_directory: baz
+"""
+
+    assert _validate_yaml_contents(terse_workspace_yaml).success

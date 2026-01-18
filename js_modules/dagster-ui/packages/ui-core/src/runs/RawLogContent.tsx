@@ -1,4 +1,4 @@
-import {Colors, FontFamily, Group, Icon, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
@@ -21,7 +21,9 @@ export const RawLogContent = React.memo((props: Props) => {
   const timer = React.useRef<number>();
   const [showScrollToTop, setShowScrollToTop] = React.useState(false);
   const scrollToTop = () => {
-    contentContainer.current && contentContainer.current.scrollToTop();
+    if (contentContainer.current) {
+      contentContainer.current.scrollToTop();
+    }
   };
   const cancelHideWarning = () => {
     if (timer.current) {
@@ -56,7 +58,7 @@ export const RawLogContent = React.memo((props: Props) => {
   }
   const warning = isTruncated ? (
     <FileWarning>
-      <Group direction="row" spacing={8} alignItems="center">
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Icon name="warning" color={Colors.accentYellow()} />
         <div>
           This log has exceeded the 5MB limit.{' '}
@@ -66,7 +68,7 @@ export const RawLogContent = React.memo((props: Props) => {
             </a>
           ) : null}
         </div>
-      </Group>
+      </Box>
     </FileWarning>
   ) : null;
 
@@ -80,10 +82,10 @@ export const RawLogContent = React.memo((props: Props) => {
               onMouseOver={cancelHideWarning}
               onMouseOut={scheduleHideWarning}
             >
-              <Group direction="row" spacing={8} alignItems="center">
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <Icon name="arrow_upward" color={Colors.accentPrimary()} />
                 Scroll to top
-              </Group>
+              </Box>
             </ScrollToTop>
           </ScrollToast>
         ) : null}
@@ -92,7 +94,7 @@ export const RawLogContent = React.memo((props: Props) => {
           <RelativeContainer>
             <LogContent
               isSelected={true}
-              content={logData}
+              content={content}
               onScrollUp={onScrollUp}
               onScrollDown={hideWarning}
               ref={contentContainer}
@@ -156,7 +158,9 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
       });
     }
     if (this.props.isSelected && !_props.isSelected) {
-      this.container.current && this.container.current.focus();
+      if (this.container.current) {
+        this.container.current.focus();
+      }
     }
   }
 
@@ -169,9 +173,13 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     const {scrollHeight, scrollTop, offsetHeight} = this.container.current;
     const position = scrollTop / (scrollHeight - offsetHeight);
     if (this.container.current.scrollTop < this.lastScroll) {
-      onScrollUp && onScrollUp(position);
+      if (onScrollUp) {
+        onScrollUp(position);
+      }
     } else {
-      onScrollDown && onScrollDown(position);
+      if (onScrollDown) {
+        onScrollDown(position);
+      }
     }
     this.lastScroll = this.container.current.scrollTop;
   };

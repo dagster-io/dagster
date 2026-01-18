@@ -3,8 +3,9 @@ import os
 import random
 import time
 from collections import defaultdict
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
 import boto3
 from dagster import (
@@ -31,13 +32,14 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.test_utils import nesting_graph, poll_for_step_start
 from dagster._utils import segfault
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_shared.yaml_utils import merge_yamls
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -175,10 +177,18 @@ def demo_slow_graph():
     count_letters(multiply_the_word_slow())
 
 
-@op
-def hanging_op(_):
-    while True:
-        time.sleep(0.1)
+@op(config_schema={"cleanup_delay": Field(int, is_required=False)})
+def hanging_op(context):
+    try:
+        while True:
+            time.sleep(0.1)
+    except DagsterExecutionInterruptedError:
+        cleanup_delay = context.op_config.get("cleanup_delay")
+        if cleanup_delay:
+            context.log.info(f"Delaying cleanup for {cleanup_delay} seconds")
+            time.sleep(cleanup_delay)
+            context.log.info("Done cleaning up")
+        raise
 
 
 @op(config_schema={"looking_for": str})
@@ -275,7 +285,7 @@ def long_running_task(context):
     iterations = 20 * 30  # 20 minutes
     for i in range(iterations):
         context.log.info(
-            "task in progress [%d/100]%% complete" % math.floor(100.0 * float(i) / iterations)
+            "task in progress [%d/100]%% complete" % math.floor(100.0 * float(i) / iterations)  # noqa: UP031
         )
         time.sleep(2)
     return random.randint(0, iterations)
@@ -283,11 +293,11 @@ def long_running_task(context):
 
 @op
 def post_process(context, input_count):
-    context.log.info("received input %d" % input_count)
+    context.log.info("received input %d" % input_count)  # noqa: UP031
     iterations = 60 * 2  # 2 hours
     for i in range(iterations):
         context.log.info(
-            "post-process task in progress [%d/100]%% complete"
+            "post-process task in progress [%d/100]%% complete"  # noqa: UP031
             % math.floor(100.0 * float(i) / iterations)
         )
         time.sleep(60)
@@ -296,8 +306,8 @@ def post_process(context, input_count):
 @graph
 def long_running_graph():
     for i in range(10):
-        t = long_running_task.alias("first_%d" % i)()
-        post_process.alias("post_process_%d" % i)(t)
+        t = long_running_task.alias("first_%d" % i)()  # noqa: UP031
+        post_process.alias("post_process_%d" % i)(t)  # noqa: UP031
 
 
 large_graph = nesting_graph(depth=1, num_children=6, name="large_graph")
@@ -382,6 +392,17 @@ def slow_graph():
 
 
 @op
+def spin_forever_op(_):
+    while True:
+        time.sleep(10)
+
+
+@graph
+def spin_forever_graph():
+    spin_forever_op()
+
+
+@op
 def slow_execute_k8s_op(context):
     # lazily import, since this repo is used in docker-tests and we can avoid the k8s import
     from dagster_k8s import execute_k8s_job
@@ -414,7 +435,7 @@ def s3_resource_with_context_manager(context):
         context.log.info("tearing down s3_resource_with_context_manager")
         bucket = "dagster-scratch-80542c2"
         key = f"resource_termination_test/{context.run_id}"
-        s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
+        s3.put_object(Bucket=bucket, Key=key, Body=b"foo")  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @op(required_resource_keys={"s3_resource_with_context_manager"})
@@ -497,7 +518,7 @@ def hard_failer_graph():
 @op
 def check_volume_mount(context):
     with open(
-        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
+        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", encoding="utf8"
     ) as mounted_file:
         contents = mounted_file.read()
         context.log.info(f"Contents of mounted file: {contents}")
@@ -553,6 +574,7 @@ def define_demo_execution_repo():
                 "demo_slow_job_docker": define_job(demo_slow_graph, "docker"),
                 "demo_job_gcs": define_job(demo_graph, "gcs"),
                 "demo_job_k8s": define_job(demo_graph, "k8s"),
+                "spin_forever_job_k8s": define_job(spin_forever_graph, "k8s"),
                 "docker_celery_job": define_job(
                     demo_resource_output_graph,
                     "celery_docker",

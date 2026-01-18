@@ -66,7 +66,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     )
 
     databricks_run_config["install_default_libraries"] = False
-    expected_task.libraries = None
+    expected_task.libraries = []
 
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_with(
@@ -135,6 +135,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         spark_version=NEW_CLUSTER["spark_version"],
         num_workers=NEW_CLUSTER["size"]["num_workers"],
         custom_tags={"__dagster_version": dagster.__version__},
+        init_scripts=[],
     )
     expected_task.libraries = [
         compute.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),
@@ -326,8 +327,8 @@ class TestDatabricksClientHasCredentials:
                 client_id="test-client-id", client_secret="test-client-secret"
             ),
         )
-        assert client.oauth_credentials.client_id == "test-client-id"
-        assert client.oauth_credentials.client_secret == "test-client-secret"
+        assert client.oauth_credentials.client_id == "test-client-id"  # pyright: ignore[reportOptionalMemberAccess]
+        assert client.oauth_credentials.client_secret == "test-client-secret"  # pyright: ignore[reportOptionalMemberAccess]
         assert client.token is None
         assert client.azure_credentials is None
 
@@ -340,8 +341,8 @@ class TestDatabricksClientHasCredentials:
                 azure_tenant_id="test-tenant-id",
             ),
         )
-        assert client.azure_credentials.azure_client_id == "test-client-id"
-        assert client.azure_credentials.azure_client_secret == "test-client-secret"
-        assert client.azure_credentials.azure_tenant_id == "test-tenant-id"
+        assert client.azure_credentials.azure_client_id == "test-client-id"  # pyright: ignore[reportOptionalMemberAccess]
+        assert client.azure_credentials.azure_client_secret == "test-client-secret"  # pyright: ignore[reportOptionalMemberAccess]
+        assert client.azure_credentials.azure_tenant_id == "test-tenant-id"  # pyright: ignore[reportOptionalMemberAccess]
         assert client.token is None
         assert client.oauth_credentials is None

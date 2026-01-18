@@ -1,9 +1,10 @@
 import os
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from typing import IO, Any, Optional
 
 import boto3
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from botocore.errorfactory import ClientError
 from dagster import (
     Field,
@@ -13,8 +14,8 @@ from dagster import (
 )
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
-    CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
+    TruncatingCloudStorageComputeLogManager,
 )
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
@@ -22,13 +23,13 @@ from dagster._core.storage.local_compute_log_manager import (
     LocalComputeLogManager,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
+from dagster._utils import ensure_dir
 from typing_extensions import Self
 
 POLLING_INTERVAL = 5
 
 
-class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
+class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):
     """Logs compute function stdout and stderr to S3.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
@@ -57,7 +58,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     Args:
         bucket (str): The name of the s3 bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster._seven.get_system_temp_directory()``.
+            ``dagster_shared.seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         use_ssl (Optional[bool]): Whether or not to use SSL. Default True.
         verify (Optional[bool]): Whether or not to verify SSL certificates. Default True.
@@ -113,6 +114,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             self._region = self._s3_session.meta.region_name
         else:
             self._region = region
+        super().__init__()
 
     @property
     def inst_data(self):
@@ -217,7 +219,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": s3_key}
         )
 
-    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):  # pyright: ignore[reportIncompatibleMethodOverride]
         if not self.is_capture_complete(log_key):
             return None
         s3_key = self._s3_key(log_key, io_type)
@@ -233,22 +235,19 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             return False
         return True
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
         path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-        ensure_file(path)
-
         if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
             return
 
         s3_key = self._s3_key(log_key, io_type, partial=partial)
-        with open(path, "rb") as data:
-            extra_args = {
-                "ContentType": "text/plain",
-                **(self._upload_extra_args if self._upload_extra_args else {}),
-            }
-            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
+        extra_args = {
+            "ContentType": "text/plain",
+            **(self._upload_extra_args if self._upload_extra_args else {}),
+        }
+        self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

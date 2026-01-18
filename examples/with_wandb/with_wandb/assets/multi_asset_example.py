@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import wandb
 from dagster import AssetOut, multi_asset
 
@@ -25,14 +23,14 @@ from dagster import AssetOut, multi_asset
     },
     group_name="my_multi_asset_group",
 )
-def write_multiple_artifacts() -> Tuple[wandb.Table, wandb.Table]:
+def write_multiple_artifacts() -> tuple[wandb.Table, wandb.Table]:
     """Example writing multiple W&B Artifact with @multi_asset.
 
     Returns:
         - wandb.Table: our training dataset
         - wandb.Table: our validation dataset
 
-    Both outputs will be turned into an W&B Artifact. They don't need to be of the same type.
+    Both outputs will be turned into a W&B Artifact. They don't need to be of the same type.
     """
     first_table = wandb.Table(columns=["a", "b", "c"], data=[[1, 2, 3]])
     second_table = wandb.Table(columns=["d", "e"], data=[[4, 5]])

@@ -1,8 +1,10 @@
 import logging
 import os
 from collections import defaultdict
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Any, Mapping, Optional
+from functools import cached_property
+from typing import Any, Optional
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
@@ -11,6 +13,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import StringSource
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -30,6 +33,7 @@ from dagster._utils import mkdir_p
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 
 
+@public
 class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed consolidated event log storage intended for test cases only.
 
@@ -112,7 +116,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_table(self, table_name: str) -> bool:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        return bool(engine.dialect.has_table(engine.connect(), table_name))
+        with engine.connect() as conn:
+            has_table = bool(engine.dialect.has_table(conn, table_name))
+        return has_table
 
     def get_db_path(self):
         return os.path.join(self._base_dir, f"{SQLITE_EVENT_LOG_FILENAME}.db")
@@ -124,13 +130,11 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
-            self._secondary_index_cache[name] = super(
-                ConsolidatedSqliteEventLogStorage, self
-            ).has_secondary_index(name)
+            self._secondary_index_cache[name] = super().has_secondary_index(name)
         return self._secondary_index_cache[name]
 
     def enable_secondary_index(self, name):
-        super(ConsolidatedSqliteEventLogStorage, self).enable_secondary_index(name)
+        super().enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
@@ -144,9 +148,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._watchers[run_id][callback] = cursor
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
-        return False
+        return self.has_table("concurrency_limits")
 
     def on_modified(self):
         keys = [
@@ -197,9 +201,7 @@ class ConsolidatedSqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
             event_log_storage, "event_log_storage", ConsolidatedSqliteEventLogStorage
         )
         self._log_path = event_log_storage.get_db_path()
-        super(ConsolidatedSqliteEventLogStorageWatchdog, self).__init__(
-            patterns=[self._log_path], **kwargs
-        )
+        super().__init__(patterns=[self._log_path], **kwargs)
 
     def on_modified(self, event):
         check.invariant(event.src_path == self._log_path)

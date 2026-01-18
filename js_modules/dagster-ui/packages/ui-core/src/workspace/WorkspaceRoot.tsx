@@ -2,26 +2,18 @@ import {Box, MainContent, NonIdealState, SpinnerWithText} from '@dagster-io/ui-c
 import {useContext} from 'react';
 import {Redirect, Switch, useParams} from 'react-router-dom';
 
-import {CodeLocationNotFound} from './CodeLocationNotFound';
 import {GraphRoot} from './GraphRoot';
-import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
 import {WorkspaceContext} from './WorkspaceContext/WorkspaceContext';
-import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
-import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
-import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';
-import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
-import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
 import {workspacePathFromAddress} from './workspacePath';
-import {useFeatureFlags} from '../app/Flags';
 import {Route} from '../app/Route';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {CodeLocationDefinitionsRoot} from '../code-location/CodeLocationDefinitionsRoot';
+import {CodeLocationDocsRoot} from '../code-location/CodeLocationDocsRoot';
 import CodeLocationOverviewRoot from '../code-location/CodeLocationOverviewRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ResourceRoot} from '../resources/ResourceRoot';
-import {WorkspaceResourcesRoot} from '../resources/WorkspaceResourcesRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 
@@ -29,9 +21,8 @@ const RepoRouteContainer = () => {
   const {repoPath} = useParams<{repoPath: string}>();
   const workspaceState = useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
-  const {flagCodeLocationPage} = useFeatureFlags();
 
-  const {loading} = workspaceState;
+  const {loadingNonAssets: loading} = workspaceState;
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
@@ -69,19 +60,6 @@ const RepoRouteContainer = () => {
         </Box>
       );
     }
-
-    const entryForLocation = workspaceState.locationEntries.find(
-      (entry) => entry.id === addressForPath.location,
-    );
-
-    return (
-      <Box padding={{vertical: 64}}>
-        <CodeLocationNotFound
-          repoAddress={addressForPath}
-          locationEntry={entryForLocation || null}
-        />
-      </Box>
-    );
   }
 
   return (
@@ -118,60 +96,38 @@ const RepoRouteContainer = () => {
       >
         <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
-      {flagCodeLocationPage ? (
-        <>
-          <Route path="/locations/:repoPath" exact>
-            <CodeLocationOverviewRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/definitions" exact>
-            <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
-          </Route>
-          <Route
-            path={[
-              '/locations/:repoPath/assets',
-              '/locations/:repoPath/jobs',
-              '/locations/:repoPath/resources',
-              '/locations/:repoPath/schedules',
-              '/locations/:repoPath/sensors',
-              '/locations/:repoPath/graphs',
-              '/locations/:repoPath/ops/:name?',
-            ]}
-            exact
-          >
-            <CodeLocationDefinitionsRoot
-              repoAddress={addressForPath}
-              repository={matchingRepo.repository}
-            />
-          </Route>
-        </>
-      ) : (
-        <>
-          <Route path="/locations/:repoPath" exact>
-            <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
-          </Route>
-          <Route path="/locations/:repoPath/resources" exact>
-            <WorkspaceResourcesRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/assets" exact>
-            <WorkspaceAssetsRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/jobs" exact>
-            <WorkspaceJobsRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/schedules" exact>
-            <WorkspaceSchedulesRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/sensors" exact>
-            <WorkspaceSensorsRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/graphs" exact>
-            <WorkspaceGraphsRoot repoAddress={addressForPath} />
-          </Route>
-          <Route path="/locations/:repoPath/ops/:name?" exact>
-            <WorkspaceOpsRoot repoAddress={addressForPath} />
-          </Route>
-        </>
-      )}
+      <Route path="/locations/:repoPath" exact>
+        <CodeLocationOverviewRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/locations/:repoPath/definitions" exact>
+        <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
+      </Route>
+      <Route path="/locations/:repoPath/docs" exact>
+        <CodeLocationDocsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/locations/:repoPath/docs/packages/:packageName?/:componentName?">
+        <CodeLocationDocsRoot repoAddress={addressForPath} />
+      </Route>
+      {/* Avoid trying to render a definitions route if there is no actual repo available. */}
+      {matchingRepo ? (
+        <Route
+          path={[
+            '/locations/:repoPath/assets',
+            '/locations/:repoPath/jobs',
+            '/locations/:repoPath/resources',
+            '/locations/:repoPath/schedules',
+            '/locations/:repoPath/sensors',
+            '/locations/:repoPath/graphs',
+            '/locations/:repoPath/ops/:name?',
+          ]}
+          exact
+        >
+          <CodeLocationDefinitionsRoot
+            repoAddress={addressForPath}
+            repository={matchingRepo.repository}
+          />
+        </Route>
+      ) : null}
       <Route path={['/locations/:repoPath/*', '/locations/:repoPath/']}>
         <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
       </Route>

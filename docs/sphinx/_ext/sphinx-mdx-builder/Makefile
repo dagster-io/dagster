@@ -1,5 +1,4 @@
 install:
-	pip install uv
 	uv pip install -e .
 
 install_dev: install
@@ -11,4 +10,10 @@ lint:
 
 lint_check:
 	ruff check
-	ruff format --check 
+	ruff format --check
+
+ruff:
+	$(MAKE) -C ../../../.. ruff
+
+test:
+	pytest -v

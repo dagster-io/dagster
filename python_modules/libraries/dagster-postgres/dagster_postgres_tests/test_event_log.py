@@ -45,6 +45,9 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
         assert isinstance(event_log_storage, PostgresEventLogStorage)
         yield event_log_storage
 
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
             run_id = make_new_run_id()
@@ -136,4 +139,4 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.postgres_url == from_explicit.postgres_url
+                assert from_url.postgres_url == from_explicit.postgres_url  # pyright: ignore[reportAttributeAccessIssue]

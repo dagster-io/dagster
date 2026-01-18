@@ -1,4 +1,5 @@
-from typing import Any, Callable, Mapping, Optional, Set
+from collections.abc import Callable, Mapping
+from typing import Any, Optional
 
 from dagster import (
     AssetsDefinition,
@@ -14,7 +15,11 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
-    build_dbt_multi_asset_args,
+    DAGSTER_DBT_SELECTOR_METADATA_KEY,
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    build_dbt_specs,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
@@ -25,17 +30,19 @@ from dagster_dbt.dbt_project import DbtProject
 def dbt_assets(
     *,
     manifest: DbtManifestParam,
-    select: str = "fqn:*",
-    exclude: Optional[str] = None,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     project: Optional[DbtProject] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -51,6 +58,8 @@ def dbt_assets(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        selector (Optional[str]): A dbt selector for the models in a project that you want to
+            include. Cannot be combined with select or exclude. Defaults to None.
         name (Optional[str]): The name of the op.
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
@@ -71,6 +80,8 @@ def dbt_assets(
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs the dbt
+            assets' execution.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -302,16 +313,12 @@ def dbt_assets(
     dagster_dbt_translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
     manifest = validate_manifest(manifest)
 
-    (
-        deps,
-        outs,
-        internal_asset_deps,
-        check_specs,
-    ) = build_dbt_multi_asset_args(
+    specs, check_specs = build_dbt_specs(
+        translator=dagster_dbt_translator,
         manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
         select=select,
-        exclude=exclude or "",
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
+        selector=selector or DBT_DEFAULT_SELECTOR,
         io_manager_key=io_manager_key,
         project=project,
     )
@@ -328,9 +335,16 @@ def dbt_assets(
             " with op_tags"
         )
 
+    if op_tags and DAGSTER_DBT_SELECTOR_METADATA_KEY in op_tags:
+        raise DagsterInvalidDefinitionError(
+            f"To specify a dbt selector, use the 'selector' argument, not '{DAGSTER_DBT_SELECTOR_METADATA_KEY}'"
+            " with op_tags"
+        )
+
     resolved_op_tags = {
         **({DAGSTER_DBT_SELECT_METADATA_KEY: select} if select else {}),
         **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
+        **({DAGSTER_DBT_SELECTOR_METADATA_KEY: selector} if selector else {}),
         **(op_tags if op_tags else {}),
     }
 
@@ -342,15 +356,15 @@ def dbt_assets(
         backfill_policy = BackfillPolicy.single_run()
 
     return multi_asset(
-        outs=outs,
         name=name,
-        internal_asset_deps=internal_asset_deps,
-        deps=deps,
+        specs=specs,
+        check_specs=check_specs,
+        can_subset=True,
         required_resource_keys=required_resource_keys,
         partitions_def=partitions_def,
-        can_subset=True,
         op_tags=resolved_op_tags,
-        check_specs=check_specs,
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
+        pool=pool,
+        allow_arbitrary_check_specs=True,
     )

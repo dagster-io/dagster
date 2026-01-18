@@ -3,7 +3,8 @@ import json
 import os
 import random
 import subprocess
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import requests
 from dagster._utils.merger import merge_dicts
@@ -49,9 +50,8 @@ def within_docker():
     from: https://stackoverflow.com/a/48710609/11295366
     """
     cgroup_path = "/proc/self/cgroup"
-    return (
-        os.path.exists("/.dockerenv")
-        or os.path.isfile(cgroup_path)
+    return os.path.exists("/.dockerenv") or (
+        os.path.isfile(cgroup_path)
         and any("docker" in line for line in open(cgroup_path, encoding="utf8"))
     )
 

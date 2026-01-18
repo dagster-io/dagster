@@ -1,23 +1,24 @@
-import {Colors, Tabs, TokenizingFieldValue} from '@dagster-io/ui-components';
+import {Tabs, TokenizingFieldValue} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import {useMemo} from 'react';
 import {useLocation} from 'react-router-dom';
-import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {getRunFeedPath} from './RunsFeedUtils';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
-import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {gql, useQuery} from '../apollo-client';
-import {RunStatus, RunsFilter} from '../graphql/types';
+import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
+import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {AnchorButton} from '../ui/AnchorButton';
 import {TabLink} from '../ui/TabLink';
 
-const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) => {
+type SelectedTab = ReturnType<typeof useSelectedRunsFeedTab>;
+
+const getDocumentTitle = (selected: SelectedTab) => {
   switch (selected) {
     case 'all':
-      return 'Runs | All runs';
+      return 'Runs | All';
+    case 'backfills':
+      return 'Runs | All backfills';
     case 'failed':
       return 'Runs | Failed';
     case 'in-progress':
@@ -31,13 +32,14 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) =
   }
 };
 
-export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
+export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {}) => {
   const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
     RUN_FEED_TABS_COUNT_QUERY,
     {
       variables: {
         queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
         inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
+        view: RunsFeedView.RUNS,
       },
     },
   );
@@ -55,64 +57,47 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
   }, [countData]);
 
   const [filterTokens] = useQueryPersistedRunFilters();
-  const selectedTab = useSelectedRunsFeedTab(filterTokens);
 
   useDocumentTitle(getDocumentTitle(selectedTab));
 
-  const urlForStatus = (statuses: RunStatus[]) => {
+  const urlForStatus = (statuses: RunStatus[], nextView?: RunsFeedView) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], getRunFeedPath());
+    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], '/runs', nextView);
   };
 
   const tabs = (
     <Tabs selectedTabId={selectedTab}>
-      <TabLink id="all" title="All runs" to={urlForStatus([])} />
+      <TabLink id="all" title="All" to={urlForStatus([])} />
+      <TabLink id="backfills" title="Backfills" to={urlForStatus([], RunsFeedView.BACKFILLS)} />
       <TabLink
         id="queued"
-        title={`Queued (${queuedCount})`}
+        title={queuedCount !== null ? `Queued (${queuedCount})` : `Queued`}
         to={urlForStatus(Array.from(queuedStatuses))}
       />
       <TabLink
         id="in-progress"
-        title={`In progress (${inProgressCount})`}
+        title={inProgressCount !== null ? `In progress (${inProgressCount})` : 'In progress'}
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to={`${getRunFeedPath()}scheduled`} />
+      <TabLink id="scheduled" title="Scheduled" to="/runs/scheduled" />
     </Tabs>
   );
 
   return {tabs, queryResult};
 };
 
-export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
-  color: ${Colors.textLight()};
-
-  &&:hover {
-    color: ${Colors.textLight()};
-  }
-
-  ${({$active}) =>
-    $active
-      ? css`
-          background-color: ${Colors.backgroundLighterHover()};
-          color: ${Colors.textDefault()};
-
-          &&:hover {
-            background-color: ${Colors.backgroundLighterHover()};
-            color: ${Colors.textDefault()};
-          }
-        `
-      : css`
-          background-color: ${Colors.backgroundDefault()};
-        `}
-`;
-
-export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => {
+export const useSelectedRunsFeedTab = (
+  filterTokens: TokenizingFieldValue[],
+  view: RunsFeedView,
+) => {
   const {pathname} = useLocation();
-  if (pathname === `${getRunFeedPath()}scheduled`) {
+  if (pathname === '/runs/scheduled') {
     return 'scheduled';
+  }
+  if (view === RunsFeedView.BACKFILLS) {
+    return 'backfills';
   }
   const statusTokens = new Set(
     filterTokens.filter((token) => token.token === 'status').map((token) => token.value),
@@ -130,13 +115,17 @@ export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => 
 };
 
 export const RUN_FEED_TABS_COUNT_QUERY = gql`
-  query RunFeedTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
-    queuedCount: runsFeedCountOrError(filter: $queuedFilter) {
+  query RunFeedTabsCountQuery(
+    $queuedFilter: RunsFilter!
+    $inProgressFilter: RunsFilter!
+    $view: RunsFeedView!
+  ) {
+    queuedCount: runsFeedCountOrError(filter: $queuedFilter, view: $view) {
       ... on RunsFeedCount {
         count
       }
     }
-    inProgressCount: runsFeedCountOrError(filter: $inProgressFilter) {
+    inProgressCount: runsFeedCountOrError(filter: $inProgressFilter, view: $view) {
       ... on RunsFeedCount {
         count
       }

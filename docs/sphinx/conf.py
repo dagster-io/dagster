@@ -43,6 +43,9 @@ project = "Dagster"
 copyright = "2019, Dagster Labs, Inc"  # noqa: A001
 author = "Dagster Labs"
 
+# Base URL for the documentation site - used for generating correct inventory URIs
+html_baseurl = "https://docs.dagster.io/"
+
 # -- General configuration ---------------------------------------------------
 
 # NOTE: `sphinx.ext.*` extensions are built-in to sphinx-- all others are supplied by other
@@ -66,6 +69,13 @@ extensions = [
     # Render MDX
     "sphinxcontrib.mdxbuilder",
 ]
+
+# MDX Builder configuration
+mdx_title_suffix = ""
+mdx_title_meta = (
+    " API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster"
+)
+mdx_description_meta = " Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples."
 
 # -- Extension configuration -------------------------------------------------
 
@@ -97,7 +107,6 @@ autodoc_mock_imports = [
     "airflow",
     "azure",
     "coloredlogs",
-    "croniter",
     "dask",
     "databricks",
     "databricks_api",
@@ -122,12 +131,12 @@ autodoc_mock_imports = [
     "orjson",
     "pandas_gbq",
     "pandera",
-    "polars",
     "prometheus_client",
     "psycopg2",
     "pypd",
     "sentry_sdk",
     "slack_sdk",
+    "sling_mac_arm64",
     "snowflake",
     "sshtunnel",
     "toposort",
@@ -145,3 +154,8 @@ autosectionlabel_prefix_document = True
 
 # Only support Google-style docstrings
 napoleon_numpy_docstring = False
+
+# Prevent docs generation for Sphinx-specific files
+exclude_patterns = ["_build", "_ext"]
+
+suppress_warnings = ["autosectionlabel.*"]

@@ -10,7 +10,7 @@ function wrapRangeInNode(range: Range, nodeName: string) {
   const newNode = document.createElement(nodeName);
   try {
     range.surroundContents(newNode);
-  } catch (error) {
+  } catch {
     newNode.appendChild(range.extractContents());
     range.insertNode(newNode);
   }

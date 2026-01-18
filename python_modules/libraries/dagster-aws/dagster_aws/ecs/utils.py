@@ -1,8 +1,9 @@
 import hashlib
 import re
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
-from dagster._core.remote_representation.origin import RemoteJobOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
@@ -12,11 +13,50 @@ def sanitize_family(family):
     return re.sub(r"[^\w^\-]", "", family)[:255]
 
 
+def sanitize_tag(tag):
+    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-using-tags.html
+    return re.sub("[^A-Za-z0-9_]", "-", tag)[:255].strip("-")
+
+
 def _get_family_hash(name):
     m = hashlib.sha1()
     m.update(name.encode("utf-8"))
     name_hash = m.hexdigest()[:8]
     return f"{name[:55]}_{name_hash}"
+
+
+class RetryableEcsException(Exception): ...
+
+
+def run_ecs_task(ecs, run_task_kwargs) -> Mapping[str, Any]:
+    response = ecs.run_task(**run_task_kwargs)
+
+    tasks = response["tasks"]
+
+    if not tasks:
+        failures = response["failures"]
+        failure_messages = []
+        for failure in failures:
+            arn = failure.get("arn")
+            reason = failure.get("reason")
+            detail = failure.get("detail")
+
+            failure_message = (
+                "Task"
+                + (f" {arn}" if arn else "")
+                + " failed."
+                + (f" Failure reason: {reason}" if reason else "")
+                + (f" Failure details: {detail}" if detail else "")
+            )
+            failure_messages.append(failure_message)
+
+        failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
+
+        if "Capacity is unavailable at this time" in failure_message:
+            raise RetryableEcsException(failure_message)
+
+        raise Exception(failure_message)
+    return tasks[0]
 
 
 def get_task_definition_family(
@@ -57,36 +97,9 @@ def task_definitions_match(
         existing_task_definition, container_name
     )
 
-    # sidecars are checked separately below
-    match_without_sidecars = existing_task_definition_config._replace(
-        sidecars=[],
-    ) == desired_task_definition_config._replace(
-        sidecars=[],
+    return existing_task_definition_config.matches_other_task_definition_config(
+        desired_task_definition_config
     )
-    if not match_without_sidecars:
-        return False
-
-    # Just match sidecars on certain fields
-    if not [
-        (
-            sidecar["name"],
-            sidecar["image"],
-            sidecar.get("environment", []),
-            sidecar.get("secrets", []),
-        )
-        for sidecar in existing_task_definition_config.sidecars
-    ] == [
-        (
-            sidecar["name"],
-            sidecar["image"],
-            sidecar.get("environment", []),
-            sidecar.get("secrets", []),
-        )
-        for sidecar in desired_task_definition_config.sidecars
-    ]:
-        return False
-
-    return True
 
 
 def get_task_logs(ecs, logs_client, cluster, task_arn, container_name, limit=10):
@@ -124,3 +137,30 @@ def get_task_logs(ecs, logs_client, cluster, task_arn, container_name, limit=10)
     ).get("events")
 
     return [event.get("message") for event in events]
+
+
+def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
+    if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
+        return True
+
+    if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
+        return True
+
+    if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
+        return True
+
+    if "CannotPullContainerError" in stopped_reason and (
+        "invalid argument" in stopped_reason or "EOF" in stopped_reason
+    ):
+        return True
+
+    if (
+        "Unexpected EC2 error while attempting to Create Network Interface" in stopped_reason
+        and "AuthFailure" in stopped_reason
+    ):
+        return True
+
+    if "The Service Discovery instance could not be registered" in stopped_reason:
+        return True
+
+    return False

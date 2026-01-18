@@ -6,7 +6,7 @@ import {
   MenuItem,
   Popover,
   Spinner,
-  Subheading,
+  TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
@@ -34,6 +34,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {testId} from '../testing/testId';
+import {assertExists} from '../util/invariant';
 
 interface Props {
   assetKey: AssetKey;
@@ -52,7 +53,7 @@ interface Props {
   isLoadingDefinition: boolean;
 }
 
-const DISPLAYED_STATUSES = [
+const DISPLAYED_STATUSES: AssetPartitionStatus[] = [
   AssetPartitionStatus.MISSING,
   AssetPartitionStatus.MATERIALIZING,
   AssetPartitionStatus.MATERIALIZED,
@@ -74,12 +75,13 @@ export const AssetPartitions = ({
   dataRefreshHint,
   isLoadingDefinition,
 }: Props) => {
-  const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
+  const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0];
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
     modifyQueryString: true,
     assetHealth,
     shouldReadPartitionQueryStringParam: false,
+    defaultSelection: 'all',
   });
 
   const [sortTypes, setSortTypes] = useState<Array<SortType>>([]);
@@ -87,11 +89,33 @@ export const AssetPartitions = ({
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
     encode: (val) => ({status: [...val].sort().join(',')}),
-    decode: (qs) =>
-      (qs.status || '')
-        .split(',')
-        .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
+    decode: (qs) => {
+      const status = qs.status;
+      if (typeof status === 'string') {
+        return status
+          .split(',')
+          .filter((s): s is AssetPartitionStatus =>
+            DISPLAYED_STATUSES.includes(s as AssetPartitionStatus),
+          );
+      }
+      return [];
+    },
   });
+
+  const [searchValues, setSearchValues] = useState<string[]>([]);
+  const updateSearchValue = (idx: number, value: string) => {
+    setSearchValues((prev) => {
+      const next = [...prev];
+
+      // add empty strings for missing indices
+      while (next.length <= idx) {
+        next.push('');
+      }
+
+      next[idx] = value;
+      return next;
+    });
+  };
 
   // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
@@ -100,24 +124,33 @@ export const AssetPartitions = ({
     params,
     setParams,
     dimensionCount: selections.length,
-    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0]!,
+    defaultKeyInDimension: (dimensionIdx) =>
+      assertExists(
+        dimensionKeysInSelection(dimensionIdx)[0],
+        'Expected at least one key in dimension selection',
+      ),
   });
 
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
   const rangesForEachDimension = useMemo(() => {
-    if (!assetHealth) {
+    const [firstSelection] = selections;
+    if (!assetHealth || !firstSelection) {
       return selections.map(() => []);
     }
+
+    const timeDimensionSelection =
+      timeDimensionIdx !== -1 ? selections[timeDimensionIdx] : undefined;
+
     return selections.map((_s, idx) =>
       assetHealth.rangesForSingleDimension(
         idx,
         idx === 1 && focusedDimensionKeys[0]
-          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
-          : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-          ? selections[timeDimensionIdx]!.selectedRanges
-          : undefined,
+          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], firstSelection.dimension)]
+          : timeDimensionSelection && idx !== timeDimensionIdx
+            ? timeDimensionSelection.selectedRanges
+            : undefined,
       ),
     );
   }, [assetHealth, selections, timeDimensionIdx, focusedDimensionKeys]);
@@ -128,43 +161,55 @@ export const AssetPartitions = ({
   // loading the full key space and shift responsibility for this to GraphQL in the future.
   //
   const dimensionKeysInSelection = (idx: number) => {
-    if (!selections[idx]) {
+    const selection = selections[idx];
+    if (!selection) {
       return []; // loading
     }
     // Special case: If you have cleared the time selection in the top bar, we
     // clear all dimension columns, (even though you still have a dimension 2 selection)
-    if (timeDimensionIdx !== -1 && selections[timeDimensionIdx]!.selectedRanges.length === 0) {
+    if (
+      timeDimensionIdx !== -1 &&
+      assertExists(selections[timeDimensionIdx], 'Expected time dimension selection').selectedRanges
+        .length === 0
+    ) {
       return [];
     }
 
-    const {dimension, selectedRanges} = selections[idx]!;
+    const {dimension, selectedRanges} = selection;
     const allKeys = dimension.partitionKeys;
-    const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
+    const sortType = getSort(sortTypes, idx, selection.dimension.type);
+
+    const filterResultsBySearch = (keys: string[]) => {
+      const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
+      return keys.filter((key) => key.toLowerCase().includes(searchLower));
+    };
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
 
+    // Early exit #1: If you have no status filters applied, just apply the
+    // text search filter, sort and return.
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
-      const result = getSelectionKeys();
-      return sortResults(result, sortType);
+      return sortResults(filterResultsBySearch(getSelectionKeys()), sortType);
     }
 
+    // Get the health ranges, and then explode them into a `matching` set of keys
+    // that have the requested statuses.
     const healthRangesInSelection = rangesClippedToSelection(
-      rangesForEachDimension[idx]!,
+      assertExists(rangesForEachDimension[idx], `Expected ranges for dimension ${idx}`),
       selectedRanges,
     );
-    const getKeysWithStates = (states: AssetPartitionStatus[]) => {
-      return healthRangesInSelection.flatMap((r) =>
+    const getKeysWithStates = (states: AssetPartitionStatus[]) =>
+      healthRangesInSelection.flatMap((r) =>
         states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
-    };
-
     const matching = uniq(
       getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
     );
 
     let result;
-    // We have to add in "missing" separately because it's the absence of a range
+
+    // We have to add in "missing" separately because it's the absence of a range.
     if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
       const selectionKeys = getSelectionKeys();
       const isMissingForIndex = (idx: number) =>
@@ -174,15 +219,29 @@ export const AssetPartitions = ({
             r.end.idx >= idx &&
             !r.value.includes(AssetPartitionStatus.MISSING),
         );
+
+      const matchingSet = new Set(matching);
+      const selectionKeysSet = new Set(selectionKeys);
       result = allKeys.filter(
-        (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
+        (a, pidx) => selectionKeysSet.has(a) && (matchingSet.has(a) || isMissingForIndex(pidx)),
       );
     } else {
       result = matching;
     }
 
-    return sortResults(result, sortType);
+    return sortResults(filterResultsBySearch(result), sortType);
   };
+
+  if (!assetHealth) {
+    return (
+      <Box
+        style={{height: 390}}
+        flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+      >
+        <Spinner purpose="page" />
+      </Box>
+    );
+  }
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
   const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
@@ -198,24 +257,34 @@ export const AssetPartitions = ({
     );
   }
 
+  const timeDimensionSelection =
+    timeDimensionIdx !== -1
+      ? assertExists(selections[timeDimensionIdx], 'Expected time dimension selection')
+      : null;
+
   return (
     <>
-      {timeDimensionIdx !== -1 && (
+      {timeDimensionSelection && (
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
-            dimensionType={selections[timeDimensionIdx]!.dimension.type}
-            partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
-            health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
-            selected={selections[timeDimensionIdx]!.selectedKeys}
+            dimensionType={timeDimensionSelection.dimension.type}
+            partitionKeys={timeDimensionSelection.dimension.partitionKeys}
+            health={{
+              ranges: assertExists(
+                rangesForEachDimension[timeDimensionIdx],
+                'Expected ranges for time dimension',
+              ),
+            }}
+            selected={timeDimensionSelection.selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
+            showQuickSelectOptionsForStatuses={false}
           />
         </Box>
       )}
-
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
@@ -244,92 +313,101 @@ export const AssetPartitions = ({
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
-                flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                background={Colors.backgroundDefault()}
                 border="bottom"
-                padding={{horizontal: 24, vertical: 8}}
+                background={Colors.backgroundDefault()}
+                padding={{right: 16, vertical: 8, left: idx === 0 ? 24 : 16}}
               >
-                <div>
-                  {selection.dimension.name !== 'default' && (
-                    <Box flex={{gap: 8, alignItems: 'center'}}>
-                      <Icon name="partition" />
-                      <Subheading>{selection.dimension.name}</Subheading>
-                    </Box>
-                  )}
-                </div>
-                <Popover
-                  content={
-                    <Menu>
-                      <MenuItem
-                        text={
-                          <Tooltip content="The order in which partitions were created">
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Creation sort</span>
-                              <Icon name="info" />
-                            </Box>
-                          </Tooltip>
-                        }
-                        active={SortType.CREATION === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.CREATION;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-creation')}
-                      />
-                      <MenuItem
-                        text={
-                          <Tooltip content="The order in which partitions were created, reversed">
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Reverse creation sort</span>
-                              <Icon name="info" />
-                            </Box>
-                          </Tooltip>
-                        }
-                        active={SortType.REVERSE_CREATION === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_CREATION;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-reverse-creation')}
-                      />
-                      <MenuItem
-                        text="Alphabetical sort"
-                        active={SortType.ALPHABETICAL === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.ALPHABETICAL;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-alphabetical')}
-                      />
-                      <MenuItem
-                        text="Reverse alphabetical sort"
-                        active={SortType.REVERSE_ALPHABETICAL === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_ALPHABETICAL;
-                            return [...copy];
-                          });
-                        }}
-                        data-testId={testId('sort-reverse-alphabetical')}
-                      />
-                    </Menu>
+                <TextInput
+                  icon="search"
+                  fill
+                  style={{width: `100%`}}
+                  value={searchValues[idx] || ''}
+                  onChange={(e) => updateSearchValue(idx, e.target.value)}
+                  placeholder={
+                    selection.dimension.name !== 'default'
+                      ? `Filter by ${selection.dimension.name}…`
+                      : 'Filter by name…'
                   }
-                  position="bottom-left"
-                >
-                  <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={Colors.accentGray()} />
-                  </SortButton>
-                </Popover>
+                  data-testid={testId(`search-${idx}`)}
+                  rightElement={
+                    <Popover
+                      content={
+                        <Menu>
+                          <MenuItem
+                            text={
+                              <Tooltip content="The order in which partitions were created">
+                                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                                  <span>Creation sort</span>
+                                  <Icon name="info" />
+                                </Box>
+                              </Tooltip>
+                            }
+                            active={SortType.CREATION === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.CREATION;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-creation')}
+                          />
+                          <MenuItem
+                            text={
+                              <Tooltip content="The order in which partitions were created, reversed">
+                                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                                  <span>Reverse creation sort</span>
+                                  <Icon name="info" />
+                                </Box>
+                              </Tooltip>
+                            }
+                            active={SortType.REVERSE_CREATION === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.REVERSE_CREATION;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-reverse-creation')}
+                          />
+                          <MenuItem
+                            text="Alphabetical sort"
+                            active={SortType.ALPHABETICAL === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.ALPHABETICAL;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-alphabetical')}
+                          />
+                          <MenuItem
+                            text="Reverse alphabetical sort"
+                            active={SortType.REVERSE_ALPHABETICAL === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.REVERSE_ALPHABETICAL;
+                                return [...copy];
+                              });
+                            }}
+                            data-testid={testId('sort-reverse-alphabetical')}
+                          />
+                        </Menu>
+                      }
+                      position="bottom-left"
+                    >
+                      <SortButton
+                        data-testid={`sort-${idx}`}
+                        style={{margin: 0, marginRight: -4, borderRadius: 6}}
+                      >
+                        <Icon name="sort_by_alpha" color={Colors.accentGray()} />
+                      </SortButton>
+                    </Popover>
+                  }
+                />
               </Box>
 
               {!assetHealth ? (
@@ -345,7 +423,10 @@ export const AssetPartitions = ({
                     }
                     const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
                     return partitionStatusAtIndex(
-                      rangesForEachDimension[idx]!,
+                      assertExists(
+                        rangesForEachDimension[idx],
+                        `Expected ranges for dimension ${idx}`,
+                      ),
                       dimensionKeyIdx,
                     ).filter((s) => statusFilters.includes(s));
                   }}
@@ -387,9 +468,11 @@ function sortResults(results: string[], sortType: SortType) {
 }
 
 function getSort(sortTypes: Array<SortType>, idx: number, definitionType: PartitionDefinitionType) {
-  return sortTypes[idx] === undefined
-    ? definitionType === PartitionDefinitionType.TIME_WINDOW
+  const sortType = sortTypes[idx];
+  if (sortType === undefined) {
+    return definitionType === PartitionDefinitionType.TIME_WINDOW
       ? SortType.REVERSE_CREATION
-      : SortType.CREATION
-    : sortTypes[idx]!;
+      : SortType.CREATION;
+  }
+  return sortType;
 }

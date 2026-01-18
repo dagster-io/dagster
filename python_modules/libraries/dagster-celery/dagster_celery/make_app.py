@@ -1,9 +1,9 @@
-from typing import Dict, Optional
+from typing import Optional
 
 from celery import Celery
 from celery.utils.collections import force_mapping
 from dagster import Any
-from dagster._seven import is_module_available
+from dagster_shared.seven import is_module_available
 from kombu import Queue
 
 from dagster_celery.config import (
@@ -35,7 +35,7 @@ def make_app(app_args=None):
 
 def make_app_with_task_routes(
     task_routes: dict,
-    app_args: Optional[Dict[str, Any]] = None,
+    app_args: Optional[dict[str, Any]] = None,
 ):
     app_ = Celery("dagster", **(app_args if app_args else {}))
 

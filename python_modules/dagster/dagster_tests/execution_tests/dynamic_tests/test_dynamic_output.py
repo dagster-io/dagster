@@ -1,44 +1,33 @@
 import gc
 from typing import NamedTuple
 
+import dagster as dg
 import objgraph
 import pytest
-from dagster import (
-    DynamicOut,
-    DynamicOutput,
-    Out,
-    build_op_context,
-    execute_job,
-    graph,
-    job,
-    op,
-    reconstructable,
-)
-from dagster._core.definitions.events import Output
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEventType
-from dagster._core.test_utils import instance_for_test
 
 
 def test_basic():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def should_work():
-        yield DynamicOutput(1, mapping_key="1")
-        yield DynamicOutput(2, mapping_key="2")
+        yield dg.DynamicOutput(1, mapping_key="1")
+        yield dg.DynamicOutput(2, mapping_key="2")
 
     assert [do.value for do in should_work()] == [1, 2]
 
 
 def test_fails_without_def():
-    @op
+    @dg.op
     def should_fail():
-        yield DynamicOutput(True, mapping_key="foo")
+        yield dg.DynamicOutput(True, mapping_key="foo")
 
-    @graph
+    @dg.graph
     def wrap():
         should_fail()
 
-    with pytest.raises(DagsterInvariantViolationError, match="did not use DynamicOutputDefinition"):
+    with pytest.raises(
+        dg.DagsterInvariantViolationError, match="did not use DynamicOutputDefinition"
+    ):
         wrap.execute_in_process(raise_on_error=True)
 
     # https://github.com/dagster-io/dagster/issues/9727
@@ -47,31 +36,31 @@ def test_fails_without_def():
 
 
 def test_fails_with_wrong_output():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def should_fail():
-        yield Output(1)
+        yield dg.Output(1)
 
-    @graph
+    @dg.graph
     def wrap():
         should_fail()
 
-    with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
+    with pytest.raises(dg.DagsterInvariantViolationError, match="must yield DynamicOutput"):
         wrap.execute_in_process(raise_on_error=True)
 
     # https://github.com/dagster-io/dagster/issues/9727
     # with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
     #     list(should_fail())
 
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def should_also_fail():
         return 1
 
-    @graph
+    @dg.graph
     def wrap_also():
         should_also_fail()
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="dynamic output 'result' expected a list of DynamicOutput objects",
     ):
         wrap_also.execute_in_process(raise_on_error=True)
@@ -85,16 +74,18 @@ def test_fails_with_wrong_output():
 
 
 def test_fails_dupe_keys():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def should_fail():
-        yield DynamicOutput(True, mapping_key="dunk")
-        yield DynamicOutput(True, mapping_key="dunk")
+        yield dg.DynamicOutput(True, mapping_key="dunk")
+        yield dg.DynamicOutput(True, mapping_key="dunk")
 
-    @graph
+    @dg.graph
     def wrap():
         should_fail()
 
-    with pytest.raises(DagsterInvariantViolationError, match='mapping_key "dunk" multiple times'):
+    with pytest.raises(
+        dg.DagsterInvariantViolationError, match='mapping_key "dunk" multiple times'
+    ):
         wrap.execute_in_process(raise_on_error=True)
 
     # https://github.com/dagster-io/dagster/issues/9727
@@ -103,37 +94,37 @@ def test_fails_dupe_keys():
 
 
 def test_invalid_mapping_keys():
-    with pytest.raises(DagsterInvalidDefinitionError):
-        DynamicOutput(True, mapping_key="")
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.DynamicOutput(True, mapping_key="")
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        DynamicOutput(True, mapping_key="?")
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.DynamicOutput(True, mapping_key="?")
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        DynamicOutput(True, mapping_key="foo.baz")
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.DynamicOutput(True, mapping_key="foo.baz")
 
 
 def test_multi_output():
-    @op(
+    @dg.op(
         out={
-            "numbers": DynamicOut(int),
-            "letters": DynamicOut(str),
-            "wildcard": Out(str),
+            "numbers": dg.DynamicOut(int),
+            "letters": dg.DynamicOut(str),
+            "wildcard": dg.Out(str),
         }
     )
     def multiout():
-        yield DynamicOutput(1, output_name="numbers", mapping_key="1")
-        yield DynamicOutput(2, output_name="numbers", mapping_key="2")
-        yield DynamicOutput("a", output_name="letters", mapping_key="a")
-        yield DynamicOutput("b", output_name="letters", mapping_key="b")
-        yield DynamicOutput("c", output_name="letters", mapping_key="c")
-        yield Output("*", "wildcard")
+        yield dg.DynamicOutput(1, output_name="numbers", mapping_key="1")
+        yield dg.DynamicOutput(2, output_name="numbers", mapping_key="2")
+        yield dg.DynamicOutput("a", output_name="letters", mapping_key="a")
+        yield dg.DynamicOutput("b", output_name="letters", mapping_key="b")
+        yield dg.DynamicOutput("c", output_name="letters", mapping_key="c")
+        yield dg.Output("*", "wildcard")
 
-    @op
+    @dg.op
     def double(n):
         return n * 2
 
-    @job
+    @dg.job
     def multi_dyn():
         numbers, _, _ = multiout()
         numbers.map(double)
@@ -150,30 +141,30 @@ def test_multi_output():
 
 
 def test_multi_out_map():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def emit():
-        yield DynamicOutput(1, mapping_key="1")
-        yield DynamicOutput(2, mapping_key="2")
-        yield DynamicOutput(3, mapping_key="3")
+        yield dg.DynamicOutput(1, mapping_key="1")
+        yield dg.DynamicOutput(2, mapping_key="2")
+        yield dg.DynamicOutput(3, mapping_key="3")
 
-    @op(
+    @dg.op(
         out={
-            "a": Out(is_required=False),
-            "b": Out(is_required=False),
-            "c": Out(is_required=False),
+            "a": dg.Out(is_required=False),
+            "b": dg.Out(is_required=False),
+            "c": dg.Out(is_required=False),
         },
     )
     def multiout(inp: int):
         if inp == 1:
-            yield Output(inp, output_name="a")
+            yield dg.Output(inp, output_name="a")
         else:
-            yield Output(inp, output_name="b")
+            yield dg.Output(inp, output_name="b")
 
-    @op
+    @dg.op
     def echo(a):
         return a
 
-    @job
+    @dg.job
     def destructure():
         a, b, c = emit().map(multiout)
         echo.alias("echo_a")(a.collect())
@@ -193,16 +184,16 @@ def test_multi_out_map():
 def test_context_mapping_key():
     _observed = []
 
-    @op
+    @dg.op
     def observe_key(context, _dep=None):
         _observed.append(context.get_mapping_key())
 
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def emit():
-        yield DynamicOutput(1, mapping_key="key_1")
-        yield DynamicOutput(2, mapping_key="key_2")
+        yield dg.DynamicOutput(1, mapping_key="key_1")
+        yield dg.DynamicOutput(2, mapping_key="key_2")
 
-    @job
+    @dg.job
     def test():
         observe_key()
         emit().map(observe_key)
@@ -213,21 +204,21 @@ def test_context_mapping_key():
 
     # test standalone doesn't throw as well
     _observed = []
-    observe_key(build_op_context())
+    observe_key(dg.build_op_context())
     assert _observed == [None]
 
 
 def test_dynamic_with_op():
-    @op
+    @dg.op
     def passthrough(_ctx, _dep=None):
         pass
 
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def emit():
-        yield DynamicOutput(1, mapping_key="key_1")
-        yield DynamicOutput(2, mapping_key="key_2")
+        yield dg.DynamicOutput(1, mapping_key="key_1")
+        yield dg.DynamicOutput(2, mapping_key="key_2")
 
-    @graph
+    @dg.graph
     def test_graph():
         emit().map(passthrough)
 
@@ -238,31 +229,33 @@ class DangerNoodle(NamedTuple):
     x: int
 
 
-@op(out={"items": DynamicOut(), "refs": Out()})
+@dg.op(out={"items": dg.DynamicOut(), "refs": dg.Out()})
 def spawn():
     for i in range(10):
-        yield DynamicOutput(DangerNoodle(i), output_name="items", mapping_key=f"num_{i}")
+        yield dg.DynamicOutput(DangerNoodle(i), output_name="items", mapping_key=f"num_{i}")
 
     gc.collect()
-    yield Output(len(objgraph.by_type("DangerNoodle")), output_name="refs")
+    yield dg.Output(len(objgraph.by_type("DangerNoodle")), output_name="refs")
 
 
-@job
+@dg.job
 def no_leaks_plz():
     spawn()
 
 
-def test_dealloc_prev_outputs():
+@pytest.mark.parametrize("executor", ["in_process", "multiprocess"])
+def test_dealloc_prev_outputs(executor):
     # Ensure dynamic outputs can be used to chunk large data objects
     # by not holding any refs to previous outputs.
     # Things that will hold on to outputs:
     # * mem io manager
     # * having hooks - they get access to output objs
     # * in process execution - output capture for execute_in_process
-    with instance_for_test() as inst:
-        with execute_job(
-            reconstructable(no_leaks_plz),
+    with dg.instance_for_test() as inst:
+        with dg.execute_job(
+            dg.reconstructable(no_leaks_plz),
             instance=inst,
+            run_config={"execution": {"config": {executor: {}}}},
         ) as result:
             assert result.success
             # there may be 1 still referenced by outer iteration frames
@@ -270,20 +263,20 @@ def test_dealloc_prev_outputs():
 
 
 def test_collect_and_map():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def dyn_vals():
         for i in range(3):
-            yield DynamicOutput(i, mapping_key=f"num_{i}")
+            yield dg.DynamicOutput(i, mapping_key=f"num_{i}")
 
-    @op
+    @dg.op
     def echo(x):
         return x
 
-    @op
+    @dg.op
     def add_each(vals, x):
         return [v + x for v in vals]
 
-    @graph
+    @dg.graph
     def both_w_echo():
         d1 = dyn_vals()
         r = d1.map(lambda x: add_each(echo(d1.collect()), x))

@@ -2,42 +2,35 @@ import logging
 import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import cached_property
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     ContextManager,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
+    TypeAlias,
     Union,
     cast,
 )
 
+import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_values
+from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection
-from typing_extensions import TypeAlias
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_evaluation import (
-    AssetCheckEvaluation,
-    AssetCheckEvaluationPlanned,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
@@ -52,12 +45,17 @@ from dagster._core.events import (
     ASSET_CHECK_EVENTS,
     ASSET_EVENTS,
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
-    MARKER_EVENTS,
     DagsterEventType,
 )
 from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
+from dagster._core.execution.stats import (
+    RUN_STATS_EVENT_TYPES,
+    STEP_STATS_EVENT_TYPES,
+    RunStepKeyStatsSnapshot,
+    build_run_step_stats_from_events,
+)
 from dagster._core.storage.asset_check_execution_record import (
+    COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES,
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
 )
@@ -73,6 +71,7 @@ from dagster._core.storage.event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
     PlannedMaterializationInfo,
+    PoolLimit,
 )
 from dagster._core.storage.event_log.migration import (
     ASSET_DATA_MIGRATIONS,
@@ -97,9 +96,8 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
+from dagster._core.types.pagination import PaginatedResults, StorageIdCursor
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_values
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import (
@@ -113,6 +111,10 @@ from dagster._utils.concurrency import (
 from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+        AssetCheckEvaluation,
+        AssetCheckEvaluationPlanned,
+    )
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 MIN_ASSET_ROWS = 25
@@ -199,7 +201,7 @@ class SqlEventLogStorage(EventLogStorage):
             [self._event_to_row(event) for event in events]
         )
 
-    def _event_to_row(self, event: EventLogEntry) -> Dict[str, Any]:
+    def _event_to_row(self, event: EventLogEntry) -> dict[str, Any]:
         dagster_event_type = None
         asset_key_str = None
         partition = None
@@ -251,6 +253,8 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/issues/3945
 
         values = self._get_asset_entry_values(event, event_id, self.has_asset_key_index_cols())
+        if not values:
+            return
         insert_statement = AssetKeyTable.insert().values(
             asset_key=event.dagster_event.asset_key.to_string(), **values
         )
@@ -270,7 +274,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _get_asset_entry_values(
         self, event: EventLogEntry, event_id: int, has_asset_key_index_cols: bool
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -283,7 +287,7 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/pull/6885
         # https://github.com/dagster-io/dagster/pull/7319
 
-        entry_values: Dict[str, Any] = {}
+        entry_values: dict[str, Any] = {}
         dagster_event = check.not_none(event.dagster_event)
         if dagster_event.is_step_materialization:
             entry_values.update(
@@ -325,75 +329,6 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
         return entry_values
-
-    def supports_add_asset_event_tags(self) -> bool:
-        return self.has_table(AssetEventTagsTable.name)
-
-    def add_asset_event_tags(
-        self,
-        event_id: int,
-        event_timestamp: float,
-        asset_key: AssetKey,
-        new_tags: Mapping[str, str],
-    ) -> None:
-        check.int_param(event_id, "event_id")
-        check.float_param(event_timestamp, "event_timestamp")
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
-
-        if not self.supports_add_asset_event_tags():
-            raise DagsterInvalidInvocationError(
-                "In order to add asset event tags, you must run `dagster instance migrate` to "
-                "create the AssetEventTags table."
-            )
-
-        current_tags_list = self.get_event_tags_for_asset(asset_key, filter_event_id=event_id)
-
-        asset_key_str = asset_key.to_string()
-
-        if len(current_tags_list) == 0:
-            current_tags: Mapping[str, str] = {}
-        else:
-            current_tags = current_tags_list[0]
-
-        with self.index_connection() as conn:
-            current_tags_set = set(current_tags.keys())
-            new_tags_set = set(new_tags.keys())
-
-            existing_tags = current_tags_set & new_tags_set
-            added_tags = new_tags_set.difference(existing_tags)
-
-            for tag in existing_tags:
-                conn.execute(
-                    AssetEventTagsTable.update()
-                    .where(
-                        db.and_(
-                            AssetEventTagsTable.c.event_id == event_id,
-                            AssetEventTagsTable.c.asset_key == asset_key_str,
-                            AssetEventTagsTable.c.key == tag,
-                        )
-                    )
-                    .values(value=new_tags[tag])
-                )
-
-            if added_tags:
-                conn.execute(
-                    AssetEventTagsTable.insert(),
-                    [
-                        dict(
-                            event_id=event_id,
-                            asset_key=asset_key_str,
-                            key=tag,
-                            value=new_tags[tag],
-                            # Postgres requires a datetime that is in UTC but has no timezone info
-                            # set in order to be stored correctly
-                            event_timestamp=datetime.fromtimestamp(
-                                event_timestamp, timezone.utc
-                            ).replace(tzinfo=None),
-                        )
-                        for tag in added_tags
-                    ],
-                )
 
     def store_asset_event_tags(
         self, events: Sequence[EventLogEntry], event_ids: Sequence[int]
@@ -469,7 +404,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         run_id,
         cursor: Optional[str] = None,
-        of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        of_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> EventLogConnection:
@@ -572,7 +507,9 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 db.and_(
                     SqlEventLogStorageTable.c.run_id == run_id,
-                    SqlEventLogStorageTable.c.dagster_event_type != None,  # noqa: E711
+                    SqlEventLogStorageTable.c.dagster_event_type.in_(
+                        [event_type.value for event_type in RUN_STATS_EVENT_TYPES]
+                    ),
                 )
             )
             .group_by("dagster_event_type")
@@ -645,18 +582,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(SqlEventLogStorageTable.c.step_key != None)  # noqa: E711
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
-                    [
-                        DagsterEventType.STEP_START.value,
-                        DagsterEventType.STEP_SUCCESS.value,
-                        DagsterEventType.STEP_SKIPPED.value,
-                        DagsterEventType.STEP_FAILURE.value,
-                        DagsterEventType.STEP_RESTARTED.value,
-                        DagsterEventType.ASSET_MATERIALIZATION.value,
-                        DagsterEventType.STEP_EXPECTATION_RESULT.value,
-                        DagsterEventType.STEP_RESTARTED.value,
-                        DagsterEventType.STEP_UP_FOR_RETRY.value,
-                    ]
-                    + [marker_event.value for marker_event in MARKER_EVENTS]
+                    [event_type.value for event_type in STEP_STATS_EVENT_TYPES]
                 )
             )
             .order_by(SqlEventLogStorageTable.c.id.asc())
@@ -1020,9 +946,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return event_records
 
-    def supports_event_consumer_queries(self) -> bool:
-        return True
-
     def _get_event_records_result(
         self,
         event_records_filter: EventRecordsFilter,
@@ -1070,6 +993,15 @@ class SqlEventLogStorage(EventLogStorage):
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
+    def fetch_failed_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return EventRecordsResult(records=[], cursor=cursor or "", has_more=False)
+
     def fetch_observations(
         self,
         records_filter: Union[AssetKey, AssetRecordsFilter],
@@ -1115,18 +1047,25 @@ class SqlEventLogStorage(EventLogStorage):
 
         before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
         event_records_filter = (
-            records_filter.to_event_records_filter(cursor, ascending)
+            records_filter.to_event_records_filter_without_job_names(cursor, ascending)
             if isinstance(records_filter, RunStatusChangeRecordsFilter)
             else EventRecordsFilter(
                 event_type, before_cursor=before_cursor, after_cursor=after_cursor
             )
         )
+        has_job_name_filter = (
+            isinstance(records_filter, RunStatusChangeRecordsFilter) and records_filter.job_names
+        )
+        if has_job_name_filter and not self.supports_run_status_change_job_name_filter:
+            check.failed(
+                "Called fetch_run_status_changes with selectors, which are not supported with this storage."
+            )
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_logs_for_all_runs_by_log_id(
         self,
         after_cursor: int = -1,
-        dagster_event_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        dagster_event_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
     ) -> Mapping[int, EventLogEntry]:
         check.int_param(after_cursor, "after_cursor")
@@ -1222,7 +1161,7 @@ class SqlEventLogStorage(EventLogStorage):
         # event log entry. Fetches backcompat EventLogEntry records when the last_materialization
         # in the raw asset row is an AssetMaterialization.
         to_backcompat_fetch = set()
-        results: Dict[AssetKey, Optional[EventLogRecord]] = {}
+        results: dict[AssetKey, Optional[EventLogRecord]] = {}
         for row in raw_asset_rows:
             asset_key = AssetKey.from_db_string(row["asset_key"])
             if not asset_key:
@@ -1275,11 +1214,11 @@ class SqlEventLogStorage(EventLogStorage):
             event_rows = db_fetch_mappings(conn, backcompat_query)
 
         for row in event_rows:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row["asset_key"]))
+            asset_key = AssetKey.from_db_string(cast("Optional[str]", row["asset_key"]))
             if asset_key:
                 results[asset_key] = EventLogRecord(
-                    storage_id=cast(int, row["id"]),
-                    event_log_entry=deserialize_value(cast(str, row["event"]), EventLogEntry),
+                    storage_id=cast("int", row["id"]),
+                    event_log_entry=deserialize_value(cast("str", row["event"]), EventLogEntry),
                 )
         return results
 
@@ -1308,7 +1247,7 @@ class SqlEventLogStorage(EventLogStorage):
         latest_materialization_records = self._get_latest_materialization_records(rows)
         can_read_asset_status_cache = self.can_read_asset_status_cache()
 
-        asset_records: List[AssetRecord] = []
+        asset_records: list[AssetRecord] = []
         for row in rows:
             asset_key = AssetKey.from_db_string(row["asset_key"])
             if asset_key:
@@ -1322,16 +1261,72 @@ class SqlEventLogStorage(EventLogStorage):
 
         return asset_records
 
+    def get_freshness_state_records(
+        self, keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, FreshnessStateRecord]:
+        latest_event_id_subquery = db_subquery(
+            db_select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+                ]
+            )
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in keys]
+                    ),
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.FRESHNESS_STATE_CHANGE.value,
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key)
+        )
+        latest_event_query = db_select([SqlEventLogStorageTable.c.event]).select_from(
+            latest_event_id_subquery.join(
+                SqlEventLogStorageTable,
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key == latest_event_id_subquery.c.asset_key,
+                    SqlEventLogStorageTable.c.id == latest_event_id_subquery.c.id,
+                ),
+            )
+        )
+
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, latest_event_query)
+
+        entries = [deserialize_value(row["event"], EventLogEntry) for row in rows]
+        records = [FreshnessStateRecord.from_event_log_entry(entry) for entry in entries]
+        return {record.entity_key: record for record in records}
+
     def get_asset_check_summary_records(
         self, asset_check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
         states = {}
         for asset_check_key in asset_check_keys:
-            execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
+            last_execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
+            last_completed_execution_record = (
+                last_execution_record
+                # If the check has never been executed or the latest record is a completed record,
+                # Avoid refetching the last completed record
+                if (
+                    not last_execution_record
+                    or last_execution_record[0].status
+                    in COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES
+                )
+                else self.get_asset_check_execution_history(
+                    asset_check_key, limit=1, status=COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES
+                )
+            )
             states[asset_check_key] = AssetCheckSummaryRecord(
                 asset_check_key=asset_check_key,
-                last_check_execution_record=execution_record[0] if execution_record else None,
-                last_run_id=execution_record[0].run_id if execution_record else None,
+                last_check_execution_record=last_execution_record[0]
+                if last_execution_record
+                else None,
+                last_run_id=last_execution_record[0].run_id if last_execution_record else None,
+                last_completed_check_execution_record=last_completed_execution_record[0]
+                if last_completed_execution_record
+                else None,
             )
         return states
 
@@ -1403,10 +1398,10 @@ class SqlEventLogStorage(EventLogStorage):
                 asset_keys=asset_keys, prefix=prefix, limit=fetch_limit, cursor=current_cursor
             )
             result.extend(rows)
-            should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
+            should_query = bool(has_more) and bool(limit) and len(result) < cast("int", limit)
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
-        if not is_partial_query and self._can_mark_assets_as_migrated(rows):
+        if not is_partial_query and self._can_mark_assets_as_migrated(rows):  # pyright: ignore[reportPossiblyUnboundVariable]
             self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
         return result[:limit] if limit else result
@@ -1417,7 +1412,7 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor=None,
-    ) -> Tuple[Iterable[SqlAlchemyRow], bool, Optional[str]]:
+    ) -> tuple[Iterable[SqlAlchemyRow], bool, Optional[str]]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.  Does not guarantee that the number of
         # rows returned will match the limit specified.  This helper function is used to fetch a
@@ -1462,11 +1457,11 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        wiped_timestamps_by_asset_key: Dict[AssetKey, float] = {}
-        row_by_asset_key: Dict[AssetKey, SqlAlchemyRow] = OrderedDict()
+        wiped_timestamps_by_asset_key: dict[AssetKey, float] = {}
+        row_by_asset_key: dict[AssetKey, SqlAlchemyRow] = OrderedDict()
 
         for row in rows:
-            asset_key = AssetKey.from_db_string(cast(str, row["asset_key"]))
+            asset_key = AssetKey.from_db_string(cast("str", row["asset_key"]))
             if not asset_key:
                 continue
             asset_details = AssetDetails.from_db_string(row["asset_details"])
@@ -1474,7 +1469,7 @@ class SqlEventLogStorage(EventLogStorage):
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event_or_record = (
-                deserialize_value(cast(str, row["last_materialization"]), NamedTuple)
+                deserialize_value(cast("str", row["last_materialization"]), NamedTuple)
                 if row["last_materialization"]
                 else None
             )
@@ -1607,8 +1602,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
             asset_key_to_details = {
-                cast(str, row["asset_key"]): (
-                    deserialize_value(cast(str, row["asset_details"]), AssetDetails)
+                cast("str", row["asset_key"]): (
+                    deserialize_value(cast("str", row["asset_details"]), AssetDetails)
                     if row["asset_details"]
                     else None
                 )
@@ -1721,7 +1716,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             results = conn.execute(tags_query).fetchall()
 
-        tags_by_event_id: Dict[int, Dict[str, str]] = defaultdict(dict)
+        tags_by_event_id: dict[int, dict[str, str]] = defaultdict(dict)
         for row in results:
             key, value, event_id = row
             tags_by_event_id[event_id][key] = value
@@ -1787,6 +1782,12 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
                 )
             )
+            if self.has_table("asset_check_executions"):
+                conn.execute(
+                    AssetCheckExecutionsTable.delete().where(
+                        AssetCheckExecutionsTable.c.asset_key == asset_key.to_string()
+                    )
+                )
 
     def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
         """Remove asset index history from event log for given asset partitions."""
@@ -1799,7 +1800,7 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: AssetKey,
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
-    ) -> Set[str]:
+    ) -> set[str]:
         query = (
             db_select(
                 [
@@ -1829,7 +1830,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
-        return set([cast(str, row[0]) for row in results])
+        return set([cast("str", row[0]) for row in results])
 
     def _latest_event_ids_by_partition_subquery(
         self,
@@ -1877,7 +1878,10 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, event_type: DagsterEventType
+        self,
+        asset_key: AssetKey,
+        event_type: DagsterEventType,
+        partitions: Optional[set[str]] = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
@@ -1886,7 +1890,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [event_type]
+            asset_key, [event_type], asset_partitions=list(partitions) if partitions else None
         )
         latest_event_ids_by_partition = db_select(
             [
@@ -1898,9 +1902,11 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = conn.execute(latest_event_ids_by_partition).fetchall()
 
-        latest_materialization_storage_id_by_partition: Dict[str, int] = {}
+        latest_materialization_storage_id_by_partition: dict[str, int] = {}
         for row in rows:
-            latest_materialization_storage_id_by_partition[cast(str, row[0])] = cast(int, row[1])
+            latest_materialization_storage_id_by_partition[cast("str", row[0])] = cast(
+                "int", row[1]
+            )
         return latest_materialization_storage_id_by_partition
 
     def get_latest_tags_by_partition(
@@ -1949,19 +1955,19 @@ class SqlEventLogStorage(EventLogStorage):
             .where(AssetEventTagsTable.c.key.in_(tag_keys))
         )
 
-        latest_tags_by_partition: Dict[str, Dict[str, str]] = defaultdict(dict)
+        latest_tags_by_partition: dict[str, dict[str, str]] = defaultdict(dict)
         with self.index_connection() as conn:
             rows = conn.execute(latest_tags_by_partition_query).fetchall()
 
         for row in rows:
-            latest_tags_by_partition[cast(str, row[0])][cast(str, row[1])] = cast(str, row[2])
+            latest_tags_by_partition[cast("str", row[0])][cast("str", row[1])] = cast("str", row[2])
 
         # convert defaultdict to dict
         return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey, after_storage_id: Optional[int] = None
-    ) -> Mapping[str, Tuple[str, int]]:
+    ) -> Mapping[str, tuple[str, int]]:
         """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
         These materializations could be in progress, or they could have failed. A separate query checking the run status
@@ -2065,7 +2071,48 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
 
-        return [cast(str, row[1]) for row in rows]
+        return [cast("str", row[1]) for row in rows]
+
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        self._check_partitions_table()
+        order_by = (
+            DynamicPartitionsTable.c.id.asc() if ascending else DynamicPartitionsTable.c.id.desc()
+        )
+        query = (
+            db_select(
+                [
+                    DynamicPartitionsTable.c.id,
+                    DynamicPartitionsTable.c.partition,
+                ]
+            )
+            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
+            .order_by(order_by)
+            .limit(limit)
+        )
+        if cursor:
+            last_storage_id = StorageIdCursor.from_cursor(cursor).storage_id
+            if ascending:
+                query = query.where(DynamicPartitionsTable.c.id > last_storage_id)
+            else:
+                query = query.where(DynamicPartitionsTable.c.id < last_storage_id)
+
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        if rows:
+            next_cursor = StorageIdCursor(storage_id=cast("int", rows[-1][0])).to_string()
+        elif cursor:
+            next_cursor = cursor
+        else:
+            next_cursor = StorageIdCursor(storage_id=-1).to_string()
+
+        return PaginatedResults(
+            results=[cast("str", row[1]) for row in rows],
+            cursor=next_cursor,
+            has_more=len(rows) == limit,
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
@@ -2126,8 +2173,21 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     @cached_property
-    def supports_global_concurrency_limits(self) -> bool:
+    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(ConcurrencySlotsTable.name)
+
+    @cached_property
+    def has_default_pool_limit_col(self) -> bool:
+        # This table was added later, and to avoid forcing a migration
+        # we handle in the code if its been added or not.
+        if not self.has_table(ConcurrencyLimitsTable.name):
+            return False
+
+        with self.index_connection() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(ConcurrencyLimitsTable.name)
+            ]
+            return ConcurrencyLimitsTable.c.using_default_limit.name in column_names
 
     @cached_property
     def has_concurrency_limits_table(self) -> bool:
@@ -2189,6 +2249,40 @@ class SqlEventLogStorage(EventLogStorage):
             return False
 
         default_limit = self._instance.global_op_concurrency_default_limit
+        # initialize outside of connection context
+        has_default_pool_limit_col = self.has_default_pool_limit_col
+
+        if has_default_pool_limit_col:
+            with self.index_transaction() as conn:
+                if default_limit is None:
+                    conn.execute(
+                        ConcurrencyLimitsTable.delete().where(
+                            ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                        )
+                    )
+                    self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                else:
+                    try:
+                        conn.execute(
+                            ConcurrencyLimitsTable.insert().values(
+                                concurrency_key=concurrency_key,
+                                limit=default_limit,
+                                using_default_limit=True,
+                            )
+                        )
+                    except db_exc.IntegrityError:
+                        conn.execute(
+                            ConcurrencyLimitsTable.update()
+                            .values(limit=default_limit)
+                            .where(
+                                db.and_(
+                                    ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                                    ConcurrencyLimitsTable.c.limit != default_limit,
+                                )
+                            )
+                        )
+                    self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            return True
 
         if default_limit is None:
             return False
@@ -2200,12 +2294,15 @@ class SqlEventLogStorage(EventLogStorage):
                         concurrency_key=concurrency_key, limit=default_limit
                     )
                 )
-                self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
             except db_exc.IntegrityError:
                 pass
+
+        self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
 
-    def _upsert_and_lock_limit_row(self, conn, concurrency_key: str, num: int):
+    def _upsert_and_lock_limit_row(
+        self, conn, concurrency_key: str, num: int, has_default_pool_limit_col: bool
+    ):
         """Helper function that can be overridden by each implementing sql variant which obtains a
         lock on the concurrency limits row for the given key and updates it to the given value.
         """
@@ -2222,15 +2319,33 @@ class SqlEventLogStorage(EventLogStorage):
         ).fetchone()
 
         if not row:
-            conn.execute(
-                ConcurrencyLimitsTable.insert().values(concurrency_key=concurrency_key, limit=num)
-            )
+            if has_default_pool_limit_col:
+                conn.execute(
+                    ConcurrencyLimitsTable.insert().values(
+                        concurrency_key=concurrency_key,
+                        limit=num,
+                        using_default_limit=False,
+                    )
+                )
+            else:
+                conn.execute(
+                    ConcurrencyLimitsTable.insert().values(
+                        concurrency_key=concurrency_key, limit=num
+                    )
+                )
         else:
-            conn.execute(
-                ConcurrencyLimitsTable.update()
-                .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
-                .values(limit=num)
-            )
+            if has_default_pool_limit_col:
+                conn.execute(
+                    ConcurrencyLimitsTable.update()
+                    .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+                    .values(limit=num, using_default_limit=False)
+                )
+            else:
+                conn.execute(
+                    ConcurrencyLimitsTable.update()
+                    .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+                    .values(limit=num)
+                )
 
     def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
         """Allocate a set of concurrency slots.
@@ -2250,8 +2365,10 @@ class SqlEventLogStorage(EventLogStorage):
         # ensure that we have concurrency limits set for all keys
         self._reconcile_concurrency_limits_from_slots()
 
+        # initialize outside of connection context
+        has_default_pool_limit_col = self.has_default_pool_limit_col
         with self.index_transaction() as conn:
-            self._upsert_and_lock_limit_row(conn, concurrency_key, num)
+            self._upsert_and_lock_limit_row(conn, concurrency_key, num, has_default_pool_limit_col)
             keys_to_assign = self._allocate_concurrency_slots(conn, concurrency_key, num)
 
         if keys_to_assign:
@@ -2277,7 +2394,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             self._allocate_concurrency_slots(conn, concurrency_key, 0)
 
-    def _allocate_concurrency_slots(self, conn, concurrency_key: str, num: int) -> List[str]:
+    def _allocate_concurrency_slots(self, conn, concurrency_key: str, num: int) -> list[str]:
         keys_to_assign = []
         count_row = conn.execute(
             db_select([db.func.count()])
@@ -2289,7 +2406,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
         ).fetchone()
-        existing = cast(int, count_row[0]) if count_row else 0
+        existing = cast("int", count_row[0]) if count_row else 0
 
         if existing > num:
             # need to delete some slots, favoring ones where the slot is unallocated
@@ -2364,8 +2481,8 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchone()
-        pending_count = cast(int, pending_row[0]) if pending_row else 0
-        slots_count = cast(int, slots[0]) if slots else 0
+        pending_count = cast("int", pending_row[0]) if pending_row else 0
+        slots_count = cast("int", slots[0]) if slots else 0
         return slots_count > pending_count
 
     def check_concurrency_claim(
@@ -2398,9 +2515,9 @@ class SqlEventLogStorage(EventLogStorage):
                     enqueued_timestamp=None,
                 )
 
-            priority = cast(int, pending_row[1]) if pending_row[1] else None
-            assigned_timestamp = cast(datetime, pending_row[0]) if pending_row[0] else None
-            create_timestamp = cast(datetime, pending_row[2]) if pending_row[2] else None
+            priority = cast("int", pending_row[1]) if pending_row[1] else None
+            assigned_timestamp = cast("datetime", pending_row[0]) if pending_row[0] else None
+            create_timestamp = cast("datetime", pending_row[2]) if pending_row[2] else None
             if assigned_timestamp is None:
                 return ConcurrencyClaimStatus(
                     concurrency_key=concurrency_key,
@@ -2459,7 +2576,7 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchone()
-            return row and cast(int, row[0]) > 0
+            return row and cast("int", row[0]) > 0
 
     def assign_pending_steps(self, concurrency_keys: Sequence[str]):
         if not concurrency_keys:
@@ -2546,7 +2663,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         # return the concurrency keys for the freed slots which were assigned
-        to_assign = [cast(str, row[2]) for row in rows if row[1] is not None]
+        to_assign = [cast("str", row[2]) for row in rows if row[1] is not None]
         return to_assign
 
     def claim_concurrency_slot(
@@ -2623,7 +2740,62 @@ class SqlEventLogStorage(EventLogStorage):
 
             return ConcurrencySlotStatus.CLAIMED
 
-    def get_concurrency_keys(self) -> Set[str]:
+    def get_pool_limits(self) -> Sequence[PoolLimit]:
+        self._reconcile_concurrency_limits_from_slots()
+        # initialize outside of connection context
+        has_default_col = self.has_default_pool_limit_col
+        with self.index_connection() as conn:
+            if self.has_concurrency_limits_table and has_default_col:
+                query = db_select(
+                    [
+                        ConcurrencyLimitsTable.c.concurrency_key,
+                        ConcurrencyLimitsTable.c.limit,
+                        ConcurrencyLimitsTable.c.using_default_limit,
+                    ]
+                ).select_from(ConcurrencyLimitsTable)
+                rows = conn.execute(query).fetchall()
+                return [
+                    PoolLimit(
+                        name=cast("str", row[0]),
+                        limit=cast("int", row[1]),
+                        from_default=cast("bool", row[2]),
+                    )
+                    for row in rows
+                ]
+
+            if self.has_concurrency_limits_table:
+                query = db_select(
+                    [
+                        ConcurrencyLimitsTable.c.concurrency_key,
+                        ConcurrencyLimitsTable.c.limit,
+                    ]
+                ).select_from(ConcurrencyLimitsTable)
+            else:
+                query = (
+                    db_select(
+                        [
+                            ConcurrencySlotsTable.c.concurrency_key,
+                            db.func.count().label("count"),
+                        ]
+                    )
+                    .where(
+                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                    )
+                    .group_by(
+                        ConcurrencySlotsTable.c.concurrency_key,
+                    )
+                )
+            rows = conn.execute(query).fetchall()
+            return [
+                PoolLimit(
+                    name=cast("str", row[0]),
+                    limit=cast("int", row[1]),
+                    from_default=False,
+                )
+                for row in rows
+            ]
+
+    def get_concurrency_keys(self) -> set[str]:
         self._reconcile_concurrency_limits_from_slots()
 
         """Get the set of concurrency limited keys."""
@@ -2640,7 +2812,7 @@ class SqlEventLogStorage(EventLogStorage):
                     .distinct()
                 )
             rows = conn.execute(query).fetchall()
-            return {cast(str, row[0]) for row in rows}
+            return {cast("str", row[0]) for row in rows}
 
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
         """Get the list of concurrency slots for a given concurrency key.
@@ -2665,6 +2837,28 @@ class SqlEventLogStorage(EventLogStorage):
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
             )
             slot_rows = db_fetch_mappings(conn, slot_query)
+            slot_count = len([slot_row for slot_row in slot_rows if not slot_row["deleted"]])
+
+            limit = slot_count
+            using_default = False
+
+            if self.has_concurrency_limits_table:
+                limit_row = conn.execute(
+                    db_select(
+                        [
+                            ConcurrencyLimitsTable.c.limit,
+                            ConcurrencyLimitsTable.c.using_default_limit,
+                        ]
+                    ).where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+                ).fetchone()
+
+                if limit_row:
+                    limit = cast("int", limit_row[0])
+                    using_default = cast("bool", limit_row[1])
+                elif not slot_count:
+                    limit = self._instance.global_op_concurrency_default_limit
+                    using_default = True
+
             pending_query = (
                 db_select(
                     [
@@ -2682,7 +2876,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             return ConcurrencyKeyInfo(
                 concurrency_key=concurrency_key,
-                slot_count=len([slot_row for slot_row in slot_rows if not slot_row["deleted"]]),
+                slot_count=slot_count,
                 claimed_slots=[
                     ClaimedSlotInfo(run_id=slot_row["run_id"], step_key=slot_row["step_key"])
                     for slot_row in slot_rows
@@ -2700,12 +2894,14 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                     for row in pending_rows
                 ],
+                limit=limit,
+                using_default_limit=using_default,
             )
 
-    def get_concurrency_run_ids(self) -> Set[str]:
+    def get_concurrency_run_ids(self) -> set[str]:
         with self.index_connection() as conn:
             rows = conn.execute(db_select([PendingStepsTable.c.run_id]).distinct()).fetchall()
-            return set([cast(str, row[0]) for row in rows])
+            return set([cast("str", row[0]) for row in rows])
 
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
         self._free_concurrency_slots(run_id=run_id)
@@ -2771,7 +2967,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
             # return the concurrency keys for the freed slots
-            return [cast(str, row[1]) for row in rows]
+            return [cast("str", row[1]) for row in rows]
 
     def store_asset_check_event(self, event: EventLogEntry, event_id: Optional[int]) -> None:
         check.inst_param(event, "event", EventLogEntry)
@@ -2794,7 +2990,7 @@ class SqlEventLogStorage(EventLogStorage):
         self, event: EventLogEntry, event_id: Optional[int]
     ) -> None:
         planned = cast(
-            AssetCheckEvaluationPlanned, check.not_none(event.dagster_event).event_specific_data
+            "AssetCheckEvaluationPlanned", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
             conn.execute(
@@ -2816,7 +3012,7 @@ class SqlEventLogStorage(EventLogStorage):
         self, event: EventLogEntry, event_id: Optional[int]
     ) -> None:
         evaluation = cast(
-            AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
+            "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
             conn.execute(
@@ -2842,7 +3038,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: Optional[int]) -> None:
         evaluation = cast(
-            AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
+            "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
             rows_updated = conn.execute(
@@ -2872,6 +3068,30 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             ).rowcount
 
+            # TODO fix the idx_asset_check_executions_unique index so that this can be a single
+            # upsert
+            if rows_updated == 0:
+                rows_updated = conn.execute(
+                    AssetCheckExecutionsTable.insert().values(
+                        asset_key=evaluation.asset_key.to_string(),
+                        check_name=evaluation.check_name,
+                        run_id=event.run_id,
+                        execution_status=(
+                            AssetCheckExecutionRecordStatus.SUCCEEDED.value
+                            if evaluation.passed
+                            else AssetCheckExecutionRecordStatus.FAILED.value
+                        ),
+                        evaluation_event=serialize_value(event),
+                        evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                        evaluation_event_storage_id=event_id,
+                        materialization_event_storage_id=(
+                            evaluation.target_materialization_data.storage_id
+                            if evaluation.target_materialization_data
+                            else None
+                        ),
+                    )
+                ).rowcount
+
         # 0 isn't normally expected, but occurs with the external instance of step launchers where
         # they don't have planned events.
         if rows_updated > 1:
@@ -2885,6 +3105,7 @@ class SqlEventLogStorage(EventLogStorage):
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
+        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -2911,6 +3132,11 @@ class SqlEventLogStorage(EventLogStorage):
 
         if cursor:
             query = query.where(AssetCheckExecutionsTable.c.id < cursor)
+
+        if status:
+            query = query.where(
+                AssetCheckExecutionsTable.c.execution_status.in_([s.value for s in status])
+            )
 
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
@@ -2968,14 +3194,14 @@ class SqlEventLogStorage(EventLogStorage):
         results = {}
         for row in rows:
             check_key = AssetCheckKey(
-                asset_key=check.not_none(AssetKey.from_db_string(cast(str, row["asset_key"]))),
-                name=cast(str, row["check_name"]),
+                asset_key=check.not_none(AssetKey.from_db_string(cast("str", row["asset_key"]))),
+                name=cast("str", row["check_name"]),
             )
             results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
         return results
 
     @property
-    def supports_asset_checks(self):
+    def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(AssetCheckExecutionsTable.name)
 
     def get_latest_planned_materialization_info(
@@ -3006,7 +3232,7 @@ class SqlEventLogStorage(EventLogStorage):
         partitions: Sequence[str],
         before_storage_id: Optional[int] = None,
         after_storage_id: Optional[int] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         partition_subquery = db_select(
             [SqlEventLogStorageTable.c.partition, SqlEventLogStorageTable.c.id]
         ).where(
@@ -3084,11 +3310,11 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = conn.execute(latest_data_version_by_partition_query).fetchall()
 
-        return {cast(str, row[0]): cast(str, row[1]) for row in rows}
+        return {cast("str", row[0]): cast("str", row[1]) for row in rows}
 
     def get_updated_data_version_partitions(
         self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
-    ) -> Set[str]:
+    ) -> set[str]:
         previous_data_versions = self._get_partition_data_versions(
             asset_key=asset_key,
             partitions=list(partitions),

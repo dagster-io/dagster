@@ -4,7 +4,8 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any, Optional, Union, cast
 
 import nbformat
 import papermill
@@ -14,23 +15,24 @@ from dagster import (
     Out,
     Output,
     _check as check,
-    _seven,
 )
+from dagster._annotations import beta
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._serdes import pack_value
-from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.tags import normalize_tags
+from dagster_shared import seven
+from dagster_shared.seven import get_system_temp_directory
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -61,6 +63,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # This is based on papermill.parameterize.parameterize_notebook
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
+@beta
 def replace_parameters(context, nb, parameters):
     """Assigned parameters into the appropriate place in the input notebook.
 
@@ -102,11 +105,12 @@ def replace_parameters(context, nb, parameters):
         after = nb.cells
 
     nb.cells = before + [newcell] + after
-    nb.metadata.papermill["parameters"] = _seven.json.dumps(parameters)
+    nb.metadata.papermill["parameters"] = seven.json.dumps(parameters)
 
     return nb
 
 
+@beta
 def get_papermill_parameters(
     step_context: StepExecutionContext,
     inputs: Mapping[str, object],
@@ -160,6 +164,7 @@ def get_papermill_parameters(
     return parameters
 
 
+@beta
 def execute_notebook(
     step_context: StepExecutionContext,
     name: str,
@@ -341,13 +346,14 @@ def _make_dagstermill_compute_fn(
     return _t_fn
 
 
+@beta
 def define_dagstermill_op(
     name: str,
     notebook_path: str,
     ins: Optional[Mapping[str, In]] = None,
     outs: Optional[Mapping[str, Out]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     output_notebook_name: Optional[str] = None,
     asset_key_prefix: Optional[Union[Sequence[str], str]] = None,
     description: Optional[str] = None,
@@ -402,7 +408,7 @@ def define_dagstermill_op(
         required_resource_keys.add(io_mgr_key)
         outs = {
             **outs,
-            cast(str, output_notebook_name): Out(io_manager_key=io_mgr_key),
+            cast("str", output_notebook_name): Out(io_manager_key=io_mgr_key),
         }
 
     if isinstance(asset_key_prefix, str):
@@ -413,7 +419,7 @@ def define_dagstermill_op(
     default_description = f"This op is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
-    user_tags = normalize_tags(tags).tags
+    user_tags = normalize_tags(tags)
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
@@ -431,7 +437,7 @@ def define_dagstermill_op(
     }
 
     if safe_is_subclass(config_schema, Config):
-        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
+        config_schema = infer_schema_from_config_class(cast("type[Config]", config_schema))
 
     return OpDefinition(
         name=name,

@@ -1,18 +1,16 @@
 import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import memoize from 'lodash/memoize';
-import {memo, useContext, useEffect, useMemo, useState} from 'react';
+import {memo, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {Timestamp} from '../app/time/Timestamp';
+import {TickResultType} from '../ticks/TickStatusTag';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {isStuckStartedTick} from './util';
-import {TimeContext} from '../app/time/TimeContext';
-import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 const COLOR_MAP = {
   [InstigationTickStatus.SUCCESS]: Colors.accentGreen(),
@@ -34,18 +32,9 @@ const MIN_WIDTH = 8; // At least 8px wide
 
 const MINUTE = 60000;
 
-const timestampFormat = memoize((timezone: string) => {
-  return new Intl.DateTimeFormat(navigator.language, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-    timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
-    timeZoneName: 'short',
-  });
-});
 export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTickFragment>({
   ticks,
+  tickResultType,
   onHoverTick,
   onSelectTick,
   exactRange,
@@ -54,6 +43,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   timeAfter = MINUTE, // 1 minute
 }: {
   ticks: T[];
+  tickResultType: TickResultType;
   onHoverTick: (InstigationTick?: T) => void;
   onSelectTick: (InstigationTick: T) => void;
   exactRange?: [number, number];
@@ -76,6 +66,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const maxX = exactRange?.[1] ? exactRange[1] * 1000 : now + timeAfter;
   const minX = exactRange?.[0] ? exactRange[0] * 1000 : now - timeRange;
+  const showNowLine = minX < now && now < maxX;
 
   const fullRange = maxX - minX;
 
@@ -88,12 +79,13 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const ticksToDisplay = useMemo(() => {
     return ticksReversed.map((tick, i) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
       const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
         ? tick.timestamp
         : tick.endTimestamp
-        ? tick.endTimestamp * 1000
-        : now;
+          ? tick.endTimestamp * 1000
+          : now;
       const endX = getX(endTimestamp, viewport.width, minX, fullRange);
       return {
         ...tick,
@@ -101,27 +93,26 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
         startX,
       };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minX, now, ticksReversed, fullRange, viewport.width]);
 
   const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
   const tickGridDelta = timeTickGridDelta / 5;
   const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
+  const numTicks = Math.ceil((maxX - startTickGridX) / tickGridDelta);
+  const numLabels = Math.ceil(numTicks / 5);
+
   const gridTicks = useMemo(() => {
     const ticks = [];
-    for (let i = startTickGridX; i <= maxX; i += tickGridDelta) {
+    for (let ii = 0; ii < numTicks; ii++) {
+      const time = startTickGridX + ii * tickGridDelta;
       ticks.push({
-        time: i,
-        x: getX(i, viewport.width, minX, fullRange),
-        showLabel: i % timeTickGridDelta === 0,
+        time,
+        x: getX(time, viewport.width, minX, fullRange),
+        showLabel: ii % numLabels === 0,
       });
     }
     return ticks;
-  }, [maxX, startTickGridX, tickGridDelta, viewport.width, minX, fullRange, timeTickGridDelta]);
-
-  const {
-    timezone: [timezone],
-  } = useContext(TimeContext);
+  }, [numTicks, startTickGridX, tickGridDelta, viewport.width, minX, fullRange, numLabels]);
 
   return (
     <div style={{marginRight: '8px'}}>
@@ -137,16 +128,18 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
               <GridTickLine />
               {tick.showLabel ? (
                 <GridTickTime>
-                  <Caption>{timestampFormat(timezone).format(new Date(tick.time))}</Caption>
+                  <Caption>
+                    <Timestamp timestamp={{ms: tick.time}} timeFormat={{showSeconds: true}} />
+                  </Caption>
                 </GridTickTime>
               ) : null}
             </GridTick>
           ))}
           {ticksToDisplay.map((tick) => {
-            const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
             const count =
-              (isAssetDaemonTick ? tick.requestedAssetMaterializationCount : tick.runIds?.length) ??
-              0;
+              (tickResultType === 'materializations' || !('runIds' in tick)
+                ? tick.requestedAssetMaterializationCount
+                : tick.runIds?.length) ?? 0;
             return (
               <Tick
                 key={tick.id}
@@ -167,7 +160,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
                   onSelectTick(tick);
                 }}
               >
-                <Tooltip content={<TickTooltip tick={tick} />}>
+                <Tooltip content={<TickTooltip tick={tick} tickResultType={tickResultType} />}>
                   <div style={{width: tick.width + 'px', height: '80px'}}>
                     {count > 0 ? count : null}
                   </div>
@@ -175,11 +168,13 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
               </Tick>
             );
           })}
-          <NowIndicator
-            style={{
-              transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
-            }}
-          />
+          {showNowLine ? (
+            <NowIndicator
+              style={{
+                transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
+              }}
+            />
+          ) : null}
         </TicksWrapper>
         <TimeAxisWrapper></TimeAxisWrapper>
       </div>
@@ -187,39 +182,52 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   );
 };
 
-const TickTooltip = memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
-  const status = useMemo(() => {
-    if (tick.status === InstigationTickStatus.FAILURE) {
-      return 'Evaluation failed';
-    }
-    if (tick.status === InstigationTickStatus.STARTED) {
-      return 'Evaluating…';
-    }
-    const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
-    if (isAssetDaemonTick) {
-      return `${tick.requestedAssetMaterializationCount} materialization${ifPlural(
-        tick.requestedAssetMaterializationCount,
-        '',
-        's',
-      )} requested`;
-    } else {
-      return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, '', 's')} requested`;
-    }
-  }, [tick]);
-  const startTime = dayjs(1000 * tick.timestamp!);
-  const endTime = dayjs(tick.endTimestamp ? 1000 * tick.endTimestamp : Date.now());
-  const elapsedTime = startTime.to(endTime, true);
-  return (
-    <div>
-      <Caption as="div">
-        {status} ({elapsedTime})
-      </Caption>
-      {tick.status === InstigationTickStatus.STARTED ? null : (
-        <Caption color={Colors.textLight()}>Click for details</Caption>
-      )}
-    </div>
-  );
-});
+const TickTooltip = memo(
+  ({
+    tick,
+    tickResultType,
+  }: {
+    tick: HistoryTickFragment | AssetDaemonTickFragment;
+    tickResultType: TickResultType;
+  }) => {
+    const status = useMemo(() => {
+      if (tick.status === InstigationTickStatus.FAILURE) {
+        return 'Evaluation failed';
+      }
+      if (tick.status === InstigationTickStatus.STARTED) {
+        return 'Evaluating…';
+      }
+      if (tickResultType === 'materializations' || !('runs' in tick)) {
+        return `${tick.requestedAssetMaterializationCount} materialization${ifPlural(
+          tick.requestedAssetMaterializationCount,
+          '',
+          's',
+        )} requested`;
+      } else {
+        return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, '', 's')} requested`;
+      }
+    }, [tick, tickResultType]);
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const startTime = dayjs(1000 * tick.timestamp!);
+    const endTime = dayjs(tick.endTimestamp ? 1000 * tick.endTimestamp : Date.now());
+    const elapsedTime = startTime.to(endTime, true);
+
+    return (
+      <div>
+        <Caption as="div">
+          <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showSeconds: true}} />
+        </Caption>
+        <Caption as="div">
+          {status} ({elapsedTime})
+        </Caption>
+        {tick.status === InstigationTickStatus.STARTED ? null : (
+          <Caption color={Colors.textLight()}>Click for details</Caption>
+        )}
+      </div>
+    );
+  },
+);
 
 const TicksWrapper = styled.div`
   position: relative;

@@ -1,39 +1,37 @@
-from dagster import graph, op
-from dagster._core.definitions.input import In
-from dagster._core.definitions.output import GraphOut, Out
+import dagster as dg
 
 
-@op(out=Out(int))
+@dg.op(out=dg.Out(int))
 def return_one():
     return 1
 
 
-@op(out=Out(int))
+@dg.op(out=dg.Out(int))
 def return_two():
     return 2
 
 
-@op(ins={"int_1": In(int)}, out=Out(int))
+@dg.op(ins={"int_1": dg.In(int)}, out=dg.Out(int))
 def add_one(int_1):
     return int_1 + 1
 
 
-@op(ins={"int_1": In(int), "int_2": In(int)}, out=Out(int))
+@dg.op(ins={"int_1": dg.In(int), "int_2": dg.In(int)}, out=dg.Out(int))
 def adder(int_1, int_2):
     return int_1 + int_2
 
 
-@op(out={"one": Out(int), "two": Out(int)})
+@dg.op(out={"one": dg.Out(int), "two": dg.Out(int)})
 def return_mult():
     return 1, 2
 
 
 def test_single_ins():
-    @graph
+    @dg.graph
     def composite_add_one(int_1):
         add_one(int_1)
 
-    @graph
+    @dg.graph
     def my_graph():
         composite_add_one(return_one())
 
@@ -43,11 +41,11 @@ def test_single_ins():
 
 
 def test_multi_ins():
-    @graph
+    @dg.graph
     def composite_adder(int_1, int_2):
         adder(int_1, int_2)
 
-    @graph
+    @dg.graph
     def my_graph():
         composite_adder(return_one(), return_two())
 
@@ -57,11 +55,11 @@ def test_multi_ins():
 
 
 def test_single_out():
-    @graph(out=GraphOut())
+    @dg.graph(out=dg.GraphOut())
     def composite_return_one():
         return return_one()
 
-    @graph
+    @dg.graph
     def my_graph():
         composite_return_one()
 
@@ -73,19 +71,19 @@ def test_single_out():
 def test_multi_out():
     called = {}
 
-    @graph(out={"out_1": GraphOut(), "out_2": GraphOut()})
+    @dg.graph(out={"out_1": dg.GraphOut(), "out_2": dg.GraphOut()})
     def composite_return_mult():
         one, two = return_mult()
         return (one, two)
 
-    @op
+    @dg.op
     def echo(in_one, in_two):
         called["one"] = in_one
         called["two"] = in_two
 
-    @graph
+    @dg.graph
     def my_graph():
-        one, two = composite_return_mult()
+        one, two = composite_return_mult()  # pyright: ignore[reportGeneralTypeIssues]
         echo(one, two)
 
     result = composite_return_mult.execute_in_process()
@@ -100,15 +98,15 @@ def test_multi_out():
 
 
 def test_graph_in_graph():
-    @graph(out=GraphOut())
+    @dg.graph(out=dg.GraphOut())
     def inner_composite_add_one(int_1):
         return add_one(int_1)
 
-    @graph(out=GraphOut())
+    @dg.graph(out=dg.GraphOut())
     def composite_adder(int_1):
         return inner_composite_add_one(int_1)
 
-    @graph
+    @dg.graph
     def my_graph():
         composite_adder(return_one())
 

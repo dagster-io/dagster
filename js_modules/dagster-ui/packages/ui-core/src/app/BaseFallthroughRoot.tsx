@@ -6,7 +6,6 @@ import {Route} from './Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
-import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 
 export const BaseFallthroughRoot = () => {
   return (
@@ -18,12 +17,9 @@ export const BaseFallthroughRoot = () => {
   );
 };
 
-const getVisibleJobs = (r: DagsterRepoOption) =>
-  r.repository.pipelines.filter((j) => !isHiddenAssetGroupJob(j.name));
-
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = useContext(WorkspaceContext);
-  const {allRepos, loading, locationEntries} = workspaceContext;
+  const {allRepos, loadingNonAssets: loading, locationEntries} = workspaceContext;
 
   if (loading) {
     return (
@@ -42,47 +38,30 @@ const FinalRedirectOrLoadingRoot = () => {
     return <Redirect to="/locations" />;
   }
 
-  const reposWithVisibleJobs = allRepos.filter((r) => getVisibleJobs(r).length > 0);
-
-  // If we have no repos with jobs, see if we have an asset group and route to it.
-  if (reposWithVisibleJobs.length === 0) {
-    const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
-    if (repoWithAssetGroup) {
-      return (
-        <Redirect
-          to={workspacePath(
-            repoWithAssetGroup.repository.name,
-            repoWithAssetGroup.repositoryLocation.name,
-            `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0]!.groupName}`,
-          )}
-        />
-      );
-    }
-  }
-
-  // If we have exactly one repo with one job, route to the job overview
-  if (reposWithVisibleJobs.length === 1) {
-    const repo = reposWithVisibleJobs[0]!;
-    const visibleJobs = getVisibleJobs(repo);
-    if (visibleJobs.length === 1) {
-      const job = visibleJobs[0]!;
-      return (
-        <Redirect
-          to={workspacePipelinePath({
-            repoName: repo.repository.name,
-            repoLocation: repo.repositoryLocation.name,
-            pipelineName: job.name,
-            isJob: job.isJob,
-          })}
-        />
-      );
-    }
-  }
-
-  // If we have more than one repo with a job, route to the instance overview
-  if (reposWithVisibleJobs.length > 0) {
+  // If there are visible jobs, redirect to overview
+  const anyVisibleJobs = ({repository}: DagsterRepoOption) => {
+    return repository.pipelines.some(({name}) => !isHiddenAssetGroupJob(name));
+  };
+  const anyReposWithVisibleJobs = allRepos.some((r) => anyVisibleJobs(r));
+  if (anyReposWithVisibleJobs) {
     return <Redirect to="/overview" />;
   }
 
+  // If there are jobs but they are all hidden, route to the overview timeline grouped by automation.
+  const hasAnyJobs = allRepos.some((r) => r.repository.pipelines.length > 0);
+  if (hasAnyJobs) {
+    return <Redirect to="/overview/activity/timeline?groupBy=automation" />;
+  }
+
+  // If we have no repos with jobs, see if we have an asset group and route to it.
+  const hasAnyAssets = allRepos.some((r) => r.repository.assetGroups.length);
+  if (hasAnyAssets) {
+    return <Redirect to="/asset-groups" />;
+  }
+
+  // Ben note: We only reach here if anyReposWithVisibleJobs is false,
+  // hasAnyJobs is false, AND there is no asset group.
+  //
+  // In this case, the overview would be blank so we go to the locations page.
   return <Redirect to="/locations" />;
 };

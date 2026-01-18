@@ -2,6 +2,7 @@ import json
 import time
 import uuid
 from typing import Any, Optional
+from unittest import mock
 
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
@@ -19,7 +20,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_subscription,
     infer_job_selector,
 )
-from typing_extensions import Dict
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -393,6 +393,58 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
         )
 
+        with mock.patch.object(
+            type(graphql_context),
+            "records_for_run_default_limit",
+            new_callable=mock.PropertyMock,
+        ) as mock_records_for_run_default_limit:
+            mock_records_for_run_default_limit.return_value = 5
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={"runId": exc_result.data["launchPipelineExecution"]["run"]["runId"]},
+            )
+
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
+            assert len(events_result.data["logsForRun"]["events"]) == 5
+
+            # exceeding default limit results in an error
+            assert events_result.data["logsForRun"]["cursor"]
+
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={
+                    "limit": 10,
+                    "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
+                },
+            )
+
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["logsForRun"]["__typename"] == "PythonError"
+            assert (
+                "Limit of 10 is too large. Max is 5" in events_result.data["logsForRun"]["message"]
+            )
+
+            # passing in a lower value than max chunk size is respected
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={
+                    "limit": 4,
+                    "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
+                },
+            )
+
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
+            assert len(events_result.data["logsForRun"]["events"]) == 4
+            assert events_result.data["logsForRun"]["cursor"]
+
     def test_basic_start_pipeline_and_poll(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "csv_hello_world")
         exc_result = execute_dagster_graphql(
@@ -727,7 +779,7 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
                 return message_data
 
 
-def first_event_of_type(logs, message_type) -> Optional[Dict[str, Any]]:
+def first_event_of_type(logs, message_type) -> Optional[dict[str, Any]]:
     for log in logs:
         if log["__typename"] == message_type:
             return log

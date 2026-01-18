@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
 
 import packaging.version
 

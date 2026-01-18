@@ -7,11 +7,11 @@ import {
   buildPartitionKeyRange,
   buildQuery,
 } from '../../graphql/types';
-import {BACKFILL_PREVIEW_QUERY} from '../BackfillPreviewModal';
+import {BACKFILL_PREVIEW_QUERY} from '../BackfillPreviewDialog';
 import {
   BackfillPreviewQuery,
   BackfillPreviewQueryVariables,
-} from '../types/BackfillPreviewModal.types';
+} from '../types/BackfillPreviewDialog.types';
 
 export const BackfillPreviewQueryMockPartitionKeys = [
   '2023-07-02',

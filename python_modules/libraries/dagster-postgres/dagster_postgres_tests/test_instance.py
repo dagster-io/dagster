@@ -7,7 +7,6 @@ import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_postgres.utils import get_conn, get_conn_string
 
 
@@ -197,49 +196,48 @@ def test_connection_leak(hostname, conn_string):
 
 def test_statement_timeouts(hostname):
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
-        instance.optimize_for_webserver(statement_timeout=500, pool_recycle=-1)  # 500ms
+        instance.optimize_for_webserver(
+            statement_timeout=500, pool_recycle=-1, max_overflow=20
+        )  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._run_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage._connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._event_storage._connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
 
 def test_skip_autocreate(hostname, conn_string):
-    TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
+    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))) as instance:
+        instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportAttributeAccessIssue]
+        instance.event_log_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportAttributeAccessIssue]
+        instance.schedule_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     with instance_for_test(
         overrides=yaml.safe_load(skip_autocreate_pg_config(hostname))
     ) as instance:
-        with pytest.raises(db.exc.ProgrammingError):
+        with pytest.raises(db.exc.ProgrammingError):  # pyright: ignore[reportAttributeAccessIssue]
             instance.get_runs()
 
-        with pytest.raises(db.exc.ProgrammingError):
+        with pytest.raises(db.exc.ProgrammingError):  # pyright: ignore[reportAttributeAccessIssue]
             instance.all_asset_keys()
 
-        with pytest.raises(db.exc.ProgrammingError):
+        with pytest.raises(db.exc.ProgrammingError):  # pyright: ignore[reportAttributeAccessIssue]
             instance.all_instigator_state()
 
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
-
-    TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
 
 
 def test_specify_pg_params(hostname):
@@ -248,9 +246,9 @@ def test_specify_pg_params(hostname):
     ) as instance:
         postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
 
-        assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001
-        assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001
-        assert instance._schedule_storage.postgres_url == postgres_url  # noqa: SLF001
+        assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        assert instance._schedule_storage.postgres_url == postgres_url  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_conn_str():
@@ -269,8 +267,8 @@ def test_conn_str():
     )
     assert conn_str == f"postgresql://{url_wo_scheme}"
     parsed = urlparse(conn_str)
-    assert unquote(parsed.username) == username
-    assert unquote(parsed.password) == password
+    assert unquote(parsed.username) == username  # pyright: ignore[reportArgumentType]
+    assert unquote(parsed.password) == password  # pyright: ignore[reportArgumentType]
     assert parsed.hostname == hostname
     assert parsed.scheme == "postgresql"
 
@@ -285,8 +283,8 @@ def test_conn_str():
 
     assert conn_str == f"postgresql+dialect://{url_wo_scheme}"
     parsed = urlparse(conn_str)
-    assert unquote(parsed.username) == username
-    assert unquote(parsed.password) == password
+    assert unquote(parsed.username) == username  # pyright: ignore[reportArgumentType]
+    assert unquote(parsed.password) == password  # pyright: ignore[reportArgumentType]
     assert parsed.hostname == hostname
     assert parsed.scheme == custom_scheme
 
@@ -309,7 +307,7 @@ def test_configured_other_schema(hostname):
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
-        instance.optimize_for_webserver(statement_timeout=100, pool_recycle=100)
+        instance.optimize_for_webserver(statement_timeout=100, pool_recycle=100, max_overflow=20)
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()

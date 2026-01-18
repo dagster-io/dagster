@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include dagster_airlift/py.typed
+include Makefile
+include CHANGES.md
+exclude conftest.py
+recursive-include dagster_airlift *.py
+prune kitchen-sink
+prune perf-harness
+prune scripts

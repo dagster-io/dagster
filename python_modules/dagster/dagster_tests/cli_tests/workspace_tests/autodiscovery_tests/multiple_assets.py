@@ -1,13 +1,13 @@
-from dagster import AssetKey, SourceAsset, asset
+import dagster as dg
 
-source_asset = SourceAsset(AssetKey("source_asset"))
+source_asset = dg.SourceAsset(dg.AssetKey("source_asset"))
 
 
-@asset
+@dg.asset
 def asset1(source_asset):
     assert source_asset
 
 
-@asset
+@dg.asset
 def asset2():
     pass

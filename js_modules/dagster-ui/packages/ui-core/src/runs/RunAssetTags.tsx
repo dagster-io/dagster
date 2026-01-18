@@ -1,11 +1,15 @@
+import {useMemo} from 'react';
+
 import {AssetKeyTagCollection} from './AssetTagCollections';
 import {assetKeysForRun} from './RunUtils';
+import {gql, useQuery} from '../apollo-client';
 import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.types';
 import {RunFragment} from './types/RunFragments.types';
-import {gql, useQuery} from '../apollo-client';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
-export const RunAssetTags = (props: {run: RunFragment}) => {
+export const RunAssetTags = (props: {
+  run: Pick<RunFragment, 'id' | 'stepKeysToExecute' | 'pipelineName' | 'assetSelection'>;
+}) => {
   const {run} = props;
   const skip = isHiddenAssetGroupJob(run.pipelineName);
   const queryResult = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
@@ -13,13 +17,16 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
     skip,
     fetchPolicy: 'no-cache',
   });
-  const {data, loading} = queryResult;
 
-  if (loading || !data || data.pipelineRunOrError.__typename !== 'Run') {
-    return null;
-  }
+  const assetKeys = useMemo(() => {
+    const {data} = queryResult;
+    let keys = null;
+    if (data?.pipelineRunOrError.__typename === 'Run') {
+      keys = data.pipelineRunOrError.assets.map((a) => a.key);
+    }
 
-  const assetKeys = skip ? assetKeysForRun(run) : data.pipelineRunOrError.assets.map((a) => a.key);
+    return skip ? assetKeysForRun(run) : keys;
+  }, [queryResult, run, skip]);
 
   return <AssetKeyTagCollection useTags assetKeys={assetKeys} />;
 };

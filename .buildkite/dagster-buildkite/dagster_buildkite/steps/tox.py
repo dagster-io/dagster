@@ -1,11 +1,32 @@
 import os
 import re
 import shlex
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import Optional
 
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
-from dagster_buildkite.utils import UV_PIN, CommandStep, make_buildkite_section_header
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import (
+    BuildkiteQueue,
+    CommandStepBuilder,
+    CommandStepConfiguration,
+)
+from buildkite_shared.uv import UV_PIN
+from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.utils import make_buildkite_section_header
+
+
+@dataclass
+class ToxFactor:
+    """Represents a tox environment factor for configuration.
+
+    Args:
+        factor: The tox factor name (e.g., "pytest", "integration")
+        splits: Number of parallel splits to generate for this factor (default: 1)
+    """
+
+    factor: str
+    splits: int = 1
+
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
@@ -20,15 +41,16 @@ def build_tox_step(
     command_type: str = "miscellaneous",
     python_version: Optional[AvailablePythonVersion] = None,
     tox_file: Optional[str] = None,
-    extra_commands_pre: Optional[List[str]] = None,
-    extra_commands_post: Optional[List[str]] = None,
-    env_vars: Optional[List[str]] = None,
-    dependencies: Optional[List[str]] = None,
+    extra_commands_pre: Optional[list[str]] = None,
+    extra_commands_post: Optional[list[str]] = None,
+    env_vars: Optional[list[str]] = None,
+    dependencies: Optional[list[str]] = None,
     retries: Optional[int] = None,
     timeout_in_minutes: Optional[int] = None,
     queue: Optional[BuildkiteQueue] = None,
     skip_reason: Optional[str] = None,
-) -> CommandStep:
+    pytest_args: Optional[list[str]] = None,
+) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
     label = f"{emoji} {base_label} {_tox_env_to_label_suffix(tox_env)}"
@@ -41,32 +63,37 @@ def build_tox_step(
         None,
         [
             "tox",
-            "-c %s " % tox_file if tox_file else None,
+            f"-c {tox_file} " if tox_file else None,
             "-vv",  # extra-verbose
             "-e",
             tox_env,
+            "--" if pytest_args else None,
+            " ".join(pytest_args) if pytest_args else None,
         ],
     )
     tox_command = " ".join(tox_command_parts)
     commands = [
         *(extra_commands_pre or []),
         f"cd {root_dir}",
-        f'pip install --force-reinstall "{UV_PIN}"',
+        f'pip install "{UV_PIN}"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),
     ]
 
-    return (
-        CommandStepBuilder(label)
+    step_builder = (
+        add_test_image(CommandStepBuilder(label), python_version, env_vars or [])
         .run(*commands)
         .with_timeout(timeout_in_minutes)
         .with_retry(retries)
-        .with_dependencies(dependencies)
-        .with_queue(queue)
-        .with_skip(skip_reason)
-        .on_test_image(python_version, env_vars or [])
-    ).build()
+        .depends_on(dependencies)
+        .skip_if(skip_reason)
+    )
+
+    if queue:
+        step_builder.on_queue(queue)
+
+    return step_builder.build()
 
 
 def _tox_env_to_label_suffix(tox_env: str) -> str:
@@ -75,7 +102,10 @@ def _tox_env_to_label_suffix(tox_env: str) -> str:
     if m:
         version_number = m[1]
         number_str = f"{version_number[0]}.{version_number[1:]}"
-        return f" {factor} {number_str}"
+        if factor == "":
+            return number_str
+
+        return f"{factor} {number_str}"
     else:
         return ""
 

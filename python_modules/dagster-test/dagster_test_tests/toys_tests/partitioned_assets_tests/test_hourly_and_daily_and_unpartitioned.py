@@ -5,7 +5,7 @@ from dagster_test.toys.partitioned_assets import hourly_and_daily_and_unpartitio
 
 def test_assets():
     defs = Definitions(assets=load_assets_from_modules([hourly_and_daily_and_unpartitioned]))
-    job_def = defs.get_implicit_global_asset_job_def()
+    job_def = defs.resolve_implicit_global_asset_job_def()
 
     assert job_def.execute_in_process(
         asset_selection=[

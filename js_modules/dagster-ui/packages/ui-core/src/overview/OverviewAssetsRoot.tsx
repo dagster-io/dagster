@@ -26,13 +26,13 @@ import {groupAssetsByStatus} from '../asset-graph/util';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {useAllAssets} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
 import {AssetCatalogTableQuery} from '../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
   Header: React.ComponentType<{refreshState: RefreshState}>;
@@ -58,8 +58,15 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'q',
-    decode: (qs) => (qs.searchQuery ? JSON.parse(qs.searchQuery) : ''),
     encode: (searchQuery) => ({searchQuery: searchQuery ? JSON.stringify(searchQuery) : undefined}),
+    decode: (qs) => {
+      if (typeof qs.searchQuery === 'string') {
+        try {
+          return JSON.parse(qs.searchQuery);
+        } catch {}
+      }
+      return '';
+    },
   });
 
   const groupedAssets = React.useMemo(() => {
@@ -120,6 +127,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           <VirtualHeaderRow />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const group = groupedAssets[index]!;
               return <VirtualRow key={key} start={start} height={size} group={group} />;
             })}
@@ -246,7 +254,7 @@ function VirtualRow({height, start, group}: RowProps) {
                 {group.groupName ? (
                   <Link
                     style={{fontWeight: 700}}
-                    to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
+                    to={globalAssetGraphPathForGroup(group.groupName)}
                   >
                     {group.groupName}
                   </Link>

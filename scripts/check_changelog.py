@@ -13,7 +13,7 @@ def main(args) -> None:
     version = str(args[1]).strip()
     changes_file = os.path.join(os.path.dirname(__file__), "../CHANGES.md")
 
-    with open(changes_file, "r") as f:
+    with open(changes_file) as f:
         changes = f.read()
 
     change_entries = re.split(r"\n#+ (\d+\.\d+\.\d+.*)\n", changes)[1:]

@@ -68,10 +68,6 @@ class PickledObjectGCSIOManager(UPathIOManager):
         return pickle.loads(bytes_obj)
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        if self.path_exists(path):
-            context.log.warning(f"Removing existing GCS key: {path.as_posix()}")
-            self.unlink(path)
-
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
         backoff(
@@ -115,7 +111,7 @@ class GCSPickleIOManager(ConfigurableIOManager):
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": GCSPickleIOManager(
@@ -219,7 +215,7 @@ def gcs_pickle_io_manager(init_context):
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                     "io_manager": gcs_pickle_io_manager.configured(

@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
@@ -35,14 +35,18 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
   const onClickRemove = React.useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      onRemove && onRemove();
+      if (onRemove) {
+        onRemove();
+      }
     },
     [onRemove],
   );
 
   const handleBlur = React.useCallback(() => {
     setEditing(false);
-    onChange && onChange(value);
+    if (onChange) {
+      onChange(value);
+    }
   }, [onChange, value]);
 
   const handleChange = React.useCallback(
@@ -107,6 +111,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
       await confirm({
         title: 'Remove tab?',
         description: `The configuration for ${
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           keyToRemove && sessions[keyToRemove] ? `"${sessions[keyToRemove]!.name}"` : 'this tab'
         } will be discarded.`,
       });
@@ -137,6 +142,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
             canRemove={sessionCount > 1}
             key={key}
             active={key === data.current}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             title={sessions[key]!.name || 'Unnamed'}
             onClick={() => onApply(applySelectSession, key)}
             onChange={(name) => onApply(applyChangesToSession, key, {name})}
@@ -235,11 +241,11 @@ const RemoveButton = styled.button`
   cursor: pointer;
   padding: 0;
 
-  ${IconWrapper} {
+  .iconGlobal {
     transition: background-color 100ms;
   }
 
-  &:hover ${IconWrapper} {
+  &:hover .iconGlobal {
     background-color: ${Colors.accentPrimaryHover()};
   }
 `;

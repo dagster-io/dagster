@@ -1,8 +1,9 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Tuple
+from typing import Any, Optional
 
 import pytest
-from dagster import AssetKey, Definitions
+from dagster import AssetKey, AssetSpec, Definitions
 from dagster_looker.lkml.asset_specs import build_looker_asset_specs
 from dagster_looker.lkml.dagster_looker_lkml_translator import (
     DagsterLookerLkmlTranslator,
@@ -11,7 +12,11 @@ from dagster_looker.lkml.dagster_looker_lkml_translator import (
 
 from dagster_looker_tests.looker_projects import (
     test_exception_derived_table_path,
+    test_extensions,
+    test_liquid_path,
+    test_refinements,
     test_retail_demo_path,
+    test_union_no_distinct_path,
 )
 
 
@@ -289,16 +294,95 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
     assert spec.key == AssetKey(["view", "exception_derived_table"])
     assert not spec.deps
     assert (
-        "Failed to optimize derived table SQL for view `exception_derived_table`"
+        "Failed to parse derived table SQL for view `exception_derived_table`"
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
     ) in caplog.text
 
 
+def test_union_no_distinct_table(caplog: pytest.LogCaptureFixture) -> None:
+    [spec] = build_looker_asset_specs(project_dir=test_union_no_distinct_path)
+
+    assert spec.key == AssetKey(["view", "union_table"])
+    # Ensure we parse out the union correctly
+    assert len(list(spec.deps)) == 2
+
+
+def test_liquid(caplog: pytest.LogCaptureFixture) -> None:
+    [spec] = build_looker_asset_specs(project_dir=test_liquid_path)
+
+    assert spec.key == AssetKey(["view", "liquid_derived_table"])
+    # assert not spec.deps
+    assert (
+        "SQL for view `liquid_derived_table`"
+        " in file `liquid_derived_table.view.lkml`"
+        " contains Liquid variables or conditions. Upstream dependencies are parsed as best-effort."
+    ) in caplog.text
+    assert {dep.asset_key for dep in spec.deps} == {
+        AssetKey(["looker-private-demo", "retail", "us_stores"]),
+    }
+
+
+def test_refinement_views(caplog: pytest.LogCaptureFixture):
+    [spec] = build_looker_asset_specs(project_dir=test_refinements)
+
+    assert spec.key == AssetKey(["view", "base"])
+    assert len(list(spec.deps)) == 1
+
+    # Ensure we get the asset key from the refined view
+    assert next(iter(spec.deps)).asset_key == AssetKey(["prod", "new_base_data"])
+
+
+def test_extension_views(caplog: pytest.LogCaptureFixture):
+    specs = build_looker_asset_specs(project_dir=test_extensions)
+
+    assert len(specs) == 3
+    assert set(spec.key for spec in specs) == {
+        AssetKey(["view", "base"]),
+        AssetKey(["view", "extension"]),
+        AssetKey(["view", "double_extension"]),
+    }
+
+    base_spec = next(spec for spec in specs if spec.key == AssetKey(["view", "base"]))
+    assert base_spec.description == "This is the base view"
+
+    extension_spec = next(spec for spec in specs if spec.key == AssetKey(["view", "extension"]))
+    assert extension_spec.description == "This is an extension view"
+
+    double_extension_spec = next(
+        spec for spec in specs if spec.key == AssetKey(["view", "double_extension"])
+    )
+    # Latest extension should take precedence
+    assert double_extension_spec.description == "This is an extension view"
+
+    assert base_spec.deps and (base_spec.deps == extension_spec.deps)
+
+
 def test_with_asset_key_replacements() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.replace_attributes(
+                key=default_spec.key.with_prefix("prefix"),
+            )
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert spec.deps
+        assert spec.key.has_prefix(["prefix"])
+        assert all(dep.asset_key.has_prefix(["prefix"]) for dep in spec.deps)
+
+
+def test_with_asset_key_replacements_legacy() -> None:
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_asset_key(
-            self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
         ) -> AssetKey:
             return super().get_asset_key(lookml_structure).with_prefix("prefix")
 
@@ -315,7 +399,24 @@ def test_with_asset_key_replacements() -> None:
 
 def test_with_deps_replacements() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_deps(self, _) -> Sequence[AssetKey]:
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.replace_attributes(deps=[])
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert not spec.deps
+
+
+def test_with_deps_replacements_legacy() -> None:
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_deps(self, _) -> Sequence[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return []
 
     my_looker_assets = build_looker_asset_specs(
@@ -331,7 +432,26 @@ def test_with_description_replacements() -> None:
     expected_description = "customized description"
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_description(self, _) -> Optional[str]:
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.replace_attributes(description=expected_description)
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert spec.description == expected_description
+
+
+def test_with_description_replacements_legacy() -> None:
+    expected_description = "customized description"
+
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_description(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_description
 
     my_looker_assets = build_looker_asset_specs(
@@ -347,7 +467,27 @@ def test_with_metadata_replacements() -> None:
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.merge_attributes(metadata=expected_metadata)
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert "customized" in spec.metadata
+        assert spec.metadata["customized"] == expected_metadata["customized"]
+
+
+def test_with_metadata_replacements_legacy() -> None:
+    expected_metadata = {"customized": "metadata"}
+
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_metadata
 
     my_looker_assets = build_looker_asset_specs(
@@ -359,11 +499,11 @@ def test_with_metadata_replacements() -> None:
         assert spec.metadata == expected_metadata
 
 
-def test_with_group_replacements() -> None:
+def test_with_group_replacements_legacy() -> None:
     expected_group = "customized_group"
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_group_name(self, _) -> Optional[str]:
+        def get_group_name(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_group
 
     my_looker_assets = build_looker_asset_specs(
@@ -375,11 +515,11 @@ def test_with_group_replacements() -> None:
         assert spec.group_name == expected_group
 
 
-def test_with_owner_replacements() -> None:
+def test_with_owner_replacements_legacy() -> None:
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_owners(self, _) -> Optional[Sequence[str]]:
+        def get_owners(self, _) -> Optional[Sequence[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_owners
 
     my_looker_assets = build_looker_asset_specs(
@@ -391,11 +531,11 @@ def test_with_owner_replacements() -> None:
         assert spec.owners == expected_owners
 
 
-def test_with_tag_replacements() -> None:
+def test_with_tag_replacements_legacy() -> None:
     expected_tags = {"customized": "tag"}
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_tags(self, _) -> Optional[Mapping[str, str]]:
+        def get_tags(self, _) -> Optional[Mapping[str, str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_tags
 
     my_looker_assets = build_looker_asset_specs(

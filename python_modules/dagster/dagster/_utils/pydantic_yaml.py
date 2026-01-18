@@ -1,21 +1,23 @@
-from typing import Sequence, Type, TypeVar
+import contextlib
+from collections.abc import Generator, Sequence
+from typing import Optional, TypeVar
 
-from pydantic import BaseModel, ValidationError, parse_obj_as
-
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
-from dagster._utils.source_position import (
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
+from dagster_shared.yaml_utils.source_position import (
     KeyPath,
+    SourcePositionTree,
     ValueAndSourcePositionTree,
     populate_source_position_and_key_paths,
 )
-from dagster._utils.yaml_utils import parse_yaml_with_source_positions
+from pydantic import BaseModel, ValidationError, parse_obj_as
+
+from dagster._core.errors import DagsterInvariantViolationError
 
 T = TypeVar("T", bound=BaseModel)
 
 
 def _parse_and_populate_model_with_annotated_errors(
-    cls: Type[T],
+    cls: type[T],
     obj_parse_root: ValueAndSourcePositionTree,
     obj_key_path_prefix: KeyPath,
 ) -> T:
@@ -36,26 +38,33 @@ def _parse_and_populate_model_with_annotated_errors(
     try:
         model = parse_obj_as(cls, obj_parse_root.value)
     except ValidationError as e:
-        if USING_PYDANTIC_1:
-            raise e
-        else:
-            line_errors = []
-            for error in e.errors():
-                key_path_in_obj = list(error["loc"])
-                source_position = obj_parse_root.source_position_tree.lookup(key_path_in_obj)
+        line_errors = []
+        for error in e.errors():
+            key_path_in_obj = list(error["loc"])
+            source_position, source_position_path = (
+                obj_parse_root.source_position_tree.lookup_closest_and_path(key_path_in_obj, None)
+            )
 
-                file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
-                file_key_path_str = ".".join(str(part) for part in file_key_path)
-                line_errors.append(
-                    {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
-                )
+            file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+            file_key_path_str = ".".join(str(part) for part in file_key_path)
+            ctx = {
+                **error.get("ctx", {}),
+                "source_position": source_position,
+                "source_position_path": source_position_path,
+            }
+            line_errors.append(
+                {**error, "loc": [file_key_path_str + " at " + str(source_position)], "ctx": ctx}
+            )
 
-            raise ValidationError.from_exception_data(  # type: ignore
-                title=e.title,  # type: ignore
-                line_errors=line_errors,
-                input_type="json",
-                hide_input=False,
-            ) from None
+            file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+            file_key_path_str = ".".join(str(part) for part in file_key_path)
+
+        raise ValidationError.from_exception_data(
+            title=e.title,
+            line_errors=line_errors,
+            input_type="json",
+            hide_input=False,
+        ) from None
 
     populate_source_position_and_key_paths(
         model, obj_parse_root.source_position_tree, obj_key_path_prefix
@@ -63,7 +72,7 @@ def _parse_and_populate_model_with_annotated_errors(
     return model
 
 
-def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string>") -> T:
+def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string>") -> T:
     """Parse the YAML source and create a Pydantic model instance from it.
 
     Attaches source position information to the `_source_position_and_key_path` attribute of the
@@ -84,14 +93,52 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_position(src, filename)
     return _parse_and_populate_model_with_annotated_errors(
         cls=cls, obj_parse_root=parsed, obj_key_path_prefix=[]
     )
 
 
+@contextlib.contextmanager
+def enrich_validation_errors_with_source_position(
+    source_position_tree: SourcePositionTree, obj_key_path_prefix: KeyPath
+) -> Generator[None, None, None]:
+    err: Optional[ValidationError] = None
+    try:
+        yield
+    except ValidationError as e:
+        line_errors = []
+        for error in e.errors():
+            key_path_in_obj = list(error["loc"])
+            source_position, source_position_path = source_position_tree.lookup_closest_and_path(
+                key_path_in_obj, None
+            )
+
+            file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+            file_key_path_str = ".".join(str(part) for part in file_key_path)
+
+            ctx = {
+                **error.get("ctx", {}),
+                "source_position": source_position,
+                "source_position_path": source_position_path,
+            }
+            line_errors.append(
+                {**error, "loc": [file_key_path_str + " at " + str(source_position)], "ctx": ctx}
+            )
+
+        err = ValidationError.from_exception_data(
+            title=e.title,
+            line_errors=line_errors,
+            input_type="json",
+            hide_input=False,
+        )
+    finally:
+        if err:
+            raise err from None
+
+
 def parse_yaml_file_to_pydantic_sequence(
-    cls: Type[T], src: str, filename: str = "<string>"
+    cls: type[T], src: str, filename: str = "<string>"
 ) -> Sequence[T]:
     """Parse the YAML source and create a list of Pydantic model instances from it.
 
@@ -113,7 +160,7 @@ def parse_yaml_file_to_pydantic_sequence(
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_position(src, filename)
 
     if not isinstance(parsed.value, list):
         raise DagsterInvariantViolationError(

@@ -1,9 +1,9 @@
-from dagster import Definitions, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def upstream():
     return 1
 
 
-defs = Definitions(assets=[upstream])
+defs = dg.Definitions(assets=[upstream])

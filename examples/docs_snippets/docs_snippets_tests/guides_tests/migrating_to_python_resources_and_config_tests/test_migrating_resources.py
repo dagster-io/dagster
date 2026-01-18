@@ -13,7 +13,7 @@ from docs_snippets.guides.dagster.migrating_to_python_resources_and_config.migra
 
 def test_initial_code_base() -> None:
     defs = initial_code_base()
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
 
 
 def test_convert_resource() -> None:
@@ -30,17 +30,17 @@ def test_new_style_resource_on_param() -> None:
 
 def test_old_third_party_resource() -> None:
     defs = old_third_party_resource()
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
 
 
 def test_old_resource_code_contextmanager() -> None:
     defs = old_resource_code_contextmanager()
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
 
 
 def test_new_resource_code_contextmanager() -> None:
     defs = new_resource_code_contextmanager()
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
 
 
 def test_new_third_party_resource_old_code_broken() -> None:

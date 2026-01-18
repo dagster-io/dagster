@@ -17,5 +17,5 @@ class PostgreSQL(BaseModel):
     postgresqlPassword: str
     postgresqlDatabase: str
     postgresqlParams: dict
-    postgresqlScheme: Optional[str]
+    postgresqlScheme: Optional[str] = None
     service: Service

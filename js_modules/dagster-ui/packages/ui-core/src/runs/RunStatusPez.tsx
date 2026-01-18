@@ -9,6 +9,7 @@ import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
+import {PezItem} from '../ui/PezItem';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
@@ -31,35 +32,50 @@ interface ListProps {
   fade: boolean;
   jobName: string;
   runs: RunTimeFragment[];
+  forceCount?: number;
 }
 
 export const RunStatusPezList = (props: ListProps) => {
-  const {fade, jobName, runs} = props;
+  const {fade, jobName, runs, forceCount} = props;
   const count = runs.length;
   const countForStep = Math.max(MIN_OPACITY_STEPS, count);
   const step = (MAX_OPACITY - MIN_OPACITY) / countForStep;
+
+  let items: (RunTimeFragment | null)[] = [...runs];
+  if (forceCount) {
+    if (forceCount > items.length) {
+      items.unshift(...Array(forceCount - items.length).fill(null));
+    } else {
+      items = items.slice(0, forceCount);
+    }
+  }
+
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-      {runs.map((run, ii) => (
-        <Popover
-          key={run.id}
-          position="top"
-          interactionKind="hover"
-          content={
-            <div>
-              <RunStatusOverlay run={run} name={jobName} />
-            </div>
-          }
-          hoverOpenDelay={100}
-        >
-          <RunStatusPez
+      {items.map((run, ii) => {
+        const opacity = fade ? MAX_OPACITY - (count - ii - 1) * step : 1.0;
+        if (!run) {
+          return (
+            <PezItem key={`empty-${ii}`} color={Colors.backgroundLighter()} opacity={opacity} />
+          );
+        }
+
+        return (
+          <Popover
             key={run.id}
-            runId={run.id}
-            status={run.status}
-            opacity={fade ? MAX_OPACITY - (count - ii - 1) * step : 1.0}
-          />
-        </Popover>
-      ))}
+            position="top"
+            interactionKind="hover"
+            content={
+              <div>
+                <RunStatusOverlay run={run} name={jobName} />
+              </div>
+            }
+            hoverOpenDelay={100}
+          >
+            <PezItem key={run.id} color={RUN_STATUS_COLORS[run.status]} opacity={opacity} />
+          </Popover>
+        );
+      })}
     </Box>
   );
 };
@@ -97,7 +113,7 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
 const OverlayContainer = styled.div`
   padding: 4px;
   font-size: 12px;
-  width: 220px;
+  width: 240px;
 `;
 
 const OverlayTitle = styled.div`

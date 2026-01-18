@@ -1,9 +1,10 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Set, Tuple, TypeVar, Union, cast
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -21,7 +22,7 @@ from dagster._core.errors import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.definitions.op_definition import OpDefinition
@@ -32,17 +33,17 @@ T = TypeVar("T")
 
 
 class SeparatedArgsKwargs(NamedTuple):
-    input_args: Tuple[Any, ...]
-    input_kwargs: Dict[str, Any]
-    resources_by_param_name: Dict[str, Any]
+    input_args: tuple[Any, ...]
+    input_kwargs: dict[str, Any]
+    resources_by_param_name: dict[str, Any]
     config_arg: Any
 
 
 def _separate_args_and_kwargs(
     compute_fn: "DecoratedOpFunction",
-    args: Tuple[Any, ...],
-    kwargs: Dict[str, Any],
-    resource_arg_mapping: Dict[str, Any],
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    resource_arg_mapping: dict[str, Any],
 ) -> SeparatedArgsKwargs:
     """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
     separates the set of resource inputs from op/asset inputs returns a tuple of the categorized
@@ -108,7 +109,7 @@ def direct_invocation_result(
     **kwargs,
 ) -> Any:
     from dagster._config.pythonic_config import Config
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.definitions.op_definition import OpDefinition
@@ -380,7 +381,7 @@ def _handle_gen_event(
     op_def: "OpDefinition",
     context: "BaseDirectExecutionContext",
     output_defs: Mapping[str, OutputDefinition],
-    outputs_seen: Set[str],
+    outputs_seen: set[str],
 ) -> T:
     if isinstance(
         event,

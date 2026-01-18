@@ -1,12 +1,9 @@
 import click
-from dagster import (
-    AssetSelection,
-    DagsterInstance,
+from dagster import AssetSelection, DagsterInstance, asset, define_asset_job
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    asset,
-    define_asset_job,
 )
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")
@@ -55,7 +52,7 @@ customers_dynamic_partitions_job = define_asset_job(
 def add_partitions(num_partitions):
     with DagsterInstance.get() as instance:
         partition_keys = [f"customer_{i}" for i in range(num_partitions)]
-        instance.add_dynamic_partitions(customers_partitions_def.name, partition_keys)
+        instance.add_dynamic_partitions(customers_partitions_def.name, partition_keys)  # pyright: ignore[reportArgumentType]
 
 
 if __name__ == "__main__":

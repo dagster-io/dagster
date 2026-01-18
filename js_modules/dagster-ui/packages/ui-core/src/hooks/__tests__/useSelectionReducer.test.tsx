@@ -38,40 +38,43 @@ describe('useSelectionReducer', () => {
   };
 
   it('checks individual items', async () => {
+    const user = userEvent.setup();
     render(<Test ids={['a', 'b', 'c', 'd']} />);
-    const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
+    const checkA = await screen.findByRole('checkbox', {name: /checkbox-a/i});
     expect(checkA).not.toBeChecked();
-    await userEvent.click(checkA);
+    await user.click(checkA);
     expect(checkA).toBeChecked();
-    await userEvent.click(checkA);
+    await user.click(checkA);
     expect(checkA).not.toBeChecked();
   });
 
   it('checks slices of items', async () => {
+    const user = userEvent.setup();
     render(<Test ids={['a', 'b', 'c', 'd']} />);
-    const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
-    const checkB = screen.getByRole('checkbox', {name: /checkbox-b/i});
-    const checkC = screen.getByRole('checkbox', {name: /checkbox-c/i});
-    const checkD = screen.getByRole('checkbox', {name: /checkbox-d/i});
+    const checkA = await screen.findByRole('checkbox', {name: /checkbox-a/i});
+    const checkB = await screen.findByRole('checkbox', {name: /checkbox-b/i});
+    const checkC = await screen.findByRole('checkbox', {name: /checkbox-c/i});
+    const checkD = await screen.findByRole('checkbox', {name: /checkbox-d/i});
 
     expect(checkA).not.toBeChecked();
     expect(checkB).not.toBeChecked();
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    const shiftClickUser = userEvent.setup();
-    await shiftClickUser.keyboard('[ShiftLeft>]');
-
-    await userEvent.click(checkA);
+    await user.click(checkA);
     expect(checkA).toBeChecked();
-    await shiftClickUser.click(checkC);
+    await user.keyboard('[ShiftLeft>]');
+    await user.click(checkC);
 
     expect(checkA).toBeChecked();
     expect(checkB).toBeChecked();
     expect(checkC).toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    await shiftClickUser.click(checkB);
+    await user.click(checkB);
+    // Release key.
+    await user.keyboard('[/ShiftLeft]');
+
     expect(checkA).toBeChecked();
     expect(checkB).not.toBeChecked();
     expect(checkC).not.toBeChecked();
@@ -79,30 +82,91 @@ describe('useSelectionReducer', () => {
   });
 
   it('allows toggle-all', async () => {
+    const user = userEvent.setup();
     render(<Test ids={['a', 'b', 'c', 'd']} />);
-    const checkAll = screen.getByRole('checkbox', {name: /check-all/i});
-    const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
-    const checkB = screen.getByRole('checkbox', {name: /checkbox-b/i});
-    const checkC = screen.getByRole('checkbox', {name: /checkbox-c/i});
-    const checkD = screen.getByRole('checkbox', {name: /checkbox-d/i});
+    const checkAll = await screen.findByRole('checkbox', {name: /check-all/i});
+    const checkA = await screen.findByRole('checkbox', {name: /checkbox-a/i});
+    const checkB = await screen.findByRole('checkbox', {name: /checkbox-b/i});
+    const checkC = await screen.findByRole('checkbox', {name: /checkbox-c/i});
+    const checkD = await screen.findByRole('checkbox', {name: /checkbox-d/i});
 
     expect(checkA).not.toBeChecked();
     expect(checkB).not.toBeChecked();
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    await userEvent.click(checkAll);
+    await user.click(checkAll);
 
     expect(checkA).toBeChecked();
     expect(checkB).toBeChecked();
     expect(checkC).toBeChecked();
     expect(checkD).toBeChecked();
 
-    await userEvent.click(checkAll);
+    await user.click(checkAll);
 
     expect(checkA).not.toBeChecked();
     expect(checkB).not.toBeChecked();
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
+  });
+
+  it('allows updating allIds', async () => {
+    const user = userEvent.setup();
+    const {rerender} = render(<Test ids={['a', 'b', 'c', 'd']} />);
+
+    const checkA = await screen.findByRole('checkbox', {name: /checkbox-a/i});
+    const checkB = await screen.findByRole('checkbox', {name: /checkbox-b/i});
+    const checkC = await screen.findByRole('checkbox', {name: /checkbox-c/i});
+    const checkD = await screen.findByRole('checkbox', {name: /checkbox-d/i});
+
+    await user.click(checkA);
+    expect(checkA).toBeChecked();
+
+    await user.keyboard('[ShiftLeft>]');
+    await user.click(checkC);
+    // Release key.
+    await user.keyboard('[/ShiftLeft]');
+
+    expect(checkA).toBeChecked();
+    expect(checkB).toBeChecked();
+    expect(checkC).toBeChecked();
+    expect(checkD).not.toBeChecked();
+
+    rerender(<Test ids={['a', 'b', 'c', 'd', 'e']} />);
+
+    const checkE = await screen.findByRole('checkbox', {name: /checkbox-e/i});
+
+    await user.click(checkE);
+    expect(checkE).toBeChecked();
+    await user.keyboard('[ShiftLeft>]');
+    await user.click(checkD);
+
+    // Release key.
+    await user.keyboard('[/ShiftLeft]');
+
+    expect(checkA).toBeChecked();
+    expect(checkB).toBeChecked();
+    expect(checkC).toBeChecked();
+    expect(checkD).toBeChecked();
+    expect(checkE).toBeChecked();
+
+    // Now remove some of the original items.
+    rerender(<Test ids={['c', 'd', 'e']} />);
+
+    expect(checkC).toBeChecked();
+    expect(checkD).toBeChecked();
+    expect(checkE).toBeChecked();
+
+    await user.click(checkE);
+    expect(checkE).not.toBeChecked();
+    await user.keyboard('[ShiftLeft>]');
+    await user.click(checkD);
+
+    // Release key.
+    await user.keyboard('[/ShiftLeft]');
+
+    expect(checkC).toBeChecked();
+    expect(checkD).not.toBeChecked();
+    expect(checkE).not.toBeChecked();
   });
 });

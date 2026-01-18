@@ -2,8 +2,8 @@ import {Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useContext, useEffect, useRef} from 'react';
 
-import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
 import {gql} from '../apollo-client';
+import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
 import {EventTypeColumn, Row as LogsRow, TimestampColumn} from '../runs/LogsRowComponents';
 import {
   ColumnWidthsContext,
@@ -69,6 +69,7 @@ export const InstigationEventLogTable = ({events}: {events: InstigationEventLogF
       <Container ref={parentRef} style={{position: 'relative'}}>
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const event = events[index]!;
             return (
               <Row key={key} $start={start} $height={size}>

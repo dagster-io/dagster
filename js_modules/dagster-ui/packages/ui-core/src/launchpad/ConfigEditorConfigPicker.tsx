@@ -5,7 +5,6 @@ import {
   Button,
   Colors,
   Icon,
-  IconWrapper,
   Menu,
   MenuDivider,
   MenuItem,
@@ -16,23 +15,19 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {gql} from '../apollo-client';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorPipelinePresetFragment,
-  ConfigPartitionsAssetsQuery,
-  ConfigPartitionsAssetsQueryVariables,
-  ConfigPartitionsQuery,
-  ConfigPartitionsQueryVariables,
   PartitionSetForConfigEditorFragment,
 } from './types/ConfigEditorConfigPicker.types';
-import {gql, useQuery} from '../apollo-client';
+import {PartitionSetDetails} from './usePartitionSetDetailsForLaunchpad';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
+import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -49,6 +44,7 @@ interface ConfigEditorConfigPickerProps {
   pipeline: Pipeline;
   pipelineMode?: string;
   partitionSets: PartitionSet[];
+  partitionSetDetails: PartitionSetDetails; // Loaded data about the selected partition set
   onSaveSession: (updates: Partial<IExecutionSession>) => void;
   onSelectPreset: (preset: Preset) => Promise<void>;
   onSelectPartition: (
@@ -68,6 +64,7 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
     onSelectPreset,
     onSelectPartition,
     partitionSets,
+    partitionSetDetails,
     repoAddress,
     assetSelection,
   } = props;
@@ -127,11 +124,11 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
       {base && 'partitionName' in base ? (
         <ConfigEditorPartitionPicker
           pipeline={pipeline}
-          partitionSetName={'partitionsSetName' in base ? base.partitionsSetName : ''}
           value={base.partitionName}
           onSelect={onSelectPartition}
           repoAddress={repoAddress}
           assetSelection={assetSelection}
+          partitionSetDetails={partitionSetDetails}
         />
       ) : null}
     </PickerContainer>
@@ -139,8 +136,8 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
 };
 
 interface ConfigEditorPartitionPickerProps {
+  partitionSetDetails: PartitionSetDetails;
   pipeline: Pipeline;
-  partitionSetName: string;
   value: string | null;
   onSelect: (
     repositorySelector: RepositorySelector,
@@ -155,38 +152,19 @@ const SORT_ORDER_KEY_BASE = 'dagster.partition-sort-order';
 type SortOrder = 'asc' | 'desc';
 
 const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPickerProps) => {
-  const {partitionSetName, value, onSelect, repoAddress, assetSelection} = props;
+  const {value, onSelect, repoAddress, assetSelection, partitionSetDetails} = props;
   const {basePath} = React.useContext(AppContext);
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResultNoAssets = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
-    CONFIG_PARTITIONS_QUERY,
-    {
-      skip: !!assetSelection,
-      variables: {repositorySelector, partitionSetName},
-      fetchPolicy: 'network-only',
-    },
-  );
-
-  const queryResultAssets = useQuery<
-    ConfigPartitionsAssetsQuery,
-    ConfigPartitionsAssetsQueryVariables
-  >(CONFIG_PARTITIONS_ASSETS_QUERY, {
-    skip: !assetSelection,
-    variables: {
-      params: {
-        ...repositorySelector,
-        pipelineName: props.pipeline.name,
-      },
-      assetKeys: assetSelection
-        ? assetSelection.map((selection) => ({path: selection.assetKey.path}))
-        : [],
-    },
-    fetchPolicy: 'network-only',
-  });
-
-  const queryResult = assetSelection ? queryResultAssets : queryResultNoAssets;
-  const {data, refetch, loading} = queryResult;
+  const {
+    loading,
+    retrieved,
+    error,
+    partitionSetName,
+    doesAnyAssetHavePartitions,
+    dynamicPartitionsDefinitionName,
+    isDynamicPartition,
+  } = partitionSetDetails;
 
   const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
     repoAddress,
@@ -196,18 +174,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     value === undefined ? 'asc' : value,
   );
 
-  const doesAnyAssetHavePartitions = React.useMemo(
-    () =>
-      data && 'assetNodes' in data && data.assetNodes?.some((node) => !!node.partitionDefinition),
-    [data],
-  );
-
   const partitions: string[] = React.useMemo(() => {
-    const retrieved = partitionKeysFromData(data);
     return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
-  }, [data, sortOrder]);
+  }, [retrieved, sortOrder]);
 
-  const error = errorFromData(data);
   const selected = value && partitions.includes(value) ? value : undefined;
 
   const onClickSort = React.useCallback(
@@ -230,24 +200,6 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
     rightElement,
   };
-
-  const {isDynamicPartition, dynamicPartitionsDefinitionName} = React.useMemo(() => {
-    const assetNodes = data && 'assetNodes' in data ? data?.assetNodes : undefined;
-    const definition = assetNodes?.find((a) => !!a.partitionDefinition)?.partitionDefinition;
-    if (
-      !definition ||
-      assetNodes?.some(
-        (node) =>
-          node?.partitionDefinition?.name && node?.partitionDefinition?.name !== definition?.name,
-      )
-    ) {
-      return {isDynamicPartition: false, dynamicPartitionsDefinitionName: undefined};
-    }
-    return {
-      isDynamicPartition: definition.type === PartitionDefinitionType.DYNAMIC,
-      dynamicPartitionsDefinitionName: definition.name,
-    };
-  }, [data]);
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
@@ -339,7 +291,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
             setShowCreatePartition(false);
           }}
           refetch={async () => {
-            await refetch();
+            await partitionSetDetails.refetch();
           }}
           onCreated={(partitionName) => {
             onSelect(repositorySelector, partitionSetName, partitionName);
@@ -388,7 +340,7 @@ const ConfigEditorConfigGeneratorPicker = React.memo(
                 renderedPresetItems.length > 0 && renderedPartitionSetItems.length > 0;
 
               return (
-                <Menu ulRef={itemsParentRef}>
+                <Menu ref={itemsParentRef}>
                   {bothTypesPresent && <MenuItem disabled={true} text="Presets" />}
                   {renderedPresetItems}
                   {bothTypesPresent && <MenuDivider />}
@@ -450,9 +402,7 @@ export const SortButton = styled.button`
     outline: none;
   }
   :hover {
-    ${IconWrapper} {
-      background-color: ${Colors.backgroundLight()};
-    }
+    background-color: ${Colors.backgroundLight()};
   }
 `;
 
@@ -461,67 +411,6 @@ const PickerContainer = styled.div`
   justify: space-between;
   align-items: center;
   gap: 6px;
-`;
-
-const CONFIG_PARTITIONS_QUERY = gql`
-  query ConfigPartitionsQuery(
-    $repositorySelector: RepositorySelector!
-    $partitionSetName: String!
-  ) {
-    partitionSetOrError(
-      repositorySelector: $repositorySelector
-      partitionSetName: $partitionSetName
-    ) {
-      ... on PartitionSet {
-        id
-        partitionsOrError {
-          ... on Partitions {
-            results {
-              ...ConfigPartitionResult
-            }
-          }
-          ...PythonErrorFragment
-        }
-      }
-    }
-  }
-
-  fragment ConfigPartitionResult on Partition {
-    name
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const CONFIG_PARTITIONS_ASSETS_QUERY = gql`
-  query ConfigPartitionsAssetsQuery($params: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
-    pipelineOrError(params: $params) {
-      ...PythonErrorFragment
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on InvalidSubsetError {
-        message
-      }
-      ... on Pipeline {
-        id
-        partitionKeysOrError(selectedAssetKeys: $assetKeys) {
-          ... on PartitionKeys {
-            partitionKeys
-          }
-        }
-      }
-    }
-    assetNodes(assetKeys: $assetKeys) {
-      id
-      partitionDefinition {
-        name
-        type
-      }
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
@@ -565,44 +454,3 @@ export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
     solidSelection
   }
 `;
-
-function partitionKeysFromData(
-  data: ConfigPartitionsAssetsQuery | ConfigPartitionsQuery | undefined,
-) {
-  if (!data) {
-    return [];
-  }
-
-  if (
-    'partitionSetOrError' in data &&
-    data.partitionSetOrError.__typename === 'PartitionSet' &&
-    data.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
-  ) {
-    return data.partitionSetOrError.partitionsOrError.results.map((a) => a.name);
-  }
-  if ('pipelineOrError' in data && data.pipelineOrError.__typename === 'Pipeline') {
-    return data.pipelineOrError.partitionKeysOrError.partitionKeys;
-  }
-  return [];
-}
-
-function errorFromData(data: ConfigPartitionsAssetsQuery | ConfigPartitionsQuery | undefined) {
-  if (!data) {
-    return null;
-  }
-  if (
-    'partitionSetOrError' in data &&
-    data.partitionSetOrError.__typename === 'PartitionSet' &&
-    data.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-  ) {
-    return data.partitionSetOrError.partitionsOrError;
-  }
-  if (
-    'pipelineOrError' in data &&
-    data.pipelineOrError &&
-    data.pipelineOrError.__typename !== 'Pipeline'
-  ) {
-    return data.pipelineOrError;
-  }
-  return null;
-}

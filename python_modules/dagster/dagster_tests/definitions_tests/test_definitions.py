@@ -1,50 +1,38 @@
 import json
 
+import dagster as dg
 import pytest
-from dagster import (
-    Any,
-    AssetKey,
-    DependencyDefinition,
-    GraphDefinition,
-    In,
-    Int,
-    JobDefinition,
-    NodeInvocation,
-    Out,
-    String,
-    op,
-)
-from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
+from dagster._core.definitions import Node, create_run_config_schema
 from dagster._core.definitions.dependency import NodeHandle, NodeOutput
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._legacy import InputDefinition
 
 
 def test_deps_equal():
-    assert DependencyDefinition("foo") == DependencyDefinition("foo")
-    assert DependencyDefinition("foo") != DependencyDefinition("bar")
+    assert dg.DependencyDefinition("foo") == dg.DependencyDefinition("foo")
+    assert dg.DependencyDefinition("foo") != dg.DependencyDefinition("bar")
 
-    assert DependencyDefinition("foo", "bar") == DependencyDefinition("foo", "bar")
-    assert DependencyDefinition("foo", "bar") != DependencyDefinition("foo", "quuz")
+    assert dg.DependencyDefinition("foo", "bar") == dg.DependencyDefinition("foo", "bar")
+    assert dg.DependencyDefinition("foo", "bar") != dg.DependencyDefinition("foo", "quuz")
 
 
 def test_op_def():
-    @op
+    @dg.op
     def produce_string():
         return "foo"
 
-    @op(
-        ins={"input_one": In(String)},
-        out=Out(Any),
-        config_schema={"another_field": Int},
+    @dg.op(
+        ins={"input_one": dg.In(dg.String)},
+        out=dg.Out(dg.Any),  # pyright: ignore[reportArgumentType]
+        config_schema={"another_field": dg.Int},
     )
     def op_one(_context, input_one):
         raise Exception("should not execute")
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[produce_string, op_one],
         name="test",
-        dependencies={"op_one": {"input_one": DependencyDefinition("produce_string")}},
+        dependencies={"op_one": {"input_one": dg.DependencyDefinition("produce_string")}},
     )
 
     assert len(list(job_def.nodes[0].outputs())) == 1
@@ -95,21 +83,21 @@ def test_op_def():
 
 
 def test_op_def_bad_input_name():
-    with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match='"context" is not a valid name'):
 
-        @op(ins={"context": In(String)})
+        @dg.op(ins={"context": dg.In(dg.String)})
         def op_one(_, _context):
             pass
 
 
 def test_op_def_receives_version():
-    @op
+    @dg.op
     def op_no_version(_):
         pass
 
     assert op_no_version.version is None
 
-    @op(version="42")
+    @dg.op(version="42")
     def op_with_version(_):
         pass
 
@@ -117,23 +105,23 @@ def test_op_def_receives_version():
 
 
 def test_job_types():
-    @op
+    @dg.op
     def produce_string():
         return "foo"
 
-    @op(
-        ins={"input_one": In(String)},
-        out=Out(Any),
-        config_schema={"another_field": Int},
+    @dg.op(
+        ins={"input_one": dg.In(dg.String)},
+        out=dg.Out(dg.Any),  # pyright: ignore[reportArgumentType]
+        config_schema={"another_field": dg.Int},
     )
     def op_one(_context, input_one):
         raise Exception("should not execute")
 
-    job_def = JobDefinition(
-        graph_def=GraphDefinition(
+    job_def = dg.JobDefinition(
+        graph_def=dg.GraphDefinition(
             node_defs=[produce_string, op_one],
             name="test",
-            dependencies={"op_one": {"input_one": DependencyDefinition("produce_string")}},
+            dependencies={"op_one": {"input_one": dg.DependencyDefinition("produce_string")}},
         )
     )
 
@@ -145,27 +133,29 @@ def test_job_types():
 
 
 def test_mapper_errors():
-    @op
+    @dg.op
     def op_a():
         return 1
 
-    with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
-        GraphDefinition(
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as excinfo_1:
+        dg.GraphDefinition(
             node_defs=[op_a],
             name="test",
-            dependencies={"solid_b": {"arg_a": DependencyDefinition("op_a")}},
+            dependencies={"solid_b": {"arg_a": dg.DependencyDefinition("op_a")}},
         )
     assert (
         str(excinfo_1.value)
         == 'Invalid dependencies: node "solid_b" in dependency dictionary not found in node list'
     )
 
-    with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
-        GraphDefinition(
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as excinfo_2:
+        dg.GraphDefinition(
             node_defs=[op_a],
             name="test",
             dependencies={
-                NodeInvocation("solid_b", alias="solid_c"): {"arg_a": DependencyDefinition("op_a")}
+                dg.NodeInvocation("solid_b", alias="solid_c"): {
+                    "arg_a": dg.DependencyDefinition("op_a")
+                }
             },
         )
     assert (
@@ -176,11 +166,11 @@ def test_mapper_errors():
 
 
 def test_materialization():
-    assert isinstance(AssetMaterialization("foo", "foo.txt"), AssetMaterialization)
+    assert isinstance(dg.AssetMaterialization("foo", "foo.txt"), dg.AssetMaterialization)
 
 
 def test_materialization_assign_label_from_asset_key():
-    mat = AssetMaterialization(asset_key=AssetKey(["foo", "bar"]))
+    mat = dg.AssetMaterialization(asset_key=dg.AssetKey(["foo", "bar"]))
     assert mat.label == "foo bar"
 
 
@@ -223,65 +213,91 @@ def test_rehydrate_op_handle():
 
 
 def test_cycle_detect():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def add(a, b):
         return a + b
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
-        GraphDefinition(
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Circular dependencies exist"):
+        dg.GraphDefinition(
             node_defs=[return_one, add],
             name="test",
             dependencies={
-                NodeInvocation("add", alias="first"): {
-                    "a": DependencyDefinition("return_one"),
-                    "b": DependencyDefinition("second"),
+                dg.NodeInvocation("add", alias="first"): {
+                    "a": dg.DependencyDefinition("return_one"),
+                    "b": dg.DependencyDefinition("second"),
                 },
-                NodeInvocation("add", alias="second"): {
-                    "a": DependencyDefinition("first"),
-                    "b": DependencyDefinition("return_one"),
+                dg.NodeInvocation("add", alias="second"): {
+                    "a": dg.DependencyDefinition("first"),
+                    "b": dg.DependencyDefinition("return_one"),
                 },
             },
         )
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
-        GraphDefinition(
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Circular dependencies exist"):
+        dg.GraphDefinition(
             name="circletron",
             node_defs=[return_one, add],
             dependencies={
-                NodeInvocation("add", alias="first"): {
-                    "a": DependencyDefinition("return_one"),
-                    "b": DependencyDefinition("second"),
+                dg.NodeInvocation("add", alias="first"): {
+                    "a": dg.DependencyDefinition("return_one"),
+                    "b": dg.DependencyDefinition("second"),
                 },
-                NodeInvocation("add", alias="second"): {
-                    "a": DependencyDefinition("first"),
-                    "b": DependencyDefinition("return_one"),
+                dg.NodeInvocation("add", alias="second"): {
+                    "a": dg.DependencyDefinition("first"),
+                    "b": dg.DependencyDefinition("return_one"),
                 },
             },
         )
 
 
 def test_composite_mapping_collision():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def add(a, b):
         return a + b
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by output"):
-        GraphDefinition(
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="already satisfied by output"):
+        dg.GraphDefinition(
             name="add_one",
             node_defs=[return_one, add],
             input_mappings=[InputDefinition("val").mapping_to("add", "a")],
             dependencies={
                 "add": {
-                    "a": DependencyDefinition("return_one"),
-                    "b": DependencyDefinition("return_one"),
+                    "a": dg.DependencyDefinition("return_one"),
+                    "b": dg.DependencyDefinition("return_one"),
                 }
             },
         )
+
+
+def test_pool_mismatch():
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as _:
+
+        @dg.op(pool="foo", tags={GLOBAL_CONCURRENCY_TAG: "bar"})
+        def my_op():
+            pass
+
+
+def test_pool_invalid():
+    illegal_pools = ["foo bar", "foo:bar", "foo,bar", "foo|bar", "foo.bar", "foo-bar"]
+    for pool in illegal_pools:
+        with pytest.raises(dg.DagsterInvalidDefinitionError) as _:
+
+            @dg.op(pool=pool)
+            def my_op():
+                pass
+
+
+def test_pool_with_slash_valid():
+    @dg.op(pool="foo/bar")
+    def my_op():
+        pass
+
+    assert my_op.pool == "foo/bar"

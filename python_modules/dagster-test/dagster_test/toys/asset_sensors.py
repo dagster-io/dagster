@@ -5,13 +5,13 @@ from dagster import (
     AssetOut,
     RunRequest,
     SkipReason,
-    StaticPartitionsDefinition,
     asset,
     job,
     multi_asset,
     multi_asset_sensor,
     op,
 )
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 
 @asset

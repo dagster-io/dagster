@@ -74,6 +74,7 @@ export type AssetNodeOpMetadataFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -109,6 +110,7 @@ export type AssetNodeOpMetadataFragment = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -131,6 +133,7 @@ export type AssetNodeOpMetadataFragment = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -252,6 +255,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -286,6 +295,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -308,6 +318,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -1532,6 +1543,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -1566,6 +1583,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -1588,6 +1606,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -2812,6 +2831,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -2846,6 +2871,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -2868,6 +2894,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -4083,6 +4110,12 @@ export type AssetNodeOpMetadataFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -4117,6 +4150,7 @@ export type AssetNodeOpMetadataFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -4139,6 +4173,7 @@ export type AssetNodeOpMetadataFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -5369,6 +5404,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -5403,6 +5444,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -5425,6 +5467,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -6649,6 +6692,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -6683,6 +6732,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -6705,6 +6755,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -7929,6 +7980,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -7963,6 +8020,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -7985,6 +8043,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -9200,6 +9259,12 @@ export type AssetNodeOpMetadataFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -9234,6 +9299,7 @@ export type AssetNodeOpMetadataFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -9256,6 +9322,7 @@ export type AssetNodeOpMetadataFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -10486,6 +10553,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -10520,6 +10593,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -10542,6 +10616,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -11766,6 +11841,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -11800,6 +11881,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -11822,6 +11904,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -13046,6 +13129,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -13080,6 +13169,7 @@ export type AssetNodeOpMetadataFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -13102,6 +13192,7 @@ export type AssetNodeOpMetadataFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -14317,6 +14408,12 @@ export type AssetNodeOpMetadataFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -14351,6 +14448,7 @@ export type AssetNodeOpMetadataFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -14373,6 +14471,7 @@ export type AssetNodeOpMetadataFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;

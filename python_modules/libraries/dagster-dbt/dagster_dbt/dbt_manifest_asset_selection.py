@@ -1,24 +1,31 @@
-from typing import AbstractSet, Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 from dagster import (
     AssetKey,
     AssetSelection,
     _check as check,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._record import record
 
-from dagster_dbt.asset_utils import get_asset_check_key_for_test, is_non_asset_node
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    get_asset_check_key_for_test,
+    get_node,
+    is_non_asset_node,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
-from dagster_dbt.utils import (
-    ASSET_RESOURCE_TYPES,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    select_unique_ids_from_manifest,
-)
+from dagster_dbt.dbt_project import DbtProject
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES, select_unique_ids
 
 
-class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
+@record
+class DbtManifestAssetSelection(AssetSelection):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
@@ -44,15 +51,39 @@ class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
     select: str
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
+    selector: str
+    project: Optional[DbtProject] = None
+
+    def __eq__(self, other):
+        if not isinstance(other, DbtManifestAssetSelection):
+            return False
+
+        self_metadata = self.manifest.get("metadata")
+        other_metadata = other.manifest.get("metadata")
+
+        if not self_metadata or not other_metadata:
+            return super().__eq__(other)
+
+        # Compare metadata only since it uniquely identifies the manifest and the
+        # full manifest dictionary can be large
+        return (
+            self_metadata == other_metadata
+            and self.select == other.select
+            and self.dagster_dbt_translator == other.dagster_dbt_translator
+            and self.exclude == other.exclude
+            and self.selector == other.selector
+        )
 
     @classmethod
     def build(
         cls,
         manifest: DbtManifestParam,
-        select: str = "fqn:*",
+        select: str = DBT_DEFAULT_SELECT,
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        exclude: Optional[str] = None,
+        exclude: str = DBT_DEFAULT_EXCLUDE,
+        selector: str = DBT_DEFAULT_SELECTOR,
+        project: Optional[DbtProject] = None,
     ):
         return cls(
             manifest=validate_manifest(manifest),
@@ -63,24 +94,28 @@ class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
                 DagsterDbtTranslator,
                 DagsterDbtTranslator(),
             ),
-            exclude=check.opt_str_param(exclude, "exclude", default=""),
+            exclude=check.str_param(exclude, "exclude"),
+            selector=check.str_param(selector, "selector"),
+            project=check.opt_inst_param(project, "project", DbtProject),
         )
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetKey]:
-        dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
-
         keys = set()
-        for unique_id in select_unique_ids_from_manifest(
+        for unique_id in select_unique_ids(
             select=self.select,
             exclude=self.exclude,
+            selector=self.selector,
             manifest_json=self.manifest,
+            project=self.project,
         ):
-            dbt_resource_props = dbt_nodes[unique_id]
+            dbt_resource_props = get_node(self.manifest, unique_id)
             is_dbt_asset = dbt_resource_props["resource_type"] in ASSET_RESOURCE_TYPES
             if is_dbt_asset and not is_non_asset_node(dbt_resource_props):
-                asset_key = self.dagster_dbt_translator.get_asset_key(dbt_resource_props)
+                asset_key = self.dagster_dbt_translator.get_asset_spec(
+                    self.manifest, unique_id, self.project
+                ).key
                 keys.add(asset_key)
 
         return keys
@@ -92,13 +127,18 @@ class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
             return set()
 
         keys = set()
-        for unique_id in select_unique_ids_from_manifest(
+        for unique_id in select_unique_ids(
             select=self.select,
             exclude=self.exclude,
+            selector=self.selector,
             manifest_json=self.manifest,
+            project=self.project,
         ):
             asset_check_key = get_asset_check_key_for_test(
-                self.manifest, self.dagster_dbt_translator, test_unique_id=unique_id
+                self.manifest,
+                self.dagster_dbt_translator,
+                test_unique_id=unique_id,
+                project=self.project,
             )
 
             if asset_check_key:

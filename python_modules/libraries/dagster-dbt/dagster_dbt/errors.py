@@ -19,6 +19,10 @@ class DagsterDbtProjectNotFoundError(DagsterDbtError):
     """Error when the specified project directory can not be found."""
 
 
+class DagsterDbtProfilesDirectoryNotFoundError(DagsterDbtError):
+    """Error when the specified profiles directory can not be found."""
+
+
 class DagsterDbtManifestNotFoundError(DagsterDbtError):
     """Error when we expect manifest.json to generated already but it is absent."""
 

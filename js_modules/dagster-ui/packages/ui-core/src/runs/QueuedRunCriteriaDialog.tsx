@@ -13,16 +13,16 @@ import {
 } from '@dagster-io/ui-components';
 import isPlainObject from 'lodash/isPlainObject';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {QUEUED_RUN_CRITERIA_QUERY} from './QueuedRunCriteriaQuery';
+import {useQuery} from '../apollo-client';
 import {
   QueuedRunCriteriaQuery,
   QueuedRunCriteriaQueryVariables,
 } from './types/QueuedRunCriteriaQuery.types';
 import {RunFragment} from './types/RunFragments.types';
-import {useQuery} from '../apollo-client';
+import {PoolTag} from '../instance/PoolTag';
 import {useRunQueueConfig} from '../instance/useRunQueueConfig';
 import {StructuredContentTable} from '../metadata/MetadataEntry';
 import {numberFormatter} from '../ui/formatters';
@@ -33,7 +33,8 @@ type TagConcurrencyLimit = {
   limit: number;
 };
 
-interface DialogProps extends ContentProps {
+interface DialogProps {
+  run: Pick<RunFragment, 'id' | 'tags'> | undefined;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -49,7 +50,7 @@ export const QueuedRunCriteriaDialog = (props: DialogProps) => {
       onClose={onClose}
       style={{width: 700}}
     >
-      <QueuedRunCriteriaDialogContent run={run} />
+      {run ? <QueuedRunCriteriaDialogContent run={run} /> : undefined}
       <DialogFooter topBorder>
         <Button intent="primary" onClick={onClose}>
           Close
@@ -75,6 +76,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
     },
   );
 
+  const granularity = data?.instance.poolConfig?.poolGranularity;
   const runTagMap = Object.fromEntries(run.tags.map(({key, value}) => [key, value]));
   const maxConcurrentRuns = runQueueConfig?.maxConcurrentRuns;
   const runTagLimits = React.useMemo(() => {
@@ -91,7 +93,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
             // can be {"applyLimitPerUniqueValue": bool}
             isPlainObject(limit.value)),
       );
-    } catch (err) {
+    } catch {
       return undefined;
     }
   }, [runQueueConfig, runTagMap]);
@@ -116,14 +118,18 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
     );
   }
 
-  const {rootConcurrencyKeys, hasUnconstrainedRootNodes} = data.runOrError;
+  const {rootConcurrencyKeys, hasUnconstrainedRootNodes, allPools} = data.runOrError;
 
   const priority = runTagMap['dagster/priority'];
-  const runIsOpConcurrencyLimited =
+  const poolOpGranularityRunLimited =
     runQueueConfig?.isOpConcurrencyAware &&
+    (!granularity || granularity === 'op') &&
     rootConcurrencyKeys &&
     rootConcurrencyKeys.length > 0 &&
     !hasUnconstrainedRootNodes;
+
+  const poolRunGranularityRunLimited =
+    runQueueConfig?.isOpConcurrencyAware && allPools && allPools.length > 0;
 
   return (
     <Table>
@@ -171,31 +177,30 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
             </td>
           </tr>
         ) : null}
-        {runIsOpConcurrencyLimited ? (
+        {poolOpGranularityRunLimited || poolRunGranularityRunLimited ? (
           <tr>
             <td>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <div>Initial concurrency keys</div>
+                <div>Pools</div>
                 <Tooltip
                   placement="bottom"
-                  content="Op/asset concurrency limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step."
+                  content={
+                    <div style={{maxWidth: 300}}>
+                      {poolOpGranularityRunLimited
+                        ? 'Pool limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step.'
+                        : 'Pool limits are set on ops for this run. This run will not start until there are available slots for all pools.'}
+                    </div>
+                  }
                 >
                   <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
               </Box>
             </td>
             <td>
-              {rootConcurrencyKeys!.map((key, i) =>
-                runQueueConfig ? (
-                  <Tag interactive key={`rootConcurrency:${i}`}>
-                    <Link to={`/concurrency?key=${key}`}>{key}</Link>
-                  </Tag>
-                ) : (
-                  <Tag interactive key={`rootConcurrency:${i}`}>
-                    {key}
-                  </Tag>
-                ),
-              )}
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+              {(poolOpGranularityRunLimited ? rootConcurrencyKeys : allPools)!.map((pool) => (
+                <PoolTag key={pool} pool={pool} />
+              ))}
             </td>
           </tr>
         ) : null}

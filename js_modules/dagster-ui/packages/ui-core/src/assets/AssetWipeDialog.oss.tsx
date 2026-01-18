@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
   Body1,
   Box,
@@ -7,15 +5,15 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
+  ProgressBar,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
 
+import {RefetchQueriesFunction} from '../apollo-client';
 import {VirtualizedSimpleAssetKeyList} from './VirtualizedSimpleAssetKeyList';
 import {asAssetPartitionRangeInput} from './asInput';
 import {useWipeAssets} from './useWipeAssets';
-import {RefetchQueriesFunction} from '../apollo-client';
 import {AssetKeyInput} from '../graphql/types';
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {numberFormatter} from '../ui/formatters';
@@ -69,7 +67,7 @@ export const AssetWipeDialogInner = memo(
         );
       } else if (!isWiping) {
         return (
-          <Group direction="column" spacing={16}>
+          <Box flex={{direction: 'column', gap: 16}}>
             <div>
               Are you sure you want to wipe materializations for{' '}
               {numberFormatter.format(assetKeys.length)}{' '}
@@ -81,14 +79,14 @@ export const AssetWipeDialogInner = memo(
               Catalog. Software-defined assets will remain unless their definition is also deleted.
             </div>
             <strong>This action cannot be undone.</strong>
-          </Group>
+          </Box>
         );
       }
       const value = assetKeys.length > 0 ? (wipedCount + failedCount) / assetKeys.length : 1;
       return (
         <Box flex={{gap: 8, direction: 'column'}}>
           <div>Wiping...</div>
-          <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+          <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
           <NavigationBlock message="Wiping in progress, please do not navigate away yet." />
         </Box>
       );

@@ -1,27 +1,19 @@
-import {
-  Box,
-  ButtonLink,
-  Colors,
-  MiddleTruncate,
-  NonIdealState,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useRef} from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {useRef} from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {
-  BackfillPartitionsForAssetKeyQuery,
-  BackfillPartitionsForAssetKeyQueryVariables,
-} from './types/BackfillAssetPartitionsTable.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
-import {gql, useApolloClient} from '../../apollo-client';
+import {gql} from '../../apollo-client';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
-import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
-import {AssetViewParams} from '../../assets/types';
-import {AssetKey, RunStatus} from '../../graphql/types';
+import {
+  failedStatuses,
+  inProgressStatuses,
+  queuedStatuses,
+  successStatuses,
+} from '../../runs/RunStatuses';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
@@ -70,8 +62,8 @@ export const BackfillAssetPartitionsTable = ({
         {items.map(({index, key, size, start}) => (
           <VirtualizedBackfillPartitionsRow
             key={key}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             asset={assetStatuses[index]!}
-            backfill={backfill}
             height={size}
             start={start}
           />
@@ -81,56 +73,48 @@ export const BackfillAssetPartitionsTable = ({
   );
 };
 
-function getRunsUrl(backfillId: string, status: 'inProgress' | 'complete' | 'failed' | 'targeted') {
-  const filters: RunFilterToken[] = [
-    {
-      token: 'tag',
-      value: `dagster/backfill=${backfillId}`,
-    },
-  ];
+function getRunsUrl(
+  backfillId: string,
+  status: 'inProgress' | 'succeeded' | 'failed' | 'targeted',
+) {
+  const filters: RunFilterToken[] = [];
+
   switch (status) {
+    /** Note: We don't include "Queued" runs on the "In progress" tab
+     * of the runs page because there's a separate Queued tab. However,
+     * they are included in the `assetBackfillStatuses.inProgress`, so we
+     * need both filters here so that WYSIWYG when you click the link.
+     */
     case 'inProgress':
       filters.push(
-        {
-          token: 'status',
-          value: RunStatus.STARTED,
-        },
-        {
-          token: 'status',
-          value: RunStatus.QUEUED,
-        },
-        {
-          token: 'status',
-          value: RunStatus.STARTING,
-        },
-        {
-          token: 'status',
-          value: RunStatus.CANCELING,
-        },
-        {
-          token: 'status',
-          value: RunStatus.NOT_STARTED,
-        },
+        ...Array.from(inProgressStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+        ...Array.from(queuedStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
       );
       break;
-    case 'complete':
-      filters.push({
-        token: 'status',
-        value: RunStatus.SUCCESS,
-      });
+    case 'succeeded':
+      filters.push(
+        ...Array.from(successStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+      );
       break;
     case 'failed':
-      filters.push({
-        token: 'status',
-        value: RunStatus.FAILURE,
-      });
-      filters.push({
-        token: 'status',
-        value: RunStatus.CANCELED,
-      });
+      filters.push(
+        ...Array.from(failedStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+      );
       break;
   }
-  return runsPathWithFilters(filters);
+  return `/runs/b/${backfillId}/${runsPathWithFilters(filters, ``)}&tab=runs`;
 }
 
 export const VirtualizedBackfillPartitionsHeader = ({
@@ -148,7 +132,7 @@ export const VirtualizedBackfillPartitionsHeader = ({
         <Link to={getRunsUrl(backfill.id, 'inProgress')}>In progress</Link>
       </HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'complete')}>Succeeded</Link>
+        <Link to={getRunsUrl(backfill.id, 'succeeded')}>Succeeded</Link>
       </HeaderCell>
       <HeaderCell>
         <Link to={getRunsUrl(backfill.id, 'failed')}>Failed</Link>
@@ -159,56 +143,28 @@ export const VirtualizedBackfillPartitionsHeader = ({
 
 export const VirtualizedBackfillPartitionsRow = ({
   asset,
-  backfill,
   height,
   start,
 }: {
   asset: AssetBackfillStatus;
-  backfill: BackfillDetailsBackfillFragment;
   height: number;
   start: number;
 }) => {
   let targeted;
   let inProgress;
-  let completed;
+  let succeeded;
   let failed;
   if (asset.__typename === 'AssetPartitionsStatusCounts') {
     targeted = asset.numPartitionsTargeted;
     inProgress = asset.numPartitionsInProgress;
-    completed = asset.numPartitionsMaterialized;
+    succeeded = asset.numPartitionsMaterialized;
     failed = asset.numPartitionsFailed;
   } else {
     targeted = 1;
     failed = asset.failed ? 1 : 0;
     inProgress = asset.inProgress ? 1 : 0;
-    completed = asset.materialized ? 1 : 0;
+    succeeded = asset.materialized ? 1 : 0;
   }
-
-  const client = useApolloClient();
-  const history = useHistory();
-
-  const onShowAssetDetails = async (assetKey: AssetKey, isPartitioned: boolean) => {
-    let params: AssetViewParams = {};
-
-    if (isPartitioned) {
-      const resp = await client.query<
-        BackfillPartitionsForAssetKeyQuery,
-        BackfillPartitionsForAssetKeyQueryVariables
-      >({
-        query: BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY,
-        variables: {backfillId: backfill.id, assetKey: asAssetKeyInput(assetKey)},
-      });
-      const data =
-        resp.data.partitionBackfillOrError.__typename === 'PartitionBackfill'
-          ? resp.data.partitionBackfillOrError.partitionsTargetedForAssetKey
-          : null;
-
-      if (data && data.ranges?.length) {
-        params = {default_range: data.ranges.map((r) => `[${r.start}...${r.end}]`).join(',')};
-      }
-    }
-    return history.push(assetDetailsPathForKey(assetKey, params));
-  };
 
   return (
     <Row
@@ -218,22 +174,17 @@ export const VirtualizedBackfillPartitionsRow = ({
     >
       <RowGrid border="bottom">
         <RowCell>
-          <Box flex={{direction: 'row', justifyContent: 'space-between'}} style={{minWidth: 0}}>
-            <ButtonLink
-              style={{minWidth: 0}}
-              onClick={() =>
-                onShowAssetDetails(
-                  asset.assetKey,
-                  asset.__typename === 'AssetPartitionsStatusCounts',
-                )
-              }
-            >
+          <Box
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}
+            style={{minWidth: 0}}
+          >
+            <Link to={assetDetailsPathForKey(asset.assetKey)}>
               <MiddleTruncate text={displayNameForAssetKey(asset.assetKey)} />
-            </ButtonLink>
+            </Link>
             <StatusBar
               targeted={targeted}
               inProgress={inProgress}
-              completed={completed}
+              succeeded={succeeded}
               failed={failed}
             />
           </Box>
@@ -242,7 +193,7 @@ export const VirtualizedBackfillPartitionsRow = ({
           <>
             <RowCell>{numberFormatter.format(targeted)}</RowCell>
             <RowCell>{numberFormatter.format(inProgress)}</RowCell>
-            <RowCell>{numberFormatter.format(completed)}</RowCell>
+            <RowCell>{numberFormatter.format(succeeded)}</RowCell>
             <RowCell>{numberFormatter.format(failed)}</RowCell>
           </>
         ) : (
@@ -250,15 +201,33 @@ export const VirtualizedBackfillPartitionsRow = ({
             <RowCell>-</RowCell>
             <RowCell>
               {inProgress ? (
-                <Tag icon="spinner" intent="primary">
-                  In progress
-                </Tag>
+                <div>
+                  <Tag icon="spinner" intent="primary">
+                    In progress
+                  </Tag>
+                </div>
               ) : (
                 '-'
               )}
             </RowCell>
-            <RowCell>{completed ? <Tag intent="success">Completed</Tag> : '-'}</RowCell>
-            <RowCell>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</RowCell>
+            <RowCell>
+              {succeeded ? (
+                <div>
+                  <Tag intent="success">Succeeded</Tag>
+                </div>
+              ) : (
+                '-'
+              )}
+            </RowCell>
+            <RowCell>
+              {failed ? (
+                <div>
+                  <Tag intent="danger">Failed</Tag>
+                </div>
+              ) : (
+                '-'
+              )}
+            </RowCell>
           </>
         )}
       </RowGrid>
@@ -292,32 +261,39 @@ export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
 export function StatusBar({
   targeted,
   inProgress,
-  completed,
+  succeeded,
   failed,
 }: {
   targeted: number;
   inProgress: number;
-  completed: number;
+  succeeded: number;
   failed: number;
 }) {
+  const pctSucceeded = (100 * succeeded) / targeted;
+  const pctFailed = (100 * failed) / targeted;
+  const pctInProgress = (100 * inProgress) / targeted;
+
+  const pctFinal = Math.ceil(pctSucceeded + pctFailed);
+
   return (
-    <div
-      style={{
-        borderRadius: '8px',
-        backgroundColor: Colors.backgroundLight(),
-        display: 'grid',
-        gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
-          (100 * inProgress) / targeted
-        }%`,
-        gridTemplateRows: '100%',
-        height: '12px',
-        width: '200px',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{background: Colors.accentGreen()}} />
-      <div style={{background: Colors.accentRed()}} />
-      <div style={{background: Colors.accentBlue()}} />
-    </div>
+    <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
+      <div
+        style={{
+          borderRadius: '8px',
+          backgroundColor: Colors.backgroundLight(),
+          display: 'grid',
+          gridTemplateColumns: `${pctSucceeded.toFixed(2)}% ${pctFailed.toFixed(2)}% ${pctInProgress.toFixed(2)}%`,
+          gridTemplateRows: '100%',
+          height: '12px',
+          width: '200px',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{background: Colors.accentGreen()}} />
+        <div style={{background: Colors.accentRed()}} />
+        <div style={{background: Colors.accentBlue()}} />
+      </div>
+      <Caption color={Colors.textLight()}>{`${pctFinal}% completed`}</Caption>
+    </Box>
   );
 }

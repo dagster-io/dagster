@@ -1,7 +1,8 @@
-import {Graph} from './VirtualizedGraphTable';
 import {RepositoryGraphsFragment} from './types/WorkspaceGraphsQuery.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+
+type Graph = {name: string; path: string; description: string | null};
 
 export const extractGraphsForRepo = (repo: RepositoryGraphsFragment) => {
   const jobGraphNames = new Set<string>(

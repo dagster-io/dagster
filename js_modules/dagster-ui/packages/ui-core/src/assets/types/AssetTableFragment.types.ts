@@ -11,11 +11,30 @@ export type AssetTableDefinitionFragment = {
   isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
+  isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
+  hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  pools: Array<string>;
+  jobNames: Array<string>;
   kinds: Array<string>;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -24,6 +43,11 @@ export type AssetTableDefinitionFragment = {
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -50,11 +74,30 @@ export type AssetTableFragment = {
     isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
+    isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
+    hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
+    pools: Array<string>;
+    jobNames: Array<string>;
     kinds: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy:
+      | {
+          __typename: 'CronFreshnessPolicy';
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
+        }
+      | {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        }
+      | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -63,6 +106,11 @@ export type AssetTableFragment = {
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
+    } | null;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
     } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}

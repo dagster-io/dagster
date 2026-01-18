@@ -16,5 +16,5 @@ def test_capture():
         with mirror_stream_to_file(sys.stdout, capture_filepath):
             print("HELLO")  # noqa: T201
 
-        with open(capture_filepath, "r", encoding="utf8") as capture_stream:
+        with open(capture_filepath, encoding="utf8") as capture_stream:
             assert "HELLO" in capture_stream.read()
