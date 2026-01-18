@@ -8,6 +8,9 @@ run_coordinator:
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 5
+    dequeue_use_threads: true 
+    dequeue_num_workers: 3
+    dequeue_interval_seconds: 10
     tag_concurrency_limits:
       - key: "operation"
         value: "example"
@@ -21,6 +24,14 @@ run_launcher:
       - DAGSTER_POSTGRES_USER
       - DAGSTER_POSTGRES_PASSWORD
       - DAGSTER_POSTGRES_DB
+    container_kwargs:
+      auto_remove: True
+      dns: 
+          - 8.8.8.8
+          - 1.1.1.1
+      sysctls:
+        net.ipv6.conf.all.disable_ipv6: 1
+        net.ipv6.conf.default.disable_ipv6: 1
     network: docker_example_network
     container_kwargs:
       volumes: # Make docker client accessible to any launched containers as well
@@ -68,3 +79,29 @@ event_log_storage:
       db_name:
         env: DAGSTER_POSTGRES_DB
       port: 5432
+
+retention:
+  schedule:
+    purge_after_days:
+      success: 14
+      failure: 14
+      skipped: 7
+  sensor:
+    purge_after_days:
+      success: 14
+      failure: 14
+      skipped: 7
+  auto_materialize:
+    purge_after_days:
+      success: 14
+      failure: 14
+      skipped: 7
+
+telemetry:
+  enabled: false
+
+run_monitoring:
+  enabled: true
+  poll_interval_seconds: 10
+  start_timeout_seconds: 120
+  cancel_timeout_seconds: 60
