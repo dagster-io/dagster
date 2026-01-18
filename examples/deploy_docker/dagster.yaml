@@ -23,7 +23,7 @@ run_launcher:
     env_vars:
       - DAGSTER_POSTGRES_USER
       - DAGSTER_POSTGRES_PASSWORD
-      - DAGSTER_POSTGRES_DB      
+      - DAGSTER_POSTGRES_DB
     network: docker_example_network
     container_kwargs:
       auto_remove: True
