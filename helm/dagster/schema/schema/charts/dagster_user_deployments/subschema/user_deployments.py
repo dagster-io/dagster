@@ -39,7 +39,9 @@ class UserDeployment(BaseModel):
     volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
     volumes: Optional[list[kubernetes.Volume]] = None
     schedulerName: Optional[str] = None
-    initContainers: Optional[list[kubernetes.Container]] = None
+    initContainers: Optional[
+        list[Union[kubernetes.Container, kubernetes.InitContainerWithStructuredImage]]
+    ] = None
     sidecarContainers: Optional[list[kubernetes.Container]] = None
     deploymentStrategy: Optional[kubernetes.DeploymentStrategy] = None
 
