@@ -6,8 +6,8 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const titles: {[key: string]: string} = {
-  configuration: 'Configuration',
-  uses: 'Uses',
+  configuration: '配置',
+  uses: '使用',
 };
 
 export const ResourceTabs = (props: {
@@ -21,23 +21,23 @@ export const ResourceTabs = (props: {
     '/locations/:repoPath/resources/:name/:tab?',
   ]);
 
-  const active = (match?.params.tab && titles[match?.params.tab]) || 'Configuration';
+  const active = (match?.params.tab && titles[match?.params.tab]) || '配置';
 
   return (
     <>
       <Tabs size="large" selectedTabId={active}>
         <TabLink
           key="configuration"
-          id="Configuration"
-          title="Configuration"
+          id="配置"
+          title="配置"
           to={workspacePathFromAddress(repoAddress, `/resources/${resourceName}`)}
         />
         <TabLink
           key="uses"
-          id="Uses"
+          id="使用"
           title={
             <Box flex={{gap: 4, alignItems: 'center'}}>
-              Uses
+              使用
               <Tag intent="none">{numUses}</Tag>
             </Box>
           }

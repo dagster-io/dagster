@@ -36,7 +36,7 @@ export const AssetLaunchpad = ({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) => {
-  const title = 'Launchpad (configure assets)';
+  const title = '启动台 (配置资产)';
 
   return (
     <Dialog
@@ -77,7 +77,7 @@ export const BackfillLaunchpad = ({
   onSaveConfig: (config: LaunchpadConfig) => void;
   savedConfig?: LaunchpadConfig | null;
 }) => {
-  const title = 'Config Editor';
+  const title = '配置编辑器';
 
   // Convert assetKeys to the format expected by sessionPresets.assetSelection
   const assetSelection = assetKeys?.map((assetKey) => ({
@@ -109,7 +109,7 @@ export const BackfillLaunchpad = ({
     return (
       <LaunchpadSessionError
         icon="error"
-        title="Error loading base asset job"
+        title="加载基础资产作业失败"
         description={
           pipelineOrError?.__typename === 'PythonError' ? pipelineOrError.message : 'Unknown error'
         }

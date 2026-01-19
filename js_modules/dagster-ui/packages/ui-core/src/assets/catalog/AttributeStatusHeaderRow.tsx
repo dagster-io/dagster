@@ -20,39 +20,39 @@ export const ASSET_HEALTH_GROUP_BY_META: Record<
   {text: string; icon: IconName}
 > = {
   [AssetHealthGroupBy.health_status]: {
-    text: 'Health Status',
+    text: '健康状态',
     icon: 'status',
   },
   [AssetHealthGroupBy.freshness_status]: {
-    text: 'Freshness Status',
+    text: '新鲜度状态',
     icon: 'freshness',
   },
   [AssetHealthGroupBy.check_status]: {
-    text: 'Check Status',
+    text: '检查状态',
     icon: 'asset_check',
   },
   [AssetHealthGroupBy.materialization_status]: {
-    text: 'Materialization Status',
+    text: '物化状态',
     icon: 'materialization',
   },
   [AssetHealthGroupBy.code_location]: {
-    text: 'Code Location',
+    text: '代码位置',
     icon: 'repo',
   },
   [AssetHealthGroupBy.group]: {
-    text: 'Group',
+    text: '组',
     icon: 'asset_group',
   },
   [AssetHealthGroupBy.owner]: {
-    text: 'Owner',
+    text: '负责人',
     icon: 'account_circle',
   },
   [AssetHealthGroupBy.kind]: {
-    text: 'Kind',
+    text: '类型',
     icon: 'compute_kind',
   },
   [AssetHealthGroupBy.tags]: {
-    text: 'Tag',
+    text: '标签',
     icon: 'tag',
   },
 };

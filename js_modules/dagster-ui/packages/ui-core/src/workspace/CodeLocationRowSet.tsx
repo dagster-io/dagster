@@ -52,7 +52,7 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
         <span style={{marginRight: '4px'}}>
           <CaptionMono>{imageKV.value}</CaptionMono>
         </span>
-        <Tooltip content={didCopy ? 'Copied!' : 'Click to copy image string'} placement="top">
+        <Tooltip content={didCopy ? '已复制！' : '点击复制镜像字符串'} placement="top">
           <UnstyledButton onClick={onClick}>
             <Icon name={didCopy ? 'done' : 'copy'} size={12} />
           </UnstyledButton>
@@ -121,20 +121,20 @@ export const LocationStatus = (props: {
   });
 
   if (locationStatus?.loadStatus === 'LOADING') {
-    return <Tag intent="primary">Updating…</Tag>;
+    return <Tag intent="primary">更新中…</Tag>;
   }
 
   if (locationOrError?.versionKey !== locationStatus?.versionKey) {
-    return <Tag intent="primary">Loading…</Tag>;
+    return <Tag intent="primary">加载中…</Tag>;
   }
 
   if (locationStatus && locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
-          <Tag intent="danger">Failed</Tag>
+          <Tag intent="danger">失败</Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
-            <span style={{fontSize: '12px'}}>View error</span>
+            <span style={{fontSize: '12px'}}>查看错误</span>
           </ButtonLink>
         </Box>
         <RepositoryLocationNonBlockingErrorDialog
@@ -149,7 +149,7 @@ export const LocationStatus = (props: {
     );
   }
 
-  return <Tag intent="success">Loaded</Tag>;
+  return <Tag intent="success">已加载</Tag>;
 };
 
 export const ReloadButton = ({location}: {location: string}) => {
@@ -169,7 +169,7 @@ export const ReloadButton = ({location}: {location: string}) => {
                 loading={reloading}
                 onClick={() => tryReload()}
               >
-                Reload
+                重载
               </Button>
             </Tooltip>
           </Box>

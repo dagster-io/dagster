@@ -35,7 +35,7 @@ export const DeleteDynamicPartitionsDialog = memo((props: DeleteDynamicPartition
   return (
     <Dialog
       isOpen={props.isOpen}
-      title={`Delete ${props.partitionsDefName} partitions`}
+      title={`删除 ${props.partitionsDefName} 分区`}
       onClose={props.onClose}
       style={{width: '50vw', minWidth: 500, maxWidth: 700}}
     >
@@ -95,8 +95,7 @@ export const DeleteDynamicPartitionsDialogInner = memo(
           <Box flex={{direction: 'column'}}>
             {result.__typename === 'DeleteDynamicPartitionsSuccess' ? (
               <Body2>
-                The selected partitions of <strong>{partitionsDefName}</strong> and associated
-                materializations have been deleted.
+                <strong>{partitionsDefName}</strong> 的选定分区及其关联的物化数据已被删除。
               </Body2>
             ) : (
               <PythonErrorInfo error={result} />
@@ -107,15 +106,14 @@ export const DeleteDynamicPartitionsDialogInner = memo(
       if (deleting) {
         return (
           <Box flex={{gap: 8, direction: 'column'}}>
-            <div>Wiping...</div>
+            <div>正在清除...</div>
           </Box>
         );
       }
       return (
         <Box flex={{direction: 'column', gap: 6}}>
           <Body2>
-            Select partition keys of the <strong>{partitionsDefName}</strong> partition definition
-            to delete.
+            选择要删除的 <strong>{partitionsDefName}</strong> 分区定义的分区键。
           </Body2>
           {health && dynamicHealth ? (
             <OrdinalPartitionSelector
@@ -129,9 +127,9 @@ export const DeleteDynamicPartitionsDialogInner = memo(
             <Spinner purpose="section" />
           )}
           <Body2 style={{marginTop: 10}}>
-            Deleting partitions impacts all assets that share this partition definition.
-            Materialization events for these partitions will be wiped.{' '}
-            <strong>This action cannot be undone.</strong>
+            删除分区会影响所有共享此分区定义的资产。
+            这些分区的物化事件将被清除。{' '}
+            <strong>此操作无法撤销。</strong>
           </Body2>
         </Box>
       );
@@ -142,7 +140,7 @@ export const DeleteDynamicPartitionsDialogInner = memo(
         <DialogBody>{content}</DialogBody>
         <DialogFooter topBorder>
           <Button intent={result ? 'primary' : 'none'} onClick={onClose}>
-            {result ? 'Done' : 'Cancel'}
+            {result ? '完成' : '取消'}
           </Button>
           {result ? null : (
             <Button
@@ -152,8 +150,8 @@ export const DeleteDynamicPartitionsDialogInner = memo(
               loading={deleting}
             >
               {selectedPartitions.length === 1
-                ? 'Delete 1 partition'
-                : `Delete ${selectedPartitions.length} partitions`}
+                ? '删除 1 个分区'
+                : `删除 ${selectedPartitions.length} 个分区`}
             </Button>
           )}
         </DialogFooter>

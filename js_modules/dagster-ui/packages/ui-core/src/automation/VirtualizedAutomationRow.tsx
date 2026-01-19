@@ -11,11 +11,11 @@ export const VirtualizedAutomationHeader = ({checkbox}: {checkbox: React.ReactNo
       <HeaderCell>
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>
-      <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Type</HeaderCell>
-      <HeaderCell>Target</HeaderCell>
-      <HeaderCell>Last tick</HeaderCell>
-      <HeaderCell>Last run</HeaderCell>
+      <HeaderCell>名称</HeaderCell>
+      <HeaderCell>类型</HeaderCell>
+      <HeaderCell>目标</HeaderCell>
+      <HeaderCell>上次触发</HeaderCell>
+      <HeaderCell>上次运行</HeaderCell>
     </HeaderRow>
   );
 };

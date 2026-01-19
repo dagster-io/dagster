@@ -182,7 +182,7 @@ export const GanttChart = (props: GanttChartProps) => {
             <OptionsSpacer />
             <Checkbox
               style={{marginBottom: 0}}
-              label="Hide not started steps"
+              label="隐藏未开始的步骤"
               checked={state.hideWaiting}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateOptions({hideWaiting: e.target.checked})
@@ -387,9 +387,9 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
               >
                 <Icon name="warning" color={Colors.accentYellow()} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
-                  <strong>Lost connection to Dagster webserver.</strong>
+                  <strong>与 Dagster 服务器的连接已断开。</strong>
                   <span>
-                    {` Verify that your instance is responding to requests at ${rootServerURI} and reload the page.`}
+                    {`请验证您的实例在 ${rootServerURI} 上正常响应请求，然后刷新页面。`}
                   </span>
                 </div>
               </Box>
@@ -405,7 +405,7 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
 
           <Checkbox
             checked={options.hideUnselectedSteps}
-            label="Hide unselected steps"
+            label="隐藏未选中的步骤"
             onChange={props.onChange}
           />
         </FilterInputsBackgroundBox>

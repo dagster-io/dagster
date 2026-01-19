@@ -91,7 +91,7 @@ export const BackfillRowContent = ({
 
   const renderBackfillStatus = () =>
     statusQueryResult?.loading ? (
-      <div style={{color: Colors.textLight()}}>Loading</div>
+      <div style={{color: Colors.textLight()}}>加载中</div>
     ) : (
       <BackfillStatusTagForPage backfill={backfill} />
     );
@@ -202,7 +202,7 @@ export const BackfillTarget = ({
       return (
         <AssetKeyTagCollection
           assetKeys={assetSelection}
-          dialogTitle="Assets in backfill"
+          dialogTitle="回填中的资产"
           useTags={useTags}
           maxRows={2}
         />
@@ -276,9 +276,7 @@ const BackfillRequestedRange = ({
     return <span />;
   }
 
-  const numPartitionsLabel = `${numPartitions.toLocaleString()} ${
-    numPartitions === 1 ? 'partition' : 'partitions'
-  }`;
+  const numPartitionsLabel = `${numPartitions.toLocaleString()} 个分区`;
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <div>

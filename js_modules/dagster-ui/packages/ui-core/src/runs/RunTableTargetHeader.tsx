@@ -9,15 +9,14 @@ export function RunTableTargetHeader() {
     (value) => value,
   );
   if (hideTabPinningNux) {
-    return <div>Target</div>;
+    return <div>目标</div>;
   }
   return (
     <ProductTour
-      title="Hide and show run tags"
+      title="显示/隐藏运行标签"
       description={
         <>
-          You can show tags that you prefer quick access to and hide tags you don&apos;t by hovering
-          over the tag and selecting the show/hide tag option.
+          您可以通过将鼠标悬停在标签上并选择显示/隐藏选项来快速访问或隐藏特定标签。
         </>
       }
       position={ProductTourPosition.BOTTOM_RIGHT}
@@ -29,7 +28,7 @@ export function RunTableTargetHeader() {
         },
       }}
     >
-      <div>Target</div>
+      <div>目标</div>
     </ProductTour>
   );
 }

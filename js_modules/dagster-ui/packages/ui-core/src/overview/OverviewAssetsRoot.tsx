@@ -151,17 +151,16 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
             onChange={(e) => {
               setSearchValue(e.target.value);
             }}
-            placeholder="Filter asset groups…"
+            placeholder="筛选资产组…"
           />
         </Box>
         <Box padding={{horizontal: 24, vertical: 16}} border="top">
           <Alert
             intent="info"
-            title="This Assets tab will be removed in an upcoming release."
+            title="此资产标签页将在即将发布的版本中移除。"
             description={
               <>
-                Use the <Link to="/asset-groups">global asset lineage page</Link> to view grouped
-                asset status details.
+                使用<Link to="/asset-groups">全局资产血缘页面</Link>查看分组的资产状态详情。
               </>
             }
           />
@@ -209,15 +208,15 @@ const TEMPLATE_COLUMNS = '5fr 1fr 1fr 1fr 1fr';
 
 const VirtualHeaderRow = () => (
   <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-    <HeaderCell>Group name</HeaderCell>
-    <HeaderCell>Missing</HeaderCell>
-    <HeaderCell>Failed/Overdue</HeaderCell>
-    <HeaderCell>In progress</HeaderCell>
-    <HeaderCell>Materialized</HeaderCell>
+    <HeaderCell>组名</HeaderCell>
+    <HeaderCell>缺失</HeaderCell>
+    <HeaderCell>失败/逾期</HeaderCell>
+    <HeaderCell>进行中</HeaderCell>
+    <HeaderCell>已物化</HeaderCell>
   </HeaderRow>
 );
 
-const UNGROUPED_ASSETS = 'Ungrouped Assets';
+const UNGROUPED_ASSETS = '未分组资产';
 type RowProps = {
   height: number;
   start: number;

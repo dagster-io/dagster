@@ -121,7 +121,7 @@ export const RunRoot = () => {
                 <RunStatusTag status={run.status} />
                 {!isHiddenAssetGroupJob(run.pipelineName) ? (
                   <Tag icon="run">
-                    Run of{' '}
+                    运行{' '}
                     <PipelineReference
                       pipelineName={run?.pipelineName}
                       pipelineHrefContext={repoAddress || 'repo-unknown'}
@@ -175,8 +175,8 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
-          title="No run found"
-          description="The run with this ID does not exist or has been cleaned up."
+          title="未找到运行"
+          description="该 ID 对应的运行不存在或已被清理。"
         />
       </Box>
     );
@@ -189,11 +189,11 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
         <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="job"
-            title="This run was remotely executed"
+            title="此运行在远程执行"
             description={
               <Box flex={{direction: 'row', alignItems: 'center'}}>
                 <a href={externalUrl} target="_blank" rel="noreferrer">
-                  View the execution logs
+                  查看执行日志
                 </a>
                 <Icon name="open_in_new" size={16} style={{marginLeft: 8}} />
               </Box>
@@ -206,8 +206,8 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
         <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="job"
-            title="No external URL found"
-            description="This run was executed externally, but does not have an external URL."
+            title="未找到外部 URL"
+            description="此运行在外部执行，但没有外部 URL。"
           />
         </Box>
       );
@@ -240,7 +240,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
     return (
       <Subtitle1>
         <Link to="/runs" style={{color: Colors.textLight()}}>
-          Runs
+          运行记录
         </Link>
         {' / '}
         <Link to={getBackfillPath(backfillTag.value, 'runs')} style={{color: Colors.textLight()}}>
@@ -254,7 +254,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
 
   return (
     <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 6}}>
-      <Link to="/runs">Runs</Link>
+      <Link to="/runs">运行记录</Link>
       <span>/</span>
       <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
     </Subtitle1>

@@ -50,8 +50,8 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
             <Fragment key={ii}>
               <h3 className={styles.causeHeader}>
                 {chainLink.isExplicitLink
-                  ? 'The above exception was caused by the following exception:'
-                  : 'The above exception occurred during handling of the following exception:'}
+                  ? '上述异常由以下异常引起：'
+                  : '在处理以下异常时发生了上述异常：'}
               </h3>
               <h3 className={styles.errorHeader}>{message}</h3>
               {stack ? <div className={styles.trace}>{stack.join('')}</div> : null}
@@ -60,7 +60,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
         })}
         {props.showReload && (
           <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>
-            Reload
+            重新加载
           </Button>
         )}
         <Box
@@ -72,7 +72,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
           <CopyErrorButton
             copy={() => {
               const text = wrapperRef.current?.innerText || '';
-              copy(text.slice(0, -1 * 'Copy error'.length)); // Strip "Copy error"
+              copy(text.slice(0, -1 * '复制错误'.length)); // Strip "复制错误"
             }}
           />
         </Box>
@@ -85,7 +85,7 @@ const ErrorContext = ({errorSource}: {errorSource: ErrorSource}) => {
   if (errorSource === ErrorSource.UNEXPECTED_ERROR) {
     return (
       <h4 className={styles.contextHeader}>
-        An unexpected exception was thrown. Please file an issue.
+        发生意外异常。请提交问题报告。
       </h4>
     );
   }
@@ -99,13 +99,13 @@ export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
       onClick={async () => {
         const message = copy();
         await showSharedToaster({
-          message: message ?? <div>Copied value</div>,
+          message: message ?? <div>已复制</div>,
           intent: 'success',
         });
       }}
       icon={<Icon name="content_copy" />}
     >
-      Copy error
+      复制错误
     </Button>
   );
 };

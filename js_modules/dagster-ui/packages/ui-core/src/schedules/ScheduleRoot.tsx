@@ -36,7 +36,7 @@ export const ScheduleRoot = (props: Props) => {
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
 
-  useDocumentTitle(`Schedule: ${scheduleName}`);
+  useDocumentTitle(`定时任务: ${scheduleName}`);
 
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -66,8 +66,8 @@ export const ScheduleRoot = (props: Props) => {
 
   const tabs = (
     <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
-      <Tab id="ticks" title="Tick history" />
-      <Tab id="runs" title="Run history" />
+      <Tab id="ticks" title="触发历史" />
+      <Tab id="runs" title="运行历史" />
     </Tabs>
   );
 

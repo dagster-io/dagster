@@ -26,13 +26,13 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
       <Tabs selectedTabId={tab}>
         <TabLink
           id="locations"
-          title="Code locations"
+          title="代码位置"
           to="/locations"
           icon={<WorkspaceStatus placeholder={false} />}
         />
         <TabLink id="health" title={healthTitle} to="/health" icon={<InstanceWarningIcon />} />
-        {canSeeConfig ? <TabLink id="concurrency" title="Concurrency" to="/concurrency" /> : null}
-        {canSeeConfig ? <TabLink id="config" title="Configuration" to="/config" /> : null}
+        {canSeeConfig ? <TabLink id="concurrency" title="并发控制" to="/concurrency" /> : null}
+        {canSeeConfig ? <TabLink id="config" title="配置" to="/config" /> : null}
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

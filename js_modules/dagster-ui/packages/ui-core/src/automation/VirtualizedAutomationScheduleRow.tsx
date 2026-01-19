@@ -110,10 +110,10 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
 
       const {hasStartPermission, hasStopPermission, status} = scheduleState;
       if (status === InstigationStatus.RUNNING && !hasStopPermission) {
-        return {disabled: true, message: 'You do not have permission to stop this schedule'};
+        return {disabled: true, message: '您没有权限停止此定时任务'};
       }
       if (status === InstigationStatus.STOPPED && !hasStartPermission) {
-        return {disabled: true, message: 'You do not have permission to start this schedule'};
+        return {disabled: true, message: '您没有权限启动此定时任务'};
       }
       return {disabled: false};
     }, [scheduleState]);
@@ -182,7 +182,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      Next tick:&nbsp;
+                      下次触发：
                       <TimestampDisplay
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         timestamp={scheduleData.scheduleState.nextTick.timestamp!}

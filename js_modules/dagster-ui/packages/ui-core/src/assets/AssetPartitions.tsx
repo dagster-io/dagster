@@ -291,7 +291,7 @@ export const AssetPartitions = ({
         border="bottom"
       >
         <div data-testid={testId('partitions-selected')}>
-          {countsFiltered.toLocaleString()} Partitions Selected
+          已选择 {countsFiltered.toLocaleString()} 个分区
         </div>
         <AssetPartitionStatusCheckboxes
           counts={countsByStateInSelection}
@@ -325,8 +325,8 @@ export const AssetPartitions = ({
                   onChange={(e) => updateSearchValue(idx, e.target.value)}
                   placeholder={
                     selection.dimension.name !== 'default'
-                      ? `Filter by ${selection.dimension.name}…`
-                      : 'Filter by name…'
+                      ? `按 ${selection.dimension.name} 筛选…`
+                      : '按名称筛选…'
                   }
                   data-testid={testId(`search-${idx}`)}
                   rightElement={
@@ -335,9 +335,9 @@ export const AssetPartitions = ({
                         <Menu>
                           <MenuItem
                             text={
-                              <Tooltip content="The order in which partitions were created">
+                              <Tooltip content="按分区创建顺序排序">
                                 <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                                  <span>Creation sort</span>
+                                  <span>按创建顺序</span>
                                   <Icon name="info" />
                                 </Box>
                               </Tooltip>
@@ -354,9 +354,9 @@ export const AssetPartitions = ({
                           />
                           <MenuItem
                             text={
-                              <Tooltip content="The order in which partitions were created, reversed">
+                              <Tooltip content="按分区创建顺序的逆序排序">
                                 <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                                  <span>Reverse creation sort</span>
+                                  <span>按创建逆序</span>
                                   <Icon name="info" />
                                 </Box>
                               </Tooltip>
@@ -372,7 +372,7 @@ export const AssetPartitions = ({
                             data-testid={testId('sort-reverse-creation')}
                           />
                           <MenuItem
-                            text="Alphabetical sort"
+                            text="按字母顺序"
                             active={SortType.ALPHABETICAL === sortType}
                             onClick={() => {
                               setSortTypes((sorts) => {
@@ -384,7 +384,7 @@ export const AssetPartitions = ({
                             data-testid={testId('sort-alphabetical')}
                           />
                           <MenuItem
-                            text="Reverse alphabetical sort"
+                            text="按字母逆序"
                             active={SortType.REVERSE_ALPHABETICAL === sortType}
                             onClick={() => {
                               setSortTypes((sorts) => {

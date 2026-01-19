@@ -105,7 +105,7 @@ export const AssetEventList = ({
             background={Colors.backgroundLighter()}
           >
             <Spinner purpose="body-text" />
-            Loading...
+            加载中...
           </Box>
         </Box>
       ) : undefined}

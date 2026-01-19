@@ -3,18 +3,18 @@ import {NonIdealState} from '@dagster-io/ui-components';
 export const AssetsEmptyState = ({prefixPath}: {prefixPath?: string[]}) => (
   <NonIdealState
     icon="asset"
-    title="Assets"
+    title="资产"
     description={
       <p>
         {prefixPath && prefixPath.length
-          ? `There are no matching materialized assets with the specified asset key. `
-          : `There are no known materialized assets. `}
-        Any asset keys that have been specified with an <code>AssetMaterialization</code> during a
-        pipeline run will appear here. See the{' '}
+          ? `没有匹配指定资产键的已物化资产。`
+          : `暂无已知的已物化资产。`}
+        任何在流水线运行期间通过 <code>AssetMaterialization</code> 指定的资产键都会显示在这里。
+        详情请参阅{' '}
         <a href="https://docs.dagster.io/_apidocs/ops#dagster.AssetMaterialization">
-          AssetMaterialization documentation
-        </a>{' '}
-        for more information.
+          AssetMaterialization 文档
+        </a>
+        。
       </p>
     }
   />

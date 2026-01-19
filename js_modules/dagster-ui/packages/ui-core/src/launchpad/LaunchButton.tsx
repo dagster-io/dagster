@@ -49,7 +49,7 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
   if (starting) {
     status = LaunchButtonStatus.Starting;
     forced = {
-      title: runCount === 1 ? 'Submitting run…' : `Submitting ${runCount} runs…`,
+      title: runCount === 1 ? '正在提交运行…' : `正在提交 ${runCount} 个运行…`,
       disabled: true,
       icon: 'dagster-spinner',
     };
@@ -204,7 +204,7 @@ const ButtonWithConfiguration = ({
     }
     if (warning) {
       try {
-        await confirm({title: 'Are you sure?', description: warning});
+        await confirm({title: '确定要继续吗？', description: warning});
       } catch {
         return;
       }

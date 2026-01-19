@@ -90,8 +90,8 @@ export const OpSelector = (props: IOpSelectorProps) => {
 
   const errorMessage = invalidOpSelection
     ? isJob
-      ? `You must provide a valid op query or * to execute the entire job.`
-      : `You must provide a valid solid query or * to execute the entire pipeline.`
+      ? `您必须提供有效的算子查询或 * 来执行整个作业。`
+      : `您必须提供有效的实体查询或 * 来执行整个流水线。`
     : serverProvidedSubsetError
       ? serverProvidedSubsetError.message
       : opsFetchError;
@@ -136,7 +136,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
             items={ops}
             ref={inputRef}
             value={query}
-            placeholder="Type an op subset…"
+            placeholder="输入算子子集…"
             onChange={onTextChange}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}

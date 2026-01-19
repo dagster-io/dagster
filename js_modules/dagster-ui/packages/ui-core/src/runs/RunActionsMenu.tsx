@@ -119,22 +119,24 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
     <>
       {reexecute.launchpadElement}
       <JoinedButtons>
-        <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
+        <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? '查看运行'}</AnchorButton>
         <Popover
           content={
             <Menu>
               <AISummaryForRunMenuItem run={run} />
               <MenuItem
+                tagName="button"
                 style={{minWidth: 200}}
-                text={loading ? 'Loading configuration...' : 'View configuration...'}
+                text={loading ? '加载配置中...' : '查看配置...'}
                 disabled={!runConfigYaml}
                 icon="open_in_new"
                 onClick={() => setVisibleDialog('config')}
               />
               <MenuItem
+                tagName="button"
                 text={
                   <div style={{display: 'contents'}}>
-                    View all tags
+                    查看所有标签
                     <Box
                       flex={{
                         justifyContent: 'center',
@@ -156,8 +158,9 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                   to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
                 >
                   <MenuItem
+                    tagName="button"
                     icon="history"
-                    text="View snapshot"
+                    text="查看快照"
                     onClick={() => setVisibleDialog('tags')}
                   />
                 </LinkNoUnderline>
@@ -167,7 +170,8 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 <Tooltip
                   content={jobLink.disabledReason || OPEN_LAUNCHPAD_UNKNOWN}
                   position="left"
-                  canShow={!infoReady || !!jobLink.disabledReason}
+                  disabled={infoReady && !jobLink.disabledReason}
+                  targetTagName="div"
                 >
                   <MenuLink
                     text={jobLink.label}
@@ -177,11 +181,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                   />
                 </Tooltip>
                 <Tooltip
-                  content={reexecutionDisabledState.message || 'Shift-click to adjust tags.'}
+                  content={reexecutionDisabledState.message || '按住 Shift 点击可调整标签'}
                   position="left"
+                  targetTagName="div"
                 >
                   <MenuItem
-                    text="Re-execute"
+                    tagName="button"
+                    text="重新执行"
                     disabled={reexecutionDisabledState.disabled}
                     icon="refresh"
                     onClick={async (e) => {
@@ -191,31 +197,34 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 </Tooltip>
                 {isFinished || !run.hasTerminatePermission ? null : (
                   <MenuItem
+                    tagName="button"
                     icon="cancel"
-                    text="Terminate"
+                    text="终止"
                     onClick={() => setVisibleDialog('terminate')}
                   />
                 )}
                 <MenuDivider />
               </>
               <MenuExternalLink
-                text="Download debug file"
+                text="下载调试文件"
                 icon="download_for_offline"
                 download
                 href={`${rootServerURI}/download_debug/${run.id}`}
               />
               {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
+                  tagName="button"
                   icon="asset_plot"
-                  text="View container metrics"
+                  text="查看容器指标"
                   intent="none"
                   onClick={() => setVisibleDialog('metrics')}
                 />
               ) : null}
               {run.hasDeletePermission ? (
                 <MenuItem
+                  tagName="button"
                   icon="delete"
-                  text="Delete"
+                  text="删除"
                   intent="danger"
                   onClick={() => setVisibleDialog('delete')}
                 />
@@ -258,7 +267,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
       ) : null}
       <Dialog
         isOpen={visibleDialog === 'tags'}
-        title="Tags"
+        title="标签"
         canOutsideClickClose
         canEscapeKeyClose
         onClose={closeDialogs}
@@ -271,9 +280,9 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           />
         </DialogBody>
         <DialogFooter topBorder>
-          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>复制标签</CopyButton>
           <Button intent="primary" onClick={closeDialogs}>
-            Close
+            关闭
           </Button>
         </DialogFooter>
       </Dialog>
@@ -361,9 +370,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
             {canTerminateAny ? (
               <MenuItem
                 icon="cancel"
-                text={`Terminate ${terminateableIDs.length} ${
-                  terminateableIDs.length === 1 ? 'run' : 'runs'
-                }`}
+                text={`终止 ${terminateableIDs.length} 个运行`}
                 disabled={terminateableIDs.length === 0}
                 onClick={() => {
                   setVisibleDialog('terminate');
@@ -374,9 +381,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
               <MenuItem
                 icon="delete"
                 intent="danger"
-                text={`Delete ${deleteableIDs.length} ${
-                  deleteableIDs.length === 1 ? 'run' : 'runs'
-                }`}
+                text={`删除 ${deleteableIDs.length} 个运行`}
                 disabled={deleteableIDs.length === 0}
                 onClick={() => {
                   setVisibleDialog('delete');
@@ -387,9 +392,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
               <>
                 <MenuItem
                   icon="refresh"
-                  text={`Re-execute ${reexecutableRuns.length} ${
-                    reexecutableRuns.length === 1 ? 'run' : 'runs'
-                  }`}
+                  text={`重新执行 ${reexecutableRuns.length} 个运行`}
                   disabled={reexecutableRuns.length === 0}
                   onClick={() => {
                     setVisibleDialog('reexecute');
@@ -397,9 +400,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
                 />
                 <MenuItem
                   icon="refresh"
-                  text={`Re-execute ${reexecuteFromFailureRuns.length} ${
-                    reexecuteFromFailureRuns.length === 1 ? 'run' : 'runs'
-                  } from failure`}
+                  text={`从失败点重新执行 ${reexecuteFromFailureRuns.length} 个运行`}
                   disabled={reexecuteFromFailureRuns.length === 0}
                   onClick={() => {
                     setVisibleDialog('reexecute-from-failure');
@@ -416,7 +417,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
           rightIcon={<Icon name="expand_more" />}
           intent="primary"
         >
-          Actions
+          操作
         </Button>
       </Popover>
       <TerminationDialog
@@ -453,7 +454,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
 });
 
 const OPEN_LAUNCHPAD_UNKNOWN =
-  'Launchpad is unavailable because the pipeline is not present in the current repository.';
+  '启动面板不可用，因为当前仓库中不存在该流水线。';
 
 // Avoid fetching envYaml, parentPipelineSnapshotId, and executionPlan on load in Runs page,
 // since they can be slow.
@@ -465,6 +466,7 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
         pipelineName
         pipelineSnapshotId
         runConfigYaml
+        pipelineName
         parentPipelineSnapshotId
         repositoryOrigin {
           id

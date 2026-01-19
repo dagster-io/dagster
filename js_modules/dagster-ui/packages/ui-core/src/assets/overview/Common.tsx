@@ -54,7 +54,7 @@ export const SectionEmptyState = ({
     <Body2>{description}</Body2>
     {learnMoreLink ? (
       <a href={learnMoreLink} target="_blank" rel="noreferrer">
-        Learn more
+        了解更多
       </a>
     ) : undefined}
     {interaction}

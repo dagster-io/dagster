@@ -88,7 +88,7 @@ export const RunRowTags = ({
             color={Colors.textLight()}
             style={{margin: '-4px', padding: '4px'}}
           >
-            View all tags ({allTagsWithPinned.length})
+            查看全部标签 ({allTagsWithPinned.length})
           </ButtonLink>
         </Caption>
       ) : null}
@@ -108,7 +108,7 @@ export const RunRowTags = ({
 
       <Dialog
         isOpen={showRunTags}
-        title="Tags"
+        title="标签"
         canOutsideClickClose
         canEscapeKeyClose
         onClose={() => {
@@ -119,9 +119,9 @@ export const RunRowTags = ({
           <RunTags tags={allTagsWithPinned} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
         </DialogBody>
         <DialogFooter topBorder>
-          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>复制标签</CopyButton>
           <Button intent="primary" onClick={() => setShowRunTags(false)}>
-            Close
+            关闭
           </Button>
         </DialogFooter>
       </Dialog>

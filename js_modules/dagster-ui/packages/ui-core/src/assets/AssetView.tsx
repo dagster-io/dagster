@@ -521,21 +521,21 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
         intent="info"
         title={
           <span>
-            This is a historical view of materializations as of{' '}
+            这是截止到{' '}
             <span style={{fontWeight: 600}}>
               <Timestamp
                 timestamp={{ms: Number(asOf)}}
                 timeFormat={{showSeconds: true, showTimezone: true}}
               />
             </span>
-            .
+            {' '}的物化历史视图。
           </span>
         }
         description={
           <Link to={`${pathname}?${searchParams.toString()}`}>
             {hasDefinition
-              ? 'Show definition and latest materializations'
-              : 'Show latest materializations'}
+              ? '显示定义和最新物化'
+              : '显示最新物化'}
           </Link>
         }
       />
@@ -574,7 +574,7 @@ const AssetViewPageHeaderTags = ({
           </Box>
         ) : null}
       </Box>
-      {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
+      {!definition?.isMaterializable ? <Tag>外部资产</Tag> : undefined}
     </>
   );
 };

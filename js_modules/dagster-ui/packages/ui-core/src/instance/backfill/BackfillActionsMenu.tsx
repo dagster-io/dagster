@@ -58,7 +58,7 @@ export const BackfillActionsMenu = ({
       return {disabled: true, message: DEFAULT_DISABLED_REASON};
     }
     if (backfill.status !== BulkActionStatus.REQUESTED) {
-      return {disabled: true, message: 'Backfill is not in progress.'};
+      return {disabled: true, message: '回填未在进行中。'};
     }
     return {disabled: false};
   }, [backfill]);
@@ -68,10 +68,10 @@ export const BackfillActionsMenu = ({
       return {disabled: true, message: DEFAULT_DISABLED_REASON};
     }
     if (backfill.status !== BulkActionStatus.FAILED) {
-      return {disabled: true, message: 'All partition runs have been launched.'};
+      return {disabled: true, message: '所有分区运行已启动。'};
     }
     if (!backfill.partitionSet) {
-      return {disabled: true, message: 'Backfill partition set is not available.'};
+      return {disabled: true, message: '回填分区集不可用。'};
     }
     return {disabled: false};
   }, [backfill]);
@@ -81,7 +81,7 @@ export const BackfillActionsMenu = ({
       return {disabled: true, message: DEFAULT_DISABLED_REASON};
     }
     if (!BULK_ACTION_TERMINAL_STATUSES.includes(backfill.status)) {
-      return {disabled: true, message: 'Backfill is still in progress.'};
+      return {disabled: true, message: '回填仍在进行中。'};
     }
     return {disabled: false};
   }, [backfill]);
@@ -93,7 +93,7 @@ export const BackfillActionsMenu = ({
     if (!BULK_ACTION_TERMINAL_WITH_FAILURES.includes(backfill.status)) {
       return {
         disabled: true,
-        message: 'Backfill is still in progress or completed without failed materializations.',
+        message: '回填仍在进行中或已完成且无失败的物化。',
       };
     }
     return {disabled: false};
@@ -105,13 +105,13 @@ export const BackfillActionsMenu = ({
       content={
         <Menu>
           <MenuItem
-            text="View backfill runs"
+            text="查看回填运行"
             icon="settings_backup_restore"
             onClick={() => history.push(getBackfillPath(backfill.id, 'runs'))}
           />
           <MenuItem
             disabled={!backfillCanShowStepStatus(backfill)}
-            text="View step status"
+            text="查看步骤状态"
             icon="view_list"
             onClick={() => {
               setShowStepStatus(true);
@@ -121,53 +121,59 @@ export const BackfillActionsMenu = ({
           <MenuDivider />
           <Tooltip
             position="left"
+            targetTagName="div"
             content={
-              reexecutionDisabledState.message || 'Launch a new backfill for the same partitions'
+              reexecutionDisabledState.message || '为相同分区启动新的回填'
             }
           >
             <MenuItem
               icon="refresh"
-              text="Re-execute"
+              tagName="button"
+              text="重新执行"
               disabled={reexecutionDisabledState.disabled}
               onClick={() => reexecute(ReexecutionStrategy.ALL_STEPS)}
             />
           </Tooltip>
           <Tooltip
             position="left"
+            targetTagName="div"
             content={
               reexecutionFromFailureDisabledState.message ||
-              'Launch a new backfill for partitions that were not materialized successfully'
+              '为未成功物化的分区启动新的回填'
             }
           >
             <MenuItem
               icon="refresh"
-              text="Re-execute from failure"
+              tagName="button"
+              text="从失败处重新执行"
               disabled={reexecutionFromFailureDisabledState.disabled}
               onClick={() => reexecute(ReexecutionStrategy.FROM_FAILURE)}
             />
           </Tooltip>
           <Tooltip
             position="left"
+            targetTagName="div"
             content={
               resumeDisabledState.message ||
-              'Launch runs for remaining partitions in the backfill that do not have a corresponding run. Does not retry failed runs.'
+              '为回填中尚无对应运行的剩余分区启动运行。不会重试失败的运行。'
             }
           >
             <MenuItem
               disabled={resumeDisabledState.disabled}
-              text="Resume and launch runs"
+              text="恢复并启动运行"
               icon="refresh"
               onClick={() => resume()}
             />
           </Tooltip>
           <Tooltip
             position="left"
+            targetTagName="div"
             content={
-              cancelDisabledState.message || 'Stop queueing runs and cancel unfinished runs.'
+              cancelDisabledState.message || '停止排队运行并取消未完成的运行。'
             }
           >
             <MenuItem
-              text="Cancel backfill"
+              text="取消回填"
               icon="cancel"
               intent="danger"
               disabled={cancelDisabledState.disabled}
@@ -188,7 +194,7 @@ export const BackfillActionsMenu = ({
     <>
       {anchorLabel ? (
         <JoinedButtons>
-          <AnchorButton to={getBackfillPath(backfill.id)}>View</AnchorButton>
+          <AnchorButton to={getBackfillPath(backfill.id)}>查看</AnchorButton>
           {popover}
         </JoinedButtons>
       ) : (

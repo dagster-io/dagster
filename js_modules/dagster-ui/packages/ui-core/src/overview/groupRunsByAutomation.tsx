@@ -34,13 +34,13 @@ export const groupRunsByAutomation = (jobRows: TimelineRow[]): TimelineRow[] => 
 
 const automationName = (automation: RunAutomation | null) => {
   if (!automation) {
-    return 'Launched manually';
+    return '手动启动';
   }
 
   const {type} = automation;
   switch (type) {
     case 'legacy-amp':
-      return 'Automation condition';
+      return '自动化条件';
     case 'schedule':
     case 'sensor':
       return automation.name;

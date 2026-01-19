@@ -43,8 +43,8 @@ export const ContentRoot = memo(() => {
           <Route path="/assets(/?.*)">
             <AssetFeatureProvider>
               <AssetsOverviewRoot
-                headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
-                documentTitlePrefix="Assets"
+                headerBreadcrumbs={[{text: '资产目录', href: '/assets'}]}
+                documentTitlePrefix="资产目录"
               />
             </AssetFeatureProvider>
           </Route>

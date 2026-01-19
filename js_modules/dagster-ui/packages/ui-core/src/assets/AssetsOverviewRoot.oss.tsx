@@ -64,7 +64,7 @@ export const AssetsOverviewRoot = ({
           right={
             <Box flex={{gap: 12, alignItems: 'center'}}>
               <AssetGlobalLineageLink />
-              <ReloadAllButton label="Reload definitions" />
+              <ReloadAllButton label="重新加载定义" />
             </Box>
           }
         />

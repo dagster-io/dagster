@@ -26,16 +26,16 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        <TabLink id="activity" title="Timeline" to="/overview/activity" />
+        <TabLink id="activity" title="时间线" to="/overview/activity" />
         {enableAssetHealthOverviewPreview && (
-          <TabLink id="asset-health" title="Asset health" to="/overview/asset-health" />
+          <TabLink id="asset-health" title="资产健康" to="/overview/asset-health" />
         )}
         {automaterializeSensorsFlagState === 'has-global-amp' && !hideAMPTab ? (
           <TabLink
             id="amp"
             title={
               <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <div>Auto-materialize</div>
+                <div>自动物化</div>
                 {automaterialize.loading ? (
                   <Spinner purpose="body-text" />
                 ) : (
@@ -56,7 +56,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
             to="/overview/automation"
           />
         ) : null}
-        <TabLink id="resources" title="Resources" to="/overview/resources" />
+        <TabLink id="resources" title="资源" to="/overview/resources" />
       </Tabs>
       {refreshState ? (
         <Box style={{alignSelf: 'center'}}>

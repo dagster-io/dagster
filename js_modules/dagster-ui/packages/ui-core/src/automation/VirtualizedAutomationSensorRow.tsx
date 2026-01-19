@@ -106,10 +106,10 @@ export const VirtualizedAutomationSensorRow = forwardRef(
 
       const {hasStartPermission, hasStopPermission, status} = sensorState;
       if (status === InstigationStatus.RUNNING && !hasStopPermission) {
-        return {disabled: true, message: 'You do not have permission to stop this sensor'};
+        return {disabled: true, message: '您没有权限停止此监控器'};
       }
       if (status === InstigationStatus.STOPPED && !hasStartPermission) {
-        return {disabled: true, message: 'You do not have permission to start this sensor'};
+        return {disabled: true, message: '您没有权限启动此监控器'};
       }
       return {disabled: false};
     }, [sensorState]);

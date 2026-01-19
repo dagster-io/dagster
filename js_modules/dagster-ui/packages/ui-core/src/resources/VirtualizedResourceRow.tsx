@@ -86,9 +86,9 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
 export const VirtualizedResourceHeader = () => {
   return (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-      <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Type</HeaderCell>
-      <HeaderCell>Uses</HeaderCell>
+      <HeaderCell>名称</HeaderCell>
+      <HeaderCell>类型</HeaderCell>
+      <HeaderCell>使用</HeaderCell>
     </HeaderRow>
   );
 };

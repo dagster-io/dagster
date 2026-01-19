@@ -9,23 +9,23 @@ export const RunTableEmptyState = ({anyFilter}: {anyFilter: boolean}) => {
         {anyFilter ? (
           <NonIdealState
             icon="run"
-            title="No matching runs"
-            description="No runs were found for this filter."
+            title="无匹配的运行"
+            description="未找到符合此筛选条件的运行。"
           />
         ) : (
           <NonIdealState
             icon="run"
-            title="No runs found"
+            title="暂无运行"
             description={
               <Box flex={{direction: 'column', gap: 12}}>
-                <div>You have not launched any runs yet.</div>
+                <div>您尚未启动任何运行。</div>
                 <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
                   <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
-                    Launch a run
+                    启动运行
                   </AnchorButton>
-                  <span>or</span>
+                  <span>或</span>
                   <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
-                    Materialize an asset
+                    物化资产
                   </AnchorButton>
                 </Box>
               </Box>

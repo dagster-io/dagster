@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import {ProgressBar} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -6,9 +8,9 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Group,
   Icon,
   Mono,
-  ProgressBar,
   showToast,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
@@ -153,7 +155,7 @@ export const TerminationDialog = (props: Props) => {
       });
       if (!data || data?.terminateRuns.__typename === 'PythonError') {
         showToast({
-          message: 'Sorry, an error occurred and the runs could not be terminated.',
+          message: '抱歉，发生错误，运行无法终止。',
           intent: 'danger',
         });
         return;
@@ -192,19 +194,17 @@ export const TerminationDialog = (props: Props) => {
       case 'initial':
         if (!count) {
           return (
-            <Box flex={{direction: 'column', gap: 16}}>
-              <div>No runs selected for termination.</div>
-              <div>The runs you selected may already have finished executing.</div>
-            </Box>
+            <Group direction="column" spacing={16}>
+              <div>未选择要终止的运行。</div>
+              <div>您选择的运行可能已经执行完毕。</div>
+            </Group>
           );
         }
 
         return (
-          <Box flex={{direction: 'column', gap: 16}}>
+          <Group direction="column" spacing={16}>
             <div>
-              {`${count} ${
-                count === 1 ? 'run' : 'runs'
-              } will be terminated. Do you wish to continue?`}
+              {`将终止 ${count} 个运行。是否继续？`}
             </div>
             {state.safeTerminationPossible ? (
               <div>
@@ -212,41 +212,39 @@ export const TerminationDialog = (props: Props) => {
                   checked={force}
                   size="small"
                   data-testid={testId('force-termination-checkbox')}
-                  label="Force termination immediately"
+                  label="立即强制终止"
                   onChange={onToggleForce}
                 />
                 {force ? (
                   <Box flex={{display: 'flex', direction: 'row', gap: 8}} margin={{top: 8}}>
                     <Icon name="warning" color={Colors.accentYellow()} />
                     <div>
-                      <strong>Warning:</strong> computational resources created by runs may not be
-                      cleaned up.
+                      <strong>警告：</strong>运行创建的计算资源可能无法被清理。
                     </div>
                   </Box>
                 ) : null}
               </div>
             ) : !props.selectedRunsAllQueued ? (
-              <Box flex={{direction: 'row', gap: 8}}>
+              <Group direction="row" spacing={8}>
                 <Icon name="warning" color={Colors.accentYellow()} />
                 <div>
-                  <strong>Warning:</strong> computational resources created by runs may not be
-                  cleaned up.
+                  <strong>警告：</strong>运行创建的计算资源可能无法被清理。
                 </div>
-              </Box>
+              </Group>
             ) : undefined}
-          </Box>
+          </Group>
         );
       case 'terminating':
       case 'completed':
         const value = count > 0 ? state.termination.completed / count : 1;
         return (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <div>{force ? 'Forcing termination…' : 'Terminating…'}</div>
-            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
+          <Group direction="column" spacing={8}>
+            <div>{force ? '正在强制终止...' : '正在终止...'}</div>
+            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
             {state.step === 'terminating' ? (
-              <NavigationBlock message="Termination in progress, please do not navigate away yet." />
+              <NavigationBlock message="终止进行中，请勿离开页面。" />
             ) : null}
-          </Box>
+          </Group>
         );
       default:
         return null;
@@ -259,7 +257,7 @@ export const TerminationDialog = (props: Props) => {
         if (!count) {
           return (
             <Button intent="none" onClick={onClose}>
-              OK
+              确定
             </Button>
           );
         }
@@ -267,27 +265,23 @@ export const TerminationDialog = (props: Props) => {
         return (
           <>
             <Button intent="none" onClick={onClose}>
-              Cancel
+              取消
             </Button>
             <Button intent="danger" onClick={mutate} data-testid={testId('terminate-button')}>
-              {`${force ? 'Force termination for' : 'Terminate'} ${`${count} ${
-                count === 1 ? 'run' : 'runs'
-              }`}`}
+              {force ? `强制终止 ${count} 个运行` : `终止 ${count} 个运行`}
             </Button>
           </>
         );
       case 'terminating':
         return (
           <Button intent="danger" disabled>
-            {force
-              ? `Forcing termination for ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`
-              : `Terminating ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`}
+            {force ? `正在强制终止 ${count} 个运行...` : `正在终止 ${count} 个运行...`}
           </Button>
         );
       case 'completed':
         return (
           <Button intent="primary" onClick={onClose}>
-            Done
+            完成
           </Button>
         );
     }
@@ -299,7 +293,7 @@ export const TerminationDialog = (props: Props) => {
     }
 
     if (state.step === 'terminating') {
-      return <div>Please do not close the window or navigate away during termination.</div>;
+      return <div>终止过程中请勿关闭窗口或离开页面。</div>;
     }
 
     const errors = state.termination.errors;
@@ -307,48 +301,40 @@ export const TerminationDialog = (props: Props) => {
     const successCount = state.termination.completed - errorCount;
 
     return (
-      <Box flex={{direction: 'column', gap: 8}}>
+      <Group direction="column" spacing={8}>
         {successCount ? (
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
+          <Group direction="row" spacing={8} alignItems="flex-start">
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {force
-                ? `Successfully forced termination for ${successCount} ${
-                    successCount === 1 ? 'run' : `runs`
-                  }.`
-                : `Successfully requested termination for ${successCount} ${
-                    successCount === 1 ? 'run' : `runs`
-                  }.`}
+                ? `已成功强制终止 ${successCount} 个运行。`
+                : `已成功请求终止 ${successCount} 个运行。`}
             </div>
-          </Box>
+          </Group>
         ) : null}
         {errorCount ? (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
+          <Group direction="column" spacing={8}>
+            <Group direction="row" spacing={8} alignItems="flex-start">
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {force
-                  ? `Could not force termination for ${errorCount} ${
-                      errorCount === 1 ? 'run' : 'runs'
-                    }:`
-                  : `Could not request termination for ${errorCount} ${
-                      errorCount === 1 ? 'run' : 'runs'
-                    }:`}
+                  ? `无法强制终止 ${errorCount} 个运行：`
+                  : `无法请求终止 ${errorCount} 个运行：`}
               </div>
-            </Box>
+            </Group>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Box flex={{direction: 'row', gap: 8}}>
+                  <Group direction="row" spacing={8}>
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
-                  </Box>
+                  </Group>
                 </li>
               ))}
             </ul>
-          </Box>
+          </Group>
         ) : null}
-      </Box>
+      </Group>
     );
   };
 
@@ -357,16 +343,16 @@ export const TerminationDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={isOpen}
-      title="Terminate runs"
+      title="终止运行"
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}
     >
       <DialogBody>
-        <Box flex={{direction: 'column', gap: 24}}>
+        <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
-        </Box>
+        </Group>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

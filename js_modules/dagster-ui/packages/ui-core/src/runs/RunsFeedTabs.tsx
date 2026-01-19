@@ -16,19 +16,19 @@ type SelectedTab = ReturnType<typeof useSelectedRunsFeedTab>;
 const getDocumentTitle = (selected: SelectedTab) => {
   switch (selected) {
     case 'all':
-      return 'Runs | All';
+      return '运行记录 | 全部';
     case 'backfills':
-      return 'Runs | All backfills';
+      return '运行记录 | 历史补算';
     case 'failed':
-      return 'Runs | Failed';
+      return '运行记录 | 失败';
     case 'in-progress':
-      return 'Runs | In progress';
+      return '运行记录 | 进行中';
     case 'queued':
-      return 'Runs | Queued';
+      return '运行记录 | 排队中';
     case 'scheduled':
-      return 'Runs | Scheduled';
+      return '运行记录 | 定时';
     default:
-      return 'Runs';
+      return '运行记录';
   }
 };
 
@@ -68,20 +68,20 @@ export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {
 
   const tabs = (
     <Tabs selectedTabId={selectedTab}>
-      <TabLink id="all" title="All" to={urlForStatus([])} />
-      <TabLink id="backfills" title="Backfills" to={urlForStatus([], RunsFeedView.BACKFILLS)} />
+      <TabLink id="all" title="全部" to={urlForStatus([])} />
+      <TabLink id="backfills" title="历史补算" to={urlForStatus([], RunsFeedView.BACKFILLS)} />
       <TabLink
         id="queued"
-        title={queuedCount !== null ? `Queued (${queuedCount})` : `Queued`}
+        title={queuedCount !== null ? `排队中 (${queuedCount})` : `排队中`}
         to={urlForStatus(Array.from(queuedStatuses))}
       />
       <TabLink
         id="in-progress"
-        title={inProgressCount !== null ? `In progress (${inProgressCount})` : 'In progress'}
+        title={inProgressCount !== null ? `进行中 (${inProgressCount})` : '进行中'}
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
-      <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to="/runs/scheduled" />
+      <TabLink id="failed" title="失败" to={urlForStatus(Array.from(failedStatuses))} />
+      <TabLink id="scheduled" title="定时" to="/runs/scheduled" />
     </Tabs>
   );
 

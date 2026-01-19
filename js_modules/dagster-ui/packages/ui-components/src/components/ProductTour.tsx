@@ -64,8 +64,8 @@ export const ProductTour = ({
     return (
       <ActionsContainer flex={{gap: 6, direction: 'row'}} margin={{top: 8}}>
         {actions?.custom}
-        {actions?.next ? <Button onClick={actions.next}>Next</Button> : null}
-        {actions?.dismiss ? <Button onClick={actions.dismiss}>Dismiss</Button> : null}
+        {actions?.next ? <Button onClick={actions.next}>下一步</Button> : null}
+        {actions?.dismiss ? <Button onClick={actions.dismiss}>关闭</Button> : null}
       </ActionsContainer>
     );
   }, [actions?.custom, actions?.next, actions?.dismiss]);

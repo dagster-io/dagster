@@ -98,7 +98,7 @@ export const CreatePartitionDialog = ({
       <Tooltip
         content={
           <div>
-            The following substrings are not allowed:{' '}
+            不允许使用以下子字符串:{' '}
             <Mono>[{INVALID_PARTITION_SUBSTRINGS_READABLE.join(',')}]</Mono>
           </div>
         }
@@ -130,22 +130,22 @@ export const CreatePartitionDialog = ({
     switch (data?.__typename) {
       case 'PythonError': {
         showCustomAlert({
-          title: 'Could not create environment variable',
+          title: '无法创建环境变量',
           body: <PythonErrorInfo error={data} />,
         });
         break;
       }
       case 'DuplicateDynamicPartitionError': {
         showCustomAlert({
-          title: 'Could not add partition',
-          body: 'A partition this name already exists.',
+          title: '无法添加分区',
+          body: '此名称的分区已存在。',
         });
         break;
       }
       case 'UnauthorizedError': {
         showCustomAlert({
-          title: 'Could not add partition',
-          body: data.message ?? 'You do not have permission to do this.',
+          title: '无法添加分区',
+          body: data.message ?? '您没有执行此操作的权限。',
         });
         break;
       }
@@ -158,8 +158,8 @@ export const CreatePartitionDialog = ({
       }
       default: {
         showCustomAlert({
-          title: 'Could not add partition',
-          body: 'An unknown error occurred.',
+          title: '无法添加分区',
+          body: '发生未知错误。',
         });
         break;
       }
@@ -174,11 +174,11 @@ export const CreatePartitionDialog = ({
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Icon name="add_circle" size={24} />
           <div>
-            Add a partition
+            添加分区
             {dynamicPartitionsDefinitionName ? (
               <>
                 {' '}
-                for <Mono>{dynamicPartitionsDefinitionName}</Mono>
+                到 <Mono>{dynamicPartitionsDefinitionName}</Mono>
               </>
             ) : (
               ''
@@ -189,13 +189,13 @@ export const CreatePartitionDialog = ({
     >
       <DialogBody>
         <Box flex={{direction: 'column', gap: 6}}>
-          <div>Partition name</div>
+          <div>分区名称</div>
           <PartitionBox>
             <TextInput
               data-testid={testId('partition-input')}
               rightElement={error ?? (isSaving ? <Spinner purpose="body-text" /> : undefined)}
               disabled={isSaving}
-              placeholder="name"
+              placeholder="名称"
               value={partitionName}
               onChange={(e) => setPartitionName(e.target.value)}
               onKeyPress={(e) => {
@@ -214,14 +214,14 @@ export const CreatePartitionDialog = ({
         </Box>
       </DialogBody>
       <DialogFooter>
-        <Button onClick={close}>Cancel</Button>
+        <Button onClick={close}>取消</Button>
         <Button
           intent="primary"
           onClick={handleSave}
           disabled={!isValidPartitionName}
           data-testid={testId('save-partition-button')}
         >
-          Save
+          保存
         </Button>
       </DialogFooter>
     </Dialog>

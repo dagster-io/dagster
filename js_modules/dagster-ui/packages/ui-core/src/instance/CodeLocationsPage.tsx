@@ -21,7 +21,7 @@ const SEARCH_THRESHOLD = 10;
 
 export const CodeLocationsPageContent = () => {
   useTrackPageView();
-  useDocumentTitle('Code locations');
+  useDocumentTitle('代码位置');
 
   const {activeFiltersJsx, flattened, button, loading, filtered, onChangeSearch, searchValue} =
     useCodeLocationPageFilters();
@@ -53,10 +53,10 @@ export const CodeLocationsPageContent = () => {
 
   const subheadingText = () => {
     if (loading || !entryCount) {
-      return 'Code locations';
+      return '代码位置';
     }
 
-    return entryCount === 1 ? '1 code location' : `${entryCount} code locations`;
+    return `${entryCount} 个代码位置`;
   };
 
   return (
@@ -73,7 +73,7 @@ export const CodeLocationsPageContent = () => {
               icon="search"
               value={searchValue}
               onChange={onChangeSearch}
-              placeholder="Filter code locations by name…"
+              placeholder="按名称过滤代码位置…"
               style={{width: '400px'}}
             />
           ) : (
@@ -81,7 +81,7 @@ export const CodeLocationsPageContent = () => {
           )}
         </Box>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-          {showSearch ? <div>{`${entryCount} code locations`}</div> : null}
+          {showSearch ? <div>{`${entryCount} 个代码位置`}</div> : null}
           <ReloadAllButton />
         </Box>
       </Box>

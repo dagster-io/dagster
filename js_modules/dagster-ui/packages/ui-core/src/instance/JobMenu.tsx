@@ -55,18 +55,18 @@ export const JobMenu = (props: Props) => {
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const executeItem =
     isAssetJob === 'loading' ? (
-      <MenuItem icon="execute" text="Loading..." disabled={true} />
+      <MenuItem icon="execute" text="加载中..." disabled={true} />
     ) : isAssetJob === true ? (
       <MenuItem
         icon={materialize.loading ? <Spinner purpose="caption-text" /> : 'execute'}
-        text="Launch new run"
+        text="启动新运行"
         disabled={!hasLaunchExecutionPermission}
         onClick={(e) => materialize.onClick(pipelineSelector, e)}
       />
     ) : (
       <MenuLink
         icon="execute"
-        text="Launch new run"
+        text="启动新运行"
         disabled={!hasLaunchExecutionPermission}
         to={workspacePipelinePath({
           repoName: repoAddress.name,
@@ -81,7 +81,7 @@ export const JobMenu = (props: Props) => {
   const reExecuteAllItem = (
     <MenuItem
       icon="replay"
-      text="Re-execute latest run"
+      text="重新执行最新运行"
       disabled={!hasLaunchReexecutionPermission || !run || !canRunAllSteps(run)}
       onClick={(e) =>
         run ? reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey) : undefined
@@ -92,7 +92,7 @@ export const JobMenu = (props: Props) => {
   const reExecuteFromFailureItem = (
     <MenuItem
       icon="sync_problem"
-      text="Re-execute latest run from failure"
+      text="从失败处重新执行最新运行"
       disabled={!hasLaunchReexecutionPermission || !run || !canRunFromFailure(run)}
       onClick={(e) =>
         run ? reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey) : undefined
@@ -116,7 +116,7 @@ export const JobMenu = (props: Props) => {
                 isJob: job.isJob,
               })}
               icon="job"
-              text="View job"
+              text="查看作业"
             />
             <MenuLink
               to={workspacePipelinePath({
@@ -127,7 +127,7 @@ export const JobMenu = (props: Props) => {
                 path: '/runs',
               })}
               icon="checklist"
-              text="View all recent runs"
+              text="查看所有最近运行"
             />
             {hasLaunchExecutionPermission ? (
               executeItem

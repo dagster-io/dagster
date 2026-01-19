@@ -72,7 +72,7 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
           onChange={handleChange}
           onBlur={handleBlur}
           value={value}
-          placeholder="Type a tab name…"
+          placeholder="输入标签页名称…"
         />
       ) : (
         title
@@ -109,11 +109,11 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
   const onRemove = async (keyToRemove: string) => {
     if (sessionCount > 1) {
       await confirm({
-        title: 'Remove tab?',
-        description: `The configuration for ${
+        title: '移除标签页？',
+        description: `${
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          keyToRemove && sessions[keyToRemove] ? `"${sessions[keyToRemove]!.name}"` : 'this tab'
-        } will be discarded.`,
+          keyToRemove && sessions[keyToRemove] ? `"${sessions[keyToRemove]!.name}"` : '此标签页'
+        } 的配置将被丢弃。`,
       });
       onApply(applyRemoveSession, keyToRemove);
     }
@@ -121,8 +121,8 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
 
   const onRemoveAll = async () => {
     await confirm({
-      title: 'Remove all tabs?',
-      description: 'All configuration tabs will be discarded.',
+      title: '移除所有标签页？',
+      description: '所有配置标签页都将被丢弃。',
     });
 
     onSave((data) => {
@@ -143,13 +143,13 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
             key={key}
             active={key === data.current}
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            title={sessions[key]!.name || 'Unnamed'}
+            title={sessions[key]!.name || '未命名'}
             onClick={() => onApply(applySelectSession, key)}
             onChange={(name) => onApply(applyChangesToSession, key, {name})}
             onRemove={() => onRemove(key)}
           />
         ))}
-        <LaunchpadTab title="+ Add..." onClick={onCreate} />
+        <LaunchpadTab title="+ 新增..." onClick={onCreate} />
         {sessionKeys.length > REMOVE_ALL_THRESHOLD ? (
           <Box
             background={Colors.backgroundDefault()}
@@ -163,7 +163,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
                 style={{whiteSpace: 'nowrap'}}
               >
                 <Icon name="delete" color={Colors.textRed()} />
-                <div>Remove all</div>
+                <div>移除全部</div>
               </Box>
             </ButtonLink>
           </Box>

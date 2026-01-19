@@ -198,7 +198,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 </AssetRunLink>
               ) : (
                 <div style={{color: Colors.textLight()}}>
-                  {!liveData && type !== 'folder' ? 'Loading' : '\u2013'}
+                  {!liveData && type !== 'folder' ? '加载中' : '\u2013'}
                 </div>
               )}
               {liveData && <StaleReasonsLabel assetKey={{path}} liveData={liveData} />}
@@ -230,9 +230,9 @@ export const VirtualizedAssetCatalogHeader = ({
   return (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS_FOR_CATALOG} sticky>
       <HeaderCell>{headerCheckbox}</HeaderCell>
-      <HeaderCell>{view === 'flat' ? 'Asset name' : 'Asset key prefix'}</HeaderCell>
-      <HeaderCell>Code location / Asset group</HeaderCell>
-      <HeaderCell>Status</HeaderCell>
+      <HeaderCell>{view === 'flat' ? '资产名称' : '资产键前缀'}</HeaderCell>
+      <HeaderCell>代码位置 / 资产组</HeaderCell>
+      <HeaderCell>状态</HeaderCell>
       <HeaderCell></HeaderCell>
     </HeaderRow>
   );
@@ -268,7 +268,7 @@ export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}
   return (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>{nameLabel}</HeaderCell>
-      <HeaderCell>Status</HeaderCell>
+      <HeaderCell>状态</HeaderCell>
       <HeaderCell></HeaderCell>
     </HeaderRow>
   );

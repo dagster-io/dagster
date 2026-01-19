@@ -6,11 +6,11 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 export const JobsRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Jobs');
+  useDocumentTitle('作业');
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Subtitle1>Jobs</Subtitle1>} />
+      <PageHeader title={<Subtitle1>作业</Subtitle1>} />
       <JobsPageContent />
     </Box>
   );

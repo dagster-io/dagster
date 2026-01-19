@@ -42,18 +42,18 @@ type State = 'invalid' | 'missing' | 'present' | 'none';
 
 const stateToHint: Record<State, {title: string; intent: Intent}> = {
   invalid: {
-    title: `You need to fix this configuration section.`,
+    title: `此配置节需要修复。`,
     intent: 'danger',
   },
   missing: {
-    title: `You need to add this configuration section.`,
+    title: `需要添加此配置节。`,
     intent: 'danger',
   },
   present: {
-    title: `This section is present and valid.`,
+    title: `此配置节存在且有效。`,
     intent: 'none',
   },
-  none: {title: `This section is empty and valid.`, intent: 'none'},
+  none: {title: `此配置节为空但有效。`, intent: 'none'},
 };
 
 const RemoveExtraConfigButton = ({
@@ -91,17 +91,16 @@ const RemoveExtraConfigButton = ({
 
   const onClick = async () => {
     await confirm({
-      title: 'Remove extra config',
+      title: '移除多余配置',
       description: (
         <div>
           <p>
-            {`You have provided extra configuration in your run config which does not conform to your
-            pipeline's config schema.`}
+            {`您的运行配置中包含不符合流水线配置模式的多余配置。`}
           </p>
           {Object.entries(knownKeyExtraPaths).length > 0 &&
             Object.entries(knownKeyExtraPaths).map(([key, value]) => (
               <React.Fragment key={key}>
-                <p>Extra {key}:</p>
+                <p>多余的 {key}:</p>
                 <ul>
                   {value.map((v) => (
                     <li key={v}>
@@ -113,7 +112,7 @@ const RemoveExtraConfigButton = ({
             ))}
           {otherPaths.length > 0 && (
             <>
-              <p>Other extra paths:</p>
+              <p>其他多余路径:</p>
               <ul>
                 {otherPaths.map((v) => (
                   <li key={v}>
@@ -124,8 +123,7 @@ const RemoveExtraConfigButton = ({
             </>
           )}
           <p>
-            Clicking confirm will automatically remove this extra configuration from your run
-            config.
+            点击确认将自动从运行配置中移除这些多余配置。
           </p>
         </div>
       ),
@@ -136,12 +134,12 @@ const RemoveExtraConfigButton = ({
   return (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       <Button disabled={disabled} onClick={onClick}>
-        Remove extra config
+        移除多余配置
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Icon name="check_circle" color={Colors.accentGreen()} />
-          No extra config to remove
+          无多余配置需要移除
         </Box>
       ) : null}
     </Box>
@@ -163,7 +161,7 @@ const ScaffoldConfigButton = ({
     <div>
       {missingNodes.length > 0 && (
         <>
-          <p>Missing paths:</p>
+          <p>缺失的路径:</p>
           <ul>
             {missingNodes.map((v) => (
               <li key={v}>
@@ -174,15 +172,14 @@ const ScaffoldConfigButton = ({
         </>
       )}
       <p>
-        Clicking confirm will automatically scaffold this missing configuration into your run config
-        with default values. You will need to change the values appropriately.
+        点击确认将使用默认值自动填充缺失的配置到您的运行配置中。您需要根据需要修改这些值。
       </p>
     </div>
   );
 
   const onClick = async () => {
     await confirm({
-      title: 'Scaffold missing config',
+      title: '填充缺失配置',
       description: confirmationMessage,
     });
     onScaffoldMissingConfig();
@@ -191,12 +188,12 @@ const ScaffoldConfigButton = ({
   return (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       <Button disabled={disabled} onClick={onClick}>
-        Scaffold missing config
+        填充缺失配置
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Icon name="check_circle" color={Colors.accentGreen()} />
-          No missing config
+          无缺失配置
         </Box>
       ) : null}
     </Box>
@@ -214,11 +211,10 @@ const ExpandDefaultButton = ({
 
   const onClick = async () => {
     await confirm({
-      title: 'Scaffold all default config',
+      title: '填充所有默认配置',
       description: (
         <div>
-          Clicking confirm will automatically scaffold any unspecified configuration fields into
-          your run config with default values. You will need to change the values appropriately.
+          点击确认将使用默认值自动填充所有未指定的配置字段到您的运行配置中。您需要根据需要修改这些值。
         </div>
       ),
     });
@@ -228,12 +224,12 @@ const ExpandDefaultButton = ({
   return (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       <Button disabled={disabled} onClick={onClick}>
-        Scaffold all default config
+        填充所有默认配置
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Icon name="check_circle" color={Colors.accentGreen()} />
-          All defaults expanded
+          所有默认值已填充
         </Box>
       ) : null}
     </Box>
@@ -338,8 +334,8 @@ export const RunPreview = (props: RunPreviewProps) => {
       pathKey: '',
       error: (
         <span>
-          PythonError:{' '}
-          <ButtonLink onClick={() => showCustomAlert({body: info})}>Click for details</ButtonLink>
+          Python错误:{' '}
+          <ButtonLink onClick={() => showCustomAlert({body: info})}>点击查看详情</ButtonLink>
         </span>
       ),
     });
@@ -403,7 +399,7 @@ export const RunPreview = (props: RunPreviewProps) => {
       .filter(Boolean);
 
     if (!boxes.length) {
-      return <ItemsEmptyNotice>Nothing to display.</ItemsEmptyNotice>;
+      return <ItemsEmptyNotice>无内容显示。</ItemsEmptyNotice>;
     }
     return boxes;
   };
@@ -415,7 +411,7 @@ export const RunPreview = (props: RunPreviewProps) => {
       first={
         <ErrorListContainer>
           <Section>
-            <SectionTitle>Errors</SectionTitle>
+            <SectionTitle>错误</SectionTitle>
             {errorsAndPaths.length ? (
               errorsAndPaths.map((item, idx) => (
                 <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
@@ -423,12 +419,12 @@ export const RunPreview = (props: RunPreviewProps) => {
             ) : (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                 <Icon name="check_circle" color={Colors.accentGreen()} />
-                No errors
+                无错误
               </Box>
             )}
           </Section>
           <Section>
-            <SectionTitle>Config actions:</SectionTitle>
+            <SectionTitle>配置操作:</SectionTitle>
             <Box flex={{direction: 'column', gap: 8}} padding={{top: 4, bottom: 20}}>
               <ScaffoldConfigButton
                 onScaffoldMissingConfig={onScaffoldMissingConfig}
@@ -455,7 +451,7 @@ export const RunPreview = (props: RunPreviewProps) => {
           <div style={{overflowY: 'scroll', width: '100%', height: '100%'}}>
             <RuntimeAndResourcesSection>
               <Section>
-                <SectionTitle>Runtime</SectionTitle>
+                <SectionTitle>运行时</SectionTitle>
                 <ItemSet>
                   {itemsIn(
                     [],
@@ -465,13 +461,13 @@ export const RunPreview = (props: RunPreviewProps) => {
               </Section>
               {(resources?.fields.length || 0) > 0 && (
                 <Section>
-                  <SectionTitle>Resources</SectionTitle>
+                  <SectionTitle>资源</SectionTitle>
                   <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
                 </Section>
               )}
             </RuntimeAndResourcesSection>
             <Section>
-              <SectionTitle>{launchpadType === 'asset' ? 'Assets (Ops)' : 'Ops'}</SectionTitle>
+              <SectionTitle>{launchpadType === 'asset' ? '资产 (算子)' : '算子'}</SectionTitle>
               <ItemSet>
                 {itemsIn(
                   [hasOps ? 'ops' : 'solids'],
@@ -491,7 +487,7 @@ export const RunPreview = (props: RunPreviewProps) => {
             }}
           >
             <Checkbox
-              label="Errors only"
+              label="仅显示错误"
               checked={errorsOnly}
               onChange={() => setErrorsOnly(!errorsOnly)}
             />
@@ -663,7 +659,7 @@ const ErrorRow = ({
                 })
               }
             >
-              View all
+              查看全部
             </ButtonLink>
           </>
         )}

@@ -77,34 +77,34 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
   return {
     overview: {
       id: 'overview',
-      title: 'Overview',
+      title: '概览',
       to: buildAssetViewParams({view: 'overview'}),
     } as AssetTabConfig,
     partitions: {
       id: 'partitions',
-      title: 'Partitions',
+      title: '分区',
       to: buildAssetViewParams({view: 'partitions'}),
       hidden: !definition?.partitionDefinition,
     } as AssetTabConfig,
     checks: {
       id: 'checks',
-      title: 'Checks',
+      title: '检查',
       to: buildAssetViewParams({view: 'checks'}),
     } as AssetTabConfig,
     events: {
       id: 'events',
-      title: 'Events',
+      title: '事件',
       to: buildAssetViewParams({view: 'events', partition: undefined}),
     } as AssetTabConfig,
     lineage: {
       id: 'lineage',
-      title: 'Lineage',
+      title: '血缘',
       to: buildAssetViewParams({view: 'lineage'}),
       disabled: !definition,
     } as AssetTabConfig,
     automation: {
       id: 'automation',
-      title: 'Automation',
+      title: '自动化',
       to: buildAssetViewParams({view: 'automation'}),
       disabled: !definition,
       hidden: !definition?.automationCondition,

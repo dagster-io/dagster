@@ -44,13 +44,13 @@ export const RunConfigDialog = (props: Props) => {
         maxHeight: '1000px',
         minHeight: '600px',
       }}
-      title="Run configuration"
+      title="运行配置"
     >
       <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
         <Box flex={{direction: 'column', gap: 20}} style={{flex: 1, overflow: 'hidden'}}>
           {hasTags ? (
             <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-              <Subheading>Tags</Subheading>
+              <Subheading>标签</Subheading>
               <div>
                 <RunTags tags={tags} mode={isJob ? null : mode} />
               </div>
@@ -59,7 +59,7 @@ export const RunConfigDialog = (props: Props) => {
           <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
             {hasTags ? (
               <Box border="bottom" padding={{left: 24, bottom: 16}}>
-                <Subheading>Config</Subheading>
+                <Subheading>配置</Subheading>
               </Box>
             ) : null}
             <CodeMirrorContainer>
@@ -87,11 +87,11 @@ export const RunConfigDialog = (props: Props) => {
             )
           }
         >
-          {hasTags ? <CopyButton value={() => tagsAsYamlString(tags)}>Copy tags</CopyButton> : null}
-          <CopyButton value={runConfigYaml}>Copy config</CopyButton>
+          {hasTags ? <CopyButton value={() => tagsAsYamlString(tags)}>复制标签</CopyButton> : null}
+          <CopyButton value={runConfigYaml}>复制配置</CopyButton>
 
           <Button onClick={onClose} intent="primary">
-            OK
+            确定
           </Button>
         </DialogFooter>
       </Box>
@@ -140,7 +140,7 @@ function OpenInLaunchpadButton({
         );
       }}
     >
-      Open in Launchpad
+      在启动面板中打开
     </Button>
   );
 }

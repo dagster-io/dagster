@@ -74,7 +74,7 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
   const plucked = pluckTagFromList(tags);
 
   if (plucked.type === 'manual') {
-    return <Tag icon="account_circle">Manually launched</Tag>;
+    return <Tag icon="account_circle">手动启动</Tag>;
   }
 
   const buildTagElement = () => {
@@ -106,9 +106,9 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
         );
       }
       case 'automation-condition':
-        return <Tag icon="automation_condition">Automation condition</Tag>;
+        return <Tag icon="automation_condition">自动化条件</Tag>;
       case 'auto-observe':
-        return <Tag icon="auto_observe">Auto-observation</Tag>;
+        return <Tag icon="auto_observe">自动观察</Tag>;
     }
   };
 
@@ -125,7 +125,7 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
       childrenMiddleTruncate
       actions={[
         {
-          label: 'Add to filter',
+          label: '添加到筛选',
           onClick: () => onAddTag({token: 'tag', value: `${key}=${value}`}),
         },
       ]}

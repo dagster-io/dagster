@@ -95,7 +95,7 @@ export const AssetActionMenu = memo((props: Props) => {
             {executeItem}
             <AddToFavoritesMenuItem assetKey={{path}} />
             <MenuLink
-              text="Show in group"
+              text="在组中显示"
               to={
                 definition
                   ? globalAssetGraphPathForGroup(definition.groupName, definition.assetKey)
@@ -105,25 +105,25 @@ export const AssetActionMenu = memo((props: Props) => {
               icon="asset_group"
             />
             <MenuLink
-              text="View checks"
+              text="查看检查"
               to={assetDetailsPathForKey({path}, {view: 'checks'})}
               disabled={!definition}
               icon="asset_check"
             />
             <MenuLink
-              text="View lineage"
+              text="查看血缘"
               to={assetDetailsPathForKey({path}, {view: 'lineage', lineageScope: 'neighbors'})}
               disabled={!definition}
               icon="graph_neighbors"
             />
             <MenuLink
-              text="View upstream assets"
+              text="查看上游资产"
               to={assetDetailsPathForKey({path}, {view: 'lineage', lineageScope: 'upstream'})}
               disabled={!definition}
               icon="graph_upstream"
             />
             <MenuLink
-              text="View downstream assets"
+              text="查看下游资产"
               to={assetDetailsPathForKey({path}, {view: 'lineage', lineageScope: 'downstream'})}
               disabled={!definition}
               icon="graph_downstream"
@@ -188,7 +188,7 @@ export const useExecuteAssetMenuItem = (
 
   const disabledMessage = definition
     ? option.disabledReason
-    : 'Asset definition not found in a code location';
+    : '在代码位置中未找到资产定义';
 
   if (!canSeeMaterializeAction) {
     return {executeItem: null, launchpadElement: null};
@@ -198,7 +198,7 @@ export const useExecuteAssetMenuItem = (
     launchpadElement: materialize.launchpadElement,
     executeItem: (
       <Tooltip
-        content={disabledMessage || 'Shift+click to add configuration'}
+        content={disabledMessage || 'Shift+点击添加配置'}
         placement="left"
         display="block"
       >
@@ -212,7 +212,7 @@ export const useExecuteAssetMenuItem = (
             }
             void showSharedToaster({
               intent: 'primary',
-              message: `Initiating...`,
+              message: `正在启动...`,
             });
 
             action([definition.assetKey], e);

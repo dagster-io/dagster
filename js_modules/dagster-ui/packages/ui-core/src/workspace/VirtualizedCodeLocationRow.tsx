@@ -76,11 +76,11 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
             {hasDocs ? (
               <div>
                 <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
-                  View docs
+                  查看文档
                 </AnchorButton>
               </div>
             ) : (
-              <span style={{color: Colors.textLighter()}}>None</span>
+              <span style={{color: Colors.textLighter()}}>无</span>
             )}
           </RowCell>
           <RowCell>
@@ -140,11 +140,11 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
             {hasDocs ? (
               <div>
                 <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
-                  View docs
+                  查看文档
                 </AnchorButton>
               </div>
             ) : (
-              <span style={{color: Colors.textLighter()}}>None</span>
+              <span style={{color: Colors.textLighter()}}>无</span>
             )}
           </RowCell>
           <RowCell style={{alignItems: 'flex-end'}}>
@@ -162,11 +162,11 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
 export const VirtualizedCodeLocationHeader = () => {
   return (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-      <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Status</HeaderCell>
-      <HeaderCell>Updated</HeaderCell>
-      <HeaderCell>Docs</HeaderCell>
-      <HeaderCell style={{textAlign: 'right'}}>Actions</HeaderCell>
+      <HeaderCell>名称</HeaderCell>
+      <HeaderCell>状态</HeaderCell>
+      <HeaderCell>更新时间</HeaderCell>
+      <HeaderCell>文档</HeaderCell>
+      <HeaderCell style={{textAlign: 'right'}}>操作</HeaderCell>
     </HeaderRow>
   );
 };

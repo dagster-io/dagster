@@ -46,7 +46,7 @@ export const TerminateAllRunsButton = ({
         onComplete={() => refetch()}
       />
       <Button intent="danger" outlined disabled={disabled} onClick={onTerminateAll}>
-        Terminate all…
+        终止全部...
       </Button>
     </>
   );

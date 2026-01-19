@@ -28,7 +28,7 @@ export const LineageSection = ({
 
       <Box flex={{direction: 'row'}}>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Upstream assets</Subtitle2>
+          <Subtitle2>上游资产</Subtitle2>
           {upstream?.length ? (
             <AssetLinksWithStatus assets={upstream} />
           ) : (
@@ -38,7 +38,7 @@ export const LineageSection = ({
           )}
         </Box>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Downstream assets</Subtitle2>
+          <Subtitle2>下游资产</Subtitle2>
           {downstream?.length ? (
             <AssetLinksWithStatus assets={downstream} />
           ) : (
@@ -86,10 +86,10 @@ const AssetLinksWithStatus = ({
       <Box>
         {displayed.length < assets.length ? (
           <Button onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
-            Show {assets.length - displayed.length} more
+            显示更多 ({assets.length - displayed.length})
           </Button>
         ) : displayed.length > displayedByDefault ? (
-          <Button onClick={() => setDisplayedCount(displayedByDefault)}>Show less</Button>
+          <Button onClick={() => setDisplayedCount(displayedByDefault)}>收起</Button>
         ) : undefined}
       </Box>
     </Box>

@@ -141,7 +141,7 @@ export const BackfillPartitionSelector = ({
   if (data.pipelineSnapshotOrError.__typename !== 'PipelineSnapshot') {
     return (
       <Box margin={20}>
-        <NonIdealState icon="error" title="Could not fetch job details" />
+        <NonIdealState icon="error" title="无法获取作业详情" />
       </Box>
     );
   }
@@ -185,18 +185,18 @@ export const BackfillPartitionSelector = ({
           <Section
             title={
               <Box flex={{justifyContent: 'space-between'}}>
-                <div>Partitions</div>
+                <div>分区</div>
                 {refreshing && (
                   <Box flex={{gap: 4, alignItems: 'center'}}>
                     <Spinner purpose="body-text" />
-                    <Body2 color={Colors.textLight()}>Refreshing...</Body2>
+                    <Body2 color={Colors.textLight()}>刷新中...</Body2>
                   </Box>
                 )}
               </Box>
             }
           >
             <Box>
-              Select partitions to materialize. Click and drag to select a range on the timeline.
+              选择要物化的分区。点击并拖拽以在时间线上选择范围。
             </Box>
 
             <DimensionRangeWizard
@@ -231,7 +231,7 @@ export const BackfillPartitionSelector = ({
           </Section>
 
           {failedPartitions.length ? (
-            <Section title="Reexecution">
+            <Section title="重新执行">
               <Checkbox
                 checked={options.fromFailure}
                 disabled={!selected.every(isFailed)}
@@ -250,10 +250,10 @@ export const BackfillPartitionSelector = ({
                 }}
                 label={
                   <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
-                    <Box margin={{right: 4}}>Re-execute from failures</Box>
+                    <Box margin={{right: 4}}>从失败处重新执行</Box>
                     <Tooltip
                       placement="top"
-                      content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed. Only applies for selections of failed partitions."
+                      content="对于每个分区，如果最近一次运行失败，则从失败的步骤开始重新执行。仅适用于选择失败的分区。"
                     >
                       <Icon name="info" color={Colors.accentGray()} />
                     </Tooltip>
@@ -266,10 +266,10 @@ export const BackfillPartitionSelector = ({
           <Section
             title={
               <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
-                <Box margin={{right: 4}}>Step subset</Box>
+                <Box margin={{right: 4}}>步骤子集</Box>
                 <Tooltip
                   placement="top"
-                  content="Applies a step-selection to each run for the requested partitions."
+                  content="为所请求分区的每次运行应用步骤选择。"
                 >
                   <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
@@ -282,19 +282,19 @@ export const BackfillPartitionSelector = ({
                 width={520}
                 items={solids}
                 value={query}
-                placeholder="Type a step subset"
+                placeholder="输入步骤子集"
                 onChange={setQuery}
                 autoApplyChanges={true}
               />
               {query ? (
                 <div style={{color: Colors.textLight()}}>
-                  {stepRows.length} step{stepRows.length === 1 ? '' : 's'} selected
+                  已选择 {stepRows.length} 个步骤
                 </div>
               ) : null}
             </Box>
           </Section>
 
-          <Section title="Tags">
+          <Section title="标签">
             <TagEditor
               tagsFromSession={tags}
               onChange={setTags}
@@ -309,7 +309,7 @@ export const BackfillPartitionSelector = ({
               </div>
             ) : (
               <div>
-                <Button onClick={() => setTagEditorOpen(true)}>Add tags to backfill runs</Button>
+                <Button onClick={() => setTagEditorOpen(true)}>为回填运行添加标签</Button>
               </div>
             )}
           </Section>
@@ -323,7 +323,7 @@ export const BackfillPartitionSelector = ({
       </DialogBody>
       <DialogFooter>
         <Button intent="none" onClick={onCancel}>
-          Cancel
+          取消
         </Button>
         <LaunchBackfillButton
           partitionNames={selected}
@@ -413,19 +413,19 @@ const LaunchBackfillButton = ({
 
   const title = () => {
     if (loading) {
-      return `Submitting ${count} ${count === 1 ? 'run' : 'runs'}…`;
+      return `正在提交 ${count} 个运行…`;
     }
 
     if (count) {
-      return `Submit ${count} ${count === 1 ? 'run' : 'runs'}`;
+      return `提交 ${count} 个运行`;
     }
 
-    return 'Select partitions to submit';
+    return '选择要提交的分区';
   };
 
   const subtitle = () => {
     return !loading && reexecutionCount
-      ? `(${reexecutionCount} selected ${reexecutionCount === 1 ? 'step' : 'steps'})`
+      ? `(已选择 ${reexecutionCount} 个步骤)`
       : '';
   };
 

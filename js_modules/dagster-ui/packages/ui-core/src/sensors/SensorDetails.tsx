@@ -115,7 +115,7 @@ export const SensorDetails = ({
       <PageHeader
         title={
           <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
-            <Link to="/automation">Automation</Link>
+            <Link to="/automation">自动化</Link>
             <span>/</span>
             {name}
           </Subtitle1>
@@ -123,7 +123,7 @@ export const SensorDetails = ({
         icon="sensors"
         tags={
           <Tag icon="sensors">
-            Sensor in <RepositoryLink repoAddress={repoAddress} />
+            监控器位于 <RepositoryLink repoAddress={repoAddress} />
           </Tag>
         }
         right={
@@ -143,20 +143,20 @@ export const SensorDetails = ({
         <tbody>
           {sensor.description ? (
             <tr>
-              <td>Description</td>
+              <td>描述</td>
               <td>{sensor.description}</td>
             </tr>
           ) : null}
           {sensor.owners.length > 0 && (
             <tr>
-              <td>Owners</td>
+              <td>负责人</td>
               <td>
                 <DefinitionOwners owners={sensor.owners} />
               </td>
             </tr>
           )}
           <tr>
-            <td>Latest tick</td>
+            <td>最近触发</td>
             <td>
               {latestTick ? (
                 <>
@@ -169,13 +169,13 @@ export const SensorDetails = ({
                   </Box>
                 </>
               ) : (
-                'Sensor has never run'
+                '监控器从未运行'
               )}
             </td>
           </tr>
           {sensor.nextTick && daemonHealth && running && (
             <tr>
-              <td>Next tick</td>
+              <td>下次触发</td>
               <td>
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 <TimestampDisplay timestamp={sensor.nextTick.timestamp!} timeFormat={TIME_FORMAT} />
@@ -184,7 +184,7 @@ export const SensorDetails = ({
           )}
           {(sensor.targets && sensor.targets.length) || assetSelection ? (
             <tr>
-              <td>Target</td>
+              <td>目标</td>
               <TargetCell>
                 <AutomationTargetList
                   targets={sensor.targets}
@@ -198,7 +198,7 @@ export const SensorDetails = ({
           <tr>
             <td>
               <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                Running
+                运行状态
               </Box>
             </td>
             <td>
@@ -212,12 +212,12 @@ export const SensorDetails = ({
             </td>
           </tr>
           <tr>
-            <td>Frequency</td>
+            <td>频率</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
           </tr>
           {metadata.assetKeys && metadata.assetKeys.length ? (
             <tr>
-              <td>Monitored assets</td>
+              <td>监控的资产</td>
               <td>
                 <SensorMonitoredAssets metadata={metadata} />
               </td>
@@ -228,13 +228,13 @@ export const SensorDetails = ({
             <tr>
               <td>
                 <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                  Cursor
+                  游标
                 </Box>
               </td>
               <td>
                 <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
                   <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
-                    {cursor ? humanizeSensorCursor(cursor) : 'None'}
+                    {cursor ? humanizeSensorCursor(cursor) : '无'}
                   </span>
                   <Tooltip
                     canShow={!sensor.hasCursorUpdatePermissions}
@@ -245,7 +245,7 @@ export const SensorDetails = ({
                       disabled={!sensor.hasCursorUpdatePermissions}
                       onClick={() => setCursorEditing(true)}
                     >
-                      {cursor !== humanizeSensorCursor(cursor) ? 'View Raw / Edit' : 'Edit'}
+                      {cursor !== humanizeSensorCursor(cursor) ? '查看原始 / 编辑' : '编辑'}
                     </Button>
                   </Tooltip>
                 </Box>

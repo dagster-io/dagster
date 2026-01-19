@@ -1,11 +1,11 @@
 import {
-  Box,
   Button,
   ButtonLink,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Group,
   Tag,
   Trace,
 } from '@dagster-io/ui-components';
@@ -21,14 +21,14 @@ const DaemonHealthTag = (props: Props) => {
   const {daemon} = props;
 
   if (daemon.healthy) {
-    return <Tag intent="success">Running</Tag>;
+    return <Tag intent="success">运行中</Tag>;
   }
 
   if (daemon.required) {
-    return <Tag intent="danger">Not running</Tag>;
+    return <Tag intent="danger">未运行</Tag>;
   }
 
-  return <Tag intent="none">Not enabled</Tag>;
+  return <Tag intent="none">未启用</Tag>;
 };
 
 type State = {
@@ -71,48 +71,48 @@ export const DaemonHealth = (props: Props) => {
       return (
         <>
           <ButtonLink color={Colors.linkDefault()} underline="hover" onClick={show}>
-            {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
+            {errorCount > 1 ? `查看错误 (${errorCount})` : '查看错误'}
           </ButtonLink>
           <Dialog
             isOpen={shown}
-            title="Daemon error"
+            title="守护进程错误"
             onClose={hide}
             style={{maxWidth: '80%', minWidth: '70%'}}
           >
             <DialogBody>
-              <Box flex={{direction: 'column', gap: 12}}>
+              <Group direction="column" spacing={12}>
                 {errorCount === 1 ? (
                   <div>
-                    <strong>{daemon.daemonType}</strong> daemon logged an error.
+                    <strong>{daemon.daemonType}</strong> 守护进程记录了一个错误。
                   </div>
                 ) : (
                   <div>
-                    <strong>{daemon.daemonType}</strong> daemon logged {errorCount} errors.
+                    <strong>{daemon.daemonType}</strong> 守护进程记录了 {errorCount} 个错误。
                   </div>
                 )}
                 <Trace>
-                  <Box flex={{direction: 'column', gap: 12}}>
+                  <Group direction="column" spacing={12}>
                     <div>{errors[page]?.message}</div>
                     <div>{errors[page]?.stack}</div>
-                  </Box>
+                  </Group>
                 </Trace>
-              </Box>
+              </Group>
             </DialogBody>
             <DialogFooter
               left={
                 errorCount > 1 ? (
-                  <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                    <ButtonLink onClick={prev}>&larr; Previous</ButtonLink>
-                    <span>{`${page + 1} of ${errorCount}`}</span>
-                    <ButtonLink onClick={next}>Next &rarr;</ButtonLink>
-                  </Box>
+                  <Group direction="row" spacing={12} alignItems="center">
+                    <ButtonLink onClick={prev}>&larr; 上一个</ButtonLink>
+                    <span>{`${page + 1} / ${errorCount}`}</span>
+                    <ButtonLink onClick={next}>下一个 &rarr;</ButtonLink>
+                  </Group>
                 ) : (
                   <div />
                 )
               }
             >
               <Button intent="primary" onClick={hide}>
-                OK
+                确定
               </Button>
             </DialogFooter>
           </Dialog>
@@ -121,16 +121,16 @@ export const DaemonHealth = (props: Props) => {
     }
 
     if (!daemon.healthy) {
-      return <div style={{color: Colors.textLight()}}>No recent heartbeat</div>;
+      return <div style={{color: Colors.textLight()}}>无最近心跳</div>;
     }
 
     return null;
   };
 
   return (
-    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+    <Group direction="row" spacing={8} alignItems="center">
       <DaemonHealthTag daemon={daemon} />
       {metadata()}
-    </Box>
+    </Group>
   );
 };

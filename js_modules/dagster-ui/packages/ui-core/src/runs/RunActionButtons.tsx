@@ -57,7 +57,7 @@ export const CancelRunButton = ({run}: {run: RunFragment}) => {
         disabled={showDialog}
         onClick={() => setShowDialog(true)}
       >
-        Terminate
+        终止
       </Button>
       <TerminationDialog
         isOpen={showDialog}
@@ -134,8 +134,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
-    title: 'All steps in root run',
-    tooltip: 'Re-execute the pipeline run from scratch. Shift-click to adjust tags.',
+    title: '根运行的所有步骤',
+    tooltip: '从头重新执行流水线运行。按住 Shift 点击可调整标签。',
     disabled: !canRunAllSteps(run),
     onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey),
   };
@@ -143,15 +143,15 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   const same: LaunchButtonConfiguration = {
     icon: 'linear_scale',
     scope: currentRunSelection?.query || '*',
-    title: 'Same steps',
+    title: '相同步骤',
     disabled: !currentRunSelection || !(currentRunSelection.finished || currentRunSelection.failed),
     tooltip: (
       <div>
         {!currentRunSelection || !currentRunSelection.present
-          ? 'Re-executes the same step subset used for this run if one was present.'
+          ? '如果本次运行使用了步骤子集，则重新执行相同的步骤子集。'
           : !currentRunSelection.finished
-            ? 'Wait for all of the steps to finish to re-execute the same subset.'
-            : 'Re-execute the same step subset used for this run:'}
+            ? '请等待所有步骤完成后再重新执行相同的步骤子集。'
+            : '重新执行本次运行使用的相同步骤子集：'}
         <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
@@ -162,15 +162,15 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   const selected: LaunchButtonConfiguration = {
     icon: 'op',
     scope: selection.query,
-    title: selection.keys.length > 1 ? 'Selected steps' : 'Selected step',
+    title: selection.keys.length > 1 ? '已选步骤' : '已选步骤',
     disabled: !selection.present || !(selection.finished || selection.failed),
     tooltip: (
       <div>
         {!selection.present
-          ? 'Select a step or type a step subset to re-execute.'
+          ? '选择一个步骤或输入步骤子集以重新执行。'
           : !selection.finished
-            ? 'Wait for the steps to finish to re-execute them.'
-            : 'Re-execute the selected steps with existing configuration:'}
+            ? '请等待步骤完成后再重新执行。'
+            : '使用现有配置重新执行已选步骤：'}
         <StepSelectionDescription selection={selection} />
       </div>
     ),
@@ -179,9 +179,9 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From selected',
+    title: '从已选开始',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
-    tooltip: 'Re-execute the pipeline downstream from the selected steps.',
+    tooltip: '从已选步骤开始向下游重新执行流水线。',
     onClick: async () => {
       if (!run.executionPlan) {
         console.warn('Run execution plan must be present to launch from-selected execution');
@@ -206,21 +206,21 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
   const fromFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From failure',
+    title: '从失败处继续',
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
-      ? 'Retry is only enabled when the pipeline has failed.'
-      : 'Retry the pipeline run, skipping steps that completed successfully. Shift-click to adjust tags.',
+      ? '仅当流水线失败时才能重试。'
+      : '重试流水线运行，跳过已成功完成的步骤。按住 Shift 点击可调整标签。',
     onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey),
   };
 
   const fromAssetFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From asset failure',
+    title: '从资产失败处继续',
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
-      ? 'Retry is only enabled when the pipeline has failed.'
-      : 'Retry the pipeline run, selecting only assets that did not complete successfully. Shift-click to adjust tags.',
+      ? '仅当流水线失败时才能重试。'
+      : '重试流水线运行，仅选择未成功完成的资产。按住 Shift 点击可调整标签。',
     onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_ASSET_FAILURE, e.shiftKey),
   };
 
@@ -228,7 +228,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     [selected, same, fromFailure, fromSelected].forEach((option) => {
       option.disabled = true;
       option.title =
-        'Retry and re-execute are only enabled on persistent storage. Try rerunning with a different storage configuration.';
+        '重试和重新执行仅在持久化存储上可用。请尝试使用其他存储配置重新运行。';
     });
   }
 
@@ -266,10 +266,10 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
           options={options}
           title={
             primary.scope === '*'
-              ? `Re-execute all (*)`
+              ? `重新执行全部 (*)`
               : primary.scope
-                ? `Re-execute (${primary.scope})`
-                : `Re-execute ${primary.title}`
+                ? `重新执行 (${primary.scope})`
+                : `重新执行 ${primary.title}`
           }
           tooltip={tooltip()}
           icon={jobError?.icon}

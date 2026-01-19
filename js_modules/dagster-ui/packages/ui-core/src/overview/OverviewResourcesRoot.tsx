@@ -90,7 +90,7 @@ export const OverviewResourcesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.textLight()}}>Loading resources…</div>
+            <div style={{color: Colors.textLight()}}>加载资源中…</div>
           </Box>
         </Box>
       );
@@ -104,17 +104,15 @@ export const OverviewResourcesRoot = () => {
           <Box padding={{top: 20}}>
             <NonIdealState
               icon="search"
-              title="No matching resources"
+              title="没有匹配的资源"
               description={
                 anyReposHidden ? (
                   <div>
-                    No resources matching <strong>{searchValue}</strong> were found in the selected
-                    code locations
+                    在选定的代码位置中未找到匹配 <strong>{searchValue}</strong> 的资源
                   </div>
                 ) : (
                   <div>
-                    No resources matching <strong>{searchValue}</strong> were found in your
-                    definitions
+                    在您的定义中未找到匹配 <strong>{searchValue}</strong> 的资源
                   </div>
                 )
               }
@@ -127,11 +125,11 @@ export const OverviewResourcesRoot = () => {
         <Box padding={{top: 20}}>
           <NonIdealState
             icon="search"
-            title="No resources"
+            title="没有资源"
             description={
               anyReposHidden
-                ? 'No resources were found in the selected code locations'
-                : 'No resources were found in your definitions'
+                ? '在选定的代码位置中未找到资源'
+                : '在您的定义中未找到资源'
             }
           />
         </Box>
@@ -156,11 +154,11 @@ export const OverviewResourcesRoot = () => {
           value={searchValue}
           rightElement={
             showSearchSpinner ? (
-              <SearchInputSpinner tooltipContent="Loading resources…" />
+              <SearchInputSpinner tooltipContent="加载资源中…" />
             ) : undefined
           }
           onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by resource name…"
+          placeholder="按资源名称筛选…"
           style={{width: '340px'}}
         />
       </Box>

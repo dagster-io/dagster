@@ -59,14 +59,14 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
       if (selected.to) {
         return (
           <div>
-            <span style={{color: Colors.textLight()}}>Selected:</span>{' '}
+            <span style={{color: Colors.textLight()}}>已选择:</span>{' '}
             {formatter.format(selected.from)} - {formatter.format(selected.to)}
           </div>
         );
       }
       return (
         <div>
-          Selected{' '}
+          已选择{' '}
           <span style={{color: Colors.textLight()}}>{formatter.format(selected.from)}</span>
         </div>
       );
@@ -78,7 +78,7 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
   return (
     <Dialog
       isOpen={isOpen}
-      title="Select a date range"
+      title="选择日期范围"
       onClosed={onCancel}
       style={{width: 'auto', minWidth: 688}}
     >
@@ -99,7 +99,7 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
         </div>
       </DialogBody>
       <DialogFooter topBorder left={leftContent()}>
-        <Button onClick={() => onCancel()}>Cancel</Button>
+        <Button onClick={() => onCancel()}>取消</Button>
         <Button
           intent="primary"
           disabled={!selected.from || !selected.to}
@@ -110,7 +110,7 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
             }
           }}
         >
-          Apply
+          应用
         </Button>
       </DialogFooter>
     </Dialog>

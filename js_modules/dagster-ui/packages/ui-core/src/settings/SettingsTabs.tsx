@@ -7,22 +7,22 @@ import {TabLink} from '../ui/TabLink';
 const items = [
   {
     key: 'code-locations',
-    label: 'Code locations',
+    label: '代码位置',
     path: '/deployment/locations',
   },
   {
     key: 'daemons',
-    label: 'Daemons',
+    label: '守护进程',
     path: '/deployment/daemons',
   },
   {
     key: 'concurrency',
-    label: 'Concurrency',
+    label: '并发',
     path: '/deployment/concurrency',
   },
   {
     key: 'config',
-    label: 'Configuration (read-only)',
+    label: '配置 (只读)',
     path: '/deployment/config',
   },
 ];

@@ -71,7 +71,7 @@ export const JobsPageContent = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.textLight()}}>Loading jobs…</div>
+            <div style={{color: Colors.textLight()}}>加载作业中...</div>
           </Box>
         </Box>
       );
@@ -82,11 +82,11 @@ export const JobsPageContent = () => {
         <Box padding={{top: 20}}>
           <NonIdealState
             icon="search"
-            title="No jobs"
+            title="无作业"
             description={
               repoBuckets.length
-                ? 'No jobs were found that match your filters'
-                : 'No jobs were found in your definitions'
+                ? '未找到匹配筛选条件的作业'
+                : '在您的定义中未找到作业'
             }
           />
         </Box>
@@ -103,7 +103,7 @@ export const JobsPageContent = () => {
       </Box>
       {loading && !repoCount ? (
         <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
-          <SpinnerWithText label="Loading jobs…" />
+          <SpinnerWithText label="加载作业中..." />
         </Box>
       ) : (
         content()

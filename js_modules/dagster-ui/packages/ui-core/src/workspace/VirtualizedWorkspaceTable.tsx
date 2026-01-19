@@ -74,7 +74,7 @@ export const DynamicRepoRow = forwardRef(
 
 export const LoadingOrNone = ({
   queryResult,
-  noneString = 'None',
+  noneString = '无',
 }: {
   queryResult: QueryResult<any, any>;
   noneString?: React.ReactNode;
@@ -82,7 +82,7 @@ export const LoadingOrNone = ({
   const {called, loading, data} = queryResult;
   return (
     <div style={{color: Colors.textLight()}}>
-      {!called || (loading && !data) ? 'Loading' : noneString}
+      {!called || (loading && !data) ? '加载中' : noneString}
     </div>
   );
 };

@@ -25,7 +25,7 @@ export const LineageDepthControl = ({
 
   return (
     <Box flex={{gap: 8, alignItems: 'center'}}>
-      Graph depth
+      图深度
       <JoinedButtons>
         <Button
           disabled={value <= 1}
@@ -59,7 +59,7 @@ export const LineageDepthControl = ({
           icon={<Icon name="add" />}
         />
         <Button disabled={value >= max} onClick={() => onChange(max)}>
-          All
+          全部
         </Button>
       </JoinedButtons>
     </Box>

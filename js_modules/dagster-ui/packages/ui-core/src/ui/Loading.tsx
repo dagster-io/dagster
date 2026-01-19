@@ -50,7 +50,7 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
     if (!networkError) {
       return (
         <Box padding={64} flex={{justifyContent: 'center'}}>
-          <NonIdealState icon="error" title="GraphQL Error - see console for details" />
+          <NonIdealState icon="error" title="GraphQL 错误 - 请查看控制台详情" />
         </Box>
       );
     }
@@ -61,7 +61,7 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
         <Box padding={64} flex={{justifyContent: 'center'}}>
           <NonIdealState
             icon="error"
-            title="Network error"
+            title="网络错误"
             description={errorCodeToMessage(statusCode)}
           />
         </Box>

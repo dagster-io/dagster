@@ -90,7 +90,7 @@ export const TableSchema = ({
           style={{minWidth: 250}}
           icon="search"
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter columns"
+          placeholder="筛选列"
         />
         {schemaLoadTimestamp && (
           <Caption color={Colors.textLighter()}>
@@ -111,9 +111,9 @@ export const TableSchema = ({
       <StyledTableWithHeader>
         <thead>
           <tr>
-            <td>Column name</td>
-            <td style={{width: 200}}>Type</td>
-            <td>Description</td>
+            <td>列名</td>
+            <td style={{width: 200}}>类型</td>
+            <td>描述</td>
             <AssetColumnLinksCell column={null} />
           </tr>
         </thead>
@@ -149,7 +149,7 @@ export const TableSchema = ({
           {rows.length === 0 && (
             <tr>
               <td colSpan={4}>
-                <Caption color={Colors.textLight()}>No table schema columns</Caption>
+                <Caption color={Colors.textLight()}>无表结构列</Caption>
               </td>
             </tr>
           )}
@@ -197,9 +197,9 @@ export const TypeTag = ({type = ''}: {type: string}) => {
   );
 };
 
-const NonNullableTag = <Tag intent="primary">non-nullable</Tag>;
+const NonNullableTag = <Tag intent="primary">非空</Tag>;
 
-const UniqueTag = <Tag intent="primary">unique</Tag>;
+const UniqueTag = <Tag intent="primary">唯一</Tag>;
 
 const ArbitraryConstraintTag = ({constraint}: {constraint: string}) => {
   if (constraint.length > MAX_CONSTRAINT_TAG_CHARS) {

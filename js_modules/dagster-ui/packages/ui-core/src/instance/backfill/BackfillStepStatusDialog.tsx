@@ -49,13 +49,13 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   return (
     <Dialog
       isOpen={!!backfill?.partitionSet}
-      title={`Step status for backfill: ${backfill?.id}`}
+      title={`回填步骤状态: ${backfill?.id}`}
       onClose={onClose}
       style={{width: '80vw'}}
     >
       {content()}
       <DialogFooter topBorder>
-        <Button onClick={onClose}>Done</Button>
+        <Button onClick={onClose}>完成</Button>
       </DialogFooter>
     </Dialog>
   );

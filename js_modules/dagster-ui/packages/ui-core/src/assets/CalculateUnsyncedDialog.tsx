@@ -63,8 +63,8 @@ export const CalculateUnsyncedDialog = React.memo(
     React.useEffect(() => {
       if (isOpen && !loading && (!data || error)) {
         showCustomAlert({
-          title: 'Could not fetch stale status for assets',
-          body: 'An unknown error occurred.',
+          title: '无法获取资产的过期状态',
+          body: '发生未知错误。',
         });
         onClose();
       }
@@ -91,7 +91,7 @@ export const CalculateUnsyncedDialog = React.memo(
       if (loading) {
         return (
           <Box flex={{alignItems: 'center', gap: 8}}>
-            <Spinner purpose="body-text" /> Fetching asset statuses
+            <Spinner purpose="body-text" /> 正在获取资产状态
           </Box>
         );
       }
@@ -113,7 +113,7 @@ export const CalculateUnsyncedDialog = React.memo(
                 }}
               />
               <label htmlFor="check-all" style={{color: Colors.textLight(), cursor: 'pointer'}}>
-                Asset Name
+                资产名称
               </label>
             </RowGrid>
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
@@ -165,17 +165,17 @@ export const CalculateUnsyncedDialog = React.memo(
       return (
         <Box flex={{alignItems: 'center', gap: 8}}>
           <Icon name="check_circle" color={Colors.accentGreen()} />
-          <div>All assets are up to date</div>
+          <div>所有资产均已更新</div>
         </Box>
       );
     };
     return (
       <>
-        <Dialog isOpen={isOpen} onClose={onClose} title="Materialize unsynced assets">
+        <Dialog isOpen={isOpen} onClose={onClose} title="物化未同步的资产">
           <DialogBody>{content()}</DialogBody>
           <DialogFooter topBorder>
             {loading ? (
-              <Button onClick={onClose}>Cancel</Button>
+              <Button onClick={onClose}>取消</Button>
             ) : unsynced.length ? (
               <Button
                 intent="primary"
@@ -185,10 +185,10 @@ export const CalculateUnsyncedDialog = React.memo(
                 }}
                 disabled={checked.size === 0}
               >
-                Materialize {checked.size} assets
+                物化 {checked.size} 个资产
               </Button>
             ) : (
-              <Button onClick={onClose}>Dismiss</Button>
+              <Button onClick={onClose}>关闭</Button>
             )}
           </DialogFooter>
         </Dialog>

@@ -79,21 +79,21 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
   const label = () => {
     if (!base) {
       if (presets.length && !partitionSets.length) {
-        return 'Preset';
+        return '预设';
       }
       if (!presets.length && partitionSets.length) {
-        return 'Partition Set';
+        return '分区集';
       }
-      return 'Preset / Partition Set';
+      return '预设 / 分区集';
     }
 
     if ('presetName' in base) {
-      return `Preset: ${base.presetName}`;
+      return `预设: ${base.presetName}`;
     }
     if ('partitionsSetName' in base) {
-      return `Partition Set: ${base.partitionsSetName}`;
+      return `分区集: ${base.partitionsSetName}`;
     }
-    return `Partitions`;
+    return `分区`;
   };
 
   const onSelect = (item: ConfigGenerator) => {
@@ -195,7 +195,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   ) : undefined;
 
   const inputProps: InputGroupProps2 & HTMLInputProps = {
-    placeholder: 'Partition',
+    placeholder: '分区',
     style: {width: 180},
     intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
     rightElement,
@@ -224,7 +224,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
         }}
         items={[]}
         itemRenderer={() => null}
-        noResults={<MenuItem disabled={true} text="Loading..." />}
+        noResults={<MenuItem disabled={true} text="加载中…" />}
         inputValueRenderer={(str) => str}
         selectedItem={value}
         onItemSelect={() => {}}
@@ -266,7 +266,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
             text={partition}
           />
         )}
-        noResults={<MenuItem disabled={true} text="No presets." />}
+        noResults={<MenuItem disabled={true} text="无预设。" />}
         onItemSelect={(item) => {
           onSelect(repositorySelector, partitionSetName, item);
         }}
@@ -277,7 +277,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
             setShowCreatePartition(true);
           }}
         >
-          Add new partition
+          添加新分区
         </Button>
       ) : null}
       {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
@@ -340,11 +340,11 @@ const ConfigEditorConfigGeneratorPicker = React.memo(
                 renderedPresetItems.length > 0 && renderedPartitionSetItems.length > 0;
 
               return (
-                <Menu ref={itemsParentRef}>
-                  {bothTypesPresent && <MenuItem disabled={true} text="Presets" />}
+                <Menu ulRef={itemsParentRef}>
+                  {bothTypesPresent && <MenuItem disabled={true} text="预设" />}
                   {renderedPresetItems}
                   {bothTypesPresent && <MenuDivider />}
-                  {bothTypesPresent && <MenuItem disabled={true} text="Partition Sets" />}
+                  {bothTypesPresent && <MenuItem disabled={true} text="分区集" />}
                   {renderedPartitionSetItems}
                 </Menu>
               );
@@ -361,17 +361,17 @@ const ConfigEditorConfigGeneratorPicker = React.memo(
                       {[
                         item.solidSelection
                           ? item.solidSelection.length === 1
-                            ? `Ops: ${item.solidSelection[0]}`
-                            : `Ops: ${item.solidSelection.length}`
-                          : `Ops: All`,
-                        `Mode: ${item.mode}`,
+                            ? `算子: ${item.solidSelection[0]}`
+                            : `算子: ${item.solidSelection.length}`
+                          : `算子: 全部`,
+                        `模式: ${item.mode}`,
                       ].join(' - ')}
                     </div>
                   </div>
                 }
               />
             )}
-            noResults={<MenuItem disabled={true} text="No presets." />}
+            noResults={<MenuItem disabled={true} text="无预设。" />}
             onItemSelect={onSelect}
           >
             <Button

@@ -56,7 +56,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
 
 export const InstanceConcurrencyIndexContent = React.memo(() => {
   useTrackPageView();
-  useDocumentTitle('Concurrency');
+  useDocumentTitle('并发');
   const queryResult = useQuery<
     InstanceConcurrencyLimitsQuery,
     InstanceConcurrencyLimitsQueryVariables
@@ -71,7 +71,7 @@ export const InstanceConcurrencyIndexContent = React.memo(() => {
     if (!data) {
       return (
         <Box padding={{vertical: 64}} flex={{direction: 'column', alignItems: 'center'}}>
-          <SpinnerWithText label="Loading concurrency information…" />
+          <SpinnerWithText label="正在加载并发信息…" />
         </Box>
       );
     }

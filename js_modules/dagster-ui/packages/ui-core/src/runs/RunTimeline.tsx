@@ -179,7 +179,7 @@ export const RunTimeline = (props: Props) => {
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
         border="top-and-bottom"
       >
-        Runs
+        运行记录
       </Box>
       <div style={{position: 'relative'}}>
         <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyObjects ? height : 0} />
@@ -489,7 +489,7 @@ export const TimeDividers = (props: TimeDividersProps) => {
         ))}
         {now >= start && now <= end ? (
           <>
-            <TimlineMarker style={{left: msToLeft(now)}}>Now</TimlineMarker>
+            <TimlineMarker style={{left: msToLeft(now)}}>当前</TimlineMarker>
             <DividerLine
               style={{left: msToLeft(now), backgroundColor: Colors.accentPrimary(), zIndex: 1}}
             />
@@ -692,7 +692,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       return (
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Spinner purpose="body-text" />
-          {includesTicks ? 'Loading runs and scheduled ticks' : 'Loading runs'}
+          {includesTicks ? '正在加载运行记录和计划任务' : '正在加载运行记录'}
         </Box>
       );
     }
@@ -701,16 +701,16 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       <Box flex={{direction: 'column', gap: 12, alignItems: 'center'}}>
         <div>
           {includesTicks
-            ? 'No runs or scheduled ticks in this time period.'
-            : 'No runs in this time period.'}
+            ? '此时间段内没有运行记录或计划任务'
+            : '此时间段内没有运行记录'}
         </div>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
           <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
-            Launch a run
+            启动运行
           </AnchorButton>
-          <span>or</span>
+          <span>或</span>
           <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
-            Materialize an asset
+            物化资产
           </AnchorButton>
         </Box>
       </Box>

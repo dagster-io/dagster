@@ -28,7 +28,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 
 export const MergedAutomationRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Automation');
+  useDocumentTitle('自动化');
 
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
 
@@ -143,7 +143,7 @@ export const MergedAutomationRoot = () => {
     if (workspaceLoading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{top: 64}}>
-          <SpinnerWithText label="Loading automations…" />
+          <SpinnerWithText label="加载自动化中..." />
         </Box>
       );
     }
@@ -154,11 +154,10 @@ export const MergedAutomationRoot = () => {
           <Box padding={{top: 20}}>
             <NonIdealState
               icon="search"
-              title="No matching automations"
+              title="无匹配的自动化"
               description={
                 <div>
-                  No automations matching <strong>{selection}</strong> were found in your
-                  definitions
+                  在您的定义中未找到匹配 <strong>{selection}</strong> 的自动化
                 </div>
               }
             />
@@ -170,17 +169,17 @@ export const MergedAutomationRoot = () => {
         <Box padding={{top: 20}}>
           <NonIdealState
             icon="search"
-            title="No automations"
+            title="无自动化"
             description={
               <Body2>
-                There are no automations in this deployment.{' '}
+                此部署中没有自动化。{' '}
                 <a
                   href="https://docs.dagster.io/concepts/automation"
                   target="_blank"
                   rel="noreferrer"
                 >
                   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    Learn more about automations
+                    了解更多关于自动化
                     <Icon name="open_in_new" color={Colors.linkDefault()} />
                   </Box>
                 </a>
@@ -211,7 +210,7 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
+      <PageHeader title={<Subtitle1>自动化</Subtitle1>} />
       {automaterializeSensorsFlagState === 'has-global-amp' ? (
         <Box padding={{horizontal: 24}} border="bottom">
           <AutomationTabs tab="schedules-and-sensors" />
@@ -231,7 +230,7 @@ export const MergedAutomationRoot = () => {
           <AutomationSelectionInput items={automations} value={selection} onChange={setSelection} />
         </Box>
         <Tooltip
-          content="You do not have permission to start or stop these schedules"
+          content="您没有权限启动或停止这些定时任务"
           canShow={anyAutomationsVisible && !viewerHasAnyInstigationPermission}
           placement="top-end"
         >

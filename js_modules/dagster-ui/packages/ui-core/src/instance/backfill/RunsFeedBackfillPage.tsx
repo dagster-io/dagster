@@ -36,7 +36,7 @@ export const RunsFeedBackfillPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
-  useDocumentTitle(`Backfill | ${backfillId}`);
+  useDocumentTitle(`回填 | ${backfillId}`);
 
   const isDaemonHealthy = useIsBackfillDaemonHealthy();
 
@@ -83,11 +83,11 @@ export const RunsFeedBackfillPage = () => {
       <Box style={{flex: 3, minHeight: 0}} flex={{direction: 'column'}}>
         <Box padding={{left: 24}} border="bottom">
           <Tabs size="large" selectedTabId={selectedTab}>
-            <Tab id="overview" title="Overview" onClick={() => setSelectedTab('overview')} />
-            <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
-            <Tab id="timeline" title="Timeline" onClick={() => setSelectedTab('timeline')} />
+            <Tab id="overview" title="概览" onClick={() => setSelectedTab('overview')} />
+            <Tab id="runs" title="运行" onClick={() => setSelectedTab('runs')} />
+            <Tab id="timeline" title="时间线" onClick={() => setSelectedTab('timeline')} />
             {featureContext.canSeeBackfillCoordinatorLogs ? (
-              <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
+              <Tab id="logs" title="协调器日志" onClick={() => setSelectedTab('logs')} />
             ) : null}
           </Tabs>
         </Box>
@@ -128,7 +128,7 @@ export const RunsFeedBackfillPage = () => {
         title={
           <Subtitle1>
             <Link to="/runs/" style={{color: Colors.textLight()}}>
-              Runs
+              运行
             </Link>
             {' / '}
             {backfillId}

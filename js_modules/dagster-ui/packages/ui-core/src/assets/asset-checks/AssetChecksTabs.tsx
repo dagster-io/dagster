@@ -11,17 +11,17 @@ interface Props {
 export const AssetChecksTabs = ({activeTab, enableAutomationHistory, onChange}: Props) => {
   return (
     <Tabs selectedTabId={activeTab} onChange={onChange}>
-      <Tab id="overview" title="Overview" />
-      <Tab id="execution-history" title="Execution history" />
+      <Tab id="overview" title="概览" />
+      <Tab id="execution-history" title="执行历史" />
       <Tab
         id="automation-history"
         title={
           <Tooltip
-            content="This asset check does not have an automation condition configured."
+            content="此资产检查未配置自动化条件。"
             canShow={!enableAutomationHistory}
             placement="top"
           >
-            Automation history
+            自动化历史
           </Tooltip>
         }
         disabled={!enableAutomationHistory}

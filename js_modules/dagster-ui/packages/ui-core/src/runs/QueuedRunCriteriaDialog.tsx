@@ -44,7 +44,7 @@ export const QueuedRunCriteriaDialog = (props: DialogProps) => {
   return (
     <Dialog
       isOpen={isOpen}
-      title="Run queue criteria"
+      title="运行队列条件"
       canOutsideClickClose
       canEscapeKeyClose
       onClose={onClose}
@@ -53,7 +53,7 @@ export const QueuedRunCriteriaDialog = (props: DialogProps) => {
       {run ? <QueuedRunCriteriaDialogContent run={run} /> : undefined}
       <DialogFooter topBorder>
         <Button intent="primary" onClick={onClose}>
-          Close
+          关闭
         </Button>
       </DialogFooter>
     </Dialog>
@@ -101,7 +101,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
   if (!runQueueConfig || loading) {
     return (
       <Box padding={32} flex={{direction: 'row', justifyContent: 'center'}}>
-        <SpinnerWithText label="Loading run queue criteria…" />
+        <SpinnerWithText label="加载运行队列条件…" />
       </Box>
     );
   }
@@ -111,8 +111,8 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
       <Box padding={32} flex={{direction: 'row', justifyContent: 'center'}}>
         <NonIdealState
           icon="run"
-          title="Queue criteria not found"
-          description="Could not load queue criteria for this run."
+          title="未找到队列条件"
+          description="无法加载此运行的队列条件。"
         />
       </Box>
     );
@@ -136,19 +136,19 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
       <tbody>
         {priority ? (
           <tr>
-            <td>Priority</td>
+            <td>优先级</td>
             <td>{priority}</td>
           </tr>
         ) : null}
         {maxConcurrentRuns !== undefined ? (
           <tr>
-            <td>Max concurrent runs</td>
+            <td>最大并发运行数</td>
             <td>{numberFormatter.format(maxConcurrentRuns)}</td>
           </tr>
         ) : null}
         {runTagLimits?.length ? (
           <tr>
-            <td>Tag concurrency limits:</td>
+            <td>标签并发限制:</td>
             <td>
               {runTagLimits.map((limit, i) => (
                 <div style={{overflow: 'auto', paddingBottom: 10}} key={`tagLimit:${i}`}>
@@ -156,7 +156,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
                     <tbody>
                       <tr>
                         <td style={{width: 80, fontSize: 12}}>
-                          {limit.value !== undefined ? 'Tag' : 'Tag key'}
+                          {limit.value !== undefined ? '标签' : '标签键'}
                         </td>
                         <td>
                           <Tag interactive>
@@ -167,7 +167,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
                         </td>
                       </tr>
                       <tr>
-                        <td style={{width: 80, fontSize: 12}}>Limit</td>
+                        <td style={{width: 80, fontSize: 12}}>限制</td>
                         <td>{limit.limit}</td>
                       </tr>
                     </tbody>
@@ -181,14 +181,14 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
           <tr>
             <td>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <div>Pools</div>
+                <div>池</div>
                 <Tooltip
                   placement="bottom"
                   content={
                     <div style={{maxWidth: 300}}>
                       {poolOpGranularityRunLimited
-                        ? 'Pool limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step.'
-                        : 'Pool limits are set on ops for this run. This run will not start until there are available slots for all pools.'}
+                        ? '此运行的所有初始步骤都设置了池限制。在至少有一个步骤有可用槽位之前，此运行不会开始。'
+                        : '此运行的操作设置了池限制。在所有池都有可用槽位之前，此运行不会开始。'}
                     </div>
                   }
                 >

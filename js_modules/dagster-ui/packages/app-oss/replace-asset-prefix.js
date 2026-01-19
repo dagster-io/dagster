@@ -20,12 +20,20 @@ function processDirectory(directory) {
       // Recursively process subdirectories
       processDirectory(filePath);
     } else if (file.endsWith('.js')) {
+      // Replace dynamic asset prefix pattern
       replaceStringInFile(
         filePath,
         '"BUILDTIME_ASSETPREFIX_REPLACE_ME',
         // if typeof window === "undefined" then we are inside a web worker
         // Grab the path from the location object
         '(() => {if (typeof window === "undefined") {return self.location.pathname.split("/_next/")[0]} return self.__webpack_public_path__ || "";})() + "',
+      );
+      // Replace static URL pattern in rewrites (e.g., _buildManifest.js)
+      // Remove the placeholder prefix from rewrite source paths
+      replaceStringInFile(
+        filePath,
+        '/BUILDTIME_ASSETPREFIX_REPLACE_ME/_next/',
+        '/_next/',
       );
     }
   }

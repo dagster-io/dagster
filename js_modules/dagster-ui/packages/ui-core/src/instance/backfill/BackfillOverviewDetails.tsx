@@ -19,7 +19,7 @@ export const BackfillOverviewDetails = ({backfill}: {backfill: any}) => (
     data-testid={testId('backfill-page-details')}
   >
     <Detail
-      label="Created"
+      label="创建时间"
       detail={
         <Timestamp
           timestamp={{ms: Number(backfill.timestamp * 1000)}}
@@ -28,7 +28,7 @@ export const BackfillOverviewDetails = ({backfill}: {backfill: any}) => (
       }
     />
     <Detail
-      label="Duration"
+      label="持续时间"
       detail={
         <LiveDuration
           start={backfill.timestamp * 1000}
@@ -37,7 +37,7 @@ export const BackfillOverviewDetails = ({backfill}: {backfill: any}) => (
       }
     />
     <Detail
-      label="Partition selection"
+      label="分区选择"
       detail={
         <TargetPartitionsDisplay
           targetPartitionCount={backfill.numPartitions || 0}
@@ -45,7 +45,7 @@ export const BackfillOverviewDetails = ({backfill}: {backfill: any}) => (
         />
       }
     />
-    <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
+    <Detail label="状态" detail={<BackfillStatusTagForPage backfill={backfill} />} />
   </Box>
 );
 

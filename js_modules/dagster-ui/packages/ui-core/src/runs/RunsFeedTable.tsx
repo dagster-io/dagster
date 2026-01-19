@@ -140,10 +140,10 @@ export const RunsFeedTable = ({
                   intent="warning"
                   title={
                     <Box flex={{direction: 'column'}}>
-                      <Body2>Bulk actions are currently only supported for runs.</Body2>
+                      <Body2>批量操作目前仅支持运行记录。</Body2>
                       <Body2>
                         {numberFormatter.format(backfillsExcluded)}&nbsp;
-                        {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being excluded
+                        个回填任务已被排除
                       </Body2>
                     </Box>
                   }
@@ -210,7 +210,7 @@ export const RunsFeedTable = ({
           {header}
           {entries.length === 0 && loading && (
             <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32}>
-              <SpinnerWithText label="Loading runs…" />
+              <SpinnerWithText label="加载运行记录中…" />
             </Box>
           )}
           <Inner $totalHeight={totalHeight}>

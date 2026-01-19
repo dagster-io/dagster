@@ -101,10 +101,10 @@ export const AssetTable = ({
           <Box padding={{top: 64}}>
             <NonIdealState
               icon="search"
-              title="No matching assets"
+              title="没有匹配的资产"
               description={
                 <div>
-                  No assets matching <strong>{assetSelection}</strong> were found
+                  未找到匹配 <strong>{assetSelection}</strong> 的资产
                 </div>
               }
             />
@@ -114,7 +114,7 @@ export const AssetTable = ({
 
       return (
         <Box padding={{top: 20}}>
-          <NonIdealState icon="search" title="No assets" description="No assets were found" />
+          <NonIdealState icon="search" title="暂无资产" description="未找到任何资产" />
         </Box>
       );
     }

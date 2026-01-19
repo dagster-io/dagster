@@ -114,7 +114,7 @@ export const RunsFeedRoot = () => {
       {button}
       {isShowingViewOption && (
         <Checkbox
-          label={<span>Show runs within backfills</span>}
+          label={<span>显示回填内的运行</span>}
           checked={view === RunsFeedView.RUNS}
           onChange={() => {
             setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);

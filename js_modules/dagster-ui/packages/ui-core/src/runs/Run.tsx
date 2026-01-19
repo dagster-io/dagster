@@ -316,7 +316,7 @@ const RunWithData = ({
             }}
             toolbarActions={
               <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                <Tooltip content={isTopExpanded ? 'Collapse' : 'Expand'}>
+                <Tooltip content={isTopExpanded ? '收起' : '展开'}>
                   <Button
                     icon={<Icon name={isTopExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
                     onClick={isTopExpanded ? resetPanels : expandTopPanel}
@@ -342,7 +342,7 @@ const RunWithData = ({
       );
     }
 
-    return <NonIdealState icon="error" title="Unable to build execution plan" />;
+    return <NonIdealState icon="error" title="无法构建执行计划" />;
   };
 
   const logContent = () => {
@@ -350,11 +350,11 @@ const RunWithData = ({
       return (
         <NonIdealState
           icon="arrow_forward"
-          title="Run queued"
-          description="This run is queued for execution and will start soon."
+          title="运行已排队"
+          description="此运行已排队等待执行，即将开始。"
           action={
             <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
-              View queued runs
+              查看排队中的运行
             </Link>
           }
         />
@@ -438,9 +438,9 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
       style={{background: Colors.backgroundDefault()}}
     >
       <NonIdealState
-        title={`Select a step to view ${type}`}
+        title={`选择一个步骤以查看 ${type}`}
         icon="warning"
-        description="Select a step on the Gantt chart or from the dropdown above to view logs."
+        description="在甘特图上或从上方的下拉菜单中选择一个步骤以查看日志。"
       />
     </Box>
   );

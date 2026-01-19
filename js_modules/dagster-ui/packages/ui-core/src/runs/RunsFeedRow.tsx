@@ -118,7 +118,7 @@ export const RunsFeedRow = ({
             style={{gap: '4px 8px', lineHeight: 0}}
           >
             {entry.__typename === 'PartitionBackfill' ? (
-              <Tag intent="none">Backfill</Tag>
+              <Tag intent="none">回填</Tag>
             ) : undefined}
 
             <RunRowTags
@@ -134,7 +134,7 @@ export const RunsFeedRow = ({
                   onClick={() => onShowDialog({type: 'queue-criteria', entry})}
                   color={Colors.textLight()}
                 >
-                  View queue criteria
+                  查看排队条件
                 </ButtonLink>
               </Caption>
             ) : null}
@@ -178,7 +178,7 @@ export const RunsFeedRow = ({
         <RunTime run={runTime} />
         {isReexecution ? (
           <div>
-            <Tag icon="cached">Re-execution</Tag>
+            <Tag icon="cached">重新执行</Tag>
           </div>
         ) : null}
       </RowCell>
@@ -213,10 +213,10 @@ export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => 
       <HeaderCell>
         <RunTableTargetHeader />
       </HeaderCell>
-      <HeaderCell>Launched by</HeaderCell>
-      <HeaderCell>Status</HeaderCell>
-      <HeaderCell>Created at</HeaderCell>
-      <HeaderCell>Duration</HeaderCell>
+      <HeaderCell>启动者</HeaderCell>
+      <HeaderCell>状态</HeaderCell>
+      <HeaderCell>创建时间</HeaderCell>
+      <HeaderCell>持续时间</HeaderCell>
       <HeaderCell></HeaderCell>
     </HeaderRow>
   );

@@ -22,7 +22,7 @@ interface Props {
   title?: string;
 }
 
-export const Spinner = ({purpose, value, fillColor, stopped, title = 'Loading…'}: Props) => {
+export const Spinner = ({purpose, value, fillColor, stopped, title = '加载中…'}: Props) => {
   const className = clsx(
     'spinnerGlobal', // Global class for targeting spinners
     styles.spinner,

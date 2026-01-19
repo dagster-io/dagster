@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const ReloadAllButton = (props: Props) => {
-  const {icon = <Icon name="reload_definitions" />, label = 'Reload all'} = props;
+  const {icon = <Icon name="reload_definitions" />, label = '全部重载'} = props;
   const {
     permissions: {canReloadWorkspace},
     disabledReasons,
@@ -55,7 +55,7 @@ export const ReloadAllButton = (props: Props) => {
       ) : (
         <Dialog
           icon="error"
-          title="Reload error"
+          title="重载错误"
           canEscapeKeyClose={false}
           canOutsideClickClose={false}
           style={{width: '90%'}}
@@ -63,7 +63,7 @@ export const ReloadAllButton = (props: Props) => {
         >
           <DialogBody>{error && <PythonErrorInfo error={error} />}</DialogBody>
           <DialogFooter>
-            <Button onClick={() => setIsOpen(false)}>Dismiss</Button>
+            <Button onClick={() => setIsOpen(false)}>关闭</Button>
           </DialogFooter>
         </Dialog>
       )}

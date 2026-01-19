@@ -118,10 +118,10 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   const checkboxState = React.useMemo(() => {
     const {hasStartPermission, hasStopPermission, status} = sensorState;
     if (status === InstigationStatus.RUNNING && !hasStopPermission) {
-      return {disabled: true, message: 'You do not have permission to stop this sensor'};
+      return {disabled: true, message: '您没有权限停止此监控器'};
     }
     if (status === InstigationStatus.STOPPED && !hasStartPermission) {
-      return {disabled: true, message: 'You do not have permission to start this sensor'};
+      return {disabled: true, message: '您没有权限启动此监控器'};
     }
     return {disabled: false};
   }, [sensorState]);
@@ -255,13 +255,13 @@ export const VirtualizedSensorHeader = ({checkbox}: {checkbox: React.ReactNode})
           <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
         </HeaderCell>
       ) : null}
-      <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Type</HeaderCell>
-      <HeaderCell>Target</HeaderCell>
-      <HeaderCell>Running</HeaderCell>
-      <HeaderCell>Frequency</HeaderCell>
-      <HeaderCell>Last tick</HeaderCell>
-      <HeaderCell>Last run</HeaderCell>
+      <HeaderCell>名称</HeaderCell>
+      <HeaderCell>类型</HeaderCell>
+      <HeaderCell>目标</HeaderCell>
+      <HeaderCell>运行中</HeaderCell>
+      <HeaderCell>频率</HeaderCell>
+      <HeaderCell>上次触发</HeaderCell>
+      <HeaderCell>上次运行</HeaderCell>
     </HeaderRow>
   );
 };
@@ -278,46 +278,42 @@ export const SENSOR_TYPE_META: Record<
   {name: string; icon: IconName; description: string | null}
 > = {
   [SensorType.ASSET]: {
-    name: 'Asset sensor',
+    name: '资产监控器',
     icon: 'sensors',
-    description: 'Asset sensors instigate runs when a materialization occurs',
+    description: '资产监控器在物化发生时触发运行',
   },
   [SensorType.AUTO_MATERIALIZE]: {
-    name: 'Automation condition sensor',
+    name: '自动化条件监控器',
     icon: 'automation_condition',
-    description:
-      'Automation condition sensors trigger runs based on conditions defined on assets or checks.',
+    description: '自动化条件监控器根据资产或检查上定义的条件触发运行',
   },
   [SensorType.AUTOMATION]: {
-    name: 'Automation condition sensor',
+    name: '自动化条件监控器',
     icon: 'automation_condition',
-    description:
-      'Automation condition sensors trigger runs based on conditions defined on assets or checks.',
+    description: '自动化条件监控器根据资产或检查上定义的条件触发运行',
   },
   [SensorType.FRESHNESS_POLICY]: {
-    name: 'Freshness policy sensor',
+    name: '新鲜度策略监控器',
     icon: 'sensors',
-    description:
-      'Freshness sensors check the freshness of assets on each tick, then perform an action in response to that status',
+    description: '新鲜度监控器在每次触发时检查资产的新鲜度，然后根据状态执行相应操作',
   },
   [SensorType.MULTI_ASSET]: {
-    name: 'Multi-asset sensor',
+    name: '多资产监控器',
     icon: 'sensors',
-    description:
-      'Multi asset sensors trigger job executions based on multiple asset materialization event streams',
+    description: '多资产监控器根据多个资产物化事件流触发作业执行',
   },
   [SensorType.RUN_STATUS]: {
-    name: 'Run status sensor',
+    name: '运行状态监控器',
     icon: 'sensors',
-    description: 'Run status sensors react to run status',
+    description: '运行状态监控器对运行状态做出响应',
   },
   [SensorType.STANDARD]: {
-    name: 'Standard sensor',
+    name: '标准监控器',
     icon: 'sensors',
     description: null,
   },
   [SensorType.UNKNOWN]: {
-    name: 'Standard sensor',
+    name: '标准监控器',
     icon: 'sensors',
     description: null,
   },

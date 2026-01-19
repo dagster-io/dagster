@@ -296,7 +296,7 @@ export const GraphQueryInput = React.memo(
 
     const opCountInfo = props.linkToPreview && (
       <OpCountWrap $hasWrap={flattenGraphsEnabled}>
-        {`${filterByQuery(props.items, pendingValue).all.length} matching ops`}
+        {`${filterByQuery(props.items, pendingValue).all.length} 个匹配的操作`}
         <Link
           target="_blank"
           style={{display: 'flex', alignItems: 'center', gap: 4}}
@@ -306,7 +306,7 @@ export const GraphQueryInput = React.memo(
             pipelineName: `${props.linkToPreview.pipelineName}~${flattenGraphsFlag}${pendingValue}`,
           })}
         >
-          Graph Preview <Icon color={Colors.linkDefault()} name="open_in_new" />
+          图预览 <Icon color={Colors.linkDefault()} name="open_in_new" />
         </Link>
       </OpCountWrap>
     );
@@ -384,7 +384,7 @@ export const GraphQueryInput = React.memo(
                 <OpInfoWrap>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                     <Checkbox
-                      label="Flatten subgraphs"
+                      label="平展子图"
                       checked={props.flattenGraphs ?? false}
                       onChange={() => {
                         props.setFlattenGraphs?.();
@@ -392,7 +392,7 @@ export const GraphQueryInput = React.memo(
                       format="switch"
                     />
                     <Tooltip
-                      content="Flatten subgraphs to select ops within nested graphs"
+                      content="平展子图以选择嵌套图中的操作"
                       placement="right"
                     >
                       <Icon name="info" color={Colors.accentGray()} />
@@ -456,18 +456,18 @@ const InfoIconDialog = () => {
     <>
       <Dialog
         isOpen={isOpen}
-        title="Query filter tips"
+        title="查询筛选提示"
         onClose={() => setIsOpen(false)}
         style={{width: '743px', maxWidth: '80%'}}
       >
         <DialogBody>
           <Box flex={{direction: 'column', gap: 10}}>
-            <div>Create custom filter queries to fine tune which assets appear in the graph.</div>
+            <div>创建自定义筛选查询以精确控制图中显示的资产。</div>
             <CustomTable>
               <thead>
                 <tr>
-                  <th>Query</th>
-                  <th>Description</th>
+                  <th>查询</th>
+                  <th>描述</th>
                 </tr>
               </thead>
               <tbody>
@@ -475,61 +475,61 @@ const InfoIconDialog = () => {
                   <td>
                     <Tag>*</Tag>
                   </td>
-                  <td>Render the entire lineage graph</td>
+                  <td>渲染整个血缘图</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>*&quot;my_asset&quot;</Tag>
                   </td>
-                  <td>Render the entire upstream lineage of my_asset</td>
+                  <td>渲染 my_asset 的全部上游血缘</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>+&quot;my_asset&quot;</Tag>
                   </td>
-                  <td>Render one layer upstream of my_asset</td>
+                  <td>渲染 my_asset 上游一层</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>++&quot;my_asset&quot;</Tag>
                   </td>
-                  <td>Render two layers upstream of my_asset</td>
+                  <td>渲染 my_asset 上游两层</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>&quot;my_asset&quot;*</Tag>
                   </td>
-                  <td>Render the entire downstream lineage of my_asset</td>
+                  <td>渲染 my_asset 的全部下游血缘</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>&quot;my_asset&quot;+</Tag>
                   </td>
-                  <td>Render one layer downstream of my_asset</td>
+                  <td>渲染 my_asset 下游一层</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>&quot;my_asset&quot;++</Tag>
                   </td>
-                  <td>Render two layers downstream of my_asset</td>
+                  <td>渲染 my_asset 下游两层</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>+&quot;my_asset&quot;+</Tag>
                   </td>
-                  <td>Render one layer upstream and downstream of my_asset</td>
+                  <td>渲染 my_asset 上下游各一层</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>*&quot;my_asset&quot;*</Tag>
                   </td>
-                  <td>Render the entire upstream and downstream lineage of my_asset</td>
+                  <td>渲染 my_asset 的全部上下游血缘</td>
                 </tr>
                 <tr>
                   <td>
                     <Tag>&quot;my_asset&quot; &quot;another&quot;</Tag>
                   </td>
-                  <td>Render two disjointed lineage segments</td>
+                  <td>渲染两个不相连的血缘片段</td>
                 </tr>
               </tbody>
             </CustomTable>
@@ -537,7 +537,7 @@ const InfoIconDialog = () => {
         </DialogBody>
         <DialogFooter topBorder>
           <Button onClick={() => setIsOpen(false)} intent="primary">
-            Close
+            关闭
           </Button>
         </DialogFooter>
       </Dialog>

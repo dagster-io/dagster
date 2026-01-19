@@ -1,4 +1,4 @@
-import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
+import {Colors, Icon, MenuDivider, MenuItem} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 
@@ -6,57 +6,43 @@ import {useAssetPermissions} from './useAssetPermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {AssetKeyInput} from '../graphql/types';
 
-export const useWipeDialog = (
+export function useWipeDialog(
   opts: {assetKey: AssetKeyInput; repository: {location: {name: string}} | null} | null,
   refresh?: () => void,
-) => {
-  const [isShowing, setIsShowing] = useState(false);
+) {
+  const [showing, setShowing] = useState(false);
 
   const {
     featureContext: {canSeeWipeMaterializationAction},
   } = useContext(CloudOSSContext);
 
+  const {hasWipePermission} = useAssetPermissions(
+    opts?.assetKey ? [opts.assetKey] : [],
+    opts?.repository?.location.name || '',
+  );
+
   return {
     element: (
       <AssetWipeDialog
         assetKeys={opts ? [opts.assetKey] : []}
-        isOpen={isShowing}
-        onClose={() => setIsShowing(false)}
+        isOpen={showing}
+        onClose={() => setShowing(false)}
         onComplete={refresh}
       />
     ),
     dropdownOptions:
       opts && canSeeWipeMaterializationAction
         ? [
-            <WipeDialogMenuItem
+            <MenuDivider key="wipe-divider" />,
+            <MenuItem
               key="wipe"
-              assetKeys={opts?.assetKey ? [opts.assetKey] : []}
-              locationName={opts?.repository?.location.name || ''}
-              onClick={() => setIsShowing(true)}
+              text="清除物化数据"
+              icon={<Icon name="delete" color={Colors.accentRed()} />}
+              disabled={!hasWipePermission}
+              intent="danger"
+              onClick={() => setShowing(true)}
             />,
           ]
         : [],
   };
-};
-
-type WipeDialogMenuItemProps = {
-  assetKeys: AssetKeyInput[];
-  locationName: string;
-  onClick: () => void;
-};
-
-const WipeDialogMenuItem = ({assetKeys, locationName, onClick}: WipeDialogMenuItemProps) => {
-  // this separate comp exists to defer this expensive query until
-  // the menuItem is rendered instead of when the hook is called
-  const {hasWipePermission} = useAssetPermissions(assetKeys, locationName);
-
-  return (
-    <MenuItem
-      text="Wipe materializations"
-      icon={<Icon name="delete" color={Colors.accentRed()} />}
-      disabled={!hasWipePermission}
-      intent="danger"
-      onClick={onClick}
-    />
-  );
-};
+}

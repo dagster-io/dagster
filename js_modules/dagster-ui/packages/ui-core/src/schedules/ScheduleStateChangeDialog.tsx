@@ -137,17 +137,13 @@ export const ScheduleStateChangeDialog = (props: Props) => {
         if (openWithIntent === 'stop') {
           return (
             <div>
-              {`${count} ${
-                count === 1 ? 'schedule' : 'schedules'
-              } will be stopped. Do you want to continue?`}
+              {`将停止 ${count} 个定时任务。是否继续？`}
             </div>
           );
         }
         return (
           <div>
-            {`${count} ${
-              count === 1 ? 'schedule' : 'schedules'
-            } will be started. Do you want to continue?`}
+            {`将启动 ${count} 个定时任务。是否继续？`}
           </div>
         );
       case 'updating':
@@ -157,7 +153,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           <Box flex={{direction: 'column', gap: 8}}>
             <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'updating' ? (
-              <NavigationBlock message="Schedules are being updated, please do not navigate away yet." />
+              <NavigationBlock message="定时任务正在更新中，请勿离开页面。" />
             ) : null}
           </Box>
         );
@@ -175,12 +171,12 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       case 'initial': {
         const label =
           openWithIntent === 'start'
-            ? `Start ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Stop ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+            ? `启动 ${count} 个定时任务`
+            : `停止 ${count} 个定时任务`;
         return (
           <>
             <Button intent="none" onClick={onClose}>
-              Cancel
+              取消
             </Button>
             <Button intent="primary" onClick={mutate}>
               {label}
@@ -191,8 +187,8 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       case 'updating': {
         const label =
           openWithIntent === 'start'
-            ? `Starting ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Stopping ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+            ? `正在启动 ${count} 个定时任务`
+            : `正在停止 ${count} 个定时任务`;
         return (
           <Button intent="primary" disabled>
             {label}
@@ -202,7 +198,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       case 'completed':
         return (
           <Button intent="primary" onClick={onClose}>
-            Done
+            完成
           </Button>
         );
     }
@@ -216,7 +212,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     if (state.step === 'updating') {
       return (
         <div>
-          Please do not close the window or navigate away while schedules are being updated.
+          定时任务正在更新中，请勿关闭窗口或离开页面。
         </div>
       );
     }
@@ -232,12 +228,8 @@ export const ScheduleStateChangeDialog = (props: Props) => {
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
-                ? `Successfully started ${
-                    successCount === 1 ? '1 schedule' : `${successCount} schedules`
-                  }.`
-                : `Successfully stopped ${
-                    successCount === 1 ? '1 schedule' : `${successCount} schedules`
-                  }.`}
+                ? `成功启动 ${successCount} 个定时任务。`
+                : `成功停止 ${successCount} 个定时任务。`}
             </div>
           </Box>
         ) : null}
@@ -247,12 +239,8 @@ export const ScheduleStateChangeDialog = (props: Props) => {
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
-                  ? `Could not start ${
-                      errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
-                    }.`
-                  : `Could not stop ${
-                      errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
-                    }.`}
+                  ? `无法启动 ${errorCount} 个定时任务。`
+                  : `无法停止 ${errorCount} 个定时任务。`}
               </div>
             </Box>
             <ul>
@@ -276,7 +264,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={openWithIntent !== 'not-open'}
-      title={openWithIntent === 'start' ? 'Start schedules' : 'Stop schedules'}
+      title={openWithIntent === 'start' ? '启动定时任务' : '停止定时任务'}
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}

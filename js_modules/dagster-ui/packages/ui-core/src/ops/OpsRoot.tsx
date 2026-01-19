@@ -118,7 +118,7 @@ interface Props {
 
 export const OpsRoot = (props: Props) => {
   useTrackPageView();
-  useDocumentTitle('Ops');
+  useDocumentTitle('算子');
 
   const {name} = useParams<{name?: string}>();
   const {repoAddress} = props;

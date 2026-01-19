@@ -31,10 +31,10 @@ export const ScheduleAndSensorDialog = ({
 
   const dialogTitle =
     scheduleCount && sensorCount
-      ? 'Schedules and sensors'
+      ? '调度和传感器'
       : scheduleCount
-        ? 'Schedules'
-        : 'Sensors';
+        ? '调度'
+        : '传感器';
 
   return (
     <Dialog
@@ -50,15 +50,15 @@ export const ScheduleAndSensorDialog = ({
           <>
             {sensorCount ? (
               <Box padding={{vertical: 16, horizontal: 24}}>
-                <Subheading>Schedules ({scheduleCount})</Subheading>
+                <Subheading>调度 ({scheduleCount})</Subheading>
               </Box>
             ) : null}
             <Table>
               <thead>
                 <tr>
                   {showSwitch ? <th style={{width: '80px'}} /> : null}
-                  <th>Schedule name</th>
-                  <th>Schedule</th>
+                  <th>调度名称</th>
+                  <th>调度</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,14 +91,14 @@ export const ScheduleAndSensorDialog = ({
           <>
             {scheduleCount ? (
               <Box padding={{vertical: 16, horizontal: 24}}>
-                <Subheading>Sensors ({sensorCount})</Subheading>
+                <Subheading>传感器 ({sensorCount})</Subheading>
               </Box>
             ) : null}
             <Table>
               <thead>
                 <tr>
                   {showSwitch ? <th style={{width: '80px'}} /> : null}
-                  <th>Sensor name</th>
+                  <th>传感器名称</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,7 +123,7 @@ export const ScheduleAndSensorDialog = ({
       </Box>
       <DialogFooter>
         <Button intent="primary" onClick={onClose}>
-          OK
+          确定
         </Button>
       </DialogFooter>
     </Dialog>

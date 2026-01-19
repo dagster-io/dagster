@@ -56,9 +56,9 @@ export const AssetNodeLineage = ({
         <ButtonGroup<AssetLineageScope>
           activeItems={new Set([params.lineageScope || 'neighbors'])}
           buttons={[
-            {id: 'neighbors', label: 'Nearest Neighbors', icon: 'graph_neighbors'},
-            {id: 'upstream', label: 'Upstream', icon: 'graph_upstream'},
-            {id: 'downstream', label: 'Downstream', icon: 'graph_downstream'},
+            {id: 'neighbors', label: '相邻节点', icon: 'graph_neighbors'},
+            {id: 'upstream', label: '上游', icon: 'graph_upstream'},
+            {id: 'downstream', label: '下游', icon: 'graph_downstream'},
           ]}
           onClick={(lineageScope) => setParams({...params, lineageScope, lineageDepth: undefined})}
         />
@@ -80,13 +80,13 @@ export const AssetNodeLineage = ({
           />
         ) : (
           <Button icon={<Icon name="materialization" />} disabled>
-            Materialize all
+            物化全部
           </Button>
         )}
       </Box>
       {currentDepth < maxDepth && (
         <DepthHidesAssetsNotice>
-          Not all upstream/downstream assets shown. Increase the depth to show more.
+          未显示所有上游/下游资产。增加深度以显示更多。
         </DepthHidesAssetsNotice>
       )}
       <LineageGraph params={params} assetKey={assetKey} assetGraphData={assetGraphData} />

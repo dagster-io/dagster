@@ -52,7 +52,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     path: '/overview',
     element: (
       <TopNavLink to="/overview" data-cy="AppTopNav_StatusLink">
-        Overview
+        概览
       </TopNavLink>
     ),
   };
@@ -62,7 +62,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     path: '/runs',
     element: (
       <TopNavLink to="/runs" data-cy="AppTopNav_RunsLink">
-        Runs
+        运行记录
       </TopNavLink>
     ),
   };
@@ -72,7 +72,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     path: '/assets',
     element: (
       <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" isActive={assetsPathMatcher}>
-        Assets
+        资产
       </TopNavLink>
     ),
   };
@@ -86,7 +86,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
         data-cy="AppTopNav_AutomationLink"
         isActive={automationPathMatcher}
       >
-        Automation
+        自动化
       </TopNavLink>
     ),
   };
@@ -98,7 +98,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
           path: '/jobs',
           element: (
             <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink" isActive={jobsPathMatcher}>
-              Jobs
+              作业
             </TopNavLink>
           ),
         }
@@ -114,7 +114,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
         isActive={deploymentPathMatcher}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-          Deployment
+          部署
           <DeploymentStatusIcon />
         </Box>
       </TopNavLink>

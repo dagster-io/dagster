@@ -55,7 +55,7 @@ export const DefinitionSection = ({
 
   return (
     <Box flex={{direction: 'column', gap: 12}}>
-      <AttributeAndValue label="Group">
+      <AttributeAndValue label="分组">
         <Tag icon="asset_group">
           <Link
             to={globalAssetGraphPathForGroup(
@@ -68,7 +68,7 @@ export const DefinitionSection = ({
         </Tag>
       </AttributeAndValue>
 
-      <AttributeAndValue label="Code location">
+      <AttributeAndValue label="代码位置">
         <Box flex={{direction: 'column'}}>
           <AssetDefinedInMultipleReposNotice
             assetKey={cachedOrLiveAssetNode.assetKey}
@@ -79,17 +79,17 @@ export const DefinitionSection = ({
           <RepositoryLink repoAddress={repoAddress!} />
           {location && (
             <Caption color={Colors.textLighter()}>
-              Loaded <TimeFromNow unixTimestamp={location.updatedTimestamp} />
+              加载于 <TimeFromNow unixTimestamp={location.updatedTimestamp} />
             </Caption>
           )}
         </Box>
       </AttributeAndValue>
-      <AttributeAndValue label="Owners">
+      <AttributeAndValue label="负责人">
         {cachedOrLiveAssetNode.owners && cachedOrLiveAssetNode.owners.length > 0 && (
           <DefinitionOwners owners={cachedOrLiveAssetNode.owners} />
         )}
       </AttributeAndValue>
-      <AttributeAndValue label="Compute kind">
+      <AttributeAndValue label="计算类型">
         {cachedOrLiveAssetNode.computeKind && (
           <AssetKind
             style={{position: 'relative'}}
@@ -99,7 +99,7 @@ export const DefinitionSection = ({
           />
         )}
       </AttributeAndValue>
-      <AttributeAndValue label="Kinds">
+      <AttributeAndValue label="类型">
         {(cachedOrLiveAssetNode.kinds.length > 1 || !cachedOrLiveAssetNode.computeKind) &&
           cachedOrLiveAssetNode.kinds.map((kind) => (
             <AssetKind
@@ -111,7 +111,7 @@ export const DefinitionSection = ({
             />
           ))}
       </AttributeAndValue>
-      <AttributeAndValue label="Storage">
+      <AttributeAndValue label="存储">
         {(tableNameMetadata || uriMetadata || storageKindTag) && (
           <Box flex={{direction: 'column', gap: 4}} style={{minWidth: 0}}>
             {tableNameMetadata && (
@@ -149,7 +149,7 @@ export const DefinitionSection = ({
           </Box>
         )}
       </AttributeAndValue>
-      <AttributeAndValue label="Tags">
+      <AttributeAndValue label="标签">
         {filteredTags && filteredTags.length > 0 && (
           <Box flex={{direction: 'column', gap: 8}}>
             <Box>
@@ -161,7 +161,7 @@ export const DefinitionSection = ({
           </Box>
         )}
       </AttributeAndValue>
-      <AttributeAndValue label="Source code">
+      <AttributeAndValue label="源代码">
         {codeSource &&
           codeSource.codeReferences &&
           codeSource.codeReferences.map((ref) => (
@@ -180,7 +180,7 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
       <Caption>
         <ButtonLink onClick={() => setShown(true)}>
           <Box flex={{alignItems: 'center'}}>
-            <span>Show system tags ({tags.length || 0})</span>
+            <span>显示系统标签 ({tags.length || 0})</span>
             <Icon name="arrow_drop_down" style={{transform: 'rotate(0deg)'}} />
           </Box>
         </ButtonLink>
@@ -197,7 +197,7 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
         <Caption>
           <ButtonLink onClick={() => setShown(false)}>
             <Box flex={{alignItems: 'center'}}>
-              <span>Hide system tags</span>
+              <span>隐藏系统标签</span>
               <Icon name="arrow_drop_down" style={{transform: 'rotate(180deg)'}} />
             </Box>
           </ButtonLink>

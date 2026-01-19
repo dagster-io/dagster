@@ -5,8 +5,8 @@ export const ERROR_CODES_TO_SURFACE = new Set([
 export const errorCodeToMessage = (statusCode: number) => {
   switch (statusCode) {
     case 504:
-      return 'Request timed out. See console for details.';
+      return '请求超时，请查看控制台详情';
     default:
-      return 'A network error occurred. See console for details.';
+      return '发生网络错误，请查看控制台详情';
   }
 };

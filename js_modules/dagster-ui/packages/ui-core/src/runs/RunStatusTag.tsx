@@ -28,23 +28,23 @@ const statusToIntent = (status: RunStatus) => {
 const runStatusToString = (status: RunStatus) => {
   switch (status) {
     case RunStatus.QUEUED:
-      return 'Queued';
+      return '排队中';
     case RunStatus.SUCCESS:
-      return 'Success';
+      return '成功';
     case RunStatus.STARTING:
-      return 'Starting';
+      return '启动中';
     case RunStatus.NOT_STARTED:
-      return 'Not started';
+      return '未开始';
     case RunStatus.FAILURE:
-      return 'Failure';
+      return '失败';
     case RunStatus.STARTED:
-      return 'Started';
+      return '执行中';
     case RunStatus.MANAGED:
-      return 'Managed';
+      return '托管中';
     case RunStatus.CANCELING:
-      return 'Canceling';
+      return '取消中';
     case RunStatus.CANCELED:
-      return 'Canceled';
+      return '已取消';
     default:
       return assertUnreachable(status);
   }
@@ -53,21 +53,21 @@ const runStatusToString = (status: RunStatus) => {
 export const runStatusToBackfillStateString = (status: RunStatus) => {
   switch (status) {
     case RunStatus.CANCELED:
-      return 'Canceled';
+      return '已取消';
     case RunStatus.CANCELING:
-      return 'Canceling';
+      return '取消中';
     case RunStatus.FAILURE:
-      return 'Failed';
+      return '失败';
     case RunStatus.STARTING:
     case RunStatus.STARTED:
-      return 'In progress';
+      return '进行中';
     case RunStatus.QUEUED:
-      return 'Queued';
+      return '排队中';
     case RunStatus.SUCCESS:
-      return 'Completed';
+      return '已完成';
     case RunStatus.MANAGED:
     case RunStatus.NOT_STARTED:
-      return 'Missing';
+      return '缺失';
     default:
       return assertUnreachable(status);
   }

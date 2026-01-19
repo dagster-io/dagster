@@ -14,15 +14,15 @@ export const GanttChartModeControl = memo(
     onChange: (mode: GanttChartMode) => void;
   }) => {
     const buttons: ButtonGroupItem<GanttChartMode>[] = [
-      {id: GanttChartMode.FLAT, icon: 'gantt_flat', tooltip: 'Flat view'},
-      {id: GanttChartMode.WATERFALL, icon: 'gantt_waterfall', tooltip: 'Waterfall view'},
+      {id: GanttChartMode.FLAT, icon: 'gantt_flat', tooltip: '平铺视图'},
+      {id: GanttChartMode.WATERFALL, icon: 'gantt_waterfall', tooltip: '瀑布流视图'},
     ];
 
     if (!hideTimedMode) {
       buttons.push({
         id: GanttChartMode.WATERFALL_TIMED,
         icon: 'timer',
-        tooltip: 'Timed view',
+        tooltip: '计时视图',
       });
     }
 

@@ -1,13 +1,14 @@
+// eslint-disable-next-line no-restricted-imports
+import {ProgressBar} from '@blueprintjs/core';
 import {
-  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Group,
   Icon,
   Mono,
-  ProgressBar,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
 
@@ -139,43 +140,42 @@ export const DeletionDialog = (props: Props) => {
     switch (state.step) {
       case 'initial':
         return (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <div>{`${count} ${count === 1 ? 'run' : 'runs'} will be deleted.`}</div>
+          <Group direction="column" spacing={8}>
+            <div>{`将删除 ${count} 个运行。`}</div>
             <div>
-              Deleting runs will not prevent them from continuing to execute, and may result in
-              unexpected behavior.
+              删除运行不会阻止它们继续执行，可能导致意外行为。
             </div>
             {terminatableCount ? (
               <div>
                 {terminatableCount > 1 ? (
                   <>
-                    {`${terminatableCount} of these runs can be terminated. `}
+                    {`其中 ${terminatableCount} 个运行可以被终止。`}
                     <strong>
-                      Please consider terminating these runs instead of deleting them.
+                      请考虑终止这些运行而不是删除它们。
                     </strong>
                   </>
                 ) : (
                   <>
-                    {`1 run can be terminated instead. `}
-                    <strong>Please consider terminating this run instead of deleting it.</strong>
+                    {`有 1 个运行可以被终止。`}
+                    <strong>请考虑终止该运行而不是删除它。</strong>
                   </>
                 )}
               </div>
             ) : null}
-            <div>Do you wish to continue with deletion?</div>
-          </Box>
+            <div>是否继续删除？</div>
+          </Group>
         );
       case 'deleting':
       case 'completed':
         const value = count > 0 ? state.deletion.completed / count : 1;
         return (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <div>Deleting…</div>
-            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
+          <Group direction="column" spacing={8}>
+            <div>正在删除...</div>
+            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
             {state.step === 'deleting' ? (
-              <NavigationBlock message="Deletion in progress, please do not navigate away yet." />
+              <NavigationBlock message="删除进行中，请勿离开页面。" />
             ) : null}
-          </Box>
+          </Group>
         );
       default:
         return null;
@@ -188,16 +188,14 @@ export const DeletionDialog = (props: Props) => {
         return (
           <>
             <Button intent="none" onClick={onClose}>
-              Cancel
+              取消
             </Button>
             <Button intent="danger" onClick={mutate}>
-              {`Yes, delete ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
+              {`是，删除 ${count} 个运行`}
             </Button>
             {terminatableCount ? (
               <Button intent="primary" onClick={onTerminateInstead}>
-                {`Terminate ${`${terminatableCount} ${
-                  terminatableCount === 1 ? 'run' : 'runs'
-                }`} instead`}
+                {`改为终止 ${terminatableCount} 个运行`}
               </Button>
             ) : null}
           </>
@@ -205,13 +203,13 @@ export const DeletionDialog = (props: Props) => {
       case 'deleting':
         return (
           <Button intent="danger" disabled>
-            Deleting…
+            正在删除...
           </Button>
         );
       case 'completed':
         return (
           <Button intent="primary" onClick={onClose}>
-            Done
+            完成
           </Button>
         );
     }
@@ -223,7 +221,7 @@ export const DeletionDialog = (props: Props) => {
     }
 
     if (state.step === 'deleting') {
-      return <div>Please do not close the window or navigate away during deletion.</div>;
+      return <div>删除过程中请勿关闭窗口或离开页面。</div>;
     }
 
     const errors = state.deletion.errors;
@@ -231,34 +229,32 @@ export const DeletionDialog = (props: Props) => {
     const successCount = state.deletion.completed - errorCount;
 
     return (
-      <Box flex={{direction: 'column', gap: 8}}>
+      <Group direction="column" spacing={8}>
         {successCount ? (
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Group direction="row" spacing={8} alignItems="center">
             <Icon name="check_circle" color={Colors.accentGreen()} />
-            <div>{`Successfully deleted ${successCount} ${
-              successCount === 1 ? 'run' : 'runs'
-            }.`}</div>
-          </Box>
+            <div>{`已成功删除 ${successCount} 个运行。`}</div>
+          </Group>
         ) : null}
         {errorCount ? (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Group direction="column" spacing={8}>
+            <Group direction="row" spacing={8} alignItems="center">
               <Icon name="warning" color={Colors.accentYellow()} />
-              <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
-            </Box>
+              <div>{`无法删除 ${errorCount} 个运行。`}</div>
+            </Group>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Box flex={{direction: 'row', gap: 8}}>
+                  <Group direction="row" spacing={8}>
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
-                  </Box>
+                  </Group>
                 </li>
               ))}
             </ul>
-          </Box>
+          </Group>
         ) : null}
-      </Box>
+      </Group>
     );
   };
 
@@ -267,16 +263,16 @@ export const DeletionDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={isOpen}
-      title="Delete runs"
+      title="删除运行"
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}
     >
       <DialogBody>
-        <Box flex={{direction: 'column', gap: 24}}>
+        <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
-        </Box>
+        </Group>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

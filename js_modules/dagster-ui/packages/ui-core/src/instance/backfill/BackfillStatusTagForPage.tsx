@@ -19,36 +19,36 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
     }
 
     const onClick = () =>
-      error && showCustomAlert({title: 'Error', body: <PythonErrorInfo error={error} />});
+      error && showCustomAlert({title: '错误', body: <PythonErrorInfo error={error} />});
 
     return (
       <Box margin={{bottom: 12}} flex={{gap: 8}}>
         <TagButton onClick={onClick}>
           <Tag intent="danger">{status}</Tag>
         </TagButton>
-        <ButtonLink onClick={onClick}>View error</ButtonLink>
+        <ButtonLink onClick={onClick}>查看错误</ButtonLink>
       </Box>
     );
   }
 
   switch (status) {
     case BulkActionStatus.REQUESTED:
-      return <Tag>In progress</Tag>;
+      return <Tag>进行中</Tag>;
 
     case BulkActionStatus.CANCELING:
-      return errorState('Canceling');
+      return errorState('取消中');
     case BulkActionStatus.CANCELED:
-      return errorState('Canceled');
+      return errorState('已取消');
     case BulkActionStatus.FAILED:
-      return errorState('Failed');
+      return errorState('失败');
     case BulkActionStatus.FAILING:
-      return errorState('Failing');
+      return errorState('失败中');
     case BulkActionStatus.COMPLETED:
-      return <Tag intent="success">Completed</Tag>;
+      return <Tag intent="success">已完成</Tag>;
     case BulkActionStatus.COMPLETED_SUCCESS:
-      return <Tag intent="success">Succeeded</Tag>;
+      return <Tag intent="success">成功</Tag>;
     case BulkActionStatus.COMPLETED_FAILED:
-      return errorState('Failed');
+      return errorState('失败');
     default:
       return <Tag>{status}</Tag>;
   }

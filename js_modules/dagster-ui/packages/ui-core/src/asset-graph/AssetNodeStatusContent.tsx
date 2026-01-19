@@ -47,7 +47,7 @@ const LOADING_STATUS_CONTENT = {
   content: (
     <>
       <Spinner purpose="caption-text" />
-      <span style={{flex: 1, color: Colors.textLight()}}>Loading...</span>
+      <span style={{flex: 1, color: Colors.textLight()}}>加载中...</span>
     </>
   ),
 };
@@ -102,7 +102,7 @@ export function _buildSourceAssetNodeStatusContent({
         <>
           <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
           <span style={{flex: 1}} color={Colors.textLight()}>
-            Observing...
+            观察中...
           </span>
           {expanded && <SpacerDot />}
           <AssetRunLink assetKey={assetKey} runId={materializingRunId} />
@@ -145,11 +145,11 @@ export function _buildSourceAssetNodeStatusContent({
 
           {liveData.runWhichFailedToMaterialize ? (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.textRed()}}>Failed, Overdue</span>
+              <span style={{color: Colors.textRed()}}>失败, 逾期</span>
             </OverdueLineagePopover>
           ) : (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.textRed()}}>Overdue</span>
+              <span style={{color: Colors.textRed()}}>逾期</span>
             </OverdueLineagePopover>
           )}
 
@@ -179,7 +179,7 @@ export function _buildSourceAssetNodeStatusContent({
       content: (
         <>
           {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />}
-          <span>Observed</span>
+          <span>已观察</span>
           {expanded && <SpacerDot />}
           <span style={{textAlign: 'right', overflow: 'hidden'}}>
             <AssetRunLink
@@ -215,7 +215,7 @@ export function _buildSourceAssetNodeStatusContent({
               size={12}
             />
           )}
-          <span>Never observed</span>
+          <span>从未观察</span>
           {!expanded && <span>–</span>}
         </>
       ),
@@ -269,10 +269,10 @@ export function _buildAssetNodeStatusContent({
           </div>
           <span style={{flex: 1}} color={Colors.textLight()}>
             {numMaterializing === 1
-              ? `Materializing 1 partition...`
+              ? `物化 1 个分区中...`
               : numMaterializing
-                ? `Materializing ${numMaterializing} partitions...`
-                : `Materializing...`}
+                ? `物化 ${numMaterializing} 个分区中...`
+                : `物化中...`}
           </span>
           {expanded && <SpacerDot />}
           {!numMaterializing || numMaterializing === 1 ? (
@@ -318,7 +318,7 @@ export function _buildAssetNodeStatusContent({
         >
           {overdue ? (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              Overdue
+              逾期
             </OverdueLineagePopover>
           ) : (
             partitionCountString(numPartitions)
@@ -370,18 +370,18 @@ export function _buildAssetNodeStatusContent({
 
           {overdue && runWhichFailedToMaterialize ? (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.textRed()}}>Failed, Overdue</span>
+              <span style={{color: Colors.textRed()}}>失败, 逾期</span>
             </OverdueLineagePopover>
           ) : overdue ? (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.textRed()}}>Overdue</span>
+              <span style={{color: Colors.textRed()}}>逾期</span>
             </OverdueLineagePopover>
           ) : runWhichFailedToMaterialize ? (
-            <span style={{color: Colors.textRed()}}>Failed</span>
+            <span style={{color: Colors.textRed()}}>失败</span>
           ) : lastMaterialization ? (
-            <span style={{color: Colors.textRed()}}>Materialized</span>
+            <span style={{color: Colors.textRed()}}>已物化</span>
           ) : (
-            <span style={{color: Colors.textRed()}}>Never materialized</span>
+            <span style={{color: Colors.textRed()}}>从未物化</span>
           )}
 
           {expanded && <SpacerDot />}
@@ -427,7 +427,7 @@ export function _buildAssetNodeStatusContent({
               size={16}
             />
           )}
-          <span style={{color: Colors.textDefault()}}>Never materialized</span>
+          <span style={{color: Colors.textDefault()}}>从未物化</span>
         </>
       ),
     };
@@ -447,7 +447,7 @@ export function _buildAssetNodeStatusContent({
             size={16}
           />
         )}
-        <span style={{color: Colors.textGreen()}}>Materialized</span>
+        <span style={{color: Colors.textGreen()}}>已物化</span>
         {expanded && <SpacerDot />}
         {lastMaterializationLink}
       </>

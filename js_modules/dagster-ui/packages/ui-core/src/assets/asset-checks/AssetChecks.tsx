@@ -133,16 +133,15 @@ export const AssetChecks = ({
     return (
       <Box flex={{alignItems: 'center'}} padding={32}>
         <NonIdealState
-          title="No checks defined for this asset"
+          title="此资产未定义检查"
           icon="asset_check"
           description={
             <Box flex={{direction: 'column', gap: 8}}>
               <Body2>
-                Asset checks can verify properties of a data asset, e.g. that there are no null
-                values in a particular column.
+                资产检查可以验证数据资产的属性，例如验证某个列中没有空值。
               </Body2>
               <a href="https://docs.dagster.io/concepts/assets/asset-checks">
-                Learn more about asset checks
+                了解更多关于资产检查
               </a>
             </Box>
           }
@@ -165,7 +164,7 @@ export const AssetChecks = ({
             padding={{left: 24, vertical: 12, right: 12}}
           >
             <Subtitle1>
-              Checks {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
+              检查 {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
             </Subtitle1>
             <ExecuteChecksButton assetNode={assetNode} checks={checks} />
           </Box>
@@ -177,7 +176,7 @@ export const AssetChecks = ({
               icon="search"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Filter checks"
+              placeholder="筛选检查"
             />
             <FixedScrollContainer>
               <Container ref={containerRef}>
@@ -237,7 +236,7 @@ export const AssetChecks = ({
               <Icon name="asset_check" />
               <Subtitle1>{selectedCheck.name}</Subtitle1>
             </Box>
-            <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
+            <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="执行" />
           </Box>
           <Box padding={{horizontal: 24}} border="bottom">
             <AssetChecksTabs

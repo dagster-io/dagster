@@ -132,10 +132,10 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
   const checkboxState = React.useMemo(() => {
     const {hasStartPermission, hasStopPermission, status} = scheduleState;
     if (status === InstigationStatus.RUNNING && !hasStopPermission) {
-      return {disabled: true, message: 'You do not have permission to stop this schedule'};
+      return {disabled: true, message: '您没有权限停止此定时任务'};
     }
     if (status === InstigationStatus.STOPPED && !hasStartPermission) {
-      return {disabled: true, message: 'You do not have permission to start this schedule'};
+      return {disabled: true, message: '您没有权限启动此定时任务'};
     }
     return {disabled: false};
   }, [scheduleState]);
@@ -186,7 +186,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                       textOverflow: 'ellipsis',
                     }}
                   >
-                    Next tick:&nbsp;
+                    下次触发：
                     <TimestampDisplay
                       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       timestamp={scheduleData.scheduleState.nextTick.timestamp!}
@@ -251,7 +251,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               content={
                 <Menu>
                   <MenuLink
-                    text="View partition history"
+                    text="查看分区历史"
                     icon="dynamic_feed"
                     target="_blank"
                     to={workspacePathFromAddress(
@@ -260,7 +260,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                     )}
                   />
                   <MenuLink
-                    text="Launch partition backfill"
+                    text="启动分区回填"
                     icon="add_circle"
                     target="_blank"
                     to={workspacePathFromAddress(
@@ -295,13 +295,13 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
           <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
         </HeaderCell>
       ) : null}
-      <HeaderCell>Schedule name</HeaderCell>
-      <HeaderCell>Schedule</HeaderCell>
-      <HeaderCell>Target</HeaderCell>
-      <HeaderCell>Running</HeaderCell>
-      <HeaderCell>Last tick</HeaderCell>
-      <HeaderCell>Last run</HeaderCell>
-      <HeaderCell>Actions</HeaderCell>
+      <HeaderCell>定时任务名称</HeaderCell>
+      <HeaderCell>执行计划</HeaderCell>
+      <HeaderCell>目标</HeaderCell>
+      <HeaderCell>运行中</HeaderCell>
+      <HeaderCell>上次触发</HeaderCell>
+      <HeaderCell>上次运行</HeaderCell>
+      <HeaderCell>操作</HeaderCell>
     </HeaderRow>
   );
 };

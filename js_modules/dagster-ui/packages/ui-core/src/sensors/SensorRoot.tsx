@@ -31,7 +31,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
 
   const {sensorName} = useParams<{sensorName: string}>();
-  useDocumentTitle(`Sensor: ${sensorName}`);
+  useDocumentTitle(`监控器: ${sensorName}`);
 
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -87,8 +87,8 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     <ButtonGroup
       activeItems={new Set([selectedTab])}
       buttons={[
-        {id: 'evaluations', label: 'Evaluations'},
-        {id: 'runs', label: 'Runs'},
+        {id: 'evaluations', label: '评估记录'},
+        {id: 'runs', label: '运行记录'},
       ]}
       onClick={(id: 'evaluations' | 'runs') => {
         setSelectedTab(id);
@@ -103,7 +103,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 16}}
       >
         <Spinner purpose="body-text" />
-        <div style={{color: Colors.textLight()}}>Loading sensor…</div>
+        <div style={{color: Colors.textLight()}}>加载监控器中…</div>
       </Box>
     );
   }
@@ -113,7 +113,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       <Box padding={{vertical: 32}}>
         <NonIdealState
           icon="error"
-          title={`Could not find sensor \`${sensorName}\` in definitions for \`${repoAddress.name}\``}
+          title={`在 \`${repoAddress.name}\` 的定义中找不到监控器 \`${sensorName}\``}
         />
       </Box>
     );

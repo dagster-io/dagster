@@ -1,4 +1,4 @@
-import {Alert, Box, ButtonLink, Colors, Mono} from '@dagster-io/ui-components';
+import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
@@ -24,9 +24,9 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
   if (result?.__typename === 'PythonError' || result?.__typename === 'PartitionSetNotFoundError') {
     errors = <PythonErrorInfo error={result} />;
   } else if (result?.__typename === 'InvalidStepError') {
-    errors = <div>{`Invalid step: ${result.invalidStepKey}`}</div>;
+    errors = <div>{`无效的步骤: ${result.invalidStepKey}`}</div>;
   } else if (result?.__typename === 'InvalidOutputError') {
-    errors = <div>{`Invalid output: ${result.invalidOutputName} for ${result.stepKey}`}</div>;
+    errors = <div>{`无效的输出: ${result.invalidOutputName} (步骤 ${result.stepKey})`}</div>;
   } else if (result && 'errors' in result) {
     errors = (
       <>
@@ -38,8 +38,8 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
   }
 
   return (
-    <Box flex={{direction: 'column', gap: 4}}>
-      <div>An unexpected error occurred. This backfill was not launched.</div>
+    <Group direction="column" spacing={4}>
+      <div>发生意外错误。此回填未启动。</div>
       {errors ? (
         <ButtonLink
           color={Colors.accentPrimary()}
@@ -50,10 +50,10 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
             });
           }}
         >
-          View error
+          查看错误
         </ButtonLink>
       ) : null}
-    </Box>
+    </Group>
   );
 }
 
@@ -73,12 +73,12 @@ export async function showBackfillSuccessToast(backfillId: string) {
     intent: 'success',
     message: (
       <div>
-        Created backfill <Mono>{backfillId}</Mono>
+        已创建回填 <Mono>{backfillId}</Mono>
       </div>
     ),
     action: {
       type: 'custom',
-      element: <AnchorButton to={url}>View</AnchorButton>,
+      element: <AnchorButton to={url}>查看</AnchorButton>,
     },
   });
 }
@@ -122,18 +122,18 @@ export function useIsBackfillDaemonHealthy() {
 export const DaemonNotRunningAlert = () => (
   <Alert
     intent="warning"
-    title="The backfill daemon is not running."
+    title="回填守护进程未运行。"
     description={
       <div>
-        See the{' '}
+        请参阅{' '}
         <a
           href="https://docs.dagster.io/deployment/dagster-daemon"
           target="_blank"
           rel="noreferrer"
         >
-          dagster-daemon documentation
+          dagster-daemon 文档
         </a>{' '}
-        for more information on how to deploy the dagster-daemon process.
+        了解如何部署 dagster-daemon 进程。
       </div>
     }
   />
@@ -159,21 +159,20 @@ export const UsingDefaultLauncherAlert = ({
       intent="warning"
       title={
         <div>
-          Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> to launch
-          backfills without a queued run coordinator is not advised.
+          不建议使用默认运行启动器 <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> 在没有队列运行协调器的情况下启动回填。
         </div>
       }
       description={
         <div>
-          Check your instance configuration in <code>dagster.yaml</code> to configure the{' '}
+          请检查 <code>dagster.yaml</code> 中的实例配置，配置{' '}
           <a
             href="https://docs.dagster.io/deployment/run-coordinator"
             target="_blank"
             rel="noreferrer"
           >
-            queued run coordinator
+            队列运行协调器
           </a>{' '}
-          or a run launcher more appropriate for launching a large number of jobs.
+          或更适合启动大量作业的运行启动器。
         </div>
       }
     />

@@ -80,12 +80,12 @@ export const AutomationTargetList = ({
 
   return (
     <Tag>
-      <div style={{color: Colors.textLight()}}>None</div>
+      <div style={{color: Colors.textLight()}}>无</div>
     </Tag>
   );
 };
 
-const ALL_ASSETS_STRING = 'all materializable assets';
+const ALL_ASSETS_STRING = '所有可物化资产';
 
 const AssetSelectionTag = ({
   assetSelection,
@@ -149,7 +149,7 @@ const AssetSelectionTag = ({
     <>
       <Dialog
         isOpen={showDialog}
-        title="Targeted assets"
+        title="目标资产"
         onClose={() => setShowDialog(false)}
         style={{width: '750px', maxWidth: '80vw', minWidth: '500px'}}
         canOutsideClickClose
@@ -161,7 +161,7 @@ const AssetSelectionTag = ({
           border="bottom"
         >
           <Box flex={{direction: 'column', gap: 4}}>
-            <Subtitle2>Asset selection</Subtitle2>
+            <Subtitle2>资产选择</Subtitle2>
             <Mono>{assetSelectionString}</Mono>
           </Box>
         </Box>
@@ -171,13 +171,13 @@ const AssetSelectionTag = ({
             {splitConditioned ? (
               <Tab
                 id="assets"
-                title={`Assets with Automation Conditions (${assetsWithAMP.length})`}
+                title={`有自动化条件的资产 (${assetsWithAMP.length})`}
                 onClick={() => setSelectedTab('assets')}
               />
             ) : (
               <Tab
                 id="assets"
-                title={`Assets (${assets.length})`}
+                title={`资产 (${assets.length})`}
                 onClick={() => setSelectedTab('assets')}
               />
             )}
@@ -185,14 +185,14 @@ const AssetSelectionTag = ({
               <Tab
                 id="assets-without-conditions"
                 disabled={assetsWithoutAMP.length === 0}
-                title={`Other Assets (${assetsWithoutAMP.length})`}
+                title={`其他资产 (${assetsWithoutAMP.length})`}
                 onClick={() => setSelectedTab('assets-without-conditions')}
               />
             )}
             <Tab
               id="checks"
               disabled={checks.length === 0}
-              title={`Checks ${checks.length}`}
+              title={`检查 ${checks.length}`}
               onClick={() => setSelectedTab('checks')}
             />
           </Tabs>
@@ -225,7 +225,7 @@ const AssetSelectionTag = ({
               setShowDialog(false);
             }}
           >
-            Close
+            关闭
           </Button>
         </DialogFooter>
       </Dialog>
@@ -234,7 +234,7 @@ const AssetSelectionTag = ({
           onClick={() => {
             if (error) {
               showCustomAlert({
-                title: 'Python error',
+                title: 'Python 错误',
                 body: <PythonErrorInfo error={error} />,
               });
             } else {
@@ -244,9 +244,9 @@ const AssetSelectionTag = ({
           color={error ? Colors.textRed() : Colors.linkDefault()}
         >
           {error
-            ? 'Error loading asset selection'
+            ? '加载资产选择时出错'
             : isAllAssets
-              ? 'All materializable assets'
+              ? '所有可物化资产'
               : assetSelectionString}
         </ButtonLink>
       </Tag>

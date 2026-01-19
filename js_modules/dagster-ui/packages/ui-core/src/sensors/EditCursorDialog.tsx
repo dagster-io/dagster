@@ -1,11 +1,11 @@
 import {
-  Box,
   Button,
   ButtonLink,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Group,
   TextArea,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
@@ -45,32 +45,32 @@ export const EditCursorDialog = ({
       variables: {sensorSelector, cursor: cursorValue},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
-      await showSharedToaster({message: 'Cursor value updated', intent: 'success'});
+      await showSharedToaster({message: '游标值已更新', intent: 'success'});
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
       await showSharedToaster({
         intent: 'danger',
         message: (
-          <Box flex={{direction: 'row', gap: 8}}>
-            <div>Could not set cursor value.</div>
+          <Group direction="row" spacing={8}>
+            <div>无法设置游标值。</div>
             <ButtonLink
               color={Colors.accentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({
-                  title: 'Python Error',
+                  title: 'Python 错误',
                   body:
                     error.__typename === 'PythonError' ? (
                       <PythonErrorInfo error={error} />
                     ) : (
-                      'Sensor not found'
+                      '未找到监控器'
                     ),
                 });
               }}
             >
-              View error
+              查看错误
             </ButtonLink>
-          </Box>
+          </Group>
         ),
       });
     }
@@ -87,20 +87,20 @@ export const EditCursorDialog = ({
       style={{
         width: '500px',
       }}
-      title={`Edit ${sensorSelector.sensorName} cursor`}
+      title={`编辑 ${sensorSelector.sensorName} 游标`}
     >
       <DialogBody>
         <TextArea
           value={cursorValue}
-          resize="vertical"
+          $resize="vertical"
           onChange={(e) => setCursorValue(e.target.value)}
           style={{width: '100%'}}
         />
       </DialogBody>
       <DialogFooter>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>取消</Button>
         <Button intent="primary" onClick={onSave} disabled={isSaving}>
-          Set cursor value
+          设置游标值
         </Button>
       </DialogFooter>
     </Dialog>

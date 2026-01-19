@@ -16,13 +16,13 @@ export const AutomationTabs = (props: Props) => {
 
   return (
     <Tabs selectedTabId={tab}>
-      <TabLink id="schedules-and-sensors" title="Schedules and sensors" to="/automation" />
+      <TabLink id="schedules-and-sensors" title="定时任务和监控器" to="/automation" />
       {automaterializeSensorsFlagState === 'has-global-amp' ? (
         <TabLink
           id="global-amp"
           title={
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <div>Auto-materialize</div>
+              <div>自动物化</div>
               {automaterialize.loading ? (
                 <Spinner purpose="body-text" />
               ) : (

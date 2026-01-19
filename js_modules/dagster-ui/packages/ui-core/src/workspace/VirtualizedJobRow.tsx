@@ -128,10 +128,10 @@ export const VirtualizedJobRow = forwardRef(
 export const VirtualizedJobHeader = () => {
   return (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-      <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Schedules/sensors</HeaderCell>
-      <HeaderCell>Latest run</HeaderCell>
-      <HeaderCell>Run history</HeaderCell>
+      <HeaderCell>名称</HeaderCell>
+      <HeaderCell>定时任务/监控器</HeaderCell>
+      <HeaderCell>最新运行</HeaderCell>
+      <HeaderCell>运行历史</HeaderCell>
       <HeaderCell></HeaderCell>
     </HeaderRow>
   );

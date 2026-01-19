@@ -39,14 +39,14 @@ export const ScheduleDetails = (props: {
       <PageHeader
         title={
           <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
-            <Link to="/automation">Automation</Link>
+            <Link to="/automation">自动化</Link>
             <span>/</span>
             {name}
           </Subtitle1>
         }
         tags={
           <Tag icon="schedule">
-            Schedule in <RepositoryLink repoAddress={repoAddress} />
+            定时任务位于 <RepositoryLink repoAddress={repoAddress} />
           </Tag>
         }
         right={
@@ -64,20 +64,20 @@ export const ScheduleDetails = (props: {
         <tbody>
           {schedule.description ? (
             <tr>
-              <td>Description</td>
+              <td>描述</td>
               <td>{schedule.description}</td>
             </tr>
           ) : null}
           {schedule.owners.length > 0 && (
             <tr>
-              <td>Owners</td>
+              <td>负责人</td>
               <td>
                 <DefinitionOwners owners={schedule.owners} />
               </td>
             </tr>
           )}
           <tr>
-            <td>Latest tick</td>
+            <td>最近触发</td>
             <td>
               {latestTick ? (
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
@@ -89,13 +89,13 @@ export const ScheduleDetails = (props: {
                   <TickStatusTag tick={latestTick} tickResultType="runs" />
                 </Box>
               ) : (
-                'Schedule has never run'
+                '定时任务从未运行'
               )}
             </td>
           </tr>
           {futureTicks.results[0] && running && (
             <tr>
-              <td>Next tick</td>
+              <td>下次触发</td>
               <td>
                 <TimestampDisplay
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -108,7 +108,7 @@ export const ScheduleDetails = (props: {
           )}
           {schedule.pipelineName || assetSelection ? (
             <tr>
-              <td>Target</td>
+              <td>目标</td>
               <TargetCell>
                 <AutomationTargetList
                   targets={schedule.pipelineName ? [{pipelineName: schedule.pipelineName}] : null}
@@ -122,7 +122,7 @@ export const ScheduleDetails = (props: {
           <tr>
             <td>
               <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                Running
+                运行状态
               </Box>
             </td>
             <td>
@@ -138,17 +138,17 @@ export const ScheduleDetails = (props: {
             </td>
           </tr>
           <tr>
-            <td>Partition set</td>
+            <td>分区集</td>
             <td>
               {partitionSet ? (
                 <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
               ) : (
-                'None'
+                '无'
               )}
             </td>
           </tr>
           <tr>
-            <td>Schedule</td>
+            <td>调度计划</td>
             <td>
               {cronSchedule ? (
                 <Box flex={{direction: 'row', gap: 8}}>
@@ -166,7 +166,7 @@ export const ScheduleDetails = (props: {
           </tr>
           {executionTimezone ? (
             <tr>
-              <td>Execution timezone</td>
+              <td>执行时区</td>
               <td>{executionTimezone}</td>
             </tr>
           ) : null}

@@ -5,6 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import updateLocale from 'dayjs/plugin/updateLocale';
 import utc from 'dayjs/plugin/utc';
+import 'dayjs/locale/zh-cn';
 
 type ThresholdUnit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
 
@@ -30,21 +31,24 @@ dayjs.extend(relativeTime, {thresholds});
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-dayjs.updateLocale('en', {
+// 设置中文为默认 locale
+dayjs.locale('zh-cn');
+
+dayjs.updateLocale('zh-cn', {
   relativeTime: {
-    future: 'in %s',
-    past: '%s ago',
-    s: '%d seconds',
-    m: 'a minute',
-    mm: '%d minutes',
-    h: 'an hour',
-    hh: '%d hours',
-    d: 'a day',
-    dd: '%d days',
-    M: 'a month',
-    MM: '%d months',
-    y: 'a year',
-    yy: '%d years',
+    future: '%s后',
+    past: '%s前',
+    s: '%d秒',
+    m: '1分钟',
+    mm: '%d分钟',
+    h: '1小时',
+    hh: '%d小时',
+    d: '1天',
+    dd: '%d天',
+    M: '1个月',
+    MM: '%d个月',
+    y: '1年',
+    yy: '%d年',
   },
 });
 

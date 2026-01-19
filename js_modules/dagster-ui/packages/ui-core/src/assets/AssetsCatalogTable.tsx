@@ -119,8 +119,8 @@ export const AssetsCatalogTable = ({
           <ButtonGroup<AssetViewType>
             activeItems={new Set([view])}
             buttons={[
-              {id: 'flat', icon: 'view_list', tooltip: 'List view'},
-              {id: 'directory', icon: 'folder', tooltip: 'Folder view'},
+              {id: 'flat', icon: 'view_list', tooltip: '列表视图'},
+              {id: 'directory', icon: 'folder', tooltip: '文件夹视图'},
             ]}
             onClick={(view) => {
               setView(view);

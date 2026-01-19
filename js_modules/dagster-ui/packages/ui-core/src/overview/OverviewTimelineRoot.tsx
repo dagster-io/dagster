@@ -92,7 +92,7 @@ export function useTimelineRange({
 
 export const OverviewTimelineRoot = ({Header}: Props) => {
   useTrackPageView();
-  useDocumentTitle('Overview | Timeline');
+  useDocumentTitle('概览 | 时间线');
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
     useTimelineRange({});
 
@@ -178,16 +178,16 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
         <ButtonGroup<HourWindow>
           activeItems={new Set([hourWindow])}
           buttons={[
-            {id: '1', label: '1hr'},
-            {id: '6', label: '6hr'},
-            {id: '12', label: '12hr'},
-            {id: '24', label: '24hr'},
+            {id: '1', label: '1小时'},
+            {id: '6', label: '6小时'},
+            {id: '12', label: '12小时'},
+            {id: '24', label: '24小时'},
           ]}
           onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
         />
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Button onClick={onPageEarlier}>&larr;</Button>
-          <Button onClick={onPageNow}>Now</Button>
+          <Button onClick={onPageNow}>当前</Button>
           <Button onClick={onPageLater}>&rarr;</Button>
         </Box>
       </Box>

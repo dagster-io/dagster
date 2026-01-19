@@ -68,26 +68,26 @@ export const TagEditor = ({
       icon="info"
       onClose={onRequestClose}
       style={{minWidth: 700}}
-      title="Add tags to run"
+      title="为运行添加标签"
       isOpen={open}
     >
       <DialogBody>
         <EditableTagList
           editState={editState}
-          editableTagsHeading="Custom tags:"
+          editableTagsHeading="自定义标签:"
           setEditState={setEditState}
           tagsFromDefinition={tagsFromDefinition}
         />
       </DialogBody>
       <DialogFooter>
-        <Button onClick={onRequestClose}>Cancel</Button>
+        <Button onClick={onRequestClose}>取消</Button>
         <ShortcutHandler
           shortcutLabel="⌥Enter"
           shortcutFilter={(e) => e.code === 'Enter' && e.altKey}
           onShortcut={onSave}
         >
           <Button intent="primary" onClick={onSave} disabled={disabled}>
-            Apply
+            应用
           </Button>
         </ShortcutHandler>
       </DialogFooter>
@@ -150,7 +150,7 @@ export const EditableTagList = ({
       {tagsFromDefinition.length ? (
         <Box flex={{direction: 'column', gap: 8}}>
           <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
-            Tags from definition:
+            定义中的标签:
           </Box>
           <TagList>
             {tagsFromDefinition.map((tag, idx) => {
@@ -158,7 +158,7 @@ export const EditableTagList = ({
               const anyOverride = editState.some((editable) => editable.key === key);
               if (anyOverride) {
                 return (
-                  <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                  <Tooltip key={key} content="已被自定义标签值覆盖" placement="top">
                     <span style={{opacity: 0.2}}>
                       <RunTag tag={tag} key={idx} />
                     </span>
@@ -186,13 +186,13 @@ export const EditableTagList = ({
                 }}
               >
                 <TextInput
-                  placeholder="Tag Key"
+                  placeholder="标签键"
                   value={key}
                   readOnly={!!parent}
                   onChange={(e) => onTagEdit(e.target.value, value, idx)}
                 />
                 <TextInput
-                  placeholder="Tag Value"
+                  placeholder="标签值"
                   value={value}
                   onChange={(e) => onTagEdit(key, e.target.value, idx)}
                 />
@@ -202,7 +202,7 @@ export const EditableTagList = ({
                     onClick={() => onRemove(idx)}
                     icon={<Icon name="delete" />}
                   >
-                    Remove
+                    移除
                   </Button>
                 )}
               </div>
@@ -211,7 +211,7 @@ export const EditableTagList = ({
         </Box>
         <Box margin={{left: 2}} flex={{direction: 'row'}}>
           <Button onClick={addTagEntry} icon={<Icon name="add_circle" />}>
-            Add custom tag
+            添加自定义标签
           </Button>
         </Box>
       </Box>
@@ -233,7 +233,7 @@ export const TagContainer = ({
               const anyOverride = tagsFromSession.some((sessionTag) => sessionTag.key === key);
               if (anyOverride) {
                 return (
-                  <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                  <Tooltip key={key} content="已被自定义标签值覆盖" placement="top">
                     <span style={{opacity: 0.2}}>
                       <RunTag tag={tag} key={idx} actions={actions} />
                     </span>

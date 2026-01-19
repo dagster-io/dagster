@@ -4,6 +4,7 @@ import {
   ButtonLink,
   CaptionMono,
   Colors,
+  Group,
   Heading,
   Icon,
   MiddleTruncate,
@@ -91,7 +92,7 @@ export const ResourceRoot = (props: Props) => {
   const {repoAddress} = props;
   const {resourceName} = useParams<{resourceName: string}>();
 
-  useDocumentTitle(`Resource: ${resourceName}`);
+  useDocumentTitle(`资源: ${resourceName}`);
 
   const resourceSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -126,7 +127,7 @@ export const ResourceRoot = (props: Props) => {
         title={<Subtitle1>{displayName}</Subtitle1>}
         tags={
           <Tag icon="resource">
-            Resource in <RepositoryLink repoAddress={repoAddress} />
+            资源位于 <RepositoryLink repoAddress={repoAddress} />
           </Tag>
         }
         tabs={
@@ -145,23 +146,23 @@ export const ResourceRoot = (props: Props) => {
               <Alert
                 intent="warning"
                 title={
-                  <Box flex={{direction: 'row', gap: 4}}>
-                    <div>Could not load resource.</div>
+                  <Group direction="row" spacing={4}>
+                    <div>无法加载资源。</div>
                     {message && (
                       <ButtonLink
                         color={Colors.linkDefault()}
                         underline="always"
                         onClick={() => {
                           showCustomAlert({
-                            title: 'Python error',
+                            title: 'Python 错误',
                             body: message,
                           });
                         }}
                       >
-                        View error
+                        查看错误
                       </ButtonLink>
                     )}
-                  </Box>
+                  </Group>
                 }
               />
             );
@@ -208,7 +209,7 @@ export const ResourceRoot = (props: Props) => {
                       padding={{vertical: 8, horizontal: 24}}
                       style={{fontSize: '12px', fontWeight: 500}}
                     >
-                      Description
+                      描述
                     </Box>
                     <Box padding={{horizontal: 24, vertical: 16}}>
                       {topLevelResourceDetailsOrError.description ? (
@@ -216,7 +217,7 @@ export const ResourceRoot = (props: Props) => {
                           {removeLeadingTabs(topLevelResourceDetailsOrError.description)}
                         </Markdown>
                       ) : (
-                        'None'
+                        '无'
                       )}
                     </Box>
                   </Box>
@@ -246,13 +247,13 @@ const ResourceConfig = (props: {
       {nestedResources.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Resource dependencies</Subheading>
+            <Subheading>资源依赖</Subheading>
           </SectionHeader>
           <Table>
             <thead>
               <tr>
-                <th style={{width: 120}}>Key</th>
-                <th style={{width: 180}}>Resource</th>
+                <th style={{width: 120}}>键</th>
+                <th style={{width: 180}}>资源</th>
               </tr>
             </thead>
             <tbody>
@@ -284,14 +285,14 @@ const ResourceConfig = (props: {
       )}
       <Box>
         <SectionHeader>
-          <Subheading>Configuration</Subheading>
+          <Subheading>配置</Subheading>
         </SectionHeader>
         <Table>
           <thead>
             <tr>
-              <th style={{width: 120}}>Key</th>
-              <th style={{width: 90}}>Type</th>
-              <th style={{width: 90}}>Value</th>
+              <th style={{width: 120}}>键</th>
+              <th style={{width: 90}}>类型</th>
+              <th style={{width: 90}}>值</th>
             </tr>
           </thead>
           <tbody>
@@ -301,8 +302,8 @@ const ResourceConfig = (props: {
                   <Box padding={{vertical: 8}}>
                     <NonIdealState
                       icon="settings"
-                      title="No configuration"
-                      description="This resource has no configuration fields."
+                      title="无配置"
+                      description="此资源没有配置字段。"
                     />
                   </Box>
                 </td>
@@ -334,14 +335,14 @@ const ResourceConfig = (props: {
                     <td>
                       <Box flex={{direction: 'row', gap: 16}}>
                         <Tooltip
-                          content={<>Default: {defaultValue}</>}
+                          content={<>默认值: {defaultValue}</>}
                           canShow={!isDefault && !!defaultValue}
                         >
                           {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
                         </Tooltip>
-                        {isDefault && <Tag>Default</Tag>}
-                        {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
-                        {type === 'SECRET' && <Tag intent="warning">Secret</Tag>}
+                        {isDefault && <Tag>默认</Tag>}
+                        {type === 'ENV_VAR' && <Tag intent="success">环境变量</Tag>}
+                        {type === 'SECRET' && <Tag intent="warning">密钥</Tag>}
                       </Box>
                     </td>
                   </tr>
@@ -367,8 +368,8 @@ const ResourceUses = (props: {
       <Box padding={{vertical: 16}}>
         <NonIdealState
           icon="list"
-          title="No uses"
-          description="This resource is not used by any assets or resources."
+          title="无使用"
+          description="此资源未被任何资产或资源使用。"
         />
       </Box>
     );
@@ -380,12 +381,12 @@ const ResourceUses = (props: {
       {parentResources.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Parent resources</Subheading>
+            <Subheading>父资源</Subheading>
           </SectionHeader>
           <Table>
             <thead>
               <tr>
-                <th>Resource</th>
+                <th>资源</th>
               </tr>
             </thead>
             <tbody>
@@ -414,12 +415,12 @@ const ResourceUses = (props: {
       {resourceDetails.assetKeysUsing.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Assets</Subheading>
+            <Subheading>资产</Subheading>
           </SectionHeader>
           <Table>
             <thead>
               <tr>
-                <th>Asset key</th>
+                <th>资产键</th>
               </tr>
             </thead>
             <tbody>
@@ -439,13 +440,13 @@ const ResourceUses = (props: {
       {resourceDetails.jobsOpsUsing.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Jobs</Subheading>
+            <Subheading>作业</Subheading>
           </SectionHeader>
           <Table>
             <thead>
               <tr>
-                <th>Job name</th>
-                <th>Ops</th>
+                <th>作业名称</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -513,18 +514,20 @@ const ResourceUses = (props: {
       )}
       {[
         {
-          name: 'Schedules',
+          name: '定时任务',
+          linkName: 'schedules',
           objects: resourceDetails.schedulesUsing,
           icon: <Icon name="schedule" color={Colors.accentGray()} />,
         },
         {
-          name: 'Sensors',
+          name: '监控器',
+          linkName: 'sensors',
           objects: resourceDetails.sensorsUsing,
           icon: <Icon name="sensors" color={Colors.accentGray()} />,
         },
       ]
         .filter(({objects}) => objects.length > 0)
-        .map(({name, objects, icon}) => (
+        .map(({name, linkName, objects, icon}) => (
           <div key={name}>
             <SectionHeader>
               <Subheading>{name}</Subheading>
@@ -532,7 +535,7 @@ const ResourceUses = (props: {
             <Table>
               <thead>
                 <tr>
-                  <th>Name</th>
+                  <th>名称</th>
                 </tr>
               </thead>
               <tbody>
@@ -554,7 +557,7 @@ const ResourceUses = (props: {
                           <Link
                             to={workspacePathFromAddress(
                               repoAddress,
-                              `/${name.toLowerCase()}/${itemName}`,
+                              `/${linkName}/${itemName}`,
                             )}
                           >
                             <MiddleTruncate text={itemName} />
@@ -596,7 +599,6 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
 
 const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
-    id
     name
     description
     configFields {
@@ -615,7 +617,6 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
       name
       type
       resource {
-        id
         name
         resourceType
         description
@@ -624,7 +625,6 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     parentResources {
       name
       resource {
-        id
         name
         resourceType
         description

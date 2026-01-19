@@ -15,8 +15,8 @@ export type ErrorCollectionContextValue = {
 export const ErrorCollectionContext = React.createContext<ErrorCollectionContextValue>({
   errorStackIncluded: true,
   errorCollectionMessage:
-    `Please report this error to the Dagster team via GitHub or Slack. ` +
-    `Refresh the page to try again.`,
+    `请通过 GitHub 或 Slack 向 Dagster 团队报告此错误。` +
+    `刷新页面重试。`,
   onReportError: (error, context) => {
     console.error(error, context);
   },
@@ -71,7 +71,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           flex={{direction: 'column', gap: 8}}
           padding={16}
         >
-          <Subheading>Sorry, {this.props.region} can&apos;t be displayed.</Subheading>
+          <Subheading>抱歉，{this.props.region} 无法显示。</Subheading>
           <Body color={Colors.textLight()}>{errorCollectionMessage}</Body>
           {errorStackIncluded && <Trace>{`${error.message}\n\n${error.stack}`}</Trace>}
         </Box>

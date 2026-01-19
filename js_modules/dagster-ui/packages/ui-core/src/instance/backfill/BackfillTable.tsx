@@ -29,12 +29,12 @@ export const BackfillTable = ({
       <Table>
         <thead>
           <tr>
-            <th>Backfill ID</th>
-            <th>Created</th>
-            {showBackfillTarget ? <th>Backfill target</th> : null}
-            <th>Requested</th>
-            <th>Launched by</th>
-            <th>Backfill status</th>
+            <th>回填 ID</th>
+            <th>创建时间</th>
+            {showBackfillTarget ? <th>回填目标</th> : null}
+            <th>请求数</th>
+            <th>发起人</th>
+            <th>回填状态</th>
             <th style={{width: 80}} />
           </tr>
         </thead>

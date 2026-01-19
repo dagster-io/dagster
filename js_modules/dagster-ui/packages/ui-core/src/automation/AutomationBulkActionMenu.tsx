@@ -25,7 +25,7 @@ export const AutomationBulkActionMenu = (props: Props) => {
         content={
           <Menu>
             <MenuItem
-              text={`Start ${count === 1 ? '1 automation' : `${count} automations`}`}
+              text={`启动 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}`}
               disabled={!anyOff}
               aria-disabled={!anyOff}
               icon="toggle_on"
@@ -34,7 +34,7 @@ export const AutomationBulkActionMenu = (props: Props) => {
               }}
             />
             <MenuItem
-              text={`Stop ${count === 1 ? '1 automation' : `${count} automations`}`}
+              text={`停止 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}`}
               disabled={!anyOn}
               aria-disabled={!anyOn}
               icon="toggle_off"
@@ -47,7 +47,7 @@ export const AutomationBulkActionMenu = (props: Props) => {
         placement="bottom-end"
       >
         <Button disabled={!count} intent="primary" rightIcon={<Icon name="expand_more" />}>
-          Actions
+          操作
         </Button>
       </Popover>
       <AutomationStateChangeDialog

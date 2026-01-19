@@ -187,7 +187,7 @@ const Criteria = React.memo(
 
     const derivedExplanation = useMemo(() => {
       if (type === 'no-definition') {
-        return <Body>It may have been deleted or be a stub imported through an integration.</Body>;
+        return <Body>它可能已被删除或是通过集成导入的存根。</Body>;
       }
 
       switch (metadata?.__typename) {
@@ -206,7 +206,7 @@ const Criteria = React.memo(
               </Body>
             );
           }
-          return 'No checks executed';
+          return '无检查已执行';
         case 'AssetHealthCheckDegradedMeta':
           if (metadata.numWarningChecks > 0 && metadata.numFailedChecks > 0) {
             return (
@@ -216,11 +216,9 @@ const Criteria = React.memo(
                   onClick={onClick('checks-degraded-all')}
                 >
                   {numberFormatter.format(metadata.numWarningChecks)}/
-                  {numberFormatter.format(metadata.totalNumChecks)} check
-                  {ifPlural(metadata.totalNumChecks, '', 's')} warning,{' '}
+                  {numberFormatter.format(metadata.totalNumChecks)} 个检查警告，{' '}
                   {numberFormatter.format(metadata.numFailedChecks)}/
-                  {numberFormatter.format(metadata.totalNumChecks)} check
-                  {ifPlural(metadata.totalNumChecks, '', 's')} failed
+                  {numberFormatter.format(metadata.totalNumChecks)} 个检查失败
                 </Link>
               </Body>
             );
@@ -233,8 +231,7 @@ const Criteria = React.memo(
                   onClick={onClick('checks-degraded-warning')}
                 >
                   {numberFormatter.format(metadata.numWarningChecks)}/
-                  {numberFormatter.format(metadata.totalNumChecks)} check
-                  {ifPlural(metadata.totalNumChecks, '', 's')} warning
+                  {numberFormatter.format(metadata.totalNumChecks)} 个检查警告
                 </Link>
               </Body>
             );
@@ -246,8 +243,7 @@ const Criteria = React.memo(
                 onClick={onClick('checks-degraded-failed')}
               >
                 {numberFormatter.format(metadata.numFailedChecks)}/
-                {numberFormatter.format(metadata.totalNumChecks)} check
-                {ifPlural(metadata.totalNumChecks, '', 's')} failed
+                {numberFormatter.format(metadata.totalNumChecks)} 个检查失败
               </Link>
             </Body>
           );
@@ -259,8 +255,7 @@ const Criteria = React.memo(
                 onClick={onClick('checks-warning')}
               >
                 {numberFormatter.format(metadata.numWarningChecks)}/
-                {numberFormatter.format(metadata.totalNumChecks)} check
-                {ifPlural(metadata.totalNumChecks, '', 's')} warning
+                {numberFormatter.format(metadata.totalNumChecks)} 个检查警告
               </Link>
             </Body>
           );
@@ -271,7 +266,7 @@ const Criteria = React.memo(
                 to={`/runs/${metadata.failedRunId}`}
                 onClick={onClick('materialization-degraded-not-partitioned')}
               >
-                Materialization failed in run {metadata.failedRunId.split('-').shift()}
+                物化在运行 {metadata.failedRunId.split('-').shift()} 中失败
               </Link>
             </Body>
           ) : null;
@@ -283,9 +278,8 @@ const Criteria = React.memo(
                 to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}
                 onClick={onClick('degraded-partitioned')}
               >
-                Materialization failed in {numberFormatter.format(metadata.numFailedPartitions)} out
-                of {numberFormatter.format(metadata.totalNumPartitions)} partition
-                {ifPlural(metadata.totalNumPartitions, '', 's')}
+                物化在 {numberFormatter.format(metadata.totalNumPartitions)} 个分区中的{' '}
+                {numberFormatter.format(metadata.numFailedPartitions)} 个失败
               </Link>
             </Body>
           );
@@ -296,20 +290,19 @@ const Criteria = React.memo(
                 to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'MISSING'})}
                 onClick={onClick('healthy-missing-partitioned')}
               >
-                Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
-                out of {numberFormatter.format(metadata.totalNumPartitions)} partition
-                {ifPlural(metadata.totalNumPartitions, '', 's')}
+                物化在 {numberFormatter.format(metadata.totalNumPartitions)} 个分区中的{' '}
+                {numberFormatter.format(metadata.numMissingPartitions)} 个缺失
               </Link>
             </Body>
           );
         case 'AssetHealthFreshnessMeta':
           if (metadata.lastMaterializedTimestamp === null) {
-            return <Body>No materializations</Body>;
+            return <Body>无物化记录</Body>;
           }
 
           return (
             <Body>
-              Last successfully materialized{' '}
+              上次成功物化于{' '}
               <TimeFromNow unixTimestamp={Number(metadata.lastMaterializedTimestamp)} />
             </Body>
           );
@@ -325,65 +318,65 @@ const Criteria = React.memo(
         case 'materialization':
           switch (status) {
             case AssetHealthStatus.DEGRADED:
-              return {text: 'Execution failed', shouldDim: false};
+              return {text: '执行失败', shouldDim: false};
             case AssetHealthStatus.HEALTHY:
-              return {text: 'Successfully executed', shouldDim: false};
+              return {text: '执行成功', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return {text: 'Execution warning', shouldDim: false};
+              return {text: '执行警告', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return {text: 'No executions', shouldDim: true};
+              return {text: '无执行记录', shouldDim: true};
             case AssetHealthStatus.UNKNOWN:
-              return {text: 'Execution status unknown', shouldDim: true};
+              return {text: '执行状态未知', shouldDim: true};
             default:
               assertUnreachable(status);
           }
         case 'freshness':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return {text: 'Freshness policy passing', shouldDim: false};
+              return {text: '新鲜度策略通过', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
-              return {text: 'Freshness policy failed', shouldDim: false};
+              return {text: '新鲜度策略失败', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return {text: 'Freshness policy warning', shouldDim: false};
+              return {text: '新鲜度策略警告', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return {text: 'No freshness policy defined', shouldDim: true};
+              return {text: '未定义新鲜度策略', shouldDim: true};
             case AssetHealthStatus.UNKNOWN:
-              return {text: 'Freshness policy not evaluated', shouldDim: false};
+              return {text: '新鲜度策略未评估', shouldDim: false};
             default:
               assertUnreachable(status);
           }
         case 'checks':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return {text: 'All checks passed', shouldDim: false};
+              return {text: '所有检查通过', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
               if (metadata && 'numFailedChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numFailedChecks === metadata.totalNumChecks) {
-                  return {text: 'All checks failed', shouldDim: false};
+                  return {text: '所有检查失败', shouldDim: false};
                 }
-                return {text: 'Some checks failed', shouldDim: false};
+                return {text: '部分检查失败', shouldDim: false};
               }
-              return {text: 'Checks failed', shouldDim: false};
+              return {text: '检查失败', shouldDim: false};
             case AssetHealthStatus.WARNING:
               if (metadata && 'numWarningChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numWarningChecks === metadata.totalNumChecks) {
-                  return {text: 'All checks failed', shouldDim: false};
+                  return {text: '所有检查失败', shouldDim: false};
                 }
               }
-              return {text: 'Some checks failed', shouldDim: false};
+              return {text: '部分检查失败', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return {text: 'No checks defined', shouldDim: true};
+              return {text: '未定义检查', shouldDim: true};
             case AssetHealthStatus.UNKNOWN:
-              return {text: 'No checks evaluated', shouldDim: false};
+              return {text: '未评估检查', shouldDim: false};
             default:
               assertUnreachable(status);
           }
         case 'no-definition':
           return {
-            text: `Missing software definition`,
+            text: `缺少软件定义`,
             shouldDim: false,
           };
       }

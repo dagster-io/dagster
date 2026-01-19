@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import {ProgressBar} from '@blueprintjs/core';
 import {
   Body1,
   Box,
@@ -5,7 +7,7 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  ProgressBar,
+  Group,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
@@ -29,7 +31,7 @@ export const AssetWipeDialog = memo(
     return (
       <Dialog
         isOpen={props.isOpen}
-        title="Wipe materializations"
+        title="清除物化数据"
         onClose={props.onClose}
         style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
       >
@@ -61,33 +63,31 @@ export const AssetWipeDialogInner = memo(
       if (isDone) {
         return (
           <Box flex={{direction: 'column'}}>
-            {wipedCount ? <Body1>{numberFormatter.format(wipedCount)} Wiped</Body1> : null}
-            {failedCount ? <Body1>{numberFormatter.format(failedCount)} Failed</Body1> : null}
+            {wipedCount ? <Body1>{numberFormatter.format(wipedCount)} 已清除</Body1> : null}
+            {failedCount ? <Body1>{numberFormatter.format(failedCount)} 失败</Body1> : null}
           </Box>
         );
       } else if (!isWiping) {
         return (
-          <Box flex={{direction: 'column', gap: 16}}>
+          <Group direction="column" spacing={16}>
             <div>
-              Are you sure you want to wipe materializations for{' '}
-              {numberFormatter.format(assetKeys.length)}{' '}
-              {ifPlural(assetKeys.length, 'asset', 'assets')}?
+              确定要清除 {numberFormatter.format(assetKeys.length)} 个资产的物化数据吗？
             </div>
             <VirtualizedSimpleAssetKeyList assetKeys={assetKeys} style={{maxHeight: '50vh'}} />
             <div>
-              Assets defined only by their historical materializations will disappear from the Asset
-              Catalog. Software-defined assets will remain unless their definition is also deleted.
+              仅由历史物化数据定义的资产将从资产目录中消失。
+              软件定义的资产将保留，除非其定义也被删除。
             </div>
-            <strong>This action cannot be undone.</strong>
-          </Box>
+            <strong>此操作无法撤销。</strong>
+          </Group>
         );
       }
       const value = assetKeys.length > 0 ? (wipedCount + failedCount) / assetKeys.length : 1;
       return (
         <Box flex={{gap: 8, direction: 'column'}}>
-          <div>Wiping...</div>
-          <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
-          <NavigationBlock message="Wiping in progress, please do not navigate away yet." />
+          <div>正在清除...</div>
+          <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+          <NavigationBlock message="清除操作进行中，请勿离开此页面。" />
         </Box>
       );
     }, [isDone, isWiping, assetKeys, wipedCount, failedCount]);
@@ -97,7 +97,7 @@ export const AssetWipeDialogInner = memo(
         <DialogBody>{content}</DialogBody>
         <DialogFooter topBorder>
           <Button intent={isDone ? 'primary' : 'none'} onClick={onClose}>
-            {isDone ? 'Done' : 'Cancel'}
+            {isDone ? '完成' : '取消'}
           </Button>
           {isDone ? null : (
             <Button
@@ -106,7 +106,7 @@ export const AssetWipeDialogInner = memo(
               disabled={isWiping}
               loading={isWiping}
             >
-              Wipe
+              清除
             </Button>
           )}
         </DialogFooter>

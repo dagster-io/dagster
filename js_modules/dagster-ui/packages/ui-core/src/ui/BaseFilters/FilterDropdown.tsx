@@ -227,12 +227,12 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search filters..."
+          placeholder="搜索筛选器..."
           ref={(el) => {
             inputRef.current = el;
             el?.focus();
           }}
-          aria-label="Search filters"
+          aria-label="搜索筛选器"
           aria-activedescendant={
             focusedItemIndex !== -1 ? itemId(menuKey, focusedItemIndex) : undefined
           }
@@ -274,7 +274,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             </Container>
           ) : (
             <Box padding={{vertical: 12, horizontal: 12}} style={{color: Colors.textLight()}}>
-              {selectedFilter?.getNoResultsPlaceholder?.(search) || 'No results'}
+              {selectedFilter?.getNoResultsPlaceholder?.(search) || '无结果'}
             </Box>
           )}
         </DropdownMenuContainer>
@@ -370,7 +370,7 @@ export const FilterDropdownButton = React.memo(({filters, label}: FilterDropdown
                 setIsOpen((isOpen) => !isOpen);
               }}
             >
-              {label ?? 'Filter'}
+              {label ?? '筛选'}
             </Button>
           </Popover>
         </div>

@@ -42,7 +42,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
       items: [
         {
           key: 'overview',
-          label: 'Overview',
+          label: '概览',
           shortcut: {
             filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyO',
             label: '⌥O',
@@ -51,7 +51,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           element: (
             <NavItemWithLink
               icon={<Icon name="timeline" />}
-              label="Overview"
+              label="概览"
               href="/overview"
               isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/overview')}
             />
@@ -59,7 +59,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
         },
         {
           key: 'runs',
-          label: 'Runs',
+          label: '运行记录',
           shortcut: {
             filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyR',
             label: '⌥R',
@@ -68,7 +68,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           element: (
             <NavItemWithLink
               icon={<Icon name="runs" />}
-              label="Runs"
+              label="运行记录"
               href="/runs"
               isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/runs')}
             />
@@ -81,7 +81,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
       items: [
         {
           key: 'catalog',
-          label: 'Catalog',
+          label: '资产目录',
           shortcut: {
             filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyC',
             label: '⌥C',
@@ -90,7 +90,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           element: (
             <NavItemWithLink
               icon={<Icon name="catalog_book" />}
-              label="Catalog"
+              label="资产目录"
               href="/assets"
               isActive={assetsPathMatcher}
             />
@@ -99,7 +99,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
         jobState === 'has-jobs'
           ? {
               key: 'jobs',
-              label: 'Jobs',
+              label: '作业',
               shortcut: {
                 filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyJ',
                 label: '⌥J',
@@ -108,7 +108,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               element: (
                 <NavItemWithLink
                   icon={<Icon name="column_lineage" />}
-                  label="Jobs"
+                  label="作业"
                   href="/jobs"
                   isActive={jobsPathMatcher}
                 />
@@ -117,7 +117,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           : null,
         {
           key: 'automation',
-          label: 'Automation',
+          label: '自动化',
           shortcut: {
             filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyA',
             label: '⌥A',
@@ -126,7 +126,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           element: (
             <NavItemWithLink
               icon={<Icon name="schedule" />}
-              label="Automation"
+              label="自动化"
               href="/automation"
               isActive={(params, currentLocation) => {
                 return (
@@ -146,7 +146,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
       items: [
         {
           key: 'lineage',
-          label: 'Lineage',
+          label: '数据血缘',
           shortcut: {
             filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyL',
             label: '⌥L',
@@ -155,7 +155,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           element: (
             <NavItemWithLink
               icon={<Icon name="lineage" />}
-              label="Lineage"
+              label="数据血缘"
               href="/asset-groups"
               isActive={lineagePathMatcher}
             />
@@ -163,7 +163,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
         },
         {
           key: 'deployment',
-          label: 'Deployment',
+          label: '部署',
           shortcut: {
             filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyD',
             label: '⌥D',
@@ -171,8 +171,8 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           },
           element: (
             <NavItemWithLink
-              icon={<Icon name="deployment" />}
-              label="Deployment"
+              icon={<Icon name="settings" />}
+              label="部署"
               href="/deployment"
               isActive={deploymentPathMatcher}
             />
@@ -195,12 +195,12 @@ const SupportItem = () => {
       placement={isCollapsed ? 'right-end' : 'top'}
       matchTargetWidth={!isCollapsed}
     >
-      <Tooltip content="Support" placement="right" canShow={isCollapsed}>
+      <Tooltip content="帮助" placement="right" canShow={isCollapsed}>
         <UnstyledButton
           onClick={() => setIsOpen((current) => !current)}
           className={styles.itemButton}
         >
-          <NavItemContent icon={<Icon name="support" />} label="Support" collapsed={isCollapsed} />
+          <NavItemContent icon={<Icon name="support" />} label="帮助" collapsed={isCollapsed} />
         </UnstyledButton>
       </Tooltip>
     </Popover>
@@ -216,11 +216,11 @@ const CollapseItem = () => {
       shortcutLabel="⌥B"
       onShortcut={toggleCollapsed}
     >
-      <Tooltip content="Show navigation" placement="right" canShow={isCollapsed}>
+      <Tooltip content="显示导航" placement="right" canShow={isCollapsed}>
         <UnstyledButton className={styles.itemButton} onClick={() => toggleCollapsed()}>
           <NavItemContent
             icon={<Icon name={isCollapsed ? 'panel_show_left' : 'panel_show_right'} />}
-            label="Hide navigation"
+            label="隐藏导航"
             collapsed={isCollapsed}
           />
         </UnstyledButton>
@@ -242,9 +242,9 @@ const SearchItem = () => {
         shortcutLabel="/ or ⌘K"
         onShortcut={() => openSearch()}
       >
-        <Tooltip content="Search" placement="right" canShow={isCollapsed}>
+        <Tooltip content="搜索" placement="right" canShow={isCollapsed}>
           <UnstyledButton onClick={() => openSearch()} className={styles.itemButton}>
-            <NavItemContent icon={<Icon name="search" />} label="Search" collapsed={isCollapsed} />
+            <NavItemContent icon={<Icon name="search" />} label="搜索" collapsed={isCollapsed} />
           </UnstyledButton>
         </Tooltip>
       </ShortcutHandler>
@@ -265,11 +265,11 @@ const SettingsItem = () => {
         shortcutLabel="⌥U"
         onShortcut={() => setIsOpen(true)}
       >
-        <Tooltip content="Settings" placement="right" canShow={isCollapsed}>
+        <Tooltip content="设置" placement="right" canShow={isCollapsed}>
           <UnstyledButton onClick={() => setIsOpen(true)} className={styles.itemButton}>
             <NavItemContent
               icon={<Icon name="settings" />}
-              label="Settings"
+              label="设置"
               collapsed={isCollapsed}
             />
           </UnstyledButton>
@@ -284,14 +284,14 @@ const SettingsItem = () => {
   );
 };
 
-export const getBottomGroups = (_config: NavigationGroupConfig): NavigationGroup[] => {
+export const getBottomGroups = ({featureFlags}: NavigationGroupConfig): NavigationGroup[] => {
   const searchGroup = [
     {
       key: 'search',
       items: [
         {
           key: 'search',
-          label: 'Search',
+          label: '搜索',
           element: <SearchItem />,
         },
       ],
@@ -303,21 +303,36 @@ export const getBottomGroups = (_config: NavigationGroupConfig): NavigationGroup
     items: [
       {
         key: 'collapse',
-        label: 'Collapse',
+        label: '折叠',
         element: <CollapseItem />,
       },
       {
         key: 'settings',
-        label: 'Settings',
+        label: '设置',
         element: <SettingsItem />,
       },
       {
         key: 'support',
-        label: 'Support',
+        label: '帮助',
         element: <SupportItem />,
       },
     ],
   };
+
+  if (featureFlags.flagMarketplace) {
+    adminGroup.items.unshift({
+      key: 'marketplace',
+      label: '集成',
+      element: (
+        <NavItemWithLink
+          icon={<Icon name="compute_kind" />}
+          label="集成"
+          href="/integrations"
+          isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/integrations')}
+        />
+      ),
+    });
+  }
 
   return [...searchGroup, adminGroup];
 };

@@ -33,9 +33,9 @@ export const AssetCatalogTableSidebar = ({
     );
     const root: HierarchyNode = {
       type: 'folder',
-      name: `Catalog${assetSelectionWithoutKeyClause ? ` (${assetSelectionWithoutKeyClause})` : ''}`,
+      name: `资产目录${assetSelectionWithoutKeyClause ? ` (${assetSelectionWithoutKeyClause})` : ''}`,
       children: hierarchy,
-      path: 'Catalog',
+      path: '资产目录',
       icon: 'catalog_book',
     };
     return [root];
@@ -47,7 +47,7 @@ export const AssetCatalogTableSidebar = ({
       loading={loading}
       hierarchyData={hierarchyData}
       selectedPaths={
-        !currentKeyPrefix?.key ? ['Catalog'] : currentKeyPrefix?.key ? [currentKeyPrefix.key] : []
+        !currentKeyPrefix?.key ? ['资产目录'] : currentKeyPrefix?.key ? [currentKeyPrefix.key] : []
       }
       onSelectPath={(e, path) => {
         onChangeSelection(selectionReplacingKeyPrefix(selection, path));

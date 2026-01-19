@@ -138,7 +138,7 @@ export const AssetNodeOverview = ({
       <Box style={{display: `grid`, gridTemplateColumns: `repeat(${sections}, minmax(0, 1fr))`}}>
         <Box flex={{direction: 'column', gap: 6}}>
           <Subtitle2>
-            Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
+            最新{assetNode?.isObservable ? '观测' : '物化'}
           </Subtitle2>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
@@ -158,7 +158,7 @@ export const AssetNodeOverview = ({
         </Box>
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Check results</Subtitle2>
+            <Subtitle2>检查结果</Subtitle2>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
@@ -174,7 +174,7 @@ export const AssetNodeOverview = ({
         ) : undefined}
         {rowCountMeta?.intValue ? (
           <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Row count</Subtitle2>
+            <Subtitle2>行数</Subtitle2>
             <Box>
               <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
             </Box>
@@ -191,22 +191,22 @@ export const AssetNodeOverview = ({
     <AssetNodeOverviewContainer
       left={
         <>
-          <LargeCollapsibleSection header="Status" icon="status">
+          <LargeCollapsibleSection header="状态" icon="status">
             {renderStatusSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Description" icon="sticky_note">
+          <LargeCollapsibleSection header="描述" icon="sticky_note">
             {cachedOrLiveAssetNode.description ? (
               <Description description={cachedOrLiveAssetNode.description} maxHeight={260} />
             ) : (
               <SectionEmptyState
-                title="No description found"
-                description="You can add a description to any asset by adding a `description` argument to it."
+                title="未找到描述"
+                description="您可以通过添加 `description` 参数来为资产添加描述。"
                 learnMoreLink="https://docs.dagster.io/_apidocs/assets#software-defined-assets"
               />
             )}
           </LargeCollapsibleSection>
           {tableSchema && (
-            <LargeCollapsibleSection header="Columns" icon="view_column">
+            <LargeCollapsibleSection header="列" icon="view_column">
               <TableSchemaAssetContext.Provider
                 value={{
                   assetKey: cachedOrLiveAssetNode.assetKey,
@@ -221,7 +221,7 @@ export const AssetNodeOverview = ({
               </TableSchemaAssetContext.Provider>
             </LargeCollapsibleSection>
           )}
-          <LargeCollapsibleSection header="Metadata" icon="view_list">
+          <LargeCollapsibleSection header="元数据" icon="view_list">
             <AssetEventMetadataEntriesTable
               assetKey={cachedOrLiveAssetNode.assetKey}
               showHeader
@@ -236,22 +236,22 @@ export const AssetNodeOverview = ({
               event={materialization || observation || null}
               emptyState={
                 <SectionEmptyState
-                  title="No metadata found"
-                  description="Attach metadata to your asset definition, materializations or observations to see it here."
+                  title="未找到元数据"
+                  description="将元数据附加到资产定义、物化或观测中即可在此处查看。"
                   learnMoreLink="https://docs.dagster.io/concepts/assets/software-defined-assets#attaching-definition-metadata"
                 />
               }
             />
           </LargeCollapsibleSection>
           <LargeCollapsibleSection
-            header="Lineage"
+            header="数据血缘"
             icon="account_tree"
             right={
               <Link
                 to={globalAssetGraphPathForAssetsAndDescendants([cachedOrLiveAssetNode.assetKey])}
                 onClick={(e) => e.stopPropagation()}
               >
-                <Box flex={{gap: 4, alignItems: 'center'}}>View in graph</Box>
+                <Box flex={{gap: 4, alignItems: 'center'}}>在图中查看</Box>
               </Link>
             }
           >
@@ -265,7 +265,7 @@ export const AssetNodeOverview = ({
       }
       right={
         <>
-          <LargeCollapsibleSection header="Definition" icon="info">
+          <LargeCollapsibleSection header="定义" icon="info">
             <DefinitionSection
               repoAddress={repoAddress}
               location={location}
@@ -273,7 +273,7 @@ export const AssetNodeOverview = ({
               cachedOrLiveAssetNode={cachedOrLiveAssetNode}
             />
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Automation details" icon="automation_condition">
+          <LargeCollapsibleSection header="自动化详情" icon="automation_condition">
             <AutomationDetailsSection
               repoAddress={repoAddress}
               assetNode={assetNode}
@@ -281,7 +281,7 @@ export const AssetNodeOverview = ({
             />
           </LargeCollapsibleSection>
           {internalFreshnessPolicy ? (
-            <LargeCollapsibleSection header="Freshness policy" icon="freshness">
+            <LargeCollapsibleSection header="新鲜度策略" icon="freshness">
               <FreshnessPolicySection
                 assetKey={cachedOrLiveAssetNode.assetKey}
                 policy={internalFreshnessPolicy}
@@ -289,7 +289,7 @@ export const AssetNodeOverview = ({
             </LargeCollapsibleSection>
           ) : null}
           {cachedOrLiveAssetNode.isExecutable ? (
-            <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
+            <LargeCollapsibleSection header="计算详情" icon="settings" collapsedByDefault>
               <ComputeDetailsSection repoAddress={repoAddress} assetNode={assetNode} />
             </LargeCollapsibleSection>
           ) : null}
@@ -339,7 +339,7 @@ export const AssetNodeOverviewNonSDA = ({
   return (
     <AssetNodeOverviewContainer
       left={
-        <LargeCollapsibleSection header="Status" icon="status">
+        <LargeCollapsibleSection header="状态" icon="status">
           <Box flex={{direction: 'column', gap: 16}}>
             <div>
               {lastMaterialization ? (
@@ -349,7 +349,7 @@ export const AssetNodeOverviewNonSDA = ({
                   stepKey={null}
                 />
               ) : (
-                <Caption color={Colors.textLighter()}>Never materialized</Caption>
+                <Caption color={Colors.textLighter()}>从未物化</Caption>
               )}
             </div>
             <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />
@@ -357,11 +357,11 @@ export const AssetNodeOverviewNonSDA = ({
         </LargeCollapsibleSection>
       }
       right={
-        <LargeCollapsibleSection header="Definition" icon="info">
+        <LargeCollapsibleSection header="定义" icon="info">
           <Box flex={{direction: 'column', gap: 12}}>
             <NonIdealState
               shrinkable
-              description="This asset doesn't have a software definition in any of your code locations."
+              description="此资产在您的任何代码位置中都没有软件定义。"
               icon="materialization"
               title=""
             />
@@ -376,13 +376,13 @@ export const AssetNodeOverviewLoading = () => (
   <AssetNodeOverviewContainer
     left={
       <>
-        <LargeCollapsibleSection header="Status" icon="status">
+        <LargeCollapsibleSection header="状态" icon="status">
           <Box flex={{direction: 'column', gap: 6}}>
             <Skeleton $height={20} $width={170} />
             <Skeleton $height={24} $width={240} />
           </Box>
         </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Description" icon="sticky_note">
+        <LargeCollapsibleSection header="描述" icon="sticky_note">
           <Box flex={{direction: 'column', gap: 6}}>
             <Skeleton $height={16} $width="90%" />
             <Skeleton $height={16} />
@@ -392,7 +392,7 @@ export const AssetNodeOverviewLoading = () => (
       </>
     }
     right={
-      <LargeCollapsibleSection header="Definition" icon="info">
+      <LargeCollapsibleSection header="定义" icon="info">
         <Box flex={{direction: 'column', gap: 12}}>
           <AttributeAndValue label={<Skeleton $width={60} />}>
             <Skeleton $height={20} $width={220} />

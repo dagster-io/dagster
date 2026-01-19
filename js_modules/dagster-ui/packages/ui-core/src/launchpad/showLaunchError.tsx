@@ -8,14 +8,14 @@ export const showLaunchError = (error: Error) => {
   const body =
     error.message === 'Failed to fetch' ? (
       <div style={{fontFamily: FontFamily.default}}>
-        Make sure the Dagster webserver is running and try again.
+        请确保 Dagster 网页服务器正在运行，然后重试。
       </div>
     ) : (
       <div>{error.message}</div>
     );
 
   showCustomAlert({
-    title: 'Could not launch run',
+    title: '无法启动运行',
     body,
   });
 };

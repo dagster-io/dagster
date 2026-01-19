@@ -138,7 +138,7 @@ export const AssetGlobalLineageLink = () => {
     <Link to={globalAssetGraphPathToString({opsQuery: assetSelection, opNames: []})}>
       <Box flex={{gap: 4}}>
         <Icon color={Colors.linkDefault()} name="lineage" />
-        View lineage
+        查看血缘
       </Box>
     </Link>
   );
@@ -146,7 +146,7 @@ export const AssetGlobalLineageLink = () => {
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">
-    View asset lineage
+    查看资产血缘
   </AnchorButton>
 );
 

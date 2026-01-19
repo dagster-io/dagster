@@ -94,44 +94,44 @@ export const GanttStatusPanel = React.memo(
             metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
           }
         />
-        <SidebarSection title={`Preparing (${preparing.length})`}>
+        <SidebarSection title={`准备中 (${preparing.length})`}>
           <div>
             {preparing.length === 0 ? (
-              <EmptyNotice>No steps are waiting to execute</EmptyNotice>
+              <EmptyNotice>没有步骤正在等待执行</EmptyNotice>
             ) : (
               preparing.map(renderStepItem)
             )}
           </div>
         </SidebarSection>
-        <SidebarSection title={`Executing (${executing.length})`}>
+        <SidebarSection title={`执行中 (${executing.length})`}>
           <div>
             {executing.length === 0 ? (
-              <EmptyNotice>No steps are executing</EmptyNotice>
+              <EmptyNotice>没有步骤正在执行</EmptyNotice>
             ) : (
               executing.map(renderStepItem)
             )}
           </div>
         </SidebarSection>
-        <SidebarSection title={`Errored (${errored.length})`}>
+        <SidebarSection title={`错误 (${errored.length})`}>
           <div>
             {errored.length === 0 ? (
-              <EmptyNotice>No steps have errored</EmptyNotice>
+              <EmptyNotice>没有步骤出错</EmptyNotice>
             ) : (
               errored.map(renderStepItem)
             )}
           </div>
         </SidebarSection>
-        <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
+        <SidebarSection collapsedByDefault title={`成功 (${succeeded.length})`}>
           <div>
             {succeeded.length === 0 ? (
-              <EmptyNotice>No steps have succeeded</EmptyNotice>
+              <EmptyNotice>没有步骤已成功</EmptyNotice>
             ) : (
               succeeded.map(renderStepItem)
             )}
           </div>
         </SidebarSection>
         {notExecuted.length > 0 ? (
-          <SidebarSection collapsedByDefault title={`Not executed (${notExecuted.length})`}>
+          <SidebarSection collapsedByDefault title={`未执行 (${notExecuted.length})`}>
             <div>{notExecuted.map(renderStepItem)}</div>
           </SidebarSection>
         ) : null}
@@ -178,7 +178,7 @@ const StepItem = ({
             flip: {enabled: false},
           }}
           position="bottom"
-          content="Unknown step state. Run completed without step execution completion."
+          content="未知步骤状态。运行已完成但步骤执行未完成。"
         >
           <StepStatusDot>?</StepStatusDot>
         </Tooltip>

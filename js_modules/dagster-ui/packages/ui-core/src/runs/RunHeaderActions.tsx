@@ -1,7 +1,6 @@
-import {Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
-import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
 import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
@@ -18,11 +17,11 @@ import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {RunStatus} from '../graphql/types';
-import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
+import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrencyKeyInfo';
 import {
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
-} from '../instance/types/ConcurrencyQueries.types';
+} from '../instance/types/InstanceConcurrencyKeyInfo.types';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -57,7 +56,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
       await showSharedToaster({
         intent: 'success',
         icon: 'check_circle',
-        message: 'Freed concurrency slots',
+        message: '已释放并发槽位',
       });
     }
   };
@@ -71,10 +70,10 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   return (
     <div>
-      <Box flex={{direction: 'row', gap: 8}}>
+      <Group direction="row" spacing={8}>
         <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
-          <Tooltip content={jobLink.disabledReason}>
+          <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
             <Button icon={<Icon name={jobLink.icon} />} disabled>
               {jobLink.label}
             </Button>
@@ -85,10 +84,10 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           </AnchorButton>
         )}
         <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
-          View tags and config
+          查看标签和配置
         </Button>
         {run.allPools && run.allPools.length ? (
-          <Tooltip content="View pools" position="top">
+          <Tooltip content="查看池" position="top" targetTagName="div">
             <Button icon={<Icon name="concurrency" />} onClick={() => setVisibleDialog('pools')} />
           </Tooltip>
         ) : null}
@@ -99,10 +98,13 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
               <Menu>
                 {!isExternalRun(run) ? (
                   <>
-                    <AISummaryForRunMenuItem run={run} />
-                    <Tooltip content="Loadable in dagster-webserver-debug" position="left">
+                    <Tooltip
+                      content="可在 dagster-webserver-debug 中加载"
+                      position="left"
+                      targetTagName="div"
+                    >
                       <MenuItem
-                        text="Download debug file"
+                        text="下载调试文件"
                         icon="download_for_offline"
                         // eslint-disable-next-line no-restricted-properties
                         onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
@@ -110,23 +112,25 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                     </Tooltip>
                     {run.status === RunStatus.QUEUED ? (
                       <MenuItem
+                        tagName="button"
                         icon="history_toggle_off"
-                        text="View queue criteria"
+                        text="查看队列条件"
                         intent="none"
                         onClick={() => setVisibleDialog('queue-criteria')}
                       />
                     ) : null}
                     {runMetricsEnabled && RunMetricsDialog ? (
                       <MenuItem
+                        tagName="button"
                         icon="asset_plot"
-                        text="View container metrics"
+                        text="查看容器指标"
                         intent="none"
                         onClick={() => setVisibleDialog('metrics')}
                       />
                     ) : null}
                     {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
                       <MenuItem
-                        text="Free concurrency slots"
+                        text="释放并发槽位"
                         icon="lock"
                         onClick={freeConcurrencySlots}
                       />
@@ -136,7 +140,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 {run.hasDeletePermission ? (
                   <MenuItem
                     icon="delete"
-                    text="Delete"
+                    text="删除"
                     intent="danger"
                     onClick={() => setVisibleDialog('delete')}
                   />
@@ -147,7 +151,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             <Button icon={<Icon name="expand_more" />} />
           </Popover>
         ) : null}
-      </Box>
+      </Group>
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={() => setVisibleDialog(null)}

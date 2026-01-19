@@ -194,7 +194,7 @@ export const useSearchDialog = () => {
               spellCheck={false}
               onChange={onChange}
               onKeyDown={onKeyDown}
-              placeholder="Search assets, jobs, schedules, sensors…"
+              placeholder="搜索资产、作业、定时任务、监控器..."
               type="text"
               value={queryString}
             />

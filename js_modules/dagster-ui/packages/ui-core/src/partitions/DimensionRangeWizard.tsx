@@ -60,7 +60,7 @@ export const DimensionRangeWizard = ({
             }}
             data-testid={testId('latest-partition-button')}
           >
-            Latest
+            最新
           </ActivatableButton>
         )}
         <ActivatableButton
@@ -72,7 +72,7 @@ export const DimensionRangeWizard = ({
           }}
           data-testid={testId('all-partition-button')}
         >
-          All
+          全部
         </ActivatableButton>
         <ActivatableButton
           as={Button}
@@ -82,7 +82,7 @@ export const DimensionRangeWizard = ({
             setSelected(getFailedPartitions(health, partitionKeys));
           }}
         >
-          All failed
+          全部失败
         </ActivatableButton>
         <ActivatableButton
           as={Button}
@@ -92,7 +92,7 @@ export const DimensionRangeWizard = ({
             setSelected(getMissingPartitions(health, partitionKeys));
           }}
         >
-          All missing
+          全部缺失
         </ActivatableButton>
         <ActivatableButton
           as={Button}
@@ -104,7 +104,7 @@ export const DimensionRangeWizard = ({
             setSelected(Array.from(new Set([...failedPartitions, ...missingPartitions])));
           }}
         >
-          All failed and missing
+          全部失败和缺失
         </ActivatableButton>
         <ActivatableButton
           as={Button}
@@ -114,7 +114,7 @@ export const DimensionRangeWizard = ({
             setSelected(partitionKeys);
           }}
         >
-          Custom
+          自定义
         </ActivatableButton>
       </JoinedButtons>
     </Box>

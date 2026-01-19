@@ -23,14 +23,14 @@ export const CursorPaginationControls = ({
   return (
     <CursorControlsContainer style={style}>
       <Button disabled={!hasPrevCursor} icon={<Icon name="arrow_back" />} onClick={popCursor}>
-        Previous
+        上一页
       </Button>
       <Button
         disabled={!hasNextCursor}
         rightIcon={<Icon name="arrow_forward" />}
         onClick={advanceCursor}
       >
-        Next
+        下一页
       </Button>
     </CursorControlsContainer>
   );
@@ -46,14 +46,14 @@ export const CursorHistoryControls = ({
   return (
     <CursorControlsContainer style={style}>
       <Button icon={<Icon name="arrow_back" />} disabled={!hasPrevCursor} onClick={popCursor}>
-        <span className="hideable-button-text">Newer</span>
+        <span className="hideable-button-text">更新</span>
       </Button>
       <Button
         rightIcon={<Icon name="arrow_forward" />}
         disabled={!hasNextCursor}
         onClick={advanceCursor}
       >
-        <span className="hideable-button-text">Older</span>
+        <span className="hideable-button-text">更早</span>
       </Button>
     </CursorControlsContainer>
   );

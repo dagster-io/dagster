@@ -37,9 +37,9 @@ export const GroupTimelineRunsBySelect = ({value, onSelect}: Props) => {
 const valueToLabel = (value: GroupRunsBy) => {
   switch (value) {
     case 'automation':
-      return 'Automations';
+      return '自动化';
     case 'job':
-      return 'Jobs';
+      return '作业';
     default:
       return assertUnreachable(value);
   }

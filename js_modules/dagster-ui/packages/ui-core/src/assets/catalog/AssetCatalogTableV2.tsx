@@ -197,8 +197,8 @@ export const AssetCatalogTableV2 = React.memo(() => {
         <Box padding={24}>
           <NonIdealState
             icon="star"
-            title="No favorite assets"
-            description="To add one, click the star in the asset view or choose 'Add to favorites' from the asset menu in the catalog."
+            title="没有收藏的资产"
+            description="要添加收藏，请在资产视图中点击星标，或从目录的资产菜单中选择「添加到收藏」。"
           />
         </Box>
       );
@@ -355,7 +355,7 @@ const Table = React.memo(
         >
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             {flagAssetCatalogSidebar ? (
-              <Tooltip content={sidebarExpanded ? 'Hide sidebar' : 'Show sidebar'}>
+              <Tooltip content={sidebarExpanded ? '隐藏侧边栏' : '显示侧边栏'}>
                 <Button
                   icon={<Icon name={sidebarExpanded ? 'panel_show_right' : 'panel_hide_right'} />}
                   onClick={() => {
@@ -370,8 +370,7 @@ const Table = React.memo(
                 <Skeleton $width={200} $height={21} />
               ) : (
                 <>
-                  {numberFormatter.format(assets?.length ?? 0)} asset
-                  {ifPlural(assets?.length ?? 0, '', 's')}
+                  {numberFormatter.format(assets?.length ?? 0)} 个资产
                 </>
               )}
             </Body>
@@ -387,14 +386,14 @@ const Table = React.memo(
                 }
               >
                 <Tag intent="primary">
-                  {numberFormatter.format(checkedDisplayKeys.size)} selected
+                  已选择 {numberFormatter.format(checkedDisplayKeys.size)} 个
                 </Tag>
               </Popover>
             ) : null}
           </Box>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <Body color={Colors.textLight()}>Group by</Body>
+              <Body color={Colors.textLight()}>分组</Body>
               <Select<(typeof GROUP_BY_ITEMS)[number]>
                 popoverProps={{
                   position: 'bottom-right',
@@ -423,7 +422,7 @@ const Table = React.memo(
               </Select>
             </Box>
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <Body color={Colors.textLight()}>Sort by</Body>
+              <Body color={Colors.textLight()}>排序</Body>
               <Select<(typeof SORT_ITEMS)[number]>
                 popoverProps={{
                   position: 'bottom-right',

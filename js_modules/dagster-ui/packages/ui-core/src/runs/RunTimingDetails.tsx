@@ -10,23 +10,23 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
     case RunStatus.QUEUED:
-      return 'Queued';
+      return '已排队';
     case RunStatus.CANCELED:
-      return 'Canceled';
+      return '已取消';
     case RunStatus.CANCELING:
-      return 'Canceling…';
+      return '正在取消…';
     case RunStatus.FAILURE:
-      return 'Failed';
+      return '失败';
     case RunStatus.NOT_STARTED:
-      return 'Waiting to start…';
+      return '等待开始…';
     case RunStatus.STARTED:
-      return 'Started…';
+      return '已开始…';
     case RunStatus.STARTING:
-      return 'Starting…';
+      return '正在启动…';
     case RunStatus.SUCCESS:
-      return 'Succeeded';
+      return '成功';
     default:
-      return 'None';
+      return '无';
   }
 };
 
@@ -36,7 +36,7 @@ const LoadingOrValue = ({
 }: {
   loading: boolean;
   children: () => React.ReactNode;
-}) => (loading ? <div style={{color: Colors.textLight()}}>Loading…</div> : <div>{children()}</div>);
+}) => (loading ? <div style={{color: Colors.textLight()}}>加载中…</div> : <div>{children()}</div>);
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -52,7 +52,7 @@ export const RunTimingDetails = ({
       spacing={0}
       rows={[
         {
-          key: 'Started',
+          key: '开始时间',
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
@@ -69,7 +69,7 @@ export const RunTimingDetails = ({
           ),
         },
         {
-          key: 'Ended',
+          key: '结束时间',
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
@@ -86,7 +86,7 @@ export const RunTimingDetails = ({
           ),
         },
         {
-          key: 'Duration',
+          key: '持续时间',
           value: (
             <LoadingOrValue loading={loading}>
               {() => {

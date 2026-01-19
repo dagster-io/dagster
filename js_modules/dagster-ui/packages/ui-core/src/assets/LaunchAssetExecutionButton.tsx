@@ -139,21 +139,21 @@ export const ERROR_INVALID_ASSET_SELECTION =
 function materializationDisabledReason(all: Asset[], materializable: Asset[], isSingle?: boolean) {
   if (!all.length) {
     if (isSingle) {
-      return 'Asset does not have a definition';
+      return '资产没有定义';
     }
-    return 'Select one or more assets to materialize';
+    return '请选择一个或多个资产进行物化';
   }
   if (all.some((a) => 'hasMaterializePermission' in a && !a.hasMaterializePermission)) {
-    return 'You do not have permission to materialize assets';
+    return '您没有物化资产的权限';
   }
   if (all.every((a) => !a.isExecutable)) {
-    return 'External assets cannot be materialized';
+    return '外部资产无法被物化';
   }
   if (all.every((a) => a.isObservable)) {
-    return 'Observable assets cannot be materialized';
+    return '可观测资产无法被物化';
   }
   if (materializable.length === 0) {
-    return 'No executable assets selected.';
+    return '未选择可执行的资产。';
   }
   return null;
 }
@@ -161,15 +161,15 @@ function materializationDisabledReason(all: Asset[], materializable: Asset[], is
 function observationDisabledReason(all: Asset[], observable: Asset[], isSingle?: boolean) {
   if (!all.length) {
     if (isSingle) {
-      return 'Asset does not have a definition';
+      return '资产没有定义';
     }
-    return 'Select one or more assets to observe';
+    return '请选择一个或多个资产进行观测';
   }
   if (all.some((a) => !a.hasMaterializePermission)) {
-    return 'You do not have permission to observe assets';
+    return '您没有观测资产的权限';
   }
   if (observable.length === 0) {
-    return 'Assets do not have observation functions';
+    return '资产没有观测函数';
   }
   return null;
 }
@@ -194,20 +194,20 @@ export function optionsForExecuteButton(
       disabledReason: materializationDisabledReason(assets, materializable, isSingle),
       icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
       label: isSelection
-        ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
+        ? `物化已选${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
-          ? `Materialize all${countIfNotAll(materializable, assets)}${ellipsis}`
-          : `Materialize${countIfNotAll(materializable, assets)}${ellipsis}`,
+          ? `物化全部${countIfNotAll(materializable, assets)}${ellipsis}`
+          : `物化${countIfNotAll(materializable, assets)}${ellipsis}`,
     },
     observeOption: {
       assetKeys: observable.map((a) => a.assetKey),
       disabledReason: observationDisabledReason(assets, observable, isSingle),
       icon: <Icon name="observation" />,
       label: isSelection
-        ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
+        ? `观测已选${countIfPluralOrNotAll(observable, assets)}`
         : observable.length > 1 && !skipAllTerm
-          ? `Observe all${countIfNotAll(observable, assets)}`
-          : `Observe${countIfNotAll(observable, assets)}`,
+          ? `观测全部${countIfNotAll(observable, assets)}`
+          : `观测${countIfNotAll(observable, assets)}`,
     },
   };
 }
@@ -304,7 +304,7 @@ export const LaunchAssetExecutionButton = ({
           content={
             firstOption.disabledReason
               ? firstOption.disabledReason
-              : 'Shift+click to add configuration'
+              : 'Shift+点击以添加配置'
           }
           placement="left"
         >
@@ -363,7 +363,7 @@ export const LaunchAssetExecutionButton = ({
                 </Tooltip>
                 {showChangedAndMissingOption ? (
                   <MenuItem
-                    text="Materialize unsynced"
+                    text="物化未同步项"
                     icon="changes_present"
                     disabled={!!materializeOption.disabledReason}
                     onClick={() => setShowCalculatingUnsyncedDialog(true)}
@@ -371,7 +371,7 @@ export const LaunchAssetExecutionButton = ({
                 ) : null}
                 {canLaunch ? (
                   <MenuItem
-                    text="Open launchpad"
+                    text="打开启动面板"
                     icon="open_in_new"
                     onClick={(e: React.MouseEvent<any>) => {
                       materialize.onClick(firstOption.assetKeys, e, true);
@@ -481,7 +481,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
     if (next.type === 'error') {
-      showCustomAlert({title: 'Unable to Materialize', body: next.error});
+      showCustomAlert({title: '无法物化', body: next.error});
       setState({type: 'none'});
       return;
     }
@@ -531,7 +531,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
             const next = await stateForLaunchingAssets(client, assetNodes, false, preferredJobName);
             if (next.type === 'error') {
               showCustomAlert({
-                title: 'Unable to Materialize',
+                title: '无法物化',
                 body: next.error,
               });
               setState({type: 'none'});
@@ -558,13 +558,13 @@ async function stateForLaunchingAssets(
   if (assets.some((x) => x.isObservable)) {
     return {
       type: 'error',
-      error: 'One or more observable assets are selected and cannot be materialized.',
+      error: '选中的一个或多个可观测资产无法被物化。',
     };
   }
   if (assets.some((x) => !x.isExecutable)) {
     return {
       type: 'error',
-      error: 'One or more external assets are selected.',
+      error: '选中了一个或多个外部资产。',
     };
   }
 
@@ -784,8 +784,7 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
     title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
       <div style={{overflow: 'auto'}}>
-        One or more of the selected assets are defined in multiple code locations. Rename these
-        assets to avoid collisions and then try again.
+        选中的一个或多个资产在多个代码位置中定义。请重命名这些资产以避免冲突，然后重试。
         <ul>
           {data.assetNodeDefinitionCollisions.map((collision, idx) => (
             <li key={idx}>
@@ -813,9 +812,8 @@ export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQue
     title: ADDITIONAL_REQUIRED_KEYS_WARNING,
     description: (
       <div style={{overflow: 'auto'}}>
-        One or more of the selected assets are part of a multi-asset that does not support
-        subsetting or that has required outputs outside the current selection. Materializing the
-        current selection will also yield new materializations for the following:
+        选中的一个或多个资产属于不支持子集选择的多资产组，或者在当前选择之外有必需的输出。
+        物化当前选择也会同时为以下资产生成新的物化结果：
         <ul>
           {data.assetNodeAdditionalRequiredKeys.map((assetKey, idx) => (
             <li key={idx}>
@@ -832,12 +830,11 @@ export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQue
 export function buildUpstreamAssetsWithNoMaterializationsAlert(missing: AssetKey[]) {
   return {
     catchOnCancel: true,
-    title: 'Are you sure?',
+    title: '确定要继续吗？',
     description: (
       <>
         <div>
-          Materializing these assets may fail because the upstream assets listed below have not been
-          materialized yet.
+          物化这些资产可能会失败，因为以下列出的上游资产尚未被物化。
         </div>
         <ul>
           {missing.map((assetKey, idx) => (

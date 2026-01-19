@@ -204,17 +204,13 @@ export const AutomationStateChangeDialog = (props: Props) => {
         if (openWithIntent === 'stop') {
           return (
             <div>
-              {`${
-                count === 1 ? '1 automation' : `${count} automations`
-              } will be stopped. Do you want to continue?`}
+              {`将停止 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}。是否继续？`}
             </div>
           );
         }
         return (
           <div>
-            {`${
-              count === 1 ? '1 automation' : `${count} automations`
-            } will be started. Do you want to continue?`}
+            {`将启动 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}。是否继续？`}
           </div>
         );
       case 'updating':
@@ -224,7 +220,7 @@ export const AutomationStateChangeDialog = (props: Props) => {
           <Box flex={{direction: 'column', gap: 8}}>
             <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 1} />
             {state.step === 'updating' ? (
-              <NavigationBlock message="Automations are being updated, please do not navigate away yet." />
+              <NavigationBlock message="正在更新自动化，请勿离开此页面。" />
             ) : null}
           </Box>
         );
@@ -242,11 +238,11 @@ export const AutomationStateChangeDialog = (props: Props) => {
       case 'initial': {
         const label =
           openWithIntent === 'start'
-            ? `Start ${count === 1 ? '1 automation' : `${count} automations`}`
-            : `Stop ${count === 1 ? '1 automation' : `${count} automations`}`;
+            ? `启动 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}`
+            : `停止 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}`;
         return (
           <>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onClose}>取消</Button>
             <Button intent="primary" onClick={mutate}>
               {label}
             </Button>
@@ -256,8 +252,8 @@ export const AutomationStateChangeDialog = (props: Props) => {
       case 'updating': {
         const label =
           openWithIntent === 'start'
-            ? `Starting ${count === 1 ? '1 automation' : `${count} automations`}`
-            : `Stopping ${count === 1 ? '1 automation' : `${count} automations`}`;
+            ? `正在启动 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}`
+            : `正在停止 ${count === 1 ? '1 个自动化' : `${count} 个自动化`}`;
         return (
           <Button intent="primary" disabled>
             {label}
@@ -267,7 +263,7 @@ export const AutomationStateChangeDialog = (props: Props) => {
       case 'completed':
         return (
           <Button intent="primary" onClick={onClose}>
-            Done
+            完成
           </Button>
         );
     }
@@ -281,7 +277,7 @@ export const AutomationStateChangeDialog = (props: Props) => {
     if (state.step === 'updating') {
       return (
         <div>
-          Please do not close the window or navigate away while automations are being updated.
+          正在更新自动化，请勿关闭窗口或离开页面。
         </div>
       );
     }
@@ -297,12 +293,8 @@ export const AutomationStateChangeDialog = (props: Props) => {
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
-                ? `Successfully started ${
-                    successCount === 1 ? '1 automation' : `${successCount} automations`
-                  }.`
-                : `Successfully stopped ${
-                    successCount === 1 ? '1 automation' : `${successCount} automations`
-                  }.`}
+                ? `已成功启动 ${successCount === 1 ? '1 个自动化' : `${successCount} 个自动化`}。`
+                : `已成功停止 ${successCount === 1 ? '1 个自动化' : `${successCount} 个自动化`}。`}
             </div>
           </Box>
         ) : null}
@@ -312,12 +304,8 @@ export const AutomationStateChangeDialog = (props: Props) => {
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
-                  ? `Could not start ${
-                      errorCount === 1 ? '1 automation' : `${errorCount} automations`
-                    }:`
-                  : `Could not stop ${
-                      errorCount === 1 ? '1 automation' : `${errorCount} automations`
-                    }:`}
+                  ? `无法启动 ${errorCount === 1 ? '1 个自动化' : `${errorCount} 个自动化`}：`
+                  : `无法停止 ${errorCount === 1 ? '1 个自动化' : `${errorCount} 个自动化`}：`}
               </div>
             </Box>
             <ul style={{margin: '8px 0'}}>
@@ -341,7 +329,7 @@ export const AutomationStateChangeDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={openWithIntent !== 'not-open'}
-      title={openWithIntent === 'start' ? 'Start automations' : 'Stop automations'}
+      title={openWithIntent === 'start' ? '启动自动化' : '停止自动化'}
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}

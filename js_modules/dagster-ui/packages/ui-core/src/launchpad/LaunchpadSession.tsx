@@ -83,10 +83,10 @@ export interface LaunchpadConfig {
   repoAddress: RepoAddress;
 }
 
-const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
-const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
-const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
-const LOADING_RUN_PREVIEW = `Checking config...`;
+const YAML_SYNTAX_INVALID = `无法解析您提供的 YAML。请修复语法错误后重试。`;
+const LOADING_CONFIG_FOR_PARTITION = `正在生成配置...`;
+const LOADING_CONFIG_SCHEMA = `正在加载配置模式...`;
+const LOADING_RUN_PREVIEW = `正在检查配置...`;
 
 type Preset = ConfigEditorPipelinePresetFragment;
 

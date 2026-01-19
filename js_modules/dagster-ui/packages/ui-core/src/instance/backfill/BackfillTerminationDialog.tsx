@@ -34,22 +34,21 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
 
   return (
     <>
-      <Dialog isOpen={!!backfill} title="Cancel backfill" onClose={onClose}>
+      <Dialog isOpen={!!backfill} title="取消回填" onClose={onClose}>
         <DialogBody>
-          In progress runs associated with this backfill will be canceled and additional runs will
-          not be queued or launched.
+          与此回填关联的进行中运行将被取消，额外的运行将不会被排队或启动。
         </DialogBody>
         <DialogFooter>
           <Button intent="none" onClick={onClose}>
-            Close
+            关闭
           </Button>
           {isSubmitting ? (
             <Button intent="danger" disabled>
-              Canceling...
+              取消中...
             </Button>
           ) : (
             <Button intent="danger" onClick={cancel}>
-              Cancel backfill
+              取消回填
             </Button>
           )}
         </DialogFooter>

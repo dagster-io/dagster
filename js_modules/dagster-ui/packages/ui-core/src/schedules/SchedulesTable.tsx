@@ -12,14 +12,14 @@ export const errorDisplay = (status: InstigationStatus, runningScheduleCount: nu
   const errors = [];
   if (status === InstigationStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
-      'Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule',
+      '定时任务已设置为运行状态，但调度器未配置或未运行此任务',
     );
   } else if (status === InstigationStatus.STOPPED && runningScheduleCount > 0) {
-    errors.push('Schedule is set to be stopped, but the scheduler is still running the schedule');
+    errors.push('定时任务已设置为停止状态，但调度器仍在运行此任务');
   }
 
   if (runningScheduleCount > 0) {
-    errors.push('Duplicate cron job for schedule found.');
+    errors.push('发现重复的定时任务 cron 作业。');
   }
 
   return (
@@ -29,8 +29,8 @@ export const errorDisplay = (status: InstigationStatus, runningScheduleCount: nu
       position="right"
       content={
         <Box flex={{direction: 'column', gap: 8}} padding={12}>
-          <strong>There are errors with this schedule.</strong>
-          <div>Errors:</div>
+          <strong>此定时任务存在错误。</strong>
+          <div>错误：</div>
           <ul>
             {errors.map((error, index) => (
               <li key={index}>{error}</li>
@@ -40,7 +40,7 @@ export const errorDisplay = (status: InstigationStatus, runningScheduleCount: nu
       }
     >
       <Tag interactive intent="danger">
-        Error
+        错误
       </Tag>
     </Popover>
   );

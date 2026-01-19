@@ -58,8 +58,8 @@ export function useReportEventsDialog(asset: Asset | null, onEventReported?: () 
         ? [
             {
               label: asset.isPartitioned
-                ? 'Report materialization events'
-                : 'Report materialization event',
+                ? '报告物化事件'
+                : '报告物化事件',
               icon: <Icon name="asset_non_sda" />,
               disabled: !hasReportRunlessAssetEventPermission,
               onClick: () => setIsOpen(true),
@@ -202,13 +202,13 @@ const ReportEventDialogBody = ({
 
     if (!data || data.__typename === 'PythonError') {
       await showSharedToaster({
-        message: <div>An unexpected error occurred. This event was not reported.</div>,
+        message: <div>发生意外错误。此事件未被报告。</div>,
         icon: 'error',
         intent: 'danger',
         action: data
           ? {
               type: 'button',
-              text: 'View error',
+              text: '查看错误',
               onClick: () => showCustomAlert({body: <PythonErrorInfo error={data} />}),
             }
           : undefined,
@@ -223,9 +223,9 @@ const ReportEventDialogBody = ({
       await showSharedToaster({
         message:
           keysFiltered.length > 1 ? (
-            <div>Your events have been reported.</div>
+            <div>事件已报告。</div>
           ) : (
-            <div>Your event has been reported.</div>
+            <div>事件已报告。</div>
           ),
         icon: 'materialization',
         intent: 'success',
@@ -244,7 +244,7 @@ const ReportEventDialogBody = ({
     }
     if (asset.isPartitioned && keysFiltered.length === 0) {
       return {
-        content: 'No partitions selected',
+        content: '未选择分区',
         canShow: true,
       };
     }
@@ -256,7 +256,7 @@ const ReportEventDialogBody = ({
       <DialogHeader
         icon="info"
         label={
-          asset.isPartitioned ? 'Report materialization events' : 'Report materialization event'
+          asset.isPartitioned ? '报告物化事件' : '报告物化事件'
         }
       />
       <Box
@@ -264,9 +264,8 @@ const ReportEventDialogBody = ({
         border={asset.isPartitioned ? {side: 'bottom'} : undefined}
       >
         <Body2>
-          Let Dagster know about a materialization that happened outside of Dagster. Typically used
-          for testing or for manually fixing incorrect information in the asset catalog, not for
-          normal operations.
+          让 Dagster 知道在 Dagster 外部发生的物化。通常用于测试或手动修复资产目录中的错误信息，
+          而非正常操作。
         </Body2>
       </Box>
 
@@ -275,7 +274,7 @@ const ReportEventDialogBody = ({
           isInitiallyOpen={true}
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Partition selection</Subheading>
+              <Subheading>分区选择</Subheading>
               <span>{partitionCountString(keyCountInSelections(selections))}</span>
             </Box>
           }
@@ -295,13 +294,13 @@ const ReportEventDialogBody = ({
             <Box padding={{vertical: 8, horizontal: 20}} flex={{direction: 'column', gap: 8}}>
               <Checkbox
                 data-testid={testId('failed-only-checkbox')}
-                label="Report only failed partitions within selection"
+                label="仅报告选择范围内的失败分区"
                 checked={filterFailed}
                 onChange={() => setFilterFailed(!filterFailed)}
               />
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
-                label="Report only missing partitions within selection"
+                label="仅报告选择范围内的缺失分区"
                 checked={filterMissing}
                 onChange={() => setFilterMissing(!filterMissing)}
               />
@@ -315,16 +314,16 @@ const ReportEventDialogBody = ({
         flex={{direction: 'column', gap: 12}}
       >
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Description</Caption>
+          <Caption>描述</Caption>
           <TextInput
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add a description"
+            placeholder="添加描述"
           />
         </Box>
       </Box>
       <DialogFooter topBorder>
-        <Button onClick={() => setIsOpen(false)}>Cancel</Button>
+        <Button onClick={() => setIsOpen(false)}>取消</Button>
         <Tooltip content={tooltipState.content} canShow={tooltipState.canShow}>
           <Button
             intent="primary"
@@ -337,8 +336,8 @@ const ReportEventDialogBody = ({
             loading={isReporting}
           >
             {keysFiltered.length > 1
-              ? `Report ${keysFiltered.length.toLocaleString()} events`
-              : 'Report event'}
+              ? `报告 ${keysFiltered.length.toLocaleString()} 个事件`
+              : '报告事件'}
           </Button>
         </Tooltip>
       </DialogFooter>

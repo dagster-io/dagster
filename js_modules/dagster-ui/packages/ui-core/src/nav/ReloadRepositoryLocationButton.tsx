@@ -17,7 +17,7 @@ interface Props {
   location: string;
 }
 
-export const NO_RELOAD_PERMISSION_TEXT = 'You do not have permission to reload this code location';
+export const NO_RELOAD_PERMISSION_TEXT = '您没有权限重新加载此代码仓库';
 
 export const ReloadRepositoryLocationButton = (props: Props) => {
   const {ChildComponent, location} = props;

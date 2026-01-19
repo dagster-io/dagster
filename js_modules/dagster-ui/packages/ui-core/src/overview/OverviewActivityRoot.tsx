@@ -41,10 +41,10 @@ export const OverviewActivityRoot = () => {
       return (
         <JoinedButtons>
           <ActivatableButton $active={selected === 'timeline'} to="/overview/activity/timeline">
-            Timeline
+            时间线
           </ActivatableButton>
           <ActivatableButton $active={selected === 'assets'} to="/overview/activity/assets">
-            Assets
+            资产
           </ActivatableButton>
         </JoinedButtons>
       );

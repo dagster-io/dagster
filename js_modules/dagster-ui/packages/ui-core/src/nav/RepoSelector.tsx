@@ -61,7 +61,7 @@ export const RepoSelector = (props: Props) => {
           indeterminate={!!(selectedCount && optionCount !== selectedCount)}
           onChange={onToggleAll}
         />
-        {`${selected.length} of ${options.length} selected`}
+        {`已选择 ${selected.length}/${options.length}`}
       </Box>
       <Table>
         <tbody>
@@ -102,7 +102,7 @@ export const RepoSelector = (props: Props) => {
                 </td>
                 <td>
                   <Link to={workspacePathFromAddress(repoAddress)} onClick={() => onBrowse()}>
-                    Browse
+                    浏览
                   </Link>
                 </td>
                 <td>
@@ -152,10 +152,10 @@ const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
             return NO_RELOAD_PERMISSION_TEXT;
           }
           return reloading ? (
-            'Reloading…'
+            '重新加载中…'
           ) : (
             <>
-              Reload <strong>{codeLocation}</strong>
+              重新加载 <strong>{codeLocation}</strong>
             </>
           );
         };

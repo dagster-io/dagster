@@ -85,9 +85,9 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
       <ButtonGroup
         activeItems={activeItems}
         buttons={[
-          {id: LogType.structured, icon: 'logs_structured', label: 'Events'},
-          {id: LogType.stdout, icon: 'logs_stdout', label: 'stdout', disabled: noStepsStarted},
-          {id: LogType.stderr, icon: 'logs_stderr', label: 'stderr', disabled: noStepsStarted},
+          {id: LogType.structured, icon: 'logs_structured', label: '事件'},
+          {id: LogType.stdout, icon: 'logs_stdout', label: '标准输出', disabled: noStepsStarted},
+          {id: LogType.stderr, icon: 'logs_stderr', label: '错误输出', disabled: noStepsStarted},
         ]}
         onClick={(id) => onSetLogType(id)}
       />
@@ -109,7 +109,7 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
       )}
       {children}
       {toggleExpanded ? (
-        <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
+        <Tooltip content={isSectionExpanded ? '收起' : '展开'}>
           <Button
             icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
             onClick={toggleExpanded}
@@ -173,13 +173,13 @@ export const ComputeLogToolbar = ({
           <div style={{width: 200}}>
             <Suggest
               resetOnClose
-              inputProps={{placeholder: 'Select a step…', style: {width: 500}}}
+              inputProps={{placeholder: '选择步骤…', style: {width: 500}}}
               popoverProps={{matchTargetWidth: true}}
               activeItem={computeLogFileKey}
               selectedItem={computeLogFileKey}
               disabled={!steps.length}
               items={Object.keys(logCaptureSteps)}
-              noResults="No matching steps"
+              noResults="无匹配的步骤"
               inputValueRenderer={(item) => fileKeyText(item)}
               itemPredicate={(query, item) =>
                 fileKeyText(item).toLocaleLowerCase().includes(query.toLocaleLowerCase())
@@ -203,7 +203,7 @@ export const ComputeLogToolbar = ({
           </div>
         ) : undefined}
 
-        {!steps ? <Box>Step: {(logCaptureInfo?.stepKeys || []).join(', ')}</Box> : undefined}
+        {!steps ? <Box>步骤: {(logCaptureInfo?.stepKeys || []).join(', ')}</Box> : undefined}
       </Box>
       {isValidStepSelection ? (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
@@ -212,17 +212,17 @@ export const ComputeLogToolbar = ({
               placement="top-end"
               content={
                 logCaptureInfo?.stepKeys.length === 1
-                  ? `Download ${logCaptureInfo?.stepKeys[0]} compute logs`
-                  : `Download compute logs`
+                  ? `下载 ${logCaptureInfo?.stepKeys[0]} 计算日志`
+                  : `下载计算日志`
               }
             >
               <ExternalAnchorButton
                 icon={<Icon name="download_for_offline" />}
-                aria-label="Download link"
+                aria-label="下载链接"
                 href={computeLogUrl}
                 download
               >
-                Download
+                下载
               </ExternalAnchorButton>
             </Tooltip>
           ) : null}

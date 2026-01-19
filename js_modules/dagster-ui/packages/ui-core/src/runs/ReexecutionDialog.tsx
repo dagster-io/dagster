@@ -1,13 +1,14 @@
+// eslint-disable-next-line no-restricted-imports
+import {ProgressBar} from '@blueprintjs/core';
 import {
-  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Group,
   Icon,
   Mono,
-  ProgressBar,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -44,33 +45,33 @@ type Error = ReturnType<typeof refineToError>;
 
 const errorText = (error: Error) => {
   if (!error) {
-    return 'Unknown error';
+    return '未知错误';
   }
   switch (error.__typename) {
     case 'ConflictingExecutionParamsError':
-      return 'Conflicting execution parameters';
+      return '执行参数冲突';
     case 'InvalidOutputError':
-      return 'Invalid output';
+      return '无效输出';
     case 'InvalidStepError':
-      return 'Invalid step';
+      return '无效步骤';
     case 'NoModeProvidedError':
-      return 'No mode provided';
+      return '未提供模式';
     case 'PipelineNotFoundError':
-      return 'Job not found in workspace';
+      return '工作区中未找到作业';
     case 'PresetNotFoundError':
-      return 'Preset not found';
+      return '未找到预设';
     case 'PythonError':
       return error.message;
     case 'RunConfigValidationInvalid':
-      return 'Run config invalid';
+      return '运行配置无效';
     case 'RunConflict':
-      return 'Run conflict';
+      return '运行冲突';
     case 'UnauthorizedError':
-      return 'Re-execution not authorized';
+      return '未授权重新执行';
     case 'InvalidSubsetError':
-      return 'Invalid op subset: ' + error.message;
+      return '无效的操作子集: ' + error.message;
     default:
-      return 'Unknown error';
+      return '未知错误';
   }
 };
 
@@ -208,10 +209,10 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
       case 'initial':
         if (!count) {
           return (
-            <Box flex={{direction: 'column', gap: 16}}>
-              <div>No runs selected for re-execution.</div>
-              <div>The runs you selected may already have finished executing.</div>
-            </Box>
+            <Group direction="column" spacing={16}>
+              <div>未选择要重新执行的运行。</div>
+              <div>您选择的运行可能已经执行完毕。</div>
+            </Group>
           );
         }
 
@@ -219,25 +220,25 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
           if (reexecutionStrategy === ReexecutionStrategy.ALL_STEPS) {
             return (
               <span>
-                {`${count} ${count === 1 ? 'run' : 'runs'} will be re-executed `}
-                <strong>with all steps</strong>. Do you wish to continue?
+                {`将重新执行 ${count} 个运行，`}
+                <strong>包含所有步骤</strong>。是否继续？
               </span>
             );
           }
           return (
             <span>
-              {`${count} ${count === 1 ? 'run' : 'runs'} will be re-executed `}
-              <strong>from failure</strong>. Do you wish to continue?
+              {`将重新执行 ${count} 个运行，`}
+              <strong>从失败处开始</strong>。是否继续？
             </span>
           );
         };
 
         return (
-          <Box flex={{direction: 'column', gap: 16}}>
+          <Group direction="column" spacing={16}>
             <div>{message()}</div>
+
             <div>
-              Re-executed runs inherit tags from the parent runs automatically. To change tag values
-              or add additional tags, add them below.
+              重新执行的运行会自动继承父运行的标签。如需更改标签值或添加额外标签，请在下方添加。
             </div>
             <EditableTagList
               editState={state.extraTags}
@@ -248,35 +249,35 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
                 })
               }
             />
+
             {selectedRunBackfillIds.length > 0 ? (
               <div>
                 {selectedRunBackfillIds.length > 1 ? (
-                  <>One or more of these runs is part of a backfill</>
+                  <>其中一个或多个运行属于某个回填</>
                 ) : (
                   <>
-                    One or more of these runs is part of backfill{' '}
+                    其中一个或多个运行属于回填{' '}
                     {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                     <Link to={getBackfillPath(selectedRunBackfillIds[0]!, 'runs')}>
                       {selectedRunBackfillIds[0]}
                     </Link>
                   </>
                 )}
-                . If the backfill has completed, re-executing these runs will not update the
-                backfill status or launch runs of downstream dependencies.
+                。如果回填已完成，重新执行这些运行将不会更新回填状态或启动下游依赖的运行。
               </div>
             ) : undefined}
-          </Box>
+          </Group>
         );
       case 'reexecuting':
       case 'completed':
         const value = count > 0 ? state.reexecution.completed / count : 1;
         return (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
+          <Group direction="column" spacing={8}>
+            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
             {state.step === 'reexecuting' ? (
-              <NavigationBlock message="Re-execution in progress, please do not navigate away yet." />
+              <NavigationBlock message="重新执行进行中，请勿离开页面。" />
             ) : null}
-          </Box>
+          </Group>
         );
       default:
         return null;
@@ -289,7 +290,7 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
         if (!count) {
           return (
             <Button intent="none" onClick={onClose}>
-              OK
+              确定
             </Button>
           );
         }
@@ -297,27 +298,27 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
         return (
           <>
             <Button intent="none" onClick={onClose}>
-              Cancel
+              取消
             </Button>
             <Button
               intent="primary"
               onClick={mutate}
               disabled={extraTagsValidated.toError.length > 0}
             >
-              {`Re-execute ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
+              {`重新执行 ${count} 个运行`}
             </Button>
           </>
         );
       case 'reexecuting':
         return (
           <Button intent="primary" disabled>
-            {`Re-executing ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`}
+            {`正在重新执行 ${count} 个运行...`}
           </Button>
         );
       case 'completed':
         return (
           <Button intent="primary" onClick={onClose}>
-            Done
+            完成
           </Button>
         );
     }
@@ -329,7 +330,7 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
     }
 
     if (state.step === 'reexecuting') {
-      return <div>Please do not close the window or navigate away during re-execution.</div>;
+      return <div>重新执行过程中请勿关闭窗口或离开页面。</div>;
     }
 
     const errors = state.reexecution.errors;
@@ -337,40 +338,36 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
     const successCount = state.reexecution.completed - errorCount;
 
     return (
-      <Box flex={{direction: 'column', gap: 8}}>
+      <Group direction="column" spacing={8}>
         {successCount ? (
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
+          <Group direction="row" spacing={8} alignItems="flex-start">
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
-              {`Successfully requested re-execution for ${successCount} ${
-                successCount === 1 ? 'run' : `runs`
-              }.`}
+              {`已成功请求重新执行 ${successCount} 个运行。`}
             </div>
-          </Box>
+          </Group>
         ) : null}
         {errorCount ? (
-          <Box flex={{direction: 'column', gap: 8}}>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
+          <Group direction="column" spacing={8}>
+            <Group direction="row" spacing={8} alignItems="flex-start">
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
-                {`Could not request re-execution for ${errorCount} ${
-                  errorCount === 1 ? 'run' : 'runs'
-                }:`}
+                {`无法请求重新执行 ${errorCount} 个运行：`}
               </div>
-            </Box>
+            </Group>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Box flex={{direction: 'row', gap: 8, alignItems: 'baseline'}}>
+                  <Group direction="row" spacing={8} alignItems="baseline">
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errorText(errors[runId])}</div> : null}
-                  </Box>
+                  </Group>
                 </li>
               ))}
             </ul>
-          </Box>
+          </Group>
         ) : null}
-      </Box>
+      </Group>
     );
   };
 
@@ -382,18 +379,18 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
       isOpen={isOpen}
       title={
         reexecutionStrategy === ReexecutionStrategy.ALL_STEPS
-          ? 'Re-execute runs'
-          : 'Re-execute runs from failure'
+          ? '重新执行运行'
+          : '从失败处重新执行运行'
       }
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}
     >
       <DialogBody>
-        <Box flex={{direction: 'column', gap: 24}}>
+        <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
-        </Box>
+        </Group>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

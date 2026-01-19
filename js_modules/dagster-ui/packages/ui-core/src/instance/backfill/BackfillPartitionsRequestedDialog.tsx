@@ -29,7 +29,7 @@ export const BackfillPartitionsRequestedDialog = ({backfillId, onClose}: Props) 
       isOpen={!!backfillId}
       title={
         <span>
-          Partitions requested for backfill:{' '}
+          回填请求的分区:{' '}
           <span style={{fontFamily: FontFamily.monospace}}>{backfillId}</span>
         </span>
       }
@@ -37,7 +37,7 @@ export const BackfillPartitionsRequestedDialog = ({backfillId, onClose}: Props) 
     >
       <DialogContent backfillId={backfillId} />
       <DialogFooter topBorder>
-        <Button onClick={onClose}>Done</Button>
+        <Button onClick={onClose}>完成</Button>
       </DialogFooter>
     </Dialog>
   );
@@ -70,7 +70,7 @@ const DialogContent = (props: {backfillId: string | undefined}) => {
     <div style={{height: '340px', overflow: 'hidden'}}>
       {loading ? (
         <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
-          <SpinnerWithText label="Loading requested partitions…" />
+          <SpinnerWithText label="加载请求的分区中..." />
         </Box>
       ) : (
         <VirtualizedItemListForDialog

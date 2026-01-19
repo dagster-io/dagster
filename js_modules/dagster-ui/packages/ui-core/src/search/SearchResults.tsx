@@ -70,21 +70,21 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
 const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
   switch (type) {
     case AssetFilterSearchResultType.CodeLocation:
-      return 'Code location';
+      return '代码位置';
     case AssetFilterSearchResultType.Kind:
-      return 'Kind';
+      return '类型';
     case AssetFilterSearchResultType.Tag:
-      return 'Tag';
+      return '标签';
     case AssetFilterSearchResultType.Owner:
-      return 'Owner';
+      return '所有者';
     case AssetFilterSearchResultType.AssetGroup:
-      return 'Group';
+      return '分组';
     case AssetFilterSearchResultType.Column:
-      return 'Column';
+      return '列';
     case AssetFilterSearchResultType.ColumnTag:
-      return 'Column tag';
+      return '列标签';
     case AssetFilterSearchResultType.TableName:
-      return 'Table name';
+      return '表名';
     default:
       assertUnreachable(type);
   }
@@ -200,17 +200,17 @@ export const SearchResultItem = <T extends ResultType>({
                   <Caption>{assetFilterPrefixString(item.type)}:</Caption>
                 )}
                 <div>{labelComponents}</div>
-                {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+                {item.repoPath && <Caption>位于 {item.repoPath}</Caption>}
               </Box>
             </StyledTag>
             <div style={{marginLeft: '8px'}}>
               <Description isHighlight={isHighlight}>
-                {item.numResults ? `${item.numResults} assets` : item.description}
+                {item.numResults ? `${item.numResults} 个资产` : item.description}
               </Description>
             </div>
           </Box>
           <ResultEnterWrapper flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            <div>Enter</div>
+            <div>回车</div>
             <Icon name="key_return" color={Colors.accentGray()} />
           </ResultEnterWrapper>
         </Box>
@@ -240,7 +240,7 @@ export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>
     if (searching) {
       return;
     }
-    return <NoResults>No results</NoResults>;
+    return <NoResults>无结果</NoResults>;
   }
 
   return (

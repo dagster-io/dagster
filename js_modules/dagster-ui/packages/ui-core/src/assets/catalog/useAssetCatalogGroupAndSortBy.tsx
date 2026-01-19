@@ -23,19 +23,19 @@ import {AssetTableFragment} from '../types/AssetTableFragment.types';
 const SORT_ITEMS = [
   {
     key: 'materialization_asc' as const,
-    text: 'Materialization (new to old)',
+    text: '物化时间（新到旧）',
   },
   {
     key: 'materialization_desc' as const,
-    text: 'Materialization (old to new)',
+    text: '物化时间（旧到新）',
   },
   {
     key: 'key_asc' as const,
-    text: 'Asset key (a to z)',
+    text: '资产键（A 到 Z）',
   },
   {
     key: 'key_desc' as const,
-    text: 'Asset key (z to a)',
+    text: '资产键（Z 到 A）',
   },
 ];
 
@@ -103,7 +103,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 text={props.group}
                 groupBy={AssetHealthGroupBy.code_location}
                 key={props.group}
-                noneGroup="No code location"
+                noneGroup="无代码位置"
               />
             );
           },
@@ -122,7 +122,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 text={props.group}
                 groupBy={AssetHealthGroupBy.group}
                 key={props.group}
-                noneGroup="No group"
+                noneGroup="无组"
               />
             );
           },
@@ -145,7 +145,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 text={props.group}
                 groupBy={AssetHealthGroupBy.owner}
                 key={props.group}
-                noneGroup="No owner"
+                noneGroup="无负责人"
               />
             );
           },
@@ -173,7 +173,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 text={props.group}
                 groupBy={AssetHealthGroupBy.kind}
                 key={props.group}
-                noneGroup="No kind"
+                noneGroup="无类型"
               />
             );
           },
@@ -196,7 +196,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 text={props.group}
                 groupBy={AssetHealthGroupBy.tags}
                 key={props.group}
-                noneGroup="No tags"
+                noneGroup="无标签"
               />
             );
           },
