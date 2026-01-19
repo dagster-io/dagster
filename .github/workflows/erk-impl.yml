@@ -1,0 +1,251 @@
+name: erk-impl
+run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "GitHub issue number to implement"
+        required: true
+        type: string
+      submitted_by:
+        description: "GitHub username of the person who submitted the issue"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique identifier for run discovery (base36)"
+        required: true
+        type: string
+      issue_title:
+        description: "Issue title for workflow run display"
+        required: true
+        type: string
+      branch_name:
+        description: "Branch name for implementation (created by submit command)"
+        required: true
+        type: string
+      pr_number:
+        description: "PR number for implementation (created by submit command)"
+        required: true
+        type: string
+      model_name:
+        description: "Claude model to use for implementation"
+        required: false
+        type: string
+        default: "claude-sonnet-4-5"
+
+concurrency:
+  group: implement-issue-${{ github.event.inputs.issue_number }}
+  cancel-in-progress: true
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Claude Code
+        uses: ./.github/actions/setup-claude-code
+
+      - name: Setup remaining tools
+        run: |
+          npm install -g prettier
+          cd $GITHUB_WORKSPACE
+          uv tool install -e . --with-editable ./packages/erk-shared
+
+      - name: Configure git
+        env:
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+        run: |
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "${SUBMITTED_BY}@users.noreply.github.com"
+
+      - name: Detect trunk branch
+        id: trunk
+        run: |
+          result=$(erk exec detect-trunk-branch)
+          echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
+
+      - name: Set branch and PR from inputs
+        id: find_pr
+        run: |
+          echo "branch_name=${{ inputs.branch_name }}" >> $GITHUB_OUTPUT
+          echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          echo "pr_exists=true" >> $GITHUB_OUTPUT
+          echo "Using branch: ${{ inputs.branch_name }}"
+          echo "Using PR: #${{ inputs.pr_number }}"
+
+      - name: Checkout implementation branch
+        env:
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+          GH_TOKEN: ${{ github.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          git fetch origin "$BRANCH_NAME"
+          git checkout "$BRANCH_NAME"
+          rm -rf .worker-impl
+          erk exec create-worker-impl-from-issue "$ISSUE_NUMBER"
+          if [ $? -ne 0 ]; then
+            gh issue comment "$ISSUE_NUMBER" --body "Could not fetch plan content for issue #$ISSUE_NUMBER."
+            exit 1
+          fi
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          git add .worker-impl
+          if [[ -n $(git status --porcelain) ]]; then
+            git commit -m "Update plan for issue #$ISSUE_NUMBER (rerun)"
+            git push origin "$BRANCH_NAME"
+          fi
+          echo "Checked out branch: $BRANCH_NAME"
+
+      - name: Post workflow started comment
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          erk exec post-workflow-started-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --branch-name "$BRANCH_NAME" \
+            --pr-number "$PR_NUMBER" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --repository "${{ github.repository }}"
+
+      - name: Add remote execution note to PR
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          erk exec add-remote-execution-note \
+            --pr-number "$PR_NUMBER" \
+            --run-id "$WORKFLOW_RUN_ID" \
+            --run-url "$WORKFLOW_RUN_URL"
+
+      - name: Set up implementation folder
+        run: |
+          cp -r .worker-impl .impl
+          echo "Copied .worker-impl/ to .impl/"
+          cat > .impl/run-info.json <<EOF
+          {
+            "run_id": "${{ github.run_id }}",
+            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          echo "Created .impl/run-info.json"
+
+      - name: Run implementation
+        id: implement
+        run: |
+          set +e
+          claude --print \
+            --model ${{ inputs.model_name }} \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/erk:plan-implement"
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "implementation_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "implementation_success=false" >> $GITHUB_OUTPUT
+          fi
+          if [ -d .worker-impl/ ]; then
+            rm -rf .worker-impl/
+            echo "Removed .worker-impl/ before submission"
+          fi
+          exit 0
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+
+      - name: Submit branch with proper commit message
+        id: submit
+        continue-on-error: true
+        if: steps.implement.outputs.implementation_success == 'true'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+        run: |
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          claude --print \
+            --model ${{ inputs.model_name }} \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/erk:git-pr-push Implement issue #$ISSUE_NUMBER"
+          echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Handle merge conflicts if push failed
+        id: handle_conflicts
+        if: steps.submit.outcome == 'failure'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          erk exec rebase-with-conflict-resolution \
+            --trunk-branch "${{ steps.trunk.outputs.trunk_branch }}" \
+            --branch-name "${{ steps.find_pr.outputs.branch_name }}" \
+            --model "${{ inputs.model_name }}"
+
+      - name: Mark PR ready for review
+        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+        run: |
+          gh pr ready "$BRANCH_NAME"
+          echo "PR marked ready for review"
+
+      - name: Update PR body with implementation summary
+        continue-on-error: true
+        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          erk exec ci-update-pr-body \
+            --issue-number "${{ inputs.issue_number }}" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Trigger CI workflows
+        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        env:
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+        run: |
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          git commit --allow-empty -m "Trigger CI workflows"
+          git push origin "$BRANCH_NAME"
+          echo "CI workflows triggered via push event"
