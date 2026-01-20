@@ -13,61 +13,17 @@ from dagster.components.utils.defs_state import (
     DefsStateConfigArgs,
     ResolvedDefsStateConfig,
 )
-from dagster.components.utils.translation import ResolvedTranslationFn
-from dagster_shared.record import record
 from pydantic import Field
 from typing_extensions import Self
 
 from dagster_polytomic.objects import PolytomicBulkSyncEnrichedSchema, PolytomicWorkspaceData
+from dagster_polytomic.translation import (
+    _TRANSLATOR_DATA_METADATA_KEY,
+    PolytomicSchemaMetadataSet,
+    PolytomicTranslatorData,
+    ResolvedPolytomicTranslationFn,
+)
 from dagster_polytomic.workspace import PolytomicWorkspace
-
-_TRANSLATOR_DATA_METADATA_KEY = ".dagster-polytomic/translator_data"
-
-
-class PolytomicSchemaMetadataSet(NamespacedMetadataSet):
-    """Represents metadata that is captured from a Polytomic schema."""
-
-    id: str
-    bulk_sync_id: str
-    output_name: Optional[str] = None
-    partition_key: Optional[str] = None
-    tracking_field: Optional[str] = None
-    source_connection_id: Optional[str] = None
-    source_connection_name: Optional[str] = None
-    destination_connection_id: Optional[str] = None
-    destination_connection_name: Optional[str] = None
-
-    @classmethod
-    def from_enriched_schema(cls, enriched_schema: PolytomicBulkSyncEnrichedSchema) -> Self:
-        return cls(
-            id=enriched_schema.id,
-            bulk_sync_id=enriched_schema.bulk_sync_id,
-            output_name=enriched_schema.output_name,
-            partition_key=enriched_schema.partition_key,
-            tracking_field=enriched_schema.tracking_field,
-            source_connection_id=enriched_schema.source_connection_id,
-            source_connection_name=enriched_schema.source_connection_name,
-            destination_connection_id=enriched_schema.destination_connection_id,
-            destination_connection_name=enriched_schema.destination_connection_name,
-        )
-
-    @classmethod
-    def namespace(cls) -> str:
-        return "dagster-polytomic"
-
-
-@record
-class PolytomicTranslatorData:
-    """Container class for data required to translate an object in an
-    Polytomic workspace into a Dagster definition.
-
-    Properties:
-        obj (PolytomicBulkSyncEnrichedSchema): The object to translate.
-        workspace_data (PolytomicWorkspaceData): Global workspace data.
-    """
-
-    obj: PolytomicBulkSyncEnrichedSchema
-    workspace_data: PolytomicWorkspaceData
 
 
 @preview
@@ -75,7 +31,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     workspace: PolytomicWorkspace = Field(
         description="Defines configuration for interacting with a Polytomic organization.",
     )
-    translation: Optional[ResolvedTranslationFn[PolytomicTranslatorData]] = Field(
+    translation: Optional[ResolvedPolytomicTranslationFn] = Field(
         default=None,
         description="Defines how to translate a Polytomic object into an AssetSpec object.",
     )
@@ -95,7 +51,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         """Load state from path using Dagster's deserialization system."""
         return dg.deserialize_value(state_path.read_text(), PolytomicWorkspaceData)
 
-    def _get_default_asset_spec(self, data: PolytomicTranslatorData) -> dg.AssetSpec:
+    def _get_default_polytomic_spec(self, data: PolytomicTranslatorData) -> Optional[dg.AssetSpec]:
         """Core function for converting a Polytomic schema into an AssetSpec object."""
         if isinstance(data.obj, PolytomicBulkSyncEnrichedSchema):
             enriched_schema = data.obj
@@ -119,13 +75,12 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                 },
                 kinds={"polytomic"},
             )
-        else:
-            raise ValueError(f"Unsupported object type: {type(data.obj)}")
+        return None
 
     def get_asset_spec(self, data: PolytomicTranslatorData) -> dg.AssetSpec:
         """Core function for converting a Polytomic object into an AssetSpec object."""
-        base_asset_spec = self._get_default_asset_spec(data)
-        if self.translation:
+        base_asset_spec = self._get_default_polytomic_spec(data)
+        if self.translation and base_asset_spec:
             return self.translation(base_asset_spec, data)
         else:
             return base_asset_spec
