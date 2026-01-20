@@ -1,43 +1,69 @@
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
+from dagster_polytomic.objects import (
+    PolytomicBulkSync,
+    PolytomicBulkSyncSchema,
+    PolytomicConnection,
+    PolytomicWorkspaceData,
+)
 from dagster_polytomic.workspace import PolytomicWorkspace
 from polytomic import BulkSchema, BulkSyncResponse, ConnectionResponseSchema
 
 
 @pytest.fixture
-def mock_connection():
-    """Create a mock connection."""
-    connection = MagicMock(spec=ConnectionResponseSchema)
-    connection.id = "conn-1"
-    connection.name = "Test Connection"
-    connection.type = "postgres"
-    return connection
+def mock_connection_response():
+    """Create a mock ConnectionResponseSchema."""
+    response = MagicMock(spec=ConnectionResponseSchema)
+    response.id = "conn-1"
+    response.name = "Test Connection"
+    # Mock the type to have a name attribute
+    mock_type = MagicMock()
+    mock_type.name = "postgres"
+    response.type = mock_type
+    response.organization_id = "org-1"
+    response.status = "active"
+    return response
 
 
 @pytest.fixture
-def mock_bulk_sync():
-    """Create a mock bulk sync."""
-    bulk_sync = MagicMock(spec=BulkSyncResponse)
-    bulk_sync.id = "sync-1"
-    bulk_sync.name = "Test Sync"
-    bulk_sync.active = True
-    return bulk_sync
+def mock_bulk_sync_response():
+    """Create a mock BulkSyncResponse."""
+    response = MagicMock(spec=BulkSyncResponse)
+    response.id = "sync-1"
+    response.name = "Test Sync"
+    response.active = True
+    response.mode = "create"
+    response.source_connection_id = "conn-1"
+    response.destination_connection_id = "conn-2"
+    response.organization_id = "org-1"
+    return response
 
 
 @pytest.fixture
-def mock_bulk_schema():
-    """Create a mock bulk schema."""
-    schema = MagicMock(spec=BulkSchema)
-    schema.id = "schema-1"
-    schema.name = "users"
-    schema.mode = "create"
-    return schema
+def mock_bulk_schema_response():
+    """Create a mock BulkSchema."""
+    response = MagicMock(spec=BulkSchema)
+    response.id = "schema-1"
+    response.enabled = True
+    response.output_name = "users"
+    response.partition_key = "created_at"
+    response.tracking_field = "updated_at"
+
+    # Mock field
+    mock_field = MagicMock()
+    mock_field.name = "id"
+    mock_field.enabled = True
+    response.fields = [mock_field]
+    return response
 
 
 @pytest.mark.asyncio
 async def test_fetch_polytomic_state_success(
-    polytomic_workspace, mock_connection, mock_bulk_sync, mock_bulk_schema
+    polytomic_workspace,
+    mock_connection_response,
+    mock_bulk_sync_response,
+    mock_bulk_schema_response,
 ):
     """Test successful fetching of workspace data."""
     # Create mock client
@@ -45,17 +71,17 @@ async def test_fetch_polytomic_state_success(
 
     # Mock connections.list() with AsyncMock
     mock_connections_list_response = MagicMock()
-    mock_connections_list_response.data = [mock_connection]
+    mock_connections_list_response.data = [mock_connection_response]
     mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
     # Mock bulk_sync.list() with AsyncMock
     mock_bulk_syncs_list_response = MagicMock()
-    mock_bulk_syncs_list_response.data = [mock_bulk_sync]
+    mock_bulk_syncs_list_response.data = [mock_bulk_sync_response]
     mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
     # Mock bulk_sync.schemas.list() with AsyncMock
     mock_schemas_list_response = MagicMock()
-    mock_schemas_list_response.data = [mock_bulk_schema]
+    mock_schemas_list_response.data = [mock_bulk_schema_response]
     mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
     # Patch the client property
@@ -68,28 +94,43 @@ async def test_fetch_polytomic_state_success(
         state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify the structure
-    assert "connections" in state
-    assert "bulk_syncs" in state
-    assert "schemas" in state
+    assert isinstance(state, PolytomicWorkspaceData)
+    assert len(state.connections) == 1
+    assert len(state.bulk_syncs) == 1
+    assert len(state.schemas) == 1
 
     # Verify connections
-    assert len(state["connections"]) == 1
-    assert state["connections"][0].id == "conn-1"
-    assert state["connections"][0].name == "Test Connection"
-    assert state["connections"][0].type == "postgres"
+    conn = state.connections[0]
+    assert isinstance(conn, PolytomicConnection)
+    assert conn.id == "conn-1"
+    assert conn.name == "Test Connection"
+    assert conn.type == "postgres"
+    assert conn.organization_id == "org-1"
+    assert conn.status == "active"
 
     # Verify bulk syncs
-    assert len(state["bulk_syncs"]) == 1
-    assert state["bulk_syncs"][0].id == "sync-1"
-    assert state["bulk_syncs"][0].name == "Test Sync"
-    assert state["bulk_syncs"][0].active is True
+    sync = state.bulk_syncs[0]
+    assert isinstance(sync, PolytomicBulkSync)
+    assert sync.id == "sync-1"
+    assert sync.name == "Test Sync"
+    assert sync.active is True
+    assert sync.mode == "create"
+    assert sync.source_connection_id == "conn-1"
+    assert sync.destination_connection_id == "conn-2"
 
     # Verify schemas
-    assert "sync-1" in state["schemas"]
-    assert len(state["schemas"]["sync-1"]) == 1
-    assert state["schemas"]["sync-1"][0].id == "schema-1"
-    assert state["schemas"]["sync-1"][0].name == "users"
-    assert state["schemas"]["sync-1"][0].mode == "create"
+    assert "sync-1" in state.schemas
+    assert len(state.schemas["sync-1"]) == 1
+    schema = state.schemas["sync-1"][0]
+    assert isinstance(schema, PolytomicBulkSyncSchema)
+    assert schema.id == "schema-1"
+    assert schema.enabled is True
+    assert schema.output_name == "users"
+    assert schema.partition_key == "created_at"
+    assert schema.tracking_field == "updated_at"
+    assert len(schema.fields) == 1
+    assert schema.fields[0].name == "id"
+    assert schema.fields[0].enabled is True
 
     # Verify method calls
     mock_client.connections.list.assert_called_once()
@@ -122,9 +163,10 @@ async def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
         state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify empty results
-    assert len(state["connections"]) == 0
-    assert len(state["bulk_syncs"]) == 0
-    assert len(state["schemas"]) == 0
+    assert isinstance(state, PolytomicWorkspaceData)
+    assert len(state.connections) == 0
+    assert len(state.bulk_syncs) == 0
+    assert len(state.schemas) == 0
 
     # Verify method calls
     mock_client.connections.list.assert_called_once()
@@ -158,31 +200,50 @@ async def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
         state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify empty results (the `or []` fallback should handle None)
-    assert len(state["connections"]) == 0
-    assert len(state["bulk_syncs"]) == 0
-    assert len(state["schemas"]) == 0
+    assert isinstance(state, PolytomicWorkspaceData)
+    assert len(state.connections) == 0
+    assert len(state.bulk_syncs) == 0
+    assert len(state.schemas) == 0
 
 
 @pytest.mark.asyncio
-async def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
+async def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace, mock_connection_response):
     """Test fetching schemas for multiple bulk syncs."""
     # Create mock bulk syncs
     mock_sync_1 = MagicMock(spec=BulkSyncResponse)
     mock_sync_1.id = "sync-1"
     mock_sync_1.name = "Sync 1"
+    mock_sync_1.active = True
+    mock_sync_1.mode = "create"
+    mock_sync_1.source_connection_id = "conn-1"
+    mock_sync_1.destination_connection_id = "conn-2"
+    mock_sync_1.organization_id = "org-1"
 
     mock_sync_2 = MagicMock(spec=BulkSyncResponse)
     mock_sync_2.id = "sync-2"
     mock_sync_2.name = "Sync 2"
+    mock_sync_2.active = False
+    mock_sync_2.mode = "update"
+    mock_sync_2.source_connection_id = "conn-1"
+    mock_sync_2.destination_connection_id = "conn-3"
+    mock_sync_2.organization_id = "org-1"
 
     # Create mock schemas
     mock_schema_1 = MagicMock(spec=BulkSchema)
     mock_schema_1.id = "schema-1"
-    mock_schema_1.name = "users"
+    mock_schema_1.enabled = True
+    mock_schema_1.output_name = "users"
+    mock_schema_1.partition_key = None
+    mock_schema_1.tracking_field = None
+    mock_schema_1.fields = []
 
     mock_schema_2 = MagicMock(spec=BulkSchema)
     mock_schema_2.id = "schema-2"
-    mock_schema_2.name = "orders"
+    mock_schema_2.enabled = True
+    mock_schema_2.output_name = "orders"
+    mock_schema_2.partition_key = None
+    mock_schema_2.tracking_field = None
+    mock_schema_2.fields = []
 
     # Create mock client
     mock_client = MagicMock()
@@ -218,18 +279,18 @@ async def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
         state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify schemas for both syncs
-    assert len(state["bulk_syncs"]) == 2
-    assert len(state["schemas"]) == 2
+    assert len(state.bulk_syncs) == 2
+    assert len(state.schemas) == 2
 
-    assert "sync-1" in state["schemas"]
-    assert len(state["schemas"]["sync-1"]) == 1
-    assert state["schemas"]["sync-1"][0].id == "schema-1"
-    assert state["schemas"]["sync-1"][0].name == "users"
+    assert "sync-1" in state.schemas
+    assert len(state.schemas["sync-1"]) == 1
+    assert state.schemas["sync-1"][0].id == "schema-1"
+    assert state.schemas["sync-1"][0].output_name == "users"
 
-    assert "sync-2" in state["schemas"]
-    assert len(state["schemas"]["sync-2"]) == 1
-    assert state["schemas"]["sync-2"][0].id == "schema-2"
-    assert state["schemas"]["sync-2"][0].name == "orders"
+    assert "sync-2" in state.schemas
+    assert len(state.schemas["sync-2"]) == 1
+    assert state.schemas["sync-2"][0].id == "schema-2"
+    assert state.schemas["sync-2"][0].output_name == "orders"
 
     # Verify schemas.list was called for each bulk sync
     assert mock_client.bulk_sync.schemas.list.call_count == 2
@@ -242,6 +303,11 @@ async def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
     mock_sync = MagicMock(spec=BulkSyncResponse)
     mock_sync.id = "sync-1"
     mock_sync.name = "Test Sync"
+    mock_sync.active = True
+    mock_sync.mode = "create"
+    mock_sync.source_connection_id = "conn-1"
+    mock_sync.destination_connection_id = "conn-2"
+    mock_sync.organization_id = "org-1"
 
     # Create mock client
     mock_client = MagicMock()
@@ -316,3 +382,64 @@ def test_client_cached_property(polytomic_workspace):
         # Verify all accesses return the same instance
         assert client1 is client2
         assert client2 is client3
+
+
+def test_workspace_data_helper_methods(mock_connection_response, mock_bulk_sync_response):
+    """Test the helper methods on PolytomicWorkspaceData."""
+    # Create workspace data
+    connection = PolytomicConnection.from_api_response(mock_connection_response)
+    bulk_sync = PolytomicBulkSync.from_api_response(mock_bulk_sync_response)
+
+    workspace_data = PolytomicWorkspaceData(
+        connections=[connection],
+        bulk_syncs=[bulk_sync],
+        schemas={"sync-1": []},
+    )
+
+    # Test get_connection
+    assert workspace_data.get_connection("conn-1") == connection
+    assert workspace_data.get_connection("non-existent") is None
+
+    # Test get_bulk_sync
+    assert workspace_data.get_bulk_sync("sync-1") == bulk_sync
+    assert workspace_data.get_bulk_sync("non-existent") is None
+
+    # Test get_bulk_sync_schemas
+    assert workspace_data.get_bulk_sync_schemas("sync-1") == []
+    assert workspace_data.get_bulk_sync_schemas("non-existent") == []
+
+
+def test_connection_type_as_string(polytomic_workspace):
+    """Test handling when connection type is a string instead of an object."""
+    # Create mock connection with string type
+    mock_connection = MagicMock(spec=ConnectionResponseSchema)
+    mock_connection.id = "conn-1"
+    mock_connection.name = "Test Connection"
+    mock_connection.type = "mysql"  # String instead of object
+    mock_connection.organization_id = "org-1"
+    mock_connection.status = "active"
+
+    # Create mock client
+    mock_client = MagicMock()
+    mock_connections_list_response = MagicMock()
+    mock_connections_list_response.data = [mock_connection]
+    mock_client.connections.list.return_value = mock_connections_list_response
+
+    mock_bulk_syncs_list_response = MagicMock()
+    mock_bulk_syncs_list_response.data = []
+    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+
+    with patch.object(
+        type(polytomic_workspace),
+        "client",
+        new_callable=PropertyMock,
+        return_value=mock_client,
+    ):
+
+        async def run_test():
+            return await polytomic_workspace.fetch_polytomic_state()
+
+        state = asyncio.run(run_test())
+
+    # Verify connection type is correctly extracted as string
+    assert state.connections[0].type == "mysql"
