@@ -71,5 +71,5 @@ class PolytomicWorkspace(dg.Resolvable, dg.Model):
         return PolytomicWorkspaceData(
             connections=connections,
             bulk_syncs=bulk_syncs,
-            schemas=schemas,
+            schemas_by_bulk_sync_id=schemas,
         )

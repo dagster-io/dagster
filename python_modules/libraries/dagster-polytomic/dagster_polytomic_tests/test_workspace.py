@@ -97,7 +97,7 @@ async def test_fetch_polytomic_state_success(
     assert isinstance(state, PolytomicWorkspaceData)
     assert len(state.connections) == 1
     assert len(state.bulk_syncs) == 1
-    assert len(state.schemas) == 1
+    assert len(state.schemas_by_bulk_sync_id) == 1
 
     # Verify connections
     conn = state.connections[0]
@@ -119,9 +119,9 @@ async def test_fetch_polytomic_state_success(
     assert sync.destination_connection_id == "conn-2"
 
     # Verify schemas
-    assert "sync-1" in state.schemas
-    assert len(state.schemas["sync-1"]) == 1
-    schema = state.schemas["sync-1"][0]
+    assert "sync-1" in state.schemas_by_bulk_sync_id
+    assert len(state.schemas_by_bulk_sync_id["sync-1"]) == 1
+    schema = state.schemas_by_bulk_sync_id["sync-1"][0]
     assert isinstance(schema, PolytomicBulkSyncSchema)
     assert schema.id == "schema-1"
     assert schema.enabled is True
@@ -166,7 +166,7 @@ async def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
     assert isinstance(state, PolytomicWorkspaceData)
     assert len(state.connections) == 0
     assert len(state.bulk_syncs) == 0
-    assert len(state.schemas) == 0
+    assert len(state.schemas_by_bulk_sync_id) == 0
 
     # Verify method calls
     mock_client.connections.list.assert_called_once()
@@ -203,7 +203,7 @@ async def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
     assert isinstance(state, PolytomicWorkspaceData)
     assert len(state.connections) == 0
     assert len(state.bulk_syncs) == 0
-    assert len(state.schemas) == 0
+    assert len(state.schemas_by_bulk_sync_id) == 0
 
 
 @pytest.mark.asyncio
@@ -280,17 +280,17 @@ async def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace, mo
 
     # Verify schemas for both syncs
     assert len(state.bulk_syncs) == 2
-    assert len(state.schemas) == 2
+    assert len(state.schemas_by_bulk_sync_id) == 2
 
-    assert "sync-1" in state.schemas
-    assert len(state.schemas["sync-1"]) == 1
-    assert state.schemas["sync-1"][0].id == "schema-1"
-    assert state.schemas["sync-1"][0].output_name == "users"
+    assert "sync-1" in state.schemas_by_bulk_sync_id
+    assert len(state.schemas_by_bulk_sync_id["sync-1"]) == 1
+    assert state.schemas_by_bulk_sync_id["sync-1"][0].id == "schema-1"
+    assert state.schemas_by_bulk_sync_id["sync-1"][0].output_name == "users"
 
-    assert "sync-2" in state.schemas
-    assert len(state.schemas["sync-2"]) == 1
-    assert state.schemas["sync-2"][0].id == "schema-2"
-    assert state.schemas["sync-2"][0].output_name == "orders"
+    assert "sync-2" in state.schemas_by_bulk_sync_id
+    assert len(state.schemas_by_bulk_sync_id["sync-2"]) == 1
+    assert state.schemas_by_bulk_sync_id["sync-2"][0].id == "schema-2"
+    assert state.schemas_by_bulk_sync_id["sync-2"][0].output_name == "orders"
 
     # Verify schemas.list was called for each bulk sync
     assert mock_client.bulk_sync.schemas.list.call_count == 2
@@ -393,7 +393,7 @@ def test_workspace_data_helper_methods(mock_connection_response, mock_bulk_sync_
     workspace_data = PolytomicWorkspaceData(
         connections=[connection],
         bulk_syncs=[bulk_sync],
-        schemas={"sync-1": []},
+        schemas_by_bulk_sync_id={"sync-1": []},
     )
 
     # Test get_connection

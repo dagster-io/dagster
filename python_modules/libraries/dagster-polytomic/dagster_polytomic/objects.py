@@ -110,12 +110,12 @@ class PolytomicWorkspaceData:
     Properties:
         connections: list[PolytomicConnection]
         bulk_syncs: list[PolytomicBulkSync]
-        schemas: dict[str, list[PolytomicBulkSyncSchema]] - Mapping of bulk sync ID to its schemas
+        schemas_by_bulk_sync_id: dict[str, list[PolytomicBulkSyncSchema]] - Mapping of bulk sync ID to its schemas
     """
 
     connections: list[PolytomicConnection]
     bulk_syncs: list[PolytomicBulkSync]
-    schemas: dict[str, list[PolytomicBulkSyncSchema]]
+    schemas_by_bulk_sync_id: dict[str, list[PolytomicBulkSyncSchema]]
 
     @cached_property
     def _connections_by_id(self) -> dict[str, PolytomicConnection]:
@@ -135,4 +135,4 @@ class PolytomicWorkspaceData:
 
     def get_bulk_sync_schemas(self, bulk_sync_id: str) -> list[PolytomicBulkSyncSchema]:
         """Get schemas for a specific bulk sync."""
-        return self.schemas.get(bulk_sync_id, [])
+        return self.schemas_by_bulk_sync_id.get(bulk_sync_id, [])

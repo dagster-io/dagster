@@ -83,18 +83,18 @@ def create_sample_bulk_sync_schema(
 def create_sample_workspace_data(
     connections: Optional[list[PolytomicConnection]] = None,
     bulk_syncs: Optional[list[PolytomicBulkSync]] = None,
-    schemas: Optional[dict[str, list[PolytomicBulkSyncSchema]]] = None,
+    schemas_by_bulk_sync_id: Optional[dict[str, list[PolytomicBulkSyncSchema]]] = None,
 ) -> PolytomicWorkspaceData:
     """Create sample PolytomicWorkspaceData for testing."""
     if connections is None:
         connections = [create_sample_connection()]
     if bulk_syncs is None:
         bulk_syncs = [create_sample_bulk_sync()]
-    if schemas is None:
-        schemas = {"sync-123": [create_sample_bulk_sync_schema()]}
+    if schemas_by_bulk_sync_id is None:
+        schemas_by_bulk_sync_id = {"sync-123": [create_sample_bulk_sync_schema()]}
 
     return PolytomicWorkspaceData(
         connections=connections,
         bulk_syncs=bulk_syncs,
-        schemas=schemas,
+        schemas_by_bulk_sync_id=schemas_by_bulk_sync_id,
     )

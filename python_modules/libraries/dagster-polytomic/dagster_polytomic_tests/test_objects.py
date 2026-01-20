@@ -156,7 +156,7 @@ def test_polytomic_workspace_data_get_connection():
     workspace_data = PolytomicWorkspaceData(
         connections=[connection1, connection2],
         bulk_syncs=[],
-        schemas={},
+        schemas_by_bulk_sync_id={},
     )
 
     # Test getting existing connection
@@ -175,7 +175,7 @@ def test_polytomic_workspace_data_get_bulk_sync():
     workspace_data = PolytomicWorkspaceData(
         connections=[],
         bulk_syncs=[bulk_sync1, bulk_sync2],
-        schemas={},
+        schemas_by_bulk_sync_id={},
     )
 
     # Test getting existing bulk sync
@@ -194,7 +194,7 @@ def test_polytomic_workspace_data_get_bulk_sync_schemas():
     workspace_data = PolytomicWorkspaceData(
         connections=[],
         bulk_syncs=[],
-        schemas={"sync-1": [schema1, schema2], "sync-2": []},
+        schemas_by_bulk_sync_id={"sync-1": [schema1, schema2], "sync-2": []},
     )
 
     # Test getting schemas for existing bulk sync
@@ -259,5 +259,5 @@ def test_utils_create_sample_workspace_data():
 
     assert len(workspace_data.connections) == 1
     assert len(workspace_data.bulk_syncs) == 1
-    assert len(workspace_data.schemas) == 1
-    assert "sync-123" in workspace_data.schemas
+    assert len(workspace_data.schemas_by_bulk_sync_id) == 1
+    assert "sync-123" in workspace_data.schemas_by_bulk_sync_id
