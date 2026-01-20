@@ -1,4 +1,3 @@
-import asyncio
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -65,11 +64,7 @@ def test_fetch_polytomic_state_success(
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        state = asyncio.run(run_test())
+        state = polytomic_workspace.fetch_polytomic_state()
 
     # Verify the structure
     assert "connections" in state
@@ -122,11 +117,7 @@ def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        state = asyncio.run(run_test())
+        state = polytomic_workspace.fetch_polytomic_state()
 
     # Verify empty results
     assert len(state["connections"]) == 0
@@ -161,11 +152,7 @@ def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        state = asyncio.run(run_test())
+        state = polytomic_workspace.fetch_polytomic_state()
 
     # Verify empty results (the `or []` fallback should handle None)
     assert len(state["connections"]) == 0
@@ -224,11 +211,7 @@ def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        state = asyncio.run(run_test())
+        state = polytomic_workspace.fetch_polytomic_state()
 
     # Verify schemas for both syncs
     assert len(state["bulk_syncs"]) == 2
@@ -278,12 +261,8 @@ def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
         with pytest.raises(Exception) as exc_info:
-            asyncio.run(run_test())
+            polytomic_workspace.fetch_polytomic_state()
 
         assert str(exc_info.value) == "API Error"
 
