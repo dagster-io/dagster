@@ -52,7 +52,7 @@ class PolytomicSchemaMetadataSet(NamespacedMetadataSet):
 
     @classmethod
     def namespace(cls) -> str:
-        return "dagster-omni"
+        return "dagster-polytomic"
 
 
 @record

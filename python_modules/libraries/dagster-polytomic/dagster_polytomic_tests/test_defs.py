@@ -37,11 +37,11 @@ def test_get_asset_spec_enriched_schema(component: PolytomicComponent):
     assert spec.kinds == {"polytomic"}
 
     # Check metadata
-    assert spec.metadata["dagster-omni/id"] == "schema-123"
-    assert spec.metadata["dagster-omni/bulk_sync_id"] == "sync-123"
-    assert spec.metadata["dagster-omni/output_name"] == "users"
-    assert spec.metadata["dagster-omni/source_connection_name"] == "PostgreSQL"
-    assert spec.metadata["dagster-omni/destination_connection_name"] == "Snowflake"
+    assert spec.metadata["dagster-polytomic/id"] == "schema-123"
+    assert spec.metadata["dagster-polytomic/bulk_sync_id"] == "sync-123"
+    assert spec.metadata["dagster-polytomic/output_name"] == "users"
+    assert spec.metadata["dagster-polytomic/source_connection_name"] == "PostgreSQL"
+    assert spec.metadata["dagster-polytomic/destination_connection_name"] == "Snowflake"
     assert ".dagster-polytomic/translator_data" in spec.metadata
 
 
@@ -264,8 +264,10 @@ def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
     assert schema_asset.key == AssetKey(["analytics", "schema-1"])
     assert schema_asset.group_name == "analytics"
     assert schema_asset.kinds == {"polytomic"}
-    assert schema_asset.metadata["dagster-omni/output_name"] == "web_events"
-    assert schema_asset.metadata["dagster-omni/partition_key"] == "event_date"
-    assert schema_asset.metadata["dagster-omni/tracking_field"] == "updated_at"
-    assert schema_asset.metadata["dagster-omni/source_connection_name"] == "PostgreSQL Source"
-    assert schema_asset.metadata["dagster-omni/destination_connection_name"] == "Snowflake Dest"
+    assert schema_asset.metadata["dagster-polytomic/output_name"] == "web_events"
+    assert schema_asset.metadata["dagster-polytomic/partition_key"] == "event_date"
+    assert schema_asset.metadata["dagster-polytomic/tracking_field"] == "updated_at"
+    assert schema_asset.metadata["dagster-polytomic/source_connection_name"] == "PostgreSQL Source"
+    assert (
+        schema_asset.metadata["dagster-polytomic/destination_connection_name"] == "Snowflake Dest"
+    )
