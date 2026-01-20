@@ -243,12 +243,7 @@ def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
         ),
     ):
         # Step 1: Fetch workspace data from "API"
-        import asyncio
-
-        async def fetch_data():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        workspace_data = asyncio.run(fetch_data())
+        workspace_data = polytomic_workspace.fetch_polytomic_state()
 
         # Step 2: Build definitions from workspace data
         defs = component.build_defs_from_workspace_data(workspace_data)

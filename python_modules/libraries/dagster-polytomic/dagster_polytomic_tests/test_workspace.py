@@ -559,11 +559,7 @@ def test_fetch_polytomic_state_excludes_disabled_schemas(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        state = asyncio.run(run_test())
+        state = polytomic_workspace.fetch_polytomic_state()
 
     # Verify only enabled schema is in the state
     assert "sync-1" in state.schemas_by_bulk_sync_id

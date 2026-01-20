@@ -84,9 +84,9 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig.from_args(self.defs_state, default_key=self.__class__.__name__)
 
-    async def write_state_to_path(self, state_path: Path) -> None:
+    def write_state_to_path(self, state_path: Path) -> None:
         """Fetch documents from Polytomic API and write state to path."""
-        state = await self.workspace.fetch_polytomic_state()
+        state = self.workspace.fetch_polytomic_state()
         state_path.write_text(dg.serialize_value(state))
 
     def load_state_from_path(self, state_path: Path) -> PolytomicWorkspaceData:
