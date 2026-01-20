@@ -115,6 +115,7 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-github**: `python_modules/libraries/dagster-github`
 **dagster-datahub**: `python_modules/libraries/dagster-datahub`
 **dagster-census**: `python_modules/libraries/dagster-census`
+**dagster-hightouch**: `python_modules/libraries/dagster-hightouch`
 **dagster-managed-elements**: `python_modules/libraries/dagster-managed-elements`
 
 ## cli tools
