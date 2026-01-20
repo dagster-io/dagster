@@ -48,12 +48,12 @@ def create_sample_bulk_sync(
 
 
 def create_sample_bulk_field(
-    name: str = "id",
+    field_id: str = "field-123",
     enabled: bool = True,
 ) -> PolytomicBulkField:
     """Create a sample PolytomicBulkField for testing."""
     return PolytomicBulkField(
-        name=name,
+        id=field_id,
         enabled=enabled,
     )
 

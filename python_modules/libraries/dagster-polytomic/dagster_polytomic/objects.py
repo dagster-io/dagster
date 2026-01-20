@@ -1,9 +1,9 @@
 from functools import cached_property
-from typing import Any, Optional
+from typing import Optional
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
-from polytomic import BulkSchema, BulkSyncResponse, ConnectionResponseSchema
+from polytomic import BulkField, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
 
 
 @whitelist_for_serdes
@@ -20,19 +20,10 @@ class PolytomicConnection:
     @classmethod
     def from_api_response(cls, response: ConnectionResponseSchema) -> "PolytomicConnection":
         """Create PolytomicConnection from API response."""
-        # Extract type name from ConnectionTypeSchema if it's an object
-        connection_type = response.type
-        if hasattr(connection_type, "name"):
-            type_name = connection_type.name or "unknown"
-        elif isinstance(connection_type, str):
-            type_name = connection_type
-        else:
-            type_name = str(connection_type) if connection_type else "unknown"
-
         return cls(
             id=response.id or "",
             name=response.name or "",
-            type=type_name,
+            type=response.type.name if response.type else "unknown",
             organization_id=response.organization_id,
             status=response.status,
         )
@@ -70,23 +61,16 @@ class PolytomicBulkSync:
 class PolytomicBulkField:
     """Represents a field in a Polytomic bulk schema."""
 
-    name: str
+    id: str
     enabled: bool
 
     @classmethod
-    def from_api_response(cls, field_data: Any) -> "PolytomicBulkField":
+    def from_api_response(cls, response: BulkField) -> "PolytomicBulkField":
         """Create PolytomicBulkField from API field data."""
-        # Handle both dict and object types
-        if isinstance(field_data, dict):
-            return cls(
-                name=field_data.get("name", ""),
-                enabled=field_data.get("enabled", True),
-            )
-        else:
-            return cls(
-                name=getattr(field_data, "name", "") or "",
-                enabled=getattr(field_data, "enabled", True) or False,
-            )
+        return cls(
+            id=response.id or "",
+            enabled=response.enabled or False,
+        )
 
 
 @whitelist_for_serdes

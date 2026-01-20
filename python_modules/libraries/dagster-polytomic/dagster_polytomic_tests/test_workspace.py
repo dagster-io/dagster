@@ -8,7 +8,7 @@ from dagster_polytomic.objects import (
     PolytomicWorkspaceData,
 )
 from dagster_polytomic.workspace import PolytomicWorkspace
-from polytomic import BulkSchema, BulkSyncResponse, ConnectionResponseSchema
+from polytomic import BulkField, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
 
 
 @pytest.fixture
@@ -51,8 +51,8 @@ def mock_bulk_schema_response():
     response.tracking_field = "updated_at"
 
     # Mock field
-    mock_field = MagicMock()
-    mock_field.name = "id"
+    mock_field = MagicMock(spec=BulkField)
+    mock_field.id = "field-1"
     mock_field.enabled = True
     response.fields = [mock_field]
     return response
@@ -129,7 +129,7 @@ async def test_fetch_polytomic_state_success(
     assert schema.partition_key == "created_at"
     assert schema.tracking_field == "updated_at"
     assert len(schema.fields) == 1
-    assert schema.fields[0].name == "id"
+    assert schema.fields[0].id == "field-1"
     assert schema.fields[0].enabled is True
 
     # Verify method calls
@@ -407,39 +407,3 @@ def test_workspace_data_helper_methods(mock_connection_response, mock_bulk_sync_
     # Test get_bulk_sync_schemas
     assert workspace_data.get_bulk_sync_schemas("sync-1") == []
     assert workspace_data.get_bulk_sync_schemas("non-existent") == []
-
-
-def test_connection_type_as_string(polytomic_workspace):
-    """Test handling when connection type is a string instead of an object."""
-    # Create mock connection with string type
-    mock_connection = MagicMock(spec=ConnectionResponseSchema)
-    mock_connection.id = "conn-1"
-    mock_connection.name = "Test Connection"
-    mock_connection.type = "mysql"  # String instead of object
-    mock_connection.organization_id = "org-1"
-    mock_connection.status = "active"
-
-    # Create mock client
-    mock_client = MagicMock()
-    mock_connections_list_response = MagicMock()
-    mock_connections_list_response.data = [mock_connection]
-    mock_client.connections.list.return_value = mock_connections_list_response
-
-    mock_bulk_syncs_list_response = MagicMock()
-    mock_bulk_syncs_list_response.data = []
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
-
-    with patch.object(
-        type(polytomic_workspace),
-        "client",
-        new_callable=PropertyMock,
-        return_value=mock_client,
-    ):
-
-        async def run_test():
-            return await polytomic_workspace.fetch_polytomic_state()
-
-        state = asyncio.run(run_test())
-
-    # Verify connection type is correctly extracted as string
-    assert state.connections[0].type == "mysql"

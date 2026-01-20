@@ -7,7 +7,7 @@ from dagster_polytomic.objects import (
     PolytomicConnection,
     PolytomicWorkspaceData,
 )
-from polytomic import BulkSchema, BulkSyncResponse, ConnectionResponseSchema
+from polytomic import BulkField, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
 
 from dagster_polytomic_tests.utils import (
     create_sample_bulk_field,
@@ -37,22 +37,6 @@ def test_polytomic_connection_from_api_response():
     assert connection.type == "postgres"
     assert connection.organization_id == "org-123"
     assert connection.status == "active"
-
-
-def test_polytomic_connection_from_api_response_string_type():
-    """Test creating PolytomicConnection when type is a string."""
-    response = MagicMock(spec=ConnectionResponseSchema)
-    response.id = "conn-456"
-    response.name = "MySQL Connection"
-    response.type = "mysql"  # String type
-    response.organization_id = "org-456"
-    response.status = "active"
-
-    connection = PolytomicConnection.from_api_response(response)
-
-    assert connection.id == "conn-456"
-    assert connection.name == "MySQL Connection"
-    assert connection.type == "mysql"
 
 
 def test_polytomic_connection_from_api_response_none_type():
@@ -93,33 +77,35 @@ def test_polytomic_bulk_sync_from_api_response():
     assert bulk_sync.organization_id == "org-123"
 
 
-def test_polytomic_bulk_field_from_api_response_dict():
-    """Test creating PolytomicBulkField from dict."""
-    field_data = {"name": "email", "enabled": True}
+def test_polytomic_bulk_field_from_api_response():
+    """Test creating PolytomicBulkField from BulkField response."""
+    response = MagicMock(spec=BulkField)
+    response.id = "field-123"
+    response.enabled = True
 
-    field = PolytomicBulkField.from_api_response(field_data)
+    field = PolytomicBulkField.from_api_response(response)
 
-    assert field.name == "email"
+    assert field.id == "field-123"
     assert field.enabled is True
 
 
-def test_polytomic_bulk_field_from_api_response_object():
-    """Test creating PolytomicBulkField from object."""
-    mock_field = MagicMock()
-    mock_field.name = "user_id"
-    mock_field.enabled = False
+def test_polytomic_bulk_field_from_api_response_disabled():
+    """Test creating PolytomicBulkField when disabled."""
+    response = MagicMock(spec=BulkField)
+    response.id = "field-456"
+    response.enabled = False
 
-    field = PolytomicBulkField.from_api_response(mock_field)
+    field = PolytomicBulkField.from_api_response(response)
 
-    assert field.name == "user_id"
+    assert field.id == "field-456"
     assert field.enabled is False
 
 
 def test_polytomic_bulk_sync_schema_from_api_response():
     """Test creating PolytomicBulkSyncSchema from API response."""
     # Create mock field
-    mock_field = MagicMock()
-    mock_field.name = "id"
+    mock_field = MagicMock(spec=BulkField)
+    mock_field.id = "field-123"
     mock_field.enabled = True
 
     response = MagicMock(spec=BulkSchema)
@@ -138,7 +124,7 @@ def test_polytomic_bulk_sync_schema_from_api_response():
     assert schema.partition_key == "created_at"
     assert schema.tracking_field == "updated_at"
     assert len(schema.fields) == 1
-    assert schema.fields[0].name == "id"
+    assert schema.fields[0].id == "field-123"
     assert schema.fields[0].enabled is True
 
 
@@ -253,7 +239,7 @@ def test_utils_create_sample_bulk_field():
     """Test utils create_sample_bulk_field helper."""
     field = create_sample_bulk_field()
 
-    assert field.name == "id"
+    assert field.id == "field-123"
     assert field.enabled is True
 
 
