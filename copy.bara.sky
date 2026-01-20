@@ -5,7 +5,7 @@ core.workflow(
     name="pr_import",
     origin=git.github_pr_origin(
         url="https://github.com/dagster-io/dagster",
-        branch="main",
+        branch="master",
     ),
     destination=git.github_pr_destination(
         url="https://github.com/dagster-io/internal",
