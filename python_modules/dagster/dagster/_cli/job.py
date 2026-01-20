@@ -405,11 +405,16 @@ def execute_execute_command(
             for asset_key in job_def.asset_layer.executable_asset_keys:
                 backfill_policy = job_def.asset_layer.get(asset_key).backfill_policy
                 if (
-                    backfill_policy is not None
-                    and backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
+                    backfill_policy is None
+                    or backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
                 ):
                     check.failed(
-                        "Provided partition range, but not all assets have a single-run backfill policy."
+                        "Partition ranges with the CLI require all selected assets to have a "
+                        "BackfillPolicy.single_run() policy. This allows the partition range to be "
+                        "executed in a single run. Assets without this policy would require creating "
+                        "a backfill with separate runs per partition, which needs a running daemon "
+                        "process. Consider using the Dagster UI or a running daemon to execute "
+                        "partition ranges for assets without a single-run backfill policy."
                     )
             try:
                 job_def.validate_partition_key(
