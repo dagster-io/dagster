@@ -39,10 +39,8 @@ defs = dg.Definitions(
 )
 ```
 
-
 For job-based workflows, the `ConfigurableHightouchResource` can be used with the `hightouch_sync_op` to trigger syncs within a job.
 For job-based workflows, the ConfigurableHightouchResource can be used with the hightouch_sync_op to trigger syncs within a job.
-
 
 ```python
 import dagster as dg
