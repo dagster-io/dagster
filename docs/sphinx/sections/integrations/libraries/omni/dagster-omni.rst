@@ -23,4 +23,4 @@ it to, and you will need to redeploy your code location after updating your meta
 The simplest way to update the stored state of your ``OmniComponent`` is to use the ``dg utils refresh-component-state`` command. When
 deploying your code location, this command should be executed in your CI/CD workflow (e.g. github actions).
 
-For more on state-backed components, see the `state-backed components guide <https://docs.dagster.io/guides/build/components/state-backed-components>`_.
+.. TODO add link to state-backed component docs once they existFor more on state-backed components, see the `state-backed components guide <https://docs.dagster.io/guides/build/components/state-backed-components>`_.

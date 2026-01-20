@@ -154,6 +154,7 @@ If you want to store assets in different datasets, you can specify the dataset a
 
 You can also specify the dataset as part of the asset's asset key:
 
+{/* TODO add dedent=4 to CodeExample below */}
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py"
   startAfter="start_asset_key"

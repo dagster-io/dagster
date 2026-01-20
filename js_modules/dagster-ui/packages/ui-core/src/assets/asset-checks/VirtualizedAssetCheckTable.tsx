@@ -71,6 +71,7 @@ interface AssetCheckRowProps {
 export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetCheckRowProps) => {
   const execution = row.executionForLatestMaterialization;
   const timestamp = execution?.evaluation?.timestamp;
+  // TODO_USE_CHECK_ID
   const rowTestId = `row-${assetNode.assetKey.path.join('-')}-${row.name}`;
 
   return (

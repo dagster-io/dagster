@@ -18,6 +18,7 @@ Dagster's versioning system helps you determine ahead of time whether materializ
 Dagster has two versioning concepts to represent the code and input data used for each materialization:
 
 - **Code version.** A string that represents the version of the code that computes an asset. This is the `code_version` argument of <PyObject section="assets" module="dagster" object="asset" decorator />.
+{/* TODO link `DataVersion` to API docs */}
 - **Data version.** A string that represents the version of the data represented by the asset. This is represented as a <PyObject section="assets" module="dagster" object="DataVersion" /> object.
 
 By keeping track of code and data versions, Dagster can predict whether a materialization will change the underlying value. This allows Dagster to skip redundant materializations and instead return the previously computed value. In more technical terms, Dagster offers a limited form of [memoization](https://en.wikipedia.org/wiki/Memoization) for assets: the last-computed asset value is always cached.

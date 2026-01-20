@@ -24,6 +24,7 @@ Resources allow you to:
 
 ## Relevant APIs
 
+{/* TODO replace `ResourceParam` with <PyObject section="resources" module="dagster" object="ResourceParam"/> in table below  */}
 | Name                                             | Description                                                                                                                                                                                                                             |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="resources" module="dagster" object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject section="resources" object="ResourceDefinition" />.                                                                                                                       |

@@ -1,9 +1,12 @@
 ---
 title: Migrating from workspace.yaml to dg.toml
 sidebar_position: 2000
+# description: TODO
 description: Migrate legacy workspace.yaml configurations to a dg.toml workspace.
 unlisted: true
 ---
+
+TODO
 
 If you have an existing `workspace.yaml` file, you can migrate to a `dg.toml`-based workspace to align with the current Dagster OSS project and workspace structure.
 

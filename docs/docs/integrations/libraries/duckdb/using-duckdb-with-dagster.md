@@ -12,6 +12,7 @@ The `dagster-duckdb` library provides two ways to interact with DuckDB tables:
 - [I/O manager](/guides/build/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as DuckdB tables to Dagster. Available I/O managers: <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />, <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />.
 
 This tutorial is divided into two sections to demonstrate the differences between the DuckDB resource and the DuckDB I/O manager. Each section will create the same assets, but the first section will use the DuckDB resource to store data in DuckDB, whereas the second section will use the DuckDB I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources.
+{/* TODO fix link See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources. */}
 
 In [Option 1](#option-1-using-the-duckdb-resource) you will:
 

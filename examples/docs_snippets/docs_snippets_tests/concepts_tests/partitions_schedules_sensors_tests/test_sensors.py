@@ -37,6 +37,7 @@ def test_log_file_job():
     assert result.success
 
 
+    # TODO: Actually test
 def test_my_directory_sensor(tmp_path, monkeypatch):
     test_file = tmp_path / "example.txt"
     test_file.write_text("data", encoding="utf8")
@@ -50,6 +51,7 @@ def test_my_directory_sensor(tmp_path, monkeypatch):
 
 
 def test_interval_sensors():
+    # TODO: Actually test
     assert sensor_A.minimum_interval_seconds == 30
     assert sensor_B.minimum_interval_seconds == 45
 

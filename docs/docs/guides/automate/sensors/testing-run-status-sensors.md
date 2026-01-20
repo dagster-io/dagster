@@ -33,6 +33,7 @@ Then we can execute this job and pull the attributes we need to build the `conte
   title="src/<project_name>/defs/sensors.py"
 />
 
+{/* TODO the methods and statuses below do not exist in API docs */}
 To inspect the resulting status in tests, use the <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" /> returned by `execute_in_process`. Its `dagster_run` and `all_events` properties let you filter for the status or event type you care about.
 
 We can use the same pattern to build the context for <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" />. If we wanted to test this run failure sensor:

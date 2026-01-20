@@ -18,6 +18,7 @@ This article assumes familiarity with [asset checks](/guides/test/asset-checks) 
 
 Using the <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator /> decorator's `specs` and `can_subset` arguments, you can execute a subset of checks in a single op.
 
+{/* TODO link this to proper API doc */}
 Inside the body of the function, we can use <PyObject section="execution" module="dagster" object="AssetCheckExecutionContext" /> and its `selected_asset_check_keys` property to identify which computations to run. We can also set the decorator's `can_subset` parameter to `True` to execute a subset of the asset checks that the computation contains.
 
 As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create:

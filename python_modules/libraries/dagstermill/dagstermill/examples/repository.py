@@ -83,6 +83,7 @@ def test_nb_op(name, **kwargs):
 
 common_resource_defs = {
     "output_notebook_io_manager": local_output_notebook_io_manager,
+    # TODO check if necessary
     "io_manager": FilesystemIOManager(),  # NOTE: Used for default outputs in these examples.
 }
 

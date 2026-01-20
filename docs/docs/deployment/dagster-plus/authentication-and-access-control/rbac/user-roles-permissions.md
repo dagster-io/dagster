@@ -99,6 +99,7 @@ To override a code location role for an individual user:
 2. Click **Edit**.
 3. Click the toggle to the left of the deployment to open a list of code locations.
 4. Next to a code location, click **Edit user role**.
+5. Select the user role for the code location: {/* TODO: add picture previously at "/images/dagster-cloud/user-token-management/code-location-override.png" */}
 5. Select the user role for the code location.
 6. Click **Save**.
 
@@ -118,6 +119,8 @@ The above also applies to code locations and Branch Deployment roles.
 
 #### Viewing overrides
 
+{/* TODO: add picture previously at "/images/dagster-cloud/user-token-management/user-overrides-popup.png" */}
+{/* TODO: add picture previously at "/images/dagster-cloud/user-token-management/code-location-override-popup.png" */}
 To view deployment-level overrides for a specific user, locate the user on the **Users** page and hover over a deployment. A tooltip will display any overrides that apply at the deployment level.
 
 If there are code location-level overrides, a small **N override(s)** link will display beneath the user's deployment role. Hover over it to display the list of overrides.
