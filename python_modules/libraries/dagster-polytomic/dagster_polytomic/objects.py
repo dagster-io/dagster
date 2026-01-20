@@ -1,3 +1,4 @@
+from collections import defaultdict
 from functools import cached_property
 from typing import Optional
 
@@ -42,6 +43,7 @@ class PolytomicBulkSync:
     source_connection_id: Optional[str]
     destination_connection_id: Optional[str]
     organization_id: Optional[str]
+    destination_configuration_schema: Optional[str]
 
     @classmethod
     def from_api_response(cls, response: BulkSyncResponse) -> "PolytomicBulkSync":
@@ -54,6 +56,9 @@ class PolytomicBulkSync:
             source_connection_id=response.source_connection_id,
             destination_connection_id=response.destination_connection_id,
             organization_id=response.organization_id,
+            destination_configuration_schema=response.destination_configuration.get("schema")
+            if response.destination_configuration
+            else None,
         )
 
 
@@ -105,6 +110,25 @@ class PolytomicBulkSyncSchema:
 
 @whitelist_for_serdes
 @record
+class PolytomicBulkSyncEnrichedSchema:
+    """Represents an enriched schema in a Polytomic bulk sync."""
+
+    id: str
+    bulk_sync_id: str
+    enabled: bool
+    output_name: Optional[str]
+    partition_key: Optional[str]
+    tracking_field: Optional[str]
+    fields: list[PolytomicBulkField]
+    destination_configuration_schema: Optional[str]
+    source_connection_id: Optional[str]
+    source_connection_name: Optional[str]
+    destination_connection_id: Optional[str]
+    destination_connection_name: Optional[str]
+
+
+@whitelist_for_serdes
+@record
 class PolytomicWorkspaceData:
     """Serializable container object for recording the state of the Polytomic API at a given point in time.
 
@@ -117,6 +141,45 @@ class PolytomicWorkspaceData:
     connections: list[PolytomicConnection]
     bulk_syncs: list[PolytomicBulkSync]
     schemas_by_bulk_sync_id: dict[str, list[PolytomicBulkSyncSchema]]
+
+    @cached_property
+    def enriched_schemas_by_bulk_sync_id(self) -> dict[str, list[PolytomicBulkSyncEnrichedSchema]]:
+        enriched_schemas_by_bulk_sync_id = defaultdict(list)
+        for bulk_sync_id, schemas in self.schemas_by_bulk_sync_id.items():
+            bulk_sync = self.get_bulk_sync(bulk_sync_id=bulk_sync_id)
+            source_connection = (
+                self.get_connection(connection_id=bulk_sync.source_connection_id)
+                if bulk_sync.source_connection_id
+                else None
+            )
+            destination_connection = (
+                self.get_connection(connection_id=bulk_sync.destination_connection_id)
+                if bulk_sync.destination_connection_id
+                else None
+            )
+
+            for schema in schemas:
+                enriched_schemas_by_bulk_sync_id[bulk_sync_id].append(
+                    PolytomicBulkSyncEnrichedSchema(
+                        id=schema.id,
+                        bulk_sync_id=bulk_sync_id,
+                        enabled=schema.enabled,
+                        output_name=schema.output_name,
+                        partition_key=schema.partition_key,
+                        tracking_field=schema.tracking_field,
+                        fields=schema.fields,
+                        destination_configuration_schema=bulk_sync.destination_configuration_schema,
+                        source_connection_id=bulk_sync.source_connection_id,
+                        source_connection_name=source_connection.name
+                        if source_connection
+                        else None,
+                        destination_connection_id=bulk_sync.destination_connection_id,
+                        destination_connection_name=destination_connection.name
+                        if destination_connection
+                        else None,
+                    )
+                )
+        return enriched_schemas_by_bulk_sync_id
 
     @cached_property
     def _connections_by_id(self) -> dict[str, PolytomicConnection]:
