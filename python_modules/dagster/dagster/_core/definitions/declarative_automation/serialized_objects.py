@@ -1,3 +1,4 @@
+import itertools
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import (  # noqa: UP035
@@ -312,3 +313,38 @@ class AutomationConditionEvaluationState:
     @property
     def true_subset(self) -> SerializableEntitySubset:
         return self.previous_evaluation.true_subset
+
+
+def get_expanded_label(
+    item: Union[AutomationConditionEvaluation, AutomationConditionSnapshot],
+    use_label=False,
+) -> Sequence[str]:
+    if isinstance(item, AutomationConditionSnapshot):
+        label, name, description, children = (
+            item.node_snapshot.label,
+            item.node_snapshot.name,
+            item.node_snapshot.description,
+            item.children,
+        )
+    else:
+        snapshot = item.condition_snapshot
+        label, name, description, children = (
+            snapshot.label,
+            snapshot.name,
+            snapshot.description,
+            item.child_evaluations,
+        )
+
+    if use_label and label is not None:
+        return [label]
+    node_text = name or description
+    child_labels = [f"({' '.join(get_expanded_label(c, use_label=True))})" for c in children]
+    if len(child_labels) == 0:
+        return [node_text]
+    elif len(child_labels) == 1:
+        return [node_text, f"{child_labels[0]}"]
+    else:
+        # intersperses node_text (e.g. AND) between each child label
+        return list(itertools.chain(*itertools.zip_longest(child_labels, [], fillvalue=node_text)))[
+            :-1
+        ]
