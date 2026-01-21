@@ -27,8 +27,8 @@ def validate_column(column: Column):
     """This function is used to validate individual DB columns in a schema for cross-DBAPI compatibility.
 
     i.e.:
-        1. plain db.String not allowed (MySQL compatability)
-        2. db.Text + unique=True not allowed (MySQL compatability).
+        1. plain db.String not allowed (MySQL compatibility)
+        2. db.Text + unique=True not allowed (MySQL compatibility).
     """
     if (
         isinstance(column.type, db.String)
