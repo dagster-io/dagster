@@ -222,8 +222,9 @@ const handleEnter = (cm: CodeMirror.Editor) => {
     return;
   }
 
-  // Mặc định
+  // Default
   cm.execCommand('newlineAndIndent');
+  return;
 };
 
 export const createJsonExtraKeys = (): CodeMirror.KeyMap => ({
