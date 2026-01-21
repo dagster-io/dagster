@@ -50,7 +50,7 @@ setup(
         "setuptools",  # Needed to parse setup.cfg
         "packaging",
         "python-dotenv",
-        "typer<0.17.0",
+        "typer>=0.15.1,<1.0",
         f"dagster-shared{pin}",
         f"dagster-cloud-cli{pin}",
     ],
