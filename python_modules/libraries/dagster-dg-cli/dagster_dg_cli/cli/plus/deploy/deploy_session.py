@@ -7,10 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import click
-
-if TYPE_CHECKING:
-    from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-
 import dagster_shared.check as check
 
 # Expensive imports moved to lazy loading inside functions to improve CLI startup performance
@@ -21,6 +17,10 @@ from dagster_dg_core.utils.git import get_local_branch_name
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg_cli.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
+
+if TYPE_CHECKING:
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+    from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
 
 def _guess_deployment_type(
@@ -176,13 +176,23 @@ def init_deploy_session(
 def build_artifact(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
+    build_strategy: "BuildStrategy",
     statedir: str,
     use_editable_dagster: bool,
     python_version: Optional[str],
     location_names: tuple[str],
 ):
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+
     if not python_version:
         python_version = f"3.{sys.version_info.minor}"
+
+    # Validate build strategy compatibility with agent type
+    if agent_type == DgPlusAgentType.HYBRID and build_strategy == BuildStrategy.pex:
+        raise click.UsageError(
+            "Build strategy 'python-executable' is not supported for Hybrid agents. "
+            "Hybrid agents require 'docker' build strategy."
+        )
 
     requested_location_names = set(location_names)
 
@@ -190,6 +200,7 @@ def build_artifact(
         _build_artifact_for_project(
             dg_context,
             agent_type,
+            build_strategy,
             statedir,
             use_editable_dagster,
             python_version,
@@ -210,6 +221,7 @@ def build_artifact(
             _build_artifact_for_project(
                 project_context,
                 agent_type,
+                build_strategy,
                 statedir,
                 use_editable_dagster,
                 python_version,
@@ -220,6 +232,7 @@ def build_artifact(
 def _build_artifact_for_project(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
+    build_strategy: "BuildStrategy",
     statedir: str,
     use_editable_dagster: bool,
     python_version: str,
@@ -256,9 +269,9 @@ def _build_artifact_for_project(
         )
 
     else:
-        # Import BuildStrategy and deps locally since they're not needed for tests
+        # Import deps locally since they're not needed for tests
         # Lazy import for test mocking and performance
-        from dagster_cloud_cli.commands.ci import BuildStrategy, build_impl
+        from dagster_cloud_cli.commands.ci import build_impl
         from dagster_cloud_cli.core.pex_builder import deps
 
         build_impl(
@@ -267,7 +280,7 @@ def _build_artifact_for_project(
             use_editable_dagster=use_editable_dagster,
             location_name=[dg_context.code_location_name],
             build_directory=str(build_directory),
-            build_strategy=BuildStrategy.docker,
+            build_strategy=build_strategy,
             docker_image_tag=None,
             docker_base_image=None,
             docker_env=[],
