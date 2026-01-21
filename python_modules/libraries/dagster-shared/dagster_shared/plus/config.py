@@ -50,6 +50,7 @@ class DagsterPlusCliConfig:
     organization: Optional[str] = None
     default_deployment: Optional[str] = None
     user_token: Optional[str] = None
+    user_email: Optional[str] = None
     agent_timeout: Optional[int] = None
 
     def has_any_configuration(self) -> bool:

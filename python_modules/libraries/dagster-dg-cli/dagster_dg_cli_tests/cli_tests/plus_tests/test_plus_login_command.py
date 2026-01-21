@@ -141,7 +141,14 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
             response = requests.post(
                 "http://localhost:4000/callback",
                 headers={"Content-Type": "application/json"},
-                data=json.dumps({"nonce": "ABCDEFGH", "organization": "hooli", "token": "abc123"}),
+                data=json.dumps(
+                    {
+                        "nonce": "ABCDEFGH",
+                        "organization": "hooli",
+                        "token": "abc123",
+                        "email": "user@hooli.com",
+                    }
+                ),
             )
             q.put(response)
 
@@ -161,12 +168,14 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
         # Verify new configuration success
         assert DagsterPlusCliConfig.get().organization == "hooli"
         assert DagsterPlusCliConfig.get().user_token == "abc123"
+        assert DagsterPlusCliConfig.get().user_email == "user@hooli.com"
         assert DagsterPlusCliConfig.get().default_deployment == "hooli-dev"
 
         if fixture_name == "setup_cloud_cli_config":
             assert yaml.safe_load(filepath.read_text()) == {
                 "organization": "hooli",
                 "user_token": "abc123",
+                "user_email": "user@hooli.com",
                 "default_deployment": "hooli-dev",
             }
         elif fixture_name == "setup_dg_cli_config_additional_config":
@@ -176,6 +185,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
                     "plus": {
                         "organization": "hooli",
                         "user_token": "abc123",
+                        "user_email": "user@hooli.com",
                         "default_deployment": "hooli-dev",
                     },
                 },
@@ -186,6 +196,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
                     "plus": {
                         "organization": "hooli",
                         "user_token": "abc123",
+                        "user_email": "user@hooli.com",
                         "default_deployment": "hooli-dev",
                     }
                 }
@@ -198,6 +209,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
                         "url": "https://custom_subdomain.dagster.cloud",
                         "organization": "hooli",
                         "user_token": "abc123",
+                        "user_email": "user@hooli.com",
                         "default_deployment": "hooli-dev",
                     },
                 }

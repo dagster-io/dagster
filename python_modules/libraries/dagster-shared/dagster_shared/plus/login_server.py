@@ -45,6 +45,7 @@ def create_token_callback_handler(nonce: str) -> type[BaseHTTPRequestHandler]:
 
             organization = body.get("organization")
             token = body.get("token")
+            email = body.get("email")
 
             self.send_response(200)
             self._send_shared_headers()
@@ -56,7 +57,7 @@ def create_token_callback_handler(nonce: str) -> type[BaseHTTPRequestHandler]:
 
             # Pass back result values
             assert isinstance(self.server, TokenServer)
-            self.server.set_result(organization=organization, token=token)
+            self.server.set_result(organization=organization, token=token, email=email)
             self.server.shutdown()
 
         # Overridden so that the webserver doesn't log requests to the console
@@ -70,6 +71,7 @@ def create_token_callback_handler(nonce: str) -> type[BaseHTTPRequestHandler]:
 class TokenServer(HTTPServer):
     organization: Optional[str] = None
     token: Optional[str] = None
+    email: Optional[str] = None
 
     def __init__(self, host: tuple[str, int], nonce: str):
         super().__init__(host, create_token_callback_handler(nonce))
@@ -79,15 +81,19 @@ class TokenServer(HTTPServer):
         # https://stackoverflow.com/a/36017741
         setattr(self, "_BaseServer__shutdown_request", True)
 
-    def set_result(self, organization: str, token: str):
+    def set_result(self, organization: str, token: str, email: Optional[str] = None) -> None:
         self.organization = organization
         self.token = token
+        self.email = email
 
     def get_organization(self) -> Optional[str]:
         return self.organization
 
     def get_token(self) -> Optional[str]:
         return self.token
+
+    def get_email(self) -> Optional[str]:
+        return self.email
 
 
 def _generate_nonce():

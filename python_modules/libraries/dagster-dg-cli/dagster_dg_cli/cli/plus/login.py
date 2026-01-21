@@ -47,10 +47,12 @@ def login_command(region: Optional[str]) -> None:
     server.serve_forever()
     new_org = server.get_organization()
     new_api_token = server.get_token()
+    new_email = server.get_email()
 
     config = DagsterPlusCliConfig(
         organization=new_org,
         user_token=new_api_token,
+        user_email=new_email,
         url=org_url,
     )
     config.write()
@@ -73,6 +75,7 @@ def login_command(region: Optional[str]) -> None:
     config = DagsterPlusCliConfig(
         organization=config.organization,
         user_token=config.user_token,
+        user_email=config.user_email,
         default_deployment=selected_deployment,
         url=org_url,
     )

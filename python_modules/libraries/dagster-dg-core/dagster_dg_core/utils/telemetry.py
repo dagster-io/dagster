@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar, Union, overload
 
 import click
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.telemetry import (
     TelemetrySettings,
     get_or_set_instance_id,
@@ -17,6 +18,26 @@ from typing_extensions import ParamSpec
 
 from dagster_dg_core.config import DgCliConfig, load_dg_user_file_config
 from dagster_dg_core.version import __version__
+
+
+def _get_dagster_plus_login_metadata() -> dict[str, str]:
+    """Get Dagster+ login metadata (organization, user email) if the user is logged in.
+
+    Results are cached for the lifetime of the process to avoid repeated config lookups.
+    Does not include sensitive data like user tokens.
+    """
+    _dagster_plus_login_data = {}
+    try:
+        if DagsterPlusCliConfig.exists():
+            config = DagsterPlusCliConfig.get()
+            if config.organization:
+                _dagster_plus_login_data["dagster_plus_organization"] = config.organization
+            if config.user_email:
+                _dagster_plus_login_data["dagster_plus_user_email"] = config.user_email
+    except Exception:
+        # Silently ignore errors - login metadata is optional
+        pass
+    return _dagster_plus_login_data
 
 
 def _get_project_telemetry_metadata(start_path: Optional[Path] = None) -> dict[str, str]:
@@ -78,6 +99,7 @@ def log_telemetry_action(
         {
             **(metadata or {}),
             "dagster_dg_version": __version__,
+            **_get_dagster_plus_login_metadata(),
             **_get_project_telemetry_metadata(start_path),
         },
     )
