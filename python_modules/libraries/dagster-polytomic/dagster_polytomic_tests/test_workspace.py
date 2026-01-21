@@ -269,7 +269,7 @@ def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
 
 def test_client_configuration():
     """Test that the Polytomic client is properly configured."""
-    workspace = PolytomicWorkspace(api_key="test-api-key-123")
+    workspace = PolytomicWorkspace(token="test-token-123")
 
     # Access the client property
     with patch("dagster_polytomic.workspace.Polytomic") as mock_polytomic_class:
@@ -286,7 +286,7 @@ def test_client_configuration():
         # Verify Polytomic was called with correct parameters
         mock_polytomic_class.assert_called_once_with(
             version="2024-02-08",
-            token="test-api-key-123",
+            token="test-token-123",
         )
 
 

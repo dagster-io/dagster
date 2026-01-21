@@ -11,7 +11,7 @@ POLYTOMIC_CLIENT_VERSION = "2024-02-08"
 class PolytomicWorkspace(dg.Resolvable, dg.Model):
     """Handles all interactions with the Polytomic API to fetch and manage state."""
 
-    api_key: str = Field(
+    token: str = Field(
         description="The API key to your Polytomic organization.",
         examples=['"{{ env.POLYTOMIC_API_KEY }}"'],
         repr=False,
@@ -21,7 +21,7 @@ class PolytomicWorkspace(dg.Resolvable, dg.Model):
     def client(self) -> Polytomic:
         return Polytomic(
             version=POLYTOMIC_CLIENT_VERSION,
-            token=self.api_key,
+            token=self.token,
         )
 
     def _fetch_connections(self) -> list[ConnectionResponseSchema]:
