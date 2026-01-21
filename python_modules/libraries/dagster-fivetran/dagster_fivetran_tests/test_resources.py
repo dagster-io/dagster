@@ -536,3 +536,38 @@ def test_fivetran_resync_and_poll_with_resync_parameters(
             connector_id=connector_id,
             resync_parameters={"schema_name_in_destination_1": ["table_name_in_destination_1"]},
         )
+
+
+def test_fetch_workspace_data_empty_groups_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a warning is logged when no groups are returned from Fivetran API."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    empty_groups_response = {
+        "code": "Success",
+        "message": "Operation performed.",
+        "data": {
+            "items": [],
+        },
+    }
+
+    with responses.RequestsMock() as response:
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=empty_groups_response,
+            status=200,
+        )
+
+        workspace_data = resource.fetch_fivetran_workspace_data()
+
+        # Verify empty workspace data is returned
+        assert len(workspace_data.connectors_by_id) == 0
+        assert len(workspace_data.destinations_by_id) == 0
+
+        # Verify warning was logged
+        assert any("No Fivetran groups found" in record.message for record in caplog.records)
+        assert any("RBAC" in record.message for record in caplog.records)
