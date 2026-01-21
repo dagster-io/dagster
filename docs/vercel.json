@@ -108,7 +108,7 @@
     },
     {
       "source": "/_apidocs/libraries/dagster-duckdb-polars",
-      "destination": "/_apidocs/libraries/duckdb/dagster-duckdb-polars"
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars"
     },
     {
       "source": "/_apidocs/libraries/dagster-duckdb-pandas",
@@ -120,7 +120,7 @@
     },
     {
       "source": "/_apidocs/libraries/dagster-fivetran",
-      "destination": "/integrations/libraries/duckdb/dagster-fivetran"
+      "destination": "/integrations/libraries/fivetran/dagster-fivetran"
     },
     {
       "source": "/_apidocs/libraries/dagster-gcp",
