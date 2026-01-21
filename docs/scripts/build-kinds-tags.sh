@@ -12,6 +12,7 @@ uv_install() {
 }
 
 uv_activate_venv() {
+  export UV_PYTHON_DOWNLOADS=automatic
   uv python install 3.11
   uv venv
   source .venv/bin/activate
