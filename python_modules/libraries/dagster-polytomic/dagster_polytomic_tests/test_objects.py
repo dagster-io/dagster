@@ -52,7 +52,7 @@ def test_polytomic_connection_from_api_response_none_type():
 
     assert connection.id == "conn-789"
     assert connection.name == "Unknown Connection"
-    assert connection.type == "unknown"
+    assert connection.type is None
 
 
 def test_polytomic_bulk_sync_from_api_response():

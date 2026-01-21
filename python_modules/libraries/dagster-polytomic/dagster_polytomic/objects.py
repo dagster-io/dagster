@@ -12,18 +12,19 @@ class PolytomicConnection:
     """Represents a Polytomic connection."""
 
     id: str
-    name: str
-    type: str
+    name: Optional[str]
+    type: Optional[str]
     organization_id: Optional[str]
     status: Optional[str]
 
     @classmethod
     def from_api_response(cls, response: ConnectionResponseSchema) -> "PolytomicConnection":
         """Create PolytomicConnection from API response."""
+        assert response.id is not None, "Connection ID cannot be None"
         return cls(
-            id=response.id or "",
-            name=response.name or "",
-            type=response.type.name if response.type and response.type.name else "unknown",
+            id=response.id,
+            name=response.name,
+            type=response.type.name if response.type else None,
             organization_id=response.organization_id,
             status=response.status,
         )
@@ -35,7 +36,7 @@ class PolytomicBulkSync:
     """Represents a Polytomic bulk sync."""
 
     id: str
-    name: str
+    name: Optional[str]
     active: bool
     mode: Optional[str]
     source_connection_id: Optional[str]
@@ -45,9 +46,10 @@ class PolytomicBulkSync:
     @classmethod
     def from_api_response(cls, response: BulkSyncResponse) -> "PolytomicBulkSync":
         """Create PolytomicBulkSync from API response."""
+        assert response.id is not None, "Bulk sync ID cannot be None"
         return cls(
-            id=response.id or "",
-            name=response.name or "",
+            id=response.id,
+            name=response.name,
             active=response.active or False,
             mode=response.mode,
             source_connection_id=response.source_connection_id,
@@ -67,8 +69,9 @@ class PolytomicBulkField:
     @classmethod
     def from_api_response(cls, response: BulkField) -> "PolytomicBulkField":
         """Create PolytomicBulkField from API field data."""
+        assert response.id is not None, "Bulk field ID cannot be None"
         return cls(
-            id=response.id or "",
+            id=response.id,
             enabled=response.enabled or False,
         )
 
@@ -88,12 +91,13 @@ class PolytomicBulkSyncSchema:
     @classmethod
     def from_api_response(cls, response: BulkSchema) -> "PolytomicBulkSyncSchema":
         """Create PolytomicBulkSyncSchema from API response."""
+        assert response.id is not None, "Bulk sync schema ID cannot be None"
         fields = []
         if response.fields:
             fields = [PolytomicBulkField.from_api_response(field) for field in response.fields]
 
         return cls(
-            id=response.id or "",
+            id=response.id,
             enabled=response.enabled or False,
             output_name=response.output_name,
             partition_key=response.partition_key,
