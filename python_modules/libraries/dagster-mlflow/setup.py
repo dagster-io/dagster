@@ -33,7 +33,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "mlflow",
-        "pandas",
+        "pandas<3.0.0",
         "protobuf!=5.29.0",  # https://github.com/protocolbuffers/protobuf/issues/19430
     ],
     zip_safe=False,
