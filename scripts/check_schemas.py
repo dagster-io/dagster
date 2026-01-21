@@ -45,7 +45,7 @@ def validate_column(column: Column):
             f"Column {column} is type TEXT and has a UNIQUE constraint; "
             "cannot use bare db.Text type w/ a UNIQUE constaint "
             "since it is incompatible with certain databases (MySQL). "
-            "Use MySQLCompatabilityTypes.UniqueText or a fixed-length db.String(123) instead."
+            "Use MySQLCompatibilityTypes.UniqueText or a fixed-length db.String(123) instead."
         )
     elif (
         column.server_default
