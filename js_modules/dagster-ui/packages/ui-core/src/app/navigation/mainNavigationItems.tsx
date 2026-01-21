@@ -162,6 +162,23 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           ),
         },
         {
+          key: 'strategy',
+          label: '策略配置',
+          shortcut: {
+            filter: (event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyS',
+            label: '⌥S',
+            path: '/strategy',
+          },
+          element: (
+            <NavItemWithLink
+              icon={<Icon name="tune" />}
+              label="策略配置"
+              href="/strategy"
+              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/strategy')}
+            />
+          ),
+        },
+        {
           key: 'deployment',
           label: '部署',
           shortcut: {

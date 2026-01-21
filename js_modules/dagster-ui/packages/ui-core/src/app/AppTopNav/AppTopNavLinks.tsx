@@ -121,7 +121,17 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     ),
   };
 
-  return [overview, runs, assets, jobs, automation, deployment].filter(
+  const strategy = {
+    key: 'strategy',
+    path: '/strategy',
+    element: (
+      <TopNavLink to="/strategy" data-cy="AppTopNav_StrategyLink">
+        策略配置
+      </TopNavLink>
+    ),
+  };
+
+  return [overview, runs, assets, jobs, automation, deployment, strategy].filter(
     (link): link is AppNavLinkType => !!link,
   );
 };

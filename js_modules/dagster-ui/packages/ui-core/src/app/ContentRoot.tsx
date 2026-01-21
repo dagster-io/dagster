@@ -24,6 +24,10 @@ const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
 const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
 const JobsRoot = lazy(() => import('../jobs/JobsRoot'));
+const IntegrationsRoot = lazy(() => import('../integrations/IntegrationsRoot'));
+const StrategyRoot = lazy(() =>
+  import('../strategy/StrategyRoot').then((mod) => ({default: mod.StrategyRoot})),
+);
 
 export const ContentRoot = memo(() => {
   const {pathname} = useLocation();
@@ -90,6 +94,12 @@ export const ContentRoot = memo(() => {
           </Route>
           <Route path="/deployment">
             <SettingsRoot />
+          </Route>
+          <Route path="/integrations">
+            <IntegrationsRoot />
+          </Route>
+          <Route path="/strategy">
+            <StrategyRoot />
           </Route>
           <Route path="*" isNestingRoute>
             <FallthroughRoot />

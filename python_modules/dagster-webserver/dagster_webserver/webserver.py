@@ -22,6 +22,7 @@ from graphene import Schema
 from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     FileResponse,
@@ -80,7 +81,16 @@ class DagsterWebserver(
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> list[Middleware]:
-        return [Middleware(DagsterTracedCounterMiddleware)]
+        # CORS middleware for cross-origin requests (AIC customization)
+        cors_middleware = Middleware(
+            CORSMiddleware,
+            allow_origins=["*"],  # 生产环境应限制为具体域名
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+            allow_headers=["*"],
+            expose_headers=["x-dagster-call-counts"],
+        )
+        return [cors_middleware, Middleware(DagsterTracedCounterMiddleware)]
 
     def make_security_headers(self) -> dict:
         return {
