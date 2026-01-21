@@ -22,6 +22,7 @@ from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
     get_or_set_instance_id,
+    get_or_set_user_id,
     get_stats_from_remote_repo,
     hash_name,
     log_action,
@@ -45,6 +46,7 @@ EXPECTED_KEYS = set(
         "elapsed_time",
         "event_id",
         "instance_id",
+        "user_id",
         "run_storage_id",
         "python_version",
         "metadata",
@@ -718,3 +720,57 @@ def test_set_instance_id_from_empty_file():
                 encoding="utf8",
             ).close()
             assert get_or_set_instance_id()
+
+
+def test_user_id_ignores_dagster_home():
+    """Test that user_id is always stored in the user telemetry dir regardless of $DAGSTER_HOME."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as fake_user_telemetry_dir:
+        user_id_path = os.path.join(fake_user_telemetry_dir, "user_id.yaml")
+
+        # Mock get_or_create_user_telemetry_dir to avoid touching real ~/.dagster/.telemetry/
+        with mock.patch(
+            "dagster_shared.telemetry.get_or_create_user_telemetry_dir",
+            return_value=fake_user_telemetry_dir,
+        ):
+            # Set DAGSTER_HOME to a different directory
+            with tempfile.TemporaryDirectory() as temp_dagster_home:
+                with environ({"DAGSTER_HOME": temp_dagster_home}):
+                    # Get or create user_id
+                    user_id = get_or_set_user_id()
+                    assert user_id
+
+                    # Verify the user_id was NOT stored in $DAGSTER_HOME
+                    dagster_home_user_id_path = os.path.join(
+                        temp_dagster_home, TELEMETRY_STR, "user_id.yaml"
+                    )
+                    assert not os.path.exists(dagster_home_user_id_path)
+
+                    # Verify the user_id WAS stored in the user telemetry dir
+                    assert os.path.exists(user_id_path)
+                    with open(user_id_path, encoding="utf8") as f:
+                        data = yaml.safe_load(f)
+                        assert data["user_id"] == user_id
+
+
+def test_user_id_consistent_across_dagster_homes():
+    """Test that user_id remains the same regardless of $DAGSTER_HOME changes."""
+    with tempfile.TemporaryDirectory() as fake_user_telemetry_dir:
+        # Mock get_or_create_user_telemetry_dir to avoid touching real ~/.dagster/.telemetry/
+        with mock.patch(
+            "dagster_shared.telemetry.get_or_create_user_telemetry_dir",
+            return_value=fake_user_telemetry_dir,
+        ):
+            # Get user_id with one DAGSTER_HOME
+            with tempfile.TemporaryDirectory() as temp_dir_1:
+                with environ({"DAGSTER_HOME": temp_dir_1}):
+                    user_id_1 = get_or_set_user_id()
+
+            # Get user_id with a different DAGSTER_HOME
+            with tempfile.TemporaryDirectory() as temp_dir_2:
+                with environ({"DAGSTER_HOME": temp_dir_2}):
+                    user_id_2 = get_or_set_user_id()
+
+            # User IDs should be the same
+            assert user_id_1 == user_id_2
