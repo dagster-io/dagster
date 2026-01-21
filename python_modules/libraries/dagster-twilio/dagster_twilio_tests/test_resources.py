@@ -20,8 +20,8 @@ def test_twilio_resource(twilio_resource_option) -> None:
     account_sid = os.environ.get("TWILIO_TEST_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_TEST_AUTH_TOKEN")
 
-    assert account_sid, "TWILIO_TEST_ACCOUNT_SID not set"
-    assert auth_token, "TWILIO_TEST_AUTH_TOKEN not set"
+    if not account_sid or not auth_token:
+        pytest.skip("Missing TWILIO_TEST_ACCOUNT_SID or TWILIO_TEST_AUTH_TOKEN")
 
     @op
     def twilio_op(twilio_resource: TwilioResource):
