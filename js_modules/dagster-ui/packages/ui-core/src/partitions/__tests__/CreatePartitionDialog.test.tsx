@@ -44,14 +44,15 @@ describe('CreatePartitionDialog', () => {
   });
 
   it('Submits mutation with correct variables and calls setSelected and onClose', async () => {
+    const user = userEvent.setup();
     const createFixture = buildCreatePartitionFixture({
       partitionsDefName: 'testPartitionDef',
       partitionKey: 'testPartitionName',
     });
     render(<Test mocks={[createFixture]} />);
     const partitionInput = await screen.findByTestId('partition-input');
-    await userEvent.type(partitionInput, 'testPartitionName');
-    await userEvent.click(screen.getByTestId('save-partition-button'));
+    await user.type(partitionInput, 'testPartitionName');
+    await user.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {
       expect(onCloseMock).toHaveBeenCalled();
       expect(onCreatedMock).toHaveBeenCalledWith('testPartitionName');
@@ -60,18 +61,20 @@ describe('CreatePartitionDialog', () => {
   });
 
   it('Shows error state', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[]} />);
     const partitionInput = await screen.findByTestId('partition-input');
     expect(screen.queryByTestId('warning-icon')).toBeNull();
-    await userEvent.type(partitionInput, 'invalidname\n\r\t');
+    await user.type(partitionInput, 'invalidname\n\r\t');
     expect(screen.getByTestId('warning-icon')).toBeVisible();
-    await userEvent.clear(partitionInput);
+    await user.clear(partitionInput);
     expect(screen.queryByTestId('warning-icon')).toBeNull();
-    await userEvent.type(partitionInput, 'validname');
+    await user.type(partitionInput, 'validname');
     expect(screen.queryByTestId('warning-icon')).toBeNull();
   });
 
   it('Shows error state when mutation fails', async () => {
+    const user = userEvent.setup();
     const createFixture = buildCreatePartitionMutation({
       variables: {
         partitionsDefName: 'testPartitionDef',
@@ -87,8 +90,8 @@ describe('CreatePartitionDialog', () => {
     });
     render(<Test mocks={[createFixture]} />);
     const partitionInput = await screen.findByTestId('partition-input');
-    await userEvent.type(partitionInput, 'testPartitionName');
-    await userEvent.click(screen.getByTestId('save-partition-button'));
+    await user.type(partitionInput, 'testPartitionName');
+    await user.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {
       expect(createFixture.result).toHaveBeenCalled();
       expect(showCustomAlertSpy).toHaveBeenCalledWith({
