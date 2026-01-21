@@ -27,6 +27,46 @@
       "destination": "/guides/build/external-pipelines"
     },
     {
+      "source": "/_apidocs/libraries/dagster-airlift",
+      "destination": "/integrations/libraries/airlift/dagster-airlift"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-airlift",
+      "destination": "/integrations/libraries/airlift/dagster-airlift"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-dask",
+      "destination": "/integrations/libraries/dask/dagster-dask"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-databricks",
+      "destination": "/integrations/libraries/databricks/dagster-databricks"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-msteams",
+      "destination": "/integrations/libraries/msteams/dagster-msteams"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-mysql",
+      "destination": "/integrations/libraries/mysql/dagster-mysql"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-pipes",
+      "destination": "/integrations/libraries/pipes"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-airflow",
+      "destination": "/integrations/libraries/airlift/dagster-airlift"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-duckdb-polars",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-ge",
+      "destination": "/integrations/libraries/great-expectations"
+    },
+    {
       "source": "/_apidocs/libraries/:path*",
       "destination": "/integrations/libraries/:path*"
     },
@@ -160,7 +200,7 @@
     },
     {
       "source": "/apidocs/external-assets-rest",
-      "destination": "/api/dagster/external-assets-rest-api"
+      "destination": "/api/rest-apis/external-assets-rest-api"
     },
     {
       "source": "/api/asset-checks",
@@ -273,6 +313,10 @@
     {
       "source": "/api/dg/dg-cli-configuration",
       "destination": "/api/clis/dg-cli/dg-cli-configuration"
+    },
+    {
+      "source": "/api/libraries/dagster-pipes",
+      "destination": "/integrations/libraries/pipes"
     },
     {
       "source": "/deploying/celery",
@@ -720,10 +764,6 @@
       "source": "/deployment/open-source",
       "destination": "/deployment/oss",
       "permanent": false
-    },
-    {
-      "source": "/_apidocs/libraries/dagster-airflow",
-      "destination": "/api/dagster/libraries/dagster-airlift"
     },
     {
       "source": "/integrations/great-expectations",
@@ -1920,6 +1960,10 @@
       "permanent": false
     },
     {
+      "source": "/next/api/python-api/libraries/dagster-graphql",
+      "destination": "/api/graphql/dagster-graphql"
+    },
+    {
       "source": "/next/guides/build/components",
       "destination": "/guides/build/components"
     },
@@ -2147,6 +2191,10 @@
       "destination": "/integrations/libraries/azure/dagster-azure"
     },
     {
+      "source": "/integrations/libraries/azure-adls2",
+      "destination": "/integrations/libraries/azure/dagster-azure"
+    },
+    {
       "source": "/_modules/dagster_azure/adls2/io_manager",
       "destination": "/integrations/libraries/azure/dagster-azure#io-manager"
     },
@@ -2204,7 +2252,7 @@
     },
     {
       "source": "/_modules/dagster_databricks/resources",
-      "destination": "api/python-api/libraries/dagster-databricks#resources"
+      "destination": "/integrations/libraries/databricks/dagster-databricks#resources"
     },
     {
       "source": "/api/libraries/dagster-datahub",
@@ -2413,6 +2461,10 @@
     {
       "source": "/api/libraries/dagster-k8s",
       "destination": "/integrations/libraries/k8s/dagster-k8s"
+    },
+    {
+      "source": "/integrations/libraries/kubernetes",
+      "destination": "/integrations/libraries/k8s"
     },
     {
       "source": "/_modules/dagster_k8s/executor",
@@ -2625,6 +2677,14 @@
     {
       "source": "/api/libraries/dagster-wandb",
       "destination": "/integrations/libraries/wandb/dagster-wandb"
+    },
+    {
+      "source": "/api/libraries",
+      "destination": "/integrations/libraries"
+    },
+    {
+      "source": "/api/libraries/",
+      "destination": "/integrations/libraries"
     },
     {
       "source": "/_modules/dagster/_config/config_schema",
@@ -3187,6 +3247,10 @@
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
+      "source": "/dagster-cloud/account/authentication",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control"
+    },
+    {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments",
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments"
     },
@@ -3281,6 +3345,14 @@
     {
       "source": "/master/guides/dagster/run-attribution",
       "destination": "/guides/build/assets/metadata-and-tags/tags#run-tags"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-dbt",
+      "destination": "/integrations/libraries/dbt/dagster-dbt"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-wandb",
+      "destination": "/integrations/libraries/wandb/dagster-wandb"
     },
     {
       "source": "/api/python-api/libraries/:path*",
