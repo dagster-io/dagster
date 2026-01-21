@@ -207,7 +207,9 @@ async def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
 
 
 @pytest.mark.asyncio
-async def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace, mock_connection_response):
+async def test_fetch_polytomic_state_multiple_bulk_syncs(
+    polytomic_workspace, mock_connection_response
+):
     """Test fetching schemas for multiple bulk syncs."""
     # Create mock bulk syncs
     mock_sync_1 = MagicMock(spec=BulkSyncResponse)

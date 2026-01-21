@@ -23,7 +23,7 @@ class PolytomicConnection:
         return cls(
             id=response.id or "",
             name=response.name or "",
-            type=response.type.name if response.type else "unknown",
+            type=response.type.name if response.type and response.type.name else "unknown",
             organization_id=response.organization_id,
             status=response.status,
         )

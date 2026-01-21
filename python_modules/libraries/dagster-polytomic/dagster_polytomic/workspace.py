@@ -2,7 +2,7 @@ import asyncio
 from functools import cached_property
 
 import dagster as dg
-from polytomic import AsyncPolytomic, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
+from polytomic import AsyncPolytomic
 from pydantic import Field
 
 from dagster_polytomic.objects import (
@@ -48,7 +48,6 @@ class PolytomicWorkspace(dg.Resolvable, dg.Model):
         response = await self.client.bulk_sync.schemas.list(id=bulk_sync_id)
         data = response.data or []
         return [PolytomicBulkSyncSchema.from_api_response(schema) for schema in data]
-
 
     async def fetch_polytomic_state(self) -> PolytomicWorkspaceData:
         """Fetch all connections, bulks syncs and schemas from the Polytomic API.
