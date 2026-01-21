@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from dagster_polytomic.workspace import PolytomicWorkspace
@@ -35,27 +35,28 @@ def mock_bulk_schema():
     return schema
 
 
-def test_fetch_polytomic_state_success(
+@pytest.mark.asyncio
+async def test_fetch_polytomic_state_success(
     polytomic_workspace, mock_connection, mock_bulk_sync, mock_bulk_schema
 ):
     """Test successful fetching of workspace data."""
     # Create mock client
     mock_client = MagicMock()
 
-    # Mock connections.list()
+    # Mock connections.list() with AsyncMock
     mock_connections_list_response = MagicMock()
     mock_connections_list_response.data = [mock_connection]
-    mock_client.connections.list.return_value = mock_connections_list_response
+    mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
-    # Mock bulk_sync.list()
+    # Mock bulk_sync.list() with AsyncMock
     mock_bulk_syncs_list_response = MagicMock()
     mock_bulk_syncs_list_response.data = [mock_bulk_sync]
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+    mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
-    # Mock bulk_sync.schemas.list()
+    # Mock bulk_sync.schemas.list() with AsyncMock
     mock_schemas_list_response = MagicMock()
     mock_schemas_list_response.data = [mock_bulk_schema]
-    mock_client.bulk_sync.schemas.list.return_value = mock_schemas_list_response
+    mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
     # Patch the client property
     with patch.object(
@@ -64,7 +65,7 @@ def test_fetch_polytomic_state_success(
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        state = polytomic_workspace.fetch_polytomic_state()
+        state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify the structure
     assert "connections" in state
@@ -96,19 +97,20 @@ def test_fetch_polytomic_state_success(
     mock_client.bulk_sync.schemas.list.assert_called_once_with(id="sync-1")
 
 
-def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
     """Test handling of empty responses from API."""
     # Create mock client
     mock_client = MagicMock()
 
-    # Mock empty responses
+    # Mock empty responses with AsyncMock
     mock_connections_list_response = MagicMock()
     mock_connections_list_response.data = []
-    mock_client.connections.list.return_value = mock_connections_list_response
+    mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
     mock_bulk_syncs_list_response = MagicMock()
     mock_bulk_syncs_list_response.data = []
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+    mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
     # Patch the client property
     with patch.object(
@@ -117,7 +119,7 @@ def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        state = polytomic_workspace.fetch_polytomic_state()
+        state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify empty results
     assert len(state["connections"]) == 0
@@ -131,19 +133,20 @@ def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
     mock_client.bulk_sync.schemas.list.assert_not_called()
 
 
-def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
     """Test handling of None data responses from API."""
     # Create mock client
     mock_client = MagicMock()
 
-    # Mock None data responses (using the `or []` fallback in the code)
+    # Mock None data responses (using the `or []` fallback in the code) with AsyncMock
     mock_connections_list_response = MagicMock()
     mock_connections_list_response.data = None
-    mock_client.connections.list.return_value = mock_connections_list_response
+    mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
     mock_bulk_syncs_list_response = MagicMock()
     mock_bulk_syncs_list_response.data = None
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+    mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
     # Patch the client property
     with patch.object(
@@ -152,7 +155,7 @@ def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        state = polytomic_workspace.fetch_polytomic_state()
+        state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify empty results (the `or []` fallback should handle None)
     assert len(state["connections"]) == 0
@@ -160,7 +163,8 @@ def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
     assert len(state["schemas"]) == 0
 
 
-def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
     """Test fetching schemas for multiple bulk syncs."""
     # Create mock bulk syncs
     mock_sync_1 = MagicMock(spec=BulkSyncResponse)
@@ -183,18 +187,18 @@ def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
     # Create mock client
     mock_client = MagicMock()
 
-    # Mock connections.list() - empty for this test
+    # Mock connections.list() - empty for this test with AsyncMock
     mock_connections_list_response = MagicMock()
     mock_connections_list_response.data = []
-    mock_client.connections.list.return_value = mock_connections_list_response
+    mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
-    # Mock bulk_sync.list()
+    # Mock bulk_sync.list() with AsyncMock
     mock_bulk_syncs_list_response = MagicMock()
     mock_bulk_syncs_list_response.data = [mock_sync_1, mock_sync_2]
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+    mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
     # Mock bulk_sync.schemas.list() to return different schemas for different sync IDs
-    def mock_schemas_list(id):
+    async def mock_schemas_list(id):
         response = MagicMock()
         if id == "sync-1":
             response.data = [mock_schema_1]
@@ -202,7 +206,7 @@ def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
             response.data = [mock_schema_2]
         return response
 
-    mock_client.bulk_sync.schemas.list.side_effect = mock_schemas_list
+    mock_client.bulk_sync.schemas.list = AsyncMock(side_effect=mock_schemas_list)
 
     # Patch the client property
     with patch.object(
@@ -211,7 +215,7 @@ def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        state = polytomic_workspace.fetch_polytomic_state()
+        state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify schemas for both syncs
     assert len(state["bulk_syncs"]) == 2
@@ -231,7 +235,8 @@ def test_fetch_polytomic_state_multiple_bulk_syncs(polytomic_workspace):
     assert mock_client.bulk_sync.schemas.list.call_count == 2
 
 
-def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
     """Test that errors when fetching schemas are propagated."""
     # Create mock bulk sync
     mock_sync = MagicMock(spec=BulkSyncResponse)
@@ -241,18 +246,18 @@ def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
     # Create mock client
     mock_client = MagicMock()
 
-    # Mock connections.list()
+    # Mock connections.list() with AsyncMock
     mock_connections_list_response = MagicMock()
     mock_connections_list_response.data = []
-    mock_client.connections.list.return_value = mock_connections_list_response
+    mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
-    # Mock bulk_sync.list()
+    # Mock bulk_sync.list() with AsyncMock
     mock_bulk_syncs_list_response = MagicMock()
     mock_bulk_syncs_list_response.data = [mock_sync]
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+    mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
-    # Mock bulk_sync.schemas.list() to raise an error
-    mock_client.bulk_sync.schemas.list.side_effect = Exception("API Error")
+    # Mock bulk_sync.schemas.list() to raise an error with AsyncMock
+    mock_client.bulk_sync.schemas.list = AsyncMock(side_effect=Exception("API Error"))
 
     # Patch the client property
     with patch.object(
@@ -262,7 +267,7 @@ def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
         return_value=mock_client,
     ):
         with pytest.raises(Exception) as exc_info:
-            polytomic_workspace.fetch_polytomic_state()
+            await polytomic_workspace.fetch_polytomic_state()
 
         assert str(exc_info.value) == "API Error"
 
@@ -272,7 +277,7 @@ def test_client_configuration():
     workspace = PolytomicWorkspace(token="test-token-123")
 
     # Access the client property
-    with patch("dagster_polytomic.workspace.Polytomic") as mock_polytomic_class:
+    with patch("dagster_polytomic.workspace.AsyncPolytomic") as mock_polytomic_class:
         mock_client_instance = MagicMock()
         mock_polytomic_class.return_value = mock_client_instance
 
@@ -283,7 +288,7 @@ def test_client_configuration():
         # Access client property
         _ = workspace.client
 
-        # Verify Polytomic was called with correct parameters
+        # Verify AsyncPolytomic was called with correct parameters
         mock_polytomic_class.assert_called_once_with(
             version="2024-02-08",
             token="test-token-123",
@@ -292,7 +297,7 @@ def test_client_configuration():
 
 def test_client_cached_property(polytomic_workspace):
     """Test that the client is cached and not recreated on subsequent accesses."""
-    with patch("dagster_polytomic.workspace.Polytomic") as mock_polytomic_class:
+    with patch("dagster_polytomic.workspace.AsyncPolytomic") as mock_polytomic_class:
         mock_client_instance = MagicMock()
         mock_polytomic_class.return_value = mock_client_instance
 
@@ -305,7 +310,7 @@ def test_client_cached_property(polytomic_workspace):
         client2 = polytomic_workspace.client
         client3 = polytomic_workspace.client
 
-        # Verify Polytomic was only called once (client is cached)
+        # Verify AsyncPolytomic was only called once (client is cached)
         mock_polytomic_class.assert_called_once()
 
         # Verify all accesses return the same instance
