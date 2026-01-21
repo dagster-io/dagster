@@ -20,6 +20,7 @@ from dagster_dg_cli.utils.plus.build import create_deploy_dockerfile, get_docker
 
 if TYPE_CHECKING:
     from dagster_cloud_cli.commands.ci import BuildStrategy
+    from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
     from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
 
@@ -177,6 +178,7 @@ def build_artifact(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
     build_strategy: "BuildStrategy",
+    pex_build_method: "BuildMethod",
     statedir: str,
     use_editable_dagster: bool,
     python_version: Optional[str],
@@ -201,6 +203,7 @@ def build_artifact(
             dg_context,
             agent_type,
             build_strategy,
+            pex_build_method,
             statedir,
             use_editable_dagster,
             python_version,
@@ -222,6 +225,7 @@ def build_artifact(
                 project_context,
                 agent_type,
                 build_strategy,
+                pex_build_method,
                 statedir,
                 use_editable_dagster,
                 python_version,
@@ -233,6 +237,7 @@ def _build_artifact_for_project(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
     build_strategy: "BuildStrategy",
+    pex_build_method: "BuildMethod",
     statedir: str,
     use_editable_dagster: bool,
     python_version: str,
@@ -272,7 +277,6 @@ def _build_artifact_for_project(
         # Import deps locally since they're not needed for tests
         # Lazy import for test mocking and performance
         from dagster_cloud_cli.commands.ci import build_impl
-        from dagster_cloud_cli.core.pex_builder import deps
 
         build_impl(
             statedir=str(statedir),
@@ -285,7 +289,7 @@ def _build_artifact_for_project(
             docker_base_image=None,
             docker_env=[],
             python_version=python_version,
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=pex_build_method,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
