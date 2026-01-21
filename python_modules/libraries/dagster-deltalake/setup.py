@@ -36,7 +36,7 @@ setup(
         f"dagster{pin}",
     ],
     extras_require={
-        "pandas": ["pandas"],
+        "pandas": ["pandas<3.0.0"],
     },
     zip_safe=False,
 )

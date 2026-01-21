@@ -8,7 +8,7 @@ setup(
         "dagster-webserver",
         "dagster-airlift[core,in-airflow]",
         "dbt-duckdb",
-        "pandas",
+        "pandas<3.0.0",
     ],
     extras_require={"test": ["pytest"]},
     entry_points={
