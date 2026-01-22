@@ -98,6 +98,7 @@ def main(
         "python_modules/libraries/dagster-pandas",
         "python_modules/libraries/dagster-pandera",
         "python_modules/libraries/dagster-papertrail",
+        "python_modules/libraries/dagster-polytomic",
         "python_modules/libraries/dagster-postgres",
         "python_modules/libraries/dagster-prometheus",
         "python_modules/libraries/dagster-pyspark",

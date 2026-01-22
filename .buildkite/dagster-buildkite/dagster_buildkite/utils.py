@@ -226,6 +226,7 @@ def has_component_integration_changes():
         "dagster-airbyte",
         "dagster-powerbi",
         "dagster-omni",
+        "dagster-polytomic",
         "dagster-fivetran",
         "dagster-dlt",
     ]
