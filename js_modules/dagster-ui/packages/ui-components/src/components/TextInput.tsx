@@ -11,11 +11,21 @@ interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'onChange'> {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   strokeColor?: string;
   rightElement?: JSX.Element;
+  allowPasswordManagers?: boolean;
 }
 
 export const TextInput = React.forwardRef(
   (props: Props, ref: React.ForwardedRef<HTMLInputElement>) => {
-    const {fill, icon, disabled, strokeColor, rightElement, type = 'text', ...rest} = props;
+    const {
+      fill,
+      icon,
+      disabled,
+      strokeColor,
+      rightElement,
+      type = 'text',
+      allowPasswordManagers = false,
+      ...rest
+    } = props;
 
     const containerStyle = fill ? {width: '100%', flex: 1} : undefined;
 
@@ -26,13 +36,20 @@ export const TextInput = React.forwardRef(
         } as React.CSSProperties)
       : {};
 
+    const passwordManagerProps = allowPasswordManagers
+      ? {}
+      : {
+          'data-lpignore': 'true',
+          'data-1p-ignore': 'true',
+        };
+
     return (
       <div className={clsx(styles.container, disabled && styles.disabled)} style={containerStyle}>
         {icon ? (
           <Icon name={icon} color={disabled ? Colors.accentGray() : Colors.accentPrimary()} />
         ) : null}
         <input
-          data-lpignore="true"
+          {...passwordManagerProps}
           {...rest}
           className={clsx(
             styles.input,
