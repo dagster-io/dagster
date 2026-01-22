@@ -14,6 +14,7 @@ from dagster_polytomic_tests.utils import (
     create_sample_bulk_sync,
     create_sample_bulk_sync_schema,
     create_sample_connection,
+    create_sample_enriched_schema,
     create_sample_workspace_data,
 )
 
@@ -65,6 +66,7 @@ def test_polytomic_bulk_sync_from_api_response():
     response.source_connection_id = "conn-source"
     response.destination_connection_id = "conn-dest"
     response.organization_id = "org-123"
+    response.destination_configuration = {"schema": "public"}
 
     bulk_sync = PolytomicBulkSync.from_api_response(response)
 
@@ -75,6 +77,25 @@ def test_polytomic_bulk_sync_from_api_response():
     assert bulk_sync.source_connection_id == "conn-source"
     assert bulk_sync.destination_connection_id == "conn-dest"
     assert bulk_sync.organization_id == "org-123"
+    assert bulk_sync.destination_configuration_schema == "public"
+
+
+def test_polytomic_bulk_sync_from_api_response_no_destination_config():
+    """Test creating PolytomicBulkSync when destination_configuration is None."""
+    response = MagicMock(spec=BulkSyncResponse)
+    response.id = "sync-456"
+    response.name = "Test Sync 2"
+    response.active = False
+    response.mode = "update"
+    response.source_connection_id = "conn-source-2"
+    response.destination_connection_id = "conn-dest-2"
+    response.organization_id = "org-456"
+    response.destination_configuration = None
+
+    bulk_sync = PolytomicBulkSync.from_api_response(response)
+
+    assert bulk_sync.id == "sync-456"
+    assert bulk_sync.destination_configuration_schema is None
 
 
 def test_polytomic_bulk_field_from_api_response():
@@ -261,3 +282,119 @@ def test_utils_create_sample_workspace_data():
     assert len(workspace_data.bulk_syncs) == 1
     assert len(workspace_data.schemas_by_bulk_sync_id) == 1
     assert "sync-123" in workspace_data.schemas_by_bulk_sync_id
+
+
+def test_polytomic_bulk_sync_enriched_schema_creation():
+    """Test creating PolytomicBulkSyncEnrichedSchema."""
+    enriched_schema = create_sample_enriched_schema(
+        schema_id="schema-1",
+        bulk_sync_id="sync-1",
+        output_name="users",
+        destination_configuration_schema="public",
+        source_connection_name="PostgreSQL",
+        destination_connection_name="Snowflake",
+    )
+
+    assert enriched_schema.id == "schema-1"
+    assert enriched_schema.bulk_sync_id == "sync-1"
+    assert enriched_schema.output_name == "users"
+    assert enriched_schema.destination_configuration_schema == "public"
+    assert enriched_schema.source_connection_name == "PostgreSQL"
+    assert enriched_schema.destination_connection_name == "Snowflake"
+
+
+def test_workspace_data_enriched_schemas_by_bulk_sync_id():
+    """Test enriched_schemas_by_bulk_sync_id property."""
+    # Create connections
+    source_conn = create_sample_connection("conn-source", "PostgreSQL Source", "postgres")
+    dest_conn = create_sample_connection("conn-dest", "Snowflake Dest", "snowflake")
+
+    # Create bulk sync with destination configuration
+    bulk_sync = create_sample_bulk_sync(
+        bulk_sync_id="sync-1",
+        name="Test Sync",
+        source_connection_id="conn-source",
+        destination_connection_id="conn-dest",
+        destination_configuration_schema="public",
+    )
+
+    # Create schemas
+    schema1 = create_sample_bulk_sync_schema("schema-1", output_name="users")
+    schema2 = create_sample_bulk_sync_schema("schema-2", output_name="orders")
+
+    # Create workspace data
+    workspace_data = PolytomicWorkspaceData(
+        connections=[source_conn, dest_conn],
+        bulk_syncs=[bulk_sync],
+        schemas_by_bulk_sync_id={"sync-1": [schema1, schema2]},
+    )
+
+    # Get enriched schemas
+    enriched = workspace_data.enriched_schemas_by_bulk_sync_id
+
+    # Verify structure
+    assert "sync-1" in enriched
+    assert len(enriched["sync-1"]) == 2
+
+    # Verify first enriched schema
+    enriched_schema1 = enriched["sync-1"][0]
+    assert enriched_schema1.id == "schema-1"
+    assert enriched_schema1.bulk_sync_id == "sync-1"
+    assert enriched_schema1.output_name == "users"
+    assert enriched_schema1.destination_configuration_schema == "public"
+    assert enriched_schema1.source_connection_id == "conn-source"
+    assert enriched_schema1.source_connection_name == "PostgreSQL Source"
+    assert enriched_schema1.destination_connection_id == "conn-dest"
+    assert enriched_schema1.destination_connection_name == "Snowflake Dest"
+
+    # Verify second enriched schema
+    enriched_schema2 = enriched["sync-1"][1]
+    assert enriched_schema2.id == "schema-2"
+    assert enriched_schema2.output_name == "orders"
+
+
+def test_workspace_data_enriched_schemas_no_connections():
+    """Test enriched_schemas_by_bulk_sync_id when connections are missing."""
+    # Create bulk sync without valid connection IDs
+    bulk_sync = create_sample_bulk_sync(
+        bulk_sync_id="sync-1",
+        source_connection_id="missing-conn",
+        destination_connection_id="missing-conn-2",
+    )
+
+    schema = create_sample_bulk_sync_schema("schema-1", output_name="users")
+
+    workspace_data = PolytomicWorkspaceData(
+        connections=[],
+        bulk_syncs=[bulk_sync],
+        schemas_by_bulk_sync_id={"sync-1": [schema]},
+    )
+
+    enriched = workspace_data.enriched_schemas_by_bulk_sync_id
+    enriched_schema = enriched["sync-1"][0]
+
+    # Connection names should be None when connections are not found
+    assert enriched_schema.source_connection_name is None
+    assert enriched_schema.destination_connection_name is None
+
+
+def test_workspace_data_enriched_schemas_cached():
+    """Test that enriched_schemas_by_bulk_sync_id is cached."""
+    workspace_data = create_sample_workspace_data()
+
+    # Access twice and verify it's the same object (cached)
+    enriched1 = workspace_data.enriched_schemas_by_bulk_sync_id
+    enriched2 = workspace_data.enriched_schemas_by_bulk_sync_id
+
+    assert enriched1 is enriched2
+
+
+def test_utils_create_sample_enriched_schema():
+    """Test utils create_sample_enriched_schema helper."""
+    enriched = create_sample_enriched_schema()
+
+    assert enriched.id == "schema-123"
+    assert enriched.bulk_sync_id == "sync-123"
+    assert enriched.output_name == "users"
+    assert enriched.source_connection_name == "Source Connection"
+    assert enriched.destination_connection_name == "Dest Connection"
