@@ -68,6 +68,7 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-sling**: `python_modules/libraries/dagster-sling`
 **dagster-dlt**: `python_modules/libraries/dagster-dlt`
 **dagster-embedded-elt**: `python_modules/libraries/dagster-embedded-elt`
+**dagster-polytomic**: `python_modules/libraries/dagster-polytomic`
 
 ## migration tools
 
@@ -88,7 +89,6 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-powerbi**: `python_modules/libraries/dagster-powerbi`
 **dagster-sigma**: `python_modules/libraries/dagster-sigma`
 **dagster-omni**: `python_modules/libraries/dagster-omni`
-**dagster-polytomic**: `python_modules/libraries/dagster-polytomic`
 
 ## ml platforms
 
