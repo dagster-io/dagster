@@ -13,6 +13,17 @@ This article assumes familiarity with [assets](/guides/build/assets) and [jobs](
 
 :::
 
+## Overview
+
+When your pipelines interact with rate-limited APIs, shared databases, or resource-constrained systems, you need to limit how many operations execute simultaneously. Dagster provides several mechanisms at different levels of granularity:
+
+| Control type      | Scope      | Protects against                | Example use case           |
+| ----------------- | ---------- | ------------------------------- | -------------------------- |
+| Concurrency pools | Cross-run  | Overloading shared resources    | Database connection limits |
+| Executor limits   | Single run | Memory/CPU exhaustion           | Large data transformations |
+| Tag concurrency   | Single run | Resource contention by category | Mixed DB + API workloads   |
+| Run queue limits  | Deployment | Too many simultaneous runs      | Backfill throttling        |
+
 ## Limit the number of total runs that can be in progress at the same time
 
 - Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
@@ -26,11 +37,11 @@ concurrency:
 
 ## Limit the number of assets or ops actively executing across all runs
 
-You can assign assets and ops to concurrency pools which allow you to limit the number of in progress op executions across all runs. You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
+You can assign assets and ops to concurrency pools which allow you to limit the number of in progress op executions across all runs. This is ideal for protecting shared resources like databases or APIs. You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_pool_api.py"
-  title="src/<project_name>/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/pool_concurrency.py"
+  title="Assigning assets to concurrency pools"
   language="python"
 />
 
@@ -50,6 +61,17 @@ To specify a limit for the pool "database" using the `dagster` CLI, use:
 dagster instance concurrency set database 1
 ```
 
+### Setting a default limit for concurrency pools
+
+- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
+- Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
+
+```yaml
+concurrency:
+  pools:
+    default_limit: 1
+```
+
 ## Limit the number of runs that can be in progress for a set of ops
 
 You can also use concurrency pools to limit the number of in progress runs containing those assets or ops. You can follow the steps in the [Limit the number of assets or ops actively in execution across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs) section to assign your assets and ops to pools and to configure the desired limit.
@@ -66,17 +88,6 @@ concurrency:
 ```
 
 Without this granularity set, the default granularity is set to the `op`. This means that for a pool `foo` with a limit `1`, we enforce that only one op is executing at a given time across all runs, but the number of runs in progress is unaffected by the pool limit.
-
-### Setting a default limit for concurrency pools
-
-- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
-- Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
-
-```yaml
-concurrency:
-  pools:
-    default_limit: 1
-```
 
 ## Limit the number of runs that can be in progress by run tag
 
@@ -123,7 +134,7 @@ The default limit for op execution within a run depends on which executor you ar
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_job.py"
   language="python"
-  title="src/<project_name>/defs/assets.py"
+  title="Limiting concurrent execution for a specific job"
 />
 
 ### Limit concurrent execution for all runs in a code location
@@ -131,7 +142,17 @@ The default limit for op execution within a run depends on which executor you ar
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_code_location.py"
   language="python"
-  title="src/<project_name>/defs/executor.py"
+  title="Limiting concurrent execution for all runs"
+/>
+
+### Limit by tag within a single run
+
+Tag-based concurrency limits ops with specific tags, allowing fine-grained control within a run. Multiple ops can run in parallel, but only N with a given tag. This is useful when different ops in the same run have different resource requirements.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/tag_concurrency.py"
+  language="python"
+  title="Tag-based concurrency limits within a run"
 />
 
 ## Prevent runs from starting if another run is already occurring (advanced)
@@ -141,8 +162,52 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_no_more_than_1_job.py"
   language="python"
-  title="src/<project_name>/defs/assets.py"
+  title="Preventing concurrent runs with a schedule"
 />
+
+## When to use each approach
+
+**Use concurrency pools when:**
+
+- You need to protect a shared resource (database, API) across all runs
+- Multiple runs might simultaneously access the same external system
+- You want ops to queue until the resource is available
+
+**Use executor limits when:**
+
+- You want to control parallelism within a single run
+- Memory or CPU constraints limit how many ops can run at once
+- You don't need cross-run coordination
+
+**Use tag-based limits when:**
+
+- Different ops in the same run have different resource requirements
+- You want some ops to run in parallel while limiting others
+- You need category-based throttling within a run
+
+**Use run queue limits when:**
+
+- You need to limit total runs across your deployment
+- Backfills or sensors might launch many runs at once
+- Your infrastructure has fixed capacity for concurrent runs
+
+## Combining approaches
+
+These mechanisms can be combined. For example:
+
+- **Pools + executor limits**: Protect external resources while also limiting local parallelism
+- **Run queue + pools**: Limit total runs AND protect specific resources within those runs
+- **Tag limits + pools**: Fine-grained control within runs plus cross-run protection
+
+```yaml
+concurrency:
+  runs:
+    max_concurrent_runs: 10
+  pools:
+    default_limit: 3
+```
+
+This configuration allows up to 10 concurrent runs, with at most 3 ops per pool executing across all runs.
 
 ## Troubleshooting
 

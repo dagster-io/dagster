@@ -17,14 +17,18 @@ def warehouse_aggregate(context: dg.AssetExecutionContext):
     time.sleep(10)
 
 
-# Job with tag concurrency limits
+# highlight-start
+# Job with tag concurrency limits - only 1 asset with database=warehouse tag can run at a time
 warehouse_job = dg.define_asset_job(
     name="warehouse_job",
     selection=[warehouse_sync, warehouse_aggregate],
     executor_def=dg.multiprocess_executor.configured(
         {
             "max_concurrent": 4,
-            "tag_concurrency_limits": [{"key": "database", "value": "warehouse", "limit": 1}],
+            "tag_concurrency_limits": [
+                {"key": "database", "value": "warehouse", "limit": 1}
+            ],
         }
     ),
 )
+# highlight-end
