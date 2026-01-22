@@ -5,7 +5,7 @@ from typing import Any, Literal, Union
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 import dagster as dg
-from dagster import Config, ConfigurableResource, Resolvable
+from dagster import Config, ConfigurableResource
 from pydantic import Field
 
 

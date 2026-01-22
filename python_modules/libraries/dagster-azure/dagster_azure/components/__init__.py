@@ -5,7 +5,7 @@ from dagster_azure.components.blob import AzureBlobStorageResourceComponent
 from dagster_azure.components.io_managers import ADLS2PickleIOManagerComponent
 
 __all__ = [
-    "AzureBlobStorageResourceComponent",
-    "ADLS2ResourceComponent",
     "ADLS2PickleIOManagerComponent",
+    "ADLS2ResourceComponent",
+    "AzureBlobStorageResourceComponent",
 ]

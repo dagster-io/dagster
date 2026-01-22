@@ -1,10 +1,8 @@
-"""Azure Blob Storage Resource Component for dagster-dg."""
-
-from typing import Optional, Union
+from typing import Any, Literal, Union
 
 import dagster as dg
-from dagster.components import Component, Model
-from dagster._annotations import public, preview
+from dagster._annotations import preview, public
+from dagster.components import Component, ComponentLoadContext, Model
 from pydantic import Field
 
 from dagster_azure.blob.resources import (
@@ -14,6 +12,31 @@ from dagster_azure.blob.resources import (
     AzureBlobStorageResource,
     AzureBlobStorageSASTokenCredential,
 )
+
+
+def _resolve(val: str):
+    if isinstance(val, str) and val.startswith("{{ env.") and val.endswith(" }}"):
+        return dg.EnvVar(val[7:-3].strip())
+    return val
+
+
+class SASCredentialModel(Model):
+    credential_type: Literal["sas"]
+    sas_token: str
+
+
+class KeyCredentialModel(Model):
+    credential_type: Literal["key"]
+    key: str
+
+
+class DefaultCredentialModel(Model):
+    credential_type: Literal["default_azure_credential"]
+    kwargs: dict = {}
+
+
+class AnonymousCredentialModel(Model):
+    credential_type: Literal["anonymous"]
 
 
 @public
@@ -37,44 +60,35 @@ class AzureBlobStorageResourceComponent(Component, dg.Resolvable, Model):
                 key: ${AZURE_STORAGE_ACCOUNT_KEY}
               resource_key: blob_storage
     """
-
-    account_url: str = Field(
-        description=(
-            "The URL to the blob storage account. Any other entities included"
-            " in the URL path (e.g. container or blob) will be discarded. This URL can be optionally"
-            " authenticated with a SAS token."
-        ),
-    )
+    account_url: str = Field(description="The URL to the blob storage account.")
 
     credential: Union[
-        AzureBlobStorageKeyCredential,
-        AzureBlobStorageSASTokenCredential,
-        AzureBlobStorageDefaultCredential,
-        AzureBlobStorageAnonymousCredential,
-    ] = Field(
-        discriminator="credential_type",
-        description=(
-            "The credential used to authenticate to the storage account. One of:"
-            " AzureBlobStorageSASTokenCredential,"
-            " AzureBlobStorageKeyCredential,"
-            " AzureBlobStorageDefaultCredential,"
-            " AzureBlobStorageAnonymousCredential"
-        ),
+        SASCredentialModel,
+        KeyCredentialModel,
+        DefaultCredentialModel,
+        AnonymousCredentialModel,
+    ] = Field(description="The credential used to authenticate.")
+
+    resource_key: str = Field(
+        default="blob_storage", description="Resource key for binding to definitions."
     )
 
-    resource_key: Optional[str] = Field(
-        default=None, description="Resource key for binding to definitions."
-    )
+    def build_resource(self, context: ComponentLoadContext) -> AzureBlobStorageResource:
+        cred: Any = AzureBlobStorageDefaultCredential()
 
-    @property
-    def resource(self) -> AzureBlobStorageResource:
-        """Return the underlying AzureBlobStorageResource."""
+        if self.credential.credential_type == "sas":
+            cred = AzureBlobStorageSASTokenCredential(token=_resolve(self.credential.sas_token))
+        elif self.credential.credential_type == "key":
+            cred = AzureBlobStorageKeyCredential(key=_resolve(self.credential.key))
+        elif self.credential.credential_type == "default_azure_credential":
+            cred = AzureBlobStorageDefaultCredential(kwargs=self.credential.kwargs)
+        elif self.credential.credential_type == "anonymous":
+            cred = AzureBlobStorageAnonymousCredential()
+
         return AzureBlobStorageResource(
-            account_url=self.account_url,
-            credential=self.credential,
+            account_url=_resolve(self.account_url),
+            credential=cred,
         )
 
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key is None:
-            return dg.Definitions()
-        return dg.Definitions(resources={self.resource_key: self.resource})
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        return dg.Definitions(resources={self.resource_key: self.build_resource(context)})

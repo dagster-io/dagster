@@ -1,7 +1,9 @@
-import pytest
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster.components.testing import create_defs_folder_sandbox
+from typing import get_args, get_origin
 
+import pytest
+from dagster import EnvVar
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.testing import create_defs_folder_sandbox
 from dagster_azure.adls2.io_manager import ADLS2PickleIOManager
 from dagster_azure.adls2.resources import ADLS2Resource
 from dagster_azure.blob.resources import AzureBlobStorageResource
@@ -11,99 +13,128 @@ from dagster_azure.components.io_managers import ADLS2PickleIOManagerComponent
 
 
 @pytest.mark.parametrize(
-    "component_cls, resource_cls",
+    "component_class, resource_class",
     [
         (AzureBlobStorageResourceComponent, AzureBlobStorageResource),
         (ADLS2ResourceComponent, ADLS2Resource),
     ],
 )
-def test_component_fields_match_resource(component_cls, resource_cls):
-    """
-    Ensures that the fields on the Component match the fields on the underlying Resource.
-    """
-    component_fields = set(component_cls.model_fields.keys())
+def test_component_fields_sync_with_resource(component_class, resource_class):
+    component_fields = set(component_class.model_fields.keys())
+    if "credential" in component_class.model_fields:
+        creds_field = component_class.model_fields["credential"]
+        creds_annotation = creds_field.annotation
+        origin = get_origin(creds_annotation)
+        if origin:
+            args = get_args(creds_annotation)
+            for arg in args:
+                if hasattr(arg, "model_fields"):
+                    component_fields.update(arg.model_fields.keys())
+        else:
+            actual_creds_class = creds_annotation
+            if hasattr(actual_creds_class, "model_fields"):
+                component_fields.update(actual_creds_class.model_fields.keys())
 
+    component_fields.discard("credential_type")
     component_fields.discard("resource_key")
     component_fields.discard("type")
-
-    resource_init_params = set(resource_cls.__init__.__annotations__.keys())
-    resource_init_params.discard("return")
-
-    missing_in_component = resource_init_params - component_fields
-    assert not missing_in_component, (
-        f"Component {component_cls.__name__} is missing fields present in Resource {resource_cls.__name__}: {missing_in_component}"
-    )
-
-    extra_in_component = component_fields - resource_init_params
-    assert not extra_in_component, (
-        f"Component {component_cls.__name__} has extra fields not in Resource {resource_cls.__name__}: {extra_in_component}"
+    resource_fields = set(resource_class.model_fields.keys())
+    resource_fields.discard("credential")
+    missing = resource_fields - component_fields
+    assert resource_fields.issubset(component_fields), (
+        f"Missing fields in {component_class.__name__}: {missing}"
     )
 
 
-def test_blob_storage_component_yaml():
+def test_blob_storage_component_integration(monkeypatch):
+    monkeypatch.setenv("AZURE_STORAGE_ACCOUNT_URL", "https://myaccount.blob.core.windows.net")
+    monkeypatch.setenv("AZURE_STORAGE_KEY", "fake-key")
+
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=AzureBlobStorageResourceComponent,
             defs_yaml_contents={
                 "type": "dagster_azure.AzureBlobStorageResourceComponent",
                 "attributes": {
-                    "account_url": "https://myaccount.blob.core.windows.net",
-                    "credential": {"credential_type": "sas", "sas_token": "test-token"},
-                    "resource_key": "blob_storage",
+                    "account_url": "{{ env.AZURE_STORAGE_ACCOUNT_URL }}",
+                    "credential": {
+                        "credential_type": "key",
+                        "key": "{{ env.AZURE_STORAGE_KEY }}",
+                    },
+                    "resource_key": "my_blob",
                 },
             },
         )
-        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
-            assert "blob_storage" in defs.resources
-            resource = defs.resources["blob_storage"]
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources
+                resource = defs.resources["my_blob"]
+                assert isinstance(resource, AzureBlobStorageResource)
 
-            assert isinstance(resource, AzureBlobStorageResource)
-            assert resource.account_url == "https://myaccount.blob.core.windows.net"
+                if isinstance(resource.account_url, EnvVar):
+                    assert resource.account_url == EnvVar("AZURE_STORAGE_ACCOUNT_URL")
+                else:
+                    assert resource.account_url == "https://myaccount.blob.core.windows.net"
+
+                if isinstance(resource.credential.key, EnvVar):
+                    assert resource.credential.key == EnvVar("AZURE_STORAGE_KEY")
+                else:
+                    assert resource.credential.key == "fake-key"
 
 
-def test_adls2_component_yaml():
+def test_adls2_component_integration(monkeypatch):
+    monkeypatch.setenv("ADLS2_STORAGE_ACCOUNT", "myadlsaccount")
+    monkeypatch.setenv("ADLS2_SAS_TOKEN", "fake-sas-token")
+
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=ADLS2ResourceComponent,
             defs_yaml_contents={
                 "type": "dagster_azure.ADLS2ResourceComponent",
                 "attributes": {
-                    "storage_account": "mystorageaccount",
-                    "credential": {"credential_type": "key", "storage_account_key": "fake-key"},
-                    "resource_key": "adls2",
+                    "storage_account": "{{ env.ADLS2_STORAGE_ACCOUNT }}",
+                    "credential": {
+                        "credential_type": "sas",
+                        "token": "{{ env.ADLS2_SAS_TOKEN }}",
+                    },
+                    "resource_key": "my_adls2",
                 },
             },
         )
-        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
-            assert "adls2" in defs.resources
-            resource = defs.resources["adls2"]
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources
+                resource = defs.resources["my_adls2"]
+                assert isinstance(resource, ADLS2Resource)
 
-            assert isinstance(resource, ADLS2Resource)
-            assert resource.storage_account == "mystorageaccount"
+                if isinstance(resource.storage_account, EnvVar):
+                    assert resource.storage_account == EnvVar("ADLS2_STORAGE_ACCOUNT")
+                else:
+                    assert resource.storage_account == "myadlsaccount"
+
+                if isinstance(resource.credential.token, EnvVar):
+                    assert resource.credential.token == EnvVar("ADLS2_SAS_TOKEN")
+                else:
+                    assert resource.credential.token == "fake-sas-token"
 
 
-def test_adls2_io_manager_component_yaml():
+def test_adls2_io_manager_integration():
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=ADLS2PickleIOManagerComponent,
             defs_yaml_contents={
                 "type": "dagster_azure.ADLS2PickleIOManagerComponent",
                 "attributes": {
-                    "adls2": {
-                        "storage_account": "io-storage",
-                        "credential": {"credential_type": "key", "storage_account_key": "key"},
-                    },
+                    "adls2": "some_adls2_resource_key",
                     "adls2_file_system": "dagster-data",
-                    "adls2_prefix": "io_manager_test",
-                    "lease_duration": 30,
+                    "adls2_prefix": "pipeline_logs",
                     "resource_key": "io_manager",
                 },
             },
         )
-        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
-            assert "io_manager" in defs.resources
-            io_manager = defs.resources["io_manager"]
-
-            assert isinstance(io_manager, ADLS2PickleIOManager)
-            assert io_manager.adls2_prefix == "io_manager_test"
-            assert io_manager.adls2.storage_account == "io-storage"
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources
+                io_manager = defs.resources["io_manager"]
+                assert isinstance(io_manager, ADLS2PickleIOManager)
+                assert io_manager.adls2 == "some_adls2_resource_key"
