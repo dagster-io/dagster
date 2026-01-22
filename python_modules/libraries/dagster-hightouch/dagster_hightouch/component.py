@@ -3,21 +3,14 @@ from collections.abc import Mapping
 from typing import Any
 
 import dagster as dg
-from dagster.components import (
-    Component,
-    Model,
-    Resolvable,
-    ResolvedAssetSpec,
-    ComponentLoadContext,
-)
+from dagster.components import Component, ComponentLoadContext, Model, Resolvable, ResolvedAssetSpec
 from pydantic import Field
 
-from .resources import ConfigurableHightouchResource
+from dagster_hightouch.resources import ConfigurableHightouchResource
 
 
 class HightouchSyncComponent(Component, Resolvable, Model):
-    """
-    Represents a Hightouch sync as a Dagster asset.
+    """Represents a Hightouch sync as a Dagster asset.
 
     This component allows you to trigger a Hightouch sync and monitor its completion
     as part of your Dagster asset graph. When materialized, it calls the Hightouch API,
@@ -69,8 +62,7 @@ class HightouchSyncComponent(Component, Resolvable, Model):
             # Summing all failed rows (adds, changes, removes) for accurate reporting
             failed_rows = result.sync_run_details.get("failedRows", {})
             total_failed = sum(
-                failed_rows.get(k, 0)
-                for k in ["addedCount", "changedCount", "removedCount"]
+                failed_rows.get(k, 0) for k in ["addedCount", "changedCount", "removedCount"]
             )
 
             yield dg.MaterializeResult(
@@ -82,9 +74,7 @@ class HightouchSyncComponent(Component, Resolvable, Model):
                     "failed_adds": failed_rows.get("addedCount", 0),
                     "failed_changes": failed_rows.get("changedCount", 0),
                     "failed_removes": failed_rows.get("removedCount", 0),
-                    "destination_details": dg.MetadataValue.json(
-                        result.destination_details
-                    ),
+                    "destination_details": dg.MetadataValue.json(result.destination_details),
                     "query_size": result.sync_run_details.get("querySize"),
                     "completion_ratio": result.sync_run_details.get("completionRatio"),
                     "failed_rows": result.sync_run_details.get("failedRows", {}).get(
