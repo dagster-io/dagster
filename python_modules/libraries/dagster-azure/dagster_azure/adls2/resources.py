@@ -1,5 +1,6 @@
 from typing import Any, Literal, Union
 
+import dagster as dg
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster import (
@@ -11,7 +12,6 @@ from dagster import (
     StringSource,
     resource,
 )
-import dagster as dg
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts

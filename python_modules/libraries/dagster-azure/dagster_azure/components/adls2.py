@@ -1,4 +1,4 @@
-from typing import Any, Literal, Union
+from typing import Optional, Union, cast
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -11,27 +11,6 @@ from dagster_azure.adls2.resources import (
     ADLS2Resource,
     ADLS2SASToken,
 )
-
-
-def _resolve(val: str):
-    if isinstance(val, str) and val.startswith("{{ env.") and val.endswith(" }}"):
-        return dg.EnvVar(val[7:-3].strip())
-    return val
-
-
-class ADLS2SASTokenModel(Model):
-    credential_type: Literal["sas"]
-    token: str
-
-
-class ADLS2KeyModel(Model):
-    credential_type: Literal["key"]
-    storage_account_key: str
-
-
-class ADLS2DefaultAzureCredentialModel(Model):
-    credential_type: Literal["default_azure_credential"]
-    kwargs: dict[str, Any] = {}
 
 
 @public
@@ -55,30 +34,25 @@ class ADLS2ResourceComponent(Component, dg.Resolvable, Model):
                 token: ${ADLS2_SAS_TOKEN}
               resource_key: adls2
     """
-    storage_account: str = Field(description="The storage account name.")
 
-    credential: Union[ADLS2SASTokenModel, ADLS2KeyModel, ADLS2DefaultAzureCredentialModel] = Field(
-        description="The credentials with which to authenticate."
+    storage_account: Optional[str] = Field(default=None, description="The storage account name")
+
+    credential: Optional[Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential]] = Field(
+        default=None, description="The credentials with which to authenticate"
     )
 
-    resource_key: str = Field(
-        default="adls2", description="Resource key for binding to definitions."
+    resource_key: Optional[str] = Field(
+        default=None, description="Resource key for binding to definitions"
     )
 
-    def build_resource(self, context: ComponentLoadContext) -> ADLS2Resource:
-        cred: Any = ADLS2DefaultAzureCredential(kwargs={})
-
-        if self.credential.credential_type == "sas":
-            cred = ADLS2SASToken(token=_resolve(self.credential.token))
-        elif self.credential.credential_type == "key":
-            cred = ADLS2Key(key=_resolve(self.credential.storage_account_key))
-        elif self.credential.credential_type == "default_azure_credential":
-            cred = ADLS2DefaultAzureCredential(kwargs=self.credential.kwargs)
-
+    @property
+    def resource(self) -> ADLS2Resource:
         return ADLS2Resource(
-            storage_account=_resolve(self.storage_account),
-            credential=cred,
+            storage_account=cast("str", self.storage_account),
+            credential=self.credential or ADLS2DefaultAzureCredential(kwargs={}),
         )
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key: self.build_resource(context)})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})

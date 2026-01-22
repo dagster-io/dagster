@@ -2,9 +2,9 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Literal, Union
 
+import dagster as dg
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-import dagster as dg
 from dagster import Config, ConfigurableResource
 from pydantic import Field
 

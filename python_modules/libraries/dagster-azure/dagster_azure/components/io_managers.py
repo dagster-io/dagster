@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -28,20 +28,35 @@ class ADLS2PickleIOManagerComponent(Component, dg.Resolvable, Model):
               adls2: ${adls2_resource}
               resource_key: io_manager
     """
-    adls2: str = Field(description="The resource key for the ADLS2 resource.")
-    adls2_file_system: str = Field(description="The ADLS2 file system to use.")
-    adls2_prefix: str = Field(default="dagster", description="The prefix to use for IO.")
 
-    resource_key: str = Field(
+    adls2: Optional[str] = Field(
+        default=None, description="The resource key for the ADLS2 resource."
+    )
+    adls2_file_system: Optional[str] = Field(
+        default=None, description="The ADLS2 file system to use."
+    )
+    adls2_prefix: Optional[str] = Field(default="dagster", description="The prefix to use for IO.")
+    lease_duration: Optional[int] = Field(
+        default=None, description="The duration of the lease in seconds."
+    )
+
+    resource_key: Optional[str] = Field(
         default="io_manager", description="Resource key for binding to definitions."
     )
 
-    def build_resource(self, context: ComponentLoadContext) -> ADLS2PickleIOManager:
-        return ADLS2PickleIOManager(
-            adls2=cast("Any", self.adls2),
-            adls2_file_system=self.adls2_file_system,
-            adls2_prefix=self.adls2_prefix,
-        )
+    @property
+    def resource(self) -> ADLS2PickleIOManager:
+        attributes = {
+            "adls2": self.adls2,
+            "adls2_file_system": self.adls2_file_system,
+            "adls2_prefix": self.adls2_prefix,
+            "lease_duration": self.lease_duration,
+        }
+        provided_attributes = {k: v for k, v in attributes.items() if v is not None}
+
+        return ADLS2PickleIOManager(**provided_attributes)
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key: self.build_resource(context)})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})
