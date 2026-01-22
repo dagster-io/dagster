@@ -3,7 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from dagster import AssetKey, DagsterInvalidDefinitionError
-from dagster_polytomic.component import PolytomicComponent, PolytomicTranslatorData
+from dagster_polytomic.component import PolytomicComponent
+from dagster_polytomic.translation import PolytomicTranslatorData
 from dagster_polytomic.workspace import PolytomicWorkspace
 from polytomic import BulkField, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
 
@@ -101,7 +102,7 @@ def test_get_asset_spec_with_translation(component: PolytomicComponent):
         return spec.replace_attributes(key=AssetKey(["custom", *spec.key.path]))
 
     component = PolytomicComponent(
-        workspace=PolytomicWorkspace(token="test-key"),
+        workspace=PolytomicWorkspace(token="test-token"),
         translation=custom_translation,
     )
 
