@@ -1,3 +1,4 @@
+import asyncio
 from functools import cached_property
 from typing import Any
 
@@ -46,9 +47,16 @@ class PolytomicWorkspace(dg.Resolvable, dg.Model):
         """
         connections = await self._fetch_connections()
         bulk_syncs = await self._fetch_bulk_syncs()
-        schemas = {}
-        for bulk_sync in bulk_syncs:
-            schemas[bulk_sync.id] = await self._fetch_bulk_sync_schemas(bulk_sync_id=bulk_sync.id)
+
+        # Fetch all schemas in parallel using asyncio.gather
+        schema_results = await asyncio.gather(
+            *[self._fetch_bulk_sync_schemas(bulk_sync_id=bulk_sync.id) for bulk_sync in bulk_syncs]
+        )
+
+        # Build the schemas dictionary
+        schemas = {
+            bulk_sync.id: schema_list for bulk_sync, schema_list in zip(bulk_syncs, schema_results)
+        }
 
         return {
             "connections": connections,
