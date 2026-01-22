@@ -416,7 +416,8 @@ def test_workspace_data_helper_methods(mock_connection_response, mock_bulk_sync_
     assert workspace_data.get_bulk_sync_schemas("non-existent") == []
 
 
-def test_fetch_bulk_sync_schemas_filters_disabled(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_bulk_sync_schemas_filters_disabled(polytomic_workspace):
     """Test that disabled schemas are filtered out when fetching."""
     # Create mock schemas - mix of enabled and disabled
     enabled_schema = MagicMock(spec=BulkSchema)
@@ -439,7 +440,7 @@ def test_fetch_bulk_sync_schemas_filters_disabled(polytomic_workspace):
     mock_client = MagicMock()
     mock_schemas_list_response = MagicMock()
     mock_schemas_list_response.data = [enabled_schema, disabled_schema]
-    mock_client.bulk_sync.schemas.list.return_value = mock_schemas_list_response
+    mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
     # Patch the client property
     with patch.object(
@@ -448,7 +449,7 @@ def test_fetch_bulk_sync_schemas_filters_disabled(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        schemas = polytomic_workspace._fetch_bulk_sync_schemas("sync-1")  # noqa: SLF001
+        schemas = await polytomic_workspace._fetch_bulk_sync_schemas("sync-1")  # noqa: SLF001
 
     # Only enabled schema should be returned
     assert len(schemas) == 1
@@ -456,7 +457,8 @@ def test_fetch_bulk_sync_schemas_filters_disabled(polytomic_workspace):
     assert schemas[0].output_name == "users"
 
 
-def test_fetch_bulk_sync_schemas_all_disabled(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_bulk_sync_schemas_all_disabled(polytomic_workspace):
     """Test that all disabled schemas results in empty list."""
     # Create mock schemas - all disabled
     disabled_schema_1 = MagicMock(spec=BulkSchema)
@@ -479,7 +481,7 @@ def test_fetch_bulk_sync_schemas_all_disabled(polytomic_workspace):
     mock_client = MagicMock()
     mock_schemas_list_response = MagicMock()
     mock_schemas_list_response.data = [disabled_schema_1, disabled_schema_2]
-    mock_client.bulk_sync.schemas.list.return_value = mock_schemas_list_response
+    mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
     # Patch the client property
     with patch.object(
@@ -488,13 +490,14 @@ def test_fetch_bulk_sync_schemas_all_disabled(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        schemas = polytomic_workspace._fetch_bulk_sync_schemas("sync-1")  # noqa: SLF001
+        schemas = await polytomic_workspace._fetch_bulk_sync_schemas("sync-1")  # noqa: SLF001
 
     # Should return empty list when all schemas are disabled
     assert len(schemas) == 0
 
 
-def test_fetch_polytomic_state_excludes_disabled_schemas(polytomic_workspace):
+@pytest.mark.asyncio
+async def test_fetch_polytomic_state_excludes_disabled_schemas(polytomic_workspace):
     """Test that disabled schemas are excluded from workspace state."""
     # Create mock connection
     mock_connection = MagicMock(spec=ConnectionResponseSchema)
@@ -540,17 +543,17 @@ def test_fetch_polytomic_state_excludes_disabled_schemas(polytomic_workspace):
     # Mock connections.list()
     mock_connections_list_response = MagicMock()
     mock_connections_list_response.data = [mock_connection]
-    mock_client.connections.list.return_value = mock_connections_list_response
+    mock_client.connections.list = AsyncMock(return_value=mock_connections_list_response)
 
     # Mock bulk_sync.list()
     mock_bulk_syncs_list_response = MagicMock()
     mock_bulk_syncs_list_response.data = [mock_bulk_sync]
-    mock_client.bulk_sync.list.return_value = mock_bulk_syncs_list_response
+    mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
     # Mock bulk_sync.schemas.list() - returns both enabled and disabled
     mock_schemas_list_response = MagicMock()
     mock_schemas_list_response.data = [enabled_schema, disabled_schema]
-    mock_client.bulk_sync.schemas.list.return_value = mock_schemas_list_response
+    mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
     # Patch the client property
     with patch.object(
@@ -559,7 +562,7 @@ def test_fetch_polytomic_state_excludes_disabled_schemas(polytomic_workspace):
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
-        state = polytomic_workspace.fetch_polytomic_state()
+        state = await polytomic_workspace.fetch_polytomic_state()
 
     # Verify only enabled schema is in the state
     assert "sync-1" in state.schemas_by_bulk_sync_id

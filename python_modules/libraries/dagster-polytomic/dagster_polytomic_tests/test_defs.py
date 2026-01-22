@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from dagster import AssetKey, DagsterInvalidDefinitionError
@@ -69,7 +69,7 @@ def test_get_asset_spec_with_translation(component: PolytomicComponent):
         return spec.replace_attributes(key=AssetKey(["custom", *spec.key.path]))
 
     component = PolytomicComponent(
-        workspace=PolytomicWorkspace(api_key="test-key"),
+        workspace=PolytomicWorkspace(token="test-key"),
         translation=custom_translation,
     )
 
@@ -170,7 +170,8 @@ def test_load_state_from_serialized_file(component: PolytomicComponent, tmp_path
     assert loaded_state.bulk_syncs[0].id == "sync-123"
 
 
-def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
+@pytest.mark.asyncio
+async def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
     """Integration test: mock API responses → WorkspaceData → AssetSpecs."""
     component = PolytomicComponent(workspace=polytomic_workspace)
 
@@ -229,21 +230,21 @@ def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
         patch.object(
             type(polytomic_workspace.client.connections),
             "list",
-            return_value=mock_conn_list_response,
+            new=AsyncMock(return_value=mock_conn_list_response),
         ),
         patch.object(
             type(polytomic_workspace.client.bulk_sync),
             "list",
-            return_value=mock_bulk_sync_list_response,
+            new=AsyncMock(return_value=mock_bulk_sync_list_response),
         ),
         patch.object(
             type(polytomic_workspace.client.bulk_sync.schemas),
             "list",
-            return_value=mock_schemas_list_response,
+            new=AsyncMock(return_value=mock_schemas_list_response),
         ),
     ):
         # Step 1: Fetch workspace data from "API"
-        workspace_data = polytomic_workspace.fetch_polytomic_state()
+        workspace_data = await polytomic_workspace.fetch_polytomic_state()
 
         # Step 2: Build definitions from workspace data
         defs = component.build_defs_from_workspace_data(workspace_data)

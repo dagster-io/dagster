@@ -48,9 +48,7 @@ class PolytomicWorkspace(dg.Resolvable, dg.Model):
         response = await self.client.bulk_sync.schemas.list(id=bulk_sync_id)
         data = response.data or []
         return [
-            PolytomicBulkSyncSchema.from_api_response(schema)
-            for schema in data
-            if schema.enabled
+            PolytomicBulkSyncSchema.from_api_response(schema) for schema in data if schema.enabled
         ]
 
     async def fetch_polytomic_state(self) -> PolytomicWorkspaceData:
