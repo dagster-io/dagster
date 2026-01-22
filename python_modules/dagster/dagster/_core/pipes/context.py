@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -90,6 +90,9 @@ class PipesMessageHandler:
         # Queue is thread-safe
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         self._extra_msg_queue: Queue[Any] = Queue()
+        # Storage for results and custom messages that have been popped off the queue
+        self._streamed_results: list[PipesExecutionResult] = []
+        self._streamed_extra_msgs: list[Any] = []
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._received_opened_msg = False
         self._messages_include_stdio_logs = False
@@ -102,10 +105,32 @@ class PipesMessageHandler:
             yield params
 
     def get_reported_results(self) -> Sequence[PipesExecutionResult]:
-        return tuple(self._result_queue.queue)
+        return tuple(self._streamed_results) + tuple(self._result_queue.queue)
+
+    def stream_reported_results(
+        self,
+        timeout: Optional[float] = None,
+        keep: bool = True,
+    ) -> Generator[PipesExecutionResult, None, None]:
+        while True:
+            item = self._result_queue.get(timeout=timeout)
+            if keep:
+                self._streamed_results.append(item)
+            yield item
 
     def get_custom_messages(self) -> Sequence[Any]:
-        return tuple(self._extra_msg_queue.queue)
+        return tuple(self._streamed_extra_msgs) + tuple(self._extra_msg_queue.queue)
+
+    def stream_custom_messages(
+        self,
+        timeout: Optional[float] = None,
+        keep: bool = True,
+    ) -> Generator[Any, None, None]:
+        while True:
+            item = self._extra_msg_queue.get(timeout=timeout)
+            if keep:
+                self._streamed_extra_msgs.append(item)
+            yield item
 
     @property
     def received_opened_message(self) -> bool:
@@ -375,6 +400,25 @@ class PipesSession:
         return (*reported, *implicit)
 
     @public
+    def stream_reported_results(
+        self,
+        *,
+        timeout: Optional[float] = None,
+        keep: bool = True,
+    ) -> Generator[PipesExecutionResult, None, None]:
+        """Stream :py:class:`PipesExecutionResult` objects reported from the external process.
+
+        Args:
+            timeout (Optional[float]): The maximum amount of time to wait for a result.
+            If None, the method will block indefinitely until a result is available.
+            keep (bool): Whether to keep the results in the queue after they are streamed.
+            If False, get_reported_results will return empty if all results have been streamed.
+
+        Yields: PipesExecutionResult
+        """
+        yield from self.message_handler.stream_reported_results(timeout=timeout, keep=keep)
+
+    @public
     def get_reported_results(self) -> Sequence[PipesExecutionResult]:
         """:py:class:`PipesExecutionResult` objects only explicitly received from the external process.
 
@@ -391,6 +435,23 @@ class PipesSession:
         Returns: Sequence[Any]
         """
         return self.message_handler.get_custom_messages()
+
+    @public
+    def stream_custom_messages(
+        self, *, timeout: Optional[float] = None, keep: bool = True
+    ) -> Generator[Any, None, None]:
+        """Stream the sequence of deserialized JSON data that was reported from the external process using
+        `report_custom_message`.
+
+        Args:
+            timeout (Optional[float]): The maximum amount of time to wait for a custom message.
+            If None, the method will block indefinitely until a custom message is available.
+            keep (bool): Whether to keep the custom messages in the queue after they are streamed.
+            If False, get_custom_messages will return empty if all custom messages have been streamed.
+
+        Yields: Any
+        """
+        yield from self.message_handler.stream_custom_messages(timeout=timeout, keep=keep)
 
     def report_launched(self, launched_payload: PipesLaunchedData):
         """Submit arbitrary information about the launched process to Pipes.
