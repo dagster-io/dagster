@@ -20,15 +20,15 @@ anthropic==0.76.0
 antlr4-python3-runtime==4.13.2
 anyio==4.12.1
 apache-airflow==2.11.0
-apache-airflow-providers-common-compat==1.11.0
-apache-airflow-providers-common-io==1.7.0
-apache-airflow-providers-common-sql==1.30.2
+apache-airflow-providers-common-compat==1.12.0
+apache-airflow-providers-common-io==1.7.1
+apache-airflow-providers-common-sql==1.30.3
 apache-airflow-providers-fab==1.5.3
-apache-airflow-providers-ftp==3.14.0
+apache-airflow-providers-ftp==3.14.1
 apache-airflow-providers-http==5.3.2
-apache-airflow-providers-imap==3.10.2
-apache-airflow-providers-smtp==2.4.1
-apache-airflow-providers-sqlite==4.2.0
+apache-airflow-providers-imap==3.10.3
+apache-airflow-providers-smtp==2.4.2
+apache-airflow-providers-sqlite==4.2.1
 apeye==1.4.1
 apeye-core==1.1.5
 apispec==6.9.0
@@ -44,7 +44,7 @@ asn1crypto==1.5.1
 -e examples/assets_dynamic_partitions
 -e examples/assets_pandas_pyspark
 asttokens==3.0.1
-async-lru==2.0.5
+async-lru==2.1.0
 attrs==25.4.0
 authlib==1.6.6
 autodocsumm==0.2.6
@@ -74,10 +74,10 @@ billiard==4.2.4
 bleach==6.3.0
 blinker==1.9.0
 bokeh==3.8.2
-boto3==1.42.28
-boto3-stubs-lite==1.42.28
-botocore==1.42.28
-botocore-stubs==1.42.28
+boto3==1.42.30
+boto3-stubs-lite==1.42.30
+botocore==1.42.30
+botocore-stubs==1.42.30
 build==1.4.0
 cachecontrol==0.14.4
 cached-property==2.0.1
@@ -87,9 +87,9 @@ caio==0.9.25
 callee==0.3.1
 cattrs==23.1.2
 celery==5.6.2
-certifi==2026.1.4
-cffi==2.0.0
-cfn-lint==1.43.2
+certifi==2025.1.31
+cffi==1.17.1
+cfn-lint==1.43.3
 chardet==5.2.0
 charset-normalizer==3.4.4
 chromadb==1.4.1
@@ -173,6 +173,7 @@ dagster-gemini==0.0.4
 -e python_modules/libraries/dagster-pandera
 -e python_modules/libraries/dagster-papertrail
 -e python_modules/dagster-pipes
+-e python_modules/libraries/dagster-polytomic
 -e python_modules/libraries/dagster-postgres
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus
@@ -197,7 +198,7 @@ dagster-qdrant==0.0.3
 dagster-weaviate==0.0.3
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
-dask==2025.12.0
+dask==2026.1.1
 dask-jobqueue==0.9.0
 dask-kubernetes==2022.9.0
 dask-yarn==0.9
@@ -207,9 +208,9 @@ dataclasses-json==0.6.7
 datadog==0.52.1
 dataproperty==1.1.0
 db-dtypes==1.5.0
-dbt-adapters==1.22.5
-dbt-common==1.37.2
-dbt-core==1.11.2
+dbt-adapters==1.16.3
+dbt-common==1.27.1
+dbt-core==1.10.8
 dbt-duckdb==1.10.0
 dbt-extractor==0.6.0
 dbt-protos==1.0.419
@@ -226,11 +227,11 @@ deprecated==1.3.1
 deprecation==2.1.0
 -e examples/development_to_production
 dict2css==0.3.0.post1
-dill==0.4.0
+dill==0.4.1
 distlib==0.4.0
-distributed==2025.12.0
+distributed==2026.1.1
 distro==1.9.0
-dlt==1.20.0
+dlt==1.21.0
 dnspython==2.8.0
 docker==7.1.0
 docker-image-py==0.1.13
@@ -281,7 +282,7 @@ google-api-core==2.29.0
 google-api-python-client==2.188.0
 google-auth==2.47.0
 google-auth-httplib2==0.3.0
-google-auth-oauthlib==1.2.2
+google-auth-oauthlib==1.2.4
 google-cloud-bigquery==3.40.0
 google-cloud-core==2.5.0
 google-cloud-dataproc==5.24.0
@@ -368,14 +369,14 @@ keyring==25.7.0
 kiwisolver==1.4.9
 kombu==5.6.2
 kopf==1.40.0
-kubernetes==33.1.0
+kubernetes==35.0.0
 kubernetes-asyncio==34.3.3
 langchain==0.3.27
 langchain-community==0.3.31
 langchain-core==0.3.83
 langchain-openai==0.3.35
 langchain-text-splitters==0.3.11
-langsmith==0.6.3
+langsmith==0.6.4
 lark==1.3.1
 lazy-object-proxy==1.12.0
 leather==0.4.1
@@ -416,7 +417,7 @@ msal-extensions==1.3.1
 msgpack==1.1.2
 msrest==0.7.1
 multidict==6.7.0
-mypy-boto3-ecs==1.42.13
+mypy-boto3-ecs==1.42.29
 mypy-boto3-emr==1.42.3
 mypy-boto3-emr-containers==1.42.3
 mypy-boto3-emr-serverless==1.42.23
@@ -497,6 +498,7 @@ pluggy==1.6.0
 ply==3.11
 polars==1.37.1
 polars-runtime-32==1.37.1
+polytomic==1.11.3
 portalocker==3.2.0
 posthog==5.4.0
 prison==0.2.1
@@ -505,7 +507,7 @@ prometheus-client==0.24.1
 prompt-toolkit==3.0.52
 propcache==0.4.1
 proto-plus==1.27.0
-protobuf==6.33.4
+protobuf==5.29.5
 psutil==7.2.1
 psycopg2-binary==2.9.11
 ptyprocess==0.7.0
@@ -513,14 +515,14 @@ pure-eval==0.2.3
 py-partiql-parser==0.5.0
 py4j==0.10.9.9
 pyarrow==22.0.0
-pyasn1==0.6.1
+pyasn1==0.6.2
 pyasn1-modules==0.4.2
 pybase64==1.4.3
 pycparser==2.23
 pydantic==2.12.5
 pydantic-core==2.41.5
 pydantic-settings==2.12.0
-pydash==8.0.5
+pydash==8.0.6
 pydata-google-auth==1.9.1
 pyfiglet==1.0.4
 pyflakes==3.4.0
@@ -595,7 +597,7 @@ scrapbook==0.5.0
 seaborn==0.13.2
 semver==3.0.4
 send2trash==2.1.0
-sentry-sdk==2.49.0
+sentry-sdk==2.50.0
 setproctitle==1.3.7
 setuptools==70.3.0
 shellingham==1.5.4
@@ -609,13 +611,13 @@ sling-mac-arm64==1.4.10.post2
 smmap==5.0.2
 sniffio==1.3.1
 snowballstemmer==3.0.1
-snowflake-connector-python==4.2.0
+snowflake-connector-python==3.18.0
 snowflake-core==1.10.0
 snowflake-snowpark-python==1.44.0
 snowflake-sqlalchemy==1.8.2
 snowplow-tracker==1.1.0
 sortedcontainers==2.4.0
-soupsieve==2.8.1
+soupsieve==2.8.3
 sphinx==9.0.4
 sphinx-autodoc-typehints==3.6.1
 sphinx-jinja2-compat==0.4.1
@@ -634,7 +636,7 @@ sqlalchemy-utils==0.42.1
 sqlglot==28.0.0
 sqlglotrs==0.7.3
 sqlparse==0.5.5
-sse-starlette==3.1.2
+sse-starlette==3.2.0
 sshpubkeys==3.3.1
 sshtunnel==0.4.0
 stack-data==0.6.3
@@ -675,7 +677,7 @@ typeguard==4.4.4
 typepy==1.3.4
 typer==0.16.1
 typer-slim==0.21.1
-types-awscrt==0.31.0
+types-awscrt==0.31.1
 types-backports==0.1.3
 types-certifi==2021.10.8.3
 types-cffi==1.17.0.20250915

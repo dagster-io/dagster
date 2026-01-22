@@ -136,7 +136,7 @@ def _select_unique_ids_from_manifest(
 
     functions = {}
     if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.11.0"):
-        from dbt.contracts.graph.nodes import FunctionNode
+        from dbt.contracts.graph.nodes import FunctionNode  # pyright: ignore
 
         functions = (
             {
