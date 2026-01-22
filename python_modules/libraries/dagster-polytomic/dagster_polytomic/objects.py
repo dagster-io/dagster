@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import Optional
 
+from dagster import _check as check
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 from polytomic import BulkField, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
@@ -20,9 +21,8 @@ class PolytomicConnection:
     @classmethod
     def from_api_response(cls, response: ConnectionResponseSchema) -> "PolytomicConnection":
         """Create PolytomicConnection from API response."""
-        assert response.id is not None, "Connection ID cannot be None"
         return cls(
-            id=response.id,
+            id=check.not_none(response.id, "Connection ID cannot be None"),
             name=response.name,
             type=response.type.name if response.type else None,
             organization_id=response.organization_id,
@@ -46,9 +46,8 @@ class PolytomicBulkSync:
     @classmethod
     def from_api_response(cls, response: BulkSyncResponse) -> "PolytomicBulkSync":
         """Create PolytomicBulkSync from API response."""
-        assert response.id is not None, "Bulk sync ID cannot be None"
         return cls(
-            id=response.id,
+            id=check.not_none(response.id, "Bulk sync ID cannot be None"),
             name=response.name,
             active=response.active or False,
             mode=response.mode,
@@ -69,9 +68,8 @@ class PolytomicBulkField:
     @classmethod
     def from_api_response(cls, response: BulkField) -> "PolytomicBulkField":
         """Create PolytomicBulkField from API field data."""
-        assert response.id is not None, "Bulk field ID cannot be None"
         return cls(
-            id=response.id,
+            id=check.not_none(response.id, "Bulk field ID cannot be None"),
             enabled=response.enabled or False,
         )
 
@@ -91,13 +89,12 @@ class PolytomicBulkSyncSchema:
     @classmethod
     def from_api_response(cls, response: BulkSchema) -> "PolytomicBulkSyncSchema":
         """Create PolytomicBulkSyncSchema from API response."""
-        assert response.id is not None, "Bulk sync schema ID cannot be None"
         fields = []
         if response.fields:
             fields = [PolytomicBulkField.from_api_response(field) for field in response.fields]
 
         return cls(
-            id=response.id,
+            id=check.not_none(response.id, "Bulk sync schema ID cannot be None"),
             enabled=response.enabled or False,
             output_name=response.output_name,
             partition_key=response.partition_key,
