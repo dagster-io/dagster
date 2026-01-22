@@ -27,20 +27,16 @@ def _get_project_telemetry_metadata(start_path: Optional[Path] = None) -> dict[s
     import yaml
 
     project_telemetry_data = {}
-    try:
-        path = start_path or Path.cwd()
-        while path != path.parent:
-            telemetry_file = path / ".dg" / "telemetry.yaml"
-            if telemetry_file.exists():
-                data = yaml.safe_load(telemetry_file.read_text())
-                if data and isinstance(data, dict):
-                    if "project_id" in data:
-                        project_telemetry_data["project_id"] = str(data["project_id"])
-                break
-            path = path.parent
-    except Exception:
-        # Silently ignore errors - telemetry metadata is optional
-        pass
+    path = start_path or Path.cwd()
+    while path != path.parent:
+        telemetry_file = path / ".dg" / "telemetry.yaml"
+        if telemetry_file.exists():
+            data = yaml.safe_load(telemetry_file.read_text())
+            if data and isinstance(data, dict):
+                if "project_id" in data:
+                    project_telemetry_data["project_id"] = str(data["project_id"])
+            break
+        path = path.parent
     return project_telemetry_data
 
 
