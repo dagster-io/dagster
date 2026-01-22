@@ -5,7 +5,7 @@ from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview
-from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -14,7 +14,6 @@ from dagster.components.utils.defs_state import (
     ResolvedDefsStateConfig,
 )
 from pydantic import Field
-from typing_extensions import Self
 
 from dagster_polytomic.objects import PolytomicBulkSyncEnrichedSchema, PolytomicWorkspaceData
 from dagster_polytomic.translation import (
@@ -77,7 +76,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             )
         return None
 
-    def get_asset_spec(self, data: PolytomicTranslatorData) -> dg.AssetSpec:
+    def get_asset_spec(self, data: PolytomicTranslatorData) -> Optional[dg.AssetSpec]:
         """Core function for converting a Polytomic object into an AssetSpec object."""
         base_asset_spec = self._get_default_polytomic_spec(data)
         if self.translation and base_asset_spec:

@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Self, TypeAlias, Union
+from typing import Annotated, Optional, TypeAlias, Union
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -9,6 +9,7 @@ from dagster.components.resolved.core_models import AssetSpecUpdateKwargs
 from dagster.components.utils import TranslatorResolvingInfo
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared.record import record
+from typing_extensions import Self
 
 from dagster_polytomic.objects import PolytomicBulkSyncEnrichedSchema, PolytomicWorkspaceData
 

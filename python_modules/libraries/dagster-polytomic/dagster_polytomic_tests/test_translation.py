@@ -3,6 +3,7 @@ from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional
+from unittest.mock import PropertyMock, patch
 
 import dagster as dg
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -11,6 +12,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestTranslation
 from dagster_polytomic import PolytomicComponent
+from dagster_polytomic.objects import PolytomicIdentity
 
 from dagster_polytomic_tests.utils import (
     create_sample_bulk_sync,
@@ -48,8 +50,9 @@ def _write_sample_state(instance: dg.DagsterInstance) -> None:
         state_path = Path(temp_dir) / "state.json"
         state_path.write_text(dg.serialize_value(workspace_data))
         assert instance.defs_state_storage is not None
+        # Use the same key format as the component's defs_state_config property
         instance.defs_state_storage.upload_state_from_path(
-            path=state_path, version="123", key=PolytomicComponent.__name__
+            path=state_path, version="123", key=f"{PolytomicComponent.__name__}[TestOrg]"
         )
 
 
@@ -58,7 +61,22 @@ def setup_polytomic_component(
     defs_yaml_contents: dict[str, Any],
 ) -> Iterator[tuple[PolytomicComponent, Definitions]]:
     """Sets up a components project with a polytomic component based on provided params."""
-    with create_defs_folder_sandbox() as sandbox, instance_for_test() as instance:
+    # Create a mock identity
+    mock_identity = PolytomicIdentity(
+        id="test-id",
+        organization_id="test-org-id",
+        organization_name="TestOrg",
+    )
+
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        instance_for_test() as instance,
+        patch(
+            "dagster_polytomic.workspace.PolytomicWorkspace.identity",
+            new_callable=PropertyMock,
+            return_value=mock_identity,
+        ),
+    ):
         _write_sample_state(instance)
         defs_path = sandbox.scaffold_component(
             component_cls=PolytomicComponent,
@@ -83,8 +101,9 @@ class TestPolytomicTranslation(TestTranslation):
             "type": "dagster_polytomic.PolytomicComponent",
             "attributes": {
                 "workspace": {
-                    "api_key": "test-key",
+                    "token": "test-token",
                 },
+                "defs_state": {"management_type": "VERSIONED_STATE_STORAGE"},
             },
         }
         body["attributes"]["translation"] = attributes
@@ -110,8 +129,9 @@ def test_per_object_type_translation() -> None:
         "type": "dagster_polytomic.PolytomicComponent",
         "attributes": {
             "workspace": {
-                "api_key": "test-key",
+                "token": "test-token",
             },
+            "defs_state": {"management_type": "VERSIONED_STATE_STORAGE"},
             "translation": {
                 "metadata": {"foo_global": "bar_global", "foo_schema": "OVERRIDE_ME"},
                 "for_schema": {

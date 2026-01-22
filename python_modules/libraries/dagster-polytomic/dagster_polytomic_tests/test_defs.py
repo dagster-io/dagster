@@ -102,7 +102,7 @@ def test_get_asset_spec_with_translation(component: PolytomicComponent):
         return spec.replace_attributes(key=AssetKey(["custom", *spec.key.path]))
 
     component = PolytomicComponent(
-        workspace=PolytomicWorkspace(token="test-key"),
+        workspace=PolytomicWorkspace(token="test-token"),
         translation=custom_translation,
     )
 
