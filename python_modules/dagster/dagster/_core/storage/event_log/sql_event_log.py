@@ -6,7 +6,6 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import cached_property
-from types import EllipsisType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -39,6 +38,7 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import (
     EventRecordsResult,
+    PartitionKeyFilter,
     RunShardedEventsCursor,
     RunStatusChangeRecordsFilter,
 )
@@ -3062,7 +3062,9 @@ class SqlEventLogStorage(EventLogStorage):
                         AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
                         AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
                         AssetCheckExecutionsTable.c.run_id == event.run_id,
-                        self._get_asset_check_partition_filter(evaluation.partition),
+                        self._get_asset_check_partition_filter_clause(
+                            PartitionKeyFilter(key=evaluation.partition)
+                        ),
                     )
                 )
                 .values(
@@ -3116,13 +3118,15 @@ class SqlEventLogStorage(EventLogStorage):
                 "as a result of duplicate AssetCheckPlanned events."
             )
 
-    def _get_asset_check_partition_filter(self, partition: Union[str, None, EllipsisType]):
-        if partition is ...:
+    def _get_asset_check_partition_filter_clause(
+        self, partition_filter: Optional[PartitionKeyFilter]
+    ):
+        if partition_filter is None:
             return True
-        elif partition is None:
+        elif partition_filter.key is None:
             return AssetCheckExecutionsTable.c.partition.is_(None)
         else:
-            return AssetCheckExecutionsTable.c.partition == partition
+            return AssetCheckExecutionsTable.c.partition == partition_filter.key
 
     def get_asset_check_execution_history(
         self,
@@ -3130,7 +3134,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
-        partition: Union[str, None, EllipsisType] = ...,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -3151,7 +3155,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db.and_(
                     AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
                     AssetCheckExecutionsTable.c.check_name == check_key.name,
-                    self._get_asset_check_partition_filter(partition),
+                    self._get_asset_check_partition_filter_clause(partition_filter),
                 )
             )
             .order_by(AssetCheckExecutionsTable.c.id.desc())
@@ -3173,7 +3177,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence[AssetCheckKey],
-        partition: Union[str, None, EllipsisType] = ...,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Returns the latest AssetCheckExecutionRecord for each check key. By default, returns the latest
         record regardless of partitioning.
@@ -3193,7 +3197,7 @@ class SqlEventLogStorage(EventLogStorage):
                         [key.asset_key.to_string() for key in check_keys]
                     ),
                     AssetCheckExecutionsTable.c.check_name.in_([key.name for key in check_keys]),
-                    self._get_asset_check_partition_filter(partition),
+                    self._get_asset_check_partition_filter_clause(partition_filter),
                 )
             )
             .group_by(

@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluationTargetMaterializationData,
 )
 from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.event_api import PartitionKeyFilter
 from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import DagsterEventType
 from dagster._core.loader import LoadingContextForTest
@@ -199,13 +200,13 @@ def test_resolve_status_transitions(instance: DagsterInstance):
 
     # Get the check records and verify resolve_status
     record_a = instance.event_log_storage.get_latest_asset_check_execution_by_key(
-        [check_key], partition="a"
+        [check_key], partition_filter=PartitionKeyFilter(key="a")
     )[check_key]
     record_b = instance.event_log_storage.get_latest_asset_check_execution_by_key(
-        [check_key], partition="b"
+        [check_key], partition_filter=PartitionKeyFilter(key="b")
     )[check_key]
     record_c = instance.event_log_storage.get_latest_asset_check_execution_by_key(
-        [check_key], partition="c"
+        [check_key], partition_filter=PartitionKeyFilter(key="c")
     )[check_key]
 
     # Verify resolved statuses - all in one async function to avoid event loop issues
@@ -277,7 +278,7 @@ def test_targets_latest_materialization_scenarios(instance: DagsterInstance):
 
     # Verify targets_latest_materialization() returns True
     record_a = instance.event_log_storage.get_latest_asset_check_execution_by_key(
-        [check_key], partition="a"
+        [check_key], partition_filter=PartitionKeyFilter(key="a")
     )[check_key]
     ctx_1 = LoadingContextForTest(instance)
     assert asyncio.run(record_a.targets_latest_materialization(ctx_1)) is True
@@ -291,7 +292,7 @@ def test_targets_latest_materialization_scenarios(instance: DagsterInstance):
 
     # Verify check for partition "a" still returns True (partition isolation)
     record_a = instance.event_log_storage.get_latest_asset_check_execution_by_key(
-        [check_key], partition="a"
+        [check_key], partition_filter=PartitionKeyFilter(key="a")
     )[check_key]
     ctx_2 = LoadingContextForTest(instance)
     assert asyncio.run(record_a.targets_latest_materialization(ctx_2)) is True
@@ -305,7 +306,7 @@ def test_targets_latest_materialization_scenarios(instance: DagsterInstance):
 
     # Verify check for partition "a" now returns False (newer mat exists for same partition)
     record_a = instance.event_log_storage.get_latest_asset_check_execution_by_key(
-        [check_key], partition="a"
+        [check_key], partition_filter=PartitionKeyFilter(key="a")
     )[check_key]
     ctx_3 = LoadingContextForTest(instance)
     assert asyncio.run(record_a.targets_latest_materialization(ctx_3)) is False
