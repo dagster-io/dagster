@@ -26,14 +26,14 @@ dev-dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=42", "dagster-shared"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["dagster_hightouch"]
 
 [tool.setuptools.dynamic]
-version = {attr = "dagster_hightouch.__version__"}
+version = {attr = "dagster_hightouch.version.__version__"}
 
 [tool.ruff]
 required-version = "==0.11.5"

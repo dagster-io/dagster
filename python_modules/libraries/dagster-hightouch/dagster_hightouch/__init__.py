@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 from .resources import ConfigurableHightouchResource, HightouchResource
 from .ops import hightouch_sync_op
 from .component import HightouchSyncComponent
