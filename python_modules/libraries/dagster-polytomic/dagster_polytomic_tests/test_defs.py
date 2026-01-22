@@ -62,6 +62,38 @@ def test_get_asset_spec_no_destination_schema(component: PolytomicComponent):
     assert spec.group_name is None
 
 
+def test_get_asset_spec_table_metadata_with_schema(component: PolytomicComponent):
+    """Test that TableMetadataSet includes fully qualified table name when schema is present."""
+    enriched_schema = create_sample_enriched_schema(
+        schema_id="users_table",
+        destination_configuration_schema="analytics",
+    )
+    workspace_data = create_sample_workspace_data()
+    data = PolytomicTranslatorData(obj=enriched_schema, workspace_data=workspace_data)
+
+    spec = component.get_asset_spec(data)
+    assert spec
+
+    # Verify table_name is fully qualified with schema
+    assert spec.metadata["dagster/table_name"] == "analytics.users_table"
+
+
+def test_get_asset_spec_table_metadata_without_schema(component: PolytomicComponent):
+    """Test that TableMetadataSet includes just table name when schema is absent."""
+    enriched_schema = create_sample_enriched_schema(
+        schema_id="orders_table",
+        destination_configuration_schema=None,
+    )
+    workspace_data = create_sample_workspace_data()
+    data = PolytomicTranslatorData(obj=enriched_schema, workspace_data=workspace_data)
+
+    spec = component.get_asset_spec(data)
+    assert spec
+
+    # Verify table_name is just the id when no schema
+    assert spec.metadata["dagster/table_name"] == "orders_table"
+
+
 def test_get_asset_spec_with_translation(component: PolytomicComponent):
     """Test get_asset_spec with custom translation function."""
 
@@ -228,17 +260,17 @@ async def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
 
     with (
         patch.object(
-            type(polytomic_workspace.client.connections),
+            type(polytomic_workspace.async_client.connections),
             "list",
             new=AsyncMock(return_value=mock_conn_list_response),
         ),
         patch.object(
-            type(polytomic_workspace.client.bulk_sync),
+            type(polytomic_workspace.async_client.bulk_sync),
             "list",
             new=AsyncMock(return_value=mock_bulk_sync_list_response),
         ),
         patch.object(
-            type(polytomic_workspace.client.bulk_sync.schemas),
+            type(polytomic_workspace.async_client.bulk_sync.schemas),
             "list",
             new=AsyncMock(return_value=mock_schemas_list_response),
         ),

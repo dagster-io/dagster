@@ -1,11 +1,11 @@
 import itertools
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Self
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview
-from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -16,6 +16,7 @@ from dagster.components.utils.defs_state import (
 from dagster.components.utils.translation import ResolvedTranslationFn
 from dagster_shared.record import record
 from pydantic import Field
+from typing_extensions import Self
 
 from dagster_polytomic.objects import PolytomicBulkSyncEnrichedSchema, PolytomicWorkspaceData
 from dagster_polytomic.workspace import PolytomicWorkspace
@@ -78,15 +79,16 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Defines how to translate a Polytomic object into an AssetSpec object.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return DefsStateConfig.from_args(self.defs_state, default_key=self.__class__.__name__)
+        default_key = f"{self.__class__.__name__}[{self.workspace.identity.organization_name}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
-    def write_state_to_path(self, state_path: Path) -> None:
+    async def write_state_to_path(self, state_path: Path) -> None:
         """Fetch documents from Polytomic API and write state to path."""
-        state = self.workspace.fetch_polytomic_state()
+        state = await self.workspace.fetch_polytomic_state()
         state_path.write_text(dg.serialize_value(state))
 
     def load_state_from_path(self, state_path: Path) -> PolytomicWorkspaceData:
@@ -108,6 +110,11 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                     _TRANSLATOR_DATA_METADATA_KEY: data,
                     **PolytomicSchemaMetadataSet.from_enriched_schema(
                         enriched_schema=enriched_schema
+                    ),
+                    **TableMetadataSet(
+                        table_name=f"{enriched_schema.destination_configuration_schema}.{enriched_schema.id}"
+                        if enriched_schema.destination_configuration_schema
+                        else enriched_schema.id
                     ),
                 },
                 kinds={"polytomic"},

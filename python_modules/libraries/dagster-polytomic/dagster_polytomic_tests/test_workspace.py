@@ -85,10 +85,10 @@ async def test_fetch_polytomic_state_success(
     mock_schemas_list_response.data = [mock_bulk_schema_response]
     mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -155,10 +155,10 @@ async def test_fetch_polytomic_state_empty_responses(polytomic_workspace):
     mock_bulk_syncs_list_response.data = []
     mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -192,10 +192,10 @@ async def test_fetch_polytomic_state_null_data_responses(polytomic_workspace):
     mock_bulk_syncs_list_response.data = None
     mock_client.bulk_sync.list = AsyncMock(return_value=mock_bulk_syncs_list_response)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -275,10 +275,10 @@ async def test_fetch_polytomic_state_multiple_bulk_syncs(
 
     mock_client.bulk_sync.schemas.list = AsyncMock(side_effect=mock_schemas_list)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -332,10 +332,10 @@ async def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
     # Mock bulk_sync.schemas.list() to raise an error with AsyncMock
     mock_client.bulk_sync.schemas.list = AsyncMock(side_effect=Exception("API Error"))
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -346,20 +346,20 @@ async def test_fetch_polytomic_state_schema_fetch_error(polytomic_workspace):
 
 
 def test_client_configuration():
-    """Test that the Polytomic client is properly configured."""
+    """Test that the Polytomic async_client is properly configured."""
     workspace = PolytomicWorkspace(token="test-token-123")
 
-    # Access the client property
+    # Access the async_client property
     with patch("dagster_polytomic.workspace.AsyncPolytomic") as mock_polytomic_class:
         mock_client_instance = MagicMock()
         mock_polytomic_class.return_value = mock_client_instance
 
         # Clear the cached property to force recreation
-        if "client" in workspace.__dict__:
-            del workspace.__dict__["client"]
+        if "async_client" in workspace.__dict__:
+            del workspace.__dict__["async_client"]
 
-        # Access client property
-        _ = workspace.client
+        # Access async_client property
+        _ = workspace.async_client
 
         # Verify AsyncPolytomic was called with correct parameters
         mock_polytomic_class.assert_called_once_with(
@@ -369,21 +369,21 @@ def test_client_configuration():
 
 
 def test_client_cached_property(polytomic_workspace):
-    """Test that the client is cached and not recreated on subsequent accesses."""
+    """Test that the async_client is cached and not recreated on subsequent accesses."""
     with patch("dagster_polytomic.workspace.AsyncPolytomic") as mock_polytomic_class:
         mock_client_instance = MagicMock()
         mock_polytomic_class.return_value = mock_client_instance
 
         # Clear the cached property to force creation
-        if "client" in polytomic_workspace.__dict__:
-            del polytomic_workspace.__dict__["client"]
+        if "async_client" in polytomic_workspace.__dict__:
+            del polytomic_workspace.__dict__["async_client"]
 
-        # Access client multiple times
-        client1 = polytomic_workspace.client
-        client2 = polytomic_workspace.client
-        client3 = polytomic_workspace.client
+        # Access async_client multiple times
+        client1 = polytomic_workspace.async_client
+        client2 = polytomic_workspace.async_client
+        client3 = polytomic_workspace.async_client
 
-        # Verify AsyncPolytomic was only called once (client is cached)
+        # Verify AsyncPolytomic was only called once (async_client is cached)
         mock_polytomic_class.assert_called_once()
 
         # Verify all accesses return the same instance
@@ -442,10 +442,10 @@ async def test_fetch_bulk_sync_schemas_filters_disabled(polytomic_workspace):
     mock_schemas_list_response.data = [enabled_schema, disabled_schema]
     mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -483,10 +483,10 @@ async def test_fetch_bulk_sync_schemas_all_disabled(polytomic_workspace):
     mock_schemas_list_response.data = [disabled_schema_1, disabled_schema_2]
     mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):
@@ -555,10 +555,10 @@ async def test_fetch_polytomic_state_excludes_disabled_schemas(polytomic_workspa
     mock_schemas_list_response.data = [enabled_schema, disabled_schema]
     mock_client.bulk_sync.schemas.list = AsyncMock(return_value=mock_schemas_list_response)
 
-    # Patch the client property
+    # Patch the async_client property
     with patch.object(
         type(polytomic_workspace),
-        "client",
+        "async_client",
         new_callable=PropertyMock,
         return_value=mock_client,
     ):

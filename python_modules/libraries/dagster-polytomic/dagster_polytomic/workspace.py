@@ -2,13 +2,15 @@ import asyncio
 from functools import cached_property
 
 import dagster as dg
-from polytomic import AsyncPolytomic
+from dagster import _check as check
+from polytomic import AsyncPolytomic, Polytomic
 from pydantic import Field
 
 from dagster_polytomic.objects import (
     PolytomicBulkSync,
     PolytomicBulkSyncSchema,
     PolytomicConnection,
+    PolytomicIdentity,
     PolytomicWorkspaceData,
 )
 
@@ -25,27 +27,41 @@ class PolytomicWorkspace(dg.Resolvable, dg.Model):
     )
 
     @cached_property
-    def client(self) -> AsyncPolytomic:
+    def async_client(self) -> AsyncPolytomic:
         return AsyncPolytomic(
             version=POLYTOMIC_CLIENT_VERSION,
             token=self.token,
         )
 
+    @cached_property
+    def client(self) -> Polytomic:
+        return Polytomic(
+            version=POLYTOMIC_CLIENT_VERSION,
+            token=self.token,
+        )
+
+    @cached_property
+    def identity(self) -> PolytomicIdentity:
+        data = self.client.identity.get().data
+        return PolytomicIdentity.from_api_response(
+            check.not_none(data, "Identity data cannot be None")
+        )
+
     async def _fetch_connections(self) -> list[PolytomicConnection]:
         """Fetch all connections."""
-        response = await self.client.connections.list()
+        response = await self.async_client.connections.list()
         data = response.data or []
         return [PolytomicConnection.from_api_response(conn) for conn in data]
 
     async def _fetch_bulk_syncs(self) -> list[PolytomicBulkSync]:
         """Fetch all bulk syncs."""
-        response = await self.client.bulk_sync.list()
+        response = await self.async_client.bulk_sync.list()
         data = response.data or []
         return [PolytomicBulkSync.from_api_response(sync) for sync in data]
 
     async def _fetch_bulk_sync_schemas(self, bulk_sync_id: str) -> list[PolytomicBulkSyncSchema]:
         """Fetch all schemas for a specific bulk sync."""
-        response = await self.client.bulk_sync.schemas.list(id=bulk_sync_id)
+        response = await self.async_client.bulk_sync.schemas.list(id=bulk_sync_id)
         data = response.data or []
         return [
             PolytomicBulkSyncSchema.from_api_response(schema) for schema in data if schema.enabled

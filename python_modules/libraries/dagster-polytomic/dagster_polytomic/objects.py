@@ -5,7 +5,36 @@ from typing import Optional
 from dagster import _check as check
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
-from polytomic import BulkField, BulkSchema, BulkSyncResponse, ConnectionResponseSchema
+from polytomic import (
+    BulkField,
+    BulkSchema,
+    BulkSyncResponse,
+    ConnectionResponseSchema,
+    GetIdentityResponseSchema,
+)
+
+
+@whitelist_for_serdes
+@record
+class PolytomicIdentity:
+    """Represents a Polytomic identity."""
+
+    id: str
+    organization_id: str
+    organization_name: str
+
+    @classmethod
+    def from_api_response(cls, response: GetIdentityResponseSchema) -> "PolytomicIdentity":
+        """Create PolytomicIdentity from API response."""
+        return cls(
+            id=check.not_none(response.id, "Identity ID cannot be None"),
+            organization_id=check.not_none(
+                response.organization_id, "Organization ID cannot be None"
+            ),
+            organization_name=check.not_none(
+                response.organization_name, "Organization name cannot be None"
+            ),
+        )
 
 
 @whitelist_for_serdes
@@ -149,12 +178,12 @@ class PolytomicWorkspaceData:
             bulk_sync = self.get_bulk_sync(bulk_sync_id=bulk_sync_id)
             source_connection = (
                 self.get_connection(connection_id=bulk_sync.source_connection_id)
-                if bulk_sync.source_connection_id
+                if bulk_sync and bulk_sync.source_connection_id
                 else None
             )
             destination_connection = (
                 self.get_connection(connection_id=bulk_sync.destination_connection_id)
-                if bulk_sync.destination_connection_id
+                if bulk_sync and bulk_sync.destination_connection_id
                 else None
             )
 
@@ -168,12 +197,16 @@ class PolytomicWorkspaceData:
                         partition_key=schema.partition_key,
                         tracking_field=schema.tracking_field,
                         fields=schema.fields,
-                        destination_configuration_schema=bulk_sync.destination_configuration_schema,
-                        source_connection_id=bulk_sync.source_connection_id,
+                        destination_configuration_schema=bulk_sync.destination_configuration_schema
+                        if bulk_sync
+                        else None,
+                        source_connection_id=bulk_sync.source_connection_id if bulk_sync else None,
                         source_connection_name=source_connection.name
                         if source_connection
                         else None,
-                        destination_connection_id=bulk_sync.destination_connection_id,
+                        destination_connection_id=bulk_sync.destination_connection_id
+                        if bulk_sync
+                        else None,
                         destination_connection_name=destination_connection.name
                         if destination_connection
                         else None,
