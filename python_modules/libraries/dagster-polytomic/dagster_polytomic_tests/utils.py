@@ -3,6 +3,7 @@ from typing import Optional
 from dagster_polytomic.objects import (
     PolytomicBulkField,
     PolytomicBulkSync,
+    PolytomicBulkSyncEnrichedSchema,
     PolytomicBulkSyncSchema,
     PolytomicConnection,
     PolytomicWorkspaceData,
@@ -34,6 +35,7 @@ def create_sample_bulk_sync(
     source_connection_id: Optional[str] = "conn-source",
     destination_connection_id: Optional[str] = "conn-dest",
     organization_id: Optional[str] = "org-123",
+    destination_configuration_schema: Optional[str] = None,
 ) -> PolytomicBulkSync:
     """Create a sample PolytomicBulkSync for testing."""
     return PolytomicBulkSync(
@@ -44,6 +46,7 @@ def create_sample_bulk_sync(
         source_connection_id=source_connection_id,
         destination_connection_id=destination_connection_id,
         organization_id=organization_id,
+        destination_configuration_schema=destination_configuration_schema,
     )
 
 
@@ -77,6 +80,40 @@ def create_sample_bulk_sync_schema(
         partition_key=partition_key,
         tracking_field=tracking_field,
         fields=fields,
+    )
+
+
+def create_sample_enriched_schema(
+    schema_id: str = "schema-123",
+    bulk_sync_id: str = "sync-123",
+    enabled: bool = True,
+    output_name: Optional[str] = "users",
+    partition_key: Optional[str] = None,
+    tracking_field: Optional[str] = None,
+    fields: Optional[list[PolytomicBulkField]] = None,
+    destination_configuration_schema: Optional[str] = None,
+    source_connection_id: Optional[str] = "conn-source",
+    source_connection_name: Optional[str] = "Source Connection",
+    destination_connection_id: Optional[str] = "conn-dest",
+    destination_connection_name: Optional[str] = "Dest Connection",
+) -> PolytomicBulkSyncEnrichedSchema:
+    """Create a sample PolytomicBulkSyncEnrichedSchema for testing."""
+    if fields is None:
+        fields = [create_sample_bulk_field()]
+
+    return PolytomicBulkSyncEnrichedSchema(
+        id=schema_id,
+        bulk_sync_id=bulk_sync_id,
+        enabled=enabled,
+        output_name=output_name,
+        partition_key=partition_key,
+        tracking_field=tracking_field,
+        fields=fields,
+        destination_configuration_schema=destination_configuration_schema,
+        source_connection_id=source_connection_id,
+        source_connection_name=source_connection_name,
+        destination_connection_id=destination_connection_id,
+        destination_connection_name=destination_connection_name,
     )
 
 
