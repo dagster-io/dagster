@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Any, Optional
 
 import dagster as dg
@@ -22,10 +21,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     )
 
     region: str = Field(
-        description=(
-            "Required. The cluster name. Cluster names within a project must be unique. Names of"
-            " deleted clusters can be reused."
-        ),
+        description="Required. The GCP region.",
     )
 
     cluster_name: str = Field(
@@ -82,7 +78,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="The key under which the Dataproc resource will be bound to the definitions.",
     )
 
-    @cached_property
+    @property
     def resource(self) -> DataprocResource:
         """Returns a configured DataprocResource."""
         return DataprocResource(

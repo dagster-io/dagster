@@ -23,7 +23,7 @@ class TestComponentFieldsSync:
         "component_class, resource_class, exclude_fields",
         [
             (BigQueryResourceComponent, BigQueryResource, {"gcp_credentials"}),
-            (GCSResourceComponent, GCSResource, set()),
+            (GCSResourceComponent, GCSResource, {"gcp_credentials"}),
             (GCSFileManagerResourceComponent, GCSFileManagerResource, {"gcp_credentials"}),
             (GCSPickleIOManagerComponent, GCSPickleIOManager, {"gcs"}),
             (DataprocResourceComponent, DataprocResource, set()),

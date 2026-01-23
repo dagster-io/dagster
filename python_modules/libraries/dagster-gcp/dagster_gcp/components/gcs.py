@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Optional
 
 import dagster as dg
@@ -18,12 +17,17 @@ class GCSResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="Project name",
     )
 
+    gcp_credentials: Optional[str] = Field(
+        default=None,
+        description="GCP authentication credentials (base64).",
+    )
+
     resource_key: Optional[str] = Field(
         default=None,
         description="The key under which the GCS resource will be bound to the definitions.",
     )
 
-    @cached_property
+    @property
     def resource(self) -> GCSResource:
         """Returns a configured GCSResource."""
         return GCSResource(
@@ -39,7 +43,7 @@ class GCSResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 @public
 @preview
 class GCSFileManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
-    """A component that provides a GCSFileManagerResource for file management operations on Google Cloud Storage."""
+    """A component that provides a GCSFileManagerResource."""
 
     project: Optional[str] = Field(
         default=None,
@@ -53,12 +57,17 @@ class GCSFileManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="Prefix to add to all file paths.",
     )
 
+    gcp_credentials: Optional[str] = Field(
+        default=None,
+        description="GCP authentication credentials (base64).",
+    )
+
     resource_key: Optional[str] = Field(
         default=None,
         description="The key under which the GCS FileManager resource will be bound to the definitions.",
     )
 
-    @cached_property
+    @property
     def resource(self) -> GCSFileManagerResource:
         """Returns a configured GCSFileManagerResource."""
         return GCSFileManagerResource(

@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Optional
 
 import dagster as dg
@@ -43,7 +42,7 @@ class BigQueryResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="The key under which the BigQuery resource will be bound to the definitions.",
     )
 
-    @cached_property
+    @property
     def resource(self) -> BigQueryResource:
         """Returns a configured BigQueryResource."""
         return BigQueryResource(
