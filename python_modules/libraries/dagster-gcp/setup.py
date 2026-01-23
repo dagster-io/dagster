@@ -50,4 +50,9 @@ setup(
         "dataproc": ["google-cloud-dataproc"],
     },
     zip_safe=False,
+    entry_points={
+        "dagster_dg_cli.registry_modules": [
+            "dagster_gcp = dagster_gcp.components",
+        ],
+    },
 )
