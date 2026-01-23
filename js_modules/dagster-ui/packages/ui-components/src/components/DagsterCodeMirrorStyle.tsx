@@ -140,4 +140,32 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   .CodeMirror-hint div {
     max-height: none !important;
   }
+
+  /* JSON Hint Styles */
+  .cm-json-hint {
+    padding: 4px 8px;
+    min-width: 280px;
+  }
+
+  .cm-json-hint-name {
+    font-weight: 600;
+    font-family: ${FontFamily.monospace};
+    font-size: 13px;
+    color: ${Colors.textDefault()};
+  }
+
+  .cm-json-hint-description {
+    font-size: 12px;
+    color: ${Colors.textLight()};
+    margin-top: 2px;
+    white-space: normal;
+    max-width: 320px;
+  }
+
+  .cm-json-hint-example {
+    font-size: 11px;
+    color: ${Colors.textLighter()};
+    font-style: italic;
+    margin-top: 2px;
+  }
 `;
