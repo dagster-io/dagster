@@ -732,7 +732,14 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
     log = ""
 
     for log_chunk in stream:
-        for line in log_chunk.decode("utf-8").split("\n"):
+
+        try:
+            decoded = log_chunk.decode("utf-8")
+        except UnicodeDecodeError:
+            logging.getLogger("dagster").exception("Failed to decode log chunk")
+            continue
+
+        for line in decoded.split("\n"):
             maybe_timestamp, _, tail = line.partition(" ")
             if not timestamp:
                 # The first item in the stream will always have a timestamp.
