@@ -71,9 +71,7 @@ The key question is: Should you use partitions to create a segment for each cust
 
 ## Solution 3: Hybrid approach
 
-
 To get the benefits of partition tracking while maintaining flexibility for runtime parameters, you can combine partitions and config. To do so, you can use partitions for the primary segmentation (for example, by customer) and config for additional runtime parameters (for example, processing options).
-
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/partitions_vs_config/with_partitions_and_config.py"
