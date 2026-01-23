@@ -1,5 +1,5 @@
 """
-Copybara configuration for importing PRs from dagster-io/dagster/scripts back to internal.
+Copybara configuration for importing PRs from dagster-io/dagster back to internal.
 """
 core.workflow(
     name="pr_import",
@@ -10,13 +10,13 @@ core.workflow(
     destination=git.github_pr_destination(
         url="https://github.com/dagster-io/internal",
         destination_ref="master",
-        pr_branch="scripts_pr_${CONTEXT_REFERENCE}",
+        pr_branch="dagster_sync_pr_${CONTEXT_REFERENCE}",
     ),
-    origin_files=glob(["scripts/**"]),
-    destination_files=glob(["dagster-oss-temp/scripts/**"]),
+    origin_files=glob(["**"]),
+    destination_files=glob(["dagster-oss/**"]),
     authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
     transformations=[
-        core.move("scripts", "dagster-oss-temp/scripts"),
+        core.move("", "dagster-oss"),
         metadata.save_author("ORIGINAL_AUTHOR"),
         metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = " dagster-io/dagster#"),
     ],
