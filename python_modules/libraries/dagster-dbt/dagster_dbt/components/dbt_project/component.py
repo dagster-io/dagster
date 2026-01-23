@@ -10,10 +10,9 @@ from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 import dagster as dg
 from dagster._annotations import public
-from dagster._utils.cached_method import cached_method
-from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.resolved.core_models import OpSpec, ResolutionContext
+from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.defs_state import DefsStateConfig
@@ -27,20 +26,15 @@ from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 from dagster_dbt.asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
-    DAGSTER_DBT_SELECT_METADATA_KEY,
-    DAGSTER_DBT_SELECTOR_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
-    DBT_DEFAULT_SELECT,
-    DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
     get_node,
 )
+from dagster_dbt.components.base import BaseDbtComponent, DagsterDbtComponentTranslatorSettings
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import (
     DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
     validate_translator,
 )
 from dagster_dbt.dbt_manifest import validate_manifest
@@ -53,13 +47,6 @@ from dagster_dbt.dbt_project_manager import (
     RemoteGitDbtProjectManager,
 )
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES
-
-
-@dataclass(frozen=True)
-class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
-    """Subclass of DagsterDbtTranslatorSettings that enables code references by default."""
-
-    enable_code_references: bool = True
 
 
 @dataclass
@@ -105,8 +92,8 @@ def _set_resolution_context(context: ResolutionContext):
 
 @public
 @scaffold_with(DbtProjectComponentScaffolder)
-@dataclass
-class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
+@dataclass(kw_only=True)
+class DbtProjectComponent(BaseDbtComponent):
     """Expose a DBT project to Dagster as a set of assets.
 
     This component assumes that you have already set up a dbt project, for example, the dbt `Jaffle shop <https://github.com/dbt-labs/jaffle-shop>`_. Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
@@ -173,40 +160,6 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             ],
         ),
     ] = field(default_factory=list)
-    op: Annotated[
-        Optional[OpSpec],
-        Resolver.default(
-            description="Op related arguments to set on the generated @dbt_assets",
-            examples=[
-                {
-                    "name": "some_op",
-                    "tags": {"tag1": "value"},
-                    "backfill_policy": {"type": "single_run"},
-                },
-            ],
-        ),
-    ] = None
-    select: Annotated[
-        str,
-        Resolver.default(
-            description="The dbt selection string for models in the project you want to include.",
-            examples=["tag:dagster"],
-        ),
-    ] = DBT_DEFAULT_SELECT
-    exclude: Annotated[
-        str,
-        Resolver.default(
-            description="The dbt selection string for models in the project you want to exclude.",
-            examples=["tag:skip_dagster"],
-        ),
-    ] = DBT_DEFAULT_EXCLUDE
-    selector: Annotated[
-        str,
-        Resolver.default(
-            description="The dbt selector for models in the project you want to include.",
-            examples=["custom_selector"],
-        ),
-    ] = DBT_DEFAULT_SELECTOR
     translation: Annotated[
         Optional[TranslationFn[Mapping[str, Any]]],
         TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
@@ -250,19 +203,10 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         """
         return self.op_config_schema
 
-    def _get_op_spec(self, project: DbtProject) -> OpSpec:
-        default = self.op or OpSpec(name=project.name)
-        # always inject required tags
-        return default.model_copy(
-            update=dict(
-                tags={
-                    **(default.tags or {}),
-                    **({DAGSTER_DBT_SELECT_METADATA_KEY: self.select} if self.select else {}),
-                    **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: self.exclude} if self.exclude else {}),
-                    **({DAGSTER_DBT_SELECTOR_METADATA_KEY: self.selector} if self.selector else {}),
-                }
-            )
-        )
+    def _get_op_spec(self, op_name: Optional[str] = None) -> OpSpec:
+        if op_name is None:
+            op_name = self.dbt_project.name
+        return super()._get_op_spec(op_name)
 
     @cached_property
     def translator(self) -> "DagsterDbtTranslator":
@@ -271,6 +215,17 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     @cached_property
     def _base_translator(self) -> "DagsterDbtTranslator":
         return DagsterDbtTranslator(self.translation_settings)
+
+    @cached_property
+    def _project_manager(self) -> DbtProjectManager:
+        if isinstance(self.project, DbtProject):
+            return NoopDbtProjectManager(self.project)
+        else:
+            return self.project
+
+    @cached_property
+    def dbt_project(self) -> DbtProject:
+        return self._project_manager.get_project(None)
 
     def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
         """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
@@ -302,7 +257,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     @public
     def get_asset_spec(
-        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject] = None
     ) -> dg.AssetSpec:
         """Generates an AssetSpec for a given dbt node.
 
@@ -332,36 +287,24 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+        # Note: We keep this method here to preserve the docstring and example specific to DbtProjectComponent
+        return super().get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(
         self,
         asset_spec: dg.AssetSpec,
         manifest: Mapping[str, Any],
         unique_id: str,
-        project: Optional["DbtProject"],
+        project: Optional["DbtProject"] = None,
     ) -> Optional[dg.AssetCheckSpec]:
-        return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
-
-    @cached_property
-    def _project_manager(self) -> DbtProjectManager:
-        if isinstance(self.project, DbtProject):
-            return NoopDbtProjectManager(self.project)
-        else:
-            return self.project
-
-    @cached_property
-    def dbt_project(self) -> DbtProject:
-        return self._project_manager.get_project(None)
+        return super().get_asset_check_spec(asset_spec, manifest, unique_id, project)
 
     def get_asset_selection(
-        self, select: str, exclude: str = DBT_DEFAULT_EXCLUDE
+        self, select: str, exclude: str = DBT_DEFAULT_EXCLUDE, manifest_path: Optional[str] = None
     ) -> DbtManifestAssetSelection:
-        return DbtManifestAssetSelection.build(
-            manifest=self.dbt_project.manifest_path,
-            dagster_dbt_translator=self.translator,
-            select=select,
-            exclude=exclude,
+        actual_manifest_path = manifest_path or str(self.dbt_project.manifest_path)
+        return super().get_asset_selection(
+            select=select, exclude=exclude, manifest_path=actual_manifest_path
         )
 
     def write_state_to_path(self, state_path: Path) -> None:
@@ -383,7 +326,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             project=project,
             io_manager_key=None,
         )
-        op_spec = self._get_op_spec(project)
+        op_spec = self._get_op_spec(project.name)
 
         @dg.multi_asset(
             specs=asset_specs,
