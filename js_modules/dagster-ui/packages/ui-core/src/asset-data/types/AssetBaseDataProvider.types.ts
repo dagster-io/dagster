@@ -65,6 +65,57 @@ export type AssetNodeLiveFragment = {
               severity: Types.AssetCheckSeverity;
             } | null;
           } | null;
+          partitionDefinition: {
+            __typename: 'PartitionDefinition';
+            name: string | null;
+            description: string;
+          } | null;
+          partitionStatuses:
+            | {
+                __typename: 'AssetCheckDefaultPartitionStatuses';
+                succeededPartitions: Array<string>;
+                failedPartitions: Array<string>;
+                inProgressPartitions: Array<string>;
+                skippedPartitions: Array<string>;
+                executionFailedPartitions: Array<string>;
+              }
+            | {
+                __typename: 'AssetCheckMultiPartitionStatuses';
+                primaryDimensionName: string;
+                ranges: Array<{
+                  __typename: 'AssetCheckMultiPartitionRangeStatuses';
+                  primaryDimStartKey: string;
+                  primaryDimEndKey: string;
+                  secondaryDim:
+                    | {
+                        __typename: 'AssetCheckDefaultPartitionStatuses';
+                        succeededPartitions: Array<string>;
+                        failedPartitions: Array<string>;
+                        inProgressPartitions: Array<string>;
+                        skippedPartitions: Array<string>;
+                        executionFailedPartitions: Array<string>;
+                      }
+                    | {
+                        __typename: 'AssetCheckTimePartitionStatuses';
+                        ranges: Array<{
+                          __typename: 'AssetCheckTimePartitionRangeStatus';
+                          startKey: string;
+                          endKey: string;
+                          status: Types.AssetCheckPartitionRangeStatus;
+                        }>;
+                      };
+                }>;
+              }
+            | {
+                __typename: 'AssetCheckTimePartitionStatuses';
+                ranges: Array<{
+                  __typename: 'AssetCheckTimePartitionRangeStatus';
+                  startKey: string;
+                  endKey: string;
+                  status: Types.AssetCheckPartitionRangeStatus;
+                }>;
+              }
+            | null;
         }>;
       };
   partitionStats: {
@@ -103,6 +154,57 @@ export type AssetCheckLiveFragment = {
     stepKey: string | null;
     evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
   } | null;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    name: string | null;
+    description: string;
+  } | null;
+  partitionStatuses:
+    | {
+        __typename: 'AssetCheckDefaultPartitionStatuses';
+        succeededPartitions: Array<string>;
+        failedPartitions: Array<string>;
+        inProgressPartitions: Array<string>;
+        skippedPartitions: Array<string>;
+        executionFailedPartitions: Array<string>;
+      }
+    | {
+        __typename: 'AssetCheckMultiPartitionStatuses';
+        primaryDimensionName: string;
+        ranges: Array<{
+          __typename: 'AssetCheckMultiPartitionRangeStatuses';
+          primaryDimStartKey: string;
+          primaryDimEndKey: string;
+          secondaryDim:
+            | {
+                __typename: 'AssetCheckDefaultPartitionStatuses';
+                succeededPartitions: Array<string>;
+                failedPartitions: Array<string>;
+                inProgressPartitions: Array<string>;
+                skippedPartitions: Array<string>;
+                executionFailedPartitions: Array<string>;
+              }
+            | {
+                __typename: 'AssetCheckTimePartitionStatuses';
+                ranges: Array<{
+                  __typename: 'AssetCheckTimePartitionRangeStatus';
+                  startKey: string;
+                  endKey: string;
+                  status: Types.AssetCheckPartitionRangeStatus;
+                }>;
+              };
+        }>;
+      }
+    | {
+        __typename: 'AssetCheckTimePartitionStatuses';
+        ranges: Array<{
+          __typename: 'AssetCheckTimePartitionRangeStatus';
+          startKey: string;
+          endKey: string;
+          status: Types.AssetCheckPartitionRangeStatus;
+        }>;
+      }
+    | null;
 };
 
 export type AssetGraphLiveQueryVariables = Types.Exact<{
@@ -151,6 +253,57 @@ export type AssetGraphLiveQuery = {
                 severity: Types.AssetCheckSeverity;
               } | null;
             } | null;
+            partitionDefinition: {
+              __typename: 'PartitionDefinition';
+              name: string | null;
+              description: string;
+            } | null;
+            partitionStatuses:
+              | {
+                  __typename: 'AssetCheckDefaultPartitionStatuses';
+                  succeededPartitions: Array<string>;
+                  failedPartitions: Array<string>;
+                  inProgressPartitions: Array<string>;
+                  skippedPartitions: Array<string>;
+                  executionFailedPartitions: Array<string>;
+                }
+              | {
+                  __typename: 'AssetCheckMultiPartitionStatuses';
+                  primaryDimensionName: string;
+                  ranges: Array<{
+                    __typename: 'AssetCheckMultiPartitionRangeStatuses';
+                    primaryDimStartKey: string;
+                    primaryDimEndKey: string;
+                    secondaryDim:
+                      | {
+                          __typename: 'AssetCheckDefaultPartitionStatuses';
+                          succeededPartitions: Array<string>;
+                          failedPartitions: Array<string>;
+                          inProgressPartitions: Array<string>;
+                          skippedPartitions: Array<string>;
+                          executionFailedPartitions: Array<string>;
+                        }
+                      | {
+                          __typename: 'AssetCheckTimePartitionStatuses';
+                          ranges: Array<{
+                            __typename: 'AssetCheckTimePartitionRangeStatus';
+                            startKey: string;
+                            endKey: string;
+                            status: Types.AssetCheckPartitionRangeStatus;
+                          }>;
+                        };
+                  }>;
+                }
+              | {
+                  __typename: 'AssetCheckTimePartitionStatuses';
+                  ranges: Array<{
+                    __typename: 'AssetCheckTimePartitionRangeStatus';
+                    startKey: string;
+                    endKey: string;
+                    status: Types.AssetCheckPartitionRangeStatus;
+                  }>;
+                }
+              | null;
           }>;
         };
     partitionStats: {
@@ -196,6 +349,6 @@ export type AssetNodeLiveFreshnessInfoFragment = {
   currentMinutesLate: number | null;
 };
 
-export const AssetGraphLiveQueryVersion = '870d33b271f68fd3fcd1eb64016904deae5b531e7d82f7b22b8b63e6815a6200';
+export const AssetGraphLiveQueryVersion = 'c8f79137c3b2f47eb62184e17c8cd11a9c6f1216561a7fe956ec638af9b2dfbd';
 
 export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';
