@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Optional
 
 import dagster as dg
@@ -23,7 +22,7 @@ class GCSPickleIOManagerComponent(dg.Component, dg.Resolvable, dg.Model):
 
     project: Optional[str] = Field(
         default=None,
-        description="Project ID for the GCS resource used by the IO manager.",
+        description="Project name",
     )
 
     resource_key: Optional[str] = Field(
@@ -31,7 +30,7 @@ class GCSPickleIOManagerComponent(dg.Component, dg.Resolvable, dg.Model):
         description="The key under which the IO manager will be bound to the definitions.",
     )
 
-    @cached_property
+    @property
     def resource(self) -> GCSPickleIOManager:
         gcs_resource = GCSResource(project=self.project)
 
