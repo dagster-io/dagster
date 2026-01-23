@@ -15,6 +15,24 @@ Imagine you need to process data for multiple customers, where each customer's d
 
 The key question is: Should you use partitions to create a segment for each customer, or should you use config to pass the customer ID as a parameter?
 
+## When to use each approach
+
+**Use partitions when:**
+
+- Your data naturally segments into discrete categories
+- You need to track materialization status per segment
+- Backfilling specific segments is a common operation
+- You want to schedule processing for all segments automatically
+- You need visibility into which segments are up-to-date vs stale
+
+**Use config when:**
+
+- Processing is infrequent or ad-hoc
+- Parameters are dynamic or come from an unbounded set
+- You don't need per-parameter tracking
+- A single materialization history is sufficient
+- You want simple parameterization without partition overhead
+
 ## Solution 1: Using partitions
 
 [Partitions](/guides/build/partitions-and-backfills/partitioning-assets) divide your data into discrete segments. Each customer becomes a partition, giving you full visibility into which customers have been processed and the ability to backfill specific customers.
@@ -51,26 +69,6 @@ The key question is: Should you use partitions to create a segment for each cust
 | **UI experience**            | Specify customer in Launchpad before each run |
 | **Setup complexity**         | Simple config class, no partition management  |
 
-## When to use each approach
-
-The choice between partitions and config depends on your specific requirements:
-
-**Use partitions when:**
-
-- Your data naturally segments into discrete categories
-- You need to track materialization status per segment
-- Backfilling specific segments is a common operation
-- You want to schedule processing for all segments automatically
-- You need visibility into which segments are up-to-date vs stale
-
-**Use config when:**
-
-- Processing is infrequent or ad-hoc
-- Parameters are dynamic or come from an unbounded set
-- You don't need per-parameter tracking
-- A single materialization history is sufficient
-- You want simple parameterization without partition overhead
-
 ## Solution 3: Hybrid approach
 
 To get the benefits of partition tracking while maintaining flexibility for runtime parameters, you can combine the partition and hybrid approaches. To do so, you can use partitions for the primary segmentation (for example, by customer) and config for additional runtime parameters (for example, processing options).
@@ -80,4 +78,3 @@ To get the benefits of partition tracking while maintaining flexibility for runt
   language="python"
   title="src/project_mini/defs/partitions_vs_config/with_partitions_and_config.py"
 />
-
