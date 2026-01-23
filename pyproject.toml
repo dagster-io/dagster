@@ -334,3 +334,8 @@ exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_de
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
+
+[dependency-groups]
+dev = [
+    "erk>=0.6.0",
+]

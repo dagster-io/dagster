@@ -72,8 +72,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             else dbt_cloud_resource_def(build_init_resource_context())
         )
         self._job_id = job_id
+        self._account_id: int = self._dbt_cloud._account_id  # noqa: SLF001
         self._project_id: int
         self._has_generate_docs: bool
+        self._environment_id: Optional[int] = None
         self._job_commands: list[str]
         self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
@@ -240,6 +242,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
         self._has_generate_docs = job["generate_docs"]
+        self._environment_id = job.get("environment_id")
 
         # We constraint the kinds of dbt Cloud jobs that we support running.
         #
@@ -380,7 +383,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _build_dbt_cloud_assets_metadata(
         self, resource_props: Mapping[str, Any]
     ) -> RawMetadataMapping:
-        metadata = {
+        metadata: dict[str, Any] = {
             "dbt Cloud Job": MetadataValue.url(
                 self._dbt_cloud.build_url_for_job(
                     project_id=self._project_id,
@@ -397,6 +400,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     unique_id=resource_props["unique_id"],
                 )
             )
+
+        # Add internal metadata for tracking/debugging
+        metadata["dagster_dbt/cloud_account_id"] = MetadataValue.int(self._account_id)
+        metadata["dagster_dbt/cloud_project_id"] = MetadataValue.int(self._project_id)
+        if self._environment_id is not None:
+            metadata["dagster_dbt/cloud_environment_id"] = MetadataValue.int(self._environment_id)
 
         return metadata
 

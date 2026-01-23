@@ -60,3 +60,21 @@ def docker_postgres_instance(postgres_instance):
             yield instance
 
     return _instance
+
+
+def pytest_runtest_setup(item):
+    if "integration" not in item.keywords:
+        return
+
+    if os.getenv("BUILDKITE"):
+        required = [
+            "DAGSTER_DOCKER_REPOSITORY",
+            "DAGSTER_DOCKER_IMAGE_TAG",
+            "AWS_ACCOUNT_ID",
+            "BUILDKITE_SECRETS_BUCKET",
+        ]
+        missing = [var for var in required if not os.getenv(var)]
+        if missing:
+            pytest.skip(
+                "Docker integration tests require Buildkite env vars: " + ", ".join(missing)
+            )

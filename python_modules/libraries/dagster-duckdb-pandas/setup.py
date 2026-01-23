@@ -34,7 +34,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-duckdb{pin}",
-        "pandas",
+        "pandas<3.0.0",
     ],
     zip_safe=False,
 )

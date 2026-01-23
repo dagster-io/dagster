@@ -315,7 +315,7 @@ describe('LaunchAssetExecutionButton', () => {
         preferredJobName: undefined,
       });
       await clickMaterializeButton();
-      await waitFor(() => expect(screen.getByText('Launchpad (configure assets)')).toBeVisible());
+      expect(await screen.findByText('Launchpad (configure assets)')).toBeVisible();
     });
 
     it('should show an error if the assets do not share a code location', async () => {

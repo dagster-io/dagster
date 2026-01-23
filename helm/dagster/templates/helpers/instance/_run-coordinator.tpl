@@ -1,14 +1,19 @@
 {{- define "dagsterYaml.runCoordinator.queued" }}
 {{- $queuedRunCoordinatorConfig := .Values.dagsterDaemon.runCoordinator.config.queuedRunCoordinator }}
+{{- $concurrencyEnabled := .Values.concurrency.enabled }}
 module: dagster.core.run_coordinator
 class: QueuedRunCoordinator
 {{- if not (empty (compact (values $queuedRunCoordinatorConfig))) }}
 config:
   {{/* Workaround to prevent 0 from being interpreted as falsey: https://github.com/helm/helm/issues/3164#issuecomment-709537506 */}}
+  {{/* Only set max_concurrent_runs if concurrency disabled OR explicitly set */}}
+  {{- if or (not $concurrencyEnabled) (not (kindIs "invalid" $queuedRunCoordinatorConfig.maxConcurrentRuns)) }}
   max_concurrent_runs: {{ if (kindIs "invalid" $queuedRunCoordinatorConfig.maxConcurrentRuns) }}-1{{ else }}{{ $queuedRunCoordinatorConfig.maxConcurrentRuns }}
   {{- end }}
+  {{- end }}
 
-  {{- if $queuedRunCoordinatorConfig.tagConcurrencyLimits }}
+  {{/* Only set tag_concurrency_limits if concurrency disabled OR explicitly set */}}
+  {{- if and $queuedRunCoordinatorConfig.tagConcurrencyLimits (or (not $concurrencyEnabled) (gt (len $queuedRunCoordinatorConfig.tagConcurrencyLimits) 0)) }}
   tag_concurrency_limits: {{ $queuedRunCoordinatorConfig.tagConcurrencyLimits | toYaml | nindent 2 }}
   {{- end }}
 
@@ -24,7 +29,8 @@ config:
   dequeue_num_workers: {{ $queuedRunCoordinatorConfig.dequeueNumWorkers }}
   {{- end }}
 
-  {{- if $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns }}
+  {{/* Only set block_op_concurrency_limited_runs if concurrency disabled OR explicitly set */}}
+  {{- if and $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns (or (not $concurrencyEnabled) $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns) }}
   block_op_concurrency_limited_runs:
     enabled: {{ $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns.enabled }}
     op_concurrency_slot_buffer: {{ $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns.opConcurrencySlotBuffer }}

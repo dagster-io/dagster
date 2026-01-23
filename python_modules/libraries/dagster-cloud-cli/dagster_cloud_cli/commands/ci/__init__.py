@@ -461,7 +461,12 @@ def init_impl(
         locations = [
             location for location in locations if location.location_name in selected_locations
         ]
-    url = get_org_url(organization, dagster_env)
+    # Check environment variable for URL first, fall back to constructing from org + env
+    env_url = os.getenv(URL_ENV_VAR_NAME)
+    if env_url:
+        url = env_url
+    else:
+        url = get_org_url(organization, dagster_env)
     # Deploy to the branch deployment for the current context. If there is no branch deployment
     # available (eg. if not in a PR) then we fallback to the --deployment flag.
 

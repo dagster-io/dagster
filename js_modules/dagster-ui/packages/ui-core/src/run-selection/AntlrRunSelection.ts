@@ -1,4 +1,4 @@
-import {CharStreams, CommonTokenStream} from 'antlr4ts';
+import {CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AntlrRunSelectionVisitor} from './AntlrRunSelectionVisitor';
 import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
@@ -17,11 +17,12 @@ export const parseRunSelectionQuery = (
   query: string,
 ): RunSelectionQueryResult | Error => {
   try {
-    const lexer = new RunSelectionLexer(CharStreams.fromString(query));
+    const lexer = new RunSelectionLexer(CharStream.fromString(query));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new RunSelectionParser(tokenStream);
     parser.removeErrorListeners();
@@ -30,7 +31,7 @@ export const parseRunSelectionQuery = (
     const tree = parser.start();
 
     const visitor = new AntlrRunSelectionVisitor(all_runs);
-    const all_selection = visitor.visit(tree);
+    const all_selection = visitor.visit(tree) ?? new Set<RunGraphQueryItem>();
     const focus_selection = visitor.focus_runs;
 
     return {

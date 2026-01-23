@@ -1,4 +1,4 @@
-import {CharStreams, CommonTokenStream} from 'antlr4ts';
+import {CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AntlrAutomationSelectionVisitor} from './AntlrAutomationSelectionVisitor';
 import {AutomationSelectionLexer} from './generated/AutomationSelectionLexer';
@@ -11,11 +11,12 @@ export const parseAutomationSelectionQuery = <T extends Automation>(
   query: string,
 ): Set<T> | Error => {
   try {
-    const lexer = new AutomationSelectionLexer(CharStreams.fromString(query));
+    const lexer = new AutomationSelectionLexer(CharStream.fromString(query));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new AutomationSelectionParser(tokenStream);
     parser.removeErrorListeners();
@@ -24,7 +25,7 @@ export const parseAutomationSelectionQuery = <T extends Automation>(
     const tree = parser.start();
 
     const visitor = new AntlrAutomationSelectionVisitor(all_automations);
-    return visitor.visit(tree);
+    return visitor.visit(tree) ?? new Set<T>();
   } catch (e) {
     return e as Error;
   }

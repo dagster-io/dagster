@@ -46,7 +46,9 @@ spec:
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
       {{- if $deployment.initContainers }}
       initContainers:
-        {{- toYaml $deployment.initContainers | nindent 8 }}
+        {{- range $container := $deployment.initContainers }}
+        - {{ include "dagster.initContainer" (list $ $container) | nindent 10 | trim }}
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ $.Chart.Name }}
@@ -145,7 +147,11 @@ spec:
               {{- toYaml $deployment.readinessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          readinessProbe: {{ $deployment.readinessProbe | toYaml | nindent 12 }}
+          readinessProbe:
+            {{- $readinessProbe := omit $deployment.readinessProbe "enabled" }}
+            {{- if $readinessProbe }}
+              {{- $readinessProbe | toYaml | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- if $deployment.livenessProbe }}
@@ -174,7 +180,11 @@ spec:
               {{- toYaml $deployment.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          livenessProbe: {{ $deployment.livenessProbe | toYaml | nindent 12 }}
+          livenessProbe:
+            {{- $livenessProbe := omit $deployment.livenessProbe "enabled" }}
+            {{- if $livenessProbe }}
+              {{- $livenessProbe | toYaml | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- if $deployment.startupProbe }}

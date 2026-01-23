@@ -44,6 +44,7 @@ describe('ReexecutionDialog', () => {
   });
 
   it('allows you to specify one or more extra tags which are sent in the re-execute mutation', async () => {
+    const user = userEvent.setup();
     render(
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
@@ -56,13 +57,13 @@ describe('ReexecutionDialog', () => {
       />,
     );
 
-    await userEvent.click(await screen.findByText('Add custom tag'));
-    await userEvent.type(await screen.findByPlaceholderText('Tag Key'), 'test_key');
-    await userEvent.type(await screen.findByPlaceholderText('Tag Value'), 'test_value');
+    await user.click(await screen.findByText('Add custom tag'));
+    await user.type(await screen.findByPlaceholderText('Tag Key'), 'test_key');
+    await user.type(await screen.findByPlaceholderText('Tag Value'), 'test_value');
 
     await waitFor(async () => {
       const button = screen.getByText(/re\-execute 3 runs/i);
-      await userEvent.click(button);
+      await user.click(button);
     });
 
     await waitFor(() => {
@@ -71,6 +72,7 @@ describe('ReexecutionDialog', () => {
   });
 
   it('moves into loading state upon re-execution', async () => {
+    const user = userEvent.setup();
     render(
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
@@ -87,7 +89,7 @@ describe('ReexecutionDialog', () => {
     });
 
     const button = screen.getByText(/re\-execute 3 runs/i);
-    await userEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(
@@ -98,6 +100,7 @@ describe('ReexecutionDialog', () => {
   });
 
   it('displays success message if mutations are successful', async () => {
+    const user = userEvent.setup();
     render(
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
@@ -112,7 +115,7 @@ describe('ReexecutionDialog', () => {
 
     await waitFor(async () => {
       const button = screen.getByText(/re\-execute 3 runs/i);
-      await userEvent.click(button);
+      await user.click(button);
     });
 
     await waitFor(() => {
@@ -121,6 +124,7 @@ describe('ReexecutionDialog', () => {
   });
 
   it('displays python errors', async () => {
+    const user = userEvent.setup();
     render(
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
@@ -143,7 +147,7 @@ describe('ReexecutionDialog', () => {
 
     await waitFor(async () => {
       const button = screen.getByText(/re\-execute 3 runs/i);
-      await userEvent.click(button);
+      await user.click(button);
     });
 
     await waitFor(() => {

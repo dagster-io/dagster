@@ -48,6 +48,6 @@ setup(
     python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
-        "pandas",
+        "pandas<3.0.0",
     ],
 )

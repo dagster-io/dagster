@@ -142,7 +142,7 @@ setup(
         "test-components": [
             "tomlkit",
             "jsonschema",
-            "pandas",
+            "pandas<3.0.0",
             "duckdb",
         ],
         "mypy": ["mypy==1.8.0"],

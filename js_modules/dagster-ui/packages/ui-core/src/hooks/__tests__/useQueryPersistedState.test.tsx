@@ -40,6 +40,7 @@ describe('useQueryPersistedState', () => {
   });
 
   it('updates the URL query string when its exposed setter is called', async () => {
+    const user = userEvent.setup();
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch: string | undefined;
 
@@ -53,13 +54,14 @@ describe('useQueryPersistedState', () => {
       expect(querySearch).toEqual('?q=B');
     });
 
-    await userEvent.click(screen.getByText(`[B]`));
+    await user.click(screen.getByText(`[B]`));
 
     expect(screen.getByText(`[Navigated]`)).toBeVisible();
     expect(querySearch).toEqual('?q=Navigated');
   });
 
   it('ignores and preserves other params present in the query string', async () => {
+    const user = userEvent.setup();
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch: string | undefined;
     render(
@@ -69,13 +71,14 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`[B]`));
+    await user.click(screen.getByText(`[B]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=Navigated&cursor=basdasd&limit=100');
     });
   });
 
   it('omits query params when their values are set to the default', async () => {
+    const user = userEvent.setup();
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch: string | undefined;
 
@@ -86,13 +89,14 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`[B]`));
+    await user.click(screen.getByText(`[B]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?cursor=basdasd&limit=100');
     });
   });
 
   it('can coexist with other instances of the same hook', async () => {
+    const user = userEvent.setup();
     let querySearch: string | undefined;
 
     render(
@@ -106,11 +110,11 @@ describe('useQueryPersistedState', () => {
     await waitFor(() => {
       expect(querySearch).toEqual('?param1=A1&param2=A2');
     });
-    await userEvent.click(screen.getByText(`[A1]`));
+    await user.click(screen.getByText(`[A1]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?param1=Navigated&param2=A2');
     });
-    await userEvent.click(screen.getByText(`[A2]`));
+    await user.click(screen.getByText(`[A2]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?param1=Navigated&param2=Navigated');
     });
@@ -118,6 +122,7 @@ describe('useQueryPersistedState', () => {
   });
 
   it('can coexist, even if you errantly retain the setter (just like setState)', async () => {
+    const user = userEvent.setup();
     const TestWithBug = () => {
       const [word, setWord] = useQueryPersistedState({queryKey: 'word'});
       const onCapturedForever = useCallback(() => {
@@ -138,17 +143,18 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`[A]`));
+    await user.click(screen.getByText(`[A]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?word=hello&param1=Navigated');
     });
-    await userEvent.click(screen.getByText(`[hello]`));
+    await user.click(screen.getByText(`[hello]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?word=world&param1=Navigated'); // would reset param1=A in case of bug
     });
   });
 
   it('can be used to represent arbitrary state shapes via custom encode/decode methods', async () => {
+    const user = userEvent.setup();
     const TestEncoding = () => {
       const [items, setItems] = useQueryPersistedState<string[]>({
         encode: (items) => ({value: items.join(',')}),
@@ -176,18 +182,19 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`[]`));
+    await user.click(screen.getByText(`[]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?value=Added0');
     });
-    await userEvent.click(screen.getByText(`["Added0"]`));
-    await userEvent.click(screen.getByText(`["Added0","Added1"]`));
+    await user.click(screen.getByText(`["Added0"]`));
+    await user.click(screen.getByText(`["Added0","Added1"]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?value=Added0%2CAdded1%2CAdded2');
     });
   });
 
   it('can be used to represent objects with optional / non-optional keys', async () => {
+    const user = userEvent.setup();
     const TestWithObject = () => {
       const [filters, setFilters] = useQueryPersistedState<{
         pipeline?: string;
@@ -211,12 +218,13 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`{"view":"grid"}`));
-    await userEvent.click(screen.getByText(`{"view":"grid","pipeline":"my_pipeline"}`));
+    await user.click(screen.getByText(`{"view":"grid"}`));
+    await user.click(screen.getByText(`{"view":"grid","pipeline":"my_pipeline"}`));
     expect(querySearch).toEqual('?pipeline=my_pipeline');
   });
 
   it('automatically coerces true/false if no encode/decode methods are provided', async () => {
+    const user = userEvent.setup();
     const TestWithObject = () => {
       const [filters, setFilters] = useQueryPersistedState<{
         enableA?: boolean;
@@ -238,17 +246,18 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`{"enableA":true,"enableB":false}`));
+    await user.click(screen.getByText(`{"enableA":true,"enableB":false}`));
     await waitFor(() => {
       expect(querySearch).toEqual('?enableA=false&enableB=true');
     });
-    await userEvent.click(screen.getByText(`{"enableA":false,"enableB":true}`));
+    await user.click(screen.getByText(`{"enableA":false,"enableB":true}`));
     await waitFor(() => {
       expect(querySearch).toEqual('?enableA=true&enableB=false');
     });
   });
 
   it('emits the same setFilters on each render if memoized options are provided, matching React.useState', async () => {
+    const user = userEvent.setup();
     let firstSetFunction: (v: any) => void;
 
     const TestWithObject = () => {
@@ -279,9 +288,9 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`Functions Same: true`));
+    await user.click(screen.getByText(`Functions Same: true`));
     expect(screen.getByText(`Functions Same: true`)).toBeVisible();
-    await userEvent.click(screen.getByText(`Functions Same: true`));
+    await user.click(screen.getByText(`Functions Same: true`));
     expect(screen.getByText(`Functions Same: true`)).toBeVisible();
   });
 
@@ -296,6 +305,7 @@ describe('useQueryPersistedState', () => {
     });
 
     it('correctly encodes arrays, using `indices` syntax', async () => {
+      const user = userEvent.setup();
       const TestArray = () => {
         const [state, setState] = useQueryPersistedState<{value: string[]}>({
           defaults: {value: []},
@@ -315,18 +325,19 @@ describe('useQueryPersistedState', () => {
         </MemoryRouter>,
       );
 
-      await userEvent.click(screen.getByText(`[]`));
+      await user.click(screen.getByText(`[]`));
       await waitFor(() => {
         expect(querySearch).toEqual('?value%5B0%5D=Added0');
       });
-      await userEvent.click(screen.getByText(`["Added0"]`));
-      await userEvent.click(screen.getByText(`["Added0","Added1"]`));
+      await user.click(screen.getByText(`["Added0"]`));
+      await user.click(screen.getByText(`["Added0","Added1"]`));
       await waitFor(() => {
         expect(querySearch).toEqual('?value%5B0%5D=Added0&value%5B1%5D=Added1&value%5B2%5D=Added2');
       });
     });
 
     it('correctly encodes arrays of objects, using `indices` syntax', async () => {
+      const user = userEvent.setup();
       const TestArray = () => {
         const [state, setState] = useQueryPersistedState<{value: {foo: string; bar: string}[]}>({
           defaults: {value: []},
@@ -353,14 +364,12 @@ describe('useQueryPersistedState', () => {
         </MemoryRouter>,
       );
 
-      await userEvent.click(screen.getByText(`[]`));
+      await user.click(screen.getByText(`[]`));
       await waitFor(() => {
         expect(querySearch).toEqual('?value%5B0%5D%5Bfoo%5D=len0&value%5B0%5D%5Bbar%5D=baz');
       });
-      await userEvent.click(screen.getByText(`[{"foo":"len0","bar":"baz"}]`));
-      await userEvent.click(
-        screen.getByText(`[{"foo":"len0","bar":"baz"},{"foo":"len1","bar":"baz"}]`),
-      );
+      await user.click(screen.getByText(`[{"foo":"len0","bar":"baz"}]`));
+      await user.click(screen.getByText(`[{"foo":"len0","bar":"baz"},{"foo":"len1","bar":"baz"}]`));
       await waitFor(() => {
         expect(querySearch).toEqual(
           '?value%5B0%5D%5Bfoo%5D=len0&value%5B0%5D%5Bbar%5D=baz&value%5B1%5D%5Bfoo%5D=len1&value%5B1%5D%5Bbar%5D=baz&value%5B2%5D%5Bfoo%5D=len2&value%5B2%5D%5Bbar%5D=baz',
@@ -369,6 +378,7 @@ describe('useQueryPersistedState', () => {
     });
 
     it('correctly encodes arrays alongside other values, using `indices` syntax', async () => {
+      const user = userEvent.setup();
       const TestArray = () => {
         const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
           defaults: {hello: 'false', items: []},
@@ -393,13 +403,13 @@ describe('useQueryPersistedState', () => {
         </MemoryRouter>,
       );
 
-      await userEvent.click(screen.getByText(`{"hello":false,"items":[]}`));
+      await user.click(screen.getByText(`{"hello":false,"items":[]}`));
 
       await waitFor(() => {
         expect(querySearch).toEqual('?hello=true&items%5B0%5D=Added0');
       });
-      await userEvent.click(screen.getByText(`{"hello":true,"items":["Added0"]}`));
-      await userEvent.click(screen.getByText(`{"hello":true,"items":["Added0","Added1"]}`));
+      await user.click(screen.getByText(`{"hello":true,"items":["Added0"]}`));
+      await user.click(screen.getByText(`{"hello":true,"items":["Added0","Added1"]}`));
 
       await waitFor(() => {
         expect(querySearch).toEqual(
@@ -409,6 +419,7 @@ describe('useQueryPersistedState', () => {
     });
 
     it('correctly handles very large arrays', async () => {
+      const user = userEvent.setup();
       /**
        * Note that this test checks an extreme case, and GET requests will not really be able to support
        * query strings of this length.
@@ -433,7 +444,7 @@ describe('useQueryPersistedState', () => {
         </MemoryRouter>,
       );
 
-      await userEvent.click(screen.getByText(`{"hello":false,"items":[]}`));
+      await user.click(screen.getByText(`{"hello":false,"items":[]}`));
 
       // Fire a console error so that we can track this. We will still allow the parse to proceed.
       expect(console.error).toHaveBeenCalledWith(
@@ -450,6 +461,7 @@ describe('useQueryPersistedState', () => {
     });
 
     it('correctly handles sparse array with very large indices', async () => {
+      const user = userEvent.setup();
       const arr = new Array(1001);
       arr[1000] = 'Added1000';
 
@@ -471,7 +483,7 @@ describe('useQueryPersistedState', () => {
         </MemoryRouter>,
       );
 
-      await userEvent.click(await findByText(`{"hello":false,"items":[]}`));
+      await user.click(await findByText(`{"hello":false,"items":[]}`));
 
       // High index is present in stringified parameter.
       await waitFor(() => {
@@ -484,6 +496,7 @@ describe('useQueryPersistedState', () => {
   });
 
   it('supports push behavior', async () => {
+    const user = userEvent.setup();
     let querySearch: string | undefined;
 
     let goback: () => void;
@@ -508,17 +521,17 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByText(`one`));
+    await user.click(screen.getByText(`one`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=one');
     });
 
-    await userEvent.click(screen.getByText(`two`));
+    await user.click(screen.getByText(`two`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=two');
     });
 
-    await userEvent.click(screen.getByText(`three`));
+    await user.click(screen.getByText(`three`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=three');
     });
@@ -541,6 +554,7 @@ describe('useQueryPersistedState', () => {
   });
 
   it('supports replace behavior', async () => {
+    const user = userEvent.setup();
     let querySearch: string | undefined;
 
     let goback: () => void;
@@ -572,17 +586,17 @@ describe('useQueryPersistedState', () => {
       push!('/page?');
     });
 
-    await userEvent.click(screen.getByText(`one`));
+    await user.click(screen.getByText(`one`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=one');
     });
 
-    await userEvent.click(screen.getByText(`two`));
+    await user.click(screen.getByText(`two`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=two');
     });
 
-    await userEvent.click(screen.getByText(`three`));
+    await user.click(screen.getByText(`three`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=three');
     });

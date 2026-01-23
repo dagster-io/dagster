@@ -1,5 +1,4 @@
-import {CharStreams, CommonTokenStream} from 'antlr4ts';
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {AbstractParseTreeVisitor, CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser, StatusAttributeExprContext} from './generated/AssetSelectionParser';
@@ -32,12 +31,14 @@ export const parseExpression = (expression: string) => {
     return [];
   }
 
-  const inputStream = CharStreams.fromString(expression);
+  const inputStream = CharStream.fromString(expression);
   const lexer = new AssetSelectionLexer(inputStream);
   lexer.removeErrorListeners();
   lexer.addErrorListener(new AntlrInputErrorListener());
 
   const tokenStream = new CommonTokenStream(lexer);
+  tokenStream.fill(); // Ensure all tokens are loaded before parsing
+
   const parser = new AssetSelectionParser(tokenStream);
   parser.removeErrorListeners();
   parser.addErrorListener(new AntlrInputErrorListener());

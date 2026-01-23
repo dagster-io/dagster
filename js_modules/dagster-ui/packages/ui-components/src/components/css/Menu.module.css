@@ -47,6 +47,7 @@
   width: 100%;
   text-align: left;
   font-family: var(--font-family--default);
+  overflow: hidden;
 }
 
 /* Remove underline from all link states */
@@ -211,6 +212,9 @@
 .menuItemText {
   flex: 1;
   min-width: 0; /* Allow text truncation */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menuItemRight {

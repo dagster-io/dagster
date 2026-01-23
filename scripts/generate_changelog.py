@@ -63,10 +63,25 @@ class Author:
 
     @property
     def is_external(self) -> bool:
-        return (
-            not any(domain in self.email for domain in ["elementl.com", "dagsterlabs.com"])
-            and self.name not in INTERNAL_AUTHOR_NAMES
-        )
+        # Check if email is from internal domain
+        if any(domain in self.email for domain in ["elementl.com", "dagsterlabs.com"]):
+            return False
+
+        # Check if name is in internal authors list
+        if self.name in INTERNAL_AUTHOR_NAMES:
+            return False
+
+        # Check if GitHub username (extracted from noreply email) is in internal authors list
+        if self.email and "@users.noreply.github.com" in self.email:
+            email_part = self.email.split("@")[0]
+            if "+" in email_part:
+                github_username = email_part.split("+")[1]
+            else:
+                github_username = email_part
+            if github_username in INTERNAL_AUTHOR_NAMES:
+                return False
+
+        return True
 
 
 @dataclass
@@ -265,7 +280,8 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
                 raw_changelog_entry_lines = []
                 break
             # Just collect the changelog entry text, ignore category checkboxes
-            if not line.lower().startswith("- ["):
+            # Match only actual checkboxes like "- [x]", "- [X]", "- [ ]", not prefixes like "- [dagster]"
+            if not re.match(r"^- \[[xX ]\]", line):
                 raw_changelog_entry_lines.append(line.strip())
         if line.startswith(CHANGELOG_HEADER):
             found_start = True
@@ -448,9 +464,10 @@ def _create_commit_display(
             )
         if should_thank:
             username = commit.github_pr_author_username
-            display_entry += (
-                f" [magenta](Thanks, \\[@{username}](https://github.com/{username})!)[/magenta]"
-            )
+            if username:
+                display_entry += (
+                    f" [magenta](Thanks, \\[@{username}](https://github.com/{username})!)[/magenta]"
+                )
 
         proposed_content = (
             f"[green]ADD TO CHANGELOG:[/green]\n\n{colored_category}\n\n- {display_entry}"

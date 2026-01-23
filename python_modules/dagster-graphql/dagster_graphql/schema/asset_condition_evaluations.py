@@ -1,7 +1,6 @@
 import enum
-import itertools
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Optional
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -11,7 +10,7 @@ from dagster._core.definitions.declarative_automation.operators.since_operator i
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
-    AutomationConditionSnapshot,
+    get_expanded_label,
 )
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
@@ -371,39 +370,6 @@ def _flatten_evaluation(
     e: AutomationConditionEvaluation,
 ) -> Sequence[AutomationConditionEvaluation]:
     # flattens the evaluation tree into a list of nodes
+    import itertools
+
     return list(itertools.chain([e], *(_flatten_evaluation(ce) for ce in e.child_evaluations)))
-
-
-def get_expanded_label(
-    item: Union[AutomationConditionEvaluation, AutomationConditionSnapshot],
-    use_label=False,
-) -> Sequence[str]:
-    if isinstance(item, AutomationConditionSnapshot):
-        label, name, description, children = (
-            item.node_snapshot.label,
-            item.node_snapshot.name,
-            item.node_snapshot.description,
-            item.children,
-        )
-    else:
-        snapshot = item.condition_snapshot
-        label, name, description, children = (
-            snapshot.label,
-            snapshot.name,
-            snapshot.description,
-            item.child_evaluations,
-        )
-
-    if use_label and label is not None:
-        return [label]
-    node_text = name or description
-    child_labels = [f"({' '.join(get_expanded_label(c, use_label=True))})" for c in children]
-    if len(child_labels) == 0:
-        return [node_text]
-    elif len(child_labels) == 1:
-        return [node_text, f"{child_labels[0]}"]
-    else:
-        # intersperses node_text (e.g. AND) between each child label
-        return list(itertools.chain(*itertools.zip_longest(child_labels, [], fillvalue=node_text)))[
-            :-1
-        ]

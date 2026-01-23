@@ -18,6 +18,10 @@ variables:
   # The IMAGE_TAG determines the tag for the built Docker image
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA-$CI_PIPELINE_ID
 
+  # Required for Docker-in-Docker
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
 stages:
   - deploy
 
@@ -47,10 +51,16 @@ dagster-cloud-deploy:
       --yes
 
     # Sync all projects (workspace or single project)
-    - find . -maxdepth 3 -name "pyproject.toml" -type f -execdir python -m uv sync \;
+    - |
+      for project in $(python -m uv run dg list projects); do
+        (cd "$project" && python -m uv sync)
+      done
 
     # Refresh state for any StateBackedComponents in the project
     - python -m uv run dg plus deploy refresh-defs-state
+
+    # Ensure .venv is excluded from Docker builds
+    - echo ".venv" >> .dockerignore
 
     # Login to the container registry
     # TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT
