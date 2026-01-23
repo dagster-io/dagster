@@ -7,7 +7,7 @@ sidebar_custom_props:
   logo: images/dagster-primary-mark.svg
 ---
 
-In this example, we'll explore three different strategies for backfilling partitioned assets. When you need to materialize multiple partitions (for initial setup or reprocessing), you can choose between Dagster's default one-run-per-partition approach, a batched approach, or a single-run approach using <PyObject section="partitions" module="dagster" object="BackfillPolicy" />. Each strategy has distinct trade-offs in terms of overhead, fault isolation, and resource utilization.
+In this example, we'll explore three different strategies for [backfilling](/guides/build/partitions-and-backfills/backfilling-data) partitioned assets. When you need to materialize multiple partitions (for initial setup or reprocessing), you can choose between Dagster's default one-run-per-partition approach, a batched approach, or a single-run approach using <PyObject section="partitions" module="dagster" object="BackfillPolicy" />. Each strategy has distinct trade-offs in terms of overhead, fault isolation, and resource utilization.
 
 ## Problem: Backfilling 100 days of historical data
 
@@ -17,7 +17,7 @@ The key question is: How should you batch your partitions to balance overhead, f
 
 ### Solution 1: One run per partition (default)
 
-By default, Dagster launches one run per partition. This provides maximum observability and fault isolation—if one partition fails, others continue independently. However, each run adds overhead (startup time, resource allocation).
+By default, Dagster launches one run per partition. This provides maximum observability and fault isolation—if one partition fails, others continue independently, and partitions are individually retried. This solution is best for dealing with unreliable data sources or API rate limits. However, each run adds overhead (startup time, resource allocation).
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/partition_backfill_strategies/multi_run_backfill.py"
