@@ -53,3 +53,39 @@ export const WithValidation = {
     value: '{\n  "broken": "json",\n',
   },
 };
+
+export const WithAutocompleteTokens = {
+  render: Template,
+  args: {
+    value: JSON.stringify(
+      {
+        message: 'Hello {{name}}, your job {{job_id}} is complete!',
+        details: 'Type { inside a string to see autocomplete hints',
+      },
+      null,
+      2,
+    ),
+    additionalAutocompleteTokens: [
+      {
+        name: 'job_id',
+        description: 'The unique identifier of the job',
+        example: 'job-12345',
+      },
+      {
+        name: 'job_name',
+        description: 'The name of the job',
+        example: 'my_daily_pipeline',
+      },
+      {
+        name: 'run_id',
+        description: 'The run identifier',
+        example: 'run-abc-123',
+      },
+      {
+        name: 'name',
+        description: 'User display name',
+        example: 'John Doe',
+      },
+    ],
+  },
+};

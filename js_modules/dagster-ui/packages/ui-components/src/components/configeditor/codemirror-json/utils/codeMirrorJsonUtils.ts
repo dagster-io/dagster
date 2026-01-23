@@ -1,249 +1,254 @@
 import CodeMirror from 'codemirror';
 
-const INDENT = '  ';
-
-const BRACKET_PAIRS: Record<string, string> = {
-  '{': '}',
-  '[': ']',
-  '(': ')',
-  '"': '"',
-  "'": "'",
+/**
+ * Type error for lint
+ */
+type CodemirrorLintError = {
+  message: string;
+  severity: 'error' | 'warning';
+  from: CodeMirror.Position;
+  to: CodeMirror.Position;
 };
 
 /**
- * Checks if the cursor is currently inside a String or Comment token.
- * Used to prevent auto-closing brackets when typing text inside strings.
- *
- * @example
- * - Code: {"key": "valu|e"} -> Returns TRUE (Inside string)
- * - Code: // comm|ent      -> Returns TRUE (Inside comment)
- * - Code: {"key": | }      -> Returns FALSE
+ * Custom JSON Linter
  */
-const isCursorInStringOrComment = (cm: CodeMirror.Editor): boolean => {
-  const cursor = cm.getCursor();
-  const token = cm.getTokenAt(cursor);
+export const registerJsonLint = (): void => {
+  // Use type assertion with interface extension for registration check
+  interface CodeMirrorHelpers {
+    helpers?: {
+      lint?: {
+        json?: unknown;
+      };
+    };
+  }
+  const cmHelpers = CodeMirror as unknown as CodeMirrorHelpers;
 
-  // token.type can be null, "string", "comment", or "variable", etc.
-  return !!(
-    token.type &&
-    (token.type.indexOf('string') > -1 || token.type.indexOf('comment') > -1)
+  // Avoid registering multiple times
+  if (cmHelpers.helpers?.lint?.json) {
+    return;
+  }
+
+  CodeMirror.registerHelper(
+    'lint',
+    'json',
+    (text: string, _options: unknown, editor: CodeMirror.Editor): Array<CodemirrorLintError> => {
+      const lints: Array<CodemirrorLintError> = [];
+
+      // Empty string => no lint
+      if (!text.trim()) {
+        return lints;
+      }
+
+      try {
+        JSON.parse(text);
+        // Parse success -> no lint
+      } catch (e: unknown) {
+        const error = e as Error;
+        const message = error.message || 'Invalid JSON';
+        const position = extractErrorPosition(text, message, editor);
+
+        lints.push({
+          message,
+          severity: 'error',
+          from: position.from,
+          to: position.to,
+        });
+      }
+
+      return lints;
+    },
   );
 };
 
 /**
- * Handles opening brackets/quotes: {, [, (, ", '
- * Features: Auto-close, Selection Wrapping, String Safety, and Quote escaping.
- * Uses `cm.operation` to ensure Atomic Undo (1 Ctrl+Z undoes the whole action).
- *
- * @example
- * 1. Auto-Close:
- * Input:  |      + '{'
- * Result: { | }
- *
- * 2. Selection Wrap:
- * Input:  |text| + '['
- * Result: [text]
- *
- * 3. String Safety (No auto-close):
- * Input:  "Error: |" + '{'
- * Result: "Error: {"
- *
- * 4. Quote Skip (Type-over):
- * Input:  "value"|   + '"'
- * Result: "value"|   (Moves cursor right, doesn't add "")
- *
- * 5. Quote Escape (Important Edge Case):
- * Input:  "Escape \"|   + '"'
- * Result: "Escape \""|  (Inserts " because previous char was \)
+ * Extract error position from JSON error message
  */
-const handleOpen = (open: string, close: string) => (cm: CodeMirror.Editor) => {
-  cm.operation(() => {
-    // Logic Overwrite for Quotes (Skip if already exists)
-    if (open === "'" || open === '"') {
-      const cursor = cm.getCursor();
-      const lineText = cm.getLine(cursor.line);
-      const nextChar = lineText.charAt(cursor.ch);
-      const prevChar = lineText.charAt(cursor.ch - 1);
+function extractErrorPosition(
+  text: string,
+  errorMessage: string,
+  editor: CodeMirror.Editor,
+): {from: CodeMirror.Position; to: CodeMirror.Position} {
+  const codeMirrorDoc = editor.getDoc();
 
-      // Edge Case: If the previous character is '\\' (Escape) -> Do not skip the quote.
-      // Example: Want to type "abc\" -> Do not skip the closing quote.
-      if (nextChar === open && prevChar !== '\\') {
-        cm.execCommand('goCharRight');
-        return;
+  // Default: start of file
+  let from: CodeMirror.Position = {line: 0, ch: 0};
+  let to: CodeMirror.Position = {line: 0, ch: 0};
+
+  // === PATTERN 1: "at position X" (Chrome/V8/Node) ===
+  let match = errorMessage.match(/position (\d+)/i);
+
+  if (match && match[1]) {
+    const index = parseInt(match[1], 10);
+    from = codeMirrorDoc.posFromIndex(index) as CodeMirror.Position;
+    to = codeMirrorDoc.posFromIndex(index + 1) as CodeMirror.Position;
+    return {from, to};
+  }
+
+  // === PATTERN 2: "line X column Y" (Firefox) ===
+  match = errorMessage.match(/line (\d+) column (\d+)/i);
+
+  if (match && match[1] && match[2]) {
+    const line = parseInt(match[1], 10) - 1;
+    const ch = parseInt(match[2], 10) - 1;
+    from = {line, ch};
+    to = {line, ch: ch + 1};
+    return {from, to};
+  }
+
+  // === PATTERN 3: Find error character ===
+  match = errorMessage.match(/Unexpected token ['"]?(.?)['"]?/i);
+
+  if (match && match[1]) {
+    const unexpectedChar = match[1];
+    const index = text.indexOf(unexpectedChar);
+    if (index !== -1) {
+      from = codeMirrorDoc.posFromIndex(index) as CodeMirror.Position;
+      to = codeMirrorDoc.posFromIndex(index + 1) as CodeMirror.Position;
+      return {from, to};
+    }
+  }
+
+  // Fallback: start of file
+  return {from, to};
+}
+
+/**
+ * Check if cursor is inside a string token
+ * Uses CodeMirror's tokenizer to detect string context
+ */
+export const isInsideString = (editor: CodeMirror.Editor): boolean => {
+  const cursor = editor.getCursor();
+  const tokenType = editor.getTokenTypeAt(cursor);
+  return tokenType !== null && /\bstring\b/.test(tokenType);
+};
+
+/**
+ * Create smart auto-close bracket handler
+ * Returns CodeMirror.Pass when inside string to let default behavior (single char)
+ */
+const createBracketHandler = (open: string, close: string) => {
+  return (editor: CodeMirror.Editor): typeof CodeMirror.Pass | void => {
+    if (isInsideString(editor)) {
+      return CodeMirror.Pass; // Let default key handler insert single char
+    }
+    // Insert paired brackets and move cursor between them
+    editor.replaceSelection(open + close);
+    const cursor = editor.getCursor();
+    editor.setCursor({line: cursor.line, ch: cursor.ch - 1});
+  };
+};
+
+/**
+ * Create extraKeys map for smart auto-close brackets
+ * Handles: { } [ ] ( ) " "
+ * Also triggers hints when typing { inside strings
+ */
+export const createSmartBracketKeyMap = (): CodeMirror.KeyMap => ({
+  // Special handler for { - triggers hints when inside strings
+  "'{'": (editor: CodeMirror.Editor): typeof CodeMirror.Pass | void => {
+    if (isInsideString(editor)) {
+      // Inside string - insert { and trigger hints after a short delay
+      editor.replaceSelection('{');
+      // Use setTimeout to let the character be inserted first
+      setTimeout(() => {
+        editor.showHint({completeSingle: false});
+      }, 50);
+      return undefined;
+    }
+    // Outside string - insert paired brackets
+    editor.replaceSelection('{}');
+    const cursor = editor.getCursor();
+    editor.setCursor({line: cursor.line, ch: cursor.ch - 1});
+    return undefined;
+  },
+  "'['": createBracketHandler('[', ']'),
+  "'('": createBracketHandler('(', ')'),
+
+  // Quote handling for double quotes
+  "'\"'": (editor: CodeMirror.Editor): typeof CodeMirror.Pass | void => {
+    const cursor = editor.getCursor();
+    const tokenType = editor.getTokenTypeAt(cursor);
+
+    // Check next character - if it's the same quote, just move past it
+    const nextChar = editor.getRange(cursor, {line: cursor.line, ch: cursor.ch + 1});
+    if (nextChar === '"') {
+      editor.setCursor({line: cursor.line, ch: cursor.ch + 1});
+      return undefined;
+    }
+
+    // Inside string - insert single quote
+    if (tokenType !== null && /\bstring\b/.test(tokenType)) {
+      return CodeMirror.Pass;
+    }
+
+    // Outside string - insert paired quotes
+    editor.replaceSelection('""');
+    editor.setCursor({line: cursor.line, ch: cursor.ch + 1});
+    return undefined;
+  },
+
+  // Enter key: auto-indent between brackets {} and []
+  Enter: (editor: CodeMirror.Editor): typeof CodeMirror.Pass | void => {
+    const cursor = editor.getCursor();
+
+    // Get characters around cursor
+    const prevChar = editor.getRange({line: cursor.line, ch: cursor.ch - 1}, cursor);
+    const nextChar = editor.getRange(cursor, {line: cursor.line, ch: cursor.ch + 1});
+
+    // Check if cursor is between matching brackets
+    const isBetweenBraces = prevChar === '{' && nextChar === '}';
+    const isBetweenSquare = prevChar === '[' && nextChar === ']';
+
+    if (isBetweenBraces || isBetweenSquare) {
+      // Get current line's indentation
+      const line = editor.getLine(cursor.line);
+      const baseIndent = line.match(/^\s*/)?.[0] || '';
+      const indentUnit = editor.getOption('indentUnit') || 2;
+      const innerIndent = baseIndent + ' '.repeat(indentUnit);
+
+      // Insert: newline + inner indent + newline + base indent
+      const insertion = '\n' + innerIndent + '\n' + baseIndent;
+      editor.replaceSelection(insertion);
+
+      // Move cursor to the middle line (indented position)
+      editor.setCursor({line: cursor.line + 1, ch: innerIndent.length});
+      return undefined;
+    }
+
+    // Not between brackets - use default Enter behavior
+    return CodeMirror.Pass;
+  },
+
+  // Backspace: re-trigger hints if deletion leaves a { or {{ pattern in a string
+  Backspace: (editor: CodeMirror.Editor): typeof CodeMirror.Pass | void => {
+    // Note: We capture cursor before the backspace happens for potential future use
+    const _cursor = editor.getCursor();
+
+    // Perform the default backspace first
+    const result = CodeMirror.Pass;
+
+    // After a short delay, check if we should show hints
+    setTimeout(() => {
+      // Check if we're now in a string with a { pattern
+      const newCursor = editor.getCursor();
+      const tokenType = editor.getTokenTypeAt(newCursor);
+
+      if (tokenType && /\bstring\b/.test(tokenType)) {
+        const line = editor.getLine(newCursor.line);
+        const textBeforeCursor = line.slice(0, newCursor.ch);
+
+        // Check for { or {{ pattern (but not {{{ or more)
+        const hasTokenPattern =
+          /\{(\{[^{]|[^{])$/.test(textBeforeCursor) || /\{$/.test(textBeforeCursor);
+        const hasTripleBrace = /\{\{\{+/.test(textBeforeCursor);
+
+        if (hasTokenPattern && !hasTripleBrace) {
+          editor.showHint({completeSingle: false});
+        }
       }
-    }
+    }, 50);
 
-    // Logic Wrap Selection
-    if (cm.somethingSelected()) {
-      const selection = cm.getSelection();
-      cm.replaceSelection(open + selection + close);
-      return;
-    }
-
-    // Logic String/Comment
-    if (isCursorInStringOrComment(cm)) {
-      cm.replaceSelection(open);
-      return;
-    }
-
-    // Default: Self-close and move cursor back
-    cm.replaceSelection(open + close);
-    cm.execCommand('goCharLeft');
-  });
-};
-
-/**
- * Handles closing brackets: }, ], )
- * Implements "Type-over" logic: If the user types a closing bracket that already exists,
- * just move the cursor past it instead of duplicating it.
- *
- * @example
- * 1. Type-over (Skip):
- * Input:  { "a": 1 |}  + '}'
- * Result: { "a": 1 }|  (Cursor moved right)
- *
- * 2. Normal Insert:
- * Input:  { "a": 1 |   + '}'
- * Result: { "a": 1 }|
- */
-const handleClose = (close: string) => (cm: CodeMirror.Editor) => {
-  cm.operation(() => {
-    const cursor = cm.getCursor();
-    const nextChar = cm.getRange(cursor, {line: cursor.line, ch: cursor.ch + 1});
-
-    // If the next character is the same as the closing bracket -> Skip
-    if (nextChar === close) {
-      cm.execCommand('goCharRight');
-      return;
-    }
-
-    // Default: Print out
-    cm.replaceSelection(close);
-  });
-};
-
-/**
- * Handles Backspace key.
- * If the cursor is between a matching pair (e.g., "{|}"), deleting the open bracket
- * will automatically delete the closing bracket as well.
- *
- * @example
- * Input:  { | }   + Backspace
- * Result: |       (Both brackets removed)
- *
- * Input:  " | "   + Backspace
- * Result: |
- */
-const handleBackspace = (cm: CodeMirror.Editor) => {
-  if (cm.somethingSelected()) {
-    return CodeMirror.Pass;
-  }
-
-  const cursor = cm.getCursor();
-  // Get the character before and after the cursor
-  const beforeCursor = cm.getRange({line: cursor.line, ch: cursor.ch - 1}, cursor);
-  const afterCursor = cm.getRange(cursor, {line: cursor.line, ch: cursor.ch + 1});
-
-  // If the characters before and after the cursor match a pair -> Delete both
-  if (BRACKET_PAIRS[beforeCursor] === afterCursor) {
-    cm.operation(() => {
-      cm.replaceRange(
-        '',
-        {line: cursor.line, ch: cursor.ch - 1},
-        {line: cursor.line, ch: cursor.ch + 1},
-      );
-    });
-    return;
-  }
-
-  return CodeMirror.Pass;
-};
-
-/**
- * Handles Enter key (Smart Indent / Explode Brackets).
- *
- * @example
- * 1. Explode (Between brackets):
- * Input:  {| }    + Enter
- * Result:
- * {
- * |  <-- Indented
- * }
- *
- * 2. Regular Indent (After open bracket):
- * Input:  { |     + Enter
- * Result:
- * {
- * |
- *
- * 3. Default (Inside string/comment):
- * Input:  "Line 1|"  + Enter
- * Result:
- * "Line 1
- * |
- */
-const handleEnter = (cm: CodeMirror.Editor) => {
-  // If something is selected or the cursor is inside a string or comment -> Default behavior
-  if (cm.somethingSelected() || isCursorInStringOrComment(cm)) {
-    return CodeMirror.Pass;
-  }
-
-  const cursor = cm.getCursor();
-  // cm.getLine can return undefined, fallback to ''
-  const line = cm.getLine(cursor.line) || '';
-  const beforeCursor = line.substring(0, cursor.ch);
-  const afterCursor = line.substring(cursor.ch);
-
-  // Check if between { } or [ ]
-  if (
-    (beforeCursor.trimEnd().endsWith('{') && afterCursor.trimStart().startsWith('}')) ||
-    (beforeCursor.trimEnd().endsWith('[') && afterCursor.trimStart().startsWith(']'))
-  ) {
-    cm.operation(() => {
-      const indent = beforeCursor.match(/^\s*/)?.[0] ?? '';
-      const newIndent = indent + INDENT;
-
-      // Insert: Newline + Indent deeper + Newline + Indent original
-      cm.replaceSelection('\n' + newIndent + '\n' + indent, 'end');
-
-      // Set cursor to middle line
-      cm.setCursor({line: cursor.line + 1, ch: newIndent.length});
-    });
-    return;
-  }
-
-  // Check if after { or [
-  if (beforeCursor.trimEnd().endsWith('{') || beforeCursor.trimEnd().endsWith('[')) {
-    cm.operation(() => {
-      const indent = beforeCursor.match(/^\s*/)?.[0] ?? '';
-      const newIndent = indent + INDENT;
-      cm.replaceSelection('\n' + newIndent);
-    });
-    return;
-  }
-
-  // Default
-  cm.execCommand('newlineAndIndent');
-  return;
-};
-
-export const createJsonExtraKeys = (): CodeMirror.KeyMap => ({
-  Enter: handleEnter,
-  Tab: (cm: CodeMirror.Editor) => cm.execCommand('indentMore'),
-  'Shift-Tab': (cm: CodeMirror.Editor) => cm.execCommand('indentLess'),
-  Backspace: handleBackspace,
-
-  // OVERRIDES
-  "'{'": handleOpen('{', '}'),
-  "'['": handleOpen('[', ']'),
-  "'('": handleOpen('(', ')'),
-
-  // Syntax for single quote key must be escaped
-  "'''": handleOpen("'", "'"),
-  "'\"'": handleOpen('"', '"'),
-
-  // Close logic (Type-over)
-  "'}'": handleClose('}'),
-  "']'": handleClose(']'),
-  "')'": handleClose(')'),
+    return result;
+  },
 });

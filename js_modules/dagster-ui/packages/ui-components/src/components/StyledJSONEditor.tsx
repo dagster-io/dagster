@@ -5,15 +5,27 @@ import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/addon/fold/foldgutter.css';
+import 'codemirror/addon/hint/show-hint';
+import 'codemirror/addon/hint/show-hint.css';
+import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/lint/lint.css';
-import 'codemirror/mode/javascript/javascript';
 import * as React from 'react';
 
 import {DagsterCodeMirrorStyle} from './DagsterCodeMirrorStyle';
 import {RawCodeMirror} from './RawCodeMirror';
-import {useJsonValidator} from './configeditor/codemirror-json/hooks/useJsonValidator';
-import {createJsonExtraKeys} from './configeditor/codemirror-json/utils/codeMirrorJsonUtils';
+import {
+  JsonHintToken,
+  registerJsonHint,
+} from './configeditor/codemirror-json/utils/codeMirrorJsonHint';
+import {
+  createSmartBracketKeyMap,
+  registerJsonLint,
+} from './configeditor/codemirror-json/utils/codeMirrorJsonUtils';
+
+// Register JSON linter and hint helper
+registerJsonLint();
+registerJsonHint();
 
 export interface StyledJSONEditorProps {
   value: string;
@@ -23,48 +35,61 @@ export interface StyledJSONEditorProps {
   theme?: string[] | string;
   className?: string;
   style?: React.CSSProperties;
+  /** Tokens for autocomplete hints (shown when typing { inside strings) */
+  additionalAutocompleteTokens?: JsonHintToken[];
 }
 
 export const StyledJSONEditor = (props: StyledJSONEditorProps) => {
-  const {options, theme, value, onChange, onReady, className, style, ...rest} = props;
-  const validateJson = useJsonValidator();
+  const {
+    options,
+    theme,
+    value,
+    onChange,
+    onReady,
+    className,
+    style,
+    additionalAutocompleteTokens,
+    ...rest
+  } = props;
 
   const finalOptions = React.useMemo(() => {
-    // Merge extraKeys: Default keys + Prop keys
-    const defaultExtraKeys = createJsonExtraKeys();
-    const propExtraKeys = options?.extraKeys || {};
-    const combinedExtraKeys =
-      typeof propExtraKeys === 'string' ? propExtraKeys : {...defaultExtraKeys, ...propExtraKeys};
-
-    // Lint options
-    const lintOptions = options?.lint ?? {getAnnotations: validateJson, async: false};
-
-    // Theme logic
     const themeArray = Array.isArray(theme) ? theme : theme ? [theme] : [];
     const themeString = [...themeArray, 'dagster'].join(' ');
 
     return {
       mode: {name: 'javascript', json: true},
-      lineNumbers: true,
-      lineWrapping: true,
-      matchBrackets: true,
 
-      // Disable default auto-close to allow our manual override to work
+      // Disable native auto-close - using smart context-aware handlers instead
       autoCloseBrackets: false,
 
+      matchBrackets: true,
+      lineNumbers: true,
+      lineWrapping: true,
       foldGutter: true,
-      gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+      gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter', 'CodeMirror-lint-markers'],
+      lint: true,
       smartIndent: true,
       indentUnit: 2,
       tabSize: 2,
       indentWithTabs: false,
       electricChars: true,
       ...options,
-      lint: lintOptions,
-      extraKeys: combinedExtraKeys,
       theme: themeString,
-    };
-  }, [options, validateJson, theme]);
+      extraKeys: {
+        // Smart auto-close brackets: only outside strings
+        ...createSmartBracketKeyMap(),
+        // Ctrl-Space to trigger autocomplete
+        'Ctrl-Space': (cm: CodeMirror.Editor) => {
+          cm.showHint({completeSingle: false});
+        },
+        ...(typeof options?.extraKeys === 'object' ? options.extraKeys : {}),
+      },
+      // Pass tokens for hint helper (extends standard ShowHintOptions)
+      hintOptions: {
+        tokens: additionalAutocompleteTokens || [],
+      },
+    } as CodeMirror.EditorConfiguration;
+  }, [options, theme, additionalAutocompleteTokens]);
 
   const handlers = React.useMemo(
     () => ({
