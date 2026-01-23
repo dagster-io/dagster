@@ -1,20 +1,13 @@
-import {
-  Box,
-  Button,
-  Colors,
-  Dialog,
-  DialogFooter,
-  Icon,
-  Mono,
-  Table,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, DialogFooter, Mono, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import styles from './AssetCheckHistoricalEventsButton.module.css';
-import {assetCheckExecutionStatusIcon, assetCheckExecutionStatusText} from './util';
+import {assetCheckExecutionStatusText, getExecutionStatusIcon} from './util';
 import {Timestamp} from '../../app/time/Timestamp';
+import {AssetCheckSeverity, RunStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {RunStatusWithStats} from '../../runs/RunStatusDots';
 import {titleForRun} from '../../runs/RunUtils';
 
 interface AssetCheckExecutionForDisplay {
@@ -22,8 +15,13 @@ interface AssetCheckExecutionForDisplay {
   runId: string;
   status: string;
   timestamp: number;
+  run: {
+    id: string;
+    status: RunStatus;
+  } | null;
   evaluation: {
     partition: string | null;
+    severity?: string | null;
   } | null;
 }
 
@@ -89,22 +87,29 @@ export const AssetCheckHistoricalEventsButton = ({
                       </td>
                     )}
                     <td>
-                      <Timestamp timestamp={{ms: Number(execution.timestamp)}} />
+                      <Timestamp timestamp={{unix: execution.timestamp}} />
                     </td>
                     <td>
                       <Box flex={{gap: 8, alignItems: 'center'}}>
-                        <Icon
-                          name={assetCheckExecutionStatusIcon(execution.status as any)}
-                          size={16}
-                          color={Colors.textLight()}
-                        />
+                        {getExecutionStatusIcon(
+                          execution.status as any,
+                          execution.evaluation?.severity as AssetCheckSeverity | null,
+                        )}
                         {assetCheckExecutionStatusText(execution.status as any)}
                       </Box>
                     </td>
                     <td>
-                      <Link to={`/runs/${execution.runId}?timestamp=${execution.timestamp}`}>
-                        <Mono>{titleForRun({id: execution.runId})}</Mono>
-                      </Link>
+                      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                        {execution.run && (
+                          <RunStatusWithStats
+                            runId={execution.run.id}
+                            status={execution.run.status}
+                          />
+                        )}
+                        <Link to={`/runs/${execution.runId}?timestamp=${execution.timestamp}`}>
+                          <Mono>{titleForRun({id: execution.runId})}</Mono>
+                        </Link>
+                      </Box>
                     </td>
                   </tr>
                 ))}

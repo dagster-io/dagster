@@ -1,4 +1,4 @@
-import {Box, Colors, NonIdealState, TextInput} from '@dagster-io/ui-components';
+import {Box, Button, Colors, NonIdealState, TextInput} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
 import {AssetCheckPartitionDetail} from './AssetCheckPartitionDetail';
@@ -7,6 +7,7 @@ import {
   assetCheckPartitionStatusToText,
   assetCheckPartitionStatusesToStyle,
 } from './AssetCheckPartitionStatus';
+import {AssetCheckPartitionStatusBar} from './AssetCheckPartitionStatusBar';
 import {useAssetCheckPartitionData} from './useAssetCheckPartitionData';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {testId} from '../../testing/testId';
@@ -41,6 +42,7 @@ const STATUS_ORDER: AssetCheckPartitionStatus[] = [
 export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitionsProps) => {
   const {data: partitionData, loading} = useAssetCheckPartitionData(assetKey, checkName);
   const [focusedPartitionKey, setFocusedPartitionKey] = useState<string | undefined>();
+  const [selectedPartitionKeys, setSelectedPartitionKeys] = useState<string[]>([]);
   const [searchValue, setSearchValue] = useState('');
 
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetCheckPartitionStatus[]>({
@@ -76,6 +78,11 @@ export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitions
 
     const allPartitions = partitionData.partitions;
     const filtered = allPartitions.filter((partition) => {
+      // Filter by selection from status bar (if any partitions are selected)
+      if (selectedPartitionKeys.length > 0 && !selectedPartitionKeys.includes(partition)) {
+        return false;
+      }
+
       if (searchValue && !partition.toLowerCase().includes(searchValue.toLowerCase())) {
         return false;
       }
@@ -87,7 +94,7 @@ export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitions
     });
 
     return {filteredPartitions: filtered, countsByStatus: counts};
-  }, [partitionData, statusFilters, searchValue]);
+  }, [partitionData, statusFilters, searchValue, selectedPartitionKeys]);
 
   // Apply sorting based on partition definition type
   const sortedAndFilteredPartitions = useMemo(() => {
@@ -133,12 +140,28 @@ export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitions
     <>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        flex={{direction: 'row', justifyContent: 'space-between'}}
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         border="bottom"
       >
-        <div data-testid={testId('partitions-selected')}>
-          {sortedAndFilteredPartitions.length.toLocaleString()} Partitions Selected
-        </div>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <div data-testid={testId('partitions-selected')}>
+            {sortedAndFilteredPartitions.length.toLocaleString()}{' '}
+            {selectedPartitionKeys.length > 0 ? 'of' : 'Partitions'}
+            {selectedPartitionKeys.length > 0 && (
+              <> {partitionData?.partitions.length.toLocaleString()} partitions</>
+            )}
+          </div>
+          {selectedPartitionKeys.length > 0 && (
+            <Button
+              onClick={() => {
+                setSelectedPartitionKeys([]);
+                setFocusedPartitionKey(undefined);
+              }}
+            >
+              Clear selection
+            </Button>
+          )}
+        </Box>
         <PartitionStatusCheckboxes
           counts={countsByStatus}
           allowed={DISPLAYED_STATUSES}
@@ -147,6 +170,30 @@ export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitions
           statusToText={assetCheckPartitionStatusToText}
         />
       </Box>
+
+      {/* Partition status bar - visual overview */}
+      {partitionData &&
+        partitionData.partitions.length > 0 &&
+        partitionData.dimensions.length > 0 && (
+          <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+            <AssetCheckPartitionStatusBar
+              partitionKeys={partitionData.partitions}
+              statusForPartition={partitionData.statusForPartition}
+              selected={selectedPartitionKeys}
+              onSelect={(selectedKeys) => {
+                setSelectedPartitionKeys(selectedKeys);
+                // Set focused partition to the first selected key
+                if (selectedKeys.length > 0) {
+                  setFocusedPartitionKey(selectedKeys[0]);
+                }
+              }}
+              splitPartitions={
+                // Time-series: continuous bar, Static/Dynamic: split segments
+                partitionData.dimensions[0]?.type !== 'TIME_WINDOW'
+              }
+            />
+          </Box>
+        )}
 
       <Box style={{flex: 1, minHeight: 0, outline: 'none'}} flex={{direction: 'row'}} tabIndex={-1}>
         <Box

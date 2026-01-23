@@ -37,6 +37,8 @@ const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
         severity: AssetCheckSeverity.WARN,
       },
     },
+    partitionDefinition: null,
+    partitionStatuses: null,
   },
   {
     __typename: 'AssetCheck',
@@ -54,6 +56,8 @@ const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
         severity: AssetCheckSeverity.WARN,
       },
     },
+    partitionDefinition: null,
+    partitionStatuses: null,
   },
 ];
 

@@ -109,6 +109,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     )
     partition = graphene.Field(graphene.String)
     stepKey = graphene.Field(graphene.String)
+    run = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
 
     class Meta:
         name = "AssetCheckExecution"
@@ -132,6 +133,12 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self, graphene_info: "ResolveInfo"
     ) -> AssetCheckExecutionResolvedStatus:
         return await self._execution.resolve_status(graphene_info.context)
+
+    def resolve_run(self, graphene_info: "ResolveInfo"):
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+
+        run_record = graphene_info.context.instance.get_run_record_by_id(self.runId)
+        return GrapheneRun(run_record) if run_record else None
 
 
 class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):

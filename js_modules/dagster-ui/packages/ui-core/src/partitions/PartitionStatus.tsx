@@ -1,9 +1,12 @@
 import {Box, Colors, Tooltip, useViewport} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
 import {useMemo} from 'react';
-import styled from 'styled-components';
 
+import styles from './PartitionStatusBar.module.css';
 import {assembleIntoSpans} from './SpanRepresentation';
+import {MIN_PARTITION_SPAN_WIDTH} from './partitionConstants';
+import {usePartitionDragSelection} from './usePartitionDragSelection';
 import {
   assetPartitionStatusToText,
   assetPartitionStatusesToStyle,
@@ -12,13 +15,6 @@ import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
 import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
 import {assertExists} from '../util/invariant';
-
-type SelectionRange = {
-  start: string;
-  end: string;
-};
-
-const MIN_SPAN_WIDTH = 8;
 
 // This component can be wired up to assets, which provide partition status in terms
 // of ranges with a given status. It can also be wired up to backfills, which provide
@@ -65,116 +61,39 @@ export const PartitionStatus = React.memo(
     splitPartitions = false,
   }: PartitionStatusProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
-    const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
-      SelectionRange | undefined
-    >();
     const {viewport, containerProps} = useViewport();
 
-    const segments = useColorSegments(health, splitPartitions, partitionNames);
-
-    const toPartitionName = React.useCallback(
-      (e: MouseEvent) => {
-        if (!ref.current) {
-          return null;
-        }
-        const percentage =
-          (e.clientX - ref.current.getBoundingClientRect().left) / ref.current.clientWidth;
-        return partitionNames[Math.floor(percentage * partitionNames.length)];
-      },
-      [partitionNames, ref],
-    );
-    const getRangeSelection = React.useCallback(
-      (start: string, end: string) => {
-        const startIdx = partitionNames.indexOf(start);
-        const endIdx = partitionNames.indexOf(end);
-        return partitionNames.slice(Math.min(startIdx, endIdx), Math.max(startIdx, endIdx) + 1);
-      },
-      [partitionNames],
-    );
-
-    const selectedSet = React.useMemo(() => new Set(selected), [selected]);
-
-    React.useEffect(() => {
-      if (!currentSelectionRange || !onSelect || !selected) {
-        return;
-      }
-      const onMouseMove = (e: MouseEvent) => {
-        const end = toPartitionName(e) || currentSelectionRange.end;
-        setCurrentSelectionRange({start: currentSelectionRange?.start, end});
-      };
-      const onMouseUp = (e: MouseEvent) => {
-        if (!currentSelectionRange) {
-          return;
-        }
-        const end = toPartitionName(e) || currentSelectionRange.end;
-        const currentSelection = getRangeSelection(currentSelectionRange.start, end);
-
-        const operation = !e.getModifierState('Shift')
-          ? 'replace'
-          : currentSelection.every((name) => selectedSet.has(name))
-            ? 'subtract'
-            : 'add';
-
-        if (operation === 'replace') {
-          onSelect(currentSelection);
-        } else if (operation === 'subtract') {
-          onSelect(selected.filter((x) => !currentSelection.includes(x)));
-        } else if (operation === 'add') {
-          onSelect(Array.from(new Set([...selected, ...currentSelection])));
-        }
-        setCurrentSelectionRange(undefined);
-      };
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-      };
-    }, [
-      onSelect,
+    // Use shared drag selection logic
+    const {currentSelectionRange, selectedSpans, handleMouseDown} = usePartitionDragSelection({
+      partitionKeys: partitionNames,
       selected,
-      selectedSet,
-      currentSelectionRange,
-      getRangeSelection,
-      toPartitionName,
-    ]);
+      onSelect,
+      containerRef: ref,
+    });
 
-    const selectedSpans = React.useMemo(
-      () =>
-        selectedSet.size === 0
-          ? []
-          : selectedSet.size === partitionNames.length
-            ? [{startIdx: 0, endIdx: partitionNames.length - 1, status: true}]
-            : assembleIntoSpans(partitionNames, (key) => selectedSet.has(key)).filter(
-                (s) => s.status,
-              ),
-      [selectedSet, partitionNames],
-    );
+    const segments = useColorSegments(health, splitPartitions, partitionNames);
 
     const highestIndex = segments
       .map((s) => s.end.idx)
       .reduce((prev, cur) => Math.max(prev, cur), 0);
     const indexToPct = (idx: number) => `${((idx * 100) / partitionNames.length).toFixed(3)}%`;
     const showSeparators =
-      splitPartitions && viewport.width > MIN_SPAN_WIDTH * (partitionNames.length + 1);
+      splitPartitions && viewport.width > MIN_PARTITION_SPAN_WIDTH * (partitionNames.length + 1);
 
     const _onClick = onClick
       ? (e: React.MouseEvent<any, MouseEvent>) => {
-          const partitionName = toPartitionName(e.nativeEvent);
+          const percentage =
+            (e.nativeEvent.clientX - (ref.current?.getBoundingClientRect().left || 0)) /
+            (ref.current?.clientWidth || 1);
+          const partitionName = partitionNames[Math.floor(percentage * partitionNames.length)];
           if (partitionName) {
             onClick(partitionName);
           }
         }
       : undefined;
 
-    const _onMouseDown = onSelect
-      ? (e: React.MouseEvent<any, MouseEvent>) => {
-          const partitionName = toPartitionName(e.nativeEvent);
-          if (partitionName) {
-            setCurrentSelectionRange({start: partitionName, end: partitionName});
-          }
-        }
-      : undefined;
+    const height = small ? 14 : 24;
+    const heightPx = `${height}px`;
 
     return (
       <div
@@ -183,10 +102,10 @@ export const PartitionStatus = React.memo(
         onDragStart={(e) => e.preventDefault()}
       >
         {selected && !selectionWindowSize ? (
-          <SelectionSpansContainer>
+          <div className={styles.selectionSpansContainer}>
             {selectedSpans.map((s) => (
               <div
-                className="selection-span"
+                className={styles.selectionSpan}
                 key={s.startIdx}
                 style={{
                   left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
@@ -194,13 +113,17 @@ export const PartitionStatus = React.memo(
                 }}
               />
             ))}
-          </SelectionSpansContainer>
+          </div>
         ) : null}
-        <PartitionSpansContainer
-          style={{height: small ? 12 : 24}}
+        <div
+          className={clsx(
+            styles.partitionSpansContainer,
+            small && styles.partitionSpansContainerSmall,
+          )}
+          style={{'--height': heightPx} as React.CSSProperties}
           ref={ref}
           onClick={_onClick}
-          onMouseDown={_onMouseDown}
+          onMouseDown={handleMouseDown}
         >
           {segments.map((s) => (
             <div
@@ -215,7 +138,7 @@ export const PartitionStatus = React.memo(
               }}
             >
               {hideStatusTooltip || tooltipMessage ? (
-                <div className="color-span" style={s.style} title={tooltipMessage} />
+                <div className={styles.colorSpan} style={s.style} title={tooltipMessage} />
               ) : (
                 <Tooltip
                   display="block"
@@ -230,7 +153,7 @@ export const PartitionStatus = React.memo(
                           } are ${s.label.toLowerCase()}`
                   }
                 >
-                  <div className="color-span" style={s.style} />
+                  <div className={styles.colorSpan} style={s.style} />
                 </Tooltip>
               )}
             </div>
@@ -238,17 +161,21 @@ export const PartitionStatus = React.memo(
           {showSeparators
             ? segments.slice(1).map((s) => (
                 <div
-                  className="separator"
+                  className={styles.separator}
                   key={`separator_${s.start.idx}`}
                   style={{
                     left: `min(calc(100% - 2px), ${indexToPct(s.start.idx)})`,
-                    height: small ? 14 : 24,
+                    height,
                   }}
                 />
               ))
             : null}
           {currentSelectionRange ? (
-            <SelectionHoverHighlight
+            <div
+              className={clsx(
+                styles.selectionHoverHighlight,
+                small && styles.selectionHoverHighlightSmall,
+              )}
               style={{
                 left: `min(calc(100% - 2px), ${indexToPct(
                   Math.min(
@@ -262,13 +189,13 @@ export const PartitionStatus = React.memo(
                       partitionNames.indexOf(currentSelectionRange.start),
                   ) + 1,
                 ),
-                height: small ? 14 : 24,
               }}
             />
           ) : null}
           {selected && selected.length && selectionWindowSize ? (
             <>
-              <SelectionFade
+              <div
+                className={styles.selectionFade}
                 key="selectionFadeLeft"
                 style={{
                   left: 0,
@@ -282,10 +209,11 @@ export const PartitionStatus = React.memo(
                       ),
                     ),
                   ),
-                  height: small ? 14 : 24,
+                  height,
                 }}
               />
-              <SelectionBorder
+              <div
+                className={styles.selectionBorder}
                 style={{
                   left: `min(calc(100% - 3px), ${indexToPct(
                     Math.min(
@@ -307,10 +235,11 @@ export const PartitionStatus = React.memo(
                         ),
                     ) + 1,
                   ),
-                  height: small ? 14 : 24,
+                  height,
                 }}
               />
-              <SelectionFade
+              <div
+                className={styles.selectionFade}
                 key="selectionFadeRight"
                 style={{
                   right: 0,
@@ -329,12 +258,12 @@ export const PartitionStatus = React.memo(
                         ),
                       ),
                   ),
-                  height: small ? 14 : 24,
+                  height,
                 }}
               />
             </>
           ) : null}
-        </PartitionSpansContainer>
+        </div>
         {!splitPartitions ? (
           <Box
             flex={{justifyContent: 'space-between'}}
@@ -438,67 +367,3 @@ function opRunStatusToColorRanges(
     };
   });
 }
-
-const SelectionSpansContainer = styled.div`
-  position: relative;
-  width: 100%;
-  overflow-x: hidden;
-  height: 10px;
-
-  .selection-span {
-    position: absolute;
-    top: 0;
-    height: 8px;
-    border: 2px solid ${Colors.accentBlue()};
-    border-bottom: 0;
-  }
-`;
-
-const PartitionSpansContainer = styled.div`
-  position: relative;
-  width: 100%;
-  border-radius: 4px;
-  overflow: hidden;
-  cursor: col-resize;
-  background: ${Colors.backgroundLighter()};
-
-  .color-span {
-    width: 100%;
-    height: 24px;
-    outline: none;
-  }
-
-  .separator {
-    width: 1px;
-    position: absolute;
-    z-index: 4;
-    background: ${Colors.keylineDefault()};
-    top: 0;
-  }
-`;
-
-const SelectionFade = styled.div`
-  position: absolute;
-  z-index: 5;
-  background: ${Colors.backgroundDefault()};
-  opacity: 0.5;
-  top: 0;
-`;
-
-const SelectionHoverHighlight = styled.div`
-  min-width: 2px;
-  position: absolute;
-  z-index: 4;
-  background: ${Colors.backgroundDefault()};
-  opacity: 0.7;
-  top: 0;
-`;
-
-const SelectionBorder = styled.div`
-  min-width: 2px;
-  position: absolute;
-  z-index: 5;
-  border: 3px solid ${Colors.borderDefault()};
-  border-radius: 4px;
-  top: 0;
-`;
