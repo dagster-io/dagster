@@ -28,6 +28,13 @@ When you scaffold a dbt component definition, the following ``defs.yaml`` config
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml
     :language: yaml
 
+*****************
+DbtCloudComponent
+*****************
+
+.. autoclass:: DbtCloudComponent
+    :members:
+
 ***********
 dagster-dbt
 ***********
