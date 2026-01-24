@@ -56,3 +56,55 @@ To make use of the orchestration capability, you will need to add code to your D
 **dbt Cloud** is a hosted service for running dbt jobs. It helps data analysts and engineers productionize dbt deployments. Beyond dbt open source, dbt Cloud provides scheduling , CI/CD, serving documentation, and monitoring & alerting.
 
 If you're currently using dbt Cloud™, you can also use Dagster to run `dbt-core` in its place. You can read more about [how to do that here](https://dagster.io/blog/migrate-off-dbt-cloud).
+
+---
+
+## Using dbt Cloud with Dagster Components
+
+The `DbtCloudComponent` allows you to load a dbt Cloud project as a set of Dagster assets using the Components API. It automatically synchronizes with your dbt Cloud manifest and triggers jobs remotely.
+
+### Prerequisites
+
+To use this component, you need:
+* A dbt Cloud account.
+* An API token and Account ID.
+* A Project ID and Environment ID for the dbt Cloud project you wish to orchestrate.
+
+### Configuration
+
+The component requires a `workspace` resource and optional selection arguments:
+
+| Argument | Type | Description |
+| :--- | :--- | :--- |
+| `workspace` | `DbtCloudWorkspace` | **Required.** Resource containing your dbt Cloud credentials (token, account_id) and project details. |
+| `select` | `str` | A dbt selection string to filter assets (e.g. `tag:staging`). Defaults to `fqn:*`. |
+| `exclude` | `str` | A dbt selection string to exclude assets. |
+| `defs_state` | `DefsStateConfig` | Configuration for persisting the state (manifest) locally. Defaults to local filesystem. |
+
+### Usage Example
+
+```python
+from dagster import Definitions
+from dagster_dbt import DbtCloudComponent, DbtCloudWorkspace
+from dagster.components.utils.defs_state import DefsStateConfigArgs
+
+# Define your dbt Cloud workspace
+dbt_cloud_workspace = DbtCloudWorkspace(
+    account_id=123456,
+    project_id=11111,
+    token="your-dbt-cloud-api-token",
+)
+
+# Create the component
+dbt_cloud = DbtCloudComponent(
+    workspace=dbt_cloud_workspace,
+    select="fqn:*",
+    defs_state=DefsStateConfigArgs.local_filesystem(),
+)
+
+# Build the definitions
+defs = dbt_cloud.build_defs()
+```
+
+### Limitations
+Code References: Unlike local dbt projects, the dbt Cloud component does not support linking Dagster assets to local SQL source files, as execution occurs remotely.
