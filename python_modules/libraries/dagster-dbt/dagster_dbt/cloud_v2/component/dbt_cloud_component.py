@@ -1,15 +1,29 @@
 import json
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Optional
 
 import dagster as dg
-from dagster._annotations import public
-from dagster._utils.cached_method import cached_method
+from dagster import (
+    AssetExecutionContext,
+    Definitions,
+    multi_asset,
+)
+
+try:
+    from dagster.components import ComponentLoadContext
+except ImportError:
+    from dagster.components.core.component import ComponentLoadContext
+
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
-from dagster.components.utils.defs_state import DefsStateConfig, DefsStateConfigArgs, ResolvedDefsStateConfig
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
 
 from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
@@ -29,7 +43,6 @@ def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspa
     return DbtCloudWorkspace(**resolved_val)
 
 
-@public
 @dataclass(kw_only=True)
 class DbtCloudComponent(BaseDbtComponent):
     """Expose a dbt Cloud workspace to Dagster as a set of assets."""
@@ -61,27 +74,37 @@ class DbtCloudComponent(BaseDbtComponent):
     def config_cls(self) -> Optional[type[dg.Config]]:
         return self.op_config_schema
 
-    @property
-    @cached_method
+    @cached_property
     def translator(self) -> DagsterDbtTranslator:
-        return DagsterDbtTranslator(self.translation_settings)
+        settings = replace(self.translation_settings, enable_code_references=False)
+        return DagsterDbtTranslator(settings)
 
     def write_state_to_path(self, state_path: Path) -> None:
         workspace_data = self.workspace.fetch_workspace_data()
+
+        serialized_jobs = []
+        for job in workspace_data.jobs:
+            if isinstance(job, dict):
+                serialized_jobs.append(job)
+            elif hasattr(job, "__dict__"):
+                serialized_jobs.append(job.__dict__)
+            else:
+                serialized_jobs.append(dict(job))
+
         state_data = {
             "project_id": workspace_data.project_id,
             "environment_id": workspace_data.environment_id,
             "adhoc_job_id": workspace_data.adhoc_job_id,
             "manifest": workspace_data.manifest,
-            "jobs": [job.__dict__ for job in workspace_data.jobs],
+            "jobs": serialized_jobs,
         }
         state_path.write_text(json.dumps(state_data, default=str))
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
-    ) -> dg.Definitions:
+        self, context: ComponentLoadContext, state_path: Optional[Path]
+    ) -> Definitions:
         if state_path is None:
-            return dg.Definitions()
+            return Definitions()
 
         state_data = json.loads(state_path.read_text())
         manifest = state_data["manifest"]
@@ -98,7 +121,7 @@ class DbtCloudComponent(BaseDbtComponent):
 
         op_spec = self._get_op_spec("dbt_cloud_assets")
 
-        @dg.multi_asset(
+        @multi_asset(
             specs=asset_specs,
             check_specs=check_specs,
             can_subset=True,
@@ -109,18 +132,17 @@ class DbtCloudComponent(BaseDbtComponent):
             config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
             allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
         )
-        def _dbt_cloud_assets(context: dg.AssetExecutionContext) -> Iterator:
+        def _dbt_cloud_assets(context: AssetExecutionContext) -> Iterator:
             yield from self.execute(context=context)
 
-        return dg.Definitions(assets=[_dbt_cloud_assets])
+        return Definitions(assets=[_dbt_cloud_assets])
 
-    def execute(self, context: dg.AssetExecutionContext) -> Iterator:
+    def execute(self, context: AssetExecutionContext) -> Iterator:
         invocation = self.workspace.cli(
             args=["run"],
             dagster_dbt_translator=self.translator,
             context=context,
         )
-
         yield from invocation.wait()
 
     def get_asset_selection(

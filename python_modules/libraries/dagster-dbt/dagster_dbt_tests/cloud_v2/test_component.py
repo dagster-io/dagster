@@ -1,0 +1,131 @@
+import json
+from pathlib import Path
+from unittest.mock import MagicMock, Mock
+
+import pytest
+from dagster import AssetExecutionContext
+from dagster.components.utils.defs_state import DefsStateConfigArgs
+from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
+from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+
+
+@pytest.fixture
+def mock_workspace_data():
+    """Create dummy data mimicking dbt Cloud API response."""
+    return DbtCloudWorkspaceData(
+        project_id=123,
+        environment_id=456,
+        adhoc_job_id=789,
+        manifest={
+            "metadata": {
+                "dbt_schema_version": "1.0.0",
+                "adapter_type": "postgres",
+            },
+            "nodes": {
+                "model.my_project.my_model": {
+                    "resource_type": "model",
+                    "package_name": "my_project",
+                    "path": "my_model.sql",
+                    "original_file_path": "models/my_model.sql",
+                    "unique_id": "model.my_project.my_model",
+                    "fqn": ["my_project", "my_model"],
+                    "name": "my_model",
+                    "config": {"enabled": True},
+                    "tags": [],
+                    "depends_on": {"nodes": []},
+                    "description": "A test model",
+                }
+            },
+            "sources": {},
+            "metrics": {},
+            "semantic_models": {},
+            "exposures": {},
+            "checks": {},
+            "child_map": {
+                "model.my_project.my_model": []
+            },
+            "parent_map": {
+                "model.my_project.my_model": []
+            },
+            "selectors": {},
+        },
+        jobs=[
+            {
+                "id": 789,
+                "account_id": 111,
+                "name": "Adhoc Job",
+                "environment_id": 456,
+                "project_id": 123
+            }
+        ],
+    )
+
+
+@pytest.fixture
+def mock_workspace(mock_workspace_data):
+    """Mock the DbtCloudWorkspace resource."""
+    workspace = MagicMock(spec=DbtCloudWorkspace)
+    workspace.unique_id = "123-456"
+    workspace.fetch_workspace_data.return_value = mock_workspace_data
+
+    mock_invocation = MagicMock()
+    mock_invocation.wait.return_value = []
+    workspace.cli.return_value = mock_invocation
+
+    return workspace
+
+
+def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspace_data):
+    """Test 1: Full cycle - Write State -> Read State -> Build Defs."""
+
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    assert state_path.exists()
+    saved_data = json.loads(state_path.read_text())
+    assert saved_data["project_id"] == 123
+    assert len(saved_data["jobs"]) == 1
+    assert "child_map" in saved_data["manifest"]
+
+    mock_load_context = MagicMock()
+    defs = component.build_defs_from_state(mock_load_context, state_path)
+
+    assert len(defs.assets) == 1
+    assets = list(defs.assets)
+    assert assets[0].node_def.name == "dbt_cloud_assets"
+
+
+def test_dbt_cloud_component_execution(mock_workspace):
+    """Test 2: Execution calls the workspace CLI correctly."""
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+    )
+
+    context = MagicMock(spec=AssetExecutionContext)
+
+    iterator = component.execute(context)
+    list(iterator)
+
+    mock_workspace.cli.assert_called_once()
+    call_args = mock_workspace.cli.call_args
+    assert call_args.kwargs["args"] == ["run"]
+    assert call_args.kwargs["context"] == context
+
+
+def test_dbt_cloud_component_asset_selection(mock_workspace):
+    """Test 3: Asset Selection works correctly (Required for standard components)."""
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+    )
+
+    selection = component.get_asset_selection(select="my_model")
+
+    assert isinstance(selection, DbtManifestAssetSelection)
+    assert selection.select == "my_model"
