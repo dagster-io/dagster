@@ -10,6 +10,7 @@ from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 import dagster as dg
 from dagster._annotations import public
+from dagster._utils.cached_method import cached_method
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import OpSpec
@@ -25,18 +26,11 @@ from dagster.components.utils.translation import (
 from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
-from dagster_dbt.asset_utils import (
-    DBT_DEFAULT_EXCLUDE,
-    build_dbt_specs,
-    get_node,
-)
+from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, build_dbt_specs, get_node
 from dagster_dbt.components.base import BaseDbtComponent, DagsterDbtComponentTranslatorSettings
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import (
-    DagsterDbtTranslator,
-    validate_translator,
-)
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
@@ -206,9 +200,11 @@ class DbtProjectComponent(BaseDbtComponent):
     def _get_op_spec(self, op_name: Optional[str] = None) -> OpSpec:
         if op_name is None:
             op_name = self.dbt_project.name
+
         return super()._get_op_spec(op_name)
 
-    @cached_property
+    @property
+    @cached_method
     def translator(self) -> "DagsterDbtTranslator":
         return DbtProjectComponentTranslator(self, self.translation_settings)
 
@@ -253,7 +249,7 @@ class DbtProjectComponent(BaseDbtComponent):
                         else:
                             return base_spec
         """
-        return get_node(manifest, unique_id)
+        return super().get_resource_props(manifest, unique_id)
 
     @public
     def get_asset_spec(
@@ -287,7 +283,11 @@ class DbtProjectComponent(BaseDbtComponent):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        # Note: We keep this method here to preserve the docstring and example specific to DbtProjectComponent
+        if self.translation:
+            base_spec = self._base_translator.get_asset_spec(manifest, unique_id, project)
+            dbt_props = get_node(manifest, unique_id)
+            return self.translation(base_spec, dbt_props)
+
         return super().get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(

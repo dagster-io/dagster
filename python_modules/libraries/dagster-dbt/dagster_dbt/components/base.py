@@ -1,9 +1,9 @@
 from abc import ABC
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Annotated, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 import dagster as dg
-from dagster._annotations import public
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.core_models import OpSpec
@@ -18,10 +18,7 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_SELECTOR,
     get_node,
 )
-from dagster_dbt.dagster_dbt_translator import (
-    DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
-)
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
 if TYPE_CHECKING:
@@ -35,7 +32,6 @@ class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
     enable_code_references: bool = True
 
 
-@public
 @dataclass(kw_only=True)
 class BaseDbtComponent(StateBackedComponent, dg.Resolvable, ABC):
     """Base class for dbt components (both local and cloud)."""
@@ -123,12 +119,13 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, ABC):
         )
 
     def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
+        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties."""
         return get_node(manifest, unique_id)
 
-    @public
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: Optional["DbtProject"] = None
     ) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given dbt node."""
         return self.translator.get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(
