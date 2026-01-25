@@ -12,8 +12,16 @@ from typing import (
     get_origin,
 )
 
+
 T = TypeVar("T", bound=Any)
 
+def is_typed_dict(tp: object) -> bool:
+    return (
+        isinstance(tp, type)
+        and issubclass(tp, dict)
+        and hasattr(tp, "__annotations__")
+        and hasattr(tp, "__total__")
+    )
 
 # Use Any for type_ because there isn't a good static type that can handle all the cases listed
 # here.
@@ -32,7 +40,9 @@ def match_type(obj: object, type_: Union[type[T], tuple[type[T]]]) -> TypeGuard[
         elif isinstance(type_, ForwardRef):
             raise NotImplementedError(
                 f"Got ForwardRef {type_}. ForwardRef is not supported by `match_type`"
-            )
+            )  
+        elif is_typed_dict(type_):
+            return isinstance(obj, dict)
         else:
             return isinstance(obj, type_)
 
