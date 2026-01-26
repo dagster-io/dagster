@@ -41,6 +41,7 @@
     -e python_modules/libraries/dagster-duckdb/
     -e python_modules/libraries/dagster-duckdb-pyspark/
   -e python_modules/libraries/dagster-pandas/
+  -e python_modules/libraries/dagster-polytomic/
   -e python_modules/libraries/dagster-postgres/
   -e python_modules/libraries/dagster-gcp[test,dataproc]
   -e python_modules/libraries/dagster-pyspark/

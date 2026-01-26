@@ -14,6 +14,7 @@ from dagster._core.definitions.selector import (
     SensorSelector,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import PartitionKeyFilter
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.remote_representation.external import CompoundID
@@ -645,6 +646,14 @@ class GrapheneQuery(graphene.ObjectType):
         non_null_list(GrapheneAssetCheckExecution),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+        partition=graphene.Argument(
+            graphene.String,
+            description=(
+                "Optional partition key filter. When omitted, returns all executions across all "
+                'partitions. When set to empty string (""), returns only unpartitioned executions. '
+                "When set to a specific value, returns executions for that partition."
+            ),
+        ),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         description="Retrieve the executions for a given asset check.",
@@ -1366,7 +1375,19 @@ class GrapheneQuery(graphene.ObjectType):
         checkName: str,
         limit: int,
         cursor: Optional[str] = None,
+        partition: Optional[str] = None,
     ):
+        # Handle ternary partition filter state:
+        # - partition=None (omitted): partition_filter=None (ALL executions)
+        # - partition="": PartitionKeyFilter(key=None) (unpartitioned only)
+        # - partition="value": PartitionKeyFilter(key="value") (specific partition)
+        if partition is None:
+            partition_filter = None
+        elif partition == "":
+            partition_filter = PartitionKeyFilter(key=None)
+        else:
+            partition_filter = PartitionKeyFilter(key=partition)
+
         return fetch_asset_check_executions(
             graphene_info.context,
             asset_check_key=AssetCheckKey(
@@ -1374,6 +1395,7 @@ class GrapheneQuery(graphene.ObjectType):
             ),
             limit=limit,
             cursor=cursor,
+            partition_filter=partition_filter,
         )
 
     def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):

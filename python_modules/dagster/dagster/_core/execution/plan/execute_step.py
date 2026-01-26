@@ -97,9 +97,6 @@ def _process_user_event(
         asset_key = _resolve_asset_result_asset_key(user_event, assets_def)
         output_name = assets_def.get_output_name_for_asset_key(asset_key)
 
-        for check_result in user_event.check_results or []:
-            yield from _process_user_event(step_context, check_result)
-
         with disable_dagster_warnings():
             if isinstance(user_event, MaterializeResult):
                 value = user_event.value
@@ -112,6 +109,10 @@ def _process_user_event(
                 data_version=user_event.data_version,
                 tags=user_event.tags,
             )
+
+        for check_result in user_event.check_results or []:
+            yield from _process_user_event(step_context, check_result)
+
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
         assets_def = _get_assets_def_for_step(step_context, user_event)

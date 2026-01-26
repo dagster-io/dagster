@@ -19,7 +19,7 @@ setup(
         "boto3",
         "click",
         "packaging>=20.9",
-        "pandas",
+        "pandas<3.0.0",
         "pathspec",
         "pytablereader",
         "pydantic",

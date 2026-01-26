@@ -1,4 +1,5 @@
 import os
+import uuid
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
@@ -129,6 +130,7 @@ def scaffold_project(
             os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
         ),
         excludes=project_excludes,
+        project_id=str(uuid.uuid4()),
         **get_dependencies_template_params(
             use_editable_dagster,
             scaffold_project_options,

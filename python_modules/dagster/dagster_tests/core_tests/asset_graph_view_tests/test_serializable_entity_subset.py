@@ -2,6 +2,7 @@ import dagster as dg
 import pytest
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset
 
 
 def test_union():
@@ -318,3 +319,38 @@ def test_from_coercible_value_dynamic_partitions():
             key=a,
             value=partitions_def.subset_with_partition_keys(["3"]),
         )
+
+
+def test_is_compatible_with_partitions_def_default_subset_time_window():
+    time_window_partitions_def = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    a = dg.AssetKey("a")
+
+    # DefaultPartitionsSubset with non-time keys should NOT be compatible
+    invalid_subset = SerializableEntitySubset(
+        key=a,
+        value=DefaultPartitionsSubset({"foo", "bar"}),
+    )
+    assert invalid_subset.is_compatible_with_partitions_def(time_window_partitions_def) is False
+
+    # DefaultPartitionsSubset with valid time keys should be compatible
+    valid_subset = SerializableEntitySubset(
+        key=a,
+        value=DefaultPartitionsSubset({"2024-01-01", "2024-01-02"}),
+    )
+    assert valid_subset.is_compatible_with_partitions_def(time_window_partitions_def) is True
+
+    # DefaultPartitionsSubset with mixed keys (some valid, some invalid) should NOT be compatible
+    mixed_subset = SerializableEntitySubset(
+        key=a,
+        value=DefaultPartitionsSubset({"2024-01-01", "invalid_key"}),
+    )
+    assert mixed_subset.is_compatible_with_partitions_def(time_window_partitions_def) is False
+
+    # DefaultPartitionsSubset with keys outside the partition range should NOT be compatible
+    out_of_range_subset = SerializableEntitySubset(
+        key=a,
+        value=DefaultPartitionsSubset({"2020-01-01"}),  # before start_date
+    )
+    assert (
+        out_of_range_subset.is_compatible_with_partitions_def(time_window_partitions_def) is False
+    )

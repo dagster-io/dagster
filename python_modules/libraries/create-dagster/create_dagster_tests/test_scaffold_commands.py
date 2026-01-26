@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 from typing import Literal, Optional, TypeAlias, get_args
 
@@ -8,6 +9,7 @@ import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
+import yaml
 from create_dagster.scaffold import _get_editable_dagster_from_env
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
@@ -169,6 +171,11 @@ def test_scaffold_project_success(
         # Standalone projects should have README.md and .gitignore
         assert Path("foo-bar/README.md").exists()
         assert Path("foo-bar/.gitignore").exists()
+        # Verify .dg/telemetry.yaml exists and contains a valid UUID
+        assert Path("foo-bar/.dg/telemetry.yaml").exists()
+        telemetry_content = yaml.safe_load(Path("foo-bar/.dg/telemetry.yaml").read_text())
+        assert "project_id" in telemetry_content
+        uuid.UUID(telemetry_content["project_id"])  # Raises if invalid UUID
 
         # Verify README.md contains the project name
         readme_content = Path("foo-bar/README.md").read_text()
@@ -209,6 +216,11 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         # Workspace projects should NOT have README.md and .gitignore
         assert not Path("projects/foo-bar/README.md").exists()
         assert not Path("projects/foo-bar/.gitignore").exists()
+        # Verify .dg/telemetry.yaml exists and contains a valid UUID
+        assert Path("projects/foo-bar/.dg/telemetry.yaml").exists()
+        telemetry_content = yaml.safe_load(Path("projects/foo-bar/.dg/telemetry.yaml").read_text())
+        assert "project_id" in telemetry_content
+        uuid.UUID(telemetry_content["project_id"])  # Raises if invalid UUID
 
         # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())

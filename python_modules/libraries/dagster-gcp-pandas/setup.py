@@ -37,7 +37,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-gcp{pin}",
-        "pandas",
+        "pandas<3.0.0",
     ],
     extras_require={"test": ["pandas-gbq"]},
     zip_safe=False,

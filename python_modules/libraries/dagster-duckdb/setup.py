@@ -36,7 +36,7 @@ setup(
     ],
     extras_require={
         "pandas": [
-            "pandas",
+            "pandas<3.0.0",
         ],
         "pyspark": [
             "pyspark>=4.1; python_version>='3.14'",

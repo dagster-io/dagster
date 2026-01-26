@@ -1,6 +1,6 @@
 from dateutil import parser
 
-from .types import SyncRunParsedOutput
+from dagster_hightouch.types import SyncRunParsedOutput
 
 
 def parse_sync_run_details(sync_run_details) -> SyncRunParsedOutput:

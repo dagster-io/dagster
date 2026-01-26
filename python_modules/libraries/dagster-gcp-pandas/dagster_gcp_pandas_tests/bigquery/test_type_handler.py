@@ -37,6 +37,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+HAS_GCP_CREDS = bool(os.getenv("GCP_PROJECT_ID")) and bool(
+    os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+)
+RUN_BUILDKITE_BIGQUERY_TESTS = IS_BUILDKITE and HAS_GCP_CREDS
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
@@ -64,7 +68,10 @@ def temporary_bigquery_table(schema_name: Optional[str]) -> Iterator[str]:
         ).result()
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.integration
 def test_io_manager_asset_metadata() -> None:
     with temporary_bigquery_table(schema_name=SCHEMA) as table_name:
@@ -89,7 +96,10 @@ def test_io_manager_asset_metadata() -> None:
         )
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_io_manager_with_bigquery_pandas(io_manager):
@@ -127,7 +137,10 @@ def test_io_manager_with_bigquery_pandas(io_manager):
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_io_manager_with_timestamp_conversion(io_manager):
@@ -161,7 +174,10 @@ def test_io_manager_with_timestamp_conversion(io_manager):
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_time_window_partitioned_asset(io_manager):
@@ -248,7 +264,10 @@ def test_time_window_partitioned_asset(io_manager):
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_static_partitioned_asset(io_manager):
@@ -325,7 +344,10 @@ def test_static_partitioned_asset(io_manager):
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_multi_partitioned_asset(io_manager):
@@ -422,7 +444,10 @@ def test_multi_partitioned_asset(io_manager):
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_dynamic_partitioned_asset(io_manager):
@@ -506,7 +531,10 @@ def test_dynamic_partitioned_asset(io_manager):
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_BIGQUERY_TESTS,
+    reason="Requires Buildkite BigQuery credentials",
+)
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
 def test_self_dependent_asset(io_manager):
