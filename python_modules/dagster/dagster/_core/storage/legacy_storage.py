@@ -1,5 +1,6 @@
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
+from types import EllipsisType
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster import _check as check
@@ -745,19 +746,24 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Union[str, None, EllipsisType] = ...,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
             limit=limit,
             cursor=cursor,
             status=status,
+            partition=partition,
         )
 
-    def get_latest_asset_check_execution_by_key(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence["AssetCheckKey"],
-    ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
-        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
+        partition: Union[str, None, EllipsisType] = ...,
+    ) -> Mapping["AssetCheckKey", AssetCheckExecutionRecord]:
+        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(
+            check_keys, partition=partition
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
