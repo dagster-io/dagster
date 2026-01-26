@@ -88,8 +88,8 @@ def test_root_help_message():
             │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Commands ───────────────────────────────────────────────────────────────────╮
-            │ sub-command   Sub-command.                                                   │
-            │ sub-group     Sub-group.                                                     │
+            │ sub-command  Sub-command.                                                    │
+            │ sub-group    Sub-group.                                                      │
             ╰──────────────────────────────────────────────────────────────────────────────╯
     """).strip(),
     )
@@ -115,7 +115,7 @@ def test_sub_group_with_option_help_message():
             │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Commands ───────────────────────────────────────────────────────────────────╮
-            │ sub-group-command   Sub-group-command.                                       │
+            │ sub-group-command  Sub-group-command.                                        │
             ╰──────────────────────────────────────────────────────────────────────────────╯
         """).strip(),
     )
