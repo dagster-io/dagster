@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import logging
 import os
+import random
 import sys
 import threading
 import zlib
@@ -553,7 +554,7 @@ class AssetDaemon(DagsterDaemon):
 
                 self._checked_migrations = True
 
-            for sensor, repo in eligible_sensors_and_repos:
+            for sensor, repo in sorted(eligible_sensors_and_repos, key=lambda _: random.random()):
                 selector_id = sensor.selector_id
                 if sensor.get_current_instigator_state(
                     all_sensor_states.get(selector_id)
