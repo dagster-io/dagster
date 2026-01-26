@@ -174,6 +174,31 @@ class ModuleScopedDagsterDefs:
                         f"Asset key {key.to_user_string()} is defined multiple times. "
                         f"Definitions found in modules: {modules}."
                     )
+        # Collision detection on ScheduleDefinitions.
+        schedule_defs_by_name = defaultdict(list)
+        for schedule_def in self.schedule_defs:
+            schedule_defs_by_name[schedule_def.name].append(schedule_def)
+        for name, schedule_defs in schedule_defs_by_name.items():
+            if len(schedule_defs) > 1:
+                schedule_defs_str = ", ".join(
+                    set(self.module_name_by_id[id(schedule_def)] for schedule_def in schedule_defs)
+                )
+                raise DagsterInvalidDefinitionError(
+                    f"Schedule name {name} is defined multiple times. Definitions found in modules: {schedule_defs_str}."
+                )
+
+        # Collision detection on SensorDefinitions.
+        sensor_defs_by_name = defaultdict(list)
+        for sensor_def in self.sensor_defs:
+            sensor_defs_by_name[sensor_def.name].append(sensor_def)
+        for name, sensor_defs in sensor_defs_by_name.items():
+            if len(sensor_defs) > 1:
+                sensor_defs_str = ", ".join(
+                    set(self.module_name_by_id[id(sensor_def)] for sensor_def in sensor_defs)
+                )
+                raise DagsterInvalidDefinitionError(
+                    f"Sensor name {name} is defined multiple times. Definitions found in modules: {sensor_defs_str}."
+                )
 
 
         # Collision detection on JobDefinitionObjects.
