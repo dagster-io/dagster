@@ -38,6 +38,11 @@ describe('autolinking', () => {
         https://www.w3.org/TR/html-aria/#docconformance
         https://www.zoom.us/j/7647885554 // looks like a phone number
 
+        URLs with semicolons (matrix parameters):
+        https://example.com/path;param=value
+        https://example.com/path;param1=value1;param2=value2/segment
+        https://api.example.com/resource;session=abc123;auth=xyz789
+
         Google maps worst case scenario:
         https://www.google.com/maps/place/Nashville,+TN/@36.1865271,-86.9503948,11z/data=!3m1!4b1!4m6!3m5!1s0x8864ec3213eb903d:0x7d3fb9d0a1e9daa0!8m2!3d36.1626638!4d-86.7816016!16zL20vMDVqYm4?entry=ttu
         `;
@@ -55,6 +60,9 @@ describe('autolinking', () => {
       'http://username:password@127.0.0.1:8000/my-internal-service?success=true#paragraph-2',
       'https://www.w3.org/TR/html-aria/#docconformance',
       'https://www.zoom.us/j/7647885554',
+      'https://example.com/path;param=value',
+      'https://example.com/path;param1=value1;param2=value2/segment',
+      'https://api.example.com/resource;session=abc123;auth=xyz789',
       'https://www.google.com/maps/place/Nashville,+TN/@36.1865271,-86.9503948,11z/data=!3m1!4b1!4m6!3m5!1s0x8864ec3213eb903d:0x7d3fb9d0a1e9daa0!8m2!3d36.1626638!4d-86.7816016!16zL20vMDVqYm4?entry=ttu',
     ]);
 
