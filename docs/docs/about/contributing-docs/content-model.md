@@ -1,4 +1,8 @@
-# Documentation content model
+---
+title: Dagster documentation content model
+sidebar_label: Content model
+description: TK
+---
 
 This page describes the structure and types of documentation we write at Dagster.
 

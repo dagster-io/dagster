@@ -1,6 +1,6 @@
 ---
 description: Dagster telemetry collects non-identifiable frontend and backend usage information to enhance development without accessing pipeline data.
-sidebar_position: 40
+sidebar_position: 50
 title: Dagster telemetry
 ---
 
