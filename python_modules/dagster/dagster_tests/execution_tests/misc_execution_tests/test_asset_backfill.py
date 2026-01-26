@@ -3117,3 +3117,65 @@ def test_backfill_fails_on_unpartitioned_asset_with_partitioned_materialization(
 
     assert "is unpartitioned in the backfill target subset" in str(exc_info.value)
     assert "received a partitioned materialization" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("policy", [BackfillPolicy.single_run(), BackfillPolicy.multi_run()])
+def test_asset_backfill_with_partitioned_asset_check(policy):
+    instance = DagsterInstance.ephemeral()
+    partitions_def = dg.DailyPartitionsDefinition("2023-10-01")
+
+    @dg.asset(partitions_def=partitions_def, backfill_policy=policy)
+    def foo():
+        pass
+
+    @dg.asset_check(asset=foo, partitions_def=partitions_def)
+    def foo_check():
+        return dg.AssetCheckResult(passed=True)
+
+    assets_by_repo_name = {"repo": [foo, foo_check]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    target_partitions_subset = partitions_def.empty_subset().with_partition_key_range(
+        partitions_def, dg.PartitionKeyRange("2023-11-01", "2023-11-03")
+    )
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset(
+            partitions_subsets_by_asset_key={foo.key: target_partitions_subset}
+        ),
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_timestamp=create_datetime(2023, 12, 5, 0, 0, 0).timestamp(),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(foo.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo.key, "2023-11-03"),
+    }
+    from dagster._core.definitions.backfill_policy import BackfillPolicyType
+
+    expected_runs = 1 if policy.policy_type == BackfillPolicyType.SINGLE_RUN else 3
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+
+    asset_key = AssetKey(["foo"])
+    asset_check_key = AssetCheckKey(asset_key=asset_key, name="foo_check")
+    assert (
+        instance.event_log_storage.get_latest_asset_check_execution_by_key([asset_check_key]).get(
+            asset_check_key
+        )
+        is None
+    )
+    assert not instance.event_log_storage.get_materialized_partitions(asset_key)
+    runs = instance.get_runs()
+    assert len(runs) == 0
+    run_backfill_to_completion(
+        asset_graph, assets_by_repo_name, asset_backfill_data, set(), instance
+    )
+    runs = instance.get_runs()
+    assert len(runs) == expected_runs
+    assert len(instance.event_log_storage.get_materialized_partitions(asset_key)) == 3
+
+    for partition in ["2023-11-01", "2023-11-02", "2023-11-03"]:
+        assert (
+            instance.event_log_storage.get_latest_asset_check_execution_by_key(
+                [asset_check_key], partition=partition
+            ).get(asset_check_key)
+            is not None
+        )
