@@ -144,58 +144,37 @@ class ModuleScopedDagsterDefs:
             for key in key_iterator(asset_object):
                 objects_by_key[key].append(asset_object)
         return objects_by_key
-
     def _do_collision_detection(self) -> None:
-        # Collision detection on module-scoped asset objects. This does not include CacheableAssetsDefinitions, which don't have their keys defined until runtime.
+        # Collision detection on module-scoped asset objects. This does not include CacheableAssetsDefinitions.
         for key, asset_objects in self.asset_objects_by_key.items():
-            # In certain cases, we allow asset specs to collide because we know we aren't loading them.
-            # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
+            asset_defs = [obj for obj in asset_objects if isinstance(obj, AssetsDefinition)]
+            asset_specs = [obj for obj in asset_objects if isinstance(obj, AssetSpec)]
 
-            # special handling for conflicting AssetSpecs since they are tuples and we can compare them with == and
-            # dedupe at least those that dont contain nested complex objects
-            if asset_objects and all(isinstance(obj, AssetSpec) for obj in asset_objects):
-                first = asset_objects[0]
-                num_distinct_objects_for_key = reduce(
-                    lambda count, obj: count + int(obj != first),
-                    asset_objects,
-                    1,
-                )
-            else:
-                num_distinct_objects_for_key = len(
-                    set(id(asset_object) for asset_object in asset_objects)
-                )
-            if len(asset_objects) > 1 and num_distinct_objects_for_key > 1:
-                asset_objects_str = ", ".join(
-                    set(self.module_name_by_id[id(asset_object)] for asset_object in asset_objects)
-                )
-                raise DagsterInvalidDefinitionError(
-                    f"Asset key {key.to_user_string()} is defined multiple times. Definitions found in modules: {asset_objects_str}."
-                )
-        # Collision detection on ScheduleDefinitions.
-        schedule_defs_by_name = defaultdict(list)
-        for schedule_def in self.schedule_defs:
-            schedule_defs_by_name[schedule_def.name].append(schedule_def)
-        for name, schedule_defs in schedule_defs_by_name.items():
-            if len(schedule_defs) > 1:
-                schedule_defs_str = ", ".join(
-                    set(self.module_name_by_id[id(schedule_def)] for schedule_def in schedule_defs)
-                )
-                raise DagsterInvalidDefinitionError(
-                    f"Schedule name {name} is defined multiple times. Definitions found in modules: {schedule_defs_str}."
-                )
+            # Multiple AssetsDefinition → conflict
+            if len(asset_defs) > 1:
+                distinct_defs = {id(a) for a in asset_defs}
+                if len(distinct_defs) > 1:
+                    modules = ", ".join({self.module_name_by_id[id(a)] for a in asset_defs})
+                    raise DagsterInvalidDefinitionError(
+                        f"Asset key {key.to_user_string()} is defined multiple times. "
+                        f"Definitions found in modules: {modules}."
+                    )
 
-        # Collision detection on SensorDefinitions.
-        sensor_defs_by_name = defaultdict(list)
-        for sensor_def in self.sensor_defs:
-            sensor_defs_by_name[sensor_def.name].append(sensor_def)
-        for name, sensor_defs in sensor_defs_by_name.items():
-            if len(sensor_defs) > 1:
-                sensor_defs_str = ", ".join(
-                    set(self.module_name_by_id[id(sensor_def)] for sensor_def in sensor_defs)
-                )
-                raise DagsterInvalidDefinitionError(
-                    f"Sensor name {name} is defined multiple times. Definitions found in modules: {sensor_defs_str}."
-                )
+            # Single AssetsDefinition → ignore specs
+            if len(asset_defs) == 1:
+                continue
+
+            # Only AssetSpecs → check for conflicts
+            if asset_specs:
+                first_spec = asset_specs[0]
+                num_distinct_specs = sum(1 for spec in asset_specs if spec != first_spec)
+                if num_distinct_specs > 0:
+                    modules = ", ".join({self.module_name_by_id[id(s)] for s in asset_specs})
+                    raise DagsterInvalidDefinitionError(
+                        f"Asset key {key.to_user_string()} is defined multiple times. "
+                        f"Definitions found in modules: {modules}."
+                    )
+
 
         # Collision detection on JobDefinitionObjects.
         job_objects_by_name = defaultdict(list)
