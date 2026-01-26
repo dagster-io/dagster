@@ -95,8 +95,8 @@ Let's review what's happening in this code:
 
 - **Passes the `SubmitTask` object, `AssetExecutionContext`, and `extras` dictionary to the `run` method of <PyObject section="libraries" integration="databricks" module="dagster_databricks" object="PipesDatabricksClient" />**. This method synchronously executes the Databricks job specified by the `SubmitTask` object. It slightly modifies the object by injecting some environment variables under `new_cluster.spark_env_vars` before submitting the object to the Databricks API.
 
-- **Returns a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution**. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the Databricks job has finished. **Note**: Execution can take several minutes even for trivial scripts due to Databricks cluster provisioning times.
 {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
+- **Returns a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution**. This is obtained by calling `get_materialize_result` on the <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> object returned by `run` after the Databricks job has finished. **Note**: Execution can take several minutes even for trivial scripts due to Databricks cluster provisioning times.
 
 ### Step 1.2: Define the Databricks Pipes client and Definitions
 

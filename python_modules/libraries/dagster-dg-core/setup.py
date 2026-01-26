@@ -21,6 +21,7 @@ setup(
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="",  # TODO - fill out description
+    description="Core utilities for Dagster dg.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dg-core"
     ),

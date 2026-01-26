@@ -1,5 +1,6 @@
 /* TODO: Refactor with scss to simplify/match other docs styling, merge with card styling in custom.scss */
 /* TODO: This duplicates/conflicts with .card styles set in custom.scss. Try to create a more cohesive card styling system */
+/* Doc card layout overrides the global .card styles from custom.scss to match docs-specific layout. */
 
 .cardContainer {
   --ifm-link-color: var(--ifm-color-emphasis-800);

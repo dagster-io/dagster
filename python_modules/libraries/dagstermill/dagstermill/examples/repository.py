@@ -83,7 +83,8 @@ def test_nb_op(name, **kwargs):
 
 common_resource_defs = {
     "output_notebook_io_manager": local_output_notebook_io_manager,
-    "io_manager": FilesystemIOManager(),  # TODO check if necessary
+    # TODO check if necessary
+    "io_manager": FilesystemIOManager(),  # NOTE: Used for default outputs in these examples.
 }
 
 hello_world = test_nb_op("hello_world", outs={})
@@ -305,17 +306,15 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
     # We need type-ignores here because type checkers don't understand the `*_PRESENT` kwargs.
     clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    # FIXME add an output to this
-    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
+    tutorial_lr = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
+    tutorial_rf = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
     @job(resource_defs=common_resource_defs)
     def tutorial_job():
         dfr, _ = clean_data()
-        # FIXME get better names for these
-        tutorial_LR(dfr)
-        tutorial_RF(dfr)
+        tutorial_lr.alias("train_linear_regression")(dfr)
+        tutorial_rf.alias("train_random_forest")(dfr)
 
 
 @op(required_resource_keys={"list"})
