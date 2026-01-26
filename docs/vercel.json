@@ -146,7 +146,7 @@
       "source": "/_apidocs/libraries/dagster-graphql",
       "destination": "/api/graphql/dagster-graphql"
     },
-   {
+    {
       "source": "/_apidocs/libraries/dagstermill",
       "destination": "/integrations/libraries/jupyter/dagstermill"
     },
@@ -3606,7 +3606,7 @@
       "source": "/api/python-api/libraries/dagster-graphql",
       "destination": "/api/graphql/dagster-graphql"
     },
-   {
+    {
       "source": "/api/python-api/libraries/dagstermill",
       "destination": "/integrations/libraries/jupyter/dagstermill"
     },
