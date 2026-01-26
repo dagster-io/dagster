@@ -1,21 +1,16 @@
 import json
 from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
-from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Optional
 
 import dagster as dg
-from dagster import (
-    AssetExecutionContext,
-    Definitions,
-    multi_asset,
-)
+from dagster import AssetExecutionContext, Definitions, check, multi_asset
 
 try:
-    from dagster.components import ComponentLoadContext
+    from dagster.components import ComponentLoadContext  # type: ignore
 except ImportError:
-    from dagster.components.core.component import ComponentLoadContext
+    from dagster.components.core.component import ComponentLoadContext  # type: ignore
 
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
@@ -25,13 +20,14 @@ from dagster.components.utils.defs_state import (
     ResolvedDefsStateConfig,
 )
 
-from dagster_dbt.asset_utils import (
-    DBT_DEFAULT_EXCLUDE,
-    build_dbt_specs,
-)
+from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, build_dbt_specs
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.components.base import BaseDbtComponent
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
+from dagster_dbt.dagster_dbt_translator import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    validate_translator,
+)
 from dagster_dbt.dbt_manifest import validate_manifest
 
 
@@ -48,12 +44,13 @@ class DbtCloudComponent(BaseDbtComponent):
     """Expose a dbt Cloud workspace to Dagster as a set of assets."""
 
     workspace: Annotated[
-        DbtCloudWorkspace,
+        Optional[DbtCloudWorkspace],
         Resolver(
             fn=resolve_workspace,
             description="The dbt Cloud workspace resource to use for this component.",
         ),
-    ]
+    ] = None
+
     defs_state: Annotated[
         ResolvedDefsStateConfig,
         Resolver.passthrough(
@@ -61,44 +58,42 @@ class DbtCloudComponent(BaseDbtComponent):
         ),
     ] = field(default_factory=DefsStateConfigArgs.local_filesystem)
 
+    def __post_init__(self):
+        check.invariant(
+            self.workspace is not None, "Workspace must be provided for DbtCloudComponent"
+        )
+
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        key = f"DbtCloudComponent[{self.workspace.unique_id}]"
+        workspace = check.not_none(self.workspace)
+        data = workspace.fetch_workspace_data()
+        key = f"DbtCloudComponent[{data.project_id}:{data.environment_id}]"
         return DefsStateConfig.from_args(self.defs_state, default_key=key)
 
     @property
-    def op_config_schema(self) -> Optional[type[dg.Config]]:
+    def op_config_schema(self) -> Optional[type[dg.Config]]:  # type: ignore
         return None
 
     @property
-    def config_cls(self) -> Optional[type[dg.Config]]:
+    def config_cls(self) -> Optional[type[dg.Config]]:  # type: ignore
         return self.op_config_schema
 
-    @cached_property
-    def translator(self) -> DagsterDbtTranslator:
-        settings = replace(self.translation_settings, enable_code_references=False)
+    @property
+    def translator(self) -> DagsterDbtTranslator:  # type: ignore
+        base_settings = self.translation_settings or DagsterDbtTranslatorSettings()
+        settings = replace(base_settings, enable_code_references=False)
         return DagsterDbtTranslator(settings)
 
     def write_state_to_path(self, state_path: Path) -> None:
-        workspace_data = self.workspace.fetch_workspace_data()
-
-        serialized_jobs = []
-        for job in workspace_data.jobs:
-            if isinstance(job, dict):
-                serialized_jobs.append(job)
-            elif hasattr(job, "__dict__"):
-                serialized_jobs.append(job.__dict__)
-            else:
-                serialized_jobs.append(dict(job))
+        workspace = check.not_none(self.workspace)
+        workspace_data = workspace.fetch_workspace_data()
 
         state_data = {
             "project_id": workspace_data.project_id,
             "environment_id": workspace_data.environment_id,
-            "adhoc_job_id": workspace_data.adhoc_job_id,
             "manifest": workspace_data.manifest,
-            "jobs": serialized_jobs,
         }
-        state_path.write_text(json.dumps(state_data, default=str))
+        state_path.write_text(json.dumps(state_data))
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Optional[Path]
@@ -138,7 +133,8 @@ class DbtCloudComponent(BaseDbtComponent):
         return Definitions(assets=[_dbt_cloud_assets])
 
     def execute(self, context: AssetExecutionContext) -> Iterator:
-        invocation = self.workspace.cli(
+        workspace = check.not_none(self.workspace)
+        invocation = workspace.cli(
             args=["run"],
             dagster_dbt_translator=self.translator,
             context=context,
@@ -153,7 +149,8 @@ class DbtCloudComponent(BaseDbtComponent):
     ):
         from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
-        workspace_data = self.workspace.fetch_workspace_data()
+        workspace = check.not_none(self.workspace)
+        workspace_data = workspace.fetch_workspace_data()
         manifest = workspace_data.manifest
 
         return DbtManifestAssetSelection.build(

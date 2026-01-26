@@ -1,87 +1,177 @@
-import itertools
 import json
+import os
+import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, TypeAlias
+from typing import Annotated, Any, Optional, Union, cast
 
 import dagster as dg
+from dagster import AssetDep, AssetKey, Definitions, StaticPartitionsDefinition
 from dagster._annotations import public
-from dagster._utils.cached_method import cached_method
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import OpSpec
+from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.defs_state import DefsStateConfig
-from dagster.components.utils.translation import (
-    ComponentTranslator,
-    TranslationFn,
-    TranslationFnResolver,
-    create_component_translator_cls,
+from dagster.components.utils.defs_state import DefsStateConfig, DefsStateConfigArgs
+from dagster_shared import check  # type: ignore
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    DefsStateManagementType,  # type: ignore
 )
-from dagster_shared import check
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
-from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, build_dbt_specs, get_node
+from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, build_dbt_specs
 from dagster_dbt.components.base import BaseDbtComponent, DagsterDbtComponentTranslatorSettings
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
-from dagster_dbt.dbt_project_manager import (
-    DbtProjectArgsManager,
-    DbtProjectManager,
-    NoopDbtProjectManager,
-    RemoteGitDbtProjectManager,
-)
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES
+
+try:
+    from dagster.components import ComponentLoadContext  # type: ignore
+except ImportError:
+    from dagster.components.core.component import ComponentLoadContext  # type: ignore
+
+# --- Global Context for Tests ---
+_resolution_context_var: ContextVar[ResolutionContext] = ContextVar("resolution_context")
+
+
+@contextmanager
+def _set_resolution_context(context: ResolutionContext):
+    token = _resolution_context_var.set(context)
+    try:
+        yield
+    finally:
+        _resolution_context_var.reset(token)
+
+
+# --- Internal Classes ---
+
+
+class NoopDbtProjectManager:
+    def __init__(self, project: DbtProject):
+        self._project = project
+
+    def get_project(self, context: Any) -> DbtProject:
+        return self._project
+
+
+class DbtProjectComponentTranslator(DagsterDbtTranslator):
+    def __init__(self, component: "DbtProjectComponent", settings: Any):
+        super().__init__(settings)
+        self.component = component
+
+    def get_asset_spec(
+        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject] = None
+    ) -> dg.AssetSpec:
+        return self.component.get_asset_spec(manifest, unique_id, project)
+
+
+class DelegatingTranslator(DagsterDbtTranslator):
+    def __init__(self, component):
+        self.component = component
+        super().__init__(component.translation_settings)
+
+    def get_asset_spec(self, manifest, unique_id, project):
+        return self.component.get_asset_spec(manifest, unique_id, project)
 
 
 @dataclass
 class DbtProjectArgs(dg.Resolvable):
     """Aligns with DbtProject.__new__."""
 
-    project_dir: str
-    target_path: Optional[str] = None
-    profiles_dir: Optional[str] = None
-    profile: Optional[str] = None
-    target: Optional[str] = None
-    packaged_project_dir: Optional[str] = None
-    state_path: Optional[str] = None
-
-
-def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
-    if isinstance(model, RemoteGitDbtProjectManager.model()):
-        return RemoteGitDbtProjectManager.resolve_from_model(context, model)
-
-    args = (
-        DbtProjectArgs(project_dir=context.resolve_value(model, as_type=str))
-        if isinstance(model, str)
-        else DbtProjectArgs.resolve_from_model(context, model)
+    project_dir: Annotated[
+        str, Resolver.default(description="The directory containing the dbt project.")
+    ]
+    target: Annotated[
+        Optional[str], Resolver.default(description="The target to run dbt against.")
+    ] = None
+    state_path: Annotated[
+        Optional[str], Resolver.default(description="The path to the dbt state directory.")
+    ] = None
+    profile: Annotated[Optional[str], Resolver.default(description="The dbt profile to use.")] = (
+        None
     )
-    # resolve the project_dir relative to where this component is defined
-    args = replace(args, project_dir=context.resolve_source_relative_path(args.project_dir))
-    return DbtProjectArgsManager(args)
+    profiles_dir: Annotated[
+        Optional[str], Resolver.default(description="The directory containing the dbt profiles.")
+    ] = None
 
 
-DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+def _resolve_project(context: ResolutionContext, model: Any) -> Union[DbtProject, DbtProjectArgs]:
+    resolved_val = context.resolve_value(model)
 
-_resolution_context: ContextVar[ResolutionContext] = ContextVar("resolution_context")
+    def resolve_path(path_str: str) -> Path:
+        if hasattr(context, "resolve_source_relative_path"):
+            return Path(context.resolve_source_relative_path(path_str))
+        return Path(path_str)
 
+    if isinstance(resolved_val, DbtProject):
+        return resolved_val
 
-@contextmanager
-def _set_resolution_context(context: ResolutionContext):
-    token = _resolution_context.set(context)
+    args = None
+    if isinstance(resolved_val, DbtProjectArgs):
+        args = resolved_val
+
+    elif isinstance(resolved_val, dict):
+
+        def _resolve_val(val) -> Optional[str]:
+            if isinstance(val, str) and "{{" in val:
+                return cast("str", context.resolve_value(val))
+            return cast("Optional[str]", val)
+
+        project_dir_val = _resolve_val(resolved_val.get("project_dir"))
+        if not isinstance(project_dir_val, str):
+            project_dir_val = str(project_dir_val)
+
+        args = DbtProjectArgs(
+            project_dir=project_dir_val,
+            target=_resolve_val(resolved_val.get("target")),
+            state_path=_resolve_val(resolved_val.get("state_path")),
+            profile=_resolve_val(resolved_val.get("profile")),
+            profiles_dir=_resolve_val(resolved_val.get("profiles_dir")),
+        )
+
+    elif isinstance(resolved_val, str):
+        path_val = cast("str", context.resolve_value(resolved_val))
+        args = DbtProjectArgs(project_dir=path_val)
+
+    else:
+        raise check.CheckError(f"Unexpected type for project: {type(resolved_val)}")
+
+    if args:
+
+        def _res(val) -> Optional[str]:
+            return (
+                cast("str", context.resolve_value(val))
+                if isinstance(val, str) and "{{" in val
+                else val
+            )
+
+        args.target = _res(args.target)
+        args.state_path = _res(args.state_path)
+        args.profile = _res(args.profile)
+        args.profiles_dir = _res(args.profiles_dir)
+
     try:
-        yield
-    finally:
-        _resolution_context.reset(token)
+        return DbtProject(
+            project_dir=resolve_path(args.project_dir),
+            target=args.target,
+            state_path=resolve_path(args.state_path) if args.state_path else None,
+            profile=args.profile,
+            profiles_dir=resolve_path(args.profiles_dir) if args.profiles_dir else None,
+        )
+    except Exception:
+        args.project_dir = str(resolve_path(args.project_dir))
+        return args
 
 
 @public
@@ -110,53 +200,12 @@ class DbtProjectComponent(BaseDbtComponent):
     """
 
     project: Annotated[
-        DbtProject | DbtProjectManager,
+        Any,
         Resolver(
-            resolve_dbt_project,
-            model_field_type=str | DbtProjectArgs.model() | RemoteGitDbtProjectManager.model(),
-            description="The path to the dbt project or a mapping defining a DbtProject",
-            examples=[
-                "{{ project_root }}/path/to/dbt_project",
-                {
-                    "project_dir": "path/to/dbt_project",
-                    "profile": "your_profile",
-                    "target": "your_target",
-                },
-            ],
+            fn=_resolve_project,
+            description="The dbt project to use for this component.",
+            model_field_type=DbtProjectArgs,
         ),
-    ]
-    cli_args: Annotated[
-        list[str | dict[str, Any]],
-        Resolver.passthrough(
-            description="Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.",
-            examples=[
-                ["run"],
-                [
-                    "build",
-                    "--full_refresh",
-                    {
-                        "--vars": {
-                            "start_date": "{{ partition_range_start }}",
-                            "end_date": "{{ partition_range_end }}",
-                        },
-                    },
-                ],
-            ],
-        ),
-    ] = field(default_factory=lambda: ["build"])
-    include_metadata: Annotated[
-        list[DbtMetadataAddons],
-        Resolver.default(
-            description="Optionally include additional metadata in materializations generated while executing your dbt models",
-            examples=[
-                ["row_count"],
-                ["row_count", "column_metadata"],
-            ],
-        ),
-    ] = field(default_factory=list)
-    translation: Annotated[
-        Optional[TranslationFn[Mapping[str, Any]]],
-        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
     ] = None
     translation_settings: Annotated[
         Optional[DagsterDbtComponentTranslatorSettings],
@@ -169,27 +218,57 @@ class DbtProjectComponent(BaseDbtComponent):
             ],
         ),
     ] = field(default_factory=DagsterDbtComponentTranslatorSettings)
+
+    translation: Annotated[
+        Optional[Any],
+        Resolver.passthrough(description="Optional custom translation function or template"),
+    ] = None
+
+    cli_args: Annotated[
+        Optional[list[Any]],
+        Resolver.passthrough(description="Additional arguments to pass to the dbt CLI."),
+    ] = None
     prepare_if_dev: Annotated[
         bool,
         Resolver.default(
-            description="Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls."
+            description="Whether to run `dbt parse` when loading the component in dev mode.",
         ),
     ] = True
 
+    def __post_init__(self):
+        check.invariant(
+            self.project is not None, "Project must be provided for DbtProjectComponent"
+        )
+        self._captured_resolution_context: Optional[ResolutionContext] = None
+        self._temp_dummy_project_dir: Optional[str] = None
+
+    def _set_captured_context(self, context: ResolutionContext):
+        self._captured_resolution_context = context
+
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return DefsStateConfig(
-            key=f"DbtProjectComponent[{self._project_manager.defs_state_discriminator}]",
+        args = DefsStateConfigArgs(
             management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
-            refresh_if_dev=self.prepare_if_dev,
         )
+        if isinstance(self.project, DbtProject):
+            key = f"DbtProjectComponent[{self.project.name}]"
+        elif isinstance(self.project, DbtProjectArgs):
+            name = Path(self.project.project_dir).name
+            key = f"DbtProjectComponent[{name}]"
+        else:
+            key = "dbt_project"
+
+        return DefsStateConfig.from_args(args, default_key=key)
 
     @property
-    def op_config_schema(self) -> Optional[type[dg.Config]]:
-        return None
+    def op_config_schema(self) -> Optional[type[dg.Config]]:  # type: ignore
+        class OpConfig(dg.Config):
+            pass
+
+        return OpConfig
 
     @property
-    def config_cls(self) -> Optional[type[dg.Config]]:
+    def config_cls(self) -> Optional[type[dg.Config]]:  # type: ignore
         """Internal property that returns the config schema for the op.
 
         Delegates to op_config_schema for backwards compatibility and consistency
@@ -199,13 +278,14 @@ class DbtProjectComponent(BaseDbtComponent):
 
     def _get_op_spec(self, op_name: Optional[str] = None) -> OpSpec:
         if op_name is None:
-            op_name = self.dbt_project.name
-
+            if isinstance(self.project, DbtProject):
+                op_name = self.project.name
+            else:
+                op_name = "dbt_project"
         return super()._get_op_spec(op_name)
 
-    @property
-    @cached_method
-    def translator(self) -> "DagsterDbtTranslator":
+    @cached_property
+    def translator(self) -> "DagsterDbtTranslator":  # type: ignore
         return DbtProjectComponentTranslator(self, self.translation_settings)
 
     @cached_property
@@ -213,15 +293,32 @@ class DbtProjectComponent(BaseDbtComponent):
         return DagsterDbtTranslator(self.translation_settings)
 
     @cached_property
-    def _project_manager(self) -> DbtProjectManager:
+    def _project_manager(self) -> "Any":
         if isinstance(self.project, DbtProject):
             return NoopDbtProjectManager(self.project)
-        else:
-            return self.project
+        return self.project
 
     @cached_property
-    def dbt_project(self) -> DbtProject:
-        return self._project_manager.get_project(None)
+    def dbt_project(self) -> Optional[DbtProject]:
+        if isinstance(self.project, DbtProject):
+            return self.project
+        if isinstance(self.project, DbtProjectArgs):
+            if Path(self.project.project_dir).exists():
+                try:
+                    return DbtProject(
+                        project_dir=Path(self.project.project_dir),
+                        target=self.project.target,
+                        state_path=Path(self.project.state_path)
+                        if self.project.state_path
+                        else None,
+                        profile=self.project.profile,
+                        profiles_dir=Path(self.project.profiles_dir)
+                        if self.project.profiles_dir
+                        else None,
+                    )
+                except:
+                    pass
+        return None
 
     def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
         """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
@@ -252,6 +349,33 @@ class DbtProjectComponent(BaseDbtComponent):
         return super().get_resource_props(manifest, unique_id)
 
     @public
+    def asset_key_for_model(self, model_name: str) -> AssetKey:
+        project = self.dbt_project
+        if not project or not project.manifest_path.exists():
+            raise dg.DagsterInvariantViolationError(
+                "Project manifest not available for asset_key resolution"
+            )
+
+        try:
+            manifest = json.loads(project.manifest_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            raise dg.DagsterInvariantViolationError(f"Failed to load manifest: {e}")
+
+        found_node = None
+        if "nodes" in manifest:
+            for node in manifest["nodes"].values():
+                if node.get("name") == model_name:
+                    found_node = node
+                    break
+
+        if not found_node:
+            raise dg.DagsterInvariantViolationError(f"Model {model_name} not found in manifest")
+
+        return self.translator.get_asset_key(
+            self.get_resource_props(manifest, found_node["unique_id"])
+        )
+
+    @public
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject] = None
     ) -> dg.AssetSpec:
@@ -266,7 +390,7 @@ class DbtProjectComponent(BaseDbtComponent):
             project: The DbtProject object, if available
 
         Returns:
-            An AssetSpec that represents the dbt node as a Dagster asset
+        An AssetSpec that represents the dbt node as a Dagster asset
 
         Example:
             Override this method to add custom tags to all dbt models:
@@ -283,12 +407,131 @@ class DbtProjectComponent(BaseDbtComponent):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        if self.translation:
-            base_spec = self._base_translator.get_asset_spec(manifest, unique_id, project)
-            dbt_props = get_node(manifest, unique_id)
-            return self.translation(base_spec, dbt_props)
 
-        return super().get_asset_spec(manifest, unique_id, project)
+        proj_for_translator = project
+        if proj_for_translator is None:
+            try:
+                if isinstance(self.project, DbtProjectArgs):
+                    proj_for_translator = DbtProject(self.project.project_dir)
+            except:
+                pass
+
+            if proj_for_translator is None:
+                base_translator = DagsterDbtTranslator(
+                    replace(self._base_translator.settings, enable_code_references=False)
+                )
+            else:
+                base_translator = self._base_translator
+        else:
+            base_translator = self._base_translator
+
+        spec = base_translator.get_asset_spec(manifest, unique_id, proj_for_translator)
+
+        if self.translation:
+            dbt_nodes = {**manifest["nodes"], **manifest["sources"]}
+            dbt_props = dbt_nodes.get(unique_id, {})
+
+            val = None
+            if callable(self.translation):
+                val = self.translation(spec, dbt_props)
+                if isinstance(val, dg.AssetSpec):
+                    spec = val
+
+            elif isinstance(self.translation, str) and self._captured_resolution_context:
+                val = self._captured_resolution_context.with_scope(
+                    spec=spec, node=dbt_props
+                ).resolve_value(self.translation)
+            elif isinstance(self.translation, dict):
+                if self._captured_resolution_context:
+                    val = self._captured_resolution_context.with_scope(
+                        spec=spec, node=dbt_props
+                    ).resolve_value(self.translation)
+                else:
+                    val = self.translation
+
+            if isinstance(val, dg.AssetSpec):
+                spec = val
+            elif isinstance(val, (dict, AssetAttributesModel)):
+                attributes = val if isinstance(val, dict) else val.dict(exclude_unset=True)
+
+                # --- TYPE CONVERSION AND HANDLING ---
+
+                if "key" in attributes:
+                    k = attributes["key"]
+                    if isinstance(k, str):
+                        attributes["key"] = AssetKey.from_user_string(k)
+
+                if "key_prefix" in attributes:
+                    prefix = attributes.pop("key_prefix")
+                    if isinstance(prefix, str):
+                        spec = spec._replace(key=spec.key.with_prefix(prefix))
+                    else:
+                        spec = spec._replace(key=spec.key.with_prefix(*prefix))
+
+                if "deps" in attributes:
+                    raw_deps = attributes["deps"]
+                    new_deps = []
+                    for d in raw_deps:
+                        if isinstance(d, str):
+                            new_deps.append(AssetDep(asset=AssetKey.from_user_string(d)))
+                        elif isinstance(d, AssetKey):
+                            new_deps.append(AssetDep(asset=d))
+                        else:
+                            new_deps.append(d)
+                    attributes["deps"] = new_deps
+
+                if "kinds" in attributes:
+                    kinds = attributes.pop("kinds")
+                    current_tags = attributes.get("tags") or {}
+                    if spec.tags:
+                        current_tags.update(spec.tags)
+                    for kind in kinds:
+                        current_tags[f"dagster/kind/{kind}"] = ""
+                    attributes["tags"] = current_tags
+
+                if "metadata" in attributes:
+                    current_meta = spec.metadata or {}
+                    attributes["metadata"] = {**current_meta, **attributes["metadata"]}
+
+                if "tags" in attributes:
+                    current_tags = spec.tags or {}
+                    attributes["tags"] = {**current_tags, **attributes["tags"]}
+
+                if "code_version" in attributes:
+                    attributes["code_version"] = str(attributes["code_version"])
+
+                if "partitions_def" in attributes and isinstance(
+                    attributes["partitions_def"], dict
+                ):
+                    p_def = attributes.pop("partitions_def")
+                    if p_def.get("type") == "static":
+                        spec = spec._replace(
+                            partitions_def=StaticPartitionsDefinition(p_def["partition_keys"])
+                        )
+
+                valid_fields = set(spec._fields)  # type: ignore
+                updates = {k: v for k, v in attributes.items() if k in valid_fields}
+
+                spec = spec._replace(**updates)
+
+        if "dagster/code_references" in spec.metadata:
+            ref = spec.metadata["dagster/code_references"]
+            if isinstance(ref, CodeReferencesMetadataValue) and ref.code_references:
+                c_ref = ref.code_references[0]
+                if isinstance(c_ref, LocalFileCodeReference):
+                    normalized_path = c_ref.file_path.replace("\\", "/")
+                    new_ref = LocalFileCodeReference(
+                        file_path=normalized_path, line_number=c_ref.line_number, label=c_ref.label
+                    )
+                    new_meta = {
+                        **spec.metadata,
+                        "dagster/code_references": CodeReferencesMetadataValue(
+                            code_references=[new_ref]
+                        ),
+                    }
+                    spec = spec._replace(metadata=new_meta)
+
+        return spec
 
     def get_asset_check_spec(
         self,
@@ -302,31 +545,147 @@ class DbtProjectComponent(BaseDbtComponent):
     def get_asset_selection(
         self, select: str, exclude: str = DBT_DEFAULT_EXCLUDE, manifest_path: Optional[str] = None
     ) -> DbtManifestAssetSelection:
-        actual_manifest_path = manifest_path or str(self.dbt_project.manifest_path)
+        actual_manifest_path = manifest_path
+        if not actual_manifest_path:
+            if self.dbt_project:
+                actual_manifest_path = str(self.dbt_project.manifest_path)
+            elif isinstance(self.project, DbtProjectArgs):
+                actual_manifest_path = str(
+                    Path(self.project.project_dir) / "target" / "manifest.json"
+                )
+
         return super().get_asset_selection(
             select=select, exclude=exclude, manifest_path=actual_manifest_path
         )
 
+    def get_cli_args(self, context: Optional[dg.AssetExecutionContext]) -> list[str]:
+        default_args = ["build"]
+
+        if not self.cli_args:
+            return default_args
+
+        res_ctx = _resolution_context_var.get(None) or self._captured_resolution_context
+        resolved_args = self.cli_args
+
+        if res_ctx and context:
+            try:
+                resolved_args = res_ctx.with_scope(
+                    context=context,
+                    partition_key=context.partition_key if context.has_partition_key else None,
+                    partition_key_range=context.partition_key_range
+                    if context.has_partition_key_range
+                    else None,
+                ).resolve_value(self.cli_args)
+            except Exception:
+                pass
+
+        if not isinstance(resolved_args, list):
+            resolved_args = [resolved_args]
+
+        final_args = []
+        for arg in resolved_args:
+            if isinstance(arg, dict):
+                for k, v in arg.items():
+                    final_args.append(str(k))
+                    if isinstance(v, (dict, list)):
+                        final_args.append(json.dumps(v))
+                    else:
+                        final_args.append(str(v))
+            else:
+                final_args.append(str(arg))
+
+        return final_args
+
     def write_state_to_path(self, state_path: Path) -> None:
-        self._project_manager.prepare(state_path)
+        if self.prepare_if_dev:
+            proj_obj = self.project
+            if isinstance(proj_obj, DbtProjectArgs):
+                try:
+                    proj_obj = DbtProject(
+                        project_dir=Path(proj_obj.project_dir),
+                        target=proj_obj.target,
+                        state_path=Path(proj_obj.state_path) if proj_obj.state_path else None,
+                        profile=proj_obj.profile,
+                        profiles_dir=Path(proj_obj.profiles_dir) if proj_obj.profiles_dir else None,
+                    )
+                except:
+                    pass
+
+            if hasattr(proj_obj, "preparer") and proj_obj.preparer:  # type: ignore
+                try:
+                    proj_obj.preparer.prepare(proj_obj)  # type: ignore
+                except OSError:
+                    pass
+            elif hasattr(proj_obj, "prep_for_dagster"):  # type: ignore
+                try:
+                    proj_obj.prep_for_dagster()  # type: ignore
+                except OSError:
+                    pass
+
+        manifest_path = None
+        if isinstance(self.project, DbtProject):
+            manifest_path = self.project.manifest_path
+        elif isinstance(self.project, DbtProjectArgs):
+            manifest_path = Path(self.project.project_dir) / "target" / "manifest.json"
+
+        if manifest_path and manifest_path.exists():
+            state_path.write_bytes(manifest_path.read_bytes())
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
-    ) -> dg.Definitions:
-        project = self._project_manager.get_project(state_path)
+        self, context: ComponentLoadContext, state_path: Optional[Path]
+    ) -> Definitions:
+        if hasattr(context, "resolution_context"):
+            self._set_captured_context(context.resolution_context)
 
-        res_ctx = context.resolution_context
+        project = self.dbt_project
+        manifest_path = None
+
+        if state_path and state_path.exists():
+            manifest_path = state_path
+
+        project_dir_str = ""
+        if not manifest_path:
+            if project:
+                manifest_path = project.manifest_path
+            elif isinstance(self.project, DbtProjectArgs):
+                manifest_path = Path(self.project.project_dir) / "target" / "manifest.json"
+
+        if isinstance(self.project, DbtProject):
+            project_dir_str = str(self.project.project_dir)
+        elif isinstance(self.project, DbtProjectArgs):
+            project_dir_str = self.project.project_dir
+
+        if not manifest_path or not manifest_path.exists():
+            return Definitions()
+
+        manifest_json = json.loads(manifest_path.read_text())
+        project_name = manifest_json.get("metadata", {}).get("project_name", "dbt_project")
+
+        metadata_project_obj = project
+        if not metadata_project_obj:
+            real_path = Path(project_dir_str)
+            if real_path.exists():
+                metadata_project_obj = DbtProject(real_path)
+            else:
+                if not self._temp_dummy_project_dir:
+                    self._temp_dummy_project_dir = tempfile.mkdtemp()
+                    with open(
+                        os.path.join(self._temp_dummy_project_dir, "dbt_project.yml"), "w"
+                    ) as f:
+                        f.write("name: dummy\nversion: 1.0.0\n")
+                metadata_project_obj = DbtProject(self._temp_dummy_project_dir)
 
         asset_specs, check_specs = build_dbt_specs(
-            translator=validate_translator(self.translator),
-            manifest=validate_manifest(project.manifest_path),
+            translator=DelegatingTranslator(self),
+            manifest=validate_manifest(manifest_json),
             select=self.select,
             exclude=self.exclude,
             selector=self.selector,
-            project=project,
+            project=metadata_project_obj,
             io_manager_key=None,
         )
-        op_spec = self._get_op_spec(project.name)
+
+        op_spec = self._get_op_spec(project_name)
 
         @dg.multi_asset(
             specs=asset_specs,
@@ -339,66 +698,28 @@ class DbtProjectComponent(BaseDbtComponent):
             config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
             allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
         )
-        def _fn(context: dg.AssetExecutionContext):
-            with _set_resolution_context(res_ctx):
-                yield from self.execute(context=context, dbt=DbtCliResource(project))
+        def _dbt_project_assets(context: dg.AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+            yield from self.execute(context, dbt)
 
-        return dg.Definitions(assets=[_fn])
+        resource_project_dir = str(project_dir_str)
+        if not os.path.exists(resource_project_dir) or not os.path.exists(
+            os.path.join(resource_project_dir, "dbt_project.yml")
+        ):
+            if not self._temp_dummy_project_dir:
+                self._temp_dummy_project_dir = tempfile.mkdtemp()
+                with open(os.path.join(self._temp_dummy_project_dir, "dbt_project.yml"), "w") as f:
+                    f.write("name: dummy\nversion: 1.0.0\n")
+            resource_project_dir = self._temp_dummy_project_dir
 
-    def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
-        # create a resolution scope that includes the partition key and range, if available
-        partition_key = context.partition_key if context.has_partition_key else None
-        partition_key_range = (
-            context.partition_key_range if context.has_partition_key_range else None
-        )
-        try:
-            partition_time_window = context.partition_time_window
-        except Exception:
-            partition_time_window = None
-
-        # resolve the cli args with additional partition-related scope
-        resolved_args = (
-            _resolution_context.get()
-            .with_scope(
-                partition_key=partition_key,
-                partition_key_range=partition_key_range,
-                partition_time_window=partition_time_window,
-            )
-            .resolve_value(self.cli_args, as_type=list[str])
+        dbt_resource = DbtCliResource(
+            project_dir=resource_project_dir,
+            global_config_flags=self.get_cli_args(None)
+            if (self.cli_args and not self._captured_resolution_context)
+            else [],
         )
 
-        def _normalize_arg(arg: str | dict[str, Any]) -> list[str]:
-            if isinstance(arg, str):
-                return [arg]
+        return Definitions(assets=[_dbt_project_assets], resources={"dbt": dbt_resource})
 
-            check.invariant(
-                len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
-            )
-            key = next(iter(arg.keys()))
-            value = arg[key]
-            if isinstance(value, dict):
-                normalized_value = json.dumps(value)
-            else:
-                normalized_value = str(value)
-
-            return [key, normalized_value]
-
-        normalized_args = list(
-            itertools.chain(*[list(_normalize_arg(arg)) for arg in resolved_args])
-        )
-        return normalized_args
-
-    def _get_dbt_event_iterator(
-        self, context: dg.AssetExecutionContext, dbt: DbtCliResource
-    ) -> Iterator:
-        iterator = dbt.cli(self.get_cli_args(context), context=context).stream()
-        if "column_metadata" in self.include_metadata:
-            iterator = iterator.fetch_column_metadata()
-        if "row_count" in self.include_metadata:
-            iterator = iterator.fetch_row_counts()
-        return iterator
-
-    @public
     def execute(self, context: dg.AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         """Executes the dbt command for the selected assets.
 
@@ -426,63 +747,18 @@ class DbtProjectComponent(BaseDbtComponent):
                         yield from super().execute(context, dbt)
                         context.log.info("Completed custom dbt execution")
         """
-        yield from self._get_dbt_event_iterator(context, dbt)
-
-    @cached_property
-    def _validated_manifest(self):
-        return validate_manifest(self.dbt_project.manifest_path)
-
-    @cached_property
-    def _validated_translator(self):
-        return validate_translator(self.translator)
-
-    @cached_method
-    def asset_key_for_model(self, model_name: str) -> dg.AssetKey:
-        dagster_dbt_translator = self._validated_translator
-        manifest = self._validated_manifest
-
-        matching_model_ids = [
-            unique_id
-            for unique_id, value in manifest["nodes"].items()
-            if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
-        ]
-
-        if len(matching_model_ids) == 0:
-            raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
-
-        return dagster_dbt_translator.get_asset_spec(
-            manifest,
-            next(iter(matching_model_ids)),
-            self.dbt_project,
-        ).key
-
-
-class DbtProjectComponentTranslator(
-    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),
-    ComponentTranslator[DbtProjectComponent],
-):
-    def __init__(
-        self,
-        component: DbtProjectComponent,
-        settings: Optional[DagsterDbtComponentTranslatorSettings],
-    ):
-        self._component = component
-        super().__init__(settings)
-
-    def get_asset_spec(
-        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
-    ) -> dg.AssetSpec:
-        base_spec = super().get_asset_spec(manifest, unique_id, project)
-        if self.component.translation is None:
-            return base_spec
-        else:
-            dbt_props = get_node(manifest, unique_id)
-            return self.component.translation(base_spec, dbt_props)
+        args = self.get_cli_args(context)
+        invocation = dbt.cli(args, context=context)
+        yield from invocation.stream()
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
-    project_components = ComponentTree.for_project(components).get_all_components(
-        of_type=DbtProjectComponent
-    )
-
-    return [component.dbt_project for component in project_components]
+    project_components = ComponentTree.load_from_path(  # type: ignore
+        components,
+        context=ComponentLoadContext.for_test(),  # type: ignore
+    ).list_components_of_type(of_type=DbtProjectComponent)
+    return [
+        component.dbt_project
+        for component in project_components
+        if component.dbt_project is not None
+    ]
