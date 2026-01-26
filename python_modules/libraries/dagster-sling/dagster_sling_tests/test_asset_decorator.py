@@ -554,3 +554,87 @@ def test_pool(replication_config: SlingReplicationParam):
     def my_sling_assets(): ...
 
     assert my_sling_assets.op.pool == pool
+
+
+def test_runs_failed_sling_config(
+    csv_to_sqlite_failed_replication: SlingReplicationParam,
+    path_to_temp_sqlite_db: str,
+    sqlite_connection: sqlite3.Connection,
+):
+    from dagster_sling.resources import SlingConnectionResource, SlingResource
+
+    @sling_assets(replication_config=csv_to_sqlite_failed_replication)
+    def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
+        yield from sling.replicate(context=context)
+
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(type="file", name="SLING_FILE"),
+            SlingConnectionResource(
+                type="sqlite",
+                name="SLING_SQLITE",
+                connection_string=f"sqlite://{path_to_temp_sqlite_db}",
+            ),
+        ]
+    )
+
+    res = materialize([my_sling_assets], resources={"sling": sling_resource}, raise_on_error=False)
+
+    assert not res.success
+    asset_materializations = res.get_asset_materialization_events()
+
+    failed_key = AssetKey(["target", "main", "failed_file"])
+    failed_metadata = [
+        mat for mat in asset_materializations if mat.asset_key and mat.asset_key == failed_key
+    ]
+    assert len(asset_materializations) == 3
+
+    metadatas = [
+        asset_materialization.step_materialization_data.materialization.metadata
+        for asset_materialization in asset_materializations
+    ]
+
+    assert all(["stream_name" in metadata for metadata in metadatas]), str(metadatas)
+    assert all(["elapsed_time" in metadata for metadata in metadatas]), str(metadatas)
+
+    failed_key = AssetKey(["target", "main", "failed_file"])
+    failed_metadata = [
+        mat for mat in asset_materializations if mat.asset_key and mat.asset_key == failed_key
+    ]
+    assert failed_metadata == []
+
+    employees_key = AssetKey(["target", "main", "employees"])
+    employees_metadata = next(
+        mat for mat in asset_materializations if mat.asset_key and mat.asset_key == employees_key
+    ).step_materialization_data.materialization.metadata
+
+    path_name = os.path.abspath(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/dataworks/")
+    )
+    employee_name_path = os.path.join(path_name, "Employees.csv")
+
+    assert employees_metadata["stream_name"].value == f"file://{employee_name_path}"
+
+    orders_key = AssetKey(["target", "main", "orders"])
+    orders_metadata = next(
+        mat for mat in asset_materializations if mat.asset_key and mat.asset_key == orders_key
+    ).step_materialization_data.materialization.metadata
+
+    path_name = os.path.abspath(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/dataworks/")
+    )
+    order_name_path = os.path.join(path_name, "Orders.csv")
+
+    assert orders_metadata["stream_name"].value == f"file://{order_name_path}"
+
+    products_key = AssetKey(["target", "main", "products"])
+    products_metadata = next(
+        mat for mat in asset_materializations if mat.asset_key and mat.asset_key == products_key
+    ).step_materialization_data.materialization.metadata
+
+    path_name = os.path.abspath(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/dataworks/")
+    )
+    product_name_path = os.path.join(path_name, "Products.csv")
+
+    assert products_metadata["stream_name"].value == f"file://{product_name_path}"
