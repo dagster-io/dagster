@@ -34,7 +34,7 @@ The Helm chart can be configured to use this architecture by configuring the `ru
 
 ### Celery
 
-Users can configure multiple Celery queues (for example, one celery queue for each resource the user would like to limit) and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
+Users can configure multiple Celery queues (for example, one Celery queue for each resource the user would like to limit) and multiple Celery workers per queue in the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
 
 The Celery workers poll for new Celery tasks and execute each task in order of receipt or priority. The Celery task largely consists of launching an ephemeral Kubernetes step worker to execute that step.
 
@@ -64,7 +64,7 @@ We assume that you've followed the initial steps in the [previous walkthrough](/
 
 We need to configure persistent object storage so that data can be serialized and passed between steps. To run the Dagster User Code example, create a S3 bucket named "dagster-test".
 
-To enable Dagster to connect to S3, provide `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables via the `env`, `envConfigMaps`, or `envSecrets` fields under `dagster-user-deployments` in `values.yaml` or (not recommended) by setting these variables directly in the User Code Deployment image.
+To enable Dagster to connect to S3, provide `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables in the `env`, `envConfigMaps`, or `envSecrets` fields under `dagster-user-deployments` in `values.yaml` or (not recommended) by setting these variables directly in the User Code Deployment image.
 
 ### Install the Dagster Helm chart with Celery
 
@@ -91,7 +91,7 @@ Helm will launch several pods. You can check the status of the installation with
 
 ### Run a job in your deployment
 
-After Helm has successfully installed all the required kubernetes resources, start port forwarding to the webserver pod via:
+After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the webserver pod:
 
 ```
     DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
@@ -118,7 +118,7 @@ Within the Dagster UI, you can watch the job as it executes.
 
 ### Configuring Celery queues
 
-Users can configure multiple Celery queues (for example, one queue for each resource to be limited) and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
+Users can configure multiple Celery queues (for example, one queue for each resource to be limited) and multiple Celery workers per queue in the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
 
 To use the queues, `dagster-celery/queue` can be set on op tags.
 

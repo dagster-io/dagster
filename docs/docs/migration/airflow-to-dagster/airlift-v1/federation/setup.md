@@ -1,5 +1,5 @@
 ---
-description: Install example code, set up a local environment, and ensure you can run Airflow locally in order to use dagster-airlift to observe DAGs from multiple Airflow instances and federate execution between them using Dagster.
+description: Install example code, set up a local environment, and ensure you can run Airflow locally to use dagster-airlift to observe DAGs from multiple Airflow instances and federate execution between them using Dagster.
 sidebar_position: 100
 title: Setup
 ---
@@ -95,4 +95,4 @@ You should be able to see the `customer_metrics` DAG in the Airflow UI:
 
 ## Next steps
 
-In the next step, "[Observe multiple Airflow instances from Dagster](/migration/airflow-to-dagster/airlift-v1/federation/observe)", we'll add asset representations of our DAGs and set up lineage across both Airflow instances.
+In the next step, [Observe multiple Airflow instances from Dagster](/migration/airflow-to-dagster/airlift-v1/federation/observe)", we'll add asset representations of our DAGs and set up lineage across both Airflow instances.

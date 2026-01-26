@@ -144,7 +144,7 @@ If an asset has multiple parameters, we recommended using keyword arguments for 
 
 ### Multi-assets with upstream assets \{#multi-assets-upstream}
 
-When testing [multi-assets](/guides/build/assets/defining-assets#multi-asset) with upstream dependencies, you cannot use `input_values`, as it's not designed to work with assets. Instead, define standalone source assets and use a mock IO manager to provide test data for the upstream assets. The mock IO manager should return the appropriate test data based on the asset key being loaded.
+When testing [multi-assets](/guides/build/assets/defining-assets#multi-asset) with upstream dependencies, you cannot use `input_values`, as it's not designed to work with assets. Instead, define standalone source assets and use a mock I/O manager to provide test data for the upstream assets. The mock I/O manager should return the appropriate test data based on the asset key being loaded.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-multi-upstream.py"

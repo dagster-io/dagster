@@ -58,7 +58,7 @@ In this step, you'll create a Kubernetes container image that runs some code tha
 
 ### Step 1.1: Write a Python script
 
-First, you'll write a Python script that uses `dagster-pipes` and is executed in a container via Kubernetes:
+First, you'll write a Python script that uses `dagster-pipes` and is executed in a container with Kubernetes:
 
 ```python
 # my_python_script.py
@@ -182,7 +182,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
 <ScaffoldResource />
 
-Next, you'll add the asset and Kubernetes resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/build/projects).
+Next, you'll add the asset and Kubernetes resource to your project's code location using the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/build/projects).
 
 Copy and paste the following to the bottom of `resources.py`:
 

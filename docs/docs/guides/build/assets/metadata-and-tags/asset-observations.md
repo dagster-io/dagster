@@ -36,17 +36,17 @@ We should now see an observation event in the event log when we execute this ass
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the **Asset Details** page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the asset details page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_2" endBefore="end_observation_asset_marker_2" title="src/<project_name>/defs/assets.py" />
 
-In the **Asset Details** page, we can see observations in the Asset Activity table:
+On the asset details page, we can see observations in the Asset Activity table:
 
 ![asset activity observation](/images/guides/build/assets/asset-observations/asset-activity-observation.png)
 
 ### Specifying a partition for an AssetObservation
 
-If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
+If you are observing a single slice of an asset (for example, a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_partitioned_asset_observation" endBefore="end_partitioned_asset_observation" title="src/<project_name>/defs/assets.py" />
 
@@ -67,9 +67,9 @@ The <PyObject section="assets" module="dagster" object="observable_source_asset"
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_plain" endBefore="end_plain" title="src/<project_name>/defs/assets.py" />
 
-When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this source asset might need to be updated.
+When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (that is, a different data version) of this source asset might need to be updated.
 
-Source asset observations can be triggered via the "Observe sources" button in the UI graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
+Source asset observations can be triggered with the "Observe sources" button in the UI graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
 
 ![observable source asset](/images/guides/build/assets/asset-observations/observe-sources.png)
 

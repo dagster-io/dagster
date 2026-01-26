@@ -19,4 +19,4 @@ For installation information and examples, see the [community integrations GitHu
 
 ## About Java
 
-[Java](https://www.java.com/en) is a programming language and computing platform first released by Sun Microsystems in 1995. It has evolved from humble beginnings to power a large share of today’s digital world, by providing the reliable platform upon which many services and applications are built. New, innovative products and digital services designed for the future continue to rely on Java, as well. To get started with Java, see the [Java developer resources](https://dev.java).
+[Java](https://www.java.com/en) is a programming language and computing platform first released by Sun Microsystems in 1995. It has evolved from humble beginnings to power a large share of today's digital world, by providing the reliable platform upon which many services and applications are built. New, innovative products and digital services designed for the future continue to rely on Java, as well. To get started with Java, see the [Java developer resources](https://dev.java).

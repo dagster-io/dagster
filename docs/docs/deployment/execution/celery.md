@@ -4,7 +4,7 @@ sidebar_position: 700
 title: Executing Dagster on Celery
 ---
 
-[Celery](https://docs.celeryq.dev) is an open-source Python distributed task queue system, with support for a variety of queues (brokers) and result persistence strategies (backends).
+[Celery](https://docs.celeryq.dev) is an open source Python distributed task queue system, with support for a variety of queues (brokers) and result persistence strategies (backends).
 
 The [`dagster-celery`](/integrations/libraries/celery) executor uses Celery to satisfy three common requirements when running jobs in production:
 
@@ -63,7 +63,7 @@ In production, more configuration is required.
 
 ### Step 1: Configure persistent run and event log storage
 
-First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/deployment/oss/oss-instance-configuration) (via [`dagster.yaml`](/deployment/oss/dagster-yaml)). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/deployment/oss/oss-instance-configuration#dagster-storage) for information on how to do this.
+First, configure appropriate persistent run and event log storage (such as `PostgresRunStorage`) and `PostgresEventLogStorage` on your [Dagster instance](/deployment/oss/oss-instance-configuration) (with [`dagster.yaml`](/deployment/oss/dagster-yaml)). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/deployment/oss/oss-instance-configuration#dagster-storage) for information on how to do this.
 
 :::note
 

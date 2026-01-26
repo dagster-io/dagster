@@ -4,7 +4,7 @@ sidebar_position: 600
 title: Testing run status sensors
 ---
 
-As with other sensors, you can directly invoke run status sensors. However, the `context` provided via <PyObject section="schedules-sensors" module="dagster" object="run_status_sensor" /> and <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" /> contain objects that are typically only available during run time. Below you'll find code snippets that demonstrate how to build the context so that you can directly invoke your function in unit tests.
+As with other sensors, you can directly invoke run status sensors. However, the `context` provided by <PyObject section="schedules-sensors" module="dagster" object="run_status_sensor" /> and <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" /> contain objects that are typically only available during run time. Below you'll find code snippets that demonstrate how to build the context so that you can directly invoke your function in unit tests.
 
 If you had written a status sensor like this (assuming you implemented the function `email_alert` elsewhere):
 

@@ -54,7 +54,7 @@ This is just a snippet of what the PipesK8sClient can do. Take a look at our ful
 
 ### Step 3: Using dagster-airlift to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration)".
+Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see [Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration).
 
 ## Parameter comparison
 
@@ -64,7 +64,7 @@ Here's a comparison of the parameters between the KubernetesPodOperator and the 
 - cluster_context (named kube_context in the PipesK8sClient)
 - config_file (named kubeconfig_file in the PipesK8sClient)
 
-Many arguments are supported indirectly via the `base_pod_spec` argument.
+Many arguments are supported indirectly through the `base_pod_spec` argument.
 
 - volumes: Volumes to be used by the Pod (key `volumes`)
 - affinity: Node affinity/anti-affinity rules for the Pod (key `affinity`)

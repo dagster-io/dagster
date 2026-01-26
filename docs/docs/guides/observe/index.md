@@ -28,4 +28,4 @@ Quickly identify which pipelines are running smoothly and which need attention w
 
 ### Insights (Dagster+)
 
-Unlock a comprehensive, dashboard-style view of your data platform’s health. Dagster+ Insights surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Insights guide](/guides/observe/insights).
+Unlock a comprehensive, dashboard-style view of your data platform's health. Dagster+ Insights surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Insights guide](/guides/observe/insights).

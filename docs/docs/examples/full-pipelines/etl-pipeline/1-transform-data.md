@@ -67,7 +67,7 @@ This will look similar to scaffolding assets, though also include the `--project
 
 ## 3. Configure the dbt `defs.yaml`
 
-The dbt component creates a single file, `defs.yaml`, which configures the Dagster dbt component definition. Unlike the assets file, which was in Python, components provide a low-code interface in YAML. Most of the YAML file’s contents were generated when we scaffolded the component definition with `dg` and provided the path to the dbt project which is set in the `project` attribute under `attributes`:
+The dbt component creates a single file, `defs.yaml`, which configures the Dagster dbt component definition. Unlike the assets file, which was in Python, components provide a low-code interface in YAML. Most of the YAML file's contents were generated when we scaffolded the component definition with `dg` and provided the path to the dbt project which is set in the `project` attribute under `attributes`:
 
 ```yaml title="src/etl_tutorial/defs/transform/defs.yaml"
 type: dagster_dbt.DbtProjectComponent

@@ -22,7 +22,7 @@ The command will print out the URL you can access the UI from in the browser, us
 
 When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/guides/build/projects/workspaces/workspace-yaml). For more information, see the [code locations documentation](/guides/build/projects).
 
-Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
+Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running to function.
 
 ## Dagster UI reference
 
@@ -118,7 +118,7 @@ The **Asset details** page contains details about a single asset. Use the tabs o
 
 To access the asset details page, click an asset in the **Asset catalog**.
 
-![The Asset Details page in the Dagster UI](/images/guides/operate/webserver/asset-details.png)
+![The asset details page in the Dagster UI](/images/guides/operate/webserver/asset-details.png)
 
 </TabItem>
 </Tabs>
@@ -142,7 +142,7 @@ The **Run details** page contains details about a single run, including timing i
 On this page, you can:
 
 - **View structured event and raw compute logs.** Refer to the run logs tab for more info.
-- **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
+- **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (such as runs created by re-executing the same previous run) are grouped in the right pane for easy reference
 
 To access the run details page, click a run in the **Run details** page.
 
@@ -160,7 +160,7 @@ To access the run logs, scroll to the bottom of the **Run details** page.
 
 **Structured event logs**
 
-- **Description**: Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset’s metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
+- **Description**: Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset's metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
 
 To access the structured event logs, click the **left side** of the toggle next to the log filter field.
 

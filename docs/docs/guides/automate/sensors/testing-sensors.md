@@ -1,5 +1,5 @@
 ---
-description: Test sensors via the Dagster UI, CLI, or Python.
+description: Test sensors using the Dagster UI, CLI, or Python.
 sidebar_position: 300
 title: Testing sensors
 ---
@@ -66,7 +66,7 @@ To unit test sensors, you can directly invoke the sensor's Python function. This
   title="src/<project_name>/defs/sensors.py"
 />
 
-Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
+Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided by <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
@@ -88,7 +88,7 @@ This sensor uses the `context` argument. To invoke it, we need to provide one:
 
 For sensors which utilize [resources](/guides/build/external-resources), you can provide the necessary resources when invoking the sensor function.
 
-Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors)", which uses the `users_api` resource.
+Below is a test for the `process_new_users_sensor` that we defined in [Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors)", which uses the `users_api` resource.
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"

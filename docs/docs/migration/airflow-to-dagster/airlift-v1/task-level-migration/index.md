@@ -26,7 +26,7 @@ Using `dagster-airlift` you can:
 In this tutorial, you'll take the following steps:
 
 - **Peer** - During the peer stage, you'll observe an Airflow instance from within a Dagster Deployment using the Airflow REST API. This loads every Airflow DAG as an asset definition and creates a sensor that polls Airflow for execution history.
-- **Observe** - In the observe stage, you'll add a mapping that maps the Airflow DAG and task ID to a collection of definitions that you want to observe. (e.g. render the full lineage the dbt models an Airflow task orchestrates). The sensor used for peering also polls for task execution history, and adds materializations to an observed asset when its corresponding task successfully executes.
+- **Observe** - In the observe stage, you'll add a mapping that maps the Airflow DAG and task ID to a collection of definitions that you want to observe. (for instance, render the full lineage the dbt models an Airflow task orchestrates). The sensor used for peering also polls for task execution history, and adds materializations to an observed asset when its corresponding task successfully executes.
 - **Migrate** - Finally, in the migrate stage, you'll selectively move execution of Airflow tasks to Dagster assets.
 
 ## Next steps

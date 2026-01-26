@@ -46,7 +46,7 @@ If a job explicitly specifies an executor, then that executor will be used. Othe
 
 :::note
 
-Executing a job via <PyObject section="jobs" module="dagster" object="JobDefinition" method="execute_in_process" /> overrides the job's executor and uses <PyObject section="execution" module="dagster" object="in_process_executor" /> instead.
+Executing a job with <PyObject section="jobs" module="dagster" object="JobDefinition" method="execute_in_process" /> overrides the job's executor and uses <PyObject section="execution" module="dagster" object="in_process_executor" /> instead.
 
 :::
 

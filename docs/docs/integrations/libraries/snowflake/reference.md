@@ -10,7 +10,7 @@ This reference page provides information for working with [`dagster-snowflake`](
 
 In addition to password-based authentication, you can authenticate with Snowflake using a key pair. To set up private key authentication for your Snowflake account, see the instructions in the [Snowflake docs](https://docs.snowflake.com/en/user-guide/key-pair-auth.html#configuring-key-pair-authentication).
 
-Currently, the Dagster's Snowflake integration only supports encrypted private keys. You can provide the private key directly to the Snowflake resource or I/O manager, or via a file containing the private key.
+Currently, the Dagster Snowflake integration only supports encrypted private keys. You can provide the private key directly to the Snowflake resource or I/O manager, or in a file containing the private key.
 
 <Tabs>
 <TabItem value="Resources" label="Resources">
@@ -197,7 +197,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 The schema is determined in this order:
 
 <ol>
-  <li>If the schema is set via metadata, that schema will be used</li>
+  <li>If the schema is set in metadata, that schema will be used</li>
   <li>Otherwise, the schema set as configuration on the I/O manager will be used</li>
   <li>
     Otherwise, if there is a <code>key_prefix</code>, that schema will be used

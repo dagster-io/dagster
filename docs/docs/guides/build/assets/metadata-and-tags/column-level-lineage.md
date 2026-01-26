@@ -13,7 +13,7 @@ Emitted as materialization metadata, column lineage can be:
 - Specified on assets defined in Dagster
 - Enabled for assets loaded from integrations like dbt
 
-Dagster uses this metadata to display the column's upstream and downstream dependencies, accessible via the asset's details page in the Dagster UI. **Note**: Viewing column-level lineage in the UI is a Dagster+ feature.
+Dagster uses this metadata to display the column's upstream and downstream dependencies, accessible from the asset's details page in the Dagster UI. **Note**: Viewing column-level lineage in the UI is a Dagster+ feature.
 
 ## Enabling column-level lineage
 

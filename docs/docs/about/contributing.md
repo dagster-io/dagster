@@ -121,7 +121,7 @@ make dev_webapp
 
 During development, you might find these commands useful. Run them from `js_modules/dagster-ui`:
 
-- `make ts`: Typescript typechecking
+- `make ts`: TypeScript typechecking
 - `make lint`: Linting with autofix
 - `make jest`: Test runner that runs the full suite of tests
 
@@ -150,7 +150,7 @@ For the full guidelines for writing and debugging documentation, please refer to
 
 ## Picking a GitHub Issue
 
-We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
+We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [GitHub issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
 When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
 
@@ -162,4 +162,4 @@ In the PR template, please describe the change, including the motivation/context
 
 A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in GitHub 🥳.
 
-Your PR is now merged into Dagster! We’ll shout out your contribution in the weekly release notes.
+Your PR is now merged into Dagster! We'll shout out your contribution in the weekly release notes.

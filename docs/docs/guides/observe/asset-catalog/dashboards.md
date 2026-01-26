@@ -1,6 +1,6 @@
 ---
 title: Custom dashboards (Dagster+)
-description: Flexibly build dashboards in the Dagster+ asset catalog scoped by tags, teams, owners, or asset groups in order to enable everyone on your team to focus on the assets that matter most to them.
+description: Flexibly build dashboards in the Dagster+ asset catalog scoped by tags, teams, owners, or asset groups to enable everyone on your team to focus on the assets that matter most to them.
 tags: [dagster-plus-feature]
 ---
 
@@ -59,7 +59,7 @@ When viewing the asset list, you can create a new dashboard from your current as
 
 ## Editing, duplicating, or deleting dashboards
 
-1. Navigate to the Asset Catalog.
+1. Navigate to the asset catalog.
 2. Click on the selection you want to edit, duplicate, or delete.
 3. Click the **Actions** dropdown, then select **Edit saved selection**, **Duplicate**, or **Delete**.
 4. If editing the selection, note that any active filters will automatically be included in the set of changes. You can also change the selection's name, description, icon, and sharing settings.

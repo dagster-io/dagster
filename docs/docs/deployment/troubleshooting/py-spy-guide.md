@@ -12,7 +12,7 @@ For slow code, `py-spy record` can produce a file that gives you a flame graph o
 
 :::info Permissions required to run `py-spy`
 
-`py-spy` usually requires elevated permissions in order to run.
+`py-spy` usually requires elevated permissions to run.
 
 :::
 

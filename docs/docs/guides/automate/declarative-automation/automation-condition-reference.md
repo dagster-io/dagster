@@ -17,7 +17,7 @@ Operands are base conditions which can be true or false about a given target. Fo
 | `AutomationCondition.newly_requested`       | Target was requested on the previous evaluation                                                                                                            |
 | `AutomationCondition.code_version_changed`  | Target has a new code version since the previous evaluation                                                                                                |
 | `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                                                            |
-| `AutomationCondition.in_latest_time_window` | Target falls within the latest time window of the asset’s <PyObject section="partitions" module="dagster" object="PartitionsDefinition" />, if applicable. |
+| `AutomationCondition.in_latest_time_window` | Target falls within the latest time window of the asset's <PyObject section="partitions" module="dagster" object="PartitionsDefinition" />, if applicable. |
 | `AutomationCondition.will_be_requested`     | Target will be requested in this tick                                                                                                                      |
 | `AutomationCondition.initial_evaluation`    | This is the first evaluation of this condition                                                                                                             |
 

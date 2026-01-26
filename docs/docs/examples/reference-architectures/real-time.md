@@ -46,7 +46,7 @@ graph LR
 
 ### 1. Postgres ingestion with dlt
 
-The integration between Postgres and Clickhouse is defined in dlt via YAML configuration in the code alongside the Dagster code. Dagster executes dlt on a schedule to extract stateful customer data into Clickhouse.
+The integration between Postgres and Clickhouse is defined in dlt in YAML configuration in the code alongside the Dagster code. Dagster executes dlt on a schedule to extract stateful customer data into Clickhouse.
 
 **Dagster Features**
 
@@ -77,7 +77,7 @@ The customer data is combined with the real-time cart data to identify users who
 
 ### 4. Notifications sent to the marketing tool
 
-A sensor checks the abandoned cart view in Clickhouse for new abandoned carts which are sent to Braze via their API.
+A sensor checks the abandoned cart view in Clickhouse for new abandoned carts which are sent to Braze using their API.
 
 **Dagster Features**
 

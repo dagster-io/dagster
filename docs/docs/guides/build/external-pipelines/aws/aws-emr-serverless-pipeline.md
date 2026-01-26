@@ -41,7 +41,7 @@ To run the examples, you'll need to:
 - Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS, you'll need:
     - An existing AWS account
-    - An AWS EMR Serverless job. AWS CloudWatch logging has to be enabled in order to receive logs from the job:
+    - An AWS EMR Serverless job. AWS CloudWatch logging has to be enabled to receive logs from the job:
     ```json
     {
         "monitoringConfiguration": {

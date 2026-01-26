@@ -42,7 +42,7 @@ Asset checks run automatically when an asset is materialized, but you can also e
 
 1. Navigate to **Assets**.
 2. Click **Reload definitions**.
-3. Navigate to the **Asset Details** page for the `orders_aggregation` asset.
+3. Navigate to the **asset details** page for the `orders_aggregation` asset.
 4. Select the **Checks** tab.
 5. Click **Execute** for `orders_aggregation`.
 

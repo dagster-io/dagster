@@ -8,7 +8,7 @@ import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
 
 <DagsterOSS />
 
-Runs initiated from the Dagster UI, the scheduler, or the `dagster job launch` CLI command are launched in Dagster. This is a distinct operation from executing a job using the `execute_job` Python API or the CLI `execute` command. A launch operation allocates computational resources (e.g. a process, a container, a Kubernetes pod, etc) to carry out a run execution and then instigates the execution.
+Runs initiated from the Dagster UI, the scheduler, or the `dagster job launch` CLI command are launched in Dagster. This is a distinct operation from executing a job using the `execute_job` Python API or the CLI `execute` command. A launch operation allocates computational resources (such as a process, a container, a Kubernetes pod, etc) to carry out a run execution and then instigates the execution.
 
 The core abstraction in the launch process is the _run launcher_, which is configured as part of the [Dagster instance](/deployment/oss/oss-instance-configuration) The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs. It receives the ID of a created run and a representation of the pipeline that is about to undergo execution.
 

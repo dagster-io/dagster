@@ -1,5 +1,5 @@
 ---
-description: Configure run retries in Dagster to manage whole-run failures, set maximum retry limits, and customize retry strategies via YAML or UI.
+description: Configure run retries in Dagster to manage whole-run failures, set maximum retry limits, and customize retry strategies with YAML or the UI.
 sidebar_position: 600
 title: Configuring run retries
 ---

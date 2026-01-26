@@ -6,7 +6,7 @@ sidebar_position: 6000
 
 With asset facets, you can customize asset views to surface the most relevant metadata, like ownership, health, freshness, and automation signals.
 
-To configure asset facets, click the facet configuration button on the Global Asset Lineage page, then select the facets you want to display:
+To configure asset facets, click the facet configuration button on the global asset lineage page, then select the facets you want to display:
 
 ![Asset facets configuration button](/images/guides/observe/asset-facets-config-button.png)
 

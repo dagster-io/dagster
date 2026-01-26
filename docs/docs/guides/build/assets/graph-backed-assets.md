@@ -42,7 +42,7 @@ In the below example, `two_assets` accepts `upstream_asset` and outputs two asse
 
 By default, when executing a graph-backed asset, every asset produced by the graph must be materialized. This means that attempting to selectively execute a subset of assets defined in the graph-backed asset will result in an error.
 
-If the underlying computation is sufficiently flexible to selectively output a subset of assets, a graph-backed asset can be subsetted. For example, let’s say we wanted to define a graph-backed asset with the structure depicted in the image below. In this case, we want to independently materialize `foo_asset` and `baz_asset`.
+If the underlying computation is sufficiently flexible to selectively output a subset of assets, a graph-backed asset can be subsetted. For example, let's say we wanted to define a graph-backed asset with the structure depicted in the image below. In this case, we want to independently materialize `foo_asset` and `baz_asset`.
 
 ![Graph-backed asset](/images/guides/build/assets/graph-backed-asset.png)
 
@@ -58,7 +58,7 @@ Because Dagster flattens each op graph into a flat input/output mapping between 
 
 In the example, `foo` and `baz` produce outputs of `my_graph`. Subsequently, their outputs need to be yielded optionally. Because `foo` yields multiple outputs, we must structure our code to conditionally yield its outputs like in the code snippet above.
 
-However, because `baz` only yields a singular output, Dagster will only run `baz` when its asset output `baz_asset` is selected. So, we don’t have to structure `baz` to return an optional output. Because `bar` does not yield any outputs that are returned from `my_graph`, its outputs do not have to be selectively returned.
+However, because `baz` only yields a singular output, Dagster will only run `baz` when its asset output `baz_asset` is selected. So, we don't have to structure `baz` to return an optional output. Because `bar` does not yield any outputs that are returned from `my_graph`, its outputs do not have to be selectively returned.
 
 We could define the asset using the code below. Notice that `can_subset` must be set to `True` in the asset definition to signify that the graph-backed asset can be subsetted.
 

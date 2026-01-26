@@ -41,7 +41,7 @@ To ensure that the dbt assets have been replaced correctly, you can execute:
 dg check defs
 ```
 
-If there are still dbt assets defined via the Pythonic API, or the dbt resource is still present, you will receive a validation error due to duplication of definitions.
+If there are still dbt assets defined with the Pythonic API, or the dbt resource is still present, you will receive a validation error due to duplication of definitions.
 
 Assuming the check passes, you can also execute:
 

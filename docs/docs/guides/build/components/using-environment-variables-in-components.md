@@ -63,7 +63,7 @@ After adding the environment dependencies, running `dg check yaml` again will co
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/11-dg-component-check-fixed.txt" />
 
-Next, you can invoke `dg list env`, which shows all environment variables configured or used by components in the project. Here we can see all of the Snowflake credentials we must configure in our shell or `.env` file in order to run our project:
+Next, you can invoke `dg list env`, which shows all environment variables configured or used by components in the project. Here we can see all of the Snowflake credentials we must configure in our shell or `.env` file to run our project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/12-dg-list-env.txt" />
 

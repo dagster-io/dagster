@@ -115,7 +115,7 @@ Dependencies in Dagster are primarily _data dependencies_. Using data dependenci
 
 If you have an op, say `Op A`, that does not depend on any outputs of another op, say `Op B`, there theoretically shouldn't be a reason for `Op A` to run after `Op B`. In most cases, these two ops should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
 
-If you need to model an explicit ordering dependency, you can use the <PyObject section="types" module="dagster" object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
+If you need to model an explicit ordering dependency, you can use the <PyObject section="types" module="dagster" object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" using Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graphs/order_based_dependency.py" startAfter="start_marker" endBefore="end_marker" title="src/<project_name>/defs/ops.py"/>
 
@@ -125,7 +125,7 @@ In this example, `create_table_2` has an input of type `Nothing` meaning that it
 
 Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
 
-Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/guides/build/io-managers).
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [I/O managers](/guides/build/io-managers).
 
 ### Loading an asset as an input
 
@@ -149,7 +149,7 @@ If the asset is partitioned, then:
 
 You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject section="graphs" module="dagster" object="GraphDefinition"/> object.
 
-To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject section="graphs" module="dagster" object="DependencyDefinition"/>.
+To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op's inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject section="graphs" module="dagster" object="DependencyDefinition"/>.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs.py" startAfter="start_pipeline_definition_marker" endBefore="end_pipeline_definition_marker" title="src/<project_name>/defs/ops.py"/>
 

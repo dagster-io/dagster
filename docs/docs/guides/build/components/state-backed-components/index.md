@@ -120,7 +120,7 @@ State is automatically refreshed every time your code location loads and stored 
 
 **Drawbacks:**
 - If an external API is unavailable, your entire code location will fail to load
-- Less control over the state refresh process (e.g. no way to roll back to a previous state version)
+- Less control over the state refresh process (no way to roll back to a previous state version)
 - Larger run artifacts (since state is attached to each run)
 
 ## Defs state keys

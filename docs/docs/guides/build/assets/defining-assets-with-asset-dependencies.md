@@ -36,7 +36,7 @@ Assets can depend on assets in different [code locations](/guides/build/projects
     title="src/<project_name>/defs/assets.py"
 />
 
-In `code_location_2`, we can reference `code_location_1_asset` it via its asset key:
+In `code_location_2`, we can reference `code_location_1_asset` by its asset key:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/data-modeling/asset-dependencies/asset-dependencies.py"

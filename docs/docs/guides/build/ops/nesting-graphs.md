@@ -65,7 +65,7 @@ Sub-graphs can dictate config for the ops and sub-graphs inside them. If the ful
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config.py" title="src/<project_name>/defs/ops.py"/>
 
-Alternatively, you can use "config mapping", i.e. you can provide a function that accepts config that's provided to the graph and generates config for the nodes inside the graph.
+Alternatively, you can use "config mapping", meaning that you can provide a function that accepts config that's provided to the graph and generates config for the nodes inside the graph.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config_mapping.py" title="src/<project_name>/defs/ops.py"/>
 

@@ -30,7 +30,7 @@ Values for these inputs can be provided in a few ways. Dagster will check the fo
 
 ### Loading a built-in Dagster type from config
 
-When you have an op at the beginning of a job that operates on a built-in Dagster type like `string` or `int`, you can provide a value for that input via run config.
+When you have an op at the beginning of a job that operates on a built-in Dagster type like `string` or `int`, you can provide a value for that input with run config.
 
 Here's a basic job with an unconnected string input:
 
@@ -38,11 +38,11 @@ Here's a basic job with an unconnected string input:
 
 ### Loading a custom Dagster type from config
 
-When you have an op at the beginning of your job that operates on a Dagster type that you've defined, you can write your own <PyObject section="types" module="dagster" object="DagsterTypeLoader" /> to define how to load that input via run config.
+When you have an op at the beginning of your job that operates on a Dagster type that you've defined, you can write your own <PyObject section="types" module="dagster" object="DagsterTypeLoader" /> to define how to load that input with run config.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/load_custom_type_from_config.py" startAfter="def_start_marker" endBefore="def_end_marker" title="src/<project_name>/defs/assets.py"/>
 
-With this, the input can be specified via config as below:
+With this, the input can be specified with config as below:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/load_custom_type_from_config.py" startAfter="execute_start_marker" endBefore="execute_end_marker" title="src/<project_name>/defs/assets.py"/>
 
@@ -81,7 +81,7 @@ In any of the examples in Option 1 or Option 2, setting the `input_manager_key` 
 
 When launching a run, you might want to parameterize how particular inputs are loaded.
 
-To accomplish this, you can define an `input_config_schema` on the I/O manager or input manager definition. The `load_input` function can access this config when storing or loading data, via the <PyObject section="io-managers" module="dagster" object="InputContext" />:
+To accomplish this, you can define an `input_config_schema` on the I/O manager or input manager definition. The `load_input` function can access this config when storing or loading data, through the <PyObject section="io-managers" module="dagster" object="InputContext" />:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/input_managers.py" startAfter="start_per_input_config" endBefore="end_per_input_config" title="src/<project_name>/defs/assets.py"/>
 
@@ -99,11 +99,11 @@ To accomplish this, you can set up the `input_manager_key` on `op2`'s `In` to po
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/input_managers.py" startAfter="start_load_input_subset" endBefore="end_load_input_subset" title="src/<project_name>/defs/assets.py"/>
 
-So far, this is set up so that `op2` always loads `table_1` even if you execute the full job. This would let you debug `op2`, but if you want to write this so that `op2` only loads `table_1` when no input is provided from an upstream op, you can rewrite the input manager as a subclass of the IO manager used for the rest of the job as follows:
+So far, this is set up so that `op2` always loads `table_1` even if you execute the full job. This would let you debug `op2`, but if you want to write this so that `op2` only loads `table_1` when no input is provided from an upstream op, you can rewrite the input manager as a subclass of the I/O manager used for the rest of the job as follows:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/input_managers.py" startAfter="start_better_load_input_subset" endBefore="end_better_load_input_subset" title="src/<project_name>/defs/assets.py"/>
 
-Now, when running the full job, `op2`'s input will be loaded using the IO manager on the output of `op1`. When running the job subset, `op2`'s input has no upstream output, so `table_1` will be loaded.
+Now, when running the full job, `op2`'s input will be loaded using the I/O manager on the output of `op1`. When running the job subset, `op2`'s input has no upstream output, so `table_1` will be loaded.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/input_managers.py" startAfter="start_execute_subselection" endBefore="end_execute_subselection" title="src/<project_name>/defs/assets.py"/>
 

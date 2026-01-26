@@ -5,7 +5,7 @@ description: Partitioned ops enable launching backfills, where each partition pr
 
 :::note
 
-This page is specific to ops. To learn about partitioning assets, see "[Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets)".
+This page is specific to ops. To learn about partitioning assets, see [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets).
 
 :::
 
@@ -81,7 +81,7 @@ In the UI, you can view runs by partition in the **Partitions tab** of a **Job**
 
 ![Partitions tab](/images/guides/build/partitions-and-backfills/partitioned-job.png)
 
-In the **Run Matrix**, each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click on an individual box to navigate to logs and run information for the step.
+In the **Run Matrix**, each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click an individual box to navigate to logs and run information for the step.
 
 You can view and use partitions in the UI Launchpad tab for a job. In the top bar, you can select from the list of all available partitions. Within the config editor, the config for the selected partition will be populated.
 

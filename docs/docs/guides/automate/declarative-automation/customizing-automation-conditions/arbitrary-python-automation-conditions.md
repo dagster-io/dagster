@@ -31,7 +31,7 @@ To do this, add an automation condition sensor to your definitions with the `use
   title="src/<project_name>/defs/sensors.py"
 />
 
-This will allow your sensor to target automation conditions containing custom python code.
+This will allow your sensor to target automation conditions containing custom Python code.
 
 ## Defining a custom condition
 

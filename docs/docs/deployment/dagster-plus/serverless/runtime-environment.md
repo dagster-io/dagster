@@ -41,7 +41,7 @@ You can add dependencies by including the corresponding Python libraries in your
 
     :::info
 
-    If you are using a `setup.py` file, you will need to add a TOML configuration file to the root of your project in order to make it `dg`-compatible and use Components. For more information, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
+    If you are using a `setup.py` file, you will need to add a TOML configuration file to the root of your project to make it `dg`-compatible and use Components. For more information, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
 
     :::
 
@@ -326,7 +326,7 @@ dagster-cloud serverless deploy --base-image=my_base_image:latest --location-nam
 
 ## Use private Python packages
 
-If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
+If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository (for example, `my-org/private-repo`), as a dependency:
 
 1.  In your `dagster-plus-deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
 
@@ -351,7 +351,7 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
     # needed once
     - name: Configure dependency resolution to use the wheel built above
       run: >
-        echo "[global]" > $GITHUB_WORKSPACE/deps/pip.conf &&
+        echo [global]" > $GITHUB_WORKSPACE/deps/pip.conf &&
         echo "find-links = " >> $GITHUB_WORKSPACE/deps/pip.conf &&
         echo "    file://$GITHUB_WORKSPACE/deps/" >> $GITHUB_WORKSPACE/deps/pip.conf &&
         echo "PIP_CONFIG_FILE=$GITHUB_WORKSPACE/deps/pip.conf" > $GITHUB_ENV

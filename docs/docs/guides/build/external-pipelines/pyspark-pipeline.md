@@ -47,7 +47,7 @@ To run the examples, you'll need to:
   curl -fSL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.780/aws-java-sdk-bundle-1.12.780.jar" \
     -o /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.780.jar
   ```
-- We are going to upload the PySpark script to the S3 bucket directly inside the Dagster asset. In production, consider doing this via CI/CD instead.
+- We are going to upload the PySpark script to the S3 bucket directly inside the Dagster asset. In production, consider doing this with CI/CD instead.
 
 ## Step 1: Write the Dagster code
 
@@ -61,7 +61,7 @@ We will set up a few non-default Pipes components to streamline the otherwise ch
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py" startAfter="start_pipes_session_marker" endBefore="end_pipes_session_marker" title="src/<project_name>/defs/assets.py" />
 
-Notice how `PipesS3MessageReader` has `include_stdio_in_messages=True`. This setting will configure the Pipes **message writer** in the Spark job to collect logs from the Spark driver and send them to Dagster via Pipes messages.
+Notice how `PipesS3MessageReader` has `include_stdio_in_messages=True`. This setting will configure the Pipes **message writer** in the Spark job to collect logs from the Spark driver and send them to Dagster through Pipes messages.
 
 2. We will be using CLI arguments to pass the bootstrap information from Dagster to the Spark job. We will fetch them from the `session.get_bootstrap_cli_arguments` method. We pass these arguments to `spark-submit` along with a few other settings.
 
@@ -70,7 +70,7 @@ Notice how `PipesS3MessageReader` has `include_stdio_in_messages=True`. This set
 
 :::note
 
-In other Pipes workflows, passing the bootstrap information from Dagster to the remote Pipes session is typically done via environment variables, but setting environment variables for Spark jobs can be complicated (the exact way of doing this depends on the Spark deployment) or not possible at all. CLI arguments are a convenient alternative.
+In other Pipes workflows, passing the bootstrap information from Dagster to the remote Pipes session is typically done with environment variables, but setting environment variables for Spark jobs can be complicated (the exact way of doing this depends on the Spark deployment) or not possible at all. CLI arguments are a convenient alternative.
 
 :::
 
@@ -82,7 +82,7 @@ First, create a new file named `script.py`, then add the following code to creat
 
 Note how `PipesCliArgsParamsLoader` is used to load the CLI arguments passed by Dagster. This information will be used to automatically configure `PipesS3MessageWriter` and `PipesS3ContextLoader`.
 
-Because the Dagster code has `include_stdio_in_messages=True`, the message writer will collect logs from the driver and send them to Dagster via Pipes messages.
+Because the Dagster code has `include_stdio_in_messages=True`, the message writer will collect logs from the driver and send them to Dagster through Pipes messages.
 
 ## Step 3: Running the pipeline with Docker
 

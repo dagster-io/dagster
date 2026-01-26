@@ -25,7 +25,7 @@ In addition to managed infrastructure, Dagster+ also adds core capabilities on t
 - [Insights](/guides/observe/insights), a powerful tool for identifying trends in your data platform overtime, optimizing cost, and answering questions like "Why does it feel like our pipelines are taking longer this month?".
 - [Alerts](/guides/observe/alerts) to a variety of services like Slack, PagerDuty, and email to notify your team of failed runs, data quality issues, and violated SLAs.
 - Authentication, [Role Based Access Control](/deployment/dagster-plus/authentication-and-access-control/rbac), and [Audit Logs](/deployment/dagster-plus/authentication-and-access-control/rbac/audit-logs) which help teams implement data mesh strategies while remaining compliant.
-- [Asset Catalog](/guides/observe/asset-catalog), a powerful search-first experience that builds off of Dagster's best-in-class lineage graph to include searching for assets, metadata, column lineage, and more.
+- [Asset catalog](/guides/observe/asset-catalog), a powerful search-first experience that builds off of Dagster's best-in-class lineage graph to include searching for assets, metadata, column lineage, and more.
 - [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to create staging environments of your Dagster code, right in Dagster+.
 
 Ready to [get started](/deployment/dagster-plus/getting-started)?

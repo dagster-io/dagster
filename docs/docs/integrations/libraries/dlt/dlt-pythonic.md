@@ -2,7 +2,7 @@
 title: Dagster & dlt (Pythonic)
 sidebar_label: dlt (Pythonic)
 sidebar_position: 2
-description: The dltHub open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets.
+description: The dltHub open source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
 pypi: https://pypi.org/project/dagster-dlt/
@@ -177,7 +177,7 @@ We'll add the resource to our <PyObject section="definitions" module="dagster" o
 
 ## Step 5: Create a dlt_assets definition for GitHub
 
-The <PyObject section="libraries" integration="dlt" object="dlt_assets" module="dagster_dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake.
+The <PyObject section="libraries" integration="dlt" object="dlt_assets" module="dagster_dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from GitHub to Snowflake.
 
 In the same file containing your Dagster assets, you can create an instance of your <PyObject section="libraries" integration="dlt" object="dlt_assets" module="dagster_dlt" decorator /> by doing something like the following:
 

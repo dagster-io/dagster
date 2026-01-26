@@ -16,7 +16,7 @@ Each full deployment can have one or multiple [code locations](/guides/build/pro
 In Dagster+, there are two types of deployments:
 
 - [**Branch deployments**](/deployment/dagster-plus/deploying-code/branch-deployments), which are temporary deployments built for testing purposes. We recommend using branch deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
-- **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis. This guide focuses on full deployments.
+- **Full deployments**, which are persistent, fully featured deployments intended to perform actions on a recurring basis. This guide focuses on full deployments.
 
 :::
 

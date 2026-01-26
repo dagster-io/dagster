@@ -16,7 +16,7 @@ In order to store the data in our vector database, we need to convert the free t
   title="src/project_ask_ai_dagster/defs/ingestion.py"
 />
 
-We will supply that partition in the decorator of our asset, as well as an <PyObject section="assets" module="dagster" object="AutomationCondition" /> to ensure that the weekly partition is updated every Monday. The rest of our asset will use the `GithubResource` we defined earlier and return a list of LangChain `Documents`:
+We will supply that partition in the decorator of our asset, as well as an <PyObject section="assets" module="dagster" object="AutomationCondition" /> to ensure that the weekly partition is updated every Monday. The rest of our asset will use the `GitHubResource` we defined earlier and return a list of LangChain `Documents`:
 
 <CodeExample
   path="docs_projects/project_ask_ai_dagster/src/project_ask_ai_dagster/defs/ingestion.py"
@@ -38,7 +38,7 @@ The next asset will convert those `Documents` to vectors and upload them to Pine
 
 This process will be very similar for the GitHub discussions content.
 
-## Custom IO Manager
+## Custom I/O manager
 
 Looking at the code, you may have noticed the `document_io_manager`. Because LangChain `Documents` are a special object type, we need to do some work to serialize and deserialize the data. [I/O Managers](/guides/build/io-managers) are responsible for handling the inputs and outputs of assets and how the data is persisted. This I/O manager will use the local file system to save the output of assets returning `Documents` as JSON files. It will then read those JSON files back into `Documents` in assets that take in those inputs:
 
@@ -52,7 +52,7 @@ Looking at the code, you may have noticed the `document_io_manager`. Because Lan
 
 ## Scraping embeddings
 
-The assets for the documentation scraping will behave similar to the GitHub assets. We will not partition by date like Github, so we can leave out that out of the asset. But like the GitHub assets, our ingestion asset will return a collection of `Documents` that will be handled by the I/O manager. This asset will also include the <PyObject section="assets" module="dagster" object="AutomationCondition" /> to update data on the same cadence as our GitHub source.
+The assets for the documentation scraping will behave similar to the GitHub assets. We will not partition by date like GitHub, so we can leave out that out of the asset. But like the GitHub assets, our ingestion asset will return a collection of `Documents` that will be handled by the I/O manager. This asset will also include the <PyObject section="assets" module="dagster" object="AutomationCondition" /> to update data on the same cadence as our GitHub source.
 
 The asset that generates the embeddings with the documentation site will need one additional change. Because the content of the documentation pages is so large, we need to split data into chunks. The `split_text` function ensures that we split the text into equal length chunks. We also want to keep similar chunks together and associated with the page they were on so we will hash the index of the URL to ensure data stays together. correctly Once the data is chunked, it can be batched and sent to Pinecone:
 

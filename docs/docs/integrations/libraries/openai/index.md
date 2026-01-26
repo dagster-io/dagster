@@ -15,7 +15,7 @@ slug: '/integrations/libraries/openai'
 
 <p>{frontMatter.description}</p>
 
-Using this library's <PyObject section="libraries" integration="openai" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
+Using this library's <PyObject section="libraries" integration="openai" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) using the [OpenAI Python API](https://github.com/openai/openai-python).
 
 When used with Dagster's [asset definitions](/guides/build/assets/defining-assets), the resource automatically logs OpenAI usage metadata in [asset metadata](/guides/build/assets/metadata-and-tags).
 
@@ -53,7 +53,7 @@ Then, we can instruct Dagster to authorize the OpenAI resource using the environ
 
 ## Using the OpenAI resource with assets
 
-The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject section="definitions" module="dagster" object="Definitions" /> object.
+The OpenAI resource can be used in assets to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/openai/assets.py"

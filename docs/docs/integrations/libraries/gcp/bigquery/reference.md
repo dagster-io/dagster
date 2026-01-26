@@ -169,7 +169,7 @@ The dataset will be the last prefix before the asset's name. In this example, th
 The dataset is determined in this order:
 
 <ol>
-  <li>If the dataset is set via metadata, that dataset will be used</li>
+  <li>If the dataset is set from metadata, that dataset will be used</li>
   <li>Otherwise, the dataset set as configuration on the I/O manager will be used</li>
   <li>
     Otherwise, if there is a <code>key_prefix</code>, that dataset will be used

@@ -7,7 +7,7 @@ action:
 # swap maps tokens in form of bad: good
 swap:
   'IO [Mm]anager': 'I/O manager'
-  dagster cloud: Dagster+
+  '[Dd]agster cloud': Dagster+
   dagster plus: Dagster+
   '[Dd]agit': 'Dagster UI'
   '[Ss]oftware-defined [Aa]sset': &asset-def asset definition|asset

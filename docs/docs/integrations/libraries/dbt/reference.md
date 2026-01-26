@@ -34,20 +34,20 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 ## dbt models and Dagster asset definitions
 
-Dagster’s [asset definitions](/guides/build/assets) bear several similarities to dbt models. An asset definition contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project can be interpreted as Dagster asset definitions:
+Dagster's [asset definitions](/guides/build/assets) bear several similarities to dbt models. An asset definition contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project can be interpreted as Dagster asset definitions:
 
 - The asset key for a dbt model is (by default) the name of the model.
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
 - The computation required to compute the asset from its upstream dependencies is the SQL within the model's definition.
 
-These similarities make it natural to interact with dbt models as asset definitions. Let’s take a look at a dbt model and an asset definition, in code:
+These similarities make it natural to interact with dbt models as asset definitions. Let's take a look at a dbt model and an asset definition, in code:
 
 ![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/creating-a-dbt-project-in-dagster/asset-dbt-model-comparison.png)
 
 Here's what's happening in this example:
 
 - The first code block is a **dbt model**
-  - As dbt models are named using file names, this model is named `orders`
+  - As dbt models are named using filenames, this model is named `orders`
   - The data for this model comes from a dependency named `raw_orders`
 - The second code block is a **Dagster asset**
   - The asset key corresponds to the name of the dbt model, `orders`
@@ -182,7 +182,7 @@ Once your dbt steps are located, add the following step to manage the state of y
 dagster-cloud ci dagster-dbt project manage-state --file path/to/project.py
 ```
 
-The `dagster-cloud ci dagster-dbt project manage-state` CLI command fetches the `manifest.json` file from your production branch and saves it to a state directory, in order to power the `dbt defer` command.
+The `dagster-cloud ci dagster-dbt project manage-state` CLI command fetches the `manifest.json` file from your production branch and saves it to a state directory to power the `dbt defer` command.
 
 In practice, this command fetches the `manifest.json` file from your production branch and add it to the state directory set to the `state_path` of the DbtProject found in `path/to/project.py`. The production `manifest.json` file can then be used as the deferred dbt artifacts.
 
@@ -425,13 +425,13 @@ Dagster's dbt integration can automatically attach [code reference](/guides/buil
 
 :::note
 
-In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To bridge this divide, the dbt tag string is used as the Dagster tag key, and the Dagster tag value is set to the empty string, `""`. Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored by default.
+In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To bridge this divide, the dbt tag string is used as the Dagster tag key, and the Dagster tag value is set to the empty string, `""`. Any dbt tags that don't match Dagster's supported tag key format (for example, they contain unsupported characters) will be ignored by default.
 
 :::
 
 For dbt models, seeds, and snapshots, the default Dagster tags will be the dbt node's configured tags.
 
-Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored.
+Any dbt tags that don't match Dagster's supported tag key format (for example, they contain unsupported characters) will be ignored.
 
 To override the Dagster tags for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator.get_tags" />. The following converts dbt tags of the form `foo=bar` to key/value pairs:
 
@@ -475,7 +475,7 @@ Dagster automatically loads your dbt tests on _models_ as [asset checks](/guides
 
 ### Indirect selection
 
-Dagster uses [dbt indirect selection](https://docs.getdbt.com/reference/global-configs/indirect-selection) to select dbt tests. By default, Dagster won't set `DBT_INDIRECT_SELECTION` so that the set of tests selected by Dagster is the same as the selected by dbt. When required, Dagster will override `DBT_INDIRECT_SELECTION` to `empty` in order to explicitly select dbt tests. For example:
+Dagster uses [dbt indirect selection](https://docs.getdbt.com/reference/global-configs/indirect-selection) to select dbt tests. By default, Dagster won't set `DBT_INDIRECT_SELECTION` so that the set of tests selected by Dagster is the same as the selected by dbt. When required, Dagster will override `DBT_INDIRECT_SELECTION` to `empty` to explicitly select dbt tests. For example:
 
 - Materializing dbt assets and excluding their asset checks
 - Executing dbt asset checks without materializing their assets
@@ -610,7 +610,7 @@ select *
 
 Then this model has an upstream source with the `jaffle_shop/orders` asset key.
 
-In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_source"/>:
+In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition using <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_source"/>:
 
 <CodeExample
   startAfter="start_upstream_asset"
@@ -694,7 +694,7 @@ SELECT ...
 
 ### Downstream dependencies
 
-Dagster allows you to define assets that are downstream of specific dbt models via <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
+Dagster allows you to define assets that are downstream of specific dbt models with <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
 
 <CodeExample
   startAfter="start_downstream_asset"
@@ -714,11 +714,11 @@ Dagster alternatively allows you to delegate loading data to an I/O manager. For
 
 ## Building incremental models using partitions
 
-You can define a Dagster <PyObject section="partitions" module="dagster" object="PartitionsDefinition"/> alongside dbt in order to build incremental models.
+You can define a Dagster <PyObject section="partitions" module="dagster" object="PartitionsDefinition"/> alongside dbt to build incremental models.
 
 Partitioned assets will be able to access the <PyObject section="partitions" module="dagster" object="TimeWindow"/>'s start and end dates, and these can be passed to dbt's CLI as variables which can be used to filter incremental models.
 
-When a partition definition to passed to the <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject section="execution" module="dagster"  object="AssetExecutionContext.partition_time_window" /> property in order to get the current start and end partitions.
+When a partition definition to passed to the <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject section="execution" module="dagster"  object="AssetExecutionContext.partition_time_window" /> property to get the current start and end partitions.
 
 <CodeExample
   startAfter="start_build_incremental_model"

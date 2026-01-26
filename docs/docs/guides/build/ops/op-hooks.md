@@ -84,7 +84,7 @@ You can test the functionality of a hook by invoking the hook definition. This w
 
 ### Accessing failure information in a failure hook
 
-In many cases, you might want to know details about an op failure. You can get the exception object thrown in the failed op via the `op_exception` property on <PyObject section="hooks" module="dagster" object="HookContext" />:
+In many cases, you might want to know details about an op failure. You can get the exception object thrown in the failed op from the `op_exception` property on <PyObject section="hooks" module="dagster" object="HookContext" />:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks_context.py" startAfter="start_failure_hook_op_exception" endBefore="end_failure_hook_op_exception" title="src/<project_name>/defs/ops.py"/>
 
@@ -92,7 +92,7 @@ In many cases, you might want to know details about an op failure. You can get t
 
 ### Environment-specific hooks using jobs
 
-Hooks use resource keys to access resources. After including the resource key in its set of `required_resource_keys`, the body of the hook can access the corresponding resource via the `resources` attribute of its context object.
+Hooks use resource keys to access resources. After including the resource key in its set of `required_resource_keys`, the body of the hook can access the corresponding resource using the `resources` attribute of its context object.
 
 It also enables you to switch resource values in different jobs so that, for example, you can send slack messages only while executing a production job and mock the slack resource while testing.
 

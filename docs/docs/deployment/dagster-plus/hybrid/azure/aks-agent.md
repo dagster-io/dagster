@@ -15,9 +15,9 @@ We'll start from a brand new organization in Dagster+, and finish with a full hy
 
 To complete the steps in this guide, you'll need:
 
-- The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
-- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/install-kubectl).
-- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install).
+- The azure CLI installed on your machine. [Azure CLI download link](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
+- `kubectl` installed on your machine. [`kubectl` download link](https://kubernetes.io/docs/tasks/tools/install-kubectl).
+- `helm` installed on your machine. [`helm` download link](https://helm.sh/docs/intro/install).
 - An existing AKS cluster. If you need to create a new AKS cluster, refer to the [Azure documentation](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-portal?tabs=azure-cli).
 - A Dagster+ organization, with an agent token for that organization.
 

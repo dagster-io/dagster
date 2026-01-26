@@ -46,7 +46,7 @@ dg dev
 
 Navigate to the **Asset catalog** and click **Materialize** to materialize the asset.
 
-Next, look at the entry for the materialization under the "Events" tab in the Asset Catalog. Take note of the two hashes in the **Tags** section of the materialization details - `code_version` and `data_version`:
+Next, look at the entry for the materialization under the "Events" tab in the asset catalog. Take note of the two hashes in the **Tags** section of the materialization details - `code_version` and `data_version`:
 
 ![Simple asset data version](/images/guides/build/assets/asset-versioning-and-caching/simple-asset-in-catalog.png)
 
@@ -109,7 +109,7 @@ Materialize `multiplied_number` to get both assets up-to-date again.
 
 ## Step three: Computing your own data versions
 
-A data version is like a fingerprint for the value that an asset represents, i.e. the output of its materialization function. Therefore, we want our data versions to correspond on a one-to-one basis to the possible return values of a materialization function. Dagster auto-generates data versions by hashing the code version together with input data versions. This satisfies the above criterion in many cases, but sometimes a different approach is necessary.
+A data version is like a fingerprint for the value that an asset represents, that is, the output of its materialization function. Therefore, we want our data versions to correspond on a one-to-one basis to the possible return values of a materialization function. Dagster auto-generates data versions by hashing the code version together with input data versions. This satisfies the above criterion in many cases, but sometimes a different approach is necessary.
 
 For example, when a materialization function contains an element of randomness, then multiple materializations of the asset with the same code over the same inputs will produce the same data version for different outputs. On the flip side, if we are generating code versions with an automated approach like source-hashing, then materializing an asset after a cosmetic refactor will produce a different data version (which is derived from the code version) but the same output.
 

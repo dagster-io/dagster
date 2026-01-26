@@ -10,7 +10,7 @@ In this guide, we'll demonstrate by using an existing dbt project that doesn't u
 
 ## Prerequisites
 
-To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, **Admin**, or **Editor** permissions in order to create a code location.
+To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, **Admin**, or **Editor** permissions to create a code location.
 
 You will also need **an existing dbt project** that contains the following files in the repository root:
 
@@ -19,7 +19,7 @@ You will also need **an existing dbt project** that contains the following files
 
 ## Step 1: Import your project in Dagster+
 
-In this section, we'll demonstrate how to import an existing project to Dagster+. Our example imports the project from a GitHub repository, but Dagster+ also supports Gitlab.
+In this section, we'll demonstrate how to import an existing project to Dagster+. Our example imports the project from a GitHub repository, but Dagster+ also supports GitLab.
 
 1. Sign in to your Dagster+ account.
 
@@ -29,9 +29,9 @@ In this section, we'll demonstrate how to import an existing project to Dagster+
 
 4. Click **Import a dbt project**, then **Continue**.
 
-5. At this point, you'll be prompted to select either GitHub or Gitlab. For this guide, we'll select **GitHub**.
+5. At this point, you'll be prompted to select either GitHub or GitLab. For this guide, we'll select **GitHub**.
 
-6. If prompted, sign into your GitHub account and complete the authorization process for the Dagster+ application. **Note**: The profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project. After the authorization is complete, you'll be redirected back to Dagster+.
+6. If prompted, sign in to your GitHub account and complete the authorization process for the Dagster+ application. **Note**: The profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project. After the authorization is complete, you'll be redirected back to Dagster+.
 
 7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note**: dbt projects must have `dbt_project.yml` and `profiles.yml` files in the repository root or an error will display.
 

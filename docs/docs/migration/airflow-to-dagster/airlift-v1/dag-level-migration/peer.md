@@ -82,7 +82,7 @@ Next, use the <PyObject section="libraries" integration="airlift" module="dagste
 This function creates:
 
 - An external asset representing each Airflow DAG. This asset is marked as materialized whenever a DAG run completes.
-- A [sensor](/guides/automate/sensors) that polls the Airflow instance for operational information. This sensor is responsible for creating materializations when a DAG executes and must remain on in order to properly update execution status.
+- A [sensor](/guides/automate/sensors) that polls the Airflow instance for operational information. This sensor is responsible for creating materializations when a DAG executes and must remain on to properly update execution status.
 
 ## Initiate an asset materialization in Dagster from Airflow
 
@@ -157,4 +157,4 @@ make clean
 
 ## Next steps
 
-In the next step, "[Observe an Airflow DAG](/migration/airflow-to-dagster/airlift-v1/dag-level-migration/observe)", we'll create and observe assets that map to the entire example DAG.
+In the next step, [Observe an Airflow DAG](/migration/airflow-to-dagster/airlift-v1/dag-level-migration/observe)", we'll create and observe assets that map to the entire example DAG.

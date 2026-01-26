@@ -7,11 +7,11 @@ sidebar_custom_props:
   logo: images/dagster-primary-mark.svg
 ---
 
-In this example, we'll explore different ways to handle caching in Dagster. Caching is especially useful for assets that rely on expensive operations, such as API calls, database queries, or heavy computations, as it can dramatically improve performance, reduce costs, and make pipelines more efficient. In practice, it’s usually best to implement caching within [resources](/guides/build/external-resources) rather than [assets](/guides/build/assets), since this makes the functionality easier to share and reuse.
+In this example, we'll explore different ways to handle caching in Dagster. Caching is especially useful for assets that rely on expensive operations, such as API calls, database queries, or heavy computations, as it can dramatically improve performance, reduce costs, and make pipelines more efficient. In practice, it's usually best to implement caching within [resources](/guides/build/external-resources) rather than [assets](/guides/build/assets), since this makes the functionality easier to share and reuse.
 
 ### Problem: Expensive resource
 
-Imagine a simple resource `ExpensiveResource` with an `addition` method that includes a forced 5-second sleep. Without caching, the resource executes the method from scratch every time it’s called. Because no intermediate results are stored, repeated calls with the same inputs always re-run the computation and incur the full cost.
+Imagine a simple resource `ExpensiveResource` with an `addition` method that includes a forced 5-second sleep. Without caching, the resource executes the method from scratch every time it's called. Because no intermediate results are stored, repeated calls with the same inputs always re-run the computation and incur the full cost.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/resource_caching/expensive_resource.py"
@@ -25,7 +25,7 @@ Imagine a simple resource `ExpensiveResource` with an `addition` method that inc
 
 ### Solution 1: Caching within the resource
 
-The in-memory caching implementation uses Python’s `@[functools.lru_cache](https://docs.python.org/3/library/functools.html#functools.cache)` decorator to store results of the `addition` method. Once a particular set of arguments has been computed, the result is stored in memory within the resource. Subsequent calls with the same arguments return immediately from the cache instead of redoing the expensive operation.
+The in-memory caching implementation uses Python's `@[functools.lru_cache](https://docs.python.org/3/library/functools.html#functools.cache)` decorator to store results of the `addition` method. Once a particular set of arguments has been computed, the result is stored in memory within the resource. Subsequent calls with the same arguments return immediately from the cache instead of redoing the expensive operation.
 
 However, because each asset initializes its own resource, cached results are not shared across asset executions.
 

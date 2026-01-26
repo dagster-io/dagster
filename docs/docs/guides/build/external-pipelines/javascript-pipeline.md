@@ -55,7 +55,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
 <ScaffoldResource />
 
-To make the resource loadable and accessible, such as the CLI, UI, and Dagster+, you’ll create a function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
+To make the resource loadable and accessible, such as the CLI, UI, and Dagster+, you'll create a function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/non-python/resources.py" language="python" title="src/<project_name>/defs/resources.py" />
 

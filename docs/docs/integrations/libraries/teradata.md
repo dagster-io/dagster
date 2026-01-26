@@ -319,7 +319,7 @@ The `s3_to_teradata` method is used to load data from an S3 bucket into a Terada
   The name of the Teradata table to which the data will be loaded.
 
 - **public_bucket (bool)**:  
-  Indicates whether the provided S3 bucket is public. If `True`, the objects within the bucket can be accessed via a URL without authentication. If `False`, the bucket is considered private, and authentication must be provided.  
+  Indicates whether the provided S3 bucket is public. If `True`, the objects within the bucket can be accessed from a URL without authentication. If `False`, the bucket is considered private, and authentication must be provided.  
   Defaults to `False`.
 
 - **teradata_authorization_name (str)**:  
@@ -548,19 +548,19 @@ It supports running commands either on the local machine or on a remote machine 
 > This could be:
 >
 > - The local machine where Dagster runs the task, for local execution.
-> - The remote host accessed via SSH, for remote execution.
-> - If executing remotely, also ensure that an SSH server (e.g., sshd) is running and accessible on the remote machine.
+> - The remote host accessed by SSH, for remote execution.
+> - If executing remotely, also ensure that an SSH server (such as `sshd`) is running and accessible on the remote machine.
 
 ### Parameters
 
 - `sql`: SQL statement(s) to be executed using BTEQ. (optional, mutually exclusive with `file_path`)
-- `file_path`: If provided, this file will be used instead of the `sql` content. This path represents remote file path when executing remotely via SSH, or local file path when executing locally. (optional, mutually exclusive with `sql`)
+- `file_path`: If provided, this file will be used instead of the `sql` content. This path represents remote file path when executing remotely by SSH, or local file path when executing locally. (optional, mutually exclusive with `sql`)
 - `remote_host`: Hostname or IP address for remote execution. If not provided, execution is assumed to be local. _(optional)_
 - `remote_user`: Username used for SSH authentication on the remote host. Required if `remote_host` is specified.
 - `remote_password`: Password for SSH authentication. Optional, and used as an alternative to `ssh_key_path`.
 - `ssh_key_path`: Path to the SSH private key used for authentication. Optional, and used as an alternative to `remote_password`.
 - `remote_port`: SSH port number for the remote host. Defaults to `22` if not specified. _(optional)_
-- `remote_working_dir`: Temporary directory location on the remote host (via SSH) where the BTEQ script will be transferred and executed. Defaults to `/tmp` if not specified. This is only applicable when `remote_host` is provided.
+- `remote_working_dir`: Temporary directory location on the remote host (by SSH) where the BTEQ script will be transferred and executed. Defaults to `/tmp` if not specified. This is only applicable when `remote_host` is provided.
 - `bteq_script_encoding`: Character encoding for the BTEQ script file. Defaults to ASCII if not specified.
 - `bteq_session_encoding`: Character set encoding for the BTEQ session. Defaults to ASCII if not specified.
 - `bteq_quit_rc`: Accepts a single integer, list, or tuple of return codes. Specifies which BTEQ return codes should be treated as successful, allowing subsequent tasks to continue execution.
@@ -603,12 +603,12 @@ output = bteq_operator(
 ## DDL Operator
 
 The `ddl_operator` method executes DDL (Data Definition Language) statements on Teradata using the Teradata Parallel Transporter (TPT).
-It supports both local and remote execution (via SSH), allowing you to manage Teradata schema objects seamlessly within Dagster pipelines.
+It supports both local and remote execution (by SSH), allowing you to manage Teradata schema objects seamlessly within Dagster pipelines.
 
 ### Key Features
 
 - Executes one or more DDL statements in a single operation.
-- Supports both local and remote execution via SSH.
+- Supports both local and remote execution by SSH.
 - Handles custom error codes to allow continued workflow execution.
 - Allows configuration of remote working directory and SSH credentials.
 - Supports custom job naming for easier tracking and debugging.
@@ -618,8 +618,8 @@ It supports both local and remote execution (via SSH), allowing you to manage Te
 > This could be:
 >
 > - The local machine running Dagster (for local execution).
-> - A remote host accessible via SSH (for remote execution).
-> - For remote setups, ensure an SSH server (e.g., sshd) is active and reachable.
+> - A remote host accessible by SSH (for remote execution).
+> - For remote setups, ensure an SSH server (such as `sshd`) is active and reachable.
 
 ### Parameters
 
@@ -642,7 +642,7 @@ It supports both local and remote execution (via SSH), allowing you to manage Te
 
 ### Raises
 
-- **`ValueError`** — If input validation fails (e.g., missing DDL list, invalid SSH configuration, or bad port number).
+- **`ValueError`** — If input validation fails (for example, missing DDL list, invalid SSH configuration, or bad port number).
 - **`Exception`** — If the DDL execution fails and the resulting error code is not part of the `error_list`.
 
 ### Notes
@@ -711,14 +711,14 @@ def create_tables(context):
 ## TDLoad Operator
 
 The `tdload_operator` method enables execution of **TDLoad** jobs for transferring data between Teradata tables or between Teradata and external files.  
-It provides a unified interface to run **TDLoad** operations either **locally** or **remotely via SSH**, allowing data ingestion and export tasks to be seamlessly integrated within Dagster pipelines.
+It provides a unified interface to run **TDLoad** operations either **locally** or **remotely by SSH**, allowing data ingestion and export tasks to be seamlessly integrated within Dagster pipelines.
 
 ### Key Features
 
 - Executes TDLoad operations for data import/export between Teradata and external files.
-- Supports both local and remote execution via SSH.
+- Supports both local and remote execution by SSH.
 - Allows custom job configuration, variable files, and TDLoad command options.
-- Handles multiple data source and target formats (e.g., CSV, TEXT, PARQUET).
+- Handles multiple data source and target formats, such as CSV, TEXT, PARQUET.
 - Supports text delimiters for structured data handling.
 - Provides strong validation for remote execution parameters and ports.
 
@@ -727,8 +727,8 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 > This could be:
 >
 > - The local machine running Dagster (for local execution).
-> - A remote host accessible via SSH (for remote execution).
-> - For remote setups, ensure that an SSH server (e.g., `sshd`) is active and reachable.
+> - A remote host accessible by SSH (for remote execution).
+> - For remote setups, ensure that an SSH server (such as `sshd`) is active and reachable.
 
 ### Parameters
 
@@ -740,9 +740,9 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 | `target_table`          | `str` | Name of the target table in Teradata.                                                       | ❌       | —       |
 | `source_file_name`      | `str` | Source file path for input data.                                                            | ❌       | —       |
 | `target_file_name`      | `str` | Target file path for output data.                                                           | ❌       | —       |
-| `source_format`         | `str` | Format of the source file (e.g., CSV, TEXT).                                                | ❌       | —       |
+| `source_format`         | `str` | Format of the source file (for example, CSV, TEXT).                                                | ❌       | —       |
 | `source_text_delimiter` | `str` | Field delimiter for the source file.                                                        | ❌       | —       |
-| `target_format`         | `str` | Format of the target file (e.g., CSV, TEXT).                                                | ❌       | —       |
+| `target_format`         | `str` | Format of the target file (for example, CSV, TEXT).                                                | ❌       | —       |
 | `target_text_delimiter` | `str` | Field delimiter for the target file.                                                        | ❌       | —       |
 | `tdload_options`        | `str` | Additional TDLoad options to customize execution.                                           | ❌       | —       |
 | `tdload_job_name`       | `str` | Name assigned to the TDLoad job.                                                            | ❌       | —       |
@@ -761,7 +761,7 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 
 ### Raises
 
-- **`ValueError`** — For invalid parameter combinations (e.g., both password and key provided, invalid port, or missing SSH credentials).
+- **`ValueError`** — For invalid parameter combinations (for example, both password and key provided, invalid port, or missing SSH credentials).
 - **`Exception`** — If the TDLoad execution fails for reasons not covered by user configuration.
 
 ### Notes

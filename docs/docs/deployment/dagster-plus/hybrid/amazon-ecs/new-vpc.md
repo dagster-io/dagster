@@ -34,7 +34,7 @@ To complete the steps in this guide, you'll need:
 
   - **Under its VPC quota limit in the region where you're spinning up the agent.** By default, AWS allows **five VPCs per region**. If you're already at your limit, refer to the [AWS VPC quotas documentation](https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html) for info on requesting a quota increase.
 
-  - **With an ECS service-linked IAM role**. This role is required to complete the setup in ECS. AWS will automatically create the role in your account the first time you create an ECS cluster in the console. However, the IAM role isn't automatically created when ECS clusters are created via CloudFormation.
+  - **With an ECS service-linked IAM role**. This role is required to complete the setup in ECS. AWS will automatically create the role in your account the first time you create an ECS cluster in the console. However, the IAM role isn't automatically created when ECS clusters are created with CloudFormation.
 
     If your account doesn't have this IAM role, running the CloudFormation template may fail.
 

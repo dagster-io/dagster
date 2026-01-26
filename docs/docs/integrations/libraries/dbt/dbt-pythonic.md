@@ -81,7 +81,7 @@ If you have incremental models in your dbt project, you can model these as parti
 
 To enable partitioning for incremental dbt models in Dagster, we start by creating a new `@dbt_assets` definition. First, we add a selector (`INCREMENTAL_SELECTOR`) to identify incremental models and configure them with a `daily_partition`. This allows Dagster to determine which partition is running and pass the correct time window (min_date, max_date) into dbt using the vars argument. With this setup, dbt builds only the records within the active partition.
 
-Next, we separate our dbt executions: one `@dbt_assets` function (`dbt_analytics`) excludes incremental models, while another (`incremental_dbt_models`) handles only those incremental assets with partitions. Inside `incremental_dbt_models`, we fetch the partition time window from the context, format it as variables, and pass them into dbt’s CLI command. This ensures dbt materializes only the partition-specific slice of data while keeping dependencies clear and maintainable.
+Next, we separate our dbt executions: one `@dbt_assets` function (`dbt_analytics`) excludes incremental models, while another (`incremental_dbt_models`) handles only those incremental assets with partitions. Inside `incremental_dbt_models`, we fetch the partition time window from the context, format it as variables, and pass them into dbt's CLI command. This ensures dbt materializes only the partition-specific slice of data while keeping dependencies clear and maintainable.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets_incrementals.py"

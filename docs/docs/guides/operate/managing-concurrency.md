@@ -69,7 +69,7 @@ Without this granularity set, the default granularity is set to the `op`. This m
 
 ### Setting a default limit for concurrency pools
 
-- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
+- Dagster+: Edit the `concurrency` config in deployment settings in the [Dagster+ UI](/guides/operate/webserver) or by using the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
 - Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
 
 ```yaml

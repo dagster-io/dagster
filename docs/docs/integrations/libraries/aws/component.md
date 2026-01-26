@@ -50,7 +50,7 @@ Manage and fetch secrets securely.
 
 ### Database and Query Services
 
-- **`AthenaClientResourceComponent`**: Executes SQL queries via Amazon Athena.
+- **`AthenaClientResourceComponent`**: Executes SQL queries through Amazon Athena.
 - **`RedshiftClientResourceComponent`**: Connects to and queries Amazon Redshift.
 - **`RDSResourceComponent`**: Interacts with Amazon RDS instances.
 

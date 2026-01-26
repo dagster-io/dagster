@@ -1,7 +1,7 @@
 ---
 title: 'Deploying Dagster to Amazon Web Services'
 sidebar_label: Amazon Web Services
-description: To deploy open source Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an IO manager.
+description: To deploy open source Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an I/O manager.
 sidebar_position: 5000
 ---
 
@@ -9,7 +9,7 @@ This guide provides instructions for deploying Dagster on Amazon Web Services (A
 
 ## Hosting Dagster on EC2
 
-To host Dagster on a bare VM or in Docker on EC2, see "[Running Dagster as a service](/deployment/oss/deployment-options/deploying-dagster-as-a-service).
+To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a service](/deployment/oss/deployment-options/deploying-dagster-as-a-service).
 
 ## Using RDS for run and event log storage
 
@@ -49,7 +49,7 @@ The <PyObject section="libraries" integration="aws" module="dagster_aws" object=
 
 By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the task that launches the run but overrides its container definition with a new command to launch a Dagster run.
 
-When using the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
+When using the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched from the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
 
 Alternatively, you can define your own task definition in your `dagster.yaml`:
 
@@ -109,7 +109,7 @@ If these tags are set, they will override any defaults set on the run launcher.
 
 ### Customizing the launched run's task
 
-The <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
+The <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (such as Fargate or EC2).
 
 To adjust the configuration of the launched run's task, set the `run_launcher.config.run_task_kwargs` field to a dictionary with additional key-value pairs that should be passed into the `run_task` boto3 API call. For example, to launch new runs in EC2 from a task running in Fargate, you could apply this configuration:
 
@@ -259,7 +259,7 @@ In this example, any secret tagged with `dagster` will be included in the enviro
 
 ## Using S3 for I/O management
 
-To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers). For example, using an S3 bucket to store data passed between ops.
+To enable parallel computation (for example, with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers). For example, using an S3 bucket to store data passed between ops.
 
 You'll need to use <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 

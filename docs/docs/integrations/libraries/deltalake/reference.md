@@ -31,7 +31,7 @@ In the following sections, we describe how the I/O manager constructs these quer
 
 :::
 
-For partitioning to work, the partition dimension needs to be one of the partition columns defined on the Delta table. Tables created via the I/O manager will be configured accordingly.
+For partitioning to work, the partition dimension needs to be one of the partition columns defined on the Delta table. Tables created with the I/O manager will be configured accordingly.
 
 :::
 
@@ -135,7 +135,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 :::
 
-The two options for specifying schema are mutually exclusive. If you provide `schema` configuration to the I/O manager, you cannot also provide it via the asset key and vice versa. If no `schema` is provided, either from configuration or asset keys, the default schema `public` will be used.
+The two options for specifying schema are mutually exclusive. If you provide `schema` configuration to the I/O manager, you cannot also provide it with the asset key and vice versa. If no `schema` is provided, either from configuration or asset keys, the default schema `public` will be used.
 
 :::
 
@@ -200,7 +200,7 @@ config = S3Config(allow_unsafe_rename=True)
 
 <TabItem value="Set-up a locking client">
 
-To use DynamoDB, set the `AWS_S3_LOCKING_PROVIDER` variable to `dynamodb` and create a table named delta_rs_lock_table in Dynamo. An example DynamoDB table creation snippet using the aws CLI follows, and should be customized for your environment’s needs (e.g. read/write capacity modes):
+To use DynamoDB, set the `AWS_S3_LOCKING_PROVIDER` variable to `dynamodb` and create a table named delta_rs_lock_table in Dynamo. An example DynamoDB table creation snippet using the AWS CLI follows, and should be customized for your environment's needs (for example, read/write capacity modes):
 
 ```bash
 aws dynamodb create-table --table-name delta_rs_lock_table \
@@ -242,7 +242,7 @@ config = S3Config(endpoint="https://<my-s3-endpoint-url>")
 
 ### Working with locally running storage (emulators)
 
-A common pattern for e.g. integration tests is to run a storage emulator like Azurite, Localstack, o.a. If not configured to use TLS, we need to configure the http client, to allow for http traffic.
+A common pattern for integration tests (for example) is to run a storage emulator like Azurite, Localstack, o.a. If not configured to use TLS, we need to configure the http client, to allow for http traffic.
 
 ```py
 config = AzureConfig(use_emulator=True, client=ClientConfig(allow_http=True))

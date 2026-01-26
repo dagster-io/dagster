@@ -77,6 +77,6 @@ A lambda or scoped function can be used to pass non-dynamic outputs along side d
 
 ### Multiple outputs
 
-Multiple outputs are returned via a `namedtuple`, where each entry can be used via `map` or `collect`.
+Multiple outputs are returned in a `namedtuple`, where each entry can be used by using `map` or `collect`.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_mult_start" endBefore="dyn_mult_end" title="src/<project_name>/defs/ops.py"/>

@@ -117,7 +117,7 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 
 ## Step 3: Create an ECS service
 
-1. Create an ECS service to run the agent. You can do this [in the Amazon ECS console](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-console-v2.html) or [via the CreateService API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html).
+1. Create an ECS service to run the agent. You can do this [in the Amazon ECS console](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-console-v2.html) or [by using the CreateService API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html).
 
    Use the [official dagster/dagster-cloud-agent image](https://hub.docker.com/r/dagster/dagster-cloud-agent) as the service's **Task definition**. This image can be used as-is or as a base layer for your own image.
 

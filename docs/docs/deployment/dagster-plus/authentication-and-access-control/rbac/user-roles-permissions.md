@@ -33,7 +33,7 @@ For example, the **Admin** user role includes permissions specific to this role 
 
 :::tip Teams in Dagster+ Pro
 
-Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see "[Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams)".
+Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see [Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams).
 
 :::
 

@@ -12,7 +12,7 @@ To begin we need our specific context. Our RAG system will combine two different
 
 ## GitHub
 
-To retrieve data from GitHub, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally, and GitHub is one of the data sources we use, and we wrote a resource to manage pulling that data. The [`GithubResource`](/integrations/libraries/github/dagster-github#resources) allows us to query GitHub using GraphQL. We are most interested in issues and discussions, so our resource will have two methods to retrieve that information over a given date range:
+To retrieve data from GitHub, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally, and GitHub is one of the data sources we use, and we wrote a resource to manage pulling that data. The [`GitHubResource`](/integrations/libraries/github/dagster-github#resources) allows us to query GitHub using GraphQL. We are most interested in issues and discussions, so our resource will have two methods to retrieve that information over a given date range:
 
 <CodeExample
   path="docs_projects/project_ask_ai_dagster/src/project_ask_ai_dagster/defs/github.py"
@@ -22,11 +22,11 @@ To retrieve data from GitHub, we are going to borrow code from the [dagster-open
   title="src/project_ask_ai_dagster/defs/github.py"
 />
 
-Because we are working with unstructured data, we need to process it in a specific format. We can use [LangChain](https://www.langchain.com) and return the data as `Documents`. LangChain is a framework designed for building applications with LLMs. It makes chaining tasks for AI applications, like RAG, easier to build. By converting the Github data into `Documents`, it will be easier to upload to our retrieval system later on.
+Because we are working with unstructured data, we need to process it in a specific format. We can use [LangChain](https://www.langchain.com) and return the data as `Documents`. LangChain is a framework designed for building applications with LLMs. It makes chaining tasks for AI applications, like RAG, easier to build. By converting the GitHub data into `Documents`, it will be easier to upload to our retrieval system later on.
 
 Documents also allow us to add metadata. Because the metadata is unique to discussions and issues, we will create two separate methods in the resource to process the data: `convert_discussions_to_documents` and `convert_issues_to_documents`.
 
-We now have everything we need for the `GithubResource` so we can initialize it using our `GITHUB_TOKEN`:
+We now have everything we need for the `GitHubResource` so we can initialize it using our `GITHUB_TOKEN`:
 
 <CodeExample
   path="docs_projects/project_ask_ai_dagster/src/project_ask_ai_dagster/defs/github.py"

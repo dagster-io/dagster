@@ -66,6 +66,7 @@ exceptions:
   - RDS
   - REPL
   - REST
+  - RPC
   - RSA
   - S3
   - SAML
@@ -84,6 +85,7 @@ exceptions:
   - TBD
   - TCP
   - TODO
+  - TOML
   - UI
   - URI
   - URL
