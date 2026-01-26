@@ -303,42 +303,90 @@ This codebase follows specific norms for exception handling to maintain clean, p
 ### General Principles
 
 - **By default, exceptions should NOT be used as control flow**
-- **Do NOT implement "fallback" behavior in catch blocks** - exceptions should bubble up the stack to be handled at appropriate boundaries
+- **STRONGLY DISCOURAGED: Do NOT implement "fallback" behavior to compensate for errors** - exceptions should bubble up to appropriate error boundaries
+- **We nearly always prefer program termination to fallbacks** - let the program fail fast and loud rather than masking problems
 - **Avoid catching broad `Exception` types** unless you have a specific reason
 
-### Acceptable Uses of Exception Handling
+### Error Boundaries: Where Exception Handling Belongs
 
-1. **Error Boundaries**: Meaningful divisions in software that have sensible default error behavior
-   - CLI commands (top-level exception handlers for user-friendly error messages)
+Exception handling should occur at **error boundaries** - meaningful architectural divisions where we can take appropriate action:
+
+1. **CLI Command Level**: Top-level exception handlers that:
+   - Log the error with full context
+   - Present user-friendly error messages
+   - Terminate the program with appropriate exit codes
+
+2. **Service/Job Level**: Operations that should fail independently:
    - Asset materialization operations (individual asset failures shouldn't fail entire job)
-2. **API Compatibility**: Compensating for APIs that use exceptions for control flow
-   - When third-party APIs use exceptions to indicate missing keys/values
-   - When storage systems have different capabilities that can't be detected a priori
-3. **Embellishing Exceptions**: Adding context to in-flight exceptions before re-raising
+   - Background service operations that should restart rather than crash the entire system
+   - Batch processing where individual item failures are acceptable
 
-### Implementation Pattern: Encapsulation
+3. **System Integration Points**: Boundaries between major system components:
+   - Database connection management (with circuit breaker patterns)
+   - External API integration points (with proper retry/backoff logic)
 
-When violating exception norms is necessary, **encapsulate the violation within a function**:
+### Error Boundary Implementation Pattern
+
+**At error boundaries, catch exceptions to:**
+- **Log comprehensive error information** for debugging
+- **Terminate gracefully** with proper cleanup
+- **Report status** to monitoring systems
+- **Present appropriate user messages** (for CLI boundaries)
 
 ```python
-# GOOD: Exception handling encapsulated in helper function
+# GOOD: CLI error boundary - log and terminate
+@click.command()
+def deploy_assets():
+    try:
+        assets = load_assets_from_config()
+        deploy_to_production(assets)
+        click.echo("Deployment successful")
+    except Exception as e:
+        logger.error("Asset deployment failed", exc_info=True)
+        click.echo(f"Deployment failed: {e}", err=True)
+        sys.exit(1)  # Terminate with error code
+
+# GOOD: Service-level error boundary - log and continue
+def process_asset_batch(asset_keys):
+    for asset_key in asset_keys:
+        try:
+            materialize_asset(asset_key)
+        except MaterializationError as e:
+            logger.error(f"Failed to materialize {asset_key}", exc_info=True)
+            # Continue processing other assets - this is an acceptable boundary
+        except Exception as e:
+            logger.error(f"Unexpected error processing {asset_key}", exc_info=True)
+            # Re-raise unexpected errors - don't mask unknown problems
+            raise
+```
+
+**Everywhere else: Let exceptions bubble up**
+
+### Legacy Exception Patterns (AVOID)
+
+The following patterns exist in legacy code but should **NOT be used in new code**:
+
+```python
+# LEGACY PATTERN - DO NOT COPY: Exception handling for fallback behavior
 def _get_asset_value_with_fallback(context, asset_key, default_value):
     """
-    Try to get asset value, fallback to default.
-
-    Some storage systems may not support certain operations,
-    so we use exception handling to detect this case.
+    LEGACY: Try to get asset value, fallback to default.
+    
+    This pattern violates our exception handling principles.
+    Prefer explicit capability checking or let the program fail.
     """
     try:
         return context.instance.get_latest_materialization_event(asset_key).asset_materialization.metadata
     except Exception:
-        return default_value
+        return default_value  # AVOID: Masking real problems
 
-# BAD: Exception control flow exposed in main logic
-try:
-    metadata = context.instance.get_latest_materialization_event(asset_key).asset_materialization.metadata
-except Exception:
-    metadata = default_value
+# PREFERRED: Explicit capability checking
+def get_asset_value(context, asset_key):
+    """Get asset value, failing explicitly if not available."""
+    if not context.instance.has_asset_key(asset_key):
+        raise AssetKeyNotFoundError(f"Asset key {asset_key} not found")
+    
+    return context.instance.get_latest_materialization_event(asset_key).asset_materialization.metadata
 ```
 
 ### Preferred Approach: Proactive Checking
@@ -428,21 +476,35 @@ for partition in get_partitions(asset_key):
         process_partition(partition)
 ```
 
-**NEVER implement fallback behavior in exception handlers** unless you're at an appropriate error boundary:
+**STRONGLY DISCOURAGED: Implement fallback behavior in exception handlers**
+
+We nearly always prefer program termination to fallbacks. Fallback logic masks underlying problems and creates unpredictable system behavior.
 
 ```python
-# BAD: Using exceptions for fallback logic
+# BAD: Using exceptions for fallback logic - masks real problems
 try:
     return parse_asset_key_from_string(key_str)
 except ValueError:
-    # Fallback to manual parsing
+    # This fallback hides the fact that key_str is malformed
     return AssetKey([key_str])
 
-# GOOD: Let the original exception bubble up
+# GOOD: Let the program fail explicitly with clear error message
+try:
+    return parse_asset_key_from_string(key_str)
+except ValueError as e:
+    raise DagsterConfigError(f"Invalid asset key format '{key_str}': {e}") from e
+
+# EVEN BETTER: Validate input format before processing
+if not is_valid_asset_key_format(key_str):
+    raise DagsterConfigError(f"Invalid asset key format: '{key_str}'")
 return parse_asset_key_from_string(key_str)
 ```
 
-**Rationale**: Exception swallowing masks real problems and makes debugging extremely difficult. If an exception occurs, it usually indicates a genuine issue that needs to be addressed, not hidden.
+**Rationale**: 
+- **Fail fast, fail loud** - problems should be immediately visible, not hidden by fallbacks
+- **Exception swallowing masks real problems** and makes debugging extremely difficult
+- **Fallbacks create unpredictable behavior** - the system appears to work but produces incorrect results
+- **Program termination is better than silent corruption** - users can fix the underlying issue
 
 ## CLI Development
 
@@ -473,6 +535,17 @@ def my_command():
 
 - **Code must be compatible with Python 3.10 and later**
 - **Use Python 3.10+ features** where appropriate (built-in generics like `list[str]`, `dict[str, Any]`, etc.)
+
+### Backwards Compatibility Policy
+
+- **DO NOT maintain backwards compatibility for internal API refactors**
+- **Only maintain backwards compatibility for public APIs** (functions/classes marked with `@public` decorator)
+- **Internal APIs can and should be refactored without backwards compatibility shims**
+- **Rationale**: 
+  - Backwards compatibility shims for internal APIs create technical debt and maintenance burden
+  - Internal APIs are not meant to be stable - they should evolve as the codebase improves
+  - Focus compatibility efforts on the public API surface that external users depend on
+  - Clean refactors are better than accumulating compatibility layers for internal code
 
 ## Documentation Style
 
