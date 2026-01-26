@@ -13,7 +13,6 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import ConcurrencyConfig
@@ -409,7 +408,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         try:
             instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
-        except Exception as e:
+        except Exception:
             error = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
@@ -424,9 +423,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     f" {run.status} - moving on. Error: {error.to_string()}"
                 )
                 return False
-            elif concurrency_config.run_queue_config.max_user_code_failure_retries and isinstance(
-                e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
-            ):
+            elif concurrency_config.run_queue_config.max_user_code_failure_retries:
                 if location_name:
                     with self._location_timeouts_lock:
                         # Don't try to dequeue runs from this location for another N seconds
@@ -447,7 +444,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     >= concurrency_config.run_queue_config.max_user_code_failure_retries
                 ):
                     message = (
-                        "Run dequeue failed to reach the user code server after"
+                        "Run dequeue failed after"
                         f" {concurrency_config.run_queue_config.max_user_code_failure_retries} attempts, failing run"
                     )
                     instance.report_engine_event(
@@ -464,7 +461,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     )
                     retries_str = "retr" + ("y" if retries_left == 1 else "ies")
                     message = (
-                        "Run dequeue failed to reach the user code server, re-submitting the run"
+                        "Run dequeue failed, re-submitting the run"
                         f" into the queue ({retries_left} {retries_str} remaining)"
                     )
                     instance.report_engine_event(
