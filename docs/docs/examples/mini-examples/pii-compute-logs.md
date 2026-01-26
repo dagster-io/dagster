@@ -13,6 +13,11 @@ In this example, we'll explore how to protect sensitive data by redacting person
 
 Imagine your assets process customer records, and debugging statements or error messages include PII. Without protection, this sensitive data would be visible to anyone with access to the Dagster UI, potentially violating privacy regulations like GDPR or HIPAA.
 
+| Solution                                       | Best for                                                            |
+| ---------------------------------------------- | ------------------------------------------------------------------- |
+| [Redact on read](#solution-1-redact-on-read)   | Preserving originals on disk for debugging while redacting in UI    |
+| [Redact on write](#solution-2-redact-on-write) | Maximum security; PII never reaches disk; works seamlessly in cloud |
+
 Consider an asset that logs customer information during processing:
 
 <CodeExample
@@ -44,7 +49,7 @@ Both solutions use a PII redactor that identifies and masks sensitive data using
 
 ## Solution 1: Redact on read
 
-The first approach redacts PII when logs are read for display. This preserves the original unredacted logs on disk, which can be useful for debugging or audit purposes.
+The first approach redacts PII when logs are read for display, preserving the original unredacted logs on disk. This is useful when administrators need access to original logs for debugging or audit purposes, but requires additional handling in cloud deployments since files must be redacted before upload.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/pii_compute_logs/pii_compute_log_manager.py"
@@ -63,16 +68,9 @@ compute_logs:
     redact_for_ui: true
 ```
 
-|                      | **Redact on read**                                       |
-| -------------------- | -------------------------------------------------------- |
-| **Storage**          | Original logs preserved on disk                          |
-| **Security**         | PII exists on disk; redacted only in UI                  |
-| **Debugging**        | Administrators can access unredacted logs if needed      |
-| **Cloud deployment** | Additional handling needed to redact before cloud upload |
-
 ## Solution 2: Redact on write
 
-For maximum security, redact PII as logs are written to disk. This ensures sensitive data never reaches storage, but means the original data cannot be recovered.
+For maximum security, redact PII as logs are written to disk. This ensures sensitive data never reaches storage and works seamlessly in cloud deployments since logs are pre-redacted. The trade-off is that original data cannot be recovered if needed for debugging.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/pii_compute_logs/pii_log_manager_write.py"
@@ -90,19 +88,3 @@ compute_logs:
     base_dir: compute_logs
     redact_on_write: true
 ```
-
-|                      | **Redact on write**                      |
-| -------------------- | ---------------------------------------- |
-| **Storage**          | Only redacted logs stored                |
-| **Security**         | Maximum security; PII never reaches disk |
-| **Debugging**        | Original data cannot be recovered        |
-| **Cloud deployment** | Works seamlessly; logs are pre-redacted  |
-
-## Choosing an approach
-
-| Consideration        | Redact on read | Redact on write |
-| -------------------- | -------------- | --------------- |
-| **Security level**   | Moderate       | Maximum         |
-| **Original access**  | Yes            | No              |
-| **Setup complexity** | Low            | Low             |
-| **Cloud-ready**      | Needs handling | Yes             |
