@@ -1,3 +1,4 @@
+import json
 from json import JSONDecodeError
 
 from dagster_shared.serdes import deserialize_value
@@ -19,33 +20,37 @@ def filter_dagster_events_from_cli_logs(log_lines):
     """
     check.list_param(log_lines, "log_lines", str)
 
-    coalesced_lines = []
-    buffer = []
-    in_split_line = False
-    for raw_line in log_lines:
-        line = raw_line.strip()
-        if not in_split_line and line.startswith("{"):
-            if line.endswith("}"):
-                coalesced_lines.append(line)
-            else:
-                buffer.append(line)
-                in_split_line = True
-        elif in_split_line:
-            buffer.append(line)
-            if line.endswith("}"):  # Note: hack, this may not have been the end of the full object
-                coalesced_lines.append("".join(buffer))
-                buffer = []
-                in_split_line = False
-
     events = []
-    for line in coalesced_lines:
-        try:
-            events.append(deserialize_value(line, DagsterEvent))
-        except JSONDecodeError:
-            pass
-        except check.CheckError:
-            pass
-        except DeserializationError:
-            pass
+    decoder = json.JSONDecoder()
+    buffer = ""
+    for raw_line in log_lines:
+        buffer += raw_line.rstrip("\r\n")
+
+        while buffer:
+            trimmed = buffer.lstrip()
+            if not trimmed:
+                buffer = ""
+                break
+
+            start_idx = trimmed.find("{")
+            if start_idx == -1:
+                buffer = ""
+                break
+
+            if start_idx:
+                trimmed = trimmed[start_idx:]
+
+            try:
+                _, end_idx = decoder.raw_decode(trimmed)
+            except JSONDecodeError:
+                buffer = trimmed
+                break
+
+            candidate = trimmed[:end_idx]
+            buffer = trimmed[end_idx:]
+            try:
+                events.append(deserialize_value(candidate, DagsterEvent))
+            except (JSONDecodeError, check.CheckError, DeserializationError):
+                pass
 
     return events

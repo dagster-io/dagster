@@ -2131,6 +2131,24 @@ class SqlEventLogStorage(EventLogStorage):
 
         return len(results) > 0
 
+    def get_dynamic_partitions_by_keys(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> Sequence[str]:
+        self._check_partitions_table()
+        if not partition_keys:
+            return []
+
+        query = db_select([DynamicPartitionsTable.c.partition]).where(
+            db.and_(
+                DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                DynamicPartitionsTable.c.partition.in_(partition_keys),
+            )
+        )
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        return [cast("str", row[0]) for row in results]
+
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
@@ -2168,6 +2186,22 @@ class SqlEventLogStorage(EventLogStorage):
                     db.and_(
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                         DynamicPartitionsTable.c.partition == partition_key,
+                    )
+                )
+            )
+
+    def delete_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        self._check_partitions_table()
+        if not partition_keys:
+            return
+        with self.index_connection() as conn:
+            conn.execute(
+                DynamicPartitionsTable.delete().where(
+                    db.and_(
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                        DynamicPartitionsTable.c.partition.in_(partition_keys),
                     )
                 )
             )

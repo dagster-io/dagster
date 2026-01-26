@@ -28,6 +28,8 @@ _START = "start"
 def _preprocess_config(cfg):
     destination_encryption_configuration = cfg.get("destination_encryption_configuration")
     time_partitioning = cfg.get("time_partitioning")
+    table_definitions = cfg.get("table_definitions")
+    udf_resources = cfg.get("udf_resources")
 
     if destination_encryption_configuration is not None:
         cfg["destination_encryption_configuration"] = EncryptionConfiguration(
@@ -36,6 +38,25 @@ def _preprocess_config(cfg):
 
     if time_partitioning is not None:
         cfg["time_partitioning"] = TimePartitioning(**time_partitioning)
+
+    if table_definitions is not None:
+        try:
+            from google.cloud.bigquery.external_config import ExternalConfig
+        except ImportError:
+            pass
+        else:
+            cfg["table_definitions"] = {
+                name: ExternalConfig.from_api_repr(defn) if isinstance(defn, dict) else defn
+                for name, defn in table_definitions.items()
+            }
+
+    if udf_resources is not None:
+        from google.cloud.bigquery.query import UDFResource
+
+        cfg["udf_resources"] = [
+            UDFResource(**resource) if isinstance(resource, dict) else resource
+            for resource in udf_resources
+        ]
 
     return cfg
 

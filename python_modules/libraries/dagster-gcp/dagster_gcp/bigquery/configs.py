@@ -4,7 +4,7 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 """
 
-from dagster import Array, Bool, Field, IntSource, String, StringSource
+from dagster import Array, Bool, Field, IntSource, Map, Permissive, Selector, String, StringSource
 
 from dagster_gcp.bigquery.types import (
     BQCreateDisposition,
@@ -186,25 +186,38 @@ def define_bigquery_query_config():
         is_required=False,
     )
 
-    # TODO:
-    # Type:	Shape[str, google.cloud.bigquery.external_config.ExternalConfig]
-    # table_definitions = Field(
-    #     PermissiveShape(),
-    #     description='''Definitions for external tables or None if not set.
-    #     See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.tableDefinitions
-    #     ''',
-    #     is_required=False,
-    # )
+    table_definitions = Field(
+        Map(
+            str,
+            Permissive(
+                fields={
+                    "source_uris": Field([StringSource], is_required=False),
+                    "source_format": Field(BQSourceFormat, is_required=False),
+                    "autodetect": Field(Bool, is_required=False),
+                    "schema": Field(Array(inner_type=dict), is_required=False),
+                }
+            ),
+        ),
+        description="""Definitions for external tables or None if not set. Values are passed to
+        `ExternalConfig.from_api_repr` when available.
+        See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.tableDefinitions
+        """,
+        is_required=False,
+    )
 
-    # TODO: Need to add this
-    # Type:	[google.cloud.bigquery.query.UDFResource]
-    # udf_resources = Field(
-    #     String,
-    #     description='''user defined function resources (empty by default)
-    #     See: https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.userDefinedFunctionResources
-    #     ''',
-    #     is_required=False
-    # )
+    udf_resource = Selector(
+        {
+            "inline_code": StringSource,
+            "resource_uri": StringSource,
+        }
+    )
+    udf_resources = Field(
+        [udf_resource],
+        description="""User defined function resources (empty by default).
+        See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.userDefinedFunctionResources
+        """,
+        is_required=False,
+    )
 
     use_legacy_sql = Field(
         Bool,
@@ -237,10 +250,10 @@ def define_bigquery_query_config():
             "maximum_bytes_billed": maximum_bytes_billed,
             "priority": priority,
             "query_parameters": query_parameters,
-            # TODO: table_definitions
+            "table_definitions": table_definitions,
             "schema_update_options": sf["schema_update_options"],
             "time_partitioning": sf["time_partitioning"],
-            # TODO: udf_resources
+            "udf_resources": udf_resources,
             "use_legacy_sql": use_legacy_sql,
             "use_query_cache": use_query_cache,
             "write_disposition": sf["write_disposition"],

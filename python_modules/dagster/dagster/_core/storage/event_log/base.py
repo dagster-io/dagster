@@ -533,6 +533,23 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Delete a partition for the specified dynamic partitions definition."""
         raise NotImplementedError()
 
+    def delete_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        """Delete partitions for the specified dynamic partitions definition."""
+        for partition_key in partition_keys:
+            self.delete_dynamic_partition(partitions_def_name, partition_key)
+
+    def get_dynamic_partitions_by_keys(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> Sequence[str]:
+        """Return the subset of partition keys that exist for the dynamic partitions definition."""
+        return [
+            partition_key
+            for partition_key in partition_keys
+            if self.has_dynamic_partition(partitions_def_name, partition_key)
+        ]
+
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 

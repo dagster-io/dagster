@@ -20,6 +20,7 @@ uv_activate_venv() {
 }
 
 # TODO - refactor Vercel logic shared between `build-kinds-tags` and `build-api-docs` into single script
+# NOTE: Vercel logic is shared with `build-api-docs` and could be consolidated later.
 if [ "$VERCEL" = "1" ]; then
   echo "Detected Vercel environment. Running Vercel-specific commands and configurations."
   export LC_ALL=C.UTF-8
