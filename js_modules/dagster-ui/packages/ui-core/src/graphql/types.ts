@@ -5040,6 +5040,7 @@ export type RunFailureEvent = ErrorEvent &
     __typename: 'RunFailureEvent';
     error: Maybe<PythonError>;
     eventType: Maybe<DagsterEventType>;
+    firstStepFailure: Maybe<ExecutionStepFailureEvent>;
     level: LogLevel;
     message: Scalars['String']['output'];
     pipelineName: Scalars['String']['output'];
@@ -14576,6 +14577,12 @@ export const buildRunFailureEvent = (
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
         : DagsterEventType.ALERT_FAILURE,
+    firstStepFailure:
+      overrides && overrides.hasOwnProperty('firstStepFailure')
+        ? overrides.firstStepFailure!
+        : relationshipsToOmit.has('ExecutionStepFailureEvent')
+          ? ({} as ExecutionStepFailureEvent)
+          : buildExecutionStepFailureEvent({}, relationshipsToOmit),
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'porro',
     pipelineName:

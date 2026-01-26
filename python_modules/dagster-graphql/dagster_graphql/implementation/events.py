@@ -386,10 +386,33 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         DagsterEventType.RUN_FAILURE,
         DagsterEventType.PIPELINE_FAILURE,
     ):
+        from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
+
         data = dagster_event.job_failure_data
+        first_step_failure = None
+        if data and data.first_step_failure_event:
+            step_event = data.first_step_failure_event
+            step_data = step_event.step_failure_data
+            # Construct the step failure event with available data
+            # Use parent event's timestamp and ERROR level since we don't have original EventLogEntry
+            first_step_failure = GrapheneExecutionStepFailureEvent(
+                runId=basic_params["runId"],
+                message=step_event.message or "",
+                timestamp=basic_params["timestamp"],  # Use parent event's timestamp
+                level=GrapheneLogLevel.ERROR,
+                stepKey=step_event.step_key,
+                solidHandleID=str(step_event.node_handle) if step_event.node_handle else None,
+                eventType=step_event.event_type,
+                error=GraphenePythonError(step_data.error)
+                if step_data and step_data.error
+                else None,
+                failureMetadata=step_data.user_failure_data if step_data else None,
+                errorSource=step_data.error_source if step_data else None,
+            )
         return GrapheneRunFailureEvent(
             pipelineName=pipeline_name,
             error=GraphenePythonError(data.error) if (data and data.error) else None,
+            first_step_failure=first_step_failure,
             **basic_params,
         )
 

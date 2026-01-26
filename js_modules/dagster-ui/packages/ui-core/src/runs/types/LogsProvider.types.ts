@@ -3275,6 +3275,209 @@ export type PipelineRunLogsSubscription = {
                   error: {__typename: 'PythonError'; message: string; stack: Array<string>};
                 }>;
               } | null;
+              firstStepFailure: {
+                __typename: 'ExecutionStepFailureEvent';
+                message: string;
+                stepKey: string | null;
+                errorSource: Types.ErrorSource | null;
+                timestamp: string;
+                error: {
+                  __typename: 'PythonError';
+                  message: string;
+                  stack: Array<string>;
+                  errorChain: Array<{
+                    __typename: 'ErrorChainLink';
+                    isExplicitLink: boolean;
+                    error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                  }>;
+                } | null;
+                failureMetadata: {
+                  __typename: 'FailureMetadata';
+                  metadataEntries: Array<
+                    | {
+                        __typename: 'AssetMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }
+                    | {
+                        __typename: 'BoolMetadataEntry';
+                        boolValue: boolean | null;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'CodeReferencesMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        codeReferences: Array<
+                          | {
+                              __typename: 'LocalFileCodeReference';
+                              filePath: string;
+                              lineNumber: number | null;
+                              label: string | null;
+                            }
+                          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                        >;
+                      }
+                    | {
+                        __typename: 'FloatMetadataEntry';
+                        floatValue: number | null;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'IntMetadataEntry';
+                        intValue: number | null;
+                        intRepr: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'JobMetadataEntry';
+                        jobName: string;
+                        repositoryName: string | null;
+                        locationName: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'JsonMetadataEntry';
+                        jsonString: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'MarkdownMetadataEntry';
+                        mdStr: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'NotebookMetadataEntry';
+                        path: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {__typename: 'NullMetadataEntry'; label: string; description: string | null}
+                    | {
+                        __typename: 'PathMetadataEntry';
+                        path: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PipelineRunMetadataEntry';
+                        runId: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PythonArtifactMetadataEntry';
+                        module: string;
+                        name: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TableColumnLineageMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        lineage: Array<{
+                          __typename: 'TableColumnLineageEntry';
+                          columnName: string;
+                          columnDeps: Array<{
+                            __typename: 'TableColumnDep';
+                            columnName: string;
+                            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                          }>;
+                        }>;
+                      }
+                    | {
+                        __typename: 'TableMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        table: {
+                          __typename: 'Table';
+                          records: Array<string>;
+                          schema: {
+                            __typename: 'TableSchema';
+                            columns: Array<{
+                              __typename: 'TableColumn';
+                              name: string;
+                              description: string | null;
+                              type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
+                              constraints: {
+                                __typename: 'TableColumnConstraints';
+                                nullable: boolean;
+                                unique: boolean;
+                                other: Array<string>;
+                              };
+                            }>;
+                            constraints: {
+                              __typename: 'TableConstraints';
+                              other: Array<string>;
+                            } | null;
+                          };
+                        };
+                      }
+                    | {
+                        __typename: 'TableSchemaMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        schema: {
+                          __typename: 'TableSchema';
+                          columns: Array<{
+                            __typename: 'TableColumn';
+                            name: string;
+                            description: string | null;
+                            type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                            constraints: {
+                              __typename: 'TableColumnConstraints';
+                              nullable: boolean;
+                              unique: boolean;
+                              other: Array<string>;
+                            };
+                          }>;
+                          constraints: {
+                            __typename: 'TableConstraints';
+                            other: Array<string>;
+                          } | null;
+                        };
+                      }
+                    | {
+                        __typename: 'TextMetadataEntry';
+                        text: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'UrlMetadataEntry';
+                        url: string;
+                        label: string;
+                        description: string | null;
+                      }
+                  >;
+                } | null;
+              } | null;
             }
           | {
               __typename: 'RunStartEvent';
@@ -7059,6 +7262,199 @@ export type RunLogsSubscriptionSuccessFragment = {
             isExplicitLink: boolean;
             error: {__typename: 'PythonError'; message: string; stack: Array<string>};
           }>;
+        } | null;
+        firstStepFailure: {
+          __typename: 'ExecutionStepFailureEvent';
+          message: string;
+          stepKey: string | null;
+          errorSource: Types.ErrorSource | null;
+          timestamp: string;
+          error: {
+            __typename: 'PythonError';
+            message: string;
+            stack: Array<string>;
+            errorChain: Array<{
+              __typename: 'ErrorChainLink';
+              isExplicitLink: boolean;
+              error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+            }>;
+          } | null;
+          failureMetadata: {
+            __typename: 'FailureMetadata';
+            metadataEntries: Array<
+              | {
+                  __typename: 'AssetMetadataEntry';
+                  label: string;
+                  description: string | null;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }
+              | {
+                  __typename: 'BoolMetadataEntry';
+                  boolValue: boolean | null;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'CodeReferencesMetadataEntry';
+                  label: string;
+                  description: string | null;
+                  codeReferences: Array<
+                    | {
+                        __typename: 'LocalFileCodeReference';
+                        filePath: string;
+                        lineNumber: number | null;
+                        label: string | null;
+                      }
+                    | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                  >;
+                }
+              | {
+                  __typename: 'FloatMetadataEntry';
+                  floatValue: number | null;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'IntMetadataEntry';
+                  intValue: number | null;
+                  intRepr: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'JobMetadataEntry';
+                  jobName: string;
+                  repositoryName: string | null;
+                  locationName: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'JsonMetadataEntry';
+                  jsonString: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'MarkdownMetadataEntry';
+                  mdStr: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'NotebookMetadataEntry';
+                  path: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {__typename: 'NullMetadataEntry'; label: string; description: string | null}
+              | {
+                  __typename: 'PathMetadataEntry';
+                  path: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'PipelineRunMetadataEntry';
+                  runId: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'PoolMetadataEntry';
+                  pool: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'PythonArtifactMetadataEntry';
+                  module: string;
+                  name: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'TableColumnLineageMetadataEntry';
+                  label: string;
+                  description: string | null;
+                  lineage: Array<{
+                    __typename: 'TableColumnLineageEntry';
+                    columnName: string;
+                    columnDeps: Array<{
+                      __typename: 'TableColumnDep';
+                      columnName: string;
+                      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                    }>;
+                  }>;
+                }
+              | {
+                  __typename: 'TableMetadataEntry';
+                  label: string;
+                  description: string | null;
+                  table: {
+                    __typename: 'Table';
+                    records: Array<string>;
+                    schema: {
+                      __typename: 'TableSchema';
+                      columns: Array<{
+                        __typename: 'TableColumn';
+                        name: string;
+                        description: string | null;
+                        type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                        constraints: {
+                          __typename: 'TableColumnConstraints';
+                          nullable: boolean;
+                          unique: boolean;
+                          other: Array<string>;
+                        };
+                      }>;
+                      constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
+                    };
+                  };
+                }
+              | {
+                  __typename: 'TableSchemaMetadataEntry';
+                  label: string;
+                  description: string | null;
+                  schema: {
+                    __typename: 'TableSchema';
+                    columns: Array<{
+                      __typename: 'TableColumn';
+                      name: string;
+                      description: string | null;
+                      type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                      constraints: {
+                        __typename: 'TableColumnConstraints';
+                        nullable: boolean;
+                        unique: boolean;
+                        other: Array<string>;
+                      };
+                    }>;
+                    constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
+                  };
+                }
+              | {
+                  __typename: 'TextMetadataEntry';
+                  text: string;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'TimestampMetadataEntry';
+                  timestamp: number;
+                  label: string;
+                  description: string | null;
+                }
+              | {
+                  __typename: 'UrlMetadataEntry';
+                  url: string;
+                  label: string;
+                  description: string | null;
+                }
+            >;
+          } | null;
         } | null;
       }
     | {
@@ -10920,6 +11316,209 @@ export type RunLogsQuery = {
                   error: {__typename: 'PythonError'; message: string; stack: Array<string>};
                 }>;
               } | null;
+              firstStepFailure: {
+                __typename: 'ExecutionStepFailureEvent';
+                message: string;
+                stepKey: string | null;
+                errorSource: Types.ErrorSource | null;
+                timestamp: string;
+                error: {
+                  __typename: 'PythonError';
+                  message: string;
+                  stack: Array<string>;
+                  errorChain: Array<{
+                    __typename: 'ErrorChainLink';
+                    isExplicitLink: boolean;
+                    error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                  }>;
+                } | null;
+                failureMetadata: {
+                  __typename: 'FailureMetadata';
+                  metadataEntries: Array<
+                    | {
+                        __typename: 'AssetMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }
+                    | {
+                        __typename: 'BoolMetadataEntry';
+                        boolValue: boolean | null;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'CodeReferencesMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        codeReferences: Array<
+                          | {
+                              __typename: 'LocalFileCodeReference';
+                              filePath: string;
+                              lineNumber: number | null;
+                              label: string | null;
+                            }
+                          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                        >;
+                      }
+                    | {
+                        __typename: 'FloatMetadataEntry';
+                        floatValue: number | null;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'IntMetadataEntry';
+                        intValue: number | null;
+                        intRepr: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'JobMetadataEntry';
+                        jobName: string;
+                        repositoryName: string | null;
+                        locationName: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'JsonMetadataEntry';
+                        jsonString: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'MarkdownMetadataEntry';
+                        mdStr: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'NotebookMetadataEntry';
+                        path: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {__typename: 'NullMetadataEntry'; label: string; description: string | null}
+                    | {
+                        __typename: 'PathMetadataEntry';
+                        path: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PipelineRunMetadataEntry';
+                        runId: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PythonArtifactMetadataEntry';
+                        module: string;
+                        name: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TableColumnLineageMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        lineage: Array<{
+                          __typename: 'TableColumnLineageEntry';
+                          columnName: string;
+                          columnDeps: Array<{
+                            __typename: 'TableColumnDep';
+                            columnName: string;
+                            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                          }>;
+                        }>;
+                      }
+                    | {
+                        __typename: 'TableMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        table: {
+                          __typename: 'Table';
+                          records: Array<string>;
+                          schema: {
+                            __typename: 'TableSchema';
+                            columns: Array<{
+                              __typename: 'TableColumn';
+                              name: string;
+                              description: string | null;
+                              type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
+                              constraints: {
+                                __typename: 'TableColumnConstraints';
+                                nullable: boolean;
+                                unique: boolean;
+                                other: Array<string>;
+                              };
+                            }>;
+                            constraints: {
+                              __typename: 'TableConstraints';
+                              other: Array<string>;
+                            } | null;
+                          };
+                        };
+                      }
+                    | {
+                        __typename: 'TableSchemaMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        schema: {
+                          __typename: 'TableSchema';
+                          columns: Array<{
+                            __typename: 'TableColumn';
+                            name: string;
+                            description: string | null;
+                            type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                            constraints: {
+                              __typename: 'TableColumnConstraints';
+                              nullable: boolean;
+                              unique: boolean;
+                              other: Array<string>;
+                            };
+                          }>;
+                          constraints: {
+                            __typename: 'TableConstraints';
+                            other: Array<string>;
+                          } | null;
+                        };
+                      }
+                    | {
+                        __typename: 'TextMetadataEntry';
+                        text: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'UrlMetadataEntry';
+                        url: string;
+                        label: string;
+                        description: string | null;
+                      }
+                  >;
+                } | null;
+              } | null;
             }
           | {
               __typename: 'RunStartEvent';
@@ -11517,6 +12116,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '929d969805de91b8890960433258984bbd32d2c08dbca55583da64c309fa3127';
+export const PipelineRunLogsSubscriptionVersion = '31d87ec4a58855b498886886157fb8bc5f61695d981e662a0854b5498aa15b9e';
 
-export const RunLogsQueryVersion = '811ef63a737599640cc1677f4a6c01c5193e5651e0b641680847abe613296deb';
+export const RunLogsQueryVersion = 'a997606764671579cf9ce3cd4346d277644c654e0a5824d4969bfb9fe894d529';

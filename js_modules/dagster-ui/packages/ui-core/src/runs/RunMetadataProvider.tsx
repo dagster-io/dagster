@@ -4,6 +4,8 @@ import {useMemo} from 'react';
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
 import {gql, useQuery} from '../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {flattenOneLevel} from '../util/flattenOneLevel';
 import {RunFragment} from './types/RunFragments.types';
 import {
@@ -12,7 +14,7 @@ import {
   RunStepStatsQuery,
   RunStepStatsQueryVariables,
 } from './types/RunMetadataProvider.types';
-import {StepEventStatus} from '../graphql/types';
+import {ErrorSource, StepEventStatus} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 export enum IStepState {
@@ -81,6 +83,17 @@ export interface ILogCaptureInfo {
   shellCmd?: ILogRetrievalShellCommand | null;
 }
 
+export interface IRunFailureEvent {
+  message: string;
+  error?: PythonErrorFragment;
+  firstStepFailure?: {
+    stepKey: string | null;
+    message: string;
+    error?: PythonErrorFragment;
+    errorSource?: ErrorSource | null;
+  };
+}
+
 export interface IRunMetadataDict {
   firstLogAt: number;
   mostRecentLogAt: number;
@@ -96,6 +109,7 @@ export interface IRunMetadataDict {
   logCaptureSteps?: {
     [fileKey: string]: ILogCaptureInfo;
   };
+  runFailureEvent?: IRunFailureEvent;
 }
 
 export const EMPTY_RUN_METADATA: IRunMetadataDict = {
@@ -250,6 +264,22 @@ export function extractMetadataFromLogs(
           upsertState(step, timestamp, IStepState.UNKNOWN);
         }
       }
+    }
+
+    // Extract run failure event data for display in the status tag dialog
+    if (log.__typename === 'RunFailureEvent') {
+      metadata.runFailureEvent = {
+        message: log.message,
+        error: log.error || undefined,
+        firstStepFailure: log.firstStepFailure
+          ? {
+              stepKey: log.firstStepFailure.stepKey,
+              message: log.firstStepFailure.message,
+              error: log.firstStepFailure.error || undefined,
+              errorSource: log.firstStepFailure.errorSource || undefined,
+            }
+          : undefined,
+      };
     }
 
     if (!log.stepKey) {
@@ -471,7 +501,21 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
         stderr
       }
     }
+    ... on RunFailureEvent {
+      error {
+        ...PythonErrorFragment
+      }
+      firstStepFailure {
+        message
+        stepKey
+        error {
+          ...PythonErrorFragment
+        }
+        errorSource
+      }
+    }
   }
 
   ${METADATA_ENTRY_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

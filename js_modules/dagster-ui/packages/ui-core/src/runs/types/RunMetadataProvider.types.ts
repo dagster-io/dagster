@@ -466,6 +466,32 @@ export type RunMetadataProviderMessageFragment_RunFailureEvent = {
   message: string;
   timestamp: string;
   stepKey: string | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
+  firstStepFailure: {
+    __typename: 'ExecutionStepFailureEvent';
+    message: string;
+    stepKey: string | null;
+    errorSource: Types.ErrorSource | null;
+    error: {
+      __typename: 'PythonError';
+      message: string;
+      stack: Array<string>;
+      errorChain: Array<{
+        __typename: 'ErrorChainLink';
+        isExplicitLink: boolean;
+        error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+      }>;
+    } | null;
+  } | null;
 };
 
 export type RunMetadataProviderMessageFragment_RunStartEvent = {

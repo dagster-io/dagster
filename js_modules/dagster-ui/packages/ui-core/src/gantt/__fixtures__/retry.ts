@@ -241,6 +241,8 @@ export const LOGS: RunMetadataProviderMessageFragment[] = [
     timestamp: '1690126924895',
     stepKey: null,
     __typename: 'RunFailureEvent',
+    error: null,
+    firstStepFailure: null,
   },
   {
     message: 'Process for run exited (pid: 65256).',

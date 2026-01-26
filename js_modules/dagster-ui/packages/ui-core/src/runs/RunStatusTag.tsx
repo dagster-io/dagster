@@ -1,7 +1,21 @@
-import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  CaptionMono,
+  Colors,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Popover,
+  Subtitle2,
+  Tag,
+} from '@dagster-io/ui-components';
+import {useState} from 'react';
 
+import {IRunFailureEvent} from './RunMetadataProvider';
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../graphql/types';
 
@@ -88,15 +102,46 @@ export const RUN_STATUS_COLORS = {
   SCHEDULED: Colors.accentGray(),
 };
 
-export const RunStatusTag = (props: {status: RunStatus}) => {
-  const {status} = props;
-  return (
-    <Tag intent={statusToIntent(status)}>
+export const RunStatusTag = (props: {status: RunStatus; failureInfo?: IRunFailureEvent | null}) => {
+  const {status, failureInfo} = props;
+  const [showDialog, setShowDialog] = useState(false);
+
+  const isClickable = status === RunStatus.FAILURE && !!failureInfo;
+
+  const tag = (
+    <Tag intent={statusToIntent(status)} interactive={isClickable}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
         <div>{runStatusToString(status)}</div>
       </Box>
     </Tag>
+  );
+
+  return (
+    <>
+      {isClickable ? (
+        <span onClick={() => setShowDialog(true)} style={{cursor: 'pointer'}}>
+          {tag}
+        </span>
+      ) : (
+        tag
+      )}
+      {failureInfo && (
+        <Dialog
+          title="Run Failure"
+          isOpen={showDialog}
+          canEscapeKeyClose
+          canOutsideClickClose
+          onClose={() => setShowDialog(false)}
+          style={{width: 'auto', maxWidth: '80vw'}}
+        >
+          <RunFailureDialogContents
+            failureInfo={failureInfo}
+            onClose={() => setShowDialog(false)}
+          />
+        </Dialog>
+      )}
+    </>
   );
 };
 
@@ -128,5 +173,86 @@ export const RunStatusTagWithStats = (props: Props) => {
     >
       <RunStatusTag status={status} />
     </Popover>
+  );
+};
+
+// Helper to check if an error has a stack trace
+const hasStackTrace = (error: {
+  message: string;
+  stack?: string[];
+  errorChain?: {error: {stack?: string[]}}[];
+}) => {
+  if (error.stack && error.stack.length > 0) {
+    return true;
+  }
+  if (error.errorChain) {
+    return error.errorChain.some((chain) => chain.error.stack && chain.error.stack.length > 0);
+  }
+  return false;
+};
+
+const RunFailureDialogContents = ({
+  failureInfo,
+  onClose,
+}: {
+  failureInfo: IRunFailureEvent;
+  onClose: () => void;
+}) => {
+  const runFailureError = failureInfo.error ?? {message: failureInfo.message};
+  const showRunFailureBox = hasStackTrace(runFailureError);
+
+  const firstStepError =
+    failureInfo.firstStepFailure?.error ??
+    (failureInfo.firstStepFailure ? {message: failureInfo.firstStepFailure.message} : null);
+
+  // CSS to override inner scrolling - make the whole dialog scroll instead
+  // Target the ErrorWrapper div (CSS modules generate class names containing "wrapper")
+  const noInnerScrollStyle = `
+    .run-failure-dialog-content [class*="wrapper"] {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+  `;
+
+  return (
+    <>
+      <style>{noInnerScrollStyle}</style>
+      <DialogBody>
+        <div
+          className="run-failure-dialog-content"
+          style={{maxHeight: 'calc(100vh - 200px)', overflow: 'auto'}}
+        >
+          {/* Run Failure first */}
+          <Box margin={{bottom: failureInfo.firstStepFailure ? 16 : 0}}>
+            <Subtitle2>Run Failure</Subtitle2>
+            {showRunFailureBox ? (
+              <Box margin={{top: 8}}>
+                <PythonErrorInfo error={runFailureError} />
+              </Box>
+            ) : (
+              <div style={{marginTop: 8}}>{runFailureError.message}</div>
+            )}
+          </Box>
+
+          {/* First Step Failure second */}
+          {failureInfo.firstStepFailure && firstStepError && (
+            <Box>
+              <Subtitle2>First Step Failure: {failureInfo.firstStepFailure.stepKey}</Subtitle2>
+              <Box margin={{top: 8}}>
+                <PythonErrorInfo
+                  error={firstStepError}
+                  errorSource={failureInfo.firstStepFailure.errorSource}
+                />
+              </Box>
+            </Box>
+          )}
+        </div>
+      </DialogBody>
+      <DialogFooter topBorder>
+        <Button intent="primary" onClick={onClose}>
+          Close
+        </Button>
+      </DialogFooter>
+    </>
   );
 };
