@@ -1489,6 +1489,9 @@ executable_test_job = define_asset_job(name="executable_test_job", selection=[ex
 
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
+# Partitions definition for testing partitioned asset checks
+partitioned_asset_check_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
 
 @asset
 def not_included_asset(): ...
@@ -1521,6 +1524,29 @@ static_partitioned_assets_job = define_asset_job(
     "static_partitioned_assets_job",
     AssetSelection.assets(upstream_static_partitioned_asset).downstream(),
 )
+
+
+@asset(partitions_def=partitioned_asset_check_partitions)
+def partitioned_asset_for_checks(context: AssetExecutionContext):
+    """Asset with partitions for testing partitioned asset checks."""
+    partition_key = context.partition_key
+    return f"data_for_{partition_key}"
+
+
+@asset_check(
+    asset=partitioned_asset_for_checks,
+    description="Check for partitioned asset",
+    blocking=True,
+    partitions_def=partitioned_asset_check_partitions,
+)
+def partitioned_asset_check(partitioned_asset_for_checks):
+    """Asset check for the partitioned asset."""
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "check_type": "partitioned",
+        },
+    )
 
 
 @asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
@@ -2399,6 +2425,7 @@ def define_assets():
         table_asset_2,
         table_asset_3,
         table_asset_4,
+        partitioned_asset_for_checks,
     ]
 
 
@@ -2416,6 +2443,7 @@ def define_asset_checks():
         asset_3_other_check,
         owned_asset_check,
         unowned_asset_check,
+        partitioned_asset_check,
     ]
 
 
