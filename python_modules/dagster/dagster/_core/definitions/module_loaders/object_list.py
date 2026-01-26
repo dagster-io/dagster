@@ -145,6 +145,12 @@ class ModuleScopedDagsterDefs:
                 objects_by_key[key].append(asset_object)
         return objects_by_key
     def _do_collision_detection(self) -> None:
+        # In certain cases, we allow asset specs to collide because we know we aren't loading them.
+        # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
+
+        # special handling for conflicting AssetSpecs since they are tuples and we can compare them with == and
+        # dedupe at least those that dont contain nested complex objects
+        
         # Collision detection on module-scoped asset objects. This does not include CacheableAssetsDefinitions.
         for key, asset_objects in self.asset_objects_by_key.items():
             asset_defs = [obj for obj in asset_objects if isinstance(obj, AssetsDefinition)]
