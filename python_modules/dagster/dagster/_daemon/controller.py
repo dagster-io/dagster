@@ -91,6 +91,7 @@ def daemon_controller_from_instance(
     workspace_load_target: WorkspaceLoadTarget,
     heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    workspace_reload_interval_seconds: int = RELOAD_WORKSPACE_INTERVAL,
     gen_daemons: Callable[
         [DagsterInstance], Iterable[DagsterDaemon]
     ] = create_daemons_from_instance,
@@ -123,6 +124,7 @@ def daemon_controller_from_instance(
                 daemons,
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
+                workspace_reload_interval_seconds=workspace_reload_interval_seconds,
                 error_interval_seconds=error_interval_seconds,
                 grpc_server_registry=grpc_server_registry,
             )
@@ -140,6 +142,7 @@ class DagsterDaemonController(AbstractContextManager):
     _instance: DagsterInstance
     _heartbeat_interval_seconds: float
     _heartbeat_tolerance_seconds: float
+    _workspace_reload_interval_seconds: float
     _daemon_shutdown_event: threading.Event
     _logger: logging.Logger
     _last_healthy_heartbeat_times: dict[str, float]
@@ -152,6 +155,7 @@ class DagsterDaemonController(AbstractContextManager):
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+        workspace_reload_interval_seconds: float = RELOAD_WORKSPACE_INTERVAL,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
     ):
         self._daemon_uuid = str(uuid.uuid4())
@@ -169,6 +173,9 @@ class DagsterDaemonController(AbstractContextManager):
 
         self._heartbeat_tolerance_seconds = check.numeric_param(
             heartbeat_tolerance_seconds, "heartbeat_tolerance_seconds"
+        )
+        self._workspace_reload_interval_seconds = check.numeric_param(
+            workspace_reload_interval_seconds, "workspace_reload_interval_seconds"
         )
 
         self._grpc_server_registry = grpc_server_registry
@@ -276,7 +283,7 @@ class DagsterDaemonController(AbstractContextManager):
     def check_workspace_freshness(self, last_workspace_update_time: float) -> float:
         nowish = get_current_timestamp()
         try:
-            if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
+            if (nowish - last_workspace_update_time) > self._workspace_reload_interval_seconds:
                 if self._grpc_server_registry:
                     self._grpc_server_registry.clear_all_grpc_endpoints()
                 self._workspace_process_context.refresh_workspace()
