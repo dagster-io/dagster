@@ -64,6 +64,7 @@ def make_teams_on_run_failure_sensor(
     monitor_all_code_locations: bool = False,
     webserver_base_url: Optional[str] = None,
     monitor_all_repositories: bool = False,
+    skip_alert_fn: Optional[Callable[[RunFailureSensorContext], bool]] = None,
 ):
     """Create a sensor on run failures that will message the given MS Teams webhook URL.
 
@@ -93,6 +94,10 @@ def make_teams_on_run_failure_sensor(
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
             Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
+        skip_alert_fn (Optional[Callable[[RunFailureSensorContext], bool]]): Function that
+            takes in the ``RunFailureSensorContext`` and returns True if the alert should
+            be skipped. Defaults to None (no alerts are skipped). This can be used to
+            conditionally skip alerts, for example based on run tags.
 
     Examples:
         .. code-block:: python
@@ -141,6 +146,9 @@ def make_teams_on_run_failure_sensor(
         monitor_all_code_locations=monitor_all,
     )
     def teams_on_run_failure(context: RunFailureSensorContext):
+        if skip_alert_fn is not None and skip_alert_fn(context):
+            return
+
         text = message_fn(context)
         card = Card() if teams_client.is_legacy_webhook() else AdaptiveCard()
         card.add_attachment(
