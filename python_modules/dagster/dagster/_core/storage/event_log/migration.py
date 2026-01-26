@@ -6,16 +6,23 @@ from tqdm import tqdm
 
 from dagster._core.assets import AssetDetails
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.event_log.asset_check_migration import migrate_asset_check_summary_data
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._time import datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
 ASSET_KEY_INDEX_COLS = "asset_key_index_columns"  # extracts index columns from the asset_keys table
+ASSET_CHECK_SUMMARY_DATA = (
+    "asset_check_summary_data"  # builds asset_checks table from asset_check_executions
+)
 
 EVENT_LOG_DATA_MIGRATIONS = {
     SECONDARY_INDEX_ASSET_KEY: lambda: migrate_asset_key_data,
 }
-ASSET_DATA_MIGRATIONS = {ASSET_KEY_INDEX_COLS: lambda: migrate_asset_keys_index_columns}
+ASSET_DATA_MIGRATIONS = {
+    ASSET_KEY_INDEX_COLS: lambda: migrate_asset_keys_index_columns,
+    ASSET_CHECK_SUMMARY_DATA: lambda: migrate_asset_check_summary_data,
+}
 
 
 def migrate_event_log_data(instance=None):

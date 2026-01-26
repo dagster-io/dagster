@@ -24,6 +24,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+    AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
@@ -45,6 +46,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._core.event_api import EventLogCursor
@@ -72,7 +74,10 @@ from dagster._core.remote_origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionStatusCacheValue,
+)
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
@@ -477,6 +482,9 @@ class TestEventLogStorage:
 
     def can_set_concurrency_defaults(self):
         return False
+
+    def can_test_asset_checks(self) -> bool:
+        return True
 
     def supports_offset_cursor_queries(self):
         return True
@@ -5867,6 +5875,9 @@ class TestEventLogStorage:
         self,
         storage: EventLogStorage,
     ):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         check_key_1 = dg.AssetCheckKey(dg.AssetKey(["my_asset"]), "my_check")
         check_key_2 = dg.AssetCheckKey(dg.AssetKey(["my_asset"]), "my_check_2")
@@ -6040,6 +6051,9 @@ class TestEventLogStorage:
         assert len(latest_checks) == 0
 
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
         run_id = make_new_run_id()
         for _ in range(2):
             storage.store_event(
@@ -6991,3 +7005,280 @@ class TestEventLogStorage:
         assert storage.get_paginated_dynamic_partitions(
             partitions_def_name="foo", limit=1, ascending=True
         ).results == ["baz"]
+
+    def test_asset_check_partition_storage(self, storage: EventLogStorage):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
+        asset_key = dg.AssetKey(["test_asset"])
+        check_name = "test_check"
+        partition_key = "2024-01-01"
+        run_id = make_new_run_id()
+        check_key = dg.AssetCheckKey(asset_key=asset_key, name=check_name)
+
+        # Create and store planned event using builder
+        planned_event = DagsterEvent.build_asset_check_evaluation_planned_event(
+            job_name="test_job",
+            step_key="test_step",
+            asset_check_key=check_key,
+            partition=partition_key,
+        )
+
+        planned_log_entry = dg.EventLogEntry(
+            error_info=None,
+            level="INFO",
+            user_message="",
+            run_id=run_id,
+            timestamp=1234567890.0,
+            step_key="test_step",
+            job_name="test_pipeline",
+            dagster_event=planned_event,
+        )
+
+        storage.store_event(planned_log_entry)
+
+        # Check that partition record was created
+        partition_records = storage.get_asset_check_partition_records(check_key)
+
+        assert len(partition_records) == 1, (
+            f"Expected 1 partition record, got {len(partition_records)}"
+        )
+
+        record = partition_records[0]
+        assert record.partition_key == partition_key
+        assert record.last_execution_status == AssetCheckExecutionRecordStatus.PLANNED
+        assert record.last_planned_run_id == run_id
+
+        # Now test evaluation event that should update the same partition
+        from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+            AssetCheckEvaluation,
+        )
+        from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+
+        evaluation_event_data = AssetCheckEvaluation(
+            asset_key=asset_key,
+            check_name=check_name,
+            partition=partition_key,
+            passed=False,  # Test failed check
+            severity=AssetCheckSeverity.ERROR,
+            description="Test check failed",
+            metadata={},
+            target_materialization_data=None,
+        )
+
+        evaluation_event = dg.DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION.value,
+            job_name="test_job",
+            event_specific_data=evaluation_event_data,
+        )
+
+        evaluation_log_entry = dg.EventLogEntry(
+            error_info=None,
+            level="INFO",
+            user_message="",
+            run_id=run_id,
+            timestamp=1234567891.0,
+            step_key="test_step",
+            job_name="test_pipeline",
+            dagster_event=evaluation_event,
+        )
+
+        storage.store_event(evaluation_log_entry)
+
+        # Check that record was updated (should still be 1 record but with different status)
+        partition_records = storage.get_asset_check_partition_records(check_key)
+
+        assert len(partition_records) == 1
+        record = partition_records[0]
+        assert record.partition_key == partition_key
+        assert record.last_execution_status == AssetCheckExecutionRecordStatus.FAILED
+        assert record.last_planned_run_id == run_id
+
+    def test_asset_check_cached_value(self, storage: EventLogStorage):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
+        asset_key = dg.AssetKey(["test_asset"])
+        check_key = dg.AssetCheckKey(asset_key=asset_key, name="test_check")
+
+        # Test: returns None for non-existent check
+        cached_value = storage.get_asset_check_cached_value(check_key)
+        assert cached_value is None
+
+        # Test: stores and retrieves correctly
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+        cache_value = AssetCheckPartitionStatusCacheValue.from_partitions_def(partitions_def)
+
+        storage.update_asset_check_cached_value(check_key, cache_value)
+
+        retrieved_value = storage.get_asset_check_cached_value(check_key)
+        assert retrieved_value is not None
+        assert retrieved_value.partitions_def_id == cache_value.partitions_def_id
+        assert retrieved_value.latest_storage_id == cache_value.latest_storage_id
+
+    def test_asset_check_partition_records_filtering(self, storage: EventLogStorage):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+        asset_key = dg.AssetKey(["test_asset"])
+        check_key = dg.AssetCheckKey(asset_key=asset_key, name="test_check")
+
+        # Store events for multiple partitions
+        partitions = ["a", "b", "c"]
+        for i, partition in enumerate(partitions):
+            planned_event = DagsterEvent.build_asset_check_evaluation_planned_event(
+                job_name="test_job",
+                step_key="test_step",
+                asset_check_key=check_key,
+                partition=partition,
+            )
+
+            log_entry = dg.EventLogEntry(
+                error_info=None,
+                level="INFO",
+                user_message="",
+                run_id=make_new_run_id(),
+                timestamp=1234567890.0 + i,
+                step_key="test_step",
+                job_name="test_pipeline",
+                dagster_event=planned_event,
+            )
+
+            storage.store_event(log_entry)
+
+        # Test: get all records (no filtering)
+        all_records = storage.get_asset_check_partition_records(check_key)
+        assert len(all_records) == 3
+        partition_keys = {r.partition_key for r in all_records}
+        assert partition_keys == {"a", "b", "c"}
+
+        # Test: partition filtering - get only partition 'b'
+        partition_b_records = storage.get_asset_check_partition_records(
+            check_key, partition_key="b"
+        )
+        assert len(partition_b_records) == 1
+        assert partition_b_records[0].partition_key == "b"
+        assert (
+            partition_b_records[0].last_execution_status == AssetCheckExecutionRecordStatus.PLANNED
+        )
+
+        # Test: partition filtering - non-existent partition
+        no_records = storage.get_asset_check_partition_records(
+            check_key, partition_key="nonexistent"
+        )
+        assert len(no_records) == 0
+
+        # Test: after_event_storage_id filtering
+        sorted_records = sorted(all_records, key=lambda r: r.last_event_id)
+        first_event_id = sorted_records[0].last_event_id
+
+        incremental_records = storage.get_asset_check_partition_records(
+            check_key, after_event_storage_id=first_event_id
+        )
+        assert len(incremental_records) == 2  # Should get partitions with higher event IDs
+
+        # Test: combined filtering - specific partition after event ID
+        combined_records = storage.get_asset_check_partition_records(
+            check_key, partition_key="c", after_event_storage_id=first_event_id
+        )
+        assert len(combined_records) == 1
+        assert combined_records[0].partition_key == "c"
+
+    def test_asset_check_summary_records_from_summary_tables(self, storage: EventLogStorage):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
+        # Create multiple check keys
+        check_keys = [
+            dg.AssetCheckKey(dg.AssetKey(["asset_1"]), "check_1"),
+            dg.AssetCheckKey(dg.AssetKey(["asset_1"]), "check_2"),
+            dg.AssetCheckKey(dg.AssetKey(["asset_2"]), "check_1"),
+        ]
+
+        run_ids = {check_key: make_new_run_id() for check_key in check_keys}
+        planned_entries = []
+        evaluation_entries = []
+        planned_timestamp_base = 1234567890.0
+        evaluation_timestamp_base = planned_timestamp_base + 100.0
+        for i, check_key in enumerate(check_keys):
+            run_id = run_ids[check_key]
+            planned_event = DagsterEvent.build_asset_check_evaluation_planned_event(
+                job_name="test_job",
+                step_key="test_step",
+                asset_check_key=check_key,
+            )
+            planned_log_entry = dg.EventLogEntry(
+                error_info=None,
+                level="INFO",
+                user_message="",
+                run_id=run_id,
+                timestamp=planned_timestamp_base + i,
+                step_key="test_step",
+                job_name="test_pipeline",
+                dagster_event=planned_event,
+            )
+            planned_entries.append(planned_log_entry)
+
+            evaluation_data = AssetCheckEvaluation(
+                asset_key=check_key.asset_key,
+                check_name=check_key.name,
+                partition=None,
+                passed=(i % 2 == 0),
+                severity=AssetCheckSeverity.ERROR,
+                description=f"Test check {i}",
+                metadata={},
+                target_materialization_data=None,
+            )
+
+            evaluation_event = dg.DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                job_name="test_job",
+                event_specific_data=evaluation_data,
+            )
+
+            evaluation_log_entry = dg.EventLogEntry(
+                error_info=None,
+                level="INFO",
+                user_message="",
+                run_id=run_id,
+                timestamp=evaluation_timestamp_base + i,
+                step_key="test_step",
+                job_name="test_pipeline",
+                dagster_event=evaluation_event,
+            )
+            evaluation_entries.append(evaluation_log_entry)
+
+        # Store all planned events first
+        for entry in planned_entries:
+            storage.store_event(entry)
+
+        # Verify summary records after planned events
+        summary_records = storage.get_asset_check_summary_records(check_keys)
+        assert len(summary_records) == len(check_keys)
+        for check_key in check_keys:
+            assert check_key in summary_records
+            record = summary_records[check_key]
+            assert record.asset_check_key == check_key
+            assert record.last_run_id == run_ids[check_key]
+            # Should have a planned execution record but no completed execution yet
+            assert record.last_check_execution_record is not None
+            assert record.last_completed_check_execution_record is None
+
+        # Store all evaluation events
+        for entry in evaluation_entries:
+            storage.store_event(entry)
+
+        # Verify summary records after evaluations
+        summary_records = storage.get_asset_check_summary_records(check_keys)
+        assert len(summary_records) == len(check_keys)
+        for i, check_key in enumerate(check_keys):
+            assert check_key in summary_records
+            record = summary_records[check_key]
+            assert record.asset_check_key == check_key
+            assert record.last_run_id == run_ids[check_key]
+            # Should have both planned and completed execution records
+            assert record.last_check_execution_record is not None
+            assert record.last_completed_check_execution_record is not None
+            # Verify the passed/failed status matches what we set (even indices pass)
+            assert record.last_completed_check_execution_record.status.value == (
+                "SUCCEEDED" if i % 2 == 0 else "FAILED"
+            )
