@@ -1,6 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
-from types import EllipsisType
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster import _check as check
@@ -11,7 +10,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import FreshnessStateRecord
-from dagster._core.event_api import EventHandlerFn
+from dagster._core.event_api import EventHandlerFn, PartitionKeyFilter
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
@@ -747,23 +746,23 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
-        partition: Union[str, None, EllipsisType] = ...,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
             limit=limit,
             cursor=cursor,
             status=status,
-            partition=partition,
+            partition_filter=partition_filter,
         )
 
     def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence["AssetCheckKey"],
-        partition: Union[str, None, EllipsisType] = ...,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Mapping["AssetCheckKey", AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(
-            check_keys, partition=partition
+            check_keys, partition_filter=partition_filter
         )
 
     def get_asset_check_partition_info(

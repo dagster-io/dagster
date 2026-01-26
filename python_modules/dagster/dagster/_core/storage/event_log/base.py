@@ -1,7 +1,6 @@
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence, Set
-from types import EllipsisType
 from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional, Union
 
 from dagster_shared.record import ImportFrom, record
@@ -20,6 +19,7 @@ from dagster._core.event_api import (
     EventLogRecord,
     EventRecordsFilter,
     EventRecordsResult,
+    PartitionKeyFilter,
     RunStatusChangeRecordsFilter,
 )
 from dagster._core.events import DagsterEventType
@@ -636,7 +636,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[Set[AssetCheckExecutionRecordStatus]] = None,
-        partition: Union[str, None, EllipsisType] = ...,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass
@@ -645,7 +645,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence[AssetCheckKey],
-        partition: Union[str, None, EllipsisType] = ...,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Get the latest executions for a list of asset checks."""
         pass

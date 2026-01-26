@@ -47,7 +47,7 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
-from dagster._core.event_api import EventLogCursor
+from dagster._core.event_api import EventLogCursor, PartitionKeyFilter
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     AssetMaterializationPlannedData,
@@ -7041,7 +7041,7 @@ class TestEventLogStorage:
         # Query each partition individually - verify each returns 1 PLANNED record
         for partition_key in partition_keys:
             checks = storage.get_asset_check_execution_history(
-                check_key, limit=10, partition=partition_key
+                check_key, limit=10, partition_filter=PartitionKeyFilter(key=partition_key)
             )
             assert len(checks) == 1, f"Expected 1 record for partition {partition_key}"
             assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
@@ -7050,7 +7050,7 @@ class TestEventLogStorage:
 
         # Verify partition=None returns empty (no unpartitioned checks)
         checks_unpartitioned = storage.get_asset_check_execution_history(
-            check_key, limit=10, partition=None
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=None)
         )
         assert len(checks_unpartitioned) == 0
 
@@ -7060,15 +7060,21 @@ class TestEventLogStorage:
         )
 
         # Verify first partition is SUCCEEDED, other partitions are still PLANNED
-        checks_a = storage.get_asset_check_execution_history(check_key, limit=10, partition=key_a)
+        checks_a = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=key_a)
+        )
         assert len(checks_a) == 1
         assert checks_a[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
-        checks_b = storage.get_asset_check_execution_history(check_key, limit=10, partition=key_b)
+        checks_b = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=key_b)
+        )
         assert len(checks_b) == 1
         assert checks_b[0].status == AssetCheckExecutionRecordStatus.PLANNED
 
-        checks_c = storage.get_asset_check_execution_history(check_key, limit=10, partition=key_c)
+        checks_c = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=key_c)
+        )
         assert len(checks_c) == 1
         assert checks_c[0].status == AssetCheckExecutionRecordStatus.PLANNED
 
@@ -7078,15 +7084,21 @@ class TestEventLogStorage:
         )
 
         # Verify second partition is FAILED, third is still PLANNED, first unchanged
-        checks_a = storage.get_asset_check_execution_history(check_key, limit=10, partition=key_a)
+        checks_a = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=key_a)
+        )
         assert len(checks_a) == 1
         assert checks_a[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
-        checks_b = storage.get_asset_check_execution_history(check_key, limit=10, partition=key_b)
+        checks_b = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=key_b)
+        )
         assert len(checks_b) == 1
         assert checks_b[0].status == AssetCheckExecutionRecordStatus.FAILED
 
-        checks_c = storage.get_asset_check_execution_history(check_key, limit=10, partition=key_c)
+        checks_c = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key=key_c)
+        )
         assert len(checks_c) == 1
         assert checks_c[0].status == AssetCheckExecutionRecordStatus.PLANNED
 
@@ -7097,24 +7109,30 @@ class TestEventLogStorage:
 
         # partition=None returns empty (no unpartitioned checks exist)
         latest_unpartitioned = storage.get_latest_asset_check_execution_by_key(
-            [check_key], partition=None
+            [check_key], partition_filter=PartitionKeyFilter(key=None)
         )
         assert check_key not in latest_unpartitioned
 
         # first partition returns latest for that partition
-        latest_a = storage.get_latest_asset_check_execution_by_key([check_key], partition=key_a)
+        latest_a = storage.get_latest_asset_check_execution_by_key(
+            [check_key], partition_filter=PartitionKeyFilter(key=key_a)
+        )
         assert check_key in latest_a
         assert latest_a[check_key].partition == key_a
         assert latest_a[check_key].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
         # second partition returns latest for that partition
-        latest_b = storage.get_latest_asset_check_execution_by_key([check_key], partition=key_b)
+        latest_b = storage.get_latest_asset_check_execution_by_key(
+            [check_key], partition_filter=PartitionKeyFilter(key=key_b)
+        )
         assert check_key in latest_b
         assert latest_b[check_key].partition == key_b
         assert latest_b[check_key].status == AssetCheckExecutionRecordStatus.FAILED
 
         # third partition returns latest for that partition (still PLANNED)
-        latest_c = storage.get_latest_asset_check_execution_by_key([check_key], partition=key_c)
+        latest_c = storage.get_latest_asset_check_execution_by_key(
+            [check_key], partition_filter=PartitionKeyFilter(key=key_c)
+        )
         assert check_key in latest_c
         assert latest_c[check_key].partition == key_c
         assert latest_c[check_key].status == AssetCheckExecutionRecordStatus.PLANNED
@@ -7240,7 +7258,9 @@ class TestEventLogStorage:
         assert record.latest_planned_run_id == run_id_2
 
         # Verify get_asset_check_execution_history returns 2 records for partition "a"
-        checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        checks = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key="a")
+        )
         assert len(checks) == 2
 
         # Verify ordering is reverse chronological (Run 2 first)
@@ -7254,7 +7274,9 @@ class TestEventLogStorage:
         assert checks[1].partition == "a"
 
         # Test get_latest_asset_check_execution_by_key returns the most recent for partition "a"
-        latest_a = storage.get_latest_asset_check_execution_by_key([check_key], partition="a")
+        latest_a = storage.get_latest_asset_check_execution_by_key(
+            [check_key], partition_filter=PartitionKeyFilter(key="a")
+        )
         assert check_key in latest_a
         assert latest_a[check_key].run_id == run_id_2
         assert latest_a[check_key].status == AssetCheckExecutionRecordStatus.FAILED
@@ -7328,7 +7350,9 @@ class TestEventLogStorage:
         )
 
         # Verify check record has target_materialization_data.storage_id == M1.storage_id
-        checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        checks = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key="a")
+        )
         assert len(checks) == 1
         assert checks[0].event
         assert checks[0].event.dagster_event
@@ -7360,7 +7384,9 @@ class TestEventLogStorage:
 
         # Verify check's target_materialization_data.storage_id still equals M1 (not M2)
         # This means the check now targets an older materialization
-        checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        checks = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition_filter=PartitionKeyFilter(key="a")
+        )
         assert len(checks) == 1
         assert checks[0].event
         assert checks[0].event.dagster_event

@@ -32,6 +32,7 @@ from dagster._core.definitions.selector import (
     PartitionsSelector,
 )
 from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.event_api import PartitionKeyFilter
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
@@ -3175,7 +3176,7 @@ def test_asset_backfill_with_partitioned_asset_check(policy):
     for partition in ["2023-11-01", "2023-11-02", "2023-11-03"]:
         assert (
             instance.event_log_storage.get_latest_asset_check_execution_by_key(
-                [asset_check_key], partition=partition
+                [asset_check_key], partition_filter=PartitionKeyFilter(key=partition)
             ).get(asset_check_key)
             is not None
         )
