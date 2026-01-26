@@ -41,6 +41,9 @@ deployments:
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.
       pullPolicy: Always
+
+    revisionHistoryLimit: 10
+
     # Arguments to `dagster api grpc`.
     # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
     # would translate to:
