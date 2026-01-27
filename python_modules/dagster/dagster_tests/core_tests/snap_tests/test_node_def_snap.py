@@ -235,3 +235,75 @@ def test_asset_job_omits_output_description_and_metadata():
 
     assert regular_output_snap.description == "op description"
     assert regular_output_snap.metadata == {"key": dg.TextMetadataValue("value")}
+
+
+def test_asset_job_subset_filters_outputs():
+    """Test that subsetted asset jobs only include outputs for selected assets."""
+
+    @dg.multi_asset(
+        outs={
+            "asset_a": dg.AssetOut(),
+            "asset_b": dg.AssetOut(),
+            "asset_c": dg.AssetOut(),
+        },
+        can_subset=True,
+    )
+    def multi_asset_op():
+        return 1, 2, 3
+
+    # Full job should have all outputs
+    full_defs = dg.Definitions(assets=[multi_asset_op])
+    full_job = full_defs.get_implicit_global_asset_job_def()
+    full_snap = build_node_defs_snapshot(full_job)
+    full_op_snap = next(s for s in full_snap.op_def_snaps if s.name == "multi_asset_op")
+    assert len(full_op_snap.output_def_snaps) == 3
+
+    # Subsetted job should only have selected outputs
+    subset_job = dg.define_asset_job("subset_job", selection=[dg.AssetKey("asset_a")])
+    subset_defs = dg.Definitions(assets=[multi_asset_op], jobs=[subset_job])
+    subset_job_def = subset_defs.get_job_def("subset_job")
+    subset_snap = build_node_defs_snapshot(subset_job_def)
+    subset_op_snap = next(s for s in subset_snap.op_def_snaps if s.name == "multi_asset_op")
+    assert len(subset_op_snap.output_def_snaps) == 1
+    assert subset_op_snap.output_def_snaps[0].name == "asset_a"
+
+
+def test_graph_asset_job_subset_filters_outputs():
+    """Test that subsetted graph asset jobs only include outputs for selected assets."""
+
+    @dg.op(out={"a": dg.Out(), "b": dg.Out(), "c": dg.Out()})
+    def inner_op():
+        return 1, 2, 3
+
+    @dg.graph_multi_asset(
+        outs={
+            "graph_asset_a": dg.AssetOut(),
+            "graph_asset_b": dg.AssetOut(),
+            "graph_asset_c": dg.AssetOut(),
+        },
+        can_subset=True,
+    )
+    def multi_graph_asset():
+        a, b, c = inner_op()
+        return {"graph_asset_a": a, "graph_asset_b": b, "graph_asset_c": c}
+
+    # Full job should have all outputs
+    full_defs = dg.Definitions(assets=[multi_graph_asset])
+    full_job = full_defs.get_implicit_global_asset_job_def()
+    full_snap = build_node_defs_snapshot(full_job)
+    full_graph_snap = next(s for s in full_snap.graph_def_snaps if s.name == "multi_graph_asset")
+    assert len(full_graph_snap.output_def_snaps) == 3
+    assert len(full_graph_snap.output_mapping_snaps) == 3
+
+    # Subsetted job should only have selected outputs
+    subset_job = dg.define_asset_job("subset_job", selection=[dg.AssetKey("graph_asset_a")])
+    subset_defs = dg.Definitions(assets=[multi_graph_asset], jobs=[subset_job])
+    subset_job_def = subset_defs.get_job_def("subset_job")
+    subset_snap = build_node_defs_snapshot(subset_job_def)
+    subset_graph_snap = next(
+        s for s in subset_snap.graph_def_snaps if s.name == "multi_graph_asset"
+    )
+    assert len(subset_graph_snap.output_def_snaps) == 1
+    assert subset_graph_snap.output_def_snaps[0].name == "graph_asset_a"
+    assert len(subset_graph_snap.output_mapping_snaps) == 1
+    assert subset_graph_snap.output_mapping_snaps[0].external_output_name == "graph_asset_a"

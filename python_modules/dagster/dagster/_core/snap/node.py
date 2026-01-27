@@ -226,13 +226,29 @@ class NodeDefsSnapshot:
 @suppress_dagster_warnings
 def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
     check.inst_param(job_def, "job_def", JobDefinition)
+
+    # Build mapping of selected outputs per node for asset jobs.
+    # This allows us to filter output_def_snaps to only include outputs that
+    # correspond to selected assets, reducing snapshot size significantly.
+    selected_outputs_by_node_def_name: dict[str, set[str]] = {}
+    if job_def.is_asset_job:
+        for data in job_def.asset_layer.data:
+            node_def = data.assets_def.node_def
+            if node_def is not None:
+                node_def_name = node_def.name
+                selected_output_names = set(data.assets_def.keys_by_output_name.keys())
+                # Also include check outputs
+                selected_output_names.update(data.assets_def.check_specs_by_output_name.keys())
+                selected_outputs_by_node_def_name[node_def_name] = selected_output_names
+
     op_def_snaps = []
     graph_def_snaps = []
     for node_def in job_def.all_node_defs:
+        selected_outputs = selected_outputs_by_node_def_name.get(node_def.name)
         if isinstance(node_def, OpDefinition):
-            op_def_snaps.append(build_op_def_snap(node_def, job_def))
+            op_def_snaps.append(build_op_def_snap(node_def, job_def, selected_outputs))
         elif isinstance(node_def, GraphDefinition):
-            graph_def_snaps.append(build_graph_def_snap(node_def, job_def))
+            graph_def_snaps.append(build_graph_def_snap(node_def, job_def, selected_outputs))
         else:
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
@@ -257,13 +273,30 @@ def _by_name(
     return snap.name
 
 
-def build_graph_def_snap(graph_def: GraphDefinition, job_def: JobDefinition) -> GraphDefSnap:
+def build_graph_def_snap(
+    graph_def: GraphDefinition,
+    job_def: JobDefinition,
+    selected_output_names: Optional[set[str]] = None,
+) -> GraphDefSnap:
     check.inst_param(graph_def, "graph_def", GraphDefinition)
+
+    # Filter output_defs to only selected outputs if provided (for asset job subsets)
+    output_defs = graph_def.output_defs
+    if selected_output_names is not None:
+        output_defs = [od for od in output_defs if od.name in selected_output_names]
+
+    # Also filter output mappings to only those that are selected
+    output_mappings = graph_def.output_mappings
+    if selected_output_names is not None:
+        output_mappings = [
+            om for om in output_mappings if om.graph_output_name in selected_output_names
+        ]
+
     return GraphDefSnap(
         name=graph_def.name,
         input_def_snaps=sorted(map(build_input_def_snap, graph_def.input_defs), key=_by_name),
         output_def_snaps=sorted(
-            map(partial(build_output_def_snap, job_def=job_def), graph_def.output_defs),
+            map(partial(build_output_def_snap, job_def=job_def), output_defs),
             key=_by_name,
         ),
         description=graph_def.description,
@@ -281,20 +314,30 @@ def build_graph_def_snap(graph_def: GraphDefinition, job_def: JobDefinition) -> 
             key=lambda in_map_snap: in_map_snap.external_input_name,
         ),
         output_mapping_snaps=sorted(
-            map(build_output_mapping_snap, graph_def.output_mappings),
+            map(build_output_mapping_snap, output_mappings),
             key=lambda out_map_snap: out_map_snap.external_output_name,
         ),
         pools=graph_def.pools,
     )
 
 
-def build_op_def_snap(op_def: OpDefinition, job_def: JobDefinition) -> OpDefSnap:
+def build_op_def_snap(
+    op_def: OpDefinition,
+    job_def: JobDefinition,
+    selected_output_names: Optional[set[str]] = None,
+) -> OpDefSnap:
     check.inst_param(op_def, "op_def", OpDefinition)
+
+    # Filter output_defs to only selected outputs if provided (for asset job subsets)
+    output_defs = op_def.output_defs
+    if selected_output_names is not None:
+        output_defs = [od for od in output_defs if od.name in selected_output_names]
+
     return OpDefSnap(
         name=op_def.name,
         input_def_snaps=sorted(map(build_input_def_snap, op_def.input_defs), key=_by_name),
         output_def_snaps=sorted(
-            map(partial(build_output_def_snap, job_def=job_def), op_def.output_defs), key=_by_name
+            map(partial(build_output_def_snap, job_def=job_def), output_defs), key=_by_name
         ),
         description=op_def.description,
         tags=op_def.tags,
