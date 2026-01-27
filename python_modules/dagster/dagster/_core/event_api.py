@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Literal, NamedTuple, Optional, TypeAlias, Union
 
+from dagster_shared.record import record
 from dagster_shared.seven import json
 
 import dagster._check as check
@@ -340,6 +341,15 @@ class AssetRecordsFilter(
     @property
     def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
         return None
+
+
+@record
+class PartitionKeyFilter:
+    """Filter for the partition keys that should be included in the result. Allows for filtering on
+    unpartitioned assets, specific partition keys, or a combination of both.
+    """
+
+    key: Optional[str]
 
 
 @whitelist_for_serdes

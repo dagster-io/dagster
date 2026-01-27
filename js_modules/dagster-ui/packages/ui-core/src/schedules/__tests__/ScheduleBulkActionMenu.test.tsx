@@ -23,6 +23,7 @@ describe('ScheduleBulkActionMenu', () => {
   };
 
   it('renders button and menu items for stopped schedules', async () => {
+    const user = userEvent.setup();
     render(
       <ScheduleBulkActionMenu
         schedules={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
@@ -34,7 +35,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    await userEvent.click(button);
+    await user.click(button);
 
     const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
     expectAriaEnabled(startItem);
@@ -43,6 +44,7 @@ describe('ScheduleBulkActionMenu', () => {
   });
 
   it('renders button and menu items for running schedules', async () => {
+    const user = userEvent.setup();
     render(
       <ScheduleBulkActionMenu
         schedules={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
@@ -54,7 +56,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    await userEvent.click(button);
+    await user.click(button);
 
     const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
     expectAriaDisabled(startItem);
@@ -63,6 +65,7 @@ describe('ScheduleBulkActionMenu', () => {
   });
 
   it('renders button and menu items for mixture of statuses', async () => {
+    const user = userEvent.setup();
     render(
       <ScheduleBulkActionMenu
         schedules={[
@@ -79,7 +82,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    await userEvent.click(button);
+    await user.click(button);
 
     // Both options enabled
     const startItem = screen.getByRole('menuitem', {name: /start 4 schedules/i});

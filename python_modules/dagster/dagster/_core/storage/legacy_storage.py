@@ -4,17 +4,17 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import FreshnessStateRecord
-from dagster._core.event_api import EventHandlerFn
+from dagster._core.event_api import EventHandlerFn, PartitionKeyFilter
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionInfo,
 )
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.event_log.base import (
@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
     from dagster._core.snap.job_snapshot import JobSnap
+    from dagster._core.storage.asset_check_state import AssetCheckState
     from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
@@ -745,19 +746,39 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
             limit=limit,
             cursor=cursor,
             status=status,
+            partition_filter=partition_filter,
         )
 
-    def get_latest_asset_check_execution_by_key(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence["AssetCheckKey"],
-    ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
-        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
+        partition_filter: Optional[PartitionKeyFilter] = None,
+    ) -> Mapping["AssetCheckKey", AssetCheckExecutionRecord]:
+        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(
+            check_keys, partition_filter=partition_filter
+        )
+
+    def get_asset_check_partition_info(
+        self,
+        keys: Sequence["AssetCheckKey"],
+        after_storage_id: Optional[int] = None,
+        partition_keys: Optional[Sequence[str]] = None,
+    ) -> Sequence[AssetCheckPartitionInfo]:
+        return self._storage.event_log_storage.get_asset_check_partition_info(
+            keys=keys, after_storage_id=after_storage_id, partition_keys=partition_keys
+        )
+
+    def get_checkpointed_asset_check_state(
+        self, keys: Sequence["AssetCheckKey"]
+    ) -> Mapping["AssetCheckKey", "AssetCheckState"]:
+        return self._storage.event_log_storage.get_checkpointed_asset_check_state(keys)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):

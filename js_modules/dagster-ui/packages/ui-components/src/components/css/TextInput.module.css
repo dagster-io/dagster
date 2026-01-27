@@ -23,7 +23,7 @@
 .textInputBase {
   background-color: var(--color-background-default);
   border: none;
-  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  box-shadow: var(--text-input-stroke-color, var(--color-border-default)) inset 0px 0px 0px 1px;
   outline: none;
   border-radius: 8px;
   color: var(--color-text-default);
@@ -57,6 +57,18 @@
   outline: none;
 }
 
+.textInputBase:hover:not(:disabled) {
+  box-shadow: var(--text-input-stroke-color-hover, var(--color-border-hover)) inset 0px 0px 0px 1px;
+}
+
+.textInputBase:focus,
+.textInputBase:hover:focus:not(:disabled) {
+  box-shadow:
+    var(--text-input-stroke-color, var(--color-border-hover)) inset 0px 0px 0px 1px,
+    var(--color-focus-ring) 0 0 0 2px;
+  background-color: var(--color-background-default-hover);
+}
+
 /* ============================================
    TEXTINPUT COMPONENT CLASSES
    ============================================ */
@@ -79,20 +91,7 @@
   composes: textInputBase;
 
   /* Dynamic values via CSS custom properties */
-  box-shadow: var(--text-input-stroke-color, var(--color-border-default)) inset 0px 0px 0px 1px;
   padding: var(--text-input-padding, 6px 6px 6px 12px);
-}
-
-.input:hover:not(:disabled) {
-  box-shadow: var(--text-input-stroke-color-hover, var(--color-border-hover)) inset 0px 0px 0px 1px;
-}
-
-.input:focus,
-.input:hover:focus:not(:disabled) {
-  box-shadow:
-    var(--text-input-stroke-color, var(--color-border-hover)) inset 0px 0px 0px 1px,
-    var(--color-focus-ring) 0 0 0 2px;
-  background-color: var(--color-background-default-hover);
 }
 
 .input.hasIcon {

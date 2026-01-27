@@ -27,8 +27,8 @@ def validate_column(column: Column):
     """This function is used to validate individual DB columns in a schema for cross-DBAPI compatibility.
 
     i.e.:
-        1. plain db.String not allowed (MySQL compatability)
-        2. db.Text + unique=True not allowed (MySQL compatability).
+        1. plain db.String not allowed (MySQL compatibility)
+        2. db.Text + unique=True not allowed (MySQL compatibility).
     """
     if (
         isinstance(column.type, db.String)
@@ -45,7 +45,7 @@ def validate_column(column: Column):
             f"Column {column} is type TEXT and has a UNIQUE constraint; "
             "cannot use bare db.Text type w/ a UNIQUE constaint "
             "since it is incompatible with certain databases (MySQL). "
-            "Use MySQLCompatabilityTypes.UniqueText or a fixed-length db.String(123) instead."
+            "Use MySQLCompatibilityTypes.UniqueText or a fixed-length db.String(123) instead."
         )
     elif (
         column.server_default

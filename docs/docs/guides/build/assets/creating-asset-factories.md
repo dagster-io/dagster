@@ -1,90 +1,115 @@
 ---
-description: Learn to create Dagster asset factories in Python using YAML configuration, Pydantic for schema validation, and Jinja2 for templating, optimizing ETL processes.
-sidebar_position: 500
 title: Creating asset factories
+description: Learn how to create asset factories using components to generate multiple similar assets from configuration.
+sidebar_position: 500
 ---
 
-Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:
+Data engineers often need to implement multiple similar workflows in data pipelines. To keep this code maintainable, many engineers use asset factories to generate Dagster objects based on configuration instead of defining each one manually.
 
-- A set of database tables all have the same schema
-- A set of files in a directory all have the same format
+In this guide, we will implement an asset factory as a custom [component](/guides/build/components).
 
-It's also possible you're serving stakeholders who aren't familiar with Python or Dagster. They may prefer interacting with assets using a domain-specific language (DSL) built on top of a configuration language such as YAML.
+:::note Prerequisites
 
-The asset factory pattern can solve both of these problems.
-
-:::note
-
-This article assumes familiarity with:
-  - [Assets](/guides/build/assets/defining-assets)
-  - [Resources](/guides/build/external-resources)
-  - SQL, YAML, and Amazon Web Services (AWS) S3
-  - [Pydantic](https://docs.pydantic.dev/latest) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x)
+Before scaffolding a custom component, you must either [create a components-ready Dagster project](/guides/build/projects/creating-projects) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
 
 :::
 
-<details>
-  <summary>Prerequisites</summary>
+## 1. Scaffold the custom component
 
-To run the example code in this article, you'll need:
+When creating a new custom component in Dagster, the first step is to scaffold the component using `dg`. This generates the necessary boilerplate code and file structure for you to implement and register the component:
 
-- Install the necessary Python libraries:
+<CliInvocationExample contents="dg scaffold component AssetFactory" />
 
-<Tabs groupId="package-manager">
-   <TabItem value="uv" label="uv">
-      Install the required dependencies:
+## 2. Define the component
 
-         ```shell
-         uv add dagster dagster-aws duckdb pyyaml pydantic
-         ```
+Next, we will need to define the component. We recommend beginning new components by designing the interface. In the case of our asset factory, there is one set resource and one or more ETL assets that will be configured. Since there will be a number of ETL assets configured, we will need to define a `Model` that can be used in the component.
 
-   </TabItem>
+Looking at the parameters of the `build_etl_job` factory, we can see what needs to be in the model:
 
-   <TabItem value="pip" label="pip">
-      Install the required dependencies:
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/asset_factory/asset_factory.py"
+  language="python"
+  startAfter="start_build_etl_job"
+  endBefore="end_build_etl_job"
+/>
 
-         ```shell
-         pip install dagster dagster-aws duckdb pyyaml pydantic
-         ```
+Within the component code in `asset_factory.py`, we will create a class that inherits from `dg.Model` with the attributes of the asset factory:
 
-   </TabItem>
-</Tabs>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/asset_factory/asset_factory_component.py"
+  language="python"
+  title="src/<project_name>/components/asset_factory.py"
+  startAfter="start_etl_job_model"
+  endBefore="end_etl_job_model"
+/>
 
-</details>
+Next, we can use that Model within the `AssetFactory` class. At the top of the class, create attributes for `access_key_id` and  `secret_access_key`. These will be shared across the assets and only need to be set once. The `etl_job` attribute will be a list since it can be any number of assets:
 
-## Building an asset factory in Python
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/asset_factory/asset_factory_component.py"
+  language="python"
+  title="src/<project_name>/components/asset_factory.py"
+  startAfter="start_asset_factory_component"
+  endBefore="end_asset_factory_component"
+/>
 
-Let's imagine a team that often has to perform the same repetitive ETL task: download a CSV file from S3, run a basic SQL query on it, and then upload the result as a new file back to S3.
+Most of the new `AssetFactory` code will look similar to the code in the old asset factory, although the <PyObject section="definitions" module="dagster" object="Definitions" />  object returned contains all of the assets that will be generated, as well as the resource.
 
-To automate this process, you might define an asset factory in Python like the following:
+## 3. Use the component
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" title="src/<project_name>/defs/assets.py" />
+With the component created and registered, we can now use it in the project. The first step is to initialize the component:
 
-The asset factory pattern is essentially a function that takes in some configuration and returns `dg.Definitions`.
+<CliInvocationExample contents="dg scaffold defs 'my_project.components.asset_factory.AssetFactory' asset_factory" />
 
-## Configuring an asset factory with YAML
+Next, set the attributes of the component:
 
-Now, the team wants to be able to configure the asset factory using YAML instead of Python, with a file like this:
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/asset_factory/defs.yaml"
+  language="yaml"
+  title="src/<project_name>/defs/asset_factory/defs.yaml"
+/>
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/etl_jobs.yaml" language="yaml" title="etl_jobs.yaml" />
+## 4. Viewing component assets
 
-To implement this, parse the YAML file and use it to create the S3 resource and ETL jobs:
+The assets generated by the initialized component behave the same as those created by the factory. You can view them on the command line:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CliInvocationExample contents="dg list defs" />
 
-## Improving usability with Pydantic and Jinja
+or interact with them in the Dagster UI by running `dg dev`:
 
-There are a few problems with the current approach:
+![Asset factory DAG](/images/guides/labs/components/asset-factory.png)
 
-1. **The YAML file isn't type-checked**, so it's easy to make mistakes that will cause cryptic `KeyError`s
-2. **The YAML file contains secrets**. Instead, it should reference environment variables.
+## 5. Adding downstream assets
 
-To solve these problems, you can use Pydantic to define a schema for the YAML file and Jinja to template the YAML file with environment variables.
+You can use assets generated from components as dependencies of other assets in your Dagster project by referencing the asset key of the asset.
 
-Here's what the new YAML file might look like. Note how Jinja templating is used to reference environment variables:
+Looking at the logic within the component, we can see how the asset key is created for each asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/etl_jobs_with_jinja.yaml" language="yaml" title="etl_jobs.yaml" />
+```python
+    asset_key = f"etl_{bucket}_{target_object}".replace(".", "_")
+```
 
-And the Python implementation:
+Based on the input from the YAML file, this will generate the following two asset keys:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py" language="python" title="src/<project_name>/defs/assets.py" />
+| bucket | target object | asset key |
+| --- | --- | --- |
+| `my_bucket` | `cleaned_transactions.csv` | `etl_my_bucket_cleaned_transactions_csv` |
+| `my_bucket` | `risky_customers.csv` | `etl_my_bucket_risky_customers_csv` |
+
+These asset keys can then be used by other assets as dependencies to continue building out the asset lineage of the project:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/asset_factory/downstream_assets.py"
+  language="python"
+  title="src/<project_name>/defs/downstream_assets.py"
+/>
+
+![Asset factory DAG downstream](/images/guides/labs/components/asset-factory-downstream.png)
+
+:::info Pure Python asset factories
+
+If you prefer not to use components, you can also create asset factories using pure Python. The factory pattern is essentially a function that takes configuration and returns <PyObject section="definitions" module="dagster" object="Definitions" />:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" />
+
+:::

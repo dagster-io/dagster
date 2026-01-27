@@ -1,3 +1,7 @@
+from dagster_aws.redshift.components import (
+    RedshiftClientResourceComponent as RedshiftClientResourceComponent,
+    RedshiftCredentialsComponent as RedshiftCredentialsComponent,
+)
 from dagster_aws.redshift.resources import (
     FakeRedshiftClient as FakeRedshiftClient,
     FakeRedshiftClientResource as FakeRedshiftClientResource,

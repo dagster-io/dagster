@@ -56,5 +56,10 @@ setup(
             "s3fs",
         ],
     },
+    entry_points={
+        "dagster_dg_cli.registry_modules": [
+            "dagster_aws = dagster_aws.components",
+        ],
+    },
     zip_safe=False,
 )

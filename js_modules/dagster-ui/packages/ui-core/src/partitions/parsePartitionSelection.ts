@@ -1,4 +1,10 @@
-import {ANTLRErrorListener, CharStreams, CommonTokenStream, RecognitionException} from 'antlr4ts';
+import {
+  BaseErrorListener,
+  CharStream,
+  CommonTokenStream,
+  RecognitionException,
+  Token,
+} from 'antlr4ng';
 
 import {
   AntlrPartitionSelectionVisitor,
@@ -23,16 +29,16 @@ export class PartitionSelectionParseError extends Error {
 /**
  * Error listener that collects syntax errors during parsing.
  */
-class PartitionSelectionErrorListener implements ANTLRErrorListener<any> {
+class PartitionSelectionErrorListener extends BaseErrorListener {
   errors: PartitionSelectionParseError[] = [];
 
-  syntaxError(
-    _recognizer: any,
-    offendingSymbol: any,
+  override syntaxError(
+    _recognizer: unknown,
+    offendingSymbol: Token | null,
     _line: number,
     charPositionInLine: number,
     msg: string,
-    _e: RecognitionException | undefined,
+    _e: RecognitionException | null,
   ): void {
     const errorMsg = offendingSymbol
       ? `Syntax error at "${offendingSymbol.text}": ${msg}`
@@ -93,14 +99,15 @@ export function parsePartitionSelection(text: string): ParsedPartitionTerm[] | E
   }
 
   try {
-    const inputStream = CharStreams.fromString(text);
-    const lexer = new PartitionSelectionLexer(inputStream);
+    const lexer = new PartitionSelectionLexer(CharStream.fromString(text));
 
     const errorListener = new PartitionSelectionErrorListener();
     lexer.removeErrorListeners();
     lexer.addErrorListener(errorListener);
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
+
     const parser = new PartitionSelectionParser(tokenStream);
 
     parser.removeErrorListeners();
@@ -114,7 +121,7 @@ export function parsePartitionSelection(text: string): ParsedPartitionTerm[] | E
     }
 
     const visitor = new AntlrPartitionSelectionVisitor();
-    return visitor.visit(tree);
+    return visitor.visit(tree) ?? [];
   } catch (e) {
     return e instanceof Error ? e : new Error(String(e));
   }

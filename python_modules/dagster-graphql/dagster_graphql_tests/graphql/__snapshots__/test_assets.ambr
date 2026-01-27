@@ -531,6 +531,14 @@
           }),
         }),
         dict({
+          'id': '["partitioned_asset_for_checks"]',
+          'key': dict({
+            'path': list([
+              'partitioned_asset_for_checks',
+            ]),
+          }),
+        }),
+        dict({
           'id': '["second_kinds_key"]',
           'key': dict({
             'path': list([
@@ -1058,6 +1066,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test_location.test_repo.["owned_partitioned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["partitioned_asset_for_checks"]',
       }),
       dict({
         'freshnessInfo': None,

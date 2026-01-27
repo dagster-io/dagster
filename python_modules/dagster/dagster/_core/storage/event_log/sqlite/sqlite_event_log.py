@@ -276,7 +276,12 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.store_asset_event_tags([event], [event_id])
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
-            self.store_asset_check_event(event, None)
+            # mirror the event in the cross-run index database
+            with self.index_connection() as conn:
+                result = conn.execute(insert_event_statement)
+                event_id = result.inserted_primary_key[0]
+
+            self.store_asset_check_event(event, event_id)
 
         if event.is_dagster_event and event.dagster_event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             # should mirror run status change events in the index shard

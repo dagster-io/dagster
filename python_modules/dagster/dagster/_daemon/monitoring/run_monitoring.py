@@ -235,7 +235,11 @@ def check_run_timeout(
         MAX_RUNTIME_SECONDS_TAG, run_record.dagster_run.tags.get("dagster/max_runtime_seconds")
     )
     if max_time_str:
-        max_time = float(max_time_str)
+        try:
+            max_time = float(max_time_str)
+        except ValueError:
+            logger.warning(f"Invalid max runtime value: {max_time_str}")
+            max_time = None
     else:
         max_time = default_timeout_seconds
 

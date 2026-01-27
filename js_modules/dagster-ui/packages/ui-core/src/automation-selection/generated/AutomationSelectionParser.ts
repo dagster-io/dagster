@@ -1,26 +1,16 @@
-// Generated from /Users/salazarm/code/dagster/js_modules/dagster-ui/packages/ui-core/src/automation-selection/AutomationSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /home/user/dagster/js_modules/dagster-ui/packages/ui-core/src/automation-selection/AutomationSelection.g4 by ANTLR 4.13.1
 
-import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
-import {NoViableAltException} from 'antlr4ts/NoViableAltException';
-import {Parser} from 'antlr4ts/Parser';
-import {ParserRuleContext} from 'antlr4ts/ParserRuleContext';
-import {RecognitionException} from 'antlr4ts/RecognitionException';
-import {RuleContext} from 'antlr4ts/RuleContext';
-//import { RuleVersion } from "antlr4ts/RuleVersion";
-import {Token} from 'antlr4ts/Token';
-import {TokenStream} from 'antlr4ts/TokenStream';
-import {Vocabulary} from 'antlr4ts/Vocabulary';
-import {VocabularyImpl} from 'antlr4ts/VocabularyImpl';
-import {ATN} from 'antlr4ts/atn/ATN';
-import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
-import {ParserATNSimulator} from 'antlr4ts/atn/ParserATNSimulator';
-import * as Utils from 'antlr4ts/misc/Utils';
-import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
+import * as antlr from 'antlr4ng';
+import {Token} from 'antlr4ng';
 
-import {AutomationSelectionListener} from './AutomationSelectionListener';
-import {AutomationSelectionVisitor} from './AutomationSelectionVisitor';
+import {AutomationSelectionListener} from './AutomationSelectionListener.js';
+import {AutomationSelectionVisitor} from './AutomationSelectionVisitor.js';
 
-export class AutomationSelectionParser extends Parser {
+// for running tests with parameters, TODO: discuss strategy for typed parameters in CI
+// eslint-disable-next-line no-unused-vars
+type int = number;
+
+export class AutomationSelectionParser extends antlr.Parser {
   public static readonly AND = 1;
   public static readonly OR = 2;
   public static readonly NOT = 3;
@@ -45,21 +35,12 @@ export class AutomationSelectionParser extends Parser {
   public static readonly RULE_attributeExpr = 3;
   public static readonly RULE_value = 4;
   public static readonly RULE_keyValue = 5;
-  // tslint:disable:no-trailing-whitespace
-  public static readonly ruleNames: string[] = [
-    'start',
-    'expr',
-    'traversalAllowedExpr',
-    'attributeExpr',
-    'value',
-    'keyValue',
-  ];
 
-  private static readonly _LITERAL_NAMES: Array<string | undefined> = [
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+  public static readonly literalNames = [
+    null,
+    null,
+    null,
+    null,
     "'='",
     "':'",
     "'*'",
@@ -70,13 +51,14 @@ export class AutomationSelectionParser extends Parser {
     "'tag'",
     "'status'",
     "'type'",
-    undefined,
-    undefined,
-    undefined,
+    null,
+    null,
+    null,
     "'<null>'",
   ];
-  private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
-    undefined,
+
+  public static readonly symbolicNames = [
+    null,
     'AND',
     'OR',
     'NOT',
@@ -96,51 +78,52 @@ export class AutomationSelectionParser extends Parser {
     'NULL_STRING',
     'WS',
   ];
-  public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
-    AutomationSelectionParser._LITERAL_NAMES,
-    AutomationSelectionParser._SYMBOLIC_NAMES,
-    [],
-  );
+  public static readonly ruleNames = [
+    'start',
+    'expr',
+    'traversalAllowedExpr',
+    'attributeExpr',
+    'value',
+    'keyValue',
+  ];
 
-  // @Override
-  // @NotNull
-  public get vocabulary(): Vocabulary {
-    return AutomationSelectionParser.VOCABULARY;
-  }
-  // tslint:enable:no-trailing-whitespace
-
-  // @Override
   public get grammarFileName(): string {
     return 'AutomationSelection.g4';
   }
-
-  // @Override
+  public get literalNames(): (string | null)[] {
+    return AutomationSelectionParser.literalNames;
+  }
+  public get symbolicNames(): (string | null)[] {
+    return AutomationSelectionParser.symbolicNames;
+  }
   public get ruleNames(): string[] {
     return AutomationSelectionParser.ruleNames;
   }
-
-  // @Override
-  public get serializedATN(): string {
+  public get serializedATN(): number[] {
     return AutomationSelectionParser._serializedATN;
   }
 
   protected createFailedPredicateException(
     predicate?: string,
     message?: string,
-  ): FailedPredicateException {
-    return new FailedPredicateException(this, predicate, message);
+  ): antlr.FailedPredicateException {
+    return new antlr.FailedPredicateException(this, predicate, message);
   }
 
-  constructor(input: TokenStream) {
+  public constructor(input: antlr.TokenStream) {
     super(input);
-    this._interp = new ParserATNSimulator(AutomationSelectionParser._ATN, this);
+    this.interpreter = new antlr.ParserATNSimulator(
+      this,
+      AutomationSelectionParser._ATN,
+      AutomationSelectionParser.decisionsToDFA,
+      new antlr.PredictionContextCache(),
+    );
   }
-  // @RuleVersion(0)
   public start(): StartContext {
-    const _localctx: StartContext = new StartContext(this._ctx, this.state);
-    this.enterRule(_localctx, 0, AutomationSelectionParser.RULE_start);
+    let localContext = new StartContext(this.context, this.state);
+    this.enterRule(localContext, 0, AutomationSelectionParser.RULE_start);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 12;
         this.expr(0);
@@ -148,40 +131,38 @@ export class AutomationSelectionParser extends Parser {
         this.match(AutomationSelectionParser.EOF);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
 
   public expr(): ExprContext;
   public expr(_p: number): ExprContext;
-  // @RuleVersion(0)
   public expr(_p?: number): ExprContext {
     if (_p === undefined) {
       _p = 0;
     }
 
-    const _parentctx: ParserRuleContext = this._ctx;
-    const _parentState: number = this.state;
-    let _localctx: ExprContext = new ExprContext(this._ctx, _parentState);
-    let _prevctx: ExprContext = _localctx;
-    const _startState: number = 2;
-    this.enterRecursionRule(_localctx, 2, AutomationSelectionParser.RULE_expr, _p);
+    let parentContext = this.context;
+    let parentState = this.state;
+    let localContext = new ExprContext(this.context, parentState);
+    let previousContext = localContext;
+    let _startState = 2;
+    this.enterRecursionRule(localContext, 2, AutomationSelectionParser.RULE_expr, _p);
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 20;
-        this._errHandler.sync(this);
-        switch (this._input.LA(1)) {
+        this.errorHandler.sync(this);
+        switch (this.tokenStream.LA(1)) {
           case AutomationSelectionParser.LPAREN:
           case AutomationSelectionParser.NAME:
           case AutomationSelectionParser.CODE_LOCATION:
@@ -189,9 +170,9 @@ export class AutomationSelectionParser extends Parser {
           case AutomationSelectionParser.STATUS:
           case AutomationSelectionParser.TYPE:
             {
-              _localctx = new TraversalAllowedExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new TraversalAllowedExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
 
               this.state = 16;
               this.traversalAllowedExpr();
@@ -199,9 +180,9 @@ export class AutomationSelectionParser extends Parser {
             break;
           case AutomationSelectionParser.NOT:
             {
-              _localctx = new NotExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new NotExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 17;
               this.match(AutomationSelectionParser.NOT);
               this.state = 18;
@@ -210,41 +191,43 @@ export class AutomationSelectionParser extends Parser {
             break;
           case AutomationSelectionParser.STAR:
             {
-              _localctx = new AllExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new AllExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 19;
               this.match(AutomationSelectionParser.STAR);
             }
             break;
           default:
-            throw new NoViableAltException(this);
+            throw new antlr.NoViableAltException(this);
         }
-        this._ctx._stop = this._input.tryLT(-1);
+        this.context!.stop = this.tokenStream.LT(-1);
         this.state = 30;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
-            if (this._parseListeners != null) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
+            if (this.parseListeners != null) {
               this.triggerExitRuleEvent();
             }
-            _prevctx = _localctx;
+            previousContext = localContext;
             {
               this.state = 28;
-              this._errHandler.sync(this);
-              switch (this.interpreter.adaptivePredict(this._input, 1, this._ctx)) {
+              this.errorHandler.sync(this);
+              switch (this.interpreter.adaptivePredict(this.tokenStream, 1, this.context)) {
                 case 1:
                   {
-                    _localctx = new AndExpressionContext(new ExprContext(_parentctx, _parentState));
+                    localContext = new AndExpressionContext(
+                      new ExprContext(parentContext, parentState),
+                    );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       AutomationSelectionParser.RULE_expr,
                     );
                     this.state = 22;
-                    if (!this.precpred(this._ctx, 3)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 3)');
+                    if (!this.precpred(this.context, 3)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 3)');
                     }
                     this.state = 23;
                     this.match(AutomationSelectionParser.AND);
@@ -252,18 +235,19 @@ export class AutomationSelectionParser extends Parser {
                     this.expr(4);
                   }
                   break;
-
                 case 2:
                   {
-                    _localctx = new OrExpressionContext(new ExprContext(_parentctx, _parentState));
+                    localContext = new OrExpressionContext(
+                      new ExprContext(parentContext, parentState),
+                    );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       AutomationSelectionParser.RULE_expr,
                     );
                     this.state = 25;
-                    if (!this.precpred(this._ctx, 2)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 2)');
+                    if (!this.precpred(this.context, 2)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 2)');
                     }
                     this.state = 26;
                     this.match(AutomationSelectionParser.OR);
@@ -275,49 +259,44 @@ export class AutomationSelectionParser extends Parser {
             }
           }
           this.state = 32;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
-      this.unrollRecursionContexts(_parentctx);
+      this.unrollRecursionContexts(parentContext);
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public traversalAllowedExpr(): TraversalAllowedExprContext {
-    let _localctx: TraversalAllowedExprContext = new TraversalAllowedExprContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 4, AutomationSelectionParser.RULE_traversalAllowedExpr);
+    let localContext = new TraversalAllowedExprContext(this.context, this.state);
+    this.enterRule(localContext, 4, AutomationSelectionParser.RULE_traversalAllowedExpr);
     try {
       this.state = 38;
-      this._errHandler.sync(this);
-      switch (this._input.LA(1)) {
+      this.errorHandler.sync(this);
+      switch (this.tokenStream.LA(1)) {
         case AutomationSelectionParser.NAME:
         case AutomationSelectionParser.CODE_LOCATION:
         case AutomationSelectionParser.TAG:
         case AutomationSelectionParser.STATUS:
         case AutomationSelectionParser.TYPE:
-          _localctx = new AttributeExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 1);
+          localContext = new AttributeExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 1);
           {
             this.state = 33;
             this.attributeExpr();
           }
           break;
         case AutomationSelectionParser.LPAREN:
-          _localctx = new ParenthesizedExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
+          localContext = new ParenthesizedExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 2);
           {
             this.state = 34;
             this.match(AutomationSelectionParser.LPAREN);
@@ -328,32 +307,30 @@ export class AutomationSelectionParser extends Parser {
           }
           break;
         default:
-          throw new NoViableAltException(this);
+          throw new antlr.NoViableAltException(this);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public attributeExpr(): AttributeExprContext {
-    let _localctx: AttributeExprContext = new AttributeExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 6, AutomationSelectionParser.RULE_attributeExpr);
+    let localContext = new AttributeExprContext(this.context, this.state);
+    this.enterRule(localContext, 6, AutomationSelectionParser.RULE_attributeExpr);
     try {
       this.state = 59;
-      this._errHandler.sync(this);
-      switch (this._input.LA(1)) {
+      this.errorHandler.sync(this);
+      switch (this.tokenStream.LA(1)) {
         case AutomationSelectionParser.NAME:
-          _localctx = new NameExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 1);
+          localContext = new NameExprContext(localContext);
+          this.enterOuterAlt(localContext, 1);
           {
             this.state = 40;
             this.match(AutomationSelectionParser.NAME);
@@ -364,8 +341,8 @@ export class AutomationSelectionParser extends Parser {
           }
           break;
         case AutomationSelectionParser.TAG:
-          _localctx = new TagExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
+          localContext = new TagExprContext(localContext);
+          this.enterOuterAlt(localContext, 2);
           {
             this.state = 43;
             this.match(AutomationSelectionParser.TAG);
@@ -374,8 +351,8 @@ export class AutomationSelectionParser extends Parser {
             this.state = 45;
             this.value();
             this.state = 48;
-            this._errHandler.sync(this);
-            switch (this.interpreter.adaptivePredict(this._input, 4, this._ctx)) {
+            this.errorHandler.sync(this);
+            switch (this.interpreter.adaptivePredict(this.tokenStream, 4, this.context)) {
               case 1:
                 {
                   this.state = 46;
@@ -388,8 +365,8 @@ export class AutomationSelectionParser extends Parser {
           }
           break;
         case AutomationSelectionParser.TYPE:
-          _localctx = new TypeExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 3);
+          localContext = new TypeExprContext(localContext);
+          this.enterOuterAlt(localContext, 3);
           {
             this.state = 50;
             this.match(AutomationSelectionParser.TYPE);
@@ -400,8 +377,8 @@ export class AutomationSelectionParser extends Parser {
           }
           break;
         case AutomationSelectionParser.STATUS:
-          _localctx = new StatusExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 4);
+          localContext = new StatusExprContext(localContext);
+          this.enterOuterAlt(localContext, 4);
           {
             this.state = 53;
             this.match(AutomationSelectionParser.STATUS);
@@ -412,8 +389,8 @@ export class AutomationSelectionParser extends Parser {
           }
           break;
         case AutomationSelectionParser.CODE_LOCATION:
-          _localctx = new CodeLocationExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 5);
+          localContext = new CodeLocationExprContext(localContext);
+          this.enterOuterAlt(localContext, 5);
           {
             this.state = 56;
             this.match(AutomationSelectionParser.CODE_LOCATION);
@@ -424,197 +401,171 @@ export class AutomationSelectionParser extends Parser {
           }
           break;
         default:
-          throw new NoViableAltException(this);
+          throw new antlr.NoViableAltException(this);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public value(): ValueContext {
-    const _localctx: ValueContext = new ValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 8, AutomationSelectionParser.RULE_value);
+    let localContext = new ValueContext(this.context, this.state);
+    this.enterRule(localContext, 8, AutomationSelectionParser.RULE_value);
     let _la: number;
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 61;
-        _la = this._input.LA(1);
-        if (
-          !(
-            (_la & ~0x1f) === 0 &&
-            ((1 << _la) &
-              ((1 << AutomationSelectionParser.QUOTED_STRING) |
-                (1 << AutomationSelectionParser.UNQUOTED_STRING) |
-                (1 << AutomationSelectionParser.NULL_STRING))) !==
-              0
-          )
-        ) {
-          this._errHandler.recoverInline(this);
+        _la = this.tokenStream.LA(1);
+        if (!((_la & ~0x1f) === 0 && ((1 << _la) & 180224) !== 0)) {
+          this.errorHandler.recoverInline(this);
         } else {
-          if (this._input.LA(1) === Token.EOF) {
-            this.matchedEOF = true;
-          }
-
-          this._errHandler.reportMatch(this);
+          this.errorHandler.reportMatch(this);
           this.consume();
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public keyValue(): KeyValueContext {
-    const _localctx: KeyValueContext = new KeyValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 10, AutomationSelectionParser.RULE_keyValue);
+    let localContext = new KeyValueContext(this.context, this.state);
+    this.enterRule(localContext, 10, AutomationSelectionParser.RULE_keyValue);
     let _la: number;
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 63;
-        _la = this._input.LA(1);
-        if (
-          !(
-            (_la & ~0x1f) === 0 &&
-            ((1 << _la) &
-              ((1 << AutomationSelectionParser.QUOTED_STRING) |
-                (1 << AutomationSelectionParser.UNQUOTED_STRING) |
-                (1 << AutomationSelectionParser.UNQUOTED_WILDCARD_STRING))) !==
-              0
-          )
-        ) {
-          this._errHandler.recoverInline(this);
+        _la = this.tokenStream.LA(1);
+        if (!((_la & ~0x1f) === 0 && ((1 << _la) & 114688) !== 0)) {
+          this.errorHandler.recoverInline(this);
         } else {
-          if (this._input.LA(1) === Token.EOF) {
-            this.matchedEOF = true;
-          }
-
-          this._errHandler.reportMatch(this);
+          this.errorHandler.reportMatch(this);
           this.consume();
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
 
-  public sempred(_localctx: RuleContext, ruleIndex: number, predIndex: number): boolean {
+  public override sempred(
+    localContext: antlr.ParserRuleContext | null,
+    ruleIndex: number,
+    predIndex: number,
+  ): boolean {
     switch (ruleIndex) {
       case 1:
-        return this.expr_sempred(_localctx as ExprContext, predIndex);
+        return this.expr_sempred(localContext as ExprContext, predIndex);
     }
     return true;
   }
-  private expr_sempred(_localctx: ExprContext, predIndex: number): boolean {
+  private expr_sempred(localContext: ExprContext | null, predIndex: number): boolean {
     switch (predIndex) {
       case 0:
-        return this.precpred(this._ctx, 3);
-
+        return this.precpred(this.context, 3);
       case 1:
-        return this.precpred(this._ctx, 2);
+        return this.precpred(this.context, 2);
     }
     return true;
   }
 
-  public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x14D\x04\x02' +
-    '\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07' +
-    '\t\x07\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x05\x03\x17\n\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07' +
-    '\x03\x1F\n\x03\f\x03\x0E\x03"\v\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03' +
-    '\x04\x05\x04)\n\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03' +
-    '\x05\x03\x05\x05\x053\n\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03' +
-    '\x05\x03\x05\x03\x05\x03\x05\x05\x05>\n\x05\x03\x06\x03\x06\x03\x07\x03' +
-    '\x07\x03\x07\x02\x02\x03\x04\b\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02' +
-    '\x02\x04\x04\x02\x10\x11\x13\x13\x03\x02\x10\x12\x02G\x02\x0E\x03\x02' +
-    '\x02\x02\x04\x16\x03\x02\x02\x02\x06(\x03\x02\x02\x02\b=\x03\x02\x02\x02' +
-    '\n?\x03\x02\x02\x02\fA\x03\x02\x02\x02\x0E\x0F\x05\x04\x03\x02\x0F\x10' +
-    '\x07\x02\x02\x03\x10\x03\x03\x02\x02\x02\x11\x12\b\x03\x01\x02\x12\x17' +
-    '\x05\x06\x04\x02\x13\x14\x07\x05\x02\x02\x14\x17\x05\x04\x03\x06\x15\x17' +
-    '\x07\b\x02\x02\x16\x11\x03\x02\x02\x02\x16\x13\x03\x02\x02\x02\x16\x15' +
-    '\x03\x02\x02\x02\x17 \x03\x02\x02\x02\x18\x19\f\x05\x02\x02\x19\x1A\x07' +
-    '\x03\x02\x02\x1A\x1F\x05\x04\x03\x06\x1B\x1C\f\x04\x02\x02\x1C\x1D\x07' +
-    '\x04\x02\x02\x1D\x1F\x05\x04\x03\x05\x1E\x18\x03\x02\x02\x02\x1E\x1B\x03' +
-    '\x02\x02\x02\x1F"\x03\x02\x02\x02 \x1E\x03\x02\x02\x02 !\x03\x02\x02' +
-    '\x02!\x05\x03\x02\x02\x02" \x03\x02\x02\x02#)\x05\b\x05\x02$%\x07\t\x02' +
-    "\x02%&\x05\x04\x03\x02&'\x07\n\x02\x02')\x03\x02\x02\x02(#\x03\x02\x02" +
-    '\x02($\x03\x02\x02\x02)\x07\x03\x02\x02\x02*+\x07\v\x02\x02+,\x07\x07' +
-    '\x02\x02,>\x05\f\x07\x02-.\x07\r\x02\x02./\x07\x07\x02\x02/2\x05\n\x06' +
-    '\x0201\x07\x06\x02\x0213\x05\n\x06\x0220\x03\x02\x02\x0223\x03\x02\x02' +
-    '\x023>\x03\x02\x02\x0245\x07\x0F\x02\x0256\x07\x07\x02\x026>\x05\n\x06' +
-    '\x0278\x07\x0E\x02\x0289\x07\x07\x02\x029>\x05\n\x06\x02:;\x07\f\x02\x02' +
-    ';<\x07\x07\x02\x02<>\x05\n\x06\x02=*\x03\x02\x02\x02=-\x03\x02\x02\x02' +
-    '=4\x03\x02\x02\x02=7\x03\x02\x02\x02=:\x03\x02\x02\x02>\t\x03\x02\x02' +
-    '\x02?@\t\x02\x02\x02@\v\x03\x02\x02\x02AB\t\x03\x02\x02B\r\x03\x02\x02' +
-    '\x02\b\x16\x1E (2=';
-  public static __ATN: ATN;
-  public static get _ATN(): ATN {
+  public static readonly _serializedATN: number[] = [
+    4, 1, 18, 66, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 1, 0, 1,
+    0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 21, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1,
+    29, 8, 1, 10, 1, 12, 1, 32, 9, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 39, 8, 2, 1, 3, 1, 3, 1,
+    3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 3, 3, 49, 8, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3,
+    1, 3, 3, 3, 60, 8, 3, 1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 0, 1, 2, 6, 0, 2, 4, 6, 8, 10, 0, 2, 2, 0,
+    14, 15, 17, 17, 1, 0, 14, 16, 69, 0, 12, 1, 0, 0, 0, 2, 20, 1, 0, 0, 0, 4, 38, 1, 0, 0, 0, 6,
+    59, 1, 0, 0, 0, 8, 61, 1, 0, 0, 0, 10, 63, 1, 0, 0, 0, 12, 13, 3, 2, 1, 0, 13, 14, 5, 0, 0, 1,
+    14, 1, 1, 0, 0, 0, 15, 16, 6, 1, -1, 0, 16, 21, 3, 4, 2, 0, 17, 18, 5, 3, 0, 0, 18, 21, 3, 2, 1,
+    4, 19, 21, 5, 6, 0, 0, 20, 15, 1, 0, 0, 0, 20, 17, 1, 0, 0, 0, 20, 19, 1, 0, 0, 0, 21, 30, 1, 0,
+    0, 0, 22, 23, 10, 3, 0, 0, 23, 24, 5, 1, 0, 0, 24, 29, 3, 2, 1, 4, 25, 26, 10, 2, 0, 0, 26, 27,
+    5, 2, 0, 0, 27, 29, 3, 2, 1, 3, 28, 22, 1, 0, 0, 0, 28, 25, 1, 0, 0, 0, 29, 32, 1, 0, 0, 0, 30,
+    28, 1, 0, 0, 0, 30, 31, 1, 0, 0, 0, 31, 3, 1, 0, 0, 0, 32, 30, 1, 0, 0, 0, 33, 39, 3, 6, 3, 0,
+    34, 35, 5, 7, 0, 0, 35, 36, 3, 2, 1, 0, 36, 37, 5, 8, 0, 0, 37, 39, 1, 0, 0, 0, 38, 33, 1, 0, 0,
+    0, 38, 34, 1, 0, 0, 0, 39, 5, 1, 0, 0, 0, 40, 41, 5, 9, 0, 0, 41, 42, 5, 5, 0, 0, 42, 60, 3, 10,
+    5, 0, 43, 44, 5, 11, 0, 0, 44, 45, 5, 5, 0, 0, 45, 48, 3, 8, 4, 0, 46, 47, 5, 4, 0, 0, 47, 49,
+    3, 8, 4, 0, 48, 46, 1, 0, 0, 0, 48, 49, 1, 0, 0, 0, 49, 60, 1, 0, 0, 0, 50, 51, 5, 13, 0, 0, 51,
+    52, 5, 5, 0, 0, 52, 60, 3, 8, 4, 0, 53, 54, 5, 12, 0, 0, 54, 55, 5, 5, 0, 0, 55, 60, 3, 8, 4, 0,
+    56, 57, 5, 10, 0, 0, 57, 58, 5, 5, 0, 0, 58, 60, 3, 8, 4, 0, 59, 40, 1, 0, 0, 0, 59, 43, 1, 0,
+    0, 0, 59, 50, 1, 0, 0, 0, 59, 53, 1, 0, 0, 0, 59, 56, 1, 0, 0, 0, 60, 7, 1, 0, 0, 0, 61, 62, 7,
+    0, 0, 0, 62, 9, 1, 0, 0, 0, 63, 64, 7, 1, 0, 0, 64, 11, 1, 0, 0, 0, 6, 20, 28, 30, 38, 48, 59,
+  ];
+
+  private static __ATN: antlr.ATN;
+  public static get _ATN(): antlr.ATN {
     if (!AutomationSelectionParser.__ATN) {
-      AutomationSelectionParser.__ATN = new ATNDeserializer().deserialize(
-        Utils.toCharArray(AutomationSelectionParser._serializedATN),
+      AutomationSelectionParser.__ATN = new antlr.ATNDeserializer().deserialize(
+        AutomationSelectionParser._serializedATN,
       );
     }
 
     return AutomationSelectionParser.__ATN;
   }
+
+  private static readonly vocabulary = new antlr.Vocabulary(
+    AutomationSelectionParser.literalNames,
+    AutomationSelectionParser.symbolicNames,
+    [],
+  );
+
+  public override get vocabulary(): antlr.Vocabulary {
+    return AutomationSelectionParser.vocabulary;
+  }
+
+  private static readonly decisionsToDFA = AutomationSelectionParser._ATN.decisionToState.map(
+    (ds: antlr.DecisionState, index: number) => new antlr.DFA(ds, index),
+  );
 }
 
-export class StartContext extends ParserRuleContext {
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public EOF(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.EOF, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class StartContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public EOF(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.EOF, 0)!;
+  }
+  public override get ruleIndex(): number {
     return AutomationSelectionParser.RULE_start;
   }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterStart) {
       listener.enterStart(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitStart) {
       listener.exitStart(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitStart) {
       return visitor.visitStart(this);
     } else {
@@ -623,40 +574,97 @@ export class StartContext extends ParserRuleContext {
   }
 }
 
-export class ExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class ExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return AutomationSelectionParser.RULE_expr;
   }
-  public copyFrom(ctx: ExprContext): void {
+  public override copyFrom(ctx: ExprContext): void {
     super.copyFrom(ctx);
   }
 }
-export class TraversalAllowedExpressionContext extends ExprContext {
-  public traversalAllowedExpr(): TraversalAllowedExprContext {
-    return this.getRuleContext(0, TraversalAllowedExprContext);
-  }
-  constructor(ctx: ExprContext) {
+export class AndExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public expr(): ExprContext[];
+  public expr(i: number): ExprContext | null;
+  public expr(i?: number): ExprContext[] | ExprContext | null {
+    if (i === undefined) {
+      return this.getRuleContexts(ExprContext);
+    }
+
+    return this.getRuleContext(i, ExprContext);
+  }
+  public AND(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.AND, 0)!;
+  }
+  public override enterRule(listener: AutomationSelectionListener): void {
+    if (listener.enterAndExpression) {
+      listener.enterAndExpression(this);
+    }
+  }
+  public override exitRule(listener: AutomationSelectionListener): void {
+    if (listener.exitAndExpression) {
+      listener.exitAndExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
+    if (visitor.visitAndExpression) {
+      return visitor.visitAndExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class AllExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public STAR(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.STAR, 0)!;
+  }
+  public override enterRule(listener: AutomationSelectionListener): void {
+    if (listener.enterAllExpression) {
+      listener.enterAllExpression(this);
+    }
+  }
+  public override exitRule(listener: AutomationSelectionListener): void {
+    if (listener.exitAllExpression) {
+      listener.exitAllExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
+    if (visitor.visitAllExpression) {
+      return visitor.visitAllExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class TraversalAllowedExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext)!;
+  }
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterTraversalAllowedExpression) {
       listener.enterTraversalAllowedExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitTraversalAllowedExpression) {
       listener.exitTraversalAllowedExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitTraversalAllowedExpression) {
       return visitor.visitTraversalAllowedExpression(this);
     } else {
@@ -665,30 +673,27 @@ export class TraversalAllowedExpressionContext extends ExprContext {
   }
 }
 export class NotExpressionContext extends ExprContext {
-  public NOT(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.NOT, 0);
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public NOT(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.NOT, 0)!;
   }
   public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
+    return this.getRuleContext(0, ExprContext)!;
   }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterNotExpression) {
       listener.enterNotExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitNotExpression) {
       listener.exitNotExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitNotExpression) {
       return visitor.visitNotExpression(this);
     } else {
@@ -696,75 +701,34 @@ export class NotExpressionContext extends ExprContext {
     }
   }
 }
-export class AndExpressionContext extends ExprContext {
-  public expr(): ExprContext[];
-  public expr(i: number): ExprContext;
-  public expr(i?: number): ExprContext | ExprContext[] {
-    if (i === undefined) {
-      return this.getRuleContexts(ExprContext);
-    } else {
-      return this.getRuleContext(i, ExprContext);
-    }
-  }
-  public AND(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.AND, 0);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
-    if (listener.enterAndExpression) {
-      listener.enterAndExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
-    if (listener.exitAndExpression) {
-      listener.exitAndExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
-    if (visitor.visitAndExpression) {
-      return visitor.visitAndExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class OrExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public expr(): ExprContext[];
-  public expr(i: number): ExprContext;
-  public expr(i?: number): ExprContext | ExprContext[] {
+  public expr(i: number): ExprContext | null;
+  public expr(i?: number): ExprContext[] | ExprContext | null {
     if (i === undefined) {
       return this.getRuleContexts(ExprContext);
-    } else {
-      return this.getRuleContext(i, ExprContext);
     }
+
+    return this.getRuleContext(i, ExprContext);
   }
-  public OR(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.OR, 0);
+  public OR(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.OR, 0)!;
   }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterOrExpression) {
       listener.enterOrExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitOrExpression) {
       listener.exitOrExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitOrExpression) {
       return visitor.visitOrExpression(this);
     } else {
@@ -772,105 +736,43 @@ export class OrExpressionContext extends ExprContext {
     }
   }
 }
-export class AllExpressionContext extends ExprContext {
-  public STAR(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.STAR, 0);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
-    if (listener.enterAllExpression) {
-      listener.enterAllExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
-    if (listener.exitAllExpression) {
-      listener.exitAllExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
-    if (visitor.visitAllExpression) {
-      return visitor.visitAllExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 
-export class TraversalAllowedExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class TraversalAllowedExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return AutomationSelectionParser.RULE_traversalAllowedExpr;
   }
-  public copyFrom(ctx: TraversalAllowedExprContext): void {
+  public override copyFrom(ctx: TraversalAllowedExprContext): void {
     super.copyFrom(ctx);
   }
 }
-export class AttributeExpressionContext extends TraversalAllowedExprContext {
-  public attributeExpr(): AttributeExprContext {
-    return this.getRuleContext(0, AttributeExprContext);
-  }
-  constructor(ctx: TraversalAllowedExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
-    if (listener.enterAttributeExpression) {
-      listener.enterAttributeExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
-    if (listener.exitAttributeExpression) {
-      listener.exitAttributeExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
-    if (visitor.visitAttributeExpression) {
-      return visitor.visitAttributeExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class ParenthesizedExpressionContext extends TraversalAllowedExprContext {
-  public LPAREN(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.LPAREN, 0);
+  public constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public LPAREN(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.LPAREN, 0)!;
   }
   public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
+    return this.getRuleContext(0, ExprContext)!;
   }
-  public RPAREN(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.RPAREN, 0);
+  public RPAREN(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.RPAREN, 0)!;
   }
-  constructor(ctx: TraversalAllowedExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterParenthesizedExpression) {
       listener.enterParenthesizedExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitParenthesizedExpression) {
       listener.exitParenthesizedExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitParenthesizedExpression) {
       return visitor.visitParenthesizedExpression(this);
     } else {
@@ -878,91 +780,78 @@ export class ParenthesizedExpressionContext extends TraversalAllowedExprContext 
     }
   }
 }
-
-export class AttributeExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
-    return AutomationSelectionParser.RULE_attributeExpr;
-  }
-  public copyFrom(ctx: AttributeExprContext): void {
+export class AttributeExpressionContext extends TraversalAllowedExprContext {
+  public constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
     super.copyFrom(ctx);
   }
-}
-export class NameExprContext extends AttributeExprContext {
-  public NAME(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.NAME, 0);
+  public attributeExpr(): AttributeExprContext {
+    return this.getRuleContext(0, AttributeExprContext)!;
   }
-  public COLON(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.COLON, 0);
-  }
-  public keyValue(): KeyValueContext {
-    return this.getRuleContext(0, KeyValueContext);
-  }
-  constructor(ctx: AttributeExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
-    if (listener.enterNameExpr) {
-      listener.enterNameExpr(this);
+  public override enterRule(listener: AutomationSelectionListener): void {
+    if (listener.enterAttributeExpression) {
+      listener.enterAttributeExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
-    if (listener.exitNameExpr) {
-      listener.exitNameExpr(this);
+  public override exitRule(listener: AutomationSelectionListener): void {
+    if (listener.exitAttributeExpression) {
+      listener.exitAttributeExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
-    if (visitor.visitNameExpr) {
-      return visitor.visitNameExpr(this);
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
+    if (visitor.visitAttributeExpression) {
+      return visitor.visitAttributeExpression(this);
     } else {
       return visitor.visitChildren(this);
     }
   }
 }
-export class TagExprContext extends AttributeExprContext {
-  public TAG(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.TAG, 0);
+
+export class AttributeExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
   }
-  public COLON(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.COLON, 0);
+  public override get ruleIndex(): number {
+    return AutomationSelectionParser.RULE_attributeExpr;
+  }
+  public override copyFrom(ctx: AttributeExprContext): void {
+    super.copyFrom(ctx);
+  }
+}
+export class TagExprContext extends AttributeExprContext {
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public TAG(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.TAG, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.COLON, 0)!;
   }
   public value(): ValueContext[];
-  public value(i: number): ValueContext;
-  public value(i?: number): ValueContext | ValueContext[] {
+  public value(i: number): ValueContext | null;
+  public value(i?: number): ValueContext[] | ValueContext | null {
     if (i === undefined) {
       return this.getRuleContexts(ValueContext);
-    } else {
-      return this.getRuleContext(i, ValueContext);
     }
+
+    return this.getRuleContext(i, ValueContext);
   }
-  public EQUAL(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.EQUAL, 0);
+  public EQUAL(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.EQUAL, 0);
   }
-  constructor(ctx: AttributeExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterTagExpr) {
       listener.enterTagExpr(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitTagExpr) {
       listener.exitTagExpr(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitTagExpr) {
       return visitor.visitTagExpr(this);
     } else {
@@ -970,69 +859,31 @@ export class TagExprContext extends AttributeExprContext {
     }
   }
 }
-export class TypeExprContext extends AttributeExprContext {
-  public TYPE(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.TYPE, 0);
-  }
-  public COLON(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.COLON, 0);
-  }
-  public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
-  }
-  constructor(ctx: AttributeExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
-    if (listener.enterTypeExpr) {
-      listener.enterTypeExpr(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
-    if (listener.exitTypeExpr) {
-      listener.exitTypeExpr(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
-    if (visitor.visitTypeExpr) {
-      return visitor.visitTypeExpr(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class StatusExprContext extends AttributeExprContext {
-  public STATUS(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.STATUS, 0);
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
   }
-  public COLON(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.COLON, 0);
+  public STATUS(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.STATUS, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.COLON, 0)!;
   }
   public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
+    return this.getRuleContext(0, ValueContext)!;
   }
-  constructor(ctx: AttributeExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterStatusExpr) {
       listener.enterStatusExpr(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitStatusExpr) {
       listener.exitStatusExpr(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitStatusExpr) {
       return visitor.visitStatusExpr(this);
     } else {
@@ -1040,34 +891,63 @@ export class StatusExprContext extends AttributeExprContext {
     }
   }
 }
-export class CodeLocationExprContext extends AttributeExprContext {
-  public CODE_LOCATION(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.CODE_LOCATION, 0);
+export class NameExprContext extends AttributeExprContext {
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
   }
-  public COLON(): TerminalNode {
-    return this.getToken(AutomationSelectionParser.COLON, 0);
+  public NAME(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.NAME, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.COLON, 0)!;
+  }
+  public keyValue(): KeyValueContext {
+    return this.getRuleContext(0, KeyValueContext)!;
+  }
+  public override enterRule(listener: AutomationSelectionListener): void {
+    if (listener.enterNameExpr) {
+      listener.enterNameExpr(this);
+    }
+  }
+  public override exitRule(listener: AutomationSelectionListener): void {
+    if (listener.exitNameExpr) {
+      listener.exitNameExpr(this);
+    }
+  }
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
+    if (visitor.visitNameExpr) {
+      return visitor.visitNameExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class CodeLocationExprContext extends AttributeExprContext {
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public CODE_LOCATION(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.CODE_LOCATION, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.COLON, 0)!;
   }
   public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
+    return this.getRuleContext(0, ValueContext)!;
   }
-  constructor(ctx: AttributeExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterCodeLocationExpr) {
       listener.enterCodeLocationExpr(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitCodeLocationExpr) {
       listener.exitCodeLocationExpr(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitCodeLocationExpr) {
       return visitor.visitCodeLocationExpr(this);
     } else {
@@ -1075,38 +955,66 @@ export class CodeLocationExprContext extends AttributeExprContext {
     }
   }
 }
+export class TypeExprContext extends AttributeExprContext {
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public TYPE(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.TYPE, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(AutomationSelectionParser.COLON, 0)!;
+  }
+  public value(): ValueContext {
+    return this.getRuleContext(0, ValueContext)!;
+  }
+  public override enterRule(listener: AutomationSelectionListener): void {
+    if (listener.enterTypeExpr) {
+      listener.enterTypeExpr(this);
+    }
+  }
+  public override exitRule(listener: AutomationSelectionListener): void {
+    if (listener.exitTypeExpr) {
+      listener.exitTypeExpr(this);
+    }
+  }
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
+    if (visitor.visitTypeExpr) {
+      return visitor.visitTypeExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
 
-export class ValueContext extends ParserRuleContext {
-  public QUOTED_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.QUOTED_STRING, 0);
-  }
-  public UNQUOTED_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.UNQUOTED_STRING, 0);
-  }
-  public NULL_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.NULL_STRING, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class ValueContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public QUOTED_STRING(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.QUOTED_STRING, 0);
+  }
+  public UNQUOTED_STRING(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.UNQUOTED_STRING, 0);
+  }
+  public NULL_STRING(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.NULL_STRING, 0);
+  }
+  public override get ruleIndex(): number {
     return AutomationSelectionParser.RULE_value;
   }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterValue) {
       listener.enterValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitValue) {
       listener.exitValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitValue) {
       return visitor.visitValue(this);
     } else {
@@ -1115,37 +1023,33 @@ export class ValueContext extends ParserRuleContext {
   }
 }
 
-export class KeyValueContext extends ParserRuleContext {
-  public QUOTED_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.QUOTED_STRING, 0);
-  }
-  public UNQUOTED_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.UNQUOTED_STRING, 0);
-  }
-  public UNQUOTED_WILDCARD_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AutomationSelectionParser.UNQUOTED_WILDCARD_STRING, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class KeyValueContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public QUOTED_STRING(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.QUOTED_STRING, 0);
+  }
+  public UNQUOTED_STRING(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.UNQUOTED_STRING, 0);
+  }
+  public UNQUOTED_WILDCARD_STRING(): antlr.TerminalNode | null {
+    return this.getToken(AutomationSelectionParser.UNQUOTED_WILDCARD_STRING, 0);
+  }
+  public override get ruleIndex(): number {
     return AutomationSelectionParser.RULE_keyValue;
   }
-  // @Override
-  public enterRule(listener: AutomationSelectionListener): void {
+  public override enterRule(listener: AutomationSelectionListener): void {
     if (listener.enterKeyValue) {
       listener.enterKeyValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: AutomationSelectionListener): void {
+  public override exitRule(listener: AutomationSelectionListener): void {
     if (listener.exitKeyValue) {
       listener.exitKeyValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result {
+  public override accept<Result>(visitor: AutomationSelectionVisitor<Result>): Result | null {
     if (visitor.visitKeyValue) {
       return visitor.visitKeyValue(this);
     } else {

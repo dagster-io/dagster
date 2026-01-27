@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
-
 clean_name = clean_name_lower
 
 
@@ -135,6 +134,21 @@ def _select_unique_ids_from_manifest(
             else {}
         )
 
+    functions = {}
+    if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.11.0"):
+        from dbt.contracts.graph.nodes import FunctionNode  # pyright: ignore
+
+        functions = (
+            {
+                "functions": {
+                    unique_id: FunctionNode.from_dict(info)
+                    for unique_id, info in manifest_json["functions"].items()
+                }
+            }
+            if manifest_json.get("functions")
+            else {}
+        )
+
     manifest = Manifest(
         nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
@@ -182,6 +196,7 @@ def _select_unique_ids_from_manifest(
             else {}
         ),
         **unit_tests,
+        **functions,
     )
 
     child_map = manifest_json["child_map"]

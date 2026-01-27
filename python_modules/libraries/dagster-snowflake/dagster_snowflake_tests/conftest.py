@@ -31,6 +31,6 @@ def pytest_runtest_setup(item):
                 if v:
                     os.environ[k] = v
 
-            missing = [var for var in REQUIRED_VARS_FOR_INTEGRATION_TESTS if not os.getenv(var)]
-            if missing:
-                pytest.skip(f"Missing required environment variables: {missing}")
+        missing = [var for var in REQUIRED_VARS_FOR_INTEGRATION_TESTS if not os.getenv(var)]
+        if missing:
+            pytest.skip(f"Missing required environment variables: {missing}")

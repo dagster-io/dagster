@@ -20,7 +20,7 @@ parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
 parser.add_argument(
     "--system",
     action="store_true",
-    help="Install the packages into the system Python. Should only be used in Dockferfiles or CI/CD.",
+    help="Install the packages into the system Python. Should only be used in Dockerfiles or CI/CD.",
 )
 
 
@@ -98,6 +98,7 @@ def main(
         "python_modules/libraries/dagster-pandas",
         "python_modules/libraries/dagster-pandera",
         "python_modules/libraries/dagster-papertrail",
+        "python_modules/libraries/dagster-polytomic",
         "python_modules/libraries/dagster-postgres",
         "python_modules/libraries/dagster-prometheus",
         "python_modules/libraries/dagster-pyspark",

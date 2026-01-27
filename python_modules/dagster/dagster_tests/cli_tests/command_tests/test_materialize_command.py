@@ -160,29 +160,63 @@ def test_partition_range_invalid_format():
 
 
 def test_partition_range_single_run_backfill_policy():
+    """Test that partition range works for assets with single_run backfill policy.
+
+    The partition range is executed in a single run using partition range tags,
+    not by creating a backfill.
+    """
     with dg.instance_for_test() as instance:
         result = invoke_materialize(
             "single_run_partitioned_asset",
             partition_range="2020-01-01...2020-01-03",
         )
+        assert result.exit_code == 0
         assert "RUN_SUCCESS" in result.output
-        partitions = instance.get_materialized_partitions(
-            dg.AssetKey("single_run_partitioned_asset")
-        )
-        for partition in ["2020-01-01", "2020-01-02", "2020-01-03"]:
-            assert partition in partitions
+
+        backfills = instance.get_backfills()
+        assert len(backfills) == 0
+
+        runs = instance.get_runs()
+        assert len(runs) == 1
 
 
 def test_partition_range_multi_run_backfill_policy():
+    """Test that partition range fails for assets with multi_run backfill policy.
+
+    Assets with multi_run backfill policy cannot use partition ranges in the CLI
+    because they would require creating a backfill with separate runs per partition,
+    which needs a running daemon process.
+    """
     with dg.instance_for_test():
         result = invoke_materialize(
             "multi_run_partitioned_asset",
             partition_range="2020-01-01...2020-01-03",
         )
-        assert (
-            "Provided partition range, but not all assets have a single-run backfill policy."
-            in str(result.exception)
+        assert result.exit_code != 0
+        assert "Partition ranges with the CLI require all selected assets to have a" in str(
+            result.exception
         )
+        assert "BackfillPolicy.single_run()" in str(result.exception)
+
+
+def test_partition_range_no_backfill_policy():
+    """Test that partition range fails for assets without a backfill policy.
+
+    This is the correct fix for issue #31055. Assets without a backfill policy
+    cannot use partition ranges in the CLI because they would require creating
+    a backfill with separate runs per partition, which needs a running daemon process.
+    The CLI validation now properly catches this case.
+    """
+    with dg.instance_for_test():
+        result = invoke_materialize(
+            "partitioned_asset",
+            partition_range="one...three",
+        )
+        assert result.exit_code != 0
+        assert "Partition ranges with the CLI require all selected assets to have a" in str(
+            result.exception
+        )
+        assert "BackfillPolicy.single_run()" in str(result.exception)
 
 
 def test_failure():

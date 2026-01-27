@@ -69,36 +69,39 @@ describe('useRepoExpansionState', () => {
   });
 
   it('toggles a key to expanded', async () => {
+    const user = userEvent.setup();
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem']));
     render(<Test />);
 
     const button = await screen.findByRole('button', {name: 'toggle ipsum:lorem'});
-    await userEvent.click(button);
+    await user.click(button);
 
     expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
     expect(window.localStorage.getItem(fullCollapsedKey)).toEqual('[]');
   });
 
   it('toggles a key to collapsed', async () => {
+    const user = userEvent.setup();
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify([]));
     render(<Test />);
 
     const button = await screen.findByRole('button', {name: 'toggle ipsum:lorem'});
-    await userEvent.click(button);
+    await user.click(button);
 
     expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
     expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(JSON.stringify(['ipsum:lorem']));
   });
 
   it('toggles all to expanded', async () => {
+    const user = userEvent.setup();
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem', 'amet:dolorsit']));
     render(<Test />);
 
     const button = await screen.findByRole('button', {name: 'expand all'});
-    await userEvent.click(button);
+    await user.click(button);
 
     // Everything expanded!
     expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
@@ -107,12 +110,13 @@ describe('useRepoExpansionState', () => {
   });
 
   it('toggles all to collapsed', async () => {
+    const user = userEvent.setup();
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem']));
     render(<Test />);
 
     const button = await screen.findByRole('button', {name: 'collapse all'});
-    await userEvent.click(button);
+    await user.click(button);
 
     // Everything collapsed!
     expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();

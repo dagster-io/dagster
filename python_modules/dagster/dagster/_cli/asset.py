@@ -43,7 +43,11 @@ def asset_cli():
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
     "--partition-range",
-    help="Asset partition range to target i.e. <start>...<end>",
+    help=(
+        "Asset partition range to materialize in the format <start>...<end>. "
+        "Requires all assets to have a BackfillPolicy.single_run() policy, which allows "
+        "the partition range to be executed in a single run. For example: 2025-01-01...2025-01-05"
+    ),
     required=False,
 )
 @click.option(
@@ -163,12 +167,18 @@ def execute_materialize_command(
         for asset_key in asset_keys:
             backfill_policy = implicit_job_def.asset_layer.get(asset_key).backfill_policy
             if (
-                backfill_policy is not None
-                and backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
+                backfill_policy is None
+                or backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
             ):
                 check.failed(
-                    "Provided partition range, but not all assets have a single-run backfill policy."
+                    "Partition ranges with the CLI require all selected assets to have a "
+                    "BackfillPolicy.single_run() policy. This allows the partition range to be "
+                    "executed in a single run. Assets without this policy would require creating "
+                    "a backfill with separate runs per partition, which needs a running daemon "
+                    "process. Consider using the Dagster UI or a running daemon to execute "
+                    "partition ranges for assets without a single-run backfill policy."
                 )
+
         try:
             implicit_job_def.validate_partition_key(
                 partition_range_start, selected_asset_keys=asset_keys, context=context
@@ -181,6 +191,7 @@ def execute_materialize_command(
                 "All selected assets must have a PartitionsDefinition containing the passed"
                 f" partition key `{partition_range_start}` or have no PartitionsDefinition."
             )
+
         tags = {
             ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
             ASSET_PARTITION_RANGE_END_TAG: partition_range_end,

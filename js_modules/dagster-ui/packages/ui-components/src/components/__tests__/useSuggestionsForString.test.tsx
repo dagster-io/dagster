@@ -48,8 +48,9 @@ describe('useSuggestionsForString', () => {
   });
 
   it('determines suggestions for query', async () => {
+    const user = userEvent.setup();
     render(<Test />);
-    await userEvent.type(screen.getByRole('textbox'), 'pr');
+    await user.type(screen.getByRole('textbox'), 'pr');
     expect(screen.getByText('prez:')).toBeVisible();
     expect(screen.getByText('prez:washington')).toBeVisible();
     expect(screen.getByText('prez:adams')).toBeVisible();
@@ -57,8 +58,9 @@ describe('useSuggestionsForString', () => {
   });
 
   it('determines suggestions when querystring matches a suggestion exactly', async () => {
+    const user = userEvent.setup();
     render(<Test />);
-    await userEvent.type(screen.getByRole('textbox'), 'prez:');
+    await user.type(screen.getByRole('textbox'), 'prez:');
     expect(screen.getByText('prez:')).toBeVisible();
     expect(screen.getByText('prez:washington')).toBeVisible();
     expect(screen.getByText('prez:adams')).toBeVisible();
@@ -66,32 +68,36 @@ describe('useSuggestionsForString', () => {
   });
 
   it('determines suggestions only for the last segment of the string', async () => {
+    const user = userEvent.setup();
     render(<Test />);
-    await userEvent.type(screen.getByRole('textbox'), 'query pr');
+    await user.type(screen.getByRole('textbox'), 'query pr');
     expect(screen.getByText('prez:')).toBeVisible();
     expect(screen.getByText('prez:washington')).toBeVisible();
     expect(screen.queryByText('query:')).toBeNull();
   });
 
   it('trims the input string when determining suggestions', async () => {
+    const user = userEvent.setup();
     render(<Test />);
-    await userEvent.type(screen.getByRole('textbox'), '     pr     ');
+    await user.type(screen.getByRole('textbox'), '     pr     ');
     expect(screen.getByText('prez:')).toBeVisible();
     expect(screen.getByText('prez:washington')).toBeVisible();
   });
 
   it('replaces the last segment with the suggestion, if selected', async () => {
+    const user = userEvent.setup();
     render(<Test />);
-    await userEvent.type(screen.getByRole('textbox'), 'pre');
+    await user.type(screen.getByRole('textbox'), 'pre');
     expect(screen.getByText('prez:')).toBeVisible();
     expect(screen.getByText('prez:washington')).toBeVisible();
   });
 
   it('replaces only the last segment with the suggestion', async () => {
+    const user = userEvent.setup();
     render(<Test />);
-    await userEvent.type(screen.getByRole('textbox'), 'query pre');
+    await user.type(screen.getByRole('textbox'), 'query pre');
     const prez = screen.getByText('prez:');
-    await userEvent.click(prez);
+    await user.click(prez);
     const input = screen.getByRole('textbox');
     expect(input).toHaveValue('query prez:');
   });

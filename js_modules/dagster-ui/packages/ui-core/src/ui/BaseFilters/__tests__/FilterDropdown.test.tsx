@@ -68,8 +68,8 @@ describe('FilterDropdown', () => {
     );
     const searchInput = screen.getByPlaceholderText('Search filters...');
     await userEvent.type(searchInput, 'type');
-    await waitFor(() => expect(screen.getByText('Type 1')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText('Type 2')).toBeInTheDocument());
+    expect(await screen.findByText('Type 1')).toBeInTheDocument();
+    expect(await screen.findByText('Type 2')).toBeInTheDocument();
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await waitFor(() => expect(mockFilters[0]!.getResults).toHaveBeenCalledWith('type'));
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -86,7 +86,7 @@ describe('FilterDropdown', () => {
     );
     const searchInput = screen.getByPlaceholderText('Search filters...');
     await userEvent.type(searchInput, 'nonexistent');
-    await waitFor(() => expect(screen.getByText('No results')).toBeInTheDocument());
+    expect(await screen.findByText('No results')).toBeInTheDocument();
   });
 });
 

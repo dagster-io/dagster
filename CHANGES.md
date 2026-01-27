@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.12.12 (core) / 0.28.12 (libraries)
+
+### New
+
+- `dg plus deploy start` now validates deployment akin to `dagster-cloud ci check`.
+- [dagster-aws] Added a suite of new components that map to all existing resources in the library.
+- [dagster-k8s] Increased the maximum version of kubernetes to 35.x.x.
+- [ui] You can now unpin asset groups that no longer contain any assets.
+
+### Bugfixes
+
+- Fixed type errors reported by Pyright's strict mode when using `@asset`, `@multi_asset`, and `@graph_asset` decorators.
+- Running `dg launch --partition-range` for an asset without an explicitly defined single-run-backfill policy now provides a clean error message.
+- Fixed issue where the celery_executor `config_source` values were ignored. (Thanks, [@danielbitzer](https://github.com/danielbitzer)!)
+- Fixed issue with `dg plus deploy refresh-defs-state` URL construction for EU regions.
+- Fixed helm chart validation error when enabling `concurrency` config with default `queuedRunCoordinator` values.
+- `dg list defs` now correctly shows labels for automation conditions.
+- [dagster-dbt] Fixed issue with the `dagster-dbt project prepare-and-package` command where user files named `dbt.py` could shadow the `dbt` module. (Thanks, [@alexaustin007](https://github.com/alexaustin007)!)
+- [dagster-dbt] Fix errors raised when [dbt functions](https://docs.getdbt.com/docs/build/udfs) are present in dbt manifest. (Thanks, [@eso-xyme](https://github.com/eso-xyme)!)
+- [ui] Fixes a bug where creating an alert policy from your Favorites would crash the app.
+
+### Dagster Plus
+
+- Fixed an issue while using the 'isolated_agents' configuration parameter in Dagster+ where runs that were terminated due to exceeding a maximum runtime would sometimes fail to terminate the run worker process after the run was marked as failed.
+
+## 1.12.11 (core) / 0.28.11 (libraries)
+
+### New
+
+- The `dagster-cloud ci check` command is now marked as deprecated. Use `dg plus deploy start` instead, which now validates configuration during deployment initialization.
+- [dagster-fivetran] `FivetranWorkspace` now supports a `request_backoff_factor` parameter for enabling exponential backoff on request failures.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed an issue where the `exclude` parameter of `@dbt_assets` could be ignored if the selection was too large.
+- [ui] The Asset Partitions page and the launch Materializations modal now correctly handle asset partitions that contain JSON or irregular characters.
+- [ui] Fixed an issue where `dagster/row_count` metadata was sometimes not displayed on the Asset Overview page if it was being set by an asset observation rather than a materialization.
+
+### Dagster Plus
+
+- The ECS agent now waits for 10 minutes by default before timing out during a code location deploy instead of 5 minutes, to ensure that large images have enough time to be pulled by the agent. See https://docs.dagster.io/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#user_code_launcher-properties for more information on changing this default.
+- [ui] The Job Insights tab now shows a metric breakdown by job
+
 ## 1.12.10 (core) / 0.28.10 (libraries)
 
 ### Bugfixes

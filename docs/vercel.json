@@ -27,6 +27,190 @@
       "destination": "/guides/build/external-pipelines"
     },
     {
+      "source": "/_apidocs/libraries/dagster-pipes",
+      "destination": "/integrations/libraries/pipes"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-airbyte",
+      "destination": "/integrations/libraries/airbyte/dagster-airbyte"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-airlift",
+      "destination": "/integrations/libraries/airlift/dagster-airlift"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-aws",
+      "destination": "/integrations/libraries/aws/dagster-aws"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-azure",
+      "destination": "/integrations/libraries/azure/dagster-azure"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-celery-docker",
+      "destination": "/integrations/libraries/celery/dagster-celery-docker"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-celery-k8s",
+      "destination": "/integrations/libraries/celery/dagster-celery-k8s"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-celery",
+      "destination": "/integrations/libraries/celery/dagster-celery"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-census",
+      "destination": "/integrations/libraries/census/dagster-census"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-dask",
+      "destination": "/integrations/libraries/dask/dagster-dask"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-databricks",
+      "destination": "/integrations/libraries/databricks/dagster-databricks"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-datadog",
+      "destination": "/integrations/libraries/datadog/dagster-datadog"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-datahub",
+      "destination": "/integrations/libraries/datahub/dagster-datahub"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-dbt",
+      "destination": "/integrations/libraries/dbt/dagster-dbt"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-deltalake-polars",
+      "destination": "/integrations/libraries/deltalake/dagster-deltalake-polars"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-deltalake",
+      "destination": "/integrations/libraries/deltalake/dagster-deltalake"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-deltalake-pandas",
+      "destination": "/integrations/libraries/deltalake/dagster-deltalake-pandas"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-dlt",
+      "destination": "/integrations/libraries/dlt/dagster-dlt"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-docker",
+      "destination": "/integrations/libraries/docker/dagster-docker"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-duckdb",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-duckdb-polars",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-duckdb-pandas",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-duckdb-pyspark",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-fivetran",
+      "destination": "/integrations/libraries/fivetran/dagster-fivetran"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-gcp",
+      "destination": "/integrations/libraries/gcp/dagster-gcp"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-gcp-pandas",
+      "destination": "/integrations/libraries/gcp/dagster-gcp-pandas"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-gcp-pyspark",
+      "destination": "/integrations/libraries/gcp/dagster-gcp-pyspark"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-github",
+      "destination": "/integrations/libraries/github/dagster-github"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-ge",
+      "destination": "/integrations/libraries/great-expectations/dagster-ge"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-graphql",
+      "destination": "/api/graphql/dagster-graphql"
+    },
+    {
+      "source": "/_apidocs/libraries/dagstermill",
+      "destination": "/integrations/libraries/jupyter/dagstermill"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-looker",
+      "destination": "/integrations/libraries/looker/dagster-looker"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-omni",
+      "destination": "/integrations/libraries/omni/dagster-omni"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-openai",
+      "destination": "/integrations/libraries/openai/dagster-openai"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-pagerduty",
+      "destination": "/integrations/libraries/pagerduty/dagster-pagerduty"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-pandera",
+      "destination": "/integrations/libraries/pandera/dagster-pandera"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-papertrail",
+      "destination": "/integrations/libraries/papertrail/dagster-papertrail"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-polars",
+      "destination": "/integrations/libraries/polars/dagster-polars"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-prometheus",
+      "destination": "/integrations/libraries/prometheus/dagster-prometheus"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-sigma",
+      "destination": "/integrations/libraries/sigma/dagster-sigma"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-sling",
+      "destination": "/integrations/libraries/sling/dagster-sling"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-spark",
+      "destination": "/integrations/libraries/spark/dagster-spark"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-tableau",
+      "destination": "/integrations/libraries/tableau/dagster-tableau"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-twilio",
+      "destination": "/integrations/libraries/twilio/dagster-twilio"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-ssh",
+      "destination": "/integrations/libraries/ssh/dagster-ssh"
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-wandb",
+      "destination": "/integrations/libraries/wandb/dagster-wandb"
+    },
+    {
       "source": "/_apidocs/libraries/:path*",
       "destination": "/integrations/libraries/:path*"
     },
@@ -160,7 +344,7 @@
     },
     {
       "source": "/apidocs/external-assets-rest",
-      "destination": "/api/dagster/external-assets-rest-api"
+      "destination": "/api/rest-apis/external-assets-rest-api"
     },
     {
       "source": "/api/asset-checks",
@@ -273,6 +457,10 @@
     {
       "source": "/api/dg/dg-cli-configuration",
       "destination": "/api/clis/dg-cli/dg-cli-configuration"
+    },
+    {
+      "source": "/api/libraries/dagster-pipes",
+      "destination": "/integrations/libraries/pipes"
     },
     {
       "source": "/deploying/celery",
@@ -720,10 +908,6 @@
       "source": "/deployment/open-source",
       "destination": "/deployment/oss",
       "permanent": false
-    },
-    {
-      "source": "/_apidocs/libraries/dagster-airflow",
-      "destination": "/api/dagster/libraries/dagster-airlift"
     },
     {
       "source": "/integrations/great-expectations",
@@ -2147,6 +2331,10 @@
       "destination": "/integrations/libraries/azure/dagster-azure"
     },
     {
+      "source": "/integrations/libraries/azure-adls2",
+      "destination": "/integrations/libraries/azure/dagster-azure"
+    },
+    {
       "source": "/_modules/dagster_azure/adls2/io_manager",
       "destination": "/integrations/libraries/azure/dagster-azure#io-manager"
     },
@@ -2204,7 +2392,7 @@
     },
     {
       "source": "/_modules/dagster_databricks/resources",
-      "destination": "api/python-api/libraries/dagster-databricks#resources"
+      "destination": "/integrations/libraries/databricks/dagster-databricks#resources"
     },
     {
       "source": "/api/libraries/dagster-datahub",
@@ -2415,6 +2603,10 @@
       "destination": "/integrations/libraries/k8s/dagster-k8s"
     },
     {
+      "source": "/integrations/libraries/kubernetes",
+      "destination": "/integrations/libraries/k8s"
+    },
+    {
       "source": "/_modules/dagster_k8s/executor",
       "destination": "/integrations/libraries/k8s/dagster-k8s#dagster_k8s.k8s_job_executor"
     },
@@ -2572,7 +2764,7 @@
     },
     {
       "source": "/api/libraries/dagster-looker",
-      "destination": "/integrations/libraries/fivetran/dagster-looker"
+      "destination": "/integrations/libraries/looker/dagster-looker"
     },
     {
       "source": "/api/libraries/dagster-omni",
@@ -2580,7 +2772,7 @@
     },
     {
       "source": "/api/libraries/dagster-openai",
-      "destination": "/integrations/libraries/fivetran/dagster-openai"
+      "destination": "/integrations/libraries/openai/dagster-openai"
     },
     {
       "source": "/api/libraries/dagster-pagerduty",
@@ -2625,6 +2817,14 @@
     {
       "source": "/api/libraries/dagster-wandb",
       "destination": "/integrations/libraries/wandb/dagster-wandb"
+    },
+    {
+      "source": "/api/libraries",
+      "destination": "/integrations/libraries"
+    },
+    {
+      "source": "/api/libraries/",
+      "destination": "/integrations/libraries"
     },
     {
       "source": "/_modules/dagster/_config/config_schema",
@@ -3187,6 +3387,10 @@
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
+      "source": "/dagster-cloud/account/authentication",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control"
+    },
+    {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments",
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments"
     },
@@ -3281,6 +3485,190 @@
     {
       "source": "/master/guides/dagster/run-attribution",
       "destination": "/guides/build/assets/metadata-and-tags/tags#run-tags"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-airbyte",
+      "destination": "/integrations/libraries/airbyte/dagster-airbyte"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-airlift",
+      "destination": "/integrations/libraries/airlift/dagster-airlift"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-aws",
+      "destination": "/integrations/libraries/aws/dagster-aws"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-azure",
+      "destination": "/integrations/libraries/azure/dagster-azure"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-celery-docker",
+      "destination": "/integrations/libraries/celery/dagster-celery-docker"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-celery-k8s",
+      "destination": "/integrations/libraries/celery/dagster-celery-k8s"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-celery",
+      "destination": "/integrations/libraries/celery/dagster-celery"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-census",
+      "destination": "/integrations/libraries/census/dagster-census"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-dask",
+      "destination": "/integrations/libraries/dask/dagster-dask"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-databricks",
+      "destination": "/integrations/libraries/databricks/dagster-databricks"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-datadog",
+      "destination": "/integrations/libraries/datadog/dagster-datadog"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-datahub",
+      "destination": "/integrations/libraries/datahub/dagster-datahub"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-dbt",
+      "destination": "/integrations/libraries/dbt/dagster-dbt"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-deltalake-polars",
+      "destination": "/integrations/libraries/deltalake/dagster-deltalake-polars"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-deltalake",
+      "destination": "/integrations/libraries/deltalake/dagster-deltalake"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-deltalake-pandas",
+      "destination": "/integrations/libraries/deltalake/dagster-deltalake-pandas"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-dlt",
+      "destination": "/integrations/libraries/dlt/dagster-dlt"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-docker",
+      "destination": "/integrations/libraries/docker/dagster-docker"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-duckdb",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-duckdb-polars",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-duckdb-pandas",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-duckdb-pyspark",
+      "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-fivetran",
+      "destination": "/integrations/libraries/duckdb/dagster-fivetran"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-gcp",
+      "destination": "/integrations/libraries/gcp/dagster-gcp"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-gcp-pandas",
+      "destination": "/integrations/libraries/gcp/dagster-gcp-pandas"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-gcp-pyspark",
+      "destination": "/integrations/libraries/gcp/dagster-gcp-pyspark"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-github",
+      "destination": "/integrations/libraries/github/dagster-github"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-ge",
+      "destination": "/integrations/libraries/great-expectations/dagster-ge"
+    },
+    {
+      "source": "/next/api/python-api/libraries/dagster-graphql",
+      "destination": "/api/graphql/dagster-graphql"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-graphql",
+      "destination": "/api/graphql/dagster-graphql"
+    },
+    {
+      "source": "/api/python-api/libraries/dagstermill",
+      "destination": "/integrations/libraries/jupyter/dagstermill"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-looker",
+      "destination": "/integrations/libraries/looker/dagster-looker"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-omni",
+      "destination": "/integrations/libraries/omni/dagster-omni"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-openai",
+      "destination": "/integrations/libraries/openai/dagster-openai"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-pagerduty",
+      "destination": "/integrations/libraries/pagerduty/dagster-pagerduty"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-pandera",
+      "destination": "/integrations/libraries/pandera/dagster-pandera"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-papertrail",
+      "destination": "/integrations/libraries/papertrail/dagster-papertrail"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-polars",
+      "destination": "/integrations/libraries/polars/dagster-polars"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-prometheus",
+      "destination": "/integrations/libraries/prometheus/dagster-prometheus"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-sigma",
+      "destination": "/integrations/libraries/sigma/dagster-sigma"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-sling",
+      "destination": "/integrations/libraries/sling/dagster-sling"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-spark",
+      "destination": "/integrations/libraries/spark/dagster-spark"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-tableau",
+      "destination": "/integrations/libraries/tableau/dagster-tableau"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-twilio",
+      "destination": "/integrations/libraries/twilio/dagster-twilio"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-ssh",
+      "destination": "/integrations/libraries/ssh/dagster-ssh"
+    },
+    {
+      "source": "/api/python-api/libraries/dagster-wandb",
+      "destination": "/integrations/libraries/wandb/dagster-wandb"
     },
     {
       "source": "/api/python-api/libraries/:path*",
@@ -4037,6 +4425,10 @@
     {
       "source": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments",
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
+    },
+    {
+      "source": "/guides/build/components/asset-factories-to-components",
+      "destination": "/guides/build/assets/creating-asset-factories"
     }
   ],
   "trailingSlash": false

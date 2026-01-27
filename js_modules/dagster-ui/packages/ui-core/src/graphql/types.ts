@@ -167,6 +167,14 @@ export type AssetCheck = {
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   jobNames: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  partitionDefinition: Maybe<PartitionDefinition>;
+  partitionKeysByDimension: Array<DimensionPartitionKeys>;
+  partitionStatuses: Maybe<AssetCheckPartitionStatuses>;
+};
+
+export type AssetCheckPartitionKeysByDimensionArgs = {
+  endIdx?: InputMaybe<Scalars['Int']['input']>;
+  startIdx?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export enum AssetCheckCanExecuteIndividually {
@@ -174,6 +182,15 @@ export enum AssetCheckCanExecuteIndividually {
   NEEDS_USER_CODE_UPGRADE = 'NEEDS_USER_CODE_UPGRADE',
   REQUIRES_MATERIALIZATION = 'REQUIRES_MATERIALIZATION',
 }
+
+export type AssetCheckDefaultPartitionStatuses = {
+  __typename: 'AssetCheckDefaultPartitionStatuses';
+  executionFailedPartitions: Array<Scalars['String']['output']>;
+  failedPartitions: Array<Scalars['String']['output']>;
+  inProgressPartitions: Array<Scalars['String']['output']>;
+  skippedPartitions: Array<Scalars['String']['output']>;
+  succeededPartitions: Array<Scalars['String']['output']>;
+};
 
 export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
@@ -202,6 +219,7 @@ export type AssetCheckEvaluation = {
     | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
+  partition: Maybe<Scalars['String']['output']>;
   severity: AssetCheckSeverity;
   success: Scalars['Boolean']['output'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
@@ -246,6 +264,7 @@ export type AssetCheckExecution = {
   __typename: 'AssetCheckExecution';
   evaluation: Maybe<AssetCheckEvaluation>;
   id: Scalars['String']['output'];
+  partition: Maybe<Scalars['String']['output']>;
   runId: Scalars['String']['output'];
   status: AssetCheckExecutionResolvedStatus;
   stepKey: Maybe<Scalars['String']['output']>;
@@ -265,6 +284,21 @@ export type AssetCheckHandleInput = {
   name: Scalars['String']['input'];
 };
 
+export type AssetCheckMultiPartitionRangeStatuses = {
+  __typename: 'AssetCheckMultiPartitionRangeStatuses';
+  primaryDimEndKey: Scalars['String']['output'];
+  primaryDimEndTime: Maybe<Scalars['Float']['output']>;
+  primaryDimStartKey: Scalars['String']['output'];
+  primaryDimStartTime: Maybe<Scalars['Float']['output']>;
+  secondaryDim: AssetCheckPartitionStatus1D;
+};
+
+export type AssetCheckMultiPartitionStatuses = {
+  __typename: 'AssetCheckMultiPartitionStatuses';
+  primaryDimensionName: Scalars['String']['output'];
+  ranges: Array<AssetCheckMultiPartitionRangeStatuses>;
+};
+
 export type AssetCheckNeedsAgentUpgradeError = Error & {
   __typename: 'AssetCheckNeedsAgentUpgradeError';
   message: Scalars['String']['output'];
@@ -280,10 +314,53 @@ export type AssetCheckNeedsUserCodeUpgrade = Error & {
   message: Scalars['String']['output'];
 };
 
+export type AssetCheckNotFoundError = Error & {
+  __typename: 'AssetCheckNotFoundError';
+  message: Scalars['String']['output'];
+};
+
+export type AssetCheckOrError =
+  | AssetCheck
+  | AssetCheckNeedsAgentUpgradeError
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNotFoundError;
+
+export enum AssetCheckPartitionRangeStatus {
+  EXECUTION_FAILED = 'EXECUTION_FAILED',
+  FAILED = 'FAILED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  SKIPPED = 'SKIPPED',
+  SUCCEEDED = 'SUCCEEDED',
+}
+
+export type AssetCheckPartitionStatus1D =
+  | AssetCheckDefaultPartitionStatuses
+  | AssetCheckTimePartitionStatuses;
+
+export type AssetCheckPartitionStatuses =
+  | AssetCheckDefaultPartitionStatuses
+  | AssetCheckMultiPartitionStatuses
+  | AssetCheckTimePartitionStatuses;
+
 export enum AssetCheckSeverity {
   ERROR = 'ERROR',
   WARN = 'WARN',
 }
+
+export type AssetCheckTimePartitionRangeStatus = {
+  __typename: 'AssetCheckTimePartitionRangeStatus';
+  endKey: Scalars['String']['output'];
+  endTime: Scalars['Float']['output'];
+  startKey: Scalars['String']['output'];
+  startTime: Scalars['Float']['output'];
+  status: AssetCheckPartitionRangeStatus;
+};
+
+export type AssetCheckTimePartitionStatuses = {
+  __typename: 'AssetCheckTimePartitionStatuses';
+  ranges: Array<AssetCheckTimePartitionRangeStatus>;
+};
 
 export type AssetCheckhandle = {
   __typename: 'AssetCheckhandle';
@@ -523,6 +600,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 
 export type AssetNode = {
   __typename: 'AssetNode';
+  assetCheckOrError: AssetCheckOrError;
   assetChecksOrError: AssetChecksOrError;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
@@ -608,6 +686,10 @@ export type AssetNode = {
   tags: Array<DefinitionTag>;
   targetingInstigators: Array<Instigator>;
   type: Maybe<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+};
+
+export type AssetNodeAssetCheckOrErrorArgs = {
+  checkName: Scalars['String']['input'];
 };
 
 export type AssetNodeAssetChecksOrErrorArgs = {
@@ -4194,6 +4276,7 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String']['input'];
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
+  partition?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryAssetConditionEvaluationForPartitionArgs = {
@@ -6504,6 +6587,51 @@ export const buildAssetCheck = (
           : buildAssetCheckExecution({}, relationshipsToOmit),
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
+    partitionDefinition:
+      overrides && overrides.hasOwnProperty('partitionDefinition')
+        ? overrides.partitionDefinition!
+        : relationshipsToOmit.has('PartitionDefinition')
+          ? ({} as PartitionDefinition)
+          : buildPartitionDefinition({}, relationshipsToOmit),
+    partitionKeysByDimension:
+      overrides && overrides.hasOwnProperty('partitionKeysByDimension')
+        ? overrides.partitionKeysByDimension!
+        : [],
+    partitionStatuses:
+      overrides && overrides.hasOwnProperty('partitionStatuses')
+        ? overrides.partitionStatuses!
+        : relationshipsToOmit.has('AssetCheckDefaultPartitionStatuses')
+          ? ({} as AssetCheckDefaultPartitionStatuses)
+          : buildAssetCheckDefaultPartitionStatuses({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetCheckDefaultPartitionStatuses = (
+  overrides?: Partial<AssetCheckDefaultPartitionStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckDefaultPartitionStatuses'} & AssetCheckDefaultPartitionStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckDefaultPartitionStatuses');
+  return {
+    __typename: 'AssetCheckDefaultPartitionStatuses',
+    executionFailedPartitions:
+      overrides && overrides.hasOwnProperty('executionFailedPartitions')
+        ? overrides.executionFailedPartitions!
+        : [],
+    failedPartitions:
+      overrides && overrides.hasOwnProperty('failedPartitions') ? overrides.failedPartitions! : [],
+    inProgressPartitions:
+      overrides && overrides.hasOwnProperty('inProgressPartitions')
+        ? overrides.inProgressPartitions!
+        : [],
+    skippedPartitions:
+      overrides && overrides.hasOwnProperty('skippedPartitions')
+        ? overrides.skippedPartitions!
+        : [],
+    succeededPartitions:
+      overrides && overrides.hasOwnProperty('succeededPartitions')
+        ? overrides.succeededPartitions!
+        : [],
   };
 };
 
@@ -6526,6 +6654,7 @@ export const buildAssetCheckEvaluation = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quia',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'non',
     severity:
       overrides && overrides.hasOwnProperty('severity')
         ? overrides.severity!
@@ -6633,6 +6762,7 @@ export const buildAssetCheckExecution = (
           ? ({} as AssetCheckEvaluation)
           : buildAssetCheckEvaluation({}, relationshipsToOmit),
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'enim',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
     status:
       overrides && overrides.hasOwnProperty('status')
@@ -6657,6 +6787,57 @@ export const buildAssetCheckHandleInput = (
           ? ({} as AssetKeyInput)
           : buildAssetKeyInput({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
+  };
+};
+
+export const buildAssetCheckMultiPartitionRangeStatuses = (
+  overrides?: Partial<AssetCheckMultiPartitionRangeStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetCheckMultiPartitionRangeStatuses';
+} & AssetCheckMultiPartitionRangeStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckMultiPartitionRangeStatuses');
+  return {
+    __typename: 'AssetCheckMultiPartitionRangeStatuses',
+    primaryDimEndKey:
+      overrides && overrides.hasOwnProperty('primaryDimEndKey')
+        ? overrides.primaryDimEndKey!
+        : 'aperiam',
+    primaryDimEndTime:
+      overrides && overrides.hasOwnProperty('primaryDimEndTime')
+        ? overrides.primaryDimEndTime!
+        : 1.22,
+    primaryDimStartKey:
+      overrides && overrides.hasOwnProperty('primaryDimStartKey')
+        ? overrides.primaryDimStartKey!
+        : 'odio',
+    primaryDimStartTime:
+      overrides && overrides.hasOwnProperty('primaryDimStartTime')
+        ? overrides.primaryDimStartTime!
+        : 0.58,
+    secondaryDim:
+      overrides && overrides.hasOwnProperty('secondaryDim')
+        ? overrides.secondaryDim!
+        : relationshipsToOmit.has('AssetCheckDefaultPartitionStatuses')
+          ? ({} as AssetCheckDefaultPartitionStatuses)
+          : buildAssetCheckDefaultPartitionStatuses({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetCheckMultiPartitionStatuses = (
+  overrides?: Partial<AssetCheckMultiPartitionStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckMultiPartitionStatuses'} & AssetCheckMultiPartitionStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckMultiPartitionStatuses');
+  return {
+    __typename: 'AssetCheckMultiPartitionStatuses',
+    primaryDimensionName:
+      overrides && overrides.hasOwnProperty('primaryDimensionName')
+        ? overrides.primaryDimensionName!
+        : 'molestiae',
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 
@@ -6693,6 +6874,49 @@ export const buildAssetCheckNeedsUserCodeUpgrade = (
   return {
     __typename: 'AssetCheckNeedsUserCodeUpgrade',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
+  };
+};
+
+export const buildAssetCheckNotFoundError = (
+  overrides?: Partial<AssetCheckNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNotFoundError'} & AssetCheckNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNotFoundError');
+  return {
+    __typename: 'AssetCheckNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestiae',
+  };
+};
+
+export const buildAssetCheckTimePartitionRangeStatus = (
+  overrides?: Partial<AssetCheckTimePartitionRangeStatus>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckTimePartitionRangeStatus'} & AssetCheckTimePartitionRangeStatus => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckTimePartitionRangeStatus');
+  return {
+    __typename: 'AssetCheckTimePartitionRangeStatus',
+    endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'nesciunt',
+    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 4.09,
+    startKey: overrides && overrides.hasOwnProperty('startKey') ? overrides.startKey! : 'mollitia',
+    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 4.59,
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetCheckPartitionRangeStatus.EXECUTION_FAILED,
+  };
+};
+
+export const buildAssetCheckTimePartitionStatuses = (
+  overrides?: Partial<AssetCheckTimePartitionStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckTimePartitionStatuses'} & AssetCheckTimePartitionStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckTimePartitionStatuses');
+  return {
+    __typename: 'AssetCheckTimePartitionStatuses',
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 
@@ -7222,6 +7446,12 @@ export const buildAssetNode = (
   relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
+    assetCheckOrError:
+      overrides && overrides.hasOwnProperty('assetCheckOrError')
+        ? overrides.assetCheckOrError!
+        : relationshipsToOmit.has('AssetCheck')
+          ? ({} as AssetCheck)
+          : buildAssetCheck({}, relationshipsToOmit),
     assetChecksOrError:
       overrides && overrides.hasOwnProperty('assetChecksOrError')
         ? overrides.assetChecksOrError!
