@@ -2,6 +2,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 from dagster_shared.record import record
+import json
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
@@ -172,6 +173,23 @@ ResolvedAssetKey: TypeAlias = Annotated[
     ),
 ]
 
+def resolve_tags_as_strings(context: ResolutionContext, tags: Mapping[str, Any]) -> Mapping[str, str]:
+    resolved = context.resolve_value(tags) if tags is not None else {}
+
+    out: dict[str, str] = {}
+    for k, v in (resolved or {}).items():
+        key = str(k)
+
+        if isinstance(v, str):
+            out[key] = v
+        else:
+            try:
+                out[key] = json.dumps(v)
+            except TypeError:
+                out[key] = str(v)
+
+    return out
+
 
 @record
 class SharedAssetKwargs(Resolvable):
@@ -224,11 +242,14 @@ class SharedAssetKwargs(Resolvable):
     ] = None
     tags: Annotated[
         Mapping[str, str],
-        Resolver.default(
+        Resolver(
+            resolve_tags_as_strings,
+            model_field_type=Mapping[str, Any],
             description="Tags for filtering and organizing.",
             examples=[{"tier": "prod", "team": "analytics"}],
         ),
     ] = {}
+
     kinds: Annotated[
         Sequence[str],
         Resolver.default(
