@@ -30,6 +30,7 @@ from dagster._core.definitions.data_version import (
     _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
     DATA_VERSION_TAG,
     DataVersion,
+    DataVersionsByPartition,
 )
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -110,7 +111,7 @@ class Output(Generic[T], EventWithMetadata):
             Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
-        data_version (Optional[DataVersion]): (Beta) A data version to manually set
+        data_version (Optional[Union[DataVersion, DataVersionsByPartition]]): (Beta) A data version to manually set
             for the asset.
         tags (Optional[Mapping[str, str]]): Tags that will be attached to the asset
             materialization event corresponding to this output, if there is one.
@@ -121,13 +122,13 @@ class Output(Generic[T], EventWithMetadata):
         value: T,
         output_name: str = DEFAULT_OUTPUT,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        data_version: Optional[DataVersion] = None,
+        data_version: Optional[Union[DataVersion, DataVersionsByPartition]] = None,
         *,
         tags: Optional[Mapping[str, str]] = None,
     ):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
-        self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
+        self._data_version = check.opt_inst_param(data_version, "data_version", Union[DataVersion, DataVersionsByPartition])
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
@@ -155,8 +156,8 @@ class Output(Generic[T], EventWithMetadata):
 
     @public
     @property
-    def data_version(self) -> Optional[DataVersion]:
-        """Optional[DataVersion]: A data version that was manually set on the `Output`."""
+    def data_version(self) -> Optional[Union[DataVersion, DataVersionsByPartition]]:
+        """Optional[Union[DataVersion, DataVersionsByPartition]]: A data version that was manually set on the `Output`."""
         return self._data_version
 
     def __eq__(self, other: object) -> bool:
