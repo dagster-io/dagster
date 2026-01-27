@@ -39,11 +39,10 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 const _assetLayoutCacheKey = weakMapMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
-    return hashObject({
-      opts,
-      graphData,
-      version: 6,
-    });
+    // IMPORTANT: hashObject internally uses weakmapMemoize to avoid re-calculating
+    // the hash for the same object twice. Hashing individual objects and joining the
+    // strings allows this Weakmap to re-use `graphData` hashes.
+    return hashObject(graphData) + hashObject(opts) + 'version:6';
   },
 );
 
