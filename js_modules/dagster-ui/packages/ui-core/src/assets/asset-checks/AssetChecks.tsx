@@ -24,6 +24,7 @@ import {
 } from './AssetCheckDetailDialog';
 import {AssetCheckExecutionList} from './AssetCheckExecutionList';
 import {AssetCheckOverview} from './AssetCheckOverview';
+import {AssetCheckPartitions} from './AssetCheckPartitions';
 import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {
@@ -102,6 +103,10 @@ export const AssetChecks = ({
     }
     return checks.find((check) => check.name === selectedCheckName) ?? checks[0];
   }, [selectedCheckName, checks]);
+
+  const hasPartitions = React.useMemo(() => {
+    return !!(selectedCheck && selectedCheck.partitionDefinition);
+  }, [selectedCheck]);
 
   const isSelectedCheckAutomated = !!selectedCheck?.automationCondition;
 
@@ -243,6 +248,7 @@ export const AssetChecks = ({
             <AssetChecksTabs
               activeTab={activeTab}
               enableAutomationHistory={isSelectedCheckAutomated}
+              hasPartitions={hasPartitions}
               onChange={(tab) => {
                 setActiveTab(tab);
               }}
@@ -258,10 +264,17 @@ export const AssetChecks = ({
             />
           ) : null}
           {activeTab === 'execution-history' ? (
-            <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} />
+            <AssetCheckExecutionList
+              executions={executions}
+              paginationProps={paginationProps}
+              hasPartitions={hasPartitions}
+            />
           ) : null}
           {activeTab === 'automation-history' ? (
             <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />
+          ) : null}
+          {activeTab === 'partitions' ? (
+            <AssetCheckPartitions assetKey={assetKey} checkName={selectedCheck.name} />
           ) : null}
         </Box>
       </Box>
