@@ -3,6 +3,7 @@ import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterator, Mapping
 from typing import (  # noqa: UP035
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -34,7 +35,10 @@ from dagster._config.pythonic_config.config import (
     MakeConfigCacheable,
     infer_schema_from_config_class,
 )
-from dagster._config.pythonic_config.conversion_utils import TResValue, _curry_config_schema
+from dagster._config.pythonic_config.conversion_utils import (
+    TResValue,
+    _curry_config_schema,
+)
 from dagster._config.pythonic_config.typing_utils import (
     BaseResourceMeta,
     LateBoundTypesForResourceTypeChecking,
@@ -54,8 +58,14 @@ from dagster._core.definitions.resource_definition import (
     has_at_least_one_parameter,
 )
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
-from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+)
+from dagster._core.execution.context.init import (
+    InitResourceContext,
+    build_init_resource_context,
+)
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -382,7 +392,8 @@ class ConfigurableResourceFactory(
             yield self._with_updated_values(to_update)
 
     @deprecated(
-        breaking_version="2.0", additional_warn_text="Use `with_replaced_resource_context` instead"
+        breaking_version="2.0",
+        additional_warn_text="Use `with_replaced_resource_context` instead",
     )
     def with_resource_context(
         self, resource_context: InitResourceContext
@@ -538,7 +549,9 @@ class ConfigurableResourceFactory(
 
     @classmethod
     def from_resource_context(
-        cls, context: InitResourceContext, nested_resources: Optional[Mapping[str, Any]] = None
+        cls,
+        context: InitResourceContext,
+        nested_resources: Optional[Mapping[str, Any]] = None,
     ) -> TResValue:
         """Creates a new instance of this resource from a populated InitResourceContext.
         Useful when creating a resource from a function-based resource, for backwards
@@ -570,7 +583,9 @@ class ConfigurableResourceFactory(
     @classmethod
     @contextlib.contextmanager
     def from_resource_context_cm(
-        cls, context: InitResourceContext, nested_resources: Optional[Mapping[str, Any]] = None
+        cls,
+        context: InitResourceContext,
+        nested_resources: Optional[Mapping[str, Any]] = None,
     ) -> Generator[TResValue, None, None]:
         """Context which generates a new instance of this resource from a populated InitResourceContext.
         Useful when creating a resource from a function-based resource, for backwards
@@ -773,15 +788,18 @@ ResourceOrPartialOrValue: TypeAlias = Union[
 V = TypeVar("V")
 
 
-class ResourceDependency(Generic[V]):
-    def __set_name__(self, _owner, name):
-        self._name = name
+if TYPE_CHECKING:
+    # For static type checkers, ResourceDependency[V] is treated as a Union that accepts:
+    # - ConfigurableResourceFactory[V]: A resource class/instance that produces V
+    # - PartialResource[V]: A partially configured resource (from configure_at_launch())
+    # - V: The resolved value itself
+    ResourceDependency: TypeAlias = Union[ConfigurableResourceFactory[V], PartialResource[V], V]
+else:
+    # At runtime, ResourceDependency is a Generic class (for metaclass detection)
+    class ResourceDependency(Generic[V]):
+        """Type annotation for declaring a resource dependency field."""
 
-    def __get__(self, obj: "ConfigurableResourceFactory", owner: Any) -> V:
-        return getattr(obj, self._name)
-
-    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
-        setattr(obj, self._name, value)
+        pass
 
 
 class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
