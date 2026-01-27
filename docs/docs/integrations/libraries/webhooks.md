@@ -22,7 +22,7 @@ Navigate to **Deployment Settings > Alert Policies** to configure a webhook.
 
 Dagster provides dynamic tokens that are replaced with actual event data at runtime. Token availability depends on the **Event Type**.
 
-### 🌍 Global Tokens (Always Available)
+### Global Tokens (Always Available)
 
 These tokens are available for **every** notification type.
 
@@ -37,7 +37,7 @@ These tokens are available for **every** notification type.
 | `{{notification_type}}` | Type of notification event (e.g., `JOB`, `TICK`).    | `JOB`                       |
 | `{{is_sample}}`         | `true` if this is a test/sample notification.        | `false`                     |
 
-### 🚀 Job & Run Tokens
+### Job & Run Tokens
 
 Available for **Job** events (Success, Failure, Long-running).
 
@@ -57,7 +57,7 @@ Available for **Job** events (Success, Failure, Long-running).
 | `{{start_time}}`      | Start time of the run.                       | `Jan 8, 2026 10:00 AM`       |
 | `{{end_time}}`        | End time of the run.                         | `Jan 8, 2026 10:05 AM`       |
 
-### 📦 Asset Tokens
+### Asset Tokens
 
 Tokens specific to Asset events.
 
@@ -92,7 +92,7 @@ Available for **Asset Health**, **Freshness**, and **Table Schema** events.
 
 </details>
 
-### 🛠️ System & Infrastructure Tokens
+### System & Infrastructure Tokens
 
 Tokens for advanced system monitoring.
 
@@ -119,7 +119,7 @@ Tokens for advanced system monitoring.
 
 </details>
 
-### 📊 Insights Tokens
+### Insights Tokens
 
 Available when **Dagster Insights** alerts are triggered (e.g., consumption exceeded).
 
