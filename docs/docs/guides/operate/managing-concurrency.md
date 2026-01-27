@@ -17,12 +17,13 @@ This article assumes familiarity with [assets](/guides/build/assets) and [jobs](
 
 When your pipelines interact with rate-limited APIs, shared databases, or resource-constrained systems, you need to limit how many operations execute simultaneously. Dagster provides several mechanisms at different levels of granularity:
 
-| Control type      | Scope      | Protects against                | Example use case           |
-| ----------------- | ---------- | ------------------------------- | -------------------------- |
-| Concurrency pools | Cross-run  | Overloading shared resources    | Database connection limits |
-| Executor limits   | Single run | Memory/CPU exhaustion           | Large data transformations |
-| Tag concurrency   | Single run | Resource contention by category | Mixed DB + API workloads   |
-| Run queue limits  | Deployment | Too many simultaneous runs      | Backfill throttling        |
+| Control type             | Scope              | Protects against                            | Example use case                      |
+| ------------------------ | ------------------ | ------------------------------------------- | ------------------------------------- |
+| Concurrency pools        | Cross-run          | Overloading shared resources                | Database connection limits            |
+| Executor limits          | Single run         | Memory/CPU exhaustion                       | Large data transformations            |
+| Tag concurrency          | Single run         | Resource contention by category             | Mixed DB + API workloads              |
+| Run queue limits         | Deployment         | Too many simultaneous runs                  | Backfill throttling                   |
+| Branch deployment limits | All branch deploys | Branch deployments using too many resources | Multi-developer teams (Dagster+ only) |
 
 ## Limit the number of total runs that can be in progress at the same time
 
@@ -164,6 +165,26 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
   language="python"
   title="Preventing concurrent runs with a schedule"
 />
+
+## Limit concurrent runs across all branch deployments (Dagster+ only) {#branch-deployment-concurrency}
+
+In Dagster+, you can limit the total number of concurrent runs across all [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) using the organization-scoped `max_concurrent_branch_deployment_runs` setting. By default, this value is 50.
+
+This setting is useful for preventing branch deployments from consuming too many resources, especially when multiple developers are working simultaneously.
+
+To view or modify this setting, use the `dagster-cloud` CLI (requires a user token with the Organization Admin role):
+
+```bash
+# View current settings
+dagster-cloud organization settings get
+
+# Save settings to a file, edit, then sync
+dagster-cloud organization settings get > org-settings.yaml
+# Edit org-settings.yaml to change max_concurrent_branch_deployment_runs
+dagster-cloud organization settings set-from-file org-settings.yaml
+```
+
+For more details, see [Managing branch deployments across multiple deployments](/deployment/dagster-plus/deploying-code/branch-deployments/multiple-deployments#setting-the-concurrency-limit-for-runs-across-all-branch-deployments).
 
 ## When to use each approach
 
