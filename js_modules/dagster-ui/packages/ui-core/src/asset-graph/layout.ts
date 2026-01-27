@@ -59,6 +59,7 @@ export type LayoutAssetGraphOptions = {
   flagAssetGraphGroupsPerCodeLocation: boolean;
   overrides?: Partial<LayoutAssetGraphConfig>;
   facets: AssetNodeFacet[];
+  forceLargeGraph?: boolean;
 };
 
 export const Config = {

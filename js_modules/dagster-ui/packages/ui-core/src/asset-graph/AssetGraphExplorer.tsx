@@ -13,6 +13,7 @@ import {
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
+import {ParsedQs} from 'qs';
 import * as React from 'react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
@@ -37,7 +38,6 @@ import {
   AssetGraphViewType,
   GraphData,
   GraphNode,
-  graphHasCycles,
   groupIdForNode,
   isGroupId,
   tokenForAssetKey,
@@ -64,9 +64,11 @@ import {
   RightInfoPanelContent,
 } from '../pipelines/GraphExplorer';
 import {
+  CycleDetectedNotice,
   EmptyDAGNotice,
   EntirelyFilteredDAGNotice,
   InvalidSelectionQueryNotice,
+  LargeDAGNotice,
   LoadingContainer,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
@@ -127,12 +129,6 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
     return <NonIdealState icon="error" title="Query Error" />;
   }
 
-  const hasCycles = graphHasCycles(assetGraphData);
-
-  if (hasCycles) {
-    return <NonIdealState icon="error" title="Cycle detected" />;
-  }
-
   return (
     <AssetGraphExplorerWithData
       key={props.explorerPath.pipelineName}
@@ -190,6 +186,7 @@ const AssetGraphExplorerWithData = ({
 
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
+  const [forceLargeGraph, setForceLargeGraph] = useState(false);
 
   const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
@@ -204,11 +201,13 @@ const AssetGraphExplorerWithData = ({
     },
     isEmptyState: (val) => val.length === 0,
   });
+
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
   const {
     layout,
     loading: layoutLoading,
+    error,
     async,
   } = useAssetLayout(
     assetGraphData,
@@ -216,10 +215,11 @@ const AssetGraphExplorerWithData = ({
     useMemo(
       () => ({
         direction,
+        forceLargeGraph,
         flagAssetGraphGroupsPerCodeLocation,
         facets: Array.from(facets),
       }),
-      [direction, facets, flagAssetGraphGroupsPerCodeLocation],
+      [direction, facets, forceLargeGraph, flagAssetGraphGroupsPerCodeLocation],
     ),
     dataLoading,
   );
@@ -690,6 +690,47 @@ const AssetGraphExplorerWithData = ({
     );
   }, [toggleFullScreen, isFullScreen]);
 
+  const renderNotice = () => {
+    if (graphQueryItems.length === 0) {
+      return <EmptyDAGNotice nodeType="asset" isGraph />;
+    }
+    if (Object.keys(assetGraphData.nodes).length === 0) {
+      if (errorState.length > 0) {
+        return <InvalidSelectionQueryNotice errors={errorState} />;
+      }
+      return <EntirelyFilteredDAGNotice nodeType="asset" />;
+    }
+    if (error === 'cycles') {
+      return <CycleDetectedNotice />;
+    }
+    if (error === 'too-large') {
+      return <LargeDAGNotice nodeType="asset" setForceLargeGraph={setForceLargeGraph} />;
+    }
+    return null;
+  };
+
+  const renderContent = () => {
+    if (error) {
+      return null;
+    }
+    if (loading && !layout) {
+      return <LoadingNotice async={async} nodeType="asset" />;
+    }
+    return (
+      <AssetGraphBackgroundContextMenu
+        direction={direction}
+        setDirection={setDirection}
+        allGroups={allGroups}
+        expandedGroups={expandedGroups}
+        setExpandedGroups={setExpandedGroups}
+        hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
+      >
+        {svgViewport}
+      </AssetGraphBackgroundContextMenu>
+    );
+  };
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -705,30 +746,8 @@ const AssetGraphExplorerWithData = ({
           </LoadingContainer>
         ) : (
           <ErrorBoundary region="graph">
-            {!loading && graphQueryItems.length === 0 ? (
-              <EmptyDAGNotice nodeType="asset" isGraph />
-            ) : !loading && Object.keys(assetGraphData.nodes).length === 0 ? (
-              errorState.length > 0 ? (
-                <InvalidSelectionQueryNotice errors={errorState} />
-              ) : (
-                <EntirelyFilteredDAGNotice nodeType="asset" />
-              )
-            ) : undefined}
-            {loading && !layout ? (
-              <LoadingNotice async={async} nodeType="asset" />
-            ) : (
-              <AssetGraphBackgroundContextMenu
-                direction={direction}
-                setDirection={setDirection}
-                allGroups={allGroups}
-                expandedGroups={expandedGroups}
-                setExpandedGroups={setExpandedGroups}
-                hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
-                setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
-              >
-                {svgViewport}
-              </AssetGraphBackgroundContextMenu>
-            )}
+            {renderNotice()}
+            {renderContent()}
             {setOptions && (
               <OptionsOverlay>
                 <Checkbox

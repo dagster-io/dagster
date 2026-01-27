@@ -1,4 +1,12 @@
-import {Box, Colors, MonoSmall, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {
+  Body2,
+  Box,
+  Button,
+  Colors,
+  MonoSmall,
+  NonIdealState,
+  Spinner,
+} from '@dagster-io/ui-components';
 import capitalize from 'lodash/capitalize';
 import styled from 'styled-components';
 
@@ -94,3 +102,46 @@ const CenteredContainer = styled.div`
   transform: translate(-50%, -50%);
   z-index: 2;
 `;
+
+export const LargeDAGNotice = ({
+  nodeType,
+  setForceLargeGraph,
+}: {
+  nodeType: 'op' | 'asset';
+  setForceLargeGraph: (enabled: boolean) => void;
+}) => {
+  return (
+    <CenteredContainer>
+      <NonIdealState
+        icon="graph_vertical"
+        title="Large graph"
+        description={
+          <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
+            <Body2>
+              This graph may be too large to display. Build an {nodeType} filter above to render a
+              portion of the graph, or click below to attempt to render it in full.
+            </Body2>
+            <Button onClick={() => setForceLargeGraph(true)}>Show Lineage Graph</Button>
+          </Box>
+        }
+      />
+    </CenteredContainer>
+  );
+};
+
+export const CycleDetectedNotice = () => {
+  return (
+    <CenteredContainer>
+      <NonIdealState
+        icon="error"
+        title="Cycle detected"
+        description={
+          <div>
+            This graph contains a cycle and cannot be displayed. Check your asset dependencies for
+            circular references.
+          </div>
+        }
+      />
+    </CenteredContainer>
+  );
+};

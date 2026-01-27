@@ -16,6 +16,7 @@ import {
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {RunStatus} from '../graphql/types';
+import {invariant} from '../util/invariant';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum AssetGraphViewType {
@@ -120,26 +121,114 @@ export const nodeDependsOnSelf = (node: GraphNode) => {
   return node.definition.dependedByKeys.some((d) => toGraphId(d) === id);
 };
 
-export const graphHasCycles = (graphData: GraphData) => {
-  const nodes = new Set(Object.keys(graphData.nodes));
-  const search = (stack: string[], node: string): boolean => {
-    if (stack.indexOf(node) !== -1) {
-      return true;
-    }
-    if (nodes.delete(node) === true) {
-      const nextStack = stack.concat(node);
-      return Object.keys(graphData.downstream[node] || {}).some((nextNode) =>
-        search(nextStack, nextNode),
-      );
-    }
-    return false;
-  };
-  let hasCycles = false;
-  while (nodes.size !== 0 && !hasCycles) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    hasCycles = search([], nodes.values().next().value!);
+export type PreflightCheckResult =
+  | {hasCycles: true; nodeCount: null; edgeCount: null; longestPath: null}
+  | {hasCycles: false; nodeCount: number; edgeCount: number; longestPath: number};
+
+/**
+ * Analyzes a directed graph to detect cycles and compute the longest path.
+ * Uses Kahn's algorithm for topological sort (which detects cycles) followed
+ * by traversal of the topological order to compute longest path.
+ * Time complexity: O(V + E), Space complexity: O(V)
+ */
+export const runPreflightChecks = (graphData: {
+  nodes: {[id: string]: unknown};
+  downstream: {[id: string]: {[childId: string]: boolean}};
+}): PreflightCheckResult => {
+  const nodeIds = Object.keys(graphData.nodes);
+  const nodeCount = nodeIds.length;
+
+  if (nodeCount === 0) {
+    return {hasCycles: false, edgeCount: 0, nodeCount: 0, longestPath: 0};
   }
-  return hasCycles;
+
+  // Step 1: Compute in-degrees for all nodes
+  const inDegree = new Map<string, number>();
+  for (const node of nodeIds) {
+    inDegree.set(node, 0);
+  }
+  for (const node of nodeIds) {
+    const downstream = graphData.downstream[node];
+    if (downstream) {
+      for (const neighbor in downstream) {
+        if (inDegree.has(neighbor)) {
+          const degree = inDegree.get(neighbor);
+          invariant(degree !== undefined, 'Degree exists');
+          inDegree.set(neighbor, degree + 1);
+        }
+      }
+    }
+  }
+
+  // Step 2: Kahn's algorithm - build topological order using index pointer (O(1) dequeue)
+  const queue: string[] = [];
+  for (const [node, degree] of inDegree) {
+    if (degree === 0) {
+      queue.push(node);
+    }
+  }
+
+  const topoOrder: string[] = [];
+  let head = 0;
+  while (head < queue.length) {
+    const node = queue[head++];
+    invariant(node !== undefined, 'Node exists');
+    topoOrder.push(node);
+
+    const downstream = graphData.downstream[node];
+    if (downstream) {
+      for (const neighbor in downstream) {
+        if (inDegree.has(neighbor)) {
+          const degree = inDegree.get(neighbor);
+          invariant(degree !== undefined, 'Degree exists');
+          const newDegree = degree - 1;
+          inDegree.set(neighbor, newDegree);
+          if (newDegree === 0) {
+            queue.push(neighbor);
+          }
+        }
+      }
+    }
+  }
+
+  // Cycle detection: if we didn't process all nodes, there's a cycle
+  if (topoOrder.length !== nodeCount) {
+    return {hasCycles: true, edgeCount: null, nodeCount: null, longestPath: null};
+  }
+
+  // Step 3: Longest path via DP on topological order
+  const dist = new Map<string, number>();
+  for (const node of nodeIds) {
+    dist.set(node, 0);
+  }
+
+  let longestPath = 0;
+  for (const node of topoOrder) {
+    const downstream = graphData.downstream[node];
+    if (downstream) {
+      for (const neighbor in downstream) {
+        if (dist.has(neighbor)) {
+          const nodedist = dist.get(node);
+          const neighbordist = dist.get(neighbor);
+          invariant(nodedist !== undefined, 'ndist exists');
+          invariant(neighbordist !== undefined, 'ndist exists');
+          const newDist = nodedist + 1;
+          if (newDist > neighbordist) {
+            dist.set(neighbor, newDist);
+            if (newDist > longestPath) {
+              longestPath = newDist;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  let edgeCount = 0;
+  for (const downstreamEdges of Object.values(graphData.downstream)) {
+    edgeCount += Object.keys(downstreamEdges).length;
+  }
+  return {hasCycles: false, nodeCount, edgeCount, longestPath};
 };
 
 export const buildSVGPathHorizontal = pathHorizontalDiagonal({
