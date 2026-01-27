@@ -6,7 +6,7 @@ sidebar_label: Webhooks
 
 # Webhooks
 
-Turn your Dagster alerts into actionable notifications. Webhooks allow Dagster+ to send HTTP requests to any endpoint when an event triggers, enabling deep integration with tools like Discord, Jira, Linear, and custom internal systems.
+Turn your Dagster alerts into actionable notifications. Webhooks allow Dagster+ to send HTTP requests to any endpoint when an event triggers, enabling deep integration with tools like Discord, Slack, and custom internal systems.
 
 ## Global Configuration
 
@@ -181,137 +181,96 @@ This payload utilizes Discord "Embeds" for a professional look and includes vari
 - [Embed Object Structure](https://discord.com/developers/docs/resources/channel#embed-object): Customize colors, fields, and images.
 - [Execute Webhook API](https://discord.com/developers/docs/resources/webhook#execute-webhook): Full API parameters documentation.
 
-## Platform Guide: Jira Cloud
+## Platform Guide: Slack
 
-Automatically create bug tickets using the Jira Cloud REST API. [Jira Cloud REST API](https://id.atlassian.com/manage-profile/security/api-tokens)
+Send rich, interactive alerts using Slack Apps (Incoming Webhooks). This is the modern replacement for legacy custom integrations.
 
-### 1. Setup & Authentication
+### 1. Setup
 
-#### A. Determine your Endpoint
+Go to Slack API: Your Apps and click **Create New App** > **From scratch**. [Slack App](https://api.slack.com/apps)
 
-- **Simple Text (Recommended)**: Use API v2 for faster performance and lighter payloads.
-  - **URL**: `https://<your-domain>.atlassian.net/rest/api/2/issue`
-- **Rich Text**: Use API v3 if you strictly require ADF formatting (Heavier payload).
-  - **URL**: `https://<your-domain>.atlassian.net/rest/api/3/issue`
+1.  Name your app (e.g., "Dagster Alerts") and select your workspace.
+2.  In the left sidebar, click **Incoming Webhooks** and toggle **Activate Incoming Webhooks** to **On**.
+3.  Click **Add New Webhook to Workspace**, select the target channel, and authorize.
+4.  Copy the Webhook URL (e.g., `https://hooks.slack.com/services/T000.../B000.../XXXX`).
 
-#### B. Generate Credentials
+### 2. Dagster Configuration
 
-Go to **Atlassian API Tokens** and create a token.
+- **URL**: Paste your Webhook URL.
+- **Headers**: None required (Authentication is embedded in the URL).
 
-Jira requires Basic Auth encoded in Base64 (`email:token`).
+### 3. Payload (Block Kit)
 
-**Mac/Linux Command**:
+Slack Block Kit allows for structured layouts and interactive buttons.
 
-```bash
-echo -n 'your_email@domain.com:your_api_token' | base64
-```
+**Key Requirements:**
 
-**Dagster Header**: Set `Authorization` to `Basic <YOUR_BASE64_STRING>`.
+- **Header Blocks**: Must use `"type": "plain_text"`.
+- **Mentions**: Use `<@USER_ID>` for users or `<!subteam^GROUP_ID>` for user groups.
+- **Color**: Use `"style": "danger"` on buttons to indicate errors (Side-bar colors are deprecated in Block Kit).
 
-### 2. Payloads
+**Recommended JSON Template:**
 
-#### Option A: API v2 (Simple Text) - Recommended
-
-Requires Endpoint v2. This is the most reliable method for automated alerts.
-
-```json
+````json
 {
-  "fields": {
-    "project": {"key": "ENG"},
-    "issuetype": {"name": "Bug"},
-    "priority": {"name": "High"},
-    "summary": "Dagster: {{alert_summary}}",
-    "description": "Error Details:\n{{alert_content}}\n\nLink: {{deployment_url}}"
-  }
-}
-```
-
-#### Option B: API v3 (Rich Text / ADF)
-
-Requires Endpoint v3. Uses the Atlassian Document Format (ADF).
-
-```json
-{
-  "fields": {
-    "project": {"key": "ENG"},
-    "issuetype": {"name": "Bug"},
-    "priority": {"name": "High"},
-    "summary": "Dagster: {{alert_summary}}",
-    "description": {
-      "type": "doc",
-      "version": 1,
-      "content": [
+  "text": "{{alert_summary}}",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Dagster Alert: {{alert_policy_name}}",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
         {
-          "type": "paragraph",
-          "content": [
-            {"type": "text", "text": "Details:\n", "marks": [{"type": "strong"}]},
-            {"type": "text", "text": "{{alert_content}}", "marks": [{"type": "code"}]}
-          ]
+          "type": "mrkdwn",
+          "text": "*Deployment:*\n{{deployment_name}}"
         },
         {
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "View in Dagster",
-              "marks": [{"type": "link", "attrs": {"href": "{{deployment_url}}"}}]
-            }
-          ]
+          "type": "mrkdwn",
+          "text": "*Alert Policy:*\n{{alert_policy_name}}"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Error Summary:*\n{{alert_summary}}"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Details:*\n```{{alert_content}}```"
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "View in Dagster",
+            "emoji": true
+          },
+          "url": "{{deployment_url}}",
+          "style": "danger"
         }
       ]
     }
-  }
+  ]
 }
-```
+````
 
-### 3. Official References
+### 4. Official References
 
-- [Jira REST API v2 (Legacy)](https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/): Reference for simple text payloads.
-- [Jira REST API v3 (Latest)](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/): Reference for ADF payloads.
-- [ADF Playground](https://developer.atlassian.com/cloud/jira/platform/apis/document/playground/): Tool to design and validate rich text JSON payloads.
-
-## Platform Guide: Linear
-
-Create issues directly via the Linear GraphQL API. (Note: Linear uses GraphQL, not standard REST webhooks). [Linear API](https://linear.app/settings/api)
-
-### 1. Setup & Authentication
-
-#### A. API Key
-
-1.  Go to **Linear Settings > Account > API**.
-2.  Create a **Personal API Key**.
-3.  **Permission Check**: Ensure your key has `write` or `admin` scopes to perform issue creation mutations.
-4.  **Dagster Header**: Set `Authorization` to `<YOUR_API_KEY>` (Do not add "Bearer").
-
-#### B. Retrieve Team ID (UUID)
-
-You must use the Team UUID (e.g., `8708e927...`), not the display name ("ENG"). Run this command in your terminal to find it:
-
-```bash
-curl -X POST https://api.linear.app/graphql \
-  -H "Authorization: <YOUR_API_KEY>" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { teams { nodes { id name } } }"}'
-```
-
-### 2. Payload (GraphQL Mutation)
-
-This payload creates an issue with a title, description, and link back to Dagster.
-
-**Dagster URL**: `https://api.linear.app/graphql`
-
-```json
-{
-  "query": "mutation CreateAlert($title: String!, $desc: String!, $team: String!) { issueCreate(input: { title: $title, description: $desc, teamId: $team, priority: 1 }) { success issue { url } } }",
-  "variables": {
-    "team": "YOUR_TEAM_UUID_HERE",
-    "title": "{{alert_summary}}",
-    "desc": "{{alert_content}}\n\n---\n**Source**: {{deployment_name}}\n**Policy**: {{alert_policy_name}}\n[Open Deployment]({{deployment_url}})"
-  }
-}
-```
-
-### 3. Official References
-
-- [Linear GraphQL Schema](https://studio.apollographql.com/public/Linear-API/variant/current/home): Explorer to test queries and mutations.
-- [Mutation: issueCreate](https://studio.apollographql.com/public/Linear-API/variant/current/schema/reference/objects/Mutation): Detailed docs on creating issues.
+- [Block Kit Builder](https://app.slack.com/block-kit-builder): Prototyping tool to design and preview your payload.
+- [Mentions Syntax](https://api.slack.com/reference/surfaces/formatting#formatting-mentions): Guide on formatting user and group mentions.
+- [Rate Limits](https://api.slack.com/rtm#rate_limiting): Slack allows 1 request per second (with short bursts). Exceeding this returns HTTP 429.
