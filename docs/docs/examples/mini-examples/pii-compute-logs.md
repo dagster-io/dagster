@@ -88,3 +88,22 @@ compute_logs:
     base_dir: compute_logs
     redact_on_write: true
 ```
+
+:::tip Using ML-based detection
+
+For production deployments with stricter compliance requirements, consider using [Microsoft Presidio](https://microsoft.github.io/presidio/) for ML-based PII detection. Presidio provides higher accuracy and supports 30+ entity types including international formats. Replace the regex-based `redact_pii` function with:
+
+```python
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+
+analyzer = AnalyzerEngine()
+anonymizer = AnonymizerEngine()
+
+def redact_pii(text: str) -> str:
+    results = analyzer.analyze(text=text, language="en")
+    anonymized = anonymizer.anonymize(text=text, analyzer_results=results)
+    return anonymized.text
+```
+
+:::
