@@ -70,6 +70,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -679,6 +680,7 @@ export type LaunchAssetLoaderQuery = {
       location: {__typename: 'RepositoryLocation'; id: string; name: string};
     };
     requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     configField: {
       __typename: 'ConfigTypeField';
       name: string;
@@ -1304,6 +1306,7 @@ export type LaunchAssetLoaderJobQuery = {
       location: {__typename: 'RepositoryLocation'; id: string; name: string};
     };
     requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     configField: {
       __typename: 'ConfigTypeField';
       name: string;
@@ -1902,9 +1905,9 @@ export type LaunchAssetCheckUpstreamQuery = {
   }>;
 };
 
-export const LaunchAssetLoaderQueryVersion = 'ae6a5d5eaf00ec9eeefaf3e7dc85a7710eb3647608aa00e3ded59877a289d645';
+export const LaunchAssetLoaderQueryVersion = '0bb9261beb8845317dbd9f9f0a0b821958eec5ab0dea5069bd28f18bd8ca3f2b';
 
-export const LaunchAssetLoaderJobQueryVersion = '112371f3f0c11b7467940b71e83cba8abf678aed019820af94fdee4f99531841';
+export const LaunchAssetLoaderJobQueryVersion = 'c24ca000a877910343596edb106396378e65bab7509475b81f2e1c5974ce4314';
 
 export const LaunchAssetLoaderResourceQueryVersion = '93f4cbee0c4705015eee5d84a5857b1122e1c3fb7e4f4907f541c43ef6d56176';
 
