@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import tempfile
+from textwrap import dedent
 
 import pytest
 import sqlalchemy as db
@@ -33,7 +34,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._time import get_current_timestamp
 from dagster._utils import file_relative_path
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 
 
 def get_columns(instance, table_name: str):
@@ -56,6 +57,23 @@ def get_primary_key(instance, table_name: str):
 def get_tables(instance):
     with instance.run_storage.connect() as conn:
         return db.inspect(conn).get_table_names()
+
+
+def get_table_statistics(instance, table_name: str):
+    query = text(
+        dedent(
+            """\
+            SELECT s.stxname AS statistics_name
+            FROM pg_statistic_ext s
+            JOIN pg_class c ON s.stxrelid = c.oid
+            WHERE c.relname = :table_name
+            """
+        )
+    )
+
+    with instance.run_storage.connect() as conn:
+        result = conn.execute(query, {"table_name": table_name})
+        return [row.statistics_name for row in result]
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
@@ -1314,3 +1332,31 @@ def test_add_backfill_end_timestamp(hostname, conn_string):
             no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
             assert no_runs_backfill
             assert no_runs_backfill.backfill_end_timestamp == no_runs_backfill.backfill_timestamp
+
+
+def test_add_run_tags_key_value_statistics(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_12_3_add_run_tags_key_value_statistics/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            # Before migration
+            assert "run_tags" in get_tables(instance)
+            assert get_table_statistics(instance, "run_tags") == []
+
+            # After upgrade
+            instance.upgrade()
+
+            assert "run_tags" in get_tables(instance)
+            assert get_table_statistics(instance, "run_tags") == ["run_tags_key_value_stats"]
