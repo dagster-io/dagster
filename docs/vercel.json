@@ -312,7 +312,7 @@
     },
     {
       "source": "/_apidocs/pipes",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/_apidocs/internals",
@@ -424,7 +424,7 @@
     },
     {
       "source": "/api/pipes",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/api/repositories",
@@ -444,7 +444,7 @@
     },
     {
       "source": "/api/python-api/dagster-shell",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/api/dg/create-dagster",
@@ -2700,7 +2700,7 @@
     },
     {
       "source": "/_modules/dagster_shell/ops",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/api/libraries/dagster-slack",
@@ -3132,11 +3132,11 @@
     },
     {
       "source": "/_modules/dagster/_core/pipes/context",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/_modules/dagster/_core/pipes/utils",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/_modules/dagster/_core/run_coordinator/queued_run_coordinator",
@@ -3752,7 +3752,7 @@
     },
     {
       "source": "/api/python-api/pipes",
-      "destination": "/api/dagster/pipes"
+      "destination": "/api/dagster/dagster-pipes-toolkit"
     },
     {
       "source": "/api/python-api/repositories",
