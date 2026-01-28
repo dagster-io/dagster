@@ -5,13 +5,14 @@ import os
 import subprocess
 import time
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 
 import dagster._check as check
 import kubernetes
 import pytest
 import requests
 import yaml
-from dagster._utils import find_free_port, git_repository_root
+from dagster._utils import find_free_port
 from dagster._utils.merger import merge_dicts
 from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_k8s.client import DagsterKubernetesClient
@@ -41,6 +42,14 @@ TEST_OTHER_IMAGE_PULL_SECRET_NAME = "test-other-image-pull-secret"
 
 # By default, dagster.workers.fullname is ReleaseName-celery-workers
 CELERY_WORKER_NAME_PREFIX = "dagster-celery-workers"
+
+
+def _discover_oss_root(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".git").exists() or path.name == "dagster-oss":
+            return path
+        path = path.parent
+    raise ValueError("Could not find git root")
 
 
 @pytest.fixture(scope="session")
@@ -457,7 +466,7 @@ def _helm_chart_helper(
             "-f",
             "-",
             release_name,
-            os.path.join(git_repository_root(), chart_name),
+            os.path.join(_discover_oss_root(Path(__file__)), chart_name),
         ]
 
         print("Running Helm Install: \n", " ".join(helm_cmd), "\nWith config:\n", helm_config_yaml)
@@ -619,7 +628,7 @@ def _helm_chart_helper(
             print("Uninstalling helm chart")
             check_output(
                 ["helm", "uninstall", release_name, "--namespace", namespace],  # pyright: ignore[reportPossiblyUnboundVariable]
-                cwd=git_repository_root(),
+                cwd=_discover_oss_root(Path(__file__)),
             )
 
 

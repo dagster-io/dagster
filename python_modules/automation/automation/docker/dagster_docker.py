@@ -1,6 +1,7 @@
 import contextlib
 import os
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
@@ -13,7 +14,7 @@ from automation.docker.utils import (
     execute_docker_tag,
     python_version_image_tag,
 )
-from automation.git import git_repo_root
+from automation.utils import discover_oss_root
 
 # Default repository prefix used for local images
 DEFAULT_LOCAL_PREFIX = "dagster"
@@ -29,7 +30,7 @@ def do_nothing(_cwd: str) -> Iterator[None]:
 
 def default_images_path():
     return os.path.join(
-        git_repo_root(),
+        discover_oss_root(Path(__file__)),
         "python_modules",
         "automation",
         "automation",

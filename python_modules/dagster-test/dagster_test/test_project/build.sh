@@ -1,6 +1,14 @@
 #!/bin/bash
 
-ROOT=$(git rev-parse --show-toplevel)
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
+# Support both standalone OSS repo and monorepo
+if [ -d "${GIT_ROOT}/dagster-oss" ]; then
+    ROOT="${GIT_ROOT}/dagster-oss"
+else
+    ROOT="${GIT_ROOT}"
+fi
+
 BASE_DIR="${ROOT}/python_modules/dagster-test"
 
 function cleanup {
