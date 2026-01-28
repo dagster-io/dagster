@@ -82,6 +82,7 @@ type LaunchAssetsState =
       assets: LaunchAssetExecutionAssetNodeFragment[];
       upstreamAssetKeys: AssetKey[];
       repoAddress: RepoAddress;
+      assetTags: {key: string; value: string}[];
     }
   | {
       type: 'single-run';
@@ -526,6 +527,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
           target={state.target}
           open={true}
           setOpen={() => setState({type: 'none'})}
+          assetTags={state.assetTags}
           refetch={async () => {
             const {assetNodes} = await onLoad(state.assets.map(asAssetKeyInput));
             const next = await stateForLaunchingAssets(client, assetNodes, false, preferredJobName);
@@ -586,6 +588,8 @@ async function stateForLaunchingAssets(
       partitionDefinitionsEqual(a.partitionDefinition, partitionDefinition),
   );
 
+  const assetTags = assets.flatMap((a) => a.tags ?? []);
+
   if (!inSameRepo || !inSameOrNoPartitionSpace || !jobName) {
     if (!partitionDefinition) {
       return {type: 'error', error: ERROR_INVALID_ASSET_SELECTION};
@@ -598,6 +602,7 @@ async function stateForLaunchingAssets(
         target: {type: 'pureAll'},
         upstreamAssetKeys: [],
         repoAddress,
+        assetTags,
       };
     }
     return {
@@ -606,6 +611,7 @@ async function stateForLaunchingAssets(
       target: {type: 'pureWithAnchorAsset', anchorAssetKey: anchorAsset.assetKey},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
+      assetTags
     };
   }
 
@@ -640,6 +646,8 @@ async function stateForLaunchingAssets(
     }
   }
 
+  
+
   if (needLaunchpad || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
@@ -660,7 +668,7 @@ async function stateForLaunchingAssets(
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
         base: partitionDefinition
-          ? {type: 'asset-job-partition', partitionName: null, tags: []}
+          ? {type: 'asset-job-partition', partitionName: null, tags: assetTags}
           : undefined,
       },
     };
@@ -672,11 +680,15 @@ async function stateForLaunchingAssets(
       target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
+      assetTags,
     };
   }
+
+ 
+
   return {
     type: 'single-run',
-    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
+    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, assetTags),
   };
 }
 
@@ -910,6 +922,10 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     }
     requiredResources {
       resourceKey
+    }
+    tags {
+      key
+      value
     }
     ...AssetNodeConfigFragment
   }
