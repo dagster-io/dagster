@@ -23,3 +23,28 @@ core.workflow(
     set_rev_id = False,
     mode="CHANGE_REQUEST",
 )
+
+"""
+Copybara configuration for syncing commits from dagster-io/dagster master to internal monorepo.
+"""
+core.workflow(
+    name="sync-internal",
+    origin = git.origin(
+        url = "https://github.com/dagster-io/dagster.git",
+        ref = "master",
+    ),
+    destination = git.destination(
+        url = "file:///workspace/build/buildkite/dagster/copybara-sync",
+        fetch = "master",
+        push = "master",
+    ),
+    origin_files = glob(["**"]),
+    destination_files = glob(["dagster-oss/**"]),
+    authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
+    transformations = [
+        core.move("", "dagster-oss"),
+        metadata.save_author("ORIGINAL_AUTHOR", search_all_changes = True),
+        metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
+    ],
+    mode = "ITERATIVE",
+)
