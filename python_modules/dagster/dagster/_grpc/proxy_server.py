@@ -231,8 +231,11 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             if self._shutdown_once_executions_finish_event.is_set():
                 break
 
+            if self._server_termination_event.is_set():
+                break
+
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
-                self._logger.warning(
+                self._logger.info(
                     f"No heartbeat received in {heartbeat_timeout} seconds, shutting down"
                 )
                 self._shutdown_once_executions_finish_event.set()
