@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.12.13 (core) / 0.28.13 (libraries)
+
+### New
+
+- [dagster-polytomic] `PolytomicComponent` has been added and can be used to represent your Polytomic bulk sync schemas as external assets in Dagster
+- [dagster-fivetran] Added warning log when no Fivetran groups are found to help users troubleshoot permission issues.
+
+## Internal Repository Changes
+
+### Bugfixes
+
+- [ui] Currently, if there are errors in the python graphql layer, you get a message like this ``` /Users/spencer/workspaces/internal/dagster-cloud/js_modules/app-cloud/node_modules/graphql/jsutils/devAssert.js:12 throw new Error(message); ^ Error: Invalid or incomplete introspection result. Ensure that you are passing "data" property of introspection response and no "errors" was returned alongside: null. at devAssert (/Users/spencer/workspaces/internal/dagster-cloud/js_modules/app-cloud/node_modules/graphql/jsutils/devAssert.js:12:11) at buildClientSchema (/Users/spencer/workspaces/internal/dagster-cloud/js_modules/app-cloud/node_modules/graphql/utilities/buildClientSchema.js:45:30) at Object.<anonymous> (/Users/spencer/workspaces/internal/dagster-cloud/js_modules/app-cloud/src/scripts/generateGraphQLTypes.ts:37:42) at Module._compile (node:internal/modules/cjs/loader:1761:14) at Module.m._compile (/Users/spencer/workspaces/internal/dagster-cloud/js_modules/app-cloud/node_modules/ts-node/src/index.ts:1618:23) at node:internal/modules/cjs/loader:1893:10 at Object.require.extensions.<computed> [as .ts] (/Users/spencer/workspaces/internal/dagster-cloud/js_modules/app-cloud/node_modules/ts-node/src/index.ts:1621:12) at Module.load (node:internal/modules/cjs/loader:1481:32) at Module._load (node:internal/modules/cjs/loader:1300:12) at TracingChannel.traceSync (node:diagnostics_channel:328:14) ``` This isn't completely useless, because it tells you broadly what's wrong (no data field in the introspection response) and what you might do to figure out what's happening (check the error field), but you still have to figure out the commands to just run the underlying command in your terminal, or run the generate script again with console.logs / in debug. With this change, in the same situation, it prints you the actual problem(s) you'd have found by running it again and checking the error field ``` ❌ GraphQL schema introspection failed: - Type AssetDiffHistoryEntry must define one or more fields. ``` This also includes an orphaned graphql generation change from master and formats the possibleTypes.generated.json file so it'll be human readable.
+
+### Dagster Plus
+
+- [ui] regenerates frontend and backend changes from code already merged into master Changelog
+
 ## 1.12.12 (core) / 0.28.12 (libraries)
 
 ### New
