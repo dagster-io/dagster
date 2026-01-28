@@ -18,10 +18,6 @@ from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 
 
-def git_repo_root():
-    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
-
-
 @dataclass
 class HelmTemplate:
     helm_dir_path: str
@@ -43,10 +39,7 @@ class HelmTemplate:
         )
 
         with NamedTemporaryFile() as tmp_file:
-            if os.path.isabs(self.helm_dir_path):
-                helm_dir_path = self.helm_dir_path
-            else:
-                helm_dir_path = os.path.join(discover_oss_root(Path(__file__)), self.helm_dir_path)
+            helm_dir_path = os.path.join(discover_oss_root(Path(__file__)), self.helm_dir_path)
 
             values_json = (
                 json.loads(values.model_dump_json(exclude_none=True, by_alias=True))

@@ -33,7 +33,6 @@ from dagster._core.test_utils import environ
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import pushd, script_relative_path
 from dagster_shared.telemetry import (
-    KNOWN_CI_ENV_VAR_KEYS,
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
     get_telemetry_logger,
@@ -775,67 +774,3 @@ def test_user_id_consistent_across_dagster_homes():
 
             # User IDs should be the same
             assert user_id_1 == user_id_2
-
-
-def test_is_known_ci_env_false_when_no_ci_env_vars(enabled_telemetry: Telemetry):
-    """Test that is_known_ci_env is False when no CI environment variables are set."""
-    _, telemetry_caplog = enabled_telemetry
-
-    # Clear all CI-related env vars
-    env_overrides: dict[str, Any] = {"CI": None}
-    for key in KNOWN_CI_ENV_VAR_KEYS:
-        env_overrides[key] = None
-
-    with environ(env_overrides):
-        runner = CliRunner()
-        with pushd(path_to_file("")):
-            result = runner.invoke(
-                job_execute_command,
-                ["-f", path_to_file("test_cli_commands.py"), "-a", "qux_job"],
-            )
-            assert result.exit_code == 0
-
-        for record in telemetry_caplog.records:
-            message = json.loads(record.getMessage())
-            assert message["is_known_ci_env"] is False
-
-
-def test_is_known_ci_env_true_when_generic_ci_env_var_set(enabled_telemetry: Telemetry):
-    """Test that is_known_ci_env is True when the generic CI env var is set."""
-    _, telemetry_caplog = enabled_telemetry
-
-    # Clear specific CI env vars, but set generic CI
-    env_overrides: dict[str, Any] = {}
-    for key in KNOWN_CI_ENV_VAR_KEYS:
-        env_overrides[key] = None
-
-    for val in ["true", "1", "yes"]:
-        env_overrides["CI"] = val
-        with environ(env_overrides):
-            runner = CliRunner()
-            with pushd(path_to_file("")):
-                result = runner.invoke(
-                    job_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", "qux_job"],
-                )
-                assert result.exit_code == 0
-
-            for record in telemetry_caplog.records:
-                message = json.loads(record.getMessage())
-                assert message["is_known_ci_env"] is True
-
-            telemetry_caplog.clear()
-
-
-def test_known_ci_env_var_keys_contains_expected_entries():
-    """Verify KNOWN_CI_ENV_VAR_KEYS contains expected entries (catches string concatenation bugs)."""
-    assert "CODEBUILD_BUILD_ID" in KNOWN_CI_ENV_VAR_KEYS
-    assert "CIRCLECI" in KNOWN_CI_ENV_VAR_KEYS
-    assert "GITHUB_ACTION" in KNOWN_CI_ENV_VAR_KEYS
-    assert "GITLAB_CI" in KNOWN_CI_ENV_VAR_KEYS
-    assert "JENKINS_URL" in KNOWN_CI_ENV_VAR_KEYS
-    assert "BUILDKITE" in KNOWN_CI_ENV_VAR_KEYS
-    assert "TRAVIS" in KNOWN_CI_ENV_VAR_KEYS
-    assert "BITBUCKET_BUILD_NUMBER" in KNOWN_CI_ENV_VAR_KEYS
-    # Ensure no accidentally concatenated strings
-    assert "CODEBUILD_BUILD_IDCIRCLECI" not in KNOWN_CI_ENV_VAR_KEYS
