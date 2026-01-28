@@ -572,7 +572,8 @@ def print_report(result: RunResult) -> None:
 
 
 if __name__ == "__main__":
-    assert os.path.exists(".git"), "Must be run from the root of the repository"
+    # Verify we're in a git repo and at the OSS repo root (has pyright/ directory)
+    assert os.path.exists("pyright"), "Must be run from the root of the dagster repository"
     args = parser.parse_args()
     params = get_params(args)
     if params["mode"] == "path":
