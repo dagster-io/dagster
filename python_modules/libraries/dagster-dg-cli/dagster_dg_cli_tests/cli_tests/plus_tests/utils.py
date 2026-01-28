@@ -17,14 +17,26 @@ def mock_gql_response(
     def match(request) -> tuple[bool, str]:
         request_body = request.body
         json_body = json.loads(request_body) if request_body else {}
-        body_query_first_line_normalized = json_body["query"].strip().split("\n")[0].strip()
-        query_first_line_normalized = query.strip().split("\n")[0].strip()
+
+        # The gql library reformats queries, so we need to normalize both queries
+        # Extract the operation name (e.g., "mutation CliCreateOrUpdateBranchDeployment")
+        body_query = json_body.get("query", "").strip()
+        expected_query = query.strip()
+
+        # Compare operation name (first word + operation name)
+        # e.g., "mutation CliCreateOrUpdateBranchDeployment" or "query DeploymentByNameQuery"
+        body_parts = body_query.split("(")[0].strip().split()
+        expected_parts = expected_query.split("(")[0].strip().split()
+
+        # Match on operation type and name (e.g., "mutation CliCreateOrUpdateBranchDeployment")
+        operation_matches = body_parts == expected_parts
+
         if expected_variables and json_body.get("variables") != expected_variables:
             return False, f"\n{json_body.get('variables')} != {expected_variables}\n{json_body}"
 
         return (
-            body_query_first_line_normalized == query_first_line_normalized,
-            f"\n'{body_query_first_line_normalized}'\n!=\n'{query_first_line_normalized}'\n",
+            operation_matches,
+            f"\n'{' '.join(body_parts)}'\n!=\n'{' '.join(expected_parts)}'\n",
         )
 
     responses.add(
