@@ -50,22 +50,37 @@ You can use Helm to do rolling upgrades of your Dagster+ agent. The version of t
 
 :::tip
 
-We recommend upgrading your Dagster+ agent every 6 months. The version of your agent is visible on the "Deployments", "Agents" tab https://your-org.dagster.plus/deployment/health. The current version of the agent matches the most [recent Dagster release](https://github.com/dagster-io/dagster/releases).
+We recommend upgrading your Dagster+ agent every six months. The version of your agent is visible on the **Deployments** > **Agents** tab at `https://<YOUR-ORG>.dagster.plus/deployment/health`.
+
+Agent version numbering follows [Dagster release](https://github.com/dagster-io/dagster/releases) version numbering.
 
 :::
 
-```yaml
-# values.yaml
-dagsterCloudAgent:
-  image:
-    tag: latest
-```
+<Tabs>
+<TabItem value="latest-version" label="Upgrading to the latest agent version">
+
+To upgrade to the latest version of the Dagster agent, run the following `helm upgrade` command:
 
 ```shell
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
 ```
+
+</TabItem>
+<TabItem value="specific-version" label="Upgrading to a specific agent version">
+
+To upgrade to a specific version of the Dagster agent, run the `helm upgrade` command with the `--version` flag:
+
+```shell
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+    --version <version-number>
+```
+
+</TabItem>
+</Tabs>
 
 ## Troubleshooting tips
 
