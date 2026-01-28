@@ -97,7 +97,9 @@ export interface LaunchAssetChoosePartitionsDialogProps {
     | 'partitionDefinition'
     | 'backfillPolicy'
     | 'jobNames'
+    | 'tags'
   >[];
+  assetTags: {key: string; value: string}[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
   refetch?: () => Promise<void>;
 }
@@ -140,8 +142,10 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   repoAddress,
   target,
   upstreamAssetKeys,
+  assetTags,
   refetch: _refetch,
 }: LaunchAssetChoosePartitionsDialogProps) => {
+  
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
   const assetKeyInputs = useMemo(() => assets.map((a) => asAssetKeyInput(a.assetKey)), [assets]);
@@ -296,8 +300,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     }
 
     const runConfigData = config.yaml || '';
-    let allTags = [...config.tags, ...tags];
+    let allTags = [...config.tags,...assetTags, ...tags];
 
+    
     if (launchWithRangesAsTags) {
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
       allTags.push({
@@ -328,9 +333,20 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   };
 
   const onLaunchAsBackfill = async () => {
-    const backfillTags = tagsWithUIExecutionTags(tags);
+    const merged = new Map<string, string>();
 
-    // Add runConfigData if we have saved configuration
+    for (const t of assetTags ?? []) {
+      merged.set(t.key, t.value);
+    }
+
+    for (const t of tags ?? []) {
+      merged.set(t.key, t.value);
+    }
+
+    const mergedTags = Array.from(merged.entries()).map(([key, value]) => ({key, value}));
+
+    const backfillTags = tagsWithUIExecutionTags(mergedTags);
+
     const runConfigData = savedConfig?.runConfigYaml || undefined;
 
     const backfillParams = (
