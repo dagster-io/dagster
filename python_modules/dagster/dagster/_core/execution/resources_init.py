@@ -49,6 +49,7 @@ def resource_initialization_manager(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     event_loop: Optional[AbstractEventLoop],
+    job_def: Optional["JobDefinition"] = None,
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -60,6 +61,7 @@ def resource_initialization_manager(
         instance=instance,
         emit_persistent_events=emit_persistent_events,
         event_loop=event_loop,
+        job_def=job_def,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -127,6 +129,7 @@ def _core_resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     event_loop,
+    job_def: Optional["JobDefinition"] = None,
 ):
     job_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
@@ -142,11 +145,17 @@ def _core_resource_initialization_event_generator(
     resource_init_times = {}
     try:
         if emit_persistent_events and resource_keys_to_init:
+            # Calculate resource origins if we have job_def and execution_plan
+            resource_origins = None
+            if job_def and execution_plan:
+                resource_origins = get_resource_origins_mapping(execution_plan, job_def)
+            
             yield DagsterEvent.resource_init_start(
                 job_name,
                 cast("ExecutionPlan", execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
+                resource_origins,
             )
 
         resource_dependencies = resolve_resource_dependencies(resource_defs)
@@ -225,6 +234,7 @@ def resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     event_loop: Optional[AbstractEventLoop],
+    job_def: Optional["JobDefinition"] = None,
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(
@@ -260,6 +270,7 @@ def resource_initialization_event_generator(
             instance=instance,
             emit_persistent_events=emit_persistent_events,
             event_loop=event_loop,
+            job_def=job_def,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
@@ -347,6 +358,60 @@ def single_resource_event_generator(
             pass
         else:
             check.failed(f"Resource generator {resource_name} yielded more than one item.")
+
+
+def get_resource_origins_mapping(
+    execution_plan: ExecutionPlan,
+    job_def: JobDefinition,
+) -> dict[str, set[str]]:
+    """Returns a mapping of resource keys to the set of origins where they are required.
+    
+    Origins can be:
+    - op names (for compute functions)
+    - hook names
+    - io_manager references
+    - input_manager references
+    """
+    resource_origins: dict[str, set[str]] = {}
+
+    for step_handle, step in execution_plan.step_dict.items():
+        if step_handle not in execution_plan.step_handles_to_execute:
+            continue
+
+        node_def = job_def.get_node(step.node_handle).definition
+        node_name = node_def.name
+
+        # Check op compute resource requirements
+        for resource_key in node_def.required_resource_keys:
+            if resource_key not in resource_origins:
+                resource_origins[resource_key] = set()
+            resource_origins[resource_key].add(f"op '{node_name}'")
+
+        # Check hook resource requirements
+        hook_defs = job_def.get_all_hooks_for_handle(step.node_handle)
+        for hook_def in hook_defs:
+            for resource_key in hook_def.required_resource_keys:
+                if resource_key not in resource_origins:
+                    resource_origins[resource_key] = set()
+                resource_origins[resource_key].add(f"hook '{hook_def.name}'")
+
+        # Check input/output manager requirements
+        for step_input in step.step_inputs:
+            input_def = node_def.input_def_named(step_input.name)
+            
+            if input_def.input_manager_key:
+                if input_def.input_manager_key not in resource_origins:
+                    resource_origins[input_def.input_manager_key] = set()
+                resource_origins[input_def.input_manager_key].add(f"input_manager for '{node_name}.{step_input.name}'")
+
+        for step_output in step.step_outputs:
+            output_def = node_def.output_def_named(step_output.name)
+            if output_def.io_manager_key:
+                if output_def.io_manager_key not in resource_origins:
+                    resource_origins[output_def.io_manager_key] = set()
+                resource_origins[output_def.io_manager_key].add(f"io_manager for '{node_name}.{step_output.name}'")
+
+    return resource_origins
 
 
 def get_required_resource_keys_to_init(
