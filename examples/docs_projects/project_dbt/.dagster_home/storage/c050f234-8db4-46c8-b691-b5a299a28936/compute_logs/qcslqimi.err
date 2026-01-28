@@ -1,0 +1,38 @@
+[32m2026-01-28 12:56:24 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - c050f234-8db4-46c8-b691-b5a299a28936 - 76274 - LOGS_CAPTURED - Started capturing logs in process (pid: 76274).
+[32m2026-01-28 12:56:24 +0200[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - c050f234-8db4-46c8-b691-b5a299a28936 - 76274 - analytics - STEP_START - Started execution of step "analytics".
+[32m2026-01-28 12:56:24 +0200[0m - dagster - [34mERROR[0m - [31m__ASSET_JOB - c050f234-8db4-46c8-b691-b5a299a28936 - 76274 - analytics - STEP_FAILURE - Execution of step "analytics" failed.
+
+dagster._core.errors.DagsterExecutionStepExecutionError: Error occurred while executing op "analytics"::
+
+dagster.components.resolved.errors.ResolutionException: UndefinedError: 'context' not found in scope, available scope is: env, dg, datetime, automation_condition, partition_key, partition_key_range, partition_time_window
+
+
+Stack Trace:
+  File "/home/michal/src/dagster/python_modules/dagster/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+    yield
+  File "/home/michal/src/dagster/python_modules/dagster/dagster/_utils/__init__.py", line 394, in iterate_with_context
+    next_output = next(iterator)
+                  ^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py", line 401, in _fn
+    yield from self.execute(context=context, dbt=DbtCliResource(project))
+  File "/home/michal/src/dagster/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py", line 486, in execute
+    yield from self._get_dbt_event_iterator(context, dbt)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py", line 451, in _get_dbt_event_iterator
+    iterator = dbt.cli(self.get_cli_args(context), context=context).stream()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py", line 424, in get_cli_args
+    .resolve_value(self.cli_args, as_type=list[str])
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/dagster/dagster/components/resolved/context.py", line 207, in resolve_value
+    return [self.at_path(i).resolve_value(v) for i, v in enumerate(val)]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/dagster/dagster/components/resolved/context.py", line 203, in resolve_value
+    return {k: self.at_path(k).resolve_value(v) for k, v in val.items()}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/dagster/dagster/components/resolved/context.py", line 209, in resolve_value
+    return self._resolve_inner_value(val)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michal/src/dagster/python_modules/dagster/dagster/components/resolved/context.py", line 164, in _resolve_inner_value
+    raise self._invalid_scope_exc(undefined_error.message) from None
+[0m
