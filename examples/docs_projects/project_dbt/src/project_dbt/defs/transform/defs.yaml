@@ -14,9 +14,15 @@ attributes:
       min_date: "{{ context.partition_time_window.start.strftime('%Y-%m-%d') }}"
       max_date: "{{ context.partition_time_window.end.strftime('%Y-%m-%d') }}"
   # highlight-end
+  
 
 post_processing:
   assets:
     - target: "*"
       attributes:
+        tags:
+          ecs/cpu: "512"
+          ecs/memory: "1536"
+
+
         partitions_def: "{{ daily_partitions_def }}"
