@@ -2931,7 +2931,7 @@ def test_subset_cycle_dependencies():
 
 def test_subset_recongeal() -> None:
     # In this test, we create a job that requires multi-asset `acd` to be broken up into two pieces
-    # in order to accommodate the inclusion of `b` in the job, as `b` depends on `a`, but is depended
+    # in order to accomodate the inclusion of `b` in the job, as `b` depends on `a`, but is depended
     # on by `c` and `d`.
     #
     # We ensure that this subsetting happens, and then ensure that when we subset this job to include
