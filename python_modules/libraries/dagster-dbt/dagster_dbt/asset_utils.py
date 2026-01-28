@@ -757,7 +757,7 @@ def default_asset_check_fn(
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
-        description=test_resource_props.get("meta", {}).get("description"),
+        description=test_resource_props.get("description"),
         additional_deps=additional_deps,
         metadata={DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: test_unique_id},
         blocking=blocking,
