@@ -47,5 +47,4 @@ core.workflow(
         metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
     ],
     mode = "ITERATIVE",
-    reversible_check = True,  # Skip commits that originated from internal
 )
