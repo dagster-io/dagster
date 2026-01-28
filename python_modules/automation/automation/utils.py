@@ -34,7 +34,7 @@ def discover_oss_root(path: Path) -> Path:
         if (path / ".git").exists() or path.name == "dagster-oss":
             return path
         path = path.parent
-    raise ValueError("Could not find git root")
+    raise ValueError("Could not find OSS root")
 
 
 @contextmanager

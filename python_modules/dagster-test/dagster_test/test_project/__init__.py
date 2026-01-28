@@ -4,6 +4,7 @@ import subprocess
 import sys
 from collections.abc import Mapping
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Optional
 
 import dagster._check as check
@@ -26,14 +27,18 @@ from dagster._core.remote_representation.external import RemoteJob, RemoteSchedu
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id
-from dagster._utils import file_relative_path, git_repository_root
+from dagster._utils import discover_oss_root, file_relative_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def get_test_repo_path():
-    return os.path.join(
-        git_repository_root(), "python_modules", "dagster-test", "dagster_test", "test_project"
+    return str(
+        discover_oss_root(Path(__file__))
+        / "python_modules"
+        / "dagster-test"
+        / "dagster_test"
+        / "test_project"
     )
 
 

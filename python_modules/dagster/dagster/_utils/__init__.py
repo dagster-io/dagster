@@ -465,6 +465,17 @@ def git_repository_root() -> str:
     return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
+_DAGSTER_OSS_SUBDIRECTORY = "dagster-oss"
+
+
+def discover_oss_root(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".git").exists() or path.name == _DAGSTER_OSS_SUBDIRECTORY:
+            return path
+        path = path.parent
+    raise ValueError("Could not find OSS root")
+
+
 def segfault() -> None:
     """Reliable cross-Python version segfault.
 

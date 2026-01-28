@@ -11,18 +11,11 @@ from typing import Any, Optional, Union
 
 import dagster._check as check
 import yaml
+from dagster._utils import discover_oss_root
 from kubernetes.client.api_client import ApiClient
 
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
-
-
-def discover_oss_root(path: Path) -> Path:
-    while path != path.parent:
-        if (path / ".git").exists() or path.name == "dagster-oss":
-            return path
-        path = path.parent
-    raise ValueError("Could not find git root")
 
 
 @dataclass
