@@ -47,6 +47,7 @@ def infer_partition_mapping(
 def get_builtin_partition_mapping_types() -> tuple[type["PartitionMapping"], ...]:
     from dagster._core.definitions.partitions.mapping import (
         AllPartitionMapping,
+        DynamicPartitionMapping,
         IdentityPartitionMapping,
         LastPartitionMapping,
         MultiPartitionMapping,
@@ -58,6 +59,7 @@ def get_builtin_partition_mapping_types() -> tuple[type["PartitionMapping"], ...
 
     return (
         AllPartitionMapping,
+        DynamicPartitionMapping,
         IdentityPartitionMapping,
         LastPartitionMapping,
         SpecificPartitionsPartitionMapping,
