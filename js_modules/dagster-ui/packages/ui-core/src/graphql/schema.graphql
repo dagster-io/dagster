@@ -1071,6 +1071,7 @@ type AssetCheckExecution {
   timestamp: Float!
   partition: String
   stepKey: String
+  run: Run
 }
 
 enum AssetCheckExecutionResolvedStatus {

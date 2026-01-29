@@ -15,6 +15,7 @@ export type AssetCheckExecutionFragment = {
   status: Types.AssetCheckExecutionResolvedStatus;
   stepKey: string | null;
   timestamp: number;
+  run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
   evaluation: {
     __typename: 'AssetCheckEvaluation';
     severity: Types.AssetCheckSeverity;
@@ -198,6 +199,7 @@ export type AssetCheckDetailsQuery = {
     status: Types.AssetCheckExecutionResolvedStatus;
     stepKey: string | null;
     timestamp: number;
+    run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
     evaluation: {
       __typename: 'AssetCheckEvaluation';
       severity: Types.AssetCheckSeverity;
@@ -366,4 +368,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = 'f5e3bf07865d4121f8ab8e2e31c9af1519f915dfbfec0daa941de352610a4673';
+export const AssetCheckDetailsQueryVersion = '2172a2770272c14ef142e0a0da4dcf6cd83c69167db6c962735172058b50f31b';

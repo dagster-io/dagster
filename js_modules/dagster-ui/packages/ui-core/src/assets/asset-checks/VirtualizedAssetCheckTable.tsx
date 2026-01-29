@@ -87,7 +87,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>
-            <AssetCheckStatusTag execution={execution} />
+            <AssetCheckStatusTag execution={execution} check={row} />
           </div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -163,6 +163,49 @@ export const ASSET_CHECK_TABLE_FRAGMENT = gql`
     ...ExecuteChecksButtonCheckFragment
     executionForLatestMaterialization {
       ...AssetCheckExecutionFragment
+    }
+    partitionDefinition {
+      name
+      description
+    }
+    partitionStatuses {
+      ... on AssetCheckDefaultPartitionStatuses {
+        succeededPartitions
+        failedPartitions
+        inProgressPartitions
+        skippedPartitions
+        executionFailedPartitions
+      }
+      ... on AssetCheckTimePartitionStatuses {
+        ranges {
+          startKey
+          endKey
+          status
+        }
+      }
+      ... on AssetCheckMultiPartitionStatuses {
+        primaryDimensionName
+        ranges {
+          primaryDimStartKey
+          primaryDimEndKey
+          secondaryDim {
+            ... on AssetCheckDefaultPartitionStatuses {
+              succeededPartitions
+              failedPartitions
+              inProgressPartitions
+              skippedPartitions
+              executionFailedPartitions
+            }
+            ... on AssetCheckTimePartitionStatuses {
+              ranges {
+                startKey
+                endKey
+                status
+              }
+            }
+          }
+        }
+      }
     }
   }
   ${ASSET_CHECK_EXECUTION_FRAGMENT}

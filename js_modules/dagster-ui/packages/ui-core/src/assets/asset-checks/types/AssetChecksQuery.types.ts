@@ -58,6 +58,7 @@ export type AssetChecksQuery = {
                   status: Types.AssetCheckExecutionResolvedStatus;
                   stepKey: string | null;
                   timestamp: number;
+                  run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
                   evaluation: {
                     __typename: 'AssetCheckEvaluation';
                     severity: Types.AssetCheckSeverity;
@@ -260,6 +261,7 @@ export type AssetChecksQuery = {
                 } | null;
                 partitionDefinition: {
                   __typename: 'PartitionDefinition';
+                  name: string | null;
                   description: string;
                   dimensionTypes: Array<{
                     __typename: 'DimensionDefinitionType';
@@ -267,6 +269,52 @@ export type AssetChecksQuery = {
                     dynamicPartitionsDefinitionName: string | null;
                   }>;
                 } | null;
+                partitionStatuses:
+                  | {
+                      __typename: 'AssetCheckDefaultPartitionStatuses';
+                      succeededPartitions: Array<string>;
+                      failedPartitions: Array<string>;
+                      inProgressPartitions: Array<string>;
+                      skippedPartitions: Array<string>;
+                      executionFailedPartitions: Array<string>;
+                    }
+                  | {
+                      __typename: 'AssetCheckMultiPartitionStatuses';
+                      primaryDimensionName: string;
+                      ranges: Array<{
+                        __typename: 'AssetCheckMultiPartitionRangeStatuses';
+                        primaryDimStartKey: string;
+                        primaryDimEndKey: string;
+                        secondaryDim:
+                          | {
+                              __typename: 'AssetCheckDefaultPartitionStatuses';
+                              succeededPartitions: Array<string>;
+                              failedPartitions: Array<string>;
+                              inProgressPartitions: Array<string>;
+                              skippedPartitions: Array<string>;
+                              executionFailedPartitions: Array<string>;
+                            }
+                          | {
+                              __typename: 'AssetCheckTimePartitionStatuses';
+                              ranges: Array<{
+                                __typename: 'AssetCheckTimePartitionRangeStatus';
+                                startKey: string;
+                                endKey: string;
+                                status: Types.AssetCheckPartitionRangeStatus;
+                              }>;
+                            };
+                      }>;
+                    }
+                  | {
+                      __typename: 'AssetCheckTimePartitionStatuses';
+                      ranges: Array<{
+                        __typename: 'AssetCheckTimePartitionRangeStatus';
+                        startKey: string;
+                        endKey: string;
+                        status: Types.AssetCheckPartitionRangeStatus;
+                      }>;
+                    }
+                  | null;
               }>;
             };
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -280,4 +328,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '0161481af04ecfb7dd909572994e065f7ec758af1b61e3bd825e494702063ecf';
+export const AssetChecksQueryVersion = '520c219b41a4c3a3ae2c001a6ac46f4236818c9ac992dc25dd15e14b05fa53ed';

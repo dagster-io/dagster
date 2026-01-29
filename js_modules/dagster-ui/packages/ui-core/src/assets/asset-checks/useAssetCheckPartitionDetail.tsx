@@ -43,6 +43,10 @@ export const ASSET_CHECK_PARTITION_DETAIL_QUERY = gql`
       status
       timestamp
       stepKey
+      run {
+        id
+        status
+      }
       evaluation {
         timestamp
         severity
