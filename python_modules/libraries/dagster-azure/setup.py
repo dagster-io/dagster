@@ -42,6 +42,11 @@ setup(
         "azure-storage-file-datalake<13.0.0,>=12.5",
         f"dagster{pin}",
     ],
-    entry_points={"console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"]},
+    entry_points={
+        "console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"],
+        "dagster_dg_cli.registry_modules": [
+            "dagster_azure = dagster_azure.components",
+        ],
+    },
     zip_safe=False,
 )
