@@ -337,34 +337,6 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     return replace(parsed_commit, changelog_category=guessed_category)
 
 
-def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
-    """Generate documented section without PR links or GitHub profiles (for internal repo changes)."""
-    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
-    for commit in documented:
-        grouped_commits[commit.changelog_category].append(commit)
-
-    documented_text = ""
-
-    for category in CATEGORY_ORDER:
-        category_commits = grouped_commits.get(category, [])
-        if not category_commits:
-            continue  # Skip empty categories
-
-        # Sort commits within category by prefix
-        category_commits.sort(key=_prefix_sort_key)
-
-        documented_text += f"\n\n### {category}\n"
-        for commit in category_commits:
-            entry = commit.changelog_entry or commit.title
-
-            # Add prefix if present
-            if commit.prefix:
-                entry = f"[{commit.prefix}] {entry}"
-
-            documented_text += f"\n- {entry}"
-    return documented_text
-
-
 def _get_commits(
     repos: Sequence[git.Repo], new_version: str, prev_version: str
 ) -> Iterator[ParsedCommit]:
@@ -624,27 +596,24 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
     """Single-pass interactive changelog generation with keyboard shortcuts."""
     # Collect all commits first
     all_commits: list[ParsedCommit] = []
-    documented_internal = []
 
     internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
 
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.ignore:
             continue
-        elif commit.repo_name == internal_repo_name and commit.documented:
-            documented_internal.append(commit)
-        else:
-            # Only include undocumented commits from OSS repo (dagster), not internal
-            if not commit.documented and commit.repo_name == "dagster":
-                updated_commit = replace(
-                    commit,
-                    changelog_category="Invalid",
-                    changelog_entry="<UNDOCUMENTED>",
-                    ignore=False,
-                )
-                all_commits.append(updated_commit)
-            elif commit.documented:
-                all_commits.append(commit)
+        # Only include undocumented commits from OSS repo (dagster), not internal
+        if not commit.documented and commit.repo_name == "dagster":
+            updated_commit = replace(
+                commit,
+                changelog_category="Invalid",
+                changelog_entry="<UNDOCUMENTED>",
+                ignore=False,
+            )
+            all_commits.append(updated_commit)
+        elif commit.documented:
+            # All documented commits (including internal) go through manual review
+            all_commits.append(commit)
 
     # All commits already have categories assigned by _get_parsed_commit
     processed_commits = all_commits
@@ -652,10 +621,6 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
     # Show initial summary
     console.print(f"\n🚀 Interactive Changelog Generation for {new_version}", style="bold blue")
     console.print(f"Found {len(processed_commits)} commits to review.", style="green")
-    if documented_internal:
-        console.print(
-            f"Found {len(documented_internal)} internal repo commits (auto-included).", style="blue"
-        )
     console.print("Use keyboard shortcuts to quickly modify each commit\n", style="cyan")
 
     final_commits = []
@@ -980,11 +945,6 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
     sections = []
     if final_commits:
         sections.append(_get_documented_section_with_thanks(final_commits))
-
-    if documented_internal:
-        sections.append(
-            f"\n\n## Internal Repository Changes\n{_get_documented_section(documented_internal)}"
-        )
 
     return header + "".join(sections)
 
