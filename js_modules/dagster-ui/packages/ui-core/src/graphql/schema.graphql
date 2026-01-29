@@ -1387,6 +1387,12 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+  partitionKeyConnection(
+    limit: Int!
+    ascending: Boolean!
+    cursor: String
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeyConnection
   hasLaunchExecutionPermission: Boolean!
   hasLaunchReexecutionPermission: Boolean!
   nodeNames: [String!]!
@@ -2522,6 +2528,12 @@ type Job implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+  partitionKeyConnection(
+    limit: Int!
+    ascending: Boolean!
+    cursor: String
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeyConnection
   hasLaunchExecutionPermission: Boolean!
   hasLaunchReexecutionPermission: Boolean!
   nodeNames: [String!]!

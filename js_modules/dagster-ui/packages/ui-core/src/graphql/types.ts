@@ -2499,6 +2499,7 @@ export type Job = IPipelineSnapshot &
     owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
+    partitionKeyConnection: Maybe<PartitionKeyConnection>;
     partitionKeysOrError: PartitionKeys;
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
@@ -2519,6 +2520,13 @@ export type JobDagsterTypeOrErrorArgs = {
 
 export type JobPartitionArgs = {
   partitionName: Scalars['String']['input'];
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type JobPartitionKeyConnectionArgs = {
+  ascending: Scalars['Boolean']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit: Scalars['Int']['input'];
   selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
@@ -3865,6 +3873,7 @@ export type Pipeline = IPipelineSnapshot &
     owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
+    partitionKeyConnection: Maybe<PartitionKeyConnection>;
     partitionKeysOrError: PartitionKeys;
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
@@ -3885,6 +3894,13 @@ export type PipelineDagsterTypeOrErrorArgs = {
 
 export type PipelinePartitionArgs = {
   partitionName: Scalars['String']['input'];
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type PipelinePartitionKeyConnectionArgs = {
+  ascending: Scalars['Boolean']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit: Scalars['Int']['input'];
   selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
@@ -10519,6 +10535,12 @@ export const buildJob = (
         : relationshipsToOmit.has('PartitionTagsAndConfig')
           ? ({} as PartitionTagsAndConfig)
           : buildPartitionTagsAndConfig({}, relationshipsToOmit),
+    partitionKeyConnection:
+      overrides && overrides.hasOwnProperty('partitionKeyConnection')
+        ? overrides.partitionKeyConnection!
+        : relationshipsToOmit.has('PartitionKeyConnection')
+          ? ({} as PartitionKeyConnection)
+          : buildPartitionKeyConnection({}, relationshipsToOmit),
     partitionKeysOrError:
       overrides && overrides.hasOwnProperty('partitionKeysOrError')
         ? overrides.partitionKeysOrError!
@@ -12846,6 +12868,12 @@ export const buildPipeline = (
         : relationshipsToOmit.has('PartitionTagsAndConfig')
           ? ({} as PartitionTagsAndConfig)
           : buildPartitionTagsAndConfig({}, relationshipsToOmit),
+    partitionKeyConnection:
+      overrides && overrides.hasOwnProperty('partitionKeyConnection')
+        ? overrides.partitionKeyConnection!
+        : relationshipsToOmit.has('PartitionKeyConnection')
+          ? ({} as PartitionKeyConnection)
+          : buildPartitionKeyConnection({}, relationshipsToOmit),
     partitionKeysOrError:
       overrides && overrides.hasOwnProperty('partitionKeysOrError')
         ? overrides.partitionKeysOrError!

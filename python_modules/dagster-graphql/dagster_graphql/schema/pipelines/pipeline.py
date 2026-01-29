@@ -9,7 +9,10 @@ from dagster._core.definitions.asset_health.asset_materialization_health import 
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessStateRecord
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.utils import PartitionRangeStatus
+from dagster._core.definitions.selector import JobSelector
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEventType
@@ -36,6 +39,7 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._core.workspace.permissions import Permissions
+from dagster._time import get_current_datetime
 from dagster._utils.tags import get_boolean_tag_value
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
@@ -85,7 +89,10 @@ from dagster_graphql.schema.logs.events import (
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.owners import GrapheneDefinitionOwner, definition_owner_from_owner_str
-from dagster_graphql.schema.partition_keys import GraphenePartitionKeys
+from dagster_graphql.schema.partition_keys import (
+    GraphenePartitionKeyConnection,
+    GraphenePartitionKeys,
+)
 from dagster_graphql.schema.pipelines.mode import GrapheneMode
 from dagster_graphql.schema.pipelines.pipeline_ref import GraphenePipelineReference
 from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshotOrError
@@ -1213,6 +1220,15 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
         ),
     )
+    partitionKeyConnection = graphene.Field(
+        GraphenePartitionKeyConnection,
+        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
+        ascending=graphene.Argument(graphene.NonNull(graphene.Boolean)),
+        cursor=graphene.Argument(graphene.String),
+        selected_asset_keys=graphene.Argument(
+            graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+        ),
+    )
     hasLaunchExecutionPermission = graphene.NonNull(graphene.Boolean)
     hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
     nodeNames = non_null_list(graphene.String)
@@ -1304,6 +1320,67 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             remote_job=self._remote_job,
             partition_name=partition_name,
             selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
+        )
+
+    def resolve_partitionKeyConnection(
+        self,
+        graphene_info: ResolveInfo,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
+    ) -> Optional[GraphenePartitionKeyConnection]:
+        """Return paginated partition keys WITHOUT loading all keys into memory.
+
+        Gets the shared PartitionsDefinition from the job's assets, then calls
+        get_paginated_partition_keys which fetches only the requested page.
+        """
+        # Get assets in job and extract shared PartitionsDefinition
+        job_selector = JobSelector(
+            location_name=self._remote_job.repository_handle.location_name,
+            repository_name=self._remote_job.repository_handle.repository_name,
+            job_name=self._remote_job.name,
+        )
+        asset_keys = _asset_key_input_list_to_asset_key_set(selected_asset_keys)
+        asset_nodes = graphene_info.context.get_assets_in_job(job_selector, asset_keys)
+
+        unique_partitions_defs: set = set()
+        for asset_node in asset_nodes:
+            if asset_node.asset_node_snap.partitions is not None:
+                unique_partitions_defs.add(
+                    asset_node.asset_node_snap.partitions.get_partitions_definition()
+                )
+
+        if len(unique_partitions_defs) == 0:
+            # Assets are all unpartitioned
+            return None
+        if len(unique_partitions_defs) != 1:
+            check.failed(
+                "There is no PartitionsDefinition shared by all the provided assets."
+                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
+            )
+
+        partitions_def = next(iter(unique_partitions_defs))
+
+        context = PartitionLoadingContext(
+            temporal_context=TemporalContext(
+                effective_dt=get_current_datetime(),
+                last_event_id=graphene_info.context.instance.event_log_storage.get_maximum_record_id(),
+            ),
+            dynamic_partitions_store=graphene_info.context.instance,
+        )
+
+        results = partitions_def.get_paginated_partition_keys(
+            context=context,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+        )
+
+        return GraphenePartitionKeyConnection(
+            results=results.results,
+            cursor=results.cursor,
+            hasMore=results.has_more,
         )
 
     def resolve_hasLaunchExecutionPermission(self, graphene_info: ResolveInfo) -> bool:
