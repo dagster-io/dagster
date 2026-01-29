@@ -25,7 +25,7 @@ KNOWN_CI_ENV_VAR_KEYS = {
     "GITHUB_ACTION",  # https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     "BITBUCKET_BUILD_NUMBER",  # https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/
     "JENKINS_URL",  # https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-    "CODEBUILD_BUILD_ID"  # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+    "CODEBUILD_BUILD_ID",  # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
     "CIRCLECI",  # https://circleci.com/docs/variables/#built-in-environment-variables
     "TRAVIS",  # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
     "BUILDKITE",  # https://buildkite.com/docs/pipelines/environment-variables
@@ -39,7 +39,7 @@ def get_python_version() -> str:
 
 def get_is_known_ci_env() -> bool:
     # Many CI tools will use `CI` key which lets us know for sure it's a CI env
-    if os.environ.get("CI") is True:
+    if os.environ.get("CI"):
         return True
 
     # Otherwise looking for predefined env var keys of known CI tools
