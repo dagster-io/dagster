@@ -48,10 +48,10 @@ core.workflow(
             verify_no_match = True,
         ),
         core.move("", "dagster-oss"),
-        metadata.save_author("ORIGINAL_AUTHOR", search_all_changes = True),
+        metadata.save_author("ORIGINAL_AUTHOR"),
         metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
         # Mark this commit as coming from dagster so sync-dagster won't re-sync it
-        metadata.add_header("Synced-From-Dagster"),
+        metadata.replace_message("${COPYBARA_CURRENT_MESSAGE}\n\nSynced-From-Dagster"),
     ],
     mode = "ITERATIVE",
 )
