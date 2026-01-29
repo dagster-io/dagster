@@ -105,6 +105,7 @@ def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.c
     return libraries_list
 
 
+@whitelist_for_serdes
 @record
 class DatabricksTaskDependsOnConfig:
     task_key: str
