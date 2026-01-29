@@ -42,10 +42,16 @@ core.workflow(
     destination_files = glob(["dagster-oss/**"]),
     authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
     transformations = [
+        # Skip commits that were synced FROM internal
+        metadata.verify_match(
+            regex = "Synced-From-Internal",
+            verify_no_match = True,
+        ),
         core.move("", "dagster-oss"),
         metadata.save_author("ORIGINAL_AUTHOR", search_all_changes = True),
         metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
+        # Mark this commit as coming from dagster so sync-dagster won't re-sync it
+        metadata.add_header("Synced-From-Dagster"),
     ],
     mode = "ITERATIVE",
-    reversible_check = True,  # Skip commits that originated from internal
 )
