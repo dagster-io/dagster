@@ -110,6 +110,7 @@ describe('DaemonList', () => {
   });
 
   it('turns off Auto-materializing', async () => {
+    const user = userEvent.setup();
     const setAutoMaterializePausedMock = {
       request: {
         query: SET_AUTOMATERIALIZE_PAUSED_MUTATION,
@@ -141,16 +142,17 @@ describe('DaemonList', () => {
     expect(switchButton).toBeChecked();
     expect(switchButton).toBeEnabled();
 
-    await userEvent.click(switchButton);
+    await user.click(switchButton);
     expect(setAutoMaterializePausedMock.result).not.toHaveBeenCalled();
 
     const confirmButton = await screen.findByRole('button', {name: /confirm/i});
-    await userEvent.click(confirmButton);
+    await user.click(confirmButton);
 
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
 
   it('turns on Auto-materializing', async () => {
+    const user = userEvent.setup();
     const setAutoMaterializePausedMock = {
       request: {
         query: SET_AUTOMATERIALIZE_PAUSED_MUTATION,
@@ -182,7 +184,7 @@ describe('DaemonList', () => {
     expect(switchButton).not.toBeChecked();
     expect(switchButton).toBeEnabled();
 
-    await userEvent.click(switchButton);
+    await user.click(switchButton);
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
 

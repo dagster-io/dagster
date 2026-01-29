@@ -166,7 +166,7 @@ class PythonPackages:
             if str(path_dir) in processed:
                 continue
             processed |= {str(path_dir)}
-            assert path_dir.is_dir()
+            assert path_dir.is_dir(), f"expected {path_dir} to be a directory"
             if (path_dir / "setup.py").exists() or (path_dir / "pyproject.toml").exists():
                 try:
                     packages.append(PythonPackage(path_dir))

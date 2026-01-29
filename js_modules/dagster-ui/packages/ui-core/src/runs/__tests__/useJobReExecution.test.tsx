@@ -27,6 +27,7 @@ describe('useJobReexecution', () => {
   const PARENT_RUN = {id: '1', pipelineName: 'abc', tags: []};
 
   it('creates the correct mutation for FROM_FAILURE', async () => {
+    const user = userEvent.setup();
     const {findByText, findByTestId} = render(
       <MockedProvider
         addTypename={false}
@@ -44,12 +45,13 @@ describe('useJobReexecution', () => {
       </MockedProvider>,
     );
 
-    await userEvent.click(await findByText('Re-execute'));
+    await user.click(await findByText('Re-execute'));
 
     expect((await findByTestId('location')).textContent).toEqual('/runs/1234');
   });
 
   it('shows the re-execute dialog so you can provide tags if requested', async () => {
+    const user = userEvent.setup();
     const {findByText} = render(
       <MockedProvider
         addTypename={false}
@@ -66,15 +68,15 @@ describe('useJobReexecution', () => {
       </MockedProvider>,
     );
 
-    await userEvent.click(await findByText('Re-execute'));
+    await user.click(await findByText('Re-execute'));
 
-    await userEvent.click(await screen.findByText('Add custom tag'));
-    await userEvent.type(await screen.findByPlaceholderText('Tag Key'), 'test_key');
-    await userEvent.type(await screen.findByPlaceholderText('Tag Value'), 'test_value');
+    await user.click(await screen.findByText('Add custom tag'));
+    await user.type(await screen.findByPlaceholderText('Tag Key'), 'test_key');
+    await user.type(await screen.findByPlaceholderText('Tag Value'), 'test_value');
 
     await waitFor(async () => {
       const button = screen.getByText(/re\-execute 1 run/i);
-      await userEvent.click(button);
+      await user.click(button);
     });
 
     await waitFor(() => {

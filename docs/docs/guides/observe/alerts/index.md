@@ -14,3 +14,5 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 Dagster+ alerts can notify you of critical events occurring in your deployment so you can catch potential issues early, helping you resolve problems before they impact your stakeholders.
 
 To create a Dagster+ alert, [configure an alert notification service](/guides/observe/alerts/configuring-an-alert-notification-service), then [create an alert policy](/guides/observe/alerts/creating-alerts) to define the conditions that will trigger an alert and the notification service that will be used to send it.
+
+For a complete reference of all YAML configuration options, see the [alert policies YAML reference](/guides/observe/alerts/yaml-reference).

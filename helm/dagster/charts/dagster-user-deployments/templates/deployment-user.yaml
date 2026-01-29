@@ -46,7 +46,9 @@ spec:
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
       {{- if $deployment.initContainers }}
       initContainers:
-        {{- toYaml $deployment.initContainers | nindent 8 }}
+        {{- range $container := $deployment.initContainers }}
+        - {{ include "dagster.initContainer" (list $ $container) | nindent 10 | trim }}
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ $.Chart.Name }}

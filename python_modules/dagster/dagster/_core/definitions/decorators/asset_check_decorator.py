@@ -28,6 +28,9 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
@@ -113,6 +116,7 @@ def asset_check(
     metadata: Optional[Mapping[str, Any]] = None,
     automation_condition: Optional[AutomationCondition[AssetCheckKey]] = None,
     pool: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -151,6 +155,7 @@ def asset_check(
         automation_condition (Optional[AutomationCondition]): An AutomationCondition which determines
             when this check should be executed.
         pool (Optional[str]): A string that identifies the concurrency pool that governs this asset check's execution.
+        partitions_def (Optional[PartitionsDefinition]): The PartitionsDefinition for this asset check.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -218,6 +223,7 @@ def asset_check(
             blocking=blocking,
             metadata=metadata,
             automation_condition=automation_condition,
+            partitions_def=partitions_def,
         )
 
         resource_defs_for_execution = wrap_resources_for_execution(resource_defs)

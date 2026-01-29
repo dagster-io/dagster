@@ -37,7 +37,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-deltalake{pin}",
-        "pandas",
+        "pandas<3.0.0",
     ],
     zip_safe=False,
 )

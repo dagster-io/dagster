@@ -67,7 +67,7 @@ def validate_dagster_block_for_module_name_or_modules(dagster_block):
     modules_present = "modules" in dagster_block and isinstance(dagster_block.get("modules"), list)
 
     if module_name_present and modules_present:
-        # Here we have the check only for list; to be a bit more forgiving in comparison to 'is_valid_modules_list' in case it's an empty list next to 'module_name' existance
+        # Here we have the check only for list; to be a bit more forgiving in comparison to 'is_valid_modules_list' in case it's an empty list next to 'module_name' existence
         if len(dagster_block["modules"]) > 0:
             raise ValueError(
                 "Only one of 'module_name' or 'modules' should be specified, not both."

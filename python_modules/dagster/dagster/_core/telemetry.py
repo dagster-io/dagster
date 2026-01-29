@@ -25,6 +25,7 @@ from dagster_shared.telemetry import (
     TelemetrySettings,
     dagster_home_if_set,
     get_or_set_instance_id,
+    get_or_set_user_id,
     log_telemetry_action,
     write_telemetry_log_line,
 )
@@ -379,6 +380,7 @@ def log_remote_repo_stats(
                 client_time=str(datetime.datetime.now()),
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
+                user_id=get_or_set_user_id(),
                 metadata={
                     **get_stats_from_remote_repo(remote_repo),
                     "source": source,
@@ -450,6 +452,7 @@ def log_repo_stats(
                 client_time=str(datetime.datetime.now()),
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
+                user_id=get_or_set_user_id(),
                 metadata={
                     "source": source,
                     "pipeline_name_hash": job_name_hash,

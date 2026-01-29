@@ -31,7 +31,7 @@
   │              │ │ omega   │ default │ alpha   │       │ This is omega asset and it has a very very very long        │ │
   │              │ │         │         │ beta    │       │ description that should be truncated.                       │ │
   │              │ │         │         │ delta   │       │                                                             │ │
-  │              │ │         │         │ epsilon │       │ Wow look …                                                  │ │
+  │              │ │         │         │ epsilon │       │ Wow loo…                                                    │ │
   │              │ └─────────┴─────────┴─────────┴───────┴─────────────────────────────────────────────────────────────┘ │
   │ Asset Checks │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                │
   │              │ ┃ Key                    ┃ Deps  ┃ Description                       ┃                                │

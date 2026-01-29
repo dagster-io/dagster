@@ -169,6 +169,7 @@ describe('<RunFilterInput  />', () => {
   // b. Test rendering with all enabledFilters
   // (Include tests for rendering with different combinations of enabledFilters)
   it('should call onChange with updated tokens when created DATE filter is updated', async () => {
+    const user = userEvent.setup();
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [
       {token: 'created_date_before', value: '1609459200'}, // 1/1/2021
@@ -181,9 +182,9 @@ describe('<RunFilterInput  />', () => {
     expect(getByText('1/1/2020')).toBeVisible();
     expect(getByText('1/1/2021')).toBeVisible();
 
-    await userEvent.click(getByText('Filter'));
-    await userEvent.click(getByText('Created date'));
-    await userEvent.click(getByText('Today'));
+    await user.click(getByText('Filter'));
+    await user.click(getByText('Created date'));
+    await user.click(getByText('Today'));
 
     const todayRange = calculateTimeRanges('UTC').timeRanges.TODAY.range;
 
@@ -197,6 +198,7 @@ describe('<RunFilterInput  />', () => {
   });
 
   it('should call onChange with updated tokens when JOB filter is updated', async () => {
+    const user = userEvent.setup();
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [];
     const {getByText} = render(
@@ -210,17 +212,18 @@ describe('<RunFilterInput  />', () => {
 
     onChange.mockClear();
 
-    await userEvent.click(getByText('Filter'));
-    await userEvent.click(getByText('Job'));
+    await user.click(getByText('Filter'));
+    await user.click(getByText('Job'));
 
     await waitFor(async () => {
-      await userEvent.click(getByText('some_job'));
+      await user.click(getByText('some_job'));
     });
 
     expect(onChange).toHaveBeenCalledWith([{token: 'job', value: 'some_job'}]);
   });
 
   it('should call onChange with updated tokens when BACKFILL filter is updated', async () => {
+    const user = userEvent.setup();
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [];
     const {getByText} = render(
@@ -234,17 +237,18 @@ describe('<RunFilterInput  />', () => {
 
     onChange.mockClear();
 
-    await userEvent.click(getByText('Filter'));
-    await userEvent.click(getByText('Backfill ID'));
+    await user.click(getByText('Filter'));
+    await user.click(getByText('Backfill ID'));
 
     await waitFor(async () => {
-      await userEvent.click(getByText('value1'));
+      await user.click(getByText('value1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([{token: 'tag', value: 'dagster/backfill=value1'}]);
   });
 
   it('should call onChange with updated tokens when TAG filter is updated', async () => {
+    const user = userEvent.setup();
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [];
     const {getByText} = render(
@@ -260,15 +264,15 @@ describe('<RunFilterInput  />', () => {
 
     onChange.mockClear();
 
-    await userEvent.click(getByText('Filter'));
-    await userEvent.click(getByText('Tag'));
+    await user.click(getByText('Filter'));
+    await user.click(getByText('Tag'));
 
     await waitFor(async () => {
-      await userEvent.click(getByText(DagsterTag.PartitionSet));
+      await user.click(getByText(DagsterTag.PartitionSet));
     });
 
     await waitFor(async () => {
-      await userEvent.click(getByText('set1'));
+      await user.click(getByText('set1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([

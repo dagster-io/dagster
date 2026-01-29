@@ -17,6 +17,7 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._symbol_annotations.lifecycle import superseded
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
@@ -135,7 +136,9 @@ K8S_JOB_OP_CONFIG = merge_dicts(
 )
 
 
-@beta
+@superseded(
+    additional_warn_text="Use `PipesK8sClient` instead for launching k8s pods within Dagster assets and ops."
+)
 def execute_k8s_job(
     context: OpExecutionContext,
     image: str,

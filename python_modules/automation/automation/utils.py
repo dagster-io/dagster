@@ -29,12 +29,12 @@ def all_equal(iterable: Iterable[object]) -> bool:
     return len(set(iterable)) == 1
 
 
-def discover_git_root(path: Path) -> Path:
+def discover_oss_root(path: Path) -> Path:
     while path != path.parent:
-        if (path / ".git").exists():
+        if (path / ".git").exists() or path.name == "dagster-oss":
             return path
         path = path.parent
-    raise ValueError("Could not find git root")
+    raise ValueError("Could not find OSS root")
 
 
 @contextmanager
@@ -54,8 +54,8 @@ def git_ls_files(pattern: str) -> list[str]:
 
 
 def get_all_repo_packages() -> list[Path]:
-    git_root = discover_git_root(Path(__file__))
-    with pushd(git_root):
+    oss_root = discover_oss_root(Path(__file__))
+    with pushd(oss_root):
         return [
             Path(p).parent
             for p in subprocess.run(

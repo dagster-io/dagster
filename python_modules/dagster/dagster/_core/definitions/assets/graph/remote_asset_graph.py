@@ -480,6 +480,9 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
             remote_node.asset_check.description,
             remote_node.asset_check.automation_condition,
             {},  # metadata not yet on AssetCheckNodeSnap
+            remote_node.asset_check.partitions_def_snapshot.get_partitions_definition()
+            if remote_node.asset_check.partitions_def_snapshot
+            else None,
         )
 
     ##### COMMON ASSET GRAPH INTERFACE
@@ -744,12 +747,13 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
     def get_repo_scoped_node(
         self, key: EntityKey, repository_selector: "RepositorySelector"
     ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
-        if isinstance(key, AssetKey):
-            if not self.has(key):
-                return None
-            return self.get(key).resolve_to_repo_scoped_node(repository_selector)
+        if not self.has(key):
+            return None
+        node = self.get(key)
+        if isinstance(node, RemoteWorkspaceAssetNode):
+            return node.resolve_to_repo_scoped_node(repository_selector)
         else:
-            raise Exception("Key must be an asset key for get_repo_scoped_node")
+            return node  # type: ignore
 
     def split_entity_keys_by_repository(
         self, keys: AbstractSet[EntityKey]

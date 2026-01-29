@@ -4,20 +4,18 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
 from typing import Any, Optional, Union
 
 import dagster._check as check
 import yaml
+from dagster._utils import discover_oss_root
 from kubernetes.client.api_client import ApiClient
 
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
-
-
-def git_repo_root():
-    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
 @dataclass
@@ -41,7 +39,7 @@ class HelmTemplate:
         )
 
         with NamedTemporaryFile() as tmp_file:
-            helm_dir_path = os.path.join(git_repo_root(), self.helm_dir_path)
+            helm_dir_path = os.path.join(discover_oss_root(Path(__file__)), self.helm_dir_path)
 
             values_json = (
                 json.loads(values.model_dump_json(exclude_none=True, by_alias=True))

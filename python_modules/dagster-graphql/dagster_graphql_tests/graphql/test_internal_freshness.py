@@ -47,6 +47,16 @@ query GetFreshnessStatusInfo($assetKey: AssetKeyInput!) {
 }
 """
 
+GET_FRESHNESS_STATUS_CHANGED_TIMESTAMP = """
+query GetFreshnessStatusChangedTimestamp($assetKey: AssetKeyInput!) {
+    assetOrError(assetKey: $assetKey) {
+        ... on Asset {
+            freshnessStatusChangedTimestamp
+        }
+    }
+}
+"""
+
 
 @asset(
     freshness_policy=FreshnessPolicy.time_window(
@@ -106,13 +116,22 @@ query getFreshnessEnabled {
                 result.data["assetNodes"][0]["freshnessStatusInfo"]["freshnessStatus"] == "UNKNOWN"
             )
 
+            # freshnessStatusChangedTimestamp starts as None
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_FRESHNESS_STATUS_CHANGED_TIMESTAMP,
+                variables={"assetKey": asset_with_freshness.key.to_graphql_input()},
+            )
+            assert result.data["assetOrError"]["freshnessStatusChangedTimestamp"] is None
+
             # now it's healthy
+            state_change_timestamp = get_current_timestamp()
             instance._report_runless_asset_event(  # noqa: SLF001
                 asset_event=FreshnessStateChange(
                     key=asset_with_freshness.key,
                     previous_state=FreshnessState.UNKNOWN,
                     new_state=FreshnessState.PASS,
-                    state_change_timestamp=get_current_timestamp(),
+                    state_change_timestamp=state_change_timestamp,
                 )
             )
 
@@ -126,3 +145,12 @@ query getFreshnessEnabled {
             assert (
                 result.data["assetNodes"][0]["freshnessStatusInfo"]["freshnessStatus"] == "HEALTHY"
             )
+
+            # freshnessStatusChangedTimestamp should now have a value in milliseconds
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_FRESHNESS_STATUS_CHANGED_TIMESTAMP,
+                variables={"assetKey": asset_with_freshness.key.to_graphql_input()},
+            )
+            returned_ts = result.data["assetOrError"]["freshnessStatusChangedTimestamp"]
+            assert returned_ts is not None
