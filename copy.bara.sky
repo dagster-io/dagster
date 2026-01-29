@@ -34,7 +34,7 @@ core.workflow(
         ref = "master",
     ),
     destination = git.destination(
-        url = "file:///workspace/build/buildkite/dagster/copybara-sync",
+        url = "https://github.com/dagster-io/internal.git",
         fetch = "master",
         push = "master",
     ),
