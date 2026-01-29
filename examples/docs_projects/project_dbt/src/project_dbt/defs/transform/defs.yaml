@@ -20,9 +20,4 @@ post_processing:
   assets:
     - target: "*"
       attributes:
-        tags:
-          ecs/cpu: "512"
-          ecs/memory: "1536"
-
-
         partitions_def: "{{ daily_partitions_def }}"
