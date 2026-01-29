@@ -6,7 +6,7 @@ import string
 import threading
 import time
 from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from datetime import datetime
 from typing import Any, Optional, Union
 
@@ -22,6 +22,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
+    PipesClientRunningInvocation,
     PipesContextInjector,
     PipesMessageReader,
     PipesParams,
@@ -438,6 +439,129 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
             )
 
     @public
+    def run_non_blocking(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        extras: Optional[PipesExtras] = None,
+        image: Optional[str] = None,
+        command: Optional[Union[str, Sequence[str]]] = None,
+        namespace: Optional[str] = None,
+        env: Optional[Mapping[str, str]] = None,
+        base_pod_meta: Optional[Mapping[str, Any]] = None,
+        base_pod_spec: Optional[Mapping[str, Any]] = None,
+        ignore_containers: Optional[set] = None,
+        enable_multi_container_logs: bool = False,
+        pod_wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
+    ) -> PipesClientRunningInvocation:
+        """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
+
+        Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]):
+                The execution context.
+            image (Optional[str]):
+                The image to set the first container in the pod spec to use.
+            command (Optional[Union[str, Sequence[str]]]):
+                The command to set the first container in the pod spec to use.
+            namespace (Optional[str]):
+                Which kubernetes namespace to use, defaults to the current namespace if
+                running inside a kubernetes cluster or falling back to "default".
+            env (Optional[Mapping[str,str]]):
+                A mapping of environment variable names to values to set on the first
+                container in the pod spec, on top of those configured on resource.
+            base_pod_meta (Optional[Mapping[str, Any]]):
+                Raw k8s config for the k8s pod's metadata
+                (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta)
+                Keys can either snake_case or camelCase. The name value will be overridden.
+            base_pod_spec (Optional[Mapping[str, Any]]):
+                Raw k8s config for the k8s pod's pod spec
+                (https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#PodSpec).
+                Keys can either snake_case or camelCase. The dagster context will be readable
+                from any container within the pod, but only the first container in the
+                `pod.spec.containers` will be able to communicate back to Dagster.
+            extras (Optional[PipesExtras]):
+                Extra values to pass along as part of the ext protocol.
+            context_injector (Optional[PipesContextInjector]):
+                Override the default ext protocol context injection.
+            message_reader (Optional[PipesMessageReader]):
+                Override the default ext protocol message reader.
+            ignore_containers (Optional[Set]): Ignore certain containers from waiting for termination. Defaults to
+                None.
+            enable_multi_container_logs (bool): Whether or not to enable multi-container log consumption.
+            pod_wait_timeout (float): How long to wait for the pod to terminate before raising an exception.
+                Defaults to 24h. Set to 0 to disable.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
+
+        """
+        self._load_k8s_config()
+        client = DagsterKubernetesClient.production_client()
+
+        exit_stack = ExitStack()
+        pipes_session = exit_stack.enter_context(
+            open_pipes_session(
+                context=context,
+                extras=extras,
+                context_injector=self.context_injector,
+                message_reader=self.message_reader,
+            )
+        )
+        namespace = namespace or detect_current_namespace(self.kubeconfig_file) or "default"
+        pod_name = get_pod_name(context.run_id, context.op.name)
+        pod_body = build_pod_body(
+            pod_name=pod_name,
+            image=image,
+            command=command,
+            env_vars={
+                **pipes_session.get_bootstrap_env_vars(),
+                **(self.env or {}),
+                **(env or {}),
+            },
+            base_pod_meta=base_pod_meta,
+            base_pod_spec=base_pod_spec,
+        )
+        client.core_api.create_namespaced_pod(namespace, pod_body)
+
+        # Consume pod logs if possible
+        pod_logs_context = self.consume_pod_logs(
+            context=context,
+            client=client,
+            namespace=namespace,
+            pod_name=pod_name,
+            enable_multi_container_logs=enable_multi_container_logs,
+        )
+
+        logs_thread = threading.Thread(
+            target=exit_stack.enter_context, args=(pod_logs_context,), daemon=True
+        )
+        logs_thread.start()
+
+        def _wait_func(
+            running_invocation: PipesClientRunningInvocation,
+        ) -> PipesClientCompletedInvocation:
+            try:
+                client.wait_for_pod(
+                    pod_name,
+                    namespace,
+                    wait_for_state=WaitForPodState.Terminated,
+                    ignore_containers=ignore_containers,
+                    wait_time_between_attempts=self.poll_interval,
+                    wait_timeout=pod_wait_timeout,
+                )
+            finally:
+                exit_stack.close()
+                client.core_api.delete_namespaced_pod(pod_name, namespace)
+                if logs_thread:
+                    logs_thread.join()
+            return PipesClientCompletedInvocation(
+                pipes_session, metadata=running_invocation.metadata
+            )
+
+        return PipesClientRunningInvocation(_wait_func, pipes_session)
+
+    @public
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
@@ -495,52 +619,20 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 process.
 
         """
-        self._load_k8s_config()
-        client = DagsterKubernetesClient.production_client()
-
-        with open_pipes_session(
+        run_obj = self.run_non_blocking(
             context=context,
             extras=extras,
-            context_injector=self.context_injector,
-            message_reader=self.message_reader,
-        ) as pipes_session:
-            namespace = namespace or detect_current_namespace(self.kubeconfig_file) or "default"
-            pod_name = get_pod_name(context.run_id, context.op.name)
-            pod_body = build_pod_body(
-                pod_name=pod_name,
-                image=image,
-                command=command,
-                env_vars={
-                    **pipes_session.get_bootstrap_env_vars(),
-                    **(self.env or {}),
-                    **(env or {}),
-                },
-                base_pod_meta=base_pod_meta,
-                base_pod_spec=base_pod_spec,
-            )
-            client.core_api.create_namespaced_pod(namespace, pod_body)
-            try:
-                # Consume pod logs if possible
-                with self.consume_pod_logs(
-                    context=context,
-                    client=client,
-                    namespace=namespace,
-                    pod_name=pod_name,
-                    enable_multi_container_logs=enable_multi_container_logs,
-                ):
-                    # wait until the pod is fully terminated (or raise an exception if it failed)
-                    client.wait_for_pod(
-                        pod_name,
-                        namespace,
-                        wait_for_state=WaitForPodState.Terminated,
-                        ignore_containers=ignore_containers,
-                        wait_time_between_attempts=self.poll_interval,
-                        wait_timeout=pod_wait_timeout,
-                    )
-            finally:
-                client.core_api.delete_namespaced_pod(pod_name, namespace)
-
-        return PipesClientCompletedInvocation(pipes_session)
+            image=image,
+            command=command,
+            namespace=namespace,
+            env=env,
+            base_pod_meta=base_pod_meta,
+            base_pod_spec=base_pod_spec,
+            ignore_containers=ignore_containers,
+            enable_multi_container_logs=enable_multi_container_logs,
+            pod_wait_timeout=pod_wait_timeout,
+        )
+        return run_obj.wait()
 
     @contextmanager
     def consume_pod_logs(

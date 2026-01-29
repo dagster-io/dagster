@@ -1,5 +1,6 @@
+import threading
 from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from typing import Any, Optional, Union
 
 import docker
@@ -13,6 +14,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
+    PipesClientRunningInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
@@ -136,52 +138,117 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
                 process.
         """
-        with open_pipes_session(
+        run_obj = self.run_non_blocking(
             context=context,
-            context_injector=self.context_injector,
-            message_reader=self.message_reader,
+            image=image,
             extras=extras,
-        ) as pipes_session:
-            client = docker.client.from_env()
-            registry = registry or self.registry
-            if registry:
-                client.login(
-                    registry=registry["url"],
-                    username=registry["username"],
-                    password=registry["password"],
-                )
+            command=command,
+            env=env,
+            registry=registry,
+            container_kwargs=container_kwargs,
+        )
+        return run_obj.wait()
 
+    def run_non_blocking(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        image: str,
+        extras: Optional[PipesExtras] = None,
+        command: Optional[Union[str, Sequence[str]]] = None,
+        env: Optional[Mapping[str, str]] = None,
+        registry: Optional[Mapping[str, str]] = None,
+        container_kwargs: Optional[Mapping[str, Any]] = None,
+    ) -> PipesClientRunningInvocation:
+        """Create a docker container and run it non-blocking, enriched with the pipes protocol.
+
+        Args:
+            image (str):
+                The image for the container to use.
+            command (Optional[Union[str, Sequence[str]]]):
+                The command for the container use.
+            env (Optional[Mapping[str,str]]):
+                A mapping of environment variable names to values to set on the first
+                container in the pod spec, on top of those configured on resource.
+            registry (Optional[Mapping[str, str]]:
+                A mapping containing url, username, and password to be used
+                with docker client login.
+            container_kwargs (Optional[Mapping[str, Any]]:
+                Arguments to be forwarded to docker client containers.create.
+            extras (Optional[PipesExtras]):
+                Extra values to pass along as part of the ext protocol.
+            context_injector (Optional[PipesContextInjector]):
+                Override the default ext protocol context injection.
+            message_reader (Optional[PipesMessageReader]):
+                Override the default ext protocol message reader.
+
+        Returns:
+            PipesClientRunningInvocation: Wrapper containing results reported by the external
+                process.
+        """
+        exit_stack = ExitStack()
+        pipes_session = exit_stack.enter_context(
+            open_pipes_session(
+                context=context,
+                context_injector=self.context_injector,
+                message_reader=self.message_reader,
+                extras=extras,
+            )
+        )
+        client = docker.client.from_env()
+        registry = registry or self.registry
+        if registry:
+            client.login(
+                registry=registry["url"],
+                username=registry["username"],
+                password=registry["password"],
+            )
+
+        try:
+            container = self._create_container(
+                client=client,
+                image=image,
+                command=command,
+                env=env,
+                open_pipes_session_env=pipes_session.get_bootstrap_env_vars(),
+                container_kwargs=container_kwargs,
+            )
+        except docker.errors.ImageNotFound:
+            client.images.pull(image)
+            container = self._create_container(
+                client=client,
+                image=image,
+                command=command,
+                env=env,
+                open_pipes_session_env=pipes_session.get_bootstrap_env_vars(),
+                container_kwargs=container_kwargs,
+            )
+
+        container.start()
+        logs_thread = None
+        if isinstance(self.message_reader, PipesDockerLogsMessageReader):
+            logs_thread = threading.Thread(
+                target=self.message_reader.consume_docker_logs, args=(container,), daemon=True
+            )
+            logs_thread.start()
+
+        def _wait_func(
+            running_invocation: PipesClientRunningInvocation,
+        ) -> PipesClientCompletedInvocation:
             try:
-                container = self._create_container(
-                    client=client,
-                    image=image,
-                    command=command,
-                    env=env,
-                    open_pipes_session_env=pipes_session.get_bootstrap_env_vars(),
-                    container_kwargs=container_kwargs,
-                )
-            except docker.errors.ImageNotFound:
-                client.images.pull(image)
-                container = self._create_container(
-                    client=client,
-                    image=image,
-                    command=command,
-                    env=env,
-                    open_pipes_session_env=pipes_session.get_bootstrap_env_vars(),
-                    container_kwargs=container_kwargs,
-                )
-
-            result = container.start()
-            try:
-                if isinstance(self.message_reader, PipesDockerLogsMessageReader):
-                    self.message_reader.consume_docker_logs(container)
-
                 result = container.wait()
                 if result["StatusCode"] != 0:
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
+                if logs_thread:
+                    logs_thread.join()
                 container.stop()
-        return PipesClientCompletedInvocation(pipes_session)
+                exit_stack.close()
+            return PipesClientCompletedInvocation(
+                pipes_session, metadata=running_invocation.metadata
+            )
+
+        return PipesClientRunningInvocation(_wait_func, pipes_session)
 
     def _create_container(
         self,
