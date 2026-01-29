@@ -289,6 +289,13 @@ class EcsStepHandler(StepHandler):
             run_task_kwargs.get("overrides", {}), task_overrides
         )
 
+        # Remove networkConfiguration if it is set to None
+        if (
+            "networkConfiguration" in run_task_kwargs
+            and run_task_kwargs.get("networkConfiguration") is None
+        ):
+            del run_task_kwargs["networkConfiguration"]
+
         return run_task_kwargs
 
     def _get_task_overrides(self, step_tags: Mapping[str, str]) -> dict[str, Any]:
