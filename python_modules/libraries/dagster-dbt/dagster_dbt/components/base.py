@@ -30,7 +30,7 @@ class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
     enable_code_references: bool = True
 
 
-class BaseDbtComponent(StateBackedComponent, dg.Model, ABC):
+class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
     """Base class for dbt components (both local and cloud)."""
 
     model_config = {"arbitrary_types_allowed": True}

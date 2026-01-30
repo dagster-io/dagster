@@ -292,21 +292,18 @@ class DbtProjectComponent(BaseDbtComponent):
             .resolve_value(self.cli_args, as_type=list[str])
         )
 
-        def _normalize_arg(arg: Union[str, dict[str, Any]]) -> list[str]:
+        def _normalize_arg(arg: Union[str, dict[str, Any], Any]) -> list[str]:
             if isinstance(arg, str):
                 return [arg]
-
-            check.invariant(
-                len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
-            )
-            key = next(iter(arg.keys()))
-            value = arg[key]
-            if isinstance(value, dict):
-                normalized_value = json.dumps(value)
-            else:
-                normalized_value = str(value)
-
-            return [key, normalized_value]
+            if isinstance(arg, dict):
+                check.invariant(
+                    len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
+                )
+                key = next(iter(arg.keys()))
+                value = arg[key]
+                normalized_value = json.dumps(value) if isinstance(value, dict) else str(value)
+                return [key, normalized_value]
+            return [str(arg)]
 
         normalized_args = list(
             itertools.chain(*[list(_normalize_arg(arg)) for arg in resolved_args])

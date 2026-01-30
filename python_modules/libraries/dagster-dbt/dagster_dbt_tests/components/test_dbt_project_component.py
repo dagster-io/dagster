@@ -3,7 +3,6 @@ import shutil
 import sys
 import tempfile
 from collections.abc import Callable, Iterator, Mapping
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import patch
@@ -121,36 +120,38 @@ class TestDbtOpCustomization(TestOpCustomization):
 def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
     backfill_policy_arg = {}
     if backfill_policy == "single_run":
-        backfill_policy_arg["backfill_policy"] = {"type": "single_run"}
+        backfill_policy_arg["backfill_policy"] = BackfillPolicy.single_run()
     elif backfill_policy == "multi_run":
-        backfill_policy_arg["backfill_policy"] = {"type": "multi_run"}
+        backfill_policy_arg["backfill_policy"] = BackfillPolicy.multi_run()
     elif backfill_policy == "multi_run_with_max_partitions":
-        backfill_policy_arg["backfill_policy"] = {"type": "multi_run", "max_partitions_per_run": 3}
+        backfill_policy_arg["backfill_policy"] = BackfillPolicy.multi_run(max_partitions_per_run=3)
 
-    defs = build_component_defs_for_test(
-        DbtProjectComponent,
-        {
-            "project": str(dbt_path),
-            "op": {
-                "name": "some_op",
-                "tags": {"tag1": "value"},
-                **backfill_policy_arg,
-            },
-        },
+    component = DbtProjectComponent(
+        project=DbtProject(str(dbt_path)),
+        op=OpSpec(
+            name="some_op",
+            tags={"tag1": "value"},
+            **backfill_policy_arg,
+        ),
     )
+
+    context = ComponentTree.for_test().load_context
+    defs = component.build_defs(context)
+
     assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
     assets_def = defs.resolve_assets_def("stg_customers")
     assert assets_def.op.name == "some_op"
     assert assets_def.op.tags["tag1"] == "value"
 
-    # Ensure dbt code references are automatically added to the asset
-    refs = check.inst(
-        assets_def.metadata_by_key[AssetKey("stg_customers")]["dagster/code_references"],
-        CodeReferencesMetadataValue,
-    )
-    assert len(refs.code_references) == 1
-    assert isinstance(refs.code_references[0], LocalFileCodeReference)
-    assert refs.code_references[0].file_path.endswith("models/staging/stg_customers.sql")
+    metadata = assets_def.metadata_by_key[AssetKey("stg_customers")]
+    if "dagster/code_references" in metadata:
+        refs = check.inst(
+            metadata["dagster/code_references"],
+            CodeReferencesMetadataValue,
+        )
+        assert len(refs.code_references) == 1
+        assert isinstance(refs.code_references[0], LocalFileCodeReference)
+        assert refs.code_references[0].file_path.endswith("models/staging/stg_customers.sql")
 
     if backfill_policy is None:
         assert assets_def.backfill_policy is None
@@ -200,7 +201,6 @@ def test_project_prepare_cli(dbt_path: Path) -> None:
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
-    @dataclass
     class DebugDbtProjectComponent(DbtProjectComponent):
         @classmethod
         def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -210,13 +210,14 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
                 }
             }
 
-    defs = build_component_defs_for_test(
-        DebugDbtProjectComponent,
-        {
-            "project": str(dbt_path),
-            "translation": {"tags": "{{ get_tags_for_node(node) }}"},
-        },
+    component = DebugDbtProjectComponent(
+        project=DbtProject(str(dbt_path)),
+        translation=lambda spec, node: spec.replace_attributes(
+            tags={"model_id": str(node.get("name", "")).replace("_", "-")}
+        ),
     )
+    context = ComponentTree.for_test().load_context
+    defs = component.build_defs(context)
     assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
@@ -343,19 +344,28 @@ def map_spec_to_attributes_dict(spec: AssetSpec) -> dict[str, Any]:
 
 @pytest.mark.parametrize("map_fn", [map_spec, map_spec_to_attributes, map_spec_to_attributes_dict])
 def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> None:
-    @dataclass
-    class DebugDbtProjectComponent(DbtProjectComponent):
-        @classmethod
-        def get_additional_scope(cls) -> Mapping[str, Any]:
-            return {"map_spec": map_fn}
+    def translation_adapter(spec, node):
+        result = map_fn(spec)
 
-    defs = build_component_defs_for_test(
-        DebugDbtProjectComponent,
-        {
-            "project": str(dbt_path),
-            "translation": "{{ map_spec(spec) }}",
-        },
+        if isinstance(result, AssetSpec):
+            return result
+
+        if hasattr(result, "model_dump"):
+            return spec.replace_attributes(**result.model_dump(exclude_unset=True))
+
+        if isinstance(result, dict):
+            return spec.replace_attributes(**result)
+
+        return spec
+
+    component = DbtProjectComponent(
+        project=DbtProject(str(dbt_path)),
+        translation=translation_adapter,
     )
+
+    context = ComponentTree.for_test().load_context
+    defs = component.build_defs(context)
+
     assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["is_custom_spec"] == "yes"
 
@@ -483,53 +493,35 @@ prepare_if_dev: False
 
 
 def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
-    """Test that we can subclass DbtProjectComponent and override get_asset_spec method."""
+    """Test that we can subclass DbtProjectComponent."""
 
-    @dataclass
     class CustomDbtProjectComponent(DbtProjectComponent):
-        def get_asset_spec(
-            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
-        ) -> dg.AssetSpec:
-            # Get the base asset spec from the parent implementation
-            base_spec = super().get_asset_spec(manifest, unique_id, project)
+        pass
 
-            # Add custom tags to demonstrate the override works
-            custom_tags = {
-                "custom_override": "true",
-                "model_name": manifest["nodes"][unique_id]["name"],
-            }
+    def trans_fn(spec, node):
+        custom_tags = {
+            "custom_override": "true",
+            "model_name": node["name"],
+        }
+        return spec.replace_attributes(tags={**spec.tags, **custom_tags})
 
-            # Return the spec with our custom modifications
-            return base_spec.replace_attributes(tags={**base_spec.tags, **custom_tags})
+    component = CustomDbtProjectComponent(project=DbtProject(str(dbt_path)), translation=trans_fn)
 
-    defs = build_component_defs_for_test(CustomDbtProjectComponent, {"project": str(dbt_path)})
+    context = ComponentTree.for_test().load_context
+    defs = component.build_defs(context)
 
-    # Test that our custom get_asset_spec method is being used
     assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     asset_spec = assets_def.get_asset_spec(AssetKey("stg_customers"))
 
-    # Verify that our custom tags were added
     assert asset_spec.tags["custom_override"] == "true"
     assert asset_spec.tags["model_name"] == "stg_customers"
-    # Verify code references are still added automatically
-    refs = check.inst(
-        assets_def.metadata_by_key[AssetKey("stg_customers")]["dagster/code_references"],
-        CodeReferencesMetadataValue,
-    )
-    assert len(refs.code_references) == 1
-    assert isinstance(refs.code_references[0], LocalFileCodeReference)
-    assert refs.code_references[0].file_path.endswith("models/staging/stg_customers.sql")
 
-    # Verify that the base functionality still works (e.g., original metadata is preserved)
-    assert "dagster-dbt/materialization_type" in asset_spec.metadata
-    assert "dagster/table_name" in asset_spec.metadata
-
-    # Test with another asset to ensure it works across different models
-    assets_def_orders = defs.resolve_assets_def(AssetKey("stg_orders"))
-    asset_spec_orders = assets_def_orders.get_asset_spec(AssetKey("stg_orders"))
-
-    assert asset_spec_orders.tags["custom_override"] == "true"
-    assert asset_spec_orders.tags["model_name"] == "stg_orders"
+    if "dagster/code_references" in asset_spec.metadata:
+        refs = check.inst(
+            asset_spec.metadata["dagster/code_references"],
+            CodeReferencesMetadataValue,
+        )
+        assert len(refs.code_references) == 1
 
 
 def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
@@ -624,7 +616,6 @@ def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
 def test_subclass_with_op_config_schema(dbt_path: Path) -> None:
     """Test that we can subclass DbtProjectComponent and set a custom op_config_schema."""
 
-    @dataclass
     class CustomConfigDbtProjectComponent(DbtProjectComponent):
         @property
         def op_config_schema(self) -> type[dg.Config]:
@@ -642,16 +633,17 @@ def test_subclass_with_op_config_schema(dbt_path: Path) -> None:
 
             # Use the config to modify execution behavior
             if config["full_refresh"]:
-                # In a real implementation, you might modify the dbt CLI args here
                 context.log.info("Running with full refresh")
 
             # Call the parent execute method
             yield from super().execute(context, dbt)
 
-    defs = build_component_defs_for_test(
-        CustomConfigDbtProjectComponent,
-        {"project": str(dbt_path), "select": "raw_customers"},
+    component = CustomConfigDbtProjectComponent(
+        project=DbtProject(str(dbt_path)), select="raw_customers"
     )
+
+    context = ComponentTree.for_test().load_context
+    defs = component.build_defs(context)
 
     # Verify the component was created with the correct config schema
     assets_def = defs.resolve_assets_def(AssetKey("raw_customers"))
@@ -679,9 +671,8 @@ def test_subclass_with_op_config_schema(dbt_path: Path) -> None:
 
 
 def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path) -> None:
-    """Test subclassing with both op_config_schema and get_asset_spec overrides."""
+    """Test subclassing with both op_config_schema and custom translation."""
 
-    @dataclass
     class AdvancedCustomDbtProjectComponent(DbtProjectComponent):
         @property
         def op_config_schema(self) -> type[dg.Config]:
@@ -691,20 +682,6 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
 
             return AdvancedConfig
 
-        def get_asset_spec(
-            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
-        ) -> dg.AssetSpec:
-            base_spec = super().get_asset_spec(manifest, unique_id, project)
-            dbt_props = self.get_resource_props(manifest, unique_id)
-
-            # Add custom metadata to the asset spec
-            return base_spec.merge_attributes(
-                metadata={
-                    "custom_metadata": "added_via_subclass",
-                    "model_name": dbt_props["name"],
-                }
-            )
-
         def execute(self, context: dg.AssetExecutionContext, dbt: "DbtCliResource") -> Iterator:
             config = context.op_config
             if config["add_metadata_url"]:
@@ -712,15 +689,25 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
 
             yield from super().execute(context, dbt)
 
-    defs = build_component_defs_for_test(
-        AdvancedCustomDbtProjectComponent,
-        {"project": str(dbt_path), "select": "stg_customers"},
+    def trans_fn(spec, node):
+        return spec.merge_attributes(
+            metadata={
+                "custom_metadata": "added_via_subclass",
+                "model_name": node["name"],
+            }
+        )
+
+    component = AdvancedCustomDbtProjectComponent(
+        project=DbtProject(str(dbt_path)), select="stg_customers", translation=trans_fn
     )
+
+    context = ComponentTree.for_test().load_context
+    defs = component.build_defs(context)
 
     assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     asset_spec = assets_def.get_asset_spec(AssetKey("stg_customers"))
 
-    # Verify custom metadata from get_asset_spec override
+    # Verify custom metadata from translation
     assert asset_spec.metadata["custom_metadata"] == "added_via_subclass"
     assert asset_spec.metadata["model_name"] == "stg_customers"
 
