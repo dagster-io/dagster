@@ -246,11 +246,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         databricks_assets = []
         for task_key, asset_specs in self.asset_specs_by_task_key.items():
+            op_prefix = self.op.name if self.op and self.op.name else "databricks"
 
             @multi_asset(
-                name=self.op.name
-                if self.op and self.op.name
-                else f"databricks_{task_key}_multi_asset_{component_defs_path_as_python_str}",
+                name=f"{op_prefix}_{task_key}_multi_asset_{component_defs_path_as_python_str}",
                 specs=asset_specs,
                 can_subset=False,
                 op_tags=self.op.tags if self.op else None,
