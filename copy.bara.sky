@@ -42,6 +42,11 @@ core.workflow(
     destination_files = glob(["dagster-oss/**"]),
     authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
     transformations = [
+        # Error on commits that were synced FROM internal
+        metadata.verify_match(
+            regex = "Synced-From-Internal",
+            verify_no_match = True,
+        ),
         core.move("", "dagster-oss"),
         metadata.save_author("ORIGINAL_AUTHOR"),
         metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
