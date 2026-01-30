@@ -30,7 +30,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.12.13rc0",
         "lazy_object_proxy",
         "setuptools<71.0.0",
         "pendulum",
