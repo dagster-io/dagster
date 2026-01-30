@@ -1,4 +1,3 @@
-import os
 import re
 import readline
 import sys
@@ -25,11 +24,19 @@ from rich.text import Text
 
 console = Console()
 
+# Repository Configuration
+# =======================
+# After merging the separate dagster (OSS) and internal repositories:
+# - dagster-oss is now a subdirectory of the internal repository
+# - Both OSS and internal code live in the same git repository
+# - Commits are classified as "dagster" (OSS) or "internal" based on which files they touch
+#   (dagster-oss/* paths = "dagster", other paths = "internal")
 GITHUB_URL = "https://github.com/dagster-io"
-OSS_ROOT = Path(__file__).parent.parent
-OSS_REPO = git.Repo(OSS_ROOT)
+OSS_ROOT = Path(__file__).parent.parent  # Points to dagster-oss directory
+REPO = git.Repo(OSS_ROOT.parent)  # Git root is one level up (internal repo root)
+OSS_REPO = REPO
+INTERNAL_REPO = REPO
 CHANGELOG_PATH = OSS_ROOT / "CHANGES.md"
-INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
 INTERNAL_DEFAULT_STR = "If a changelog entry is required"
 
 CHANGELOG_HEADER = "## Changelog"
@@ -238,21 +245,19 @@ def _get_libraries_version(new_version: str) -> str:
     return ".".join(["0", str(new_minor), split[2]])
 
 
-def _get_repo_name(git_dir: str) -> str:
-    if (
-        "DAGSTER_GIT_REPO_DIR" not in os.environ
-        or "DAGSTER_INTERNAL_GIT_REPO_DIR" not in os.environ
-    ):
-        raise ValueError(
-            "Required environment variables DAGSTER_GIT_REPO_DIR and/or DAGSTER_INTERNAL_GIT_REPO_DIR not set"
-        )
+def _get_repo_name(commit: git.Commit) -> str:
+    """Determine if commit belongs to OSS (dagster) or internal repo.
 
-    if git_dir.startswith(os.environ["DAGSTER_GIT_REPO_DIR"]):
-        return "dagster"
-    elif git_dir.startswith(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"]):
-        return "internal"
-    else:
-        raise ValueError("Could not determine repository name from git directory.")
+    After repo merge, we determine this by checking which files the commit touched.
+    If any file is under dagster-oss/, it's considered an OSS commit.
+    """
+    # Check files touched by this commit
+    for file_path in commit.stats.files.keys():
+        if file_path.startswith("dagster-oss/"):
+            return "dagster"
+
+    # If no dagster-oss files were touched, it's an internal commit
+    return "internal"
 
 
 def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
@@ -260,7 +265,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     title = str(commit.message).splitlines()[0].strip()
     # me avoiding regex -- titles are formatted as "Lorem ipsum ... (#12345)" so we can just search
     # for the last octothorpe and chop off the closing paren
-    repo_name = _get_repo_name(str(commit.repo.git_dir))
+    repo_name = _get_repo_name(commit)
     issue_number = title.split("#")[-1][:-1]
 
     # find the first line that has `CHANGELOG` in the first few characters, then take the next
@@ -368,9 +373,15 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
 def _get_commits(
     repos: Sequence[git.Repo], new_version: str, prev_version: str
 ) -> Iterator[ParsedCommit]:
+    # After repo merge, OSS and INTERNAL repos are the same
+    # Use a set to track seen commits and avoid duplicates
+    seen_commits = set()
     for repo in repos:
         for commit in repo.iter_commits(rev=f"release-{prev_version}..release-{new_version}"):
-            yield _get_parsed_commit(commit)
+            commit_sha = commit.hexsha
+            if commit_sha not in seen_commits:
+                seen_commits.add(commit_sha)
+                yield _get_parsed_commit(commit)
 
 
 def _colored(text: str, color: str) -> str:
@@ -612,8 +623,7 @@ def _guess_category(commit: ParsedCommit) -> str:
         return "Bugfixes"
 
     # Check for Dagster Plus (internal repo only)
-    internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
-    if commit.repo_name == internal_repo_name:
+    if commit.repo_name == "internal":
         return "Dagster Plus"
 
     # Default to New
@@ -626,12 +636,10 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
     all_commits: list[ParsedCommit] = []
     documented_internal = []
 
-    internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
-
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.ignore:
             continue
-        elif commit.repo_name == internal_repo_name and commit.documented:
+        elif commit.repo_name == "internal" and commit.documented:
             documented_internal.append(commit)
         else:
             # Only include undocumented commits from OSS repo (dagster), not internal
@@ -774,8 +782,7 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
 
                         elif action == "c":
                             # Cycle category
-                            internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
-                            is_internal = commit.repo_name == internal_repo_name
+                            is_internal = commit.repo_name == "internal"
                             new_category = _cycle_category(commit.changelog_category, is_internal)
 
                             commit = replace(commit, changelog_category=new_category, ignore=False)
@@ -1046,49 +1053,60 @@ def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> 
     if prev_version is None:
         prev_version = _get_previous_version(new_version)
 
-    # Show loading indicator during setup
-    loading_text = Text("Setting up branches and parsing commits...", style="bold blue")
-    with Live(loading_text, auto_refresh=True, refresh_per_second=4, console=console) as live:
-        # ensure that the release branches are available locally
-        for repo in [OSS_REPO, INTERNAL_REPO]:
+    # Save the original branch to restore it later
+    original_branch = REPO.active_branch.name
+
+    try:
+        # Show loading indicator during setup
+        loading_text = Text("Setting up branches and parsing commits...", style="bold blue")
+        with Live(loading_text, auto_refresh=True, refresh_per_second=4, console=console) as live:
+            # After repo merge, only need to set up branches once
             live.update(
                 Text(
-                    f"Checking out branches for {str(repo.git_dir).split('/')[-2]}...",
+                    "Checking out branches for merged repository...",
                     style="bold blue",
                 )
             )
-            repo.git.checkout("master")
-            repo.git.pull()
-            repo.git.checkout(f"release-{prev_version}")
-            repo.git.pull()
-            repo.git.checkout(f"release-{new_version}")
-            repo.git.pull()
-            repo.git.checkout("master")
+            REPO.git.checkout("master")
+            REPO.git.pull()
+            REPO.git.checkout(f"release-{prev_version}")
+            REPO.git.pull()
+            REPO.git.checkout(f"release-{new_version}")
+            REPO.git.pull()
+            REPO.git.checkout("master")
 
-        live.update(Text("Parsing commits and preparing interactive review...", style="bold blue"))
+            live.update(
+                Text("Parsing commits and preparing interactive review...", style="bold blue")
+            )
 
-    # Generate changelog in interactive mode
-    try:
-        new_text = _interactive_changelog_generation(new_version, prev_version)
+        # Generate changelog in interactive mode
+        try:
+            new_text = _interactive_changelog_generation(new_version, prev_version)
 
-        # Only write if generation was successful (not cancelled)
-        if new_text and not new_text.startswith("No changelog generated"):
-            with open(CHANGELOG_PATH) as f:
-                current_changelog = f.read()
+            # Only write if generation was successful (not cancelled)
+            if new_text and not new_text.startswith("No changelog generated"):
+                with open(CHANGELOG_PATH) as f:
+                    current_changelog = f.read()
 
-            new_changelog = new_text + current_changelog[1:]
+                new_changelog = new_text + current_changelog[1:]
 
-            with open(CHANGELOG_PATH, "w") as f:
-                f.write(new_changelog)
+                with open(CHANGELOG_PATH, "w") as f:
+                    f.write(new_changelog)
 
-            console.print("\n🎉 Interactive changelog generation complete!", style="bold green")
-            console.print(f"📝 Changelog updated in {CHANGELOG_PATH}")
-        else:
-            console.print("\n⚠️  Changelog generation cancelled - no changes made.", style="yellow")
-    except KeyboardInterrupt:
-        console.print(
-            "\n\n⚠️  Operation cancelled by user - no changes made to changelog.", style="yellow"
-        )
+                console.print("\n🎉 Interactive changelog generation complete!", style="bold green")
+                console.print(f"📝 Changelog updated in {CHANGELOG_PATH}")
+            else:
+                console.print(
+                    "\n⚠️  Changelog generation cancelled - no changes made.", style="yellow"
+                )
+        except KeyboardInterrupt:
+            console.print(
+                "\n\n⚠️  Operation cancelled by user - no changes made to changelog.", style="yellow"
+            )
+    finally:
+        # Always restore the original branch
+        console.print(f"\n↩️  Restoring original branch: {original_branch}", style="dim")
+        REPO.git.checkout(original_branch)
 
 
 if __name__ == "__main__":
