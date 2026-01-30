@@ -1,11 +1,18 @@
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.utils import make_new_run_id
 from dagster.components.core.component_tree import ComponentTree
 from dagster_k8s.component import PipesK8sComponent
-from dagster_k8s.pipes import _DEV_NULL_MESSAGE_WRITER, build_pod_body, get_pod_name
+from dagster_k8s.pipes import (
+    _DEV_NULL_MESSAGE_WRITER,
+    PipesK8sClient,
+    PipesK8sPodLogsMessageReader,
+    build_pod_body,
+    get_pod_name,
+)
 from dagster_k8s.utils import detect_current_namespace
 from dagster_pipes import DAGSTER_PIPES_CONTEXT_ENV_VAR, DAGSTER_PIPES_MESSAGES_ENV_VAR
 
@@ -458,6 +465,35 @@ def test_pipes_pod_name_sanitization():
     capital_pod_name = get_pod_name(run_id, capital_op_name)
     assert capital_pod_name.startswith(f"dagster-{run_id[:18]}-why-are-you-yelling--")
     assert len(capital_pod_name) <= 63
+
+
+def test_consume_pod_logs_passes_ignore_containers():
+    """Verify ignore_containers is passed through to wait_for_pod."""
+    # Mock the k8s client
+    mock_k8s_client = mock.MagicMock()
+
+    # Create a mock message reader that is an instance of PipesK8sPodLogsMessageReader
+    # but with consume_pod_logs mocked to avoid needing the _handler context
+    message_reader = mock.MagicMock(spec=PipesK8sPodLogsMessageReader)
+    pipes_client = PipesK8sClient(message_reader=message_reader)
+
+    # Mock context
+    mock_context = mock.MagicMock()
+
+    # Call consume_pod_logs with ignore_containers
+    with pipes_client.consume_pod_logs(
+        context=mock_context,
+        client=mock_k8s_client,
+        namespace="test-namespace",
+        pod_name="test-pod",
+        ignore_containers={"sidecar"},
+    ):
+        pass
+
+    # Verify wait_for_pod was called with ignore_containers
+    mock_k8s_client.wait_for_pod.assert_called_once()
+    call_kwargs = mock_k8s_client.wait_for_pod.call_args.kwargs
+    assert call_kwargs.get("ignore_containers") == {"sidecar"}
 
 
 def test_component():
