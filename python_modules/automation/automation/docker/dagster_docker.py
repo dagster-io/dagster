@@ -30,7 +30,9 @@ def do_nothing(_cwd: str) -> Iterator[None]:
 
 def default_images_path():
     return os.path.join(
-        discover_oss_root(Path(__file__)),
+        # We need to use cwd here instead of __file__ because this file is not always
+        # part of the greater OSS codebase or even a git repo when it is run.
+        discover_oss_root(Path.cwd()),
         "python_modules",
         "automation",
         "automation",
