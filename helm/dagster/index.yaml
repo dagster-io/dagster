@@ -1,0 +1,130 @@
+apiVersion: v1
+entries:
+  dagster:
+  - apiVersion: v2
+    appVersion: dev
+    created: "2026-01-30T13:39:07.054229-08:00"
+    dependencies:
+    - condition: dagster-user-deployments.enableSubchart
+      name: dagster-user-deployments
+      repository: ""
+      version: 0.0.1-dev
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+      version: 8.1.0
+    - condition: rabbitmq.enabled
+      name: rabbitmq
+      repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+      version: 6.16.3
+    - condition: redis.internal
+      name: redis
+      repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+      version: 12.7.4
+    description: The data orchestration platform built for productivity.
+    digest: 29a7fc43758e92c7c126df40f50b036c5c8a15ebb43a0007f9a3cd6bdb5bcaab
+    icon: https://elementl.com/icons/social/dagster.jpg
+    keywords:
+    - analytics
+    - data-orchestrator
+    - data-pipelines
+    - etl
+    - workflow
+    kubeVersion: '>= 1.18.0-0'
+    maintainers:
+    - email: support@elementl.com
+      name: Elementl
+      url: https://elementl.com
+    name: dagster
+    sources:
+    - https://github.com/dagster-io/dagster/tree/master/helm/dagster
+    type: application
+    urls:
+    - dagster-0.0.1-dev.tgz
+    version: 0.0.1-dev
+  postgresql:
+  - apiVersion: v1
+    appVersion: 11.6.0
+    created: "2026-01-30T13:39:07.055139-08:00"
+    description: Chart for PostgreSQL, an object-relational database management system
+      (ORDBMS) with an emphasis on extensibility and on standards-compliance.
+    digest: f3f1f566c93ebb19bca0647127f510c9a2fe4fe4b9153dc7f4c49c34f569da55
+    home: https://www.postgresql.org/
+    icon: https://bitnami.com/assets/stacks/postgresql/img/postgresql-stack-110x117.png
+    keywords:
+    - postgresql
+    - postgres
+    - database
+    - sql
+    - replication
+    - cluster
+    maintainers:
+    - email: containers@bitnami.com
+      name: Bitnami
+    - email: cedric@desaintmartin.fr
+      name: desaintmartin
+    name: postgresql
+    sources:
+    - https://github.com/bitnami/bitnami-docker-postgresql
+    urls:
+    - charts/postgresql-8.1.0.tgz
+    version: 8.1.0
+  rabbitmq:
+  - apiVersion: v1
+    appVersion: 3.8.2
+    created: "2026-01-30T13:39:07.055857-08:00"
+    description: Open source message broker software that implements the Advanced
+      Message Queuing Protocol (AMQP)
+    digest: 7af785788b8d155e34219f0cc3ade6feade27dd4584ab04a658f399303125fb0
+    home: https://www.rabbitmq.com
+    icon: https://bitnami.com/assets/stacks/rabbitmq/img/rabbitmq-stack-220x234.png
+    keywords:
+    - rabbitmq
+    - message queue
+    - AMQP
+    maintainers:
+    - email: containers@bitnami.com
+      name: Bitnami
+    - email: cedric@desaintmartin.fr
+      name: desaintmartin
+    name: rabbitmq
+    sources:
+    - https://github.com/bitnami/bitnami-docker-rabbitmq
+    urls:
+    - charts/rabbitmq-6.16.3.tgz
+    version: 6.16.3
+  redis:
+  - annotations:
+      category: Database
+    apiVersion: v2
+    appVersion: 6.0.10
+    created: "2026-01-30T13:39:07.057324-08:00"
+    dependencies:
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.x.x
+    description: Open source, advanced key-value store. It is often referred to as
+      a data structure server since keys can contain strings, hashes, lists, sets
+      and sorted sets.
+    digest: 410bd14ec7efd3fe503a67153363c76be629192a6be15c531feedfbf86c649f1
+    home: https://github.com/bitnami/charts/tree/master/bitnami/redis
+    icon: https://bitnami.com/assets/stacks/redis/img/redis-stack-220x234.png
+    keywords:
+    - redis
+    - keyvalue
+    - database
+    maintainers:
+    - email: containers@bitnami.com
+      name: Bitnami
+    - email: cedric@desaintmartin.fr
+      name: desaintmartin
+    name: redis
+    sources:
+    - https://github.com/bitnami/bitnami-docker-redis
+    - http://redis.io/
+    urls:
+    - charts/redis-12.7.4.tgz
+    version: 12.7.4
+generated: "2026-01-30T13:39:06.837044-08:00"
