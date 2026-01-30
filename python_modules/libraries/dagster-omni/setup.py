@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_omni_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.12.13rc0",
+        "dagster==1.12.13",
         "aiohttp",
         "python-dateutil",
     ],

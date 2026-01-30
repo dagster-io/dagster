@@ -36,9 +36,9 @@ setup(
     packages=find_packages(exclude=["dagster_dg_cli_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster-dg-core==1.12.13rc0",
-        "dagster==1.12.13rc0",
-        "dagster-cloud-cli==1.12.13rc0",
+        "dagster-dg-core==1.12.13",
+        "dagster==1.12.13",
+        "dagster-cloud-cli==1.12.13",
         "typer",
     ],
     extras_require={
