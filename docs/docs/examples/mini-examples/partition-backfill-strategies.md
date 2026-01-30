@@ -28,7 +28,7 @@ The key question is: How should you batch your partitions to balance overhead, f
 | [Batched runs](#solution-2-batched-runs)                                     | Reducing overhead while maintaining fault isolation, short processing times, initial backfills       |
 | [Single run](#solution-3-single-run)                                         | Spark/Snowflake/Databricks, range-based queries, minimizing Dagster Cloud credits                    |
 
-### Solution 1: One run per partition (default)
+## Solution 1: One run per partition (default)
 
 By default, Dagster launches one run per partition. This provides maximum observability and fault isolation—if one partition fails, others continue independently, and partitions are individually retried. For 100 partitions, this creates 100 separate runs, each with its own startup overhead. This approach is best when your data source is unreliable (API rate limits, transient failures), you need fine-grained retry capability for individual partitions, or per-partition observability is critical.
 
@@ -38,7 +38,7 @@ By default, Dagster launches one run per partition. This provides maximum observ
   title="src/project_mini/defs/partition_backfill_strategies/multi_run_backfill.py"
 />
 
-### Solution 2: Batched runs
+## Solution 2: Batched runs
 
 With <PyObject section="partitions" module="dagster" object="BackfillPolicy.multi_run"/>, Dagster groups partitions into batches. For example, with `max_partitions_per_run=10`, 100 partitions become 10 runs of 10 partitions each. This reduces overhead by 90% while maintaining moderate fault isolation—if one partition fails, only its batch of 10 needs to retry. This approach works well when you want to reduce overhead while maintaining some fault isolation, processing time per partition is short (seconds to a few minutes), or you're doing an initial backfill of many partitions.
 
@@ -66,7 +66,7 @@ When using <PyObject section="partitions" module="dagster" object="BackfillPolic
 
 Adjust based on observed failure rates and infrastructure constraints. For more information on parallelization within batched runs, see [Parallelization within batched runs](#parallelization-within-batched-runs).
 
-### Solution 3: Single run
+## Solution 3: Single run
 
 With <PyObject section="partitions" module="dagster" object="BackfillPolicy.single_run"/>, Dagster processes all selected partitions in one run, eliminating per-run overhead entirely. For 100 partitions, this creates just 1 run. However, a failure requires retrying all partitions together. This approach is ideal when you're using a parallel-processing engine (Spark, Snowflake, Databricks), your queries naturally operate on date ranges, or you want to minimize Dagster Cloud credit consumption.
 
@@ -94,7 +94,7 @@ When using <PyObject section="partitions" module="dagster" object="BackfillPolic
 | Thread pool  | I/O-bound tasks | 10-100 threads      | Low      | Low        |
 | Process pool | CPU-bound tasks | Number of CPU cores | Medium   | Low        |
 
-### Strategy 1: Batch query (fastest for databases)
+## Strategy 1: Batch query (fastest for databases)
 
 Process all partitions in a single database query:
 
@@ -106,7 +106,7 @@ Process all partitions in a single database query:
 
 **Best for:** SQL databases, REST APIs with batch endpoints
 
-### Strategy 2: Thread pool (I/O-bound operations)
+## Strategy 2: Thread pool (I/O-bound operations)
 
 Use threads for parallel I/O operations:
 
@@ -120,7 +120,7 @@ Use threads for parallel I/O operations:
 
 **Parallelism:** Limited by `max_workers` (5 concurrent in this example)
 
-### Strategy 3: Process pool (CPU-bound operations)
+## Strategy 3: Process pool (CPU-bound operations)
 
 Use processes for parallel CPU-intensive work:
 

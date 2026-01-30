@@ -15,8 +15,6 @@ Imagine you need to process data for multiple customers, where each customer's d
 
 The key question is: Should you use partitions to create a segment for each customer, or should you use config to pass the customer ID as a parameter?
 
-## When to use each approach
-
 **Use partitions when:**
 
 - Your data naturally segments into discrete categories
