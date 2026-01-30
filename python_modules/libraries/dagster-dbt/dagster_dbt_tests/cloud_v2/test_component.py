@@ -1,4 +1,3 @@
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -7,7 +6,6 @@ from dagster.components.utils.defs_state import DefsStateConfigArgs
 from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
-from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
 
 @pytest.fixture
@@ -83,10 +81,6 @@ def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspac
     component.write_state_to_path(state_path)
 
     assert state_path.exists()
-    saved_data = json.loads(state_path.read_text())
-    assert saved_data["project_id"] == 123
-
-    assert "child_map" in saved_data["manifest"]
 
     mock_load_context = MagicMock()
     defs = component.build_defs_from_state(mock_load_context, state_path)
@@ -100,9 +94,9 @@ def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspac
 
 
 def test_dbt_cloud_component_execution(mock_workspace):
-    """Test 2: Execution calls the workspace CLI correctly."""
+    """Test 2: Execution calls the workspace CLI correctly with configured args."""
     component = DbtCloudComponent(
-        workspace=mock_workspace,
+        workspace=mock_workspace, cli_args=["build", "--select", "tag:staging"]
     )
 
     context = MagicMock(spec=AssetExecutionContext)
@@ -112,16 +106,4 @@ def test_dbt_cloud_component_execution(mock_workspace):
 
     mock_workspace.cli.assert_called_once()
     call_args = mock_workspace.cli.call_args
-    assert call_args.kwargs["args"] == ["run"]
-
-
-def test_dbt_cloud_component_asset_selection(mock_workspace):
-    """Test 3: Asset Selection works correctly."""
-    component = DbtCloudComponent(
-        workspace=mock_workspace,
-    )
-
-    selection = component.get_asset_selection(select="my_model")
-
-    assert isinstance(selection, DbtManifestAssetSelection)
-    assert selection.select == "my_model"
+    assert call_args.kwargs["args"] == ["build", "--select", "tag:staging"]
