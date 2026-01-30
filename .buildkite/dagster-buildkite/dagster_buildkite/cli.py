@@ -10,6 +10,7 @@ logging.basicConfig(
 
 from buildkite_shared.git import GitInfo
 from buildkite_shared.python_packages import PythonPackages
+from buildkite_shared.steps import prefix_commands
 from dagster_buildkite.pipelines.dagster_oss_main import build_dagster_oss_main_steps
 from dagster_buildkite.pipelines.dagster_oss_nightly_pipeline import build_dagster_oss_nightly_steps
 from dagster_buildkite.pipelines.prerelease_package import build_prerelease_package_steps
@@ -42,22 +43,12 @@ def _ensure_oss_root() -> bool:
     return False
 
 
-def _prefix_commands_with_cd(steps: list) -> None:
-    """Prefix all commands with 'cd dagster-oss' for running OSS steps from internal repo."""
-    for step in steps:
-        if "commands" in step:
-            step["commands"] = ["cd dagster-oss", *step["commands"]]
-        # Handle grouped steps
-        if "steps" in step:
-            _prefix_commands_with_cd(step["steps"])
-
-
 def dagster() -> None:
     is_internal = _ensure_oss_root()
     PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_dagster_oss_main_steps()
     if is_internal:
-        _prefix_commands_with_cd(steps)
+        prefix_commands(steps, "cd dagster-oss")
     buildkite_yaml = buildkite_yaml_for_steps(steps)
     print(buildkite_yaml)  # noqa: T201
 
@@ -67,7 +58,7 @@ def dagster_nightly() -> None:
     PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_dagster_oss_nightly_steps()
     if is_internal:
-        _prefix_commands_with_cd(steps)
+        prefix_commands(steps, "cd dagster-oss")
     buildkite_yaml = buildkite_yaml_for_steps(steps, custom_slack_channel="eng-buildkite-nightly")
     print(buildkite_yaml)  # noqa: T201
 
@@ -77,6 +68,6 @@ def prerelease_package() -> None:
     PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_prerelease_package_steps()
     if is_internal:
-        _prefix_commands_with_cd(steps)
+        prefix_commands(steps, "cd dagster-oss")
     buildkite_yaml = buildkite_yaml_for_steps(steps)
     print(buildkite_yaml)  # noqa: T201
