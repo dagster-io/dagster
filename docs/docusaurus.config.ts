@@ -69,7 +69,7 @@ const config: Config = {
       additionalLanguages: ['diff', 'json', 'bash', 'docker'],
     },
     zoom: {
-      selector: '.theme-doc-markdown :not(a) > img, .tabs-container img',
+      selector: '.markdown > img, .tabs-container img ',
       config: {
         // options you can specify via https://github.com/francoischalifour/medium-zoom#usage
         background: {
