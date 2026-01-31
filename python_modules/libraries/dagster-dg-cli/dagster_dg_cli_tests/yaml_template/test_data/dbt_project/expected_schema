@@ -1,6 +1,30 @@
 # Template with instructions
 type: dagster_dbt.DbtProjectComponent  # Required
 attributes:  # Optional: Attributes details
+  op:  # Optional: Op related arguments to set on the generated @dbt_assets
+    name: <string>  # Optional: 
+    tags: <one of: object, string>  # Optional: 
+    description: <string>  # Optional: 
+    pool: <string>  # Optional: 
+    backfill_policy:  # Optional: 
+      # Choose one of the following types:
+      # Option 1 - SingleRunBackfillPolicyModel:
+      # type: <string>  # Optional: 
+      #
+      # Option 2 - MultiRunBackfillPolicyModel:
+      # type: <string>  # Optional: 
+      # max_partitions_per_run: <integer>  # Optional: 
+      #
+  select: <string>  # Optional: The dbt selection string for models you want to include.
+  exclude: <string>  # Optional: The dbt selection string for models you want to exclude.
+  selector: <string>  # Optional: The dbt selector for models you want to include.
+  translation_settings:  # Optional: 
+    enable_asset_checks: <one of: boolean, string>  # Optional: 
+    enable_duplicate_source_asset_keys: <one of: boolean, string>  # Optional: 
+    enable_code_references: <one of: boolean, string>  # Optional: 
+    enable_dbt_selection_by_name: <one of: boolean, string>  # Optional: 
+    enable_source_tests_as_checks: <one of: boolean, string>  # Optional: 
+    enable_source_metadata: <one of: boolean, string>  # Optional: 
   project:  # Required: The path to the dbt project or a mapping defining a DbtProject
     # Choose one of the following types:
     # Option 1 - DbtProjectArgsModel:
@@ -20,24 +44,7 @@ attributes:  # Optional: Attributes details
     # target: <string>  # Optional: The target to use for the dbt project.
     #
   cli_args: <one of: array of item, string>  # Optional: Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.
-  include_metadata: <one of: array of string, string>  # Optional: Optionally include additional metadata in materializations generated while executing your dbt models
-  op:  # Optional: Op related arguments to set on the generated @dbt_assets
-    name: <string>  # Optional: 
-    tags: <one of: object, string>  # Optional: 
-    description: <string>  # Optional: 
-    pool: <string>  # Optional: 
-    backfill_policy:  # Optional: 
-      # Choose one of the following types:
-      # Option 1 - SingleRunBackfillPolicyModel:
-      # type: <string>  # Optional: 
-      #
-      # Option 2 - MultiRunBackfillPolicyModel:
-      # type: <string>  # Optional: 
-      # max_partitions_per_run: <integer>  # Optional: 
-      #
-  select: <string>  # Optional: The dbt selection string for models in the project you want to include.
-  exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
-  selector: <string>  # Optional: The dbt selector for models in the project you want to include.
+  include_metadata: <one of: array of string, string>  # Optional: 
   translation:  # Optional: 
     deps: <one of: array of string, string>  # Optional: The asset keys for the upstream assets that this asset depends on.
     description: <string>  # Optional: Human-readable description of the asset.
@@ -91,11 +98,4 @@ attributes:  # Optional: Attributes details
     freshness_policy: <string>  # Optional: The freshness policy for the asset.
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
-  translation_settings:  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
-    enable_asset_checks: <one of: boolean, string>  # Optional: 
-    enable_duplicate_source_asset_keys: <one of: boolean, string>  # Optional: 
-    enable_code_references: <one of: boolean, string>  # Optional: 
-    enable_dbt_selection_by_name: <one of: boolean, string>  # Optional: 
-    enable_source_tests_as_checks: <one of: boolean, string>  # Optional: 
-    enable_source_metadata: <one of: boolean, string>  # Optional: 
-  prepare_if_dev: <one of: boolean, string>  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
+  prepare_if_dev: <one of: boolean, string>  # Optional: 
