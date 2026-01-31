@@ -34,6 +34,7 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
     """Base class for dbt components (both local and cloud)."""
 
     model_config = {"arbitrary_types_allowed": True}
+
     op: Annotated[
         Optional[OpSpec],
         Resolver.default(
@@ -47,6 +48,7 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
             ],
         ),
     ] = None
+
     select: Annotated[
         str,
         Resolver.default(
@@ -54,6 +56,7 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
             examples=["tag:dagster"],
         ),
     ] = DBT_DEFAULT_SELECT
+
     exclude: Annotated[
         str,
         Resolver.default(
@@ -61,6 +64,7 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
             examples=["tag:skip_dagster"],
         ),
     ] = DBT_DEFAULT_EXCLUDE
+
     selector: Annotated[
         str,
         Resolver.default(
@@ -68,17 +72,16 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
             examples=["custom_selector"],
         ),
     ] = DBT_DEFAULT_SELECTOR
-    translation_settings: Annotated[
-        Optional[DagsterDbtComponentTranslatorSettings],
-        Resolver.default(
-            description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
-            examples=[
-                {
-                    "enable_source_tests_as_checks": True,
-                },
-            ],
-        ),
-    ] = Field(default_factory=lambda: DagsterDbtComponentTranslatorSettings())
+
+    translation_settings: DagsterDbtComponentTranslatorSettings = Field(
+        default_factory=DagsterDbtComponentTranslatorSettings,
+        description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
+        examples=[
+            {
+                "enable_source_tests_as_checks": True,
+            },
+        ],
+    )
 
     @property
     @cached_method
@@ -91,6 +94,11 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
 
     @property
     def config_cls(self) -> Optional[type[dg.Config]]:
+        """Internal property that returns the config schema for the op.
+
+        Delegates to op_config_schema for backwards compatibility and consistency
+        with other component types.
+        """
         return self.op_config_schema
 
     def _get_op_spec(self, op_name: Optional[str] = None) -> OpSpec:
@@ -110,13 +118,64 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
         )
 
     def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
-        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties."""
+        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
+        for the corresponding dbt resource (e.g. model, seed, snapshot, source) as defined
+        in your dbt project. This can be used as a convenience method when overriding the
+        `get_asset_spec` method.
+
+        Args:
+            manifest (Mapping[str, Any]): The parsed manifest of the dbt project.
+            unique_id (str): The unique_id of the dbt resource.
+
+        Returns:
+            Mapping[str, Any]: The dictionary of properties for the corresponding dbt resource.
+
+        Examples:
+            .. code-block:: python
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+
+                    def get_asset_spec(self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject] = None) -> dg.AssetSpec:
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        resource_props = self.get_resource_props(manifest, unique_id)
+                        if resource_props["meta"].get("use_custom_group"):
+                            return base_spec.replace_attributes(group_name="custom_group")
+                        else:
+                            return base_spec
+        """
         return get_node(manifest, unique_id)
 
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: Optional["DbtProject"] = None
     ) -> dg.AssetSpec:
-        """Generates an AssetSpec for a given dbt node."""
+        """Generates an AssetSpec for a given dbt node.
+
+        This method can be overridden in a subclass to customize how dbt nodes are converted
+        to Dagster asset specs. By default, it delegates to the configured DagsterDbtTranslator.
+
+        Args:
+            manifest: The dbt manifest dictionary containing information about all dbt nodes
+            unique_id: The unique identifier for the dbt node (e.g., "model.my_project.my_model")
+            project: The DbtProject object, if available
+
+        Returns:
+            An AssetSpec that represents the dbt node as a Dagster asset
+
+        Example:
+            Override this method to add custom tags to all dbt models:
+
+            .. code-block:: python
+
+                from dagster_dbt import DbtProjectComponent
+                import dagster as dg
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+                    def get_asset_spec(self, manifest, unique_id, project):
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        return base_spec.replace_attributes(
+                            tags={**base_spec.tags, "custom_tag": "my_value"}
+                        )
+        """
         return self.translator.get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(

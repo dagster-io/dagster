@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from dataclasses import replace
 from pathlib import Path
-from typing import Annotated, Any, Optional, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
 
 from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster.components import ComponentLoadContext
@@ -20,9 +20,9 @@ from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.components.base import BaseDbtComponent
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
+
 if TYPE_CHECKING:
     from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
-
 
 
 def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspace:
@@ -66,13 +66,7 @@ class DbtCloudComponent(BaseDbtComponent):
 
     @property
     def translator(self) -> DagsterDbtTranslator:
-        if self.translation_settings:
-            settings = replace(self.translation_settings, enable_code_references=False)
-        else:
-            from dagster_dbt.components.base import DagsterDbtComponentTranslatorSettings
-
-            settings = DagsterDbtComponentTranslatorSettings(enable_code_references=False)
-
+        settings = replace(self.translation_settings, enable_code_references=False)
         return DagsterDbtTranslator(settings)
 
     def write_state_to_path(self, state_path: Path) -> None:
