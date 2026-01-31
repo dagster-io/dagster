@@ -1,11 +1,13 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster import AssetExecutionContext, AssetsDefinition
+from dagster import AssetsDefinition
+from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils.defs_state import DefsStateConfigArgs
 from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
+from dagster_dbt.components.base import _set_resolution_context
 
 
 @pytest.fixture
@@ -99,11 +101,16 @@ def test_dbt_cloud_component_execution(mock_workspace):
         workspace=mock_workspace, cli_args=["build", "--select", "tag:staging"]
     )
 
-    context = MagicMock(spec=AssetExecutionContext)
+    context = MagicMock()
+    context.has_partition_key = False
+    context.has_partition_key_range = False
 
-    iterator = component.execute(context)
-    list(iterator)
+    dummy_resolution_context = ResolutionContext.default()
+
+    with _set_resolution_context(dummy_resolution_context):
+        iterator = component.execute(context)
+        list(iterator)
 
     mock_workspace.cli.assert_called_once()
-    call_args = mock_workspace.cli.call_args
-    assert call_args.kwargs["args"] == ["build", "--select", "tag:staging"]
+    call_args = mock_workspace.cli.call_args[1]
+    assert call_args["args"] == ["build", "--select", "tag:staging"]

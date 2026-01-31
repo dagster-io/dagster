@@ -7,17 +7,13 @@ from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster.components import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
-from dagster.components.utils.defs_state import (
-    DefsStateConfig,
-    DefsStateConfigArgs,
-    ResolvedDefsStateConfig,
-)
+from dagster.components.utils.defs_state import DefsStateConfig, DefsStateConfigArgs
 from dagster_shared.serdes import deserialize_value, serialize_value
 from pydantic import Field
 
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
-from dagster_dbt.components.base import BaseDbtComponent
+from dagster_dbt.components.base import BaseDbtComponent, _set_resolution_context
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
 
@@ -45,19 +41,11 @@ class DbtCloudComponent(BaseDbtComponent):
     ]
 
     defs_state: Annotated[
-        ResolvedDefsStateConfig,
+        DefsStateConfigArgs,
         Resolver.passthrough(
             description="Configuration for how definitions state should be managed.",
         ),
     ] = Field(default_factory=DefsStateConfigArgs.local_filesystem)
-
-    cli_args: Annotated[
-        list[str],
-        Resolver.passthrough(
-            description="Arguments to pass to the dbt Cloud CLI when executing. Defaults to `['run']`.",
-            examples=[["run"], ["build"]],
-        ),
-    ] = Field(default_factory=lambda: ["run"])
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -81,6 +69,7 @@ class DbtCloudComponent(BaseDbtComponent):
 
         workspace_data = cast("DbtCloudWorkspaceData", deserialize_value(state_path.read_text()))
         manifest = workspace_data.manifest
+        res_ctx = context.resolution_context
 
         asset_specs, check_specs = build_dbt_specs(
             translator=self.translator,
@@ -106,12 +95,10 @@ class DbtCloudComponent(BaseDbtComponent):
             allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
         )
         def _dbt_cloud_assets(context: AssetExecutionContext) -> Iterator:
-            yield from self.execute(context=context)
+            with _set_resolution_context(res_ctx):
+                yield from self.execute(context=context)
 
         return Definitions(assets=[_dbt_cloud_assets])
-
-    def get_cli_args(self, context: AssetExecutionContext) -> list[str]:
-        return self.cli_args
 
     def execute(self, context: AssetExecutionContext) -> Iterator:
         invocation = self.workspace.cli(

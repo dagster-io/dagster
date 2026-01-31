@@ -1,9 +1,5 @@
-import itertools
-import json
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
@@ -23,12 +19,15 @@ from dagster.components.utils.translation import (
     TranslationFnResolver,
     create_component_translator_cls,
 )
-from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 from pydantic import Field
 
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, build_dbt_specs, get_node
-from dagster_dbt.components.base import BaseDbtComponent, DagsterDbtComponentTranslatorSettings
+from dagster_dbt.components.base import (
+    BaseDbtComponent,
+    DagsterDbtComponentTranslatorSettings,
+    _set_resolution_context,
+)
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -73,17 +72,6 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
 
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
-_resolution_context: ContextVar[ResolutionContext] = ContextVar("resolution_context")
-
-
-@contextmanager
-def _set_resolution_context(context: ResolutionContext):
-    token = _resolution_context.set(context)
-    try:
-        yield
-    finally:
-        _resolution_context.reset(token)
-
 
 @public
 @scaffold_with(DbtProjectComponentScaffolder)
@@ -125,36 +113,6 @@ class DbtProjectComponent(BaseDbtComponent):
             ],
         ),
     ]
-    translation_settings: Annotated[
-        Optional[DagsterDbtComponentTranslatorSettings],
-        Resolver.default(
-            description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
-            examples=[
-                {
-                    "enable_source_tests_as_checks": True,
-                },
-            ],
-        ),
-    ] = field(default_factory=DagsterDbtComponentTranslatorSettings)
-    cli_args: Annotated[
-        list[Union[str, dict[str, Any]]],
-        Resolver.passthrough(
-            description="Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.",
-            examples=[
-                ["run"],
-                [
-                    "build",
-                    "--full_refresh",
-                    {
-                        "--vars": {
-                            "start_date": "{{ partition_range_start }}",
-                            "end_date": "{{ partition_range_end }}",
-                        },
-                    },
-                ],
-            ],
-        ),
-    ] = Field(default_factory=lambda: ["build"])
 
     include_metadata: list[DbtMetadataAddons] = Field(
         default_factory=list,
@@ -253,46 +211,6 @@ class DbtProjectComponent(BaseDbtComponent):
                 yield from self.execute(context=context, dbt=DbtCliResource(project))
 
         return dg.Definitions(assets=[_fn])
-
-    def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
-        partition_key = context.partition_key if context.has_partition_key else None
-        partition_key_range = (
-            context.partition_key_range if context.has_partition_key_range else None
-        )
-        try:
-            partition_time_window = context.partition_time_window
-        except Exception:
-            partition_time_window = None
-
-        resolved_args = (
-            _resolution_context.get()
-            .with_scope(
-                partition_key=partition_key,
-                partition_key_range=partition_key_range,
-                partition_time_window=partition_time_window,
-            )
-            .resolve_value(self.cli_args, as_type=list[str])
-        )
-
-        def _normalize_arg(arg: Union[str, dict[str, Any], Any]) -> list[str]:
-            if isinstance(arg, str):
-                return [arg]
-
-            if isinstance(arg, dict):
-                check.invariant(
-                    len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
-                )
-                key = next(iter(arg.keys()))
-                value = arg[key]
-                normalized_value = json.dumps(value) if isinstance(value, dict) else str(value)
-                return [key, normalized_value]
-
-            return [str(arg)]
-
-        normalized_args = list(
-            itertools.chain(*[list(_normalize_arg(arg)) for arg in resolved_args])
-        )
-        return normalized_args
 
     def _get_dbt_event_iterator(
         self, context: dg.AssetExecutionContext, dbt: DbtCliResource

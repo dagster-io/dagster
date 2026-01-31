@@ -1,12 +1,18 @@
+import itertools
+import json
 from abc import ABC
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Annotated, Any, Optional, Union
 
 import dagster as dg
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.state_backed_component import StateBackedComponent
+from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
+from dagster_shared import check
 from pydantic import Field
 
 from dagster_dbt.asset_utils import (
@@ -16,12 +22,20 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
-    get_node,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-if TYPE_CHECKING:
-    from dagster_dbt.dbt_project import DbtProject
+_resolution_context: ContextVar[ResolutionContext] = ContextVar("resolution_context")
+
+
+@contextmanager
+def _set_resolution_context(context: ResolutionContext):
+    """Context manager to set the resolution context for dbt components."""
+    token = _resolution_context.set(context)
+    try:
+        yield
+    finally:
+        _resolution_context.reset(token)
 
 
 class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
@@ -34,6 +48,26 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
     """Base class for dbt components (both local and cloud)."""
 
     model_config = {"arbitrary_types_allowed": True}
+
+    cli_args: Annotated[
+        list[Union[str, dict[str, Any]]],
+        Resolver.passthrough(
+            description="Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.",
+            examples=[
+                ["run"],
+                [
+                    "build",
+                    "--full_refresh",
+                    {
+                        "--vars": {
+                            "start_date": "{{ partition_range_start }}",
+                            "end_date": "{{ partition_range_end }}",
+                        },
+                    },
+                ],
+            ],
+        ),
+    ] = Field(default_factory=lambda: ["build"])
 
     op: Annotated[
         Optional[OpSpec],
@@ -94,18 +128,13 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
 
     @property
     def config_cls(self) -> Optional[type[dg.Config]]:
-        """Internal property that returns the config schema for the op.
-
-        Delegates to op_config_schema for backwards compatibility and consistency
-        with other component types.
-        """
         return self.op_config_schema
 
     def _get_op_spec(self, op_name: Optional[str] = None) -> OpSpec:
         if op_name is None:
-            op_name = self.op.name if self.op else None
+            op_name = "dbt_assets"
 
-        default = self.op or OpSpec(name=op_name or "dbt_assets")
+        default = self.op or OpSpec(name=op_name)
         return default.model_copy(
             update=dict(
                 tags={
@@ -117,65 +146,51 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
             )
         )
 
-    def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
-        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
-        for the corresponding dbt resource (e.g. model, seed, snapshot, source) as defined
-        in your dbt project. This can be used as a convenience method when overriding the
-        `get_asset_spec` method.
+    def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
+        partition_key = context.partition_key if context.has_partition_key else None
+        partition_key_range = (
+            context.partition_key_range if context.has_partition_key_range else None
+        )
+        try:
+            partition_time_window = context.partition_time_window
+        except Exception:
+            partition_time_window = None
 
-        Args:
-            manifest (Mapping[str, Any]): The parsed manifest of the dbt project.
-            unique_id (str): The unique_id of the dbt resource.
+        resolved_args = (
+            _resolution_context.get()
+            .with_scope(
+                partition_key=partition_key,
+                partition_key_range=partition_key_range,
+                partition_time_window=partition_time_window,
+            )
+            .resolve_value(self.cli_args, as_type=list[str])
+        )
 
-        Returns:
-            Mapping[str, Any]: The dictionary of properties for the corresponding dbt resource.
+        def _normalize_arg(arg: Union[str, dict[str, Any]]) -> list[str]:
+            if isinstance(arg, str):
+                return [arg]
 
-        Examples:
-            .. code-block:: python
+            check.invariant(
+                len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
+            )
+            key = next(iter(arg.keys()))
+            value = arg[key]
+            if isinstance(value, dict):
+                normalized_value = json.dumps(value)
+            else:
+                normalized_value = str(value)
 
-                class CustomDbtProjectComponent(DbtProjectComponent):
+            return [key, normalized_value]
 
-                    def get_asset_spec(self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject] = None) -> dg.AssetSpec:
-                        base_spec = super().get_asset_spec(manifest, unique_id, project)
-                        resource_props = self.get_resource_props(manifest, unique_id)
-                        if resource_props["meta"].get("use_custom_group"):
-                            return base_spec.replace_attributes(group_name="custom_group")
-                        else:
-                            return base_spec
-        """
-        return get_node(manifest, unique_id)
+        normalized_args = list(
+            itertools.chain(*[list(_normalize_arg(arg)) for arg in resolved_args])
+        )
+        return normalized_args
 
     def get_asset_spec(
-        self, manifest: Mapping[str, Any], unique_id: str, project: Optional["DbtProject"] = None
+        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[Any] = None
     ) -> dg.AssetSpec:
-        """Generates an AssetSpec for a given dbt node.
-
-        This method can be overridden in a subclass to customize how dbt nodes are converted
-        to Dagster asset specs. By default, it delegates to the configured DagsterDbtTranslator.
-
-        Args:
-            manifest: The dbt manifest dictionary containing information about all dbt nodes
-            unique_id: The unique identifier for the dbt node (e.g., "model.my_project.my_model")
-            project: The DbtProject object, if available
-
-        Returns:
-            An AssetSpec that represents the dbt node as a Dagster asset
-
-        Example:
-            Override this method to add custom tags to all dbt models:
-
-            .. code-block:: python
-
-                from dagster_dbt import DbtProjectComponent
-                import dagster as dg
-
-                class CustomDbtProjectComponent(DbtProjectComponent):
-                    def get_asset_spec(self, manifest, unique_id, project):
-                        base_spec = super().get_asset_spec(manifest, unique_id, project)
-                        return base_spec.replace_attributes(
-                            tags={**base_spec.tags, "custom_tag": "my_value"}
-                        )
-        """
+        """Generates an AssetSpec for a given dbt node using the configured translator."""
         return self.translator.get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(
@@ -183,6 +198,6 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
         asset_spec: dg.AssetSpec,
         manifest: Mapping[str, Any],
         unique_id: str,
-        project: Optional["DbtProject"] = None,
+        project: Optional[Any] = None,
     ) -> Optional[dg.AssetCheckSpec]:
         return self.translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)

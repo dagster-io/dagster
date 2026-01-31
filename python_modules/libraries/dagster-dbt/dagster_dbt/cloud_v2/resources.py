@@ -9,6 +9,7 @@ from dagster import (
     AssetSpec,
     ConfigurableResource,
     Definitions,
+    Resolvable,
     _check as check,
     get_dagster_logger,
     multi_asset_check,
@@ -73,7 +74,7 @@ class DbtCloudCredentials(NamedTuple):
 
 
 @public
-class DbtCloudWorkspace(ConfigurableResource):
+class DbtCloudWorkspace(ConfigurableResource, Resolvable):
     """This class represents a dbt Cloud workspace and provides utilities
     to interact with dbt Cloud APIs.
 

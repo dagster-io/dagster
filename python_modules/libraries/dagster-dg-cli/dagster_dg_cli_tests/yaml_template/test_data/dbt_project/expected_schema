@@ -1,6 +1,7 @@
 # Template with instructions
 type: dagster_dbt.DbtProjectComponent  # Required
 attributes:  # Optional: Attributes details
+  cli_args: <one of: array of item, string>  # Optional: Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.
   op:  # Optional: Op related arguments to set on the generated @dbt_assets
     name: <string>  # Optional: 
     tags: <one of: object, string>  # Optional: 
@@ -43,7 +44,6 @@ attributes:  # Optional: Attributes details
     # profile: <string>  # Optional: The profile to use for the dbt project.
     # target: <string>  # Optional: The target to use for the dbt project.
     #
-  cli_args: <one of: array of item, string>  # Optional: Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.
   include_metadata: <one of: array of string, string>  # Optional: 
   translation:  # Optional: 
     deps: <one of: array of string, string>  # Optional: The asset keys for the upstream assets that this asset depends on.
