@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from dataclasses import replace
 from pathlib import Path
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, Optional, cast, TYPE_CHECKING
 
 from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster.components import ComponentLoadContext
@@ -17,10 +17,12 @@ from pydantic import Field
 
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
-from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
 from dagster_dbt.components.base import BaseDbtComponent
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
+if TYPE_CHECKING:
+    from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
+
 
 
 def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspace:
@@ -41,6 +43,7 @@ class DbtCloudComponent(BaseDbtComponent):
             description="The dbt Cloud workspace resource to use for this component.",
         ),
     ]
+
     defs_state: Annotated[
         ResolvedDefsStateConfig,
         Resolver.passthrough(
