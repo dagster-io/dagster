@@ -182,6 +182,12 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     "name": "some_op",
                     "tags": {"tag1": "value"},
                     "backfill_policy": {"type": "single_run"},
+                    "retry_policy": {
+                        "max_retries": 3,
+                        "delay": 30,
+                        "jitter": "LINEAR",
+                        "backoff": "EXPONENTIAL",
+                    },
                 },
             ],
         ),
@@ -395,6 +401,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             pool=op_spec.pool,
             config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
             allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
+            retry_policy=op_spec.retry_policy,
         )
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):
