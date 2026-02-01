@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
+from functools import cached_property
 
 from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster._annotations import public
@@ -53,7 +54,7 @@ class DbtCloudComponent(BaseDbtComponent):
         key = f"DbtCloudComponent[{self.workspace.unique_id}]"
         return DefsStateConfig.from_args(self.defs_state, default_key=key)
 
-    @property
+    @cached_property
     def translator(self) -> DagsterDbtTranslator:
         settings = replace(self.translation_settings, enable_code_references=False)
         return DagsterDbtTranslator(settings)

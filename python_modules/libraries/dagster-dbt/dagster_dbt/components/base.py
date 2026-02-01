@@ -4,10 +4,10 @@ from abc import ABC
 from collections.abc import Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import cached_property
 from typing import Annotated, Any, Optional, Union
 
 import dagster as dg
-from dagster._utils.cached_method import cached_method
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import OpSpec
@@ -117,8 +117,7 @@ class BaseDbtComponent(StateBackedComponent, dg.Resolvable, dg.Model, ABC):
         ],
     )
 
-    @property
-    @cached_method
+    @cached_property
     def translator(self) -> DagsterDbtTranslator:
         return DagsterDbtTranslator(self.translation_settings)
 

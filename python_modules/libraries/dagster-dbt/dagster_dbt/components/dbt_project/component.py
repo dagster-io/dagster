@@ -148,7 +148,7 @@ class DbtProjectComponent(BaseDbtComponent):
             op_name = self.dbt_project.name
         return super()._get_op_spec(op_name)
 
-    @property
+    @cached_property
     def translator(self) -> "DagsterDbtTranslator":
         return DbtProjectComponentTranslator(self, self.translation_settings)
 
