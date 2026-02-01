@@ -102,9 +102,6 @@ dbt_cloud = DbtCloudComponent(
     select="fqn:*",
     defs_state=DefsStateConfigArgs.local_filesystem(),
 )
-
-# Build the definitions
-defs = dbt_cloud.build_defs()
 ```
 
 ### Limitations

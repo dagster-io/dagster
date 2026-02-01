@@ -1,8 +1,8 @@
 from collections.abc import Iterator
 from dataclasses import replace
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
-from functools import cached_property
 
 from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster._annotations import public
@@ -29,6 +29,7 @@ def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspa
     if isinstance(resolved_val, DbtCloudWorkspace):
         return resolved_val
     return DbtCloudWorkspace(**resolved_val)
+
 
 @public
 class DbtCloudComponent(BaseDbtComponent):
