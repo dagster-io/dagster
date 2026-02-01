@@ -182,6 +182,10 @@ class OpSpec(Model, Resolvable):
             model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
         ),
     ] = None
+    retry_policy: Annotated[
+        Optional[RetryPolicy],
+        Resolver(resolve_retry_policy, model_field_type=RetryPolicyModel),
+    ] = None
 
 
 def _expect_injected(context, val):
