@@ -66,20 +66,21 @@ The `DbtCloudComponent` allows you to load a dbt Cloud project as a set of Dagst
 ### Prerequisites
 
 To use this component, you need:
-* A dbt Cloud account.
-* An API token and Account ID.
-* A Project ID and Environment ID for the dbt Cloud project you wish to orchestrate.
+
+- A dbt Cloud account.
+- An API token and Account ID.
+- A Project ID and Environment ID for the dbt Cloud project you wish to orchestrate.
 
 ### Configuration
 
 The component requires a `workspace` resource and optional selection arguments:
 
-| Argument | Type | Description |
-| :--- | :--- | :--- |
-| `workspace` | `DbtCloudWorkspace` | **Required.** Resource containing your dbt Cloud credentials (token, account_id) and project details. |
-| `select` | `str` | A dbt selection string to filter assets (e.g. `tag:staging`). Defaults to `fqn:*`. |
-| `exclude` | `str` | A dbt selection string to exclude assets. |
-| `defs_state` | `DefsStateConfig` | Configuration for persisting the state (manifest) locally. Defaults to local filesystem. |
+| Argument     | Type                | Description                                                                                           |
+| :----------- | :------------------ | :---------------------------------------------------------------------------------------------------- |
+| `workspace`  | `DbtCloudWorkspace` | **Required.** Resource containing your dbt Cloud credentials (token, account_id) and project details. |
+| `select`     | `str`               | A dbt selection string to filter assets (e.g. `tag:staging`). Defaults to `fqn:*`.                    |
+| `exclude`    | `str`               | A dbt selection string to exclude assets.                                                             |
+| `defs_state` | `DefsStateConfig`   | Configuration for persisting the state (manifest) locally. Defaults to local filesystem.              |
 
 ### Usage Example
 
@@ -107,4 +108,5 @@ defs = dbt_cloud.build_defs()
 ```
 
 ### Limitations
+
 Code References: Unlike local dbt projects, the dbt Cloud component does not support linking Dagster assets to local SQL source files, as execution occurs remotely.

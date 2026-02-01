@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
 
 from dagster import AssetExecutionContext, Definitions, multi_asset
+from dagster._annotations import public
 from dagster.components import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
@@ -28,7 +29,7 @@ def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspa
         return resolved_val
     return DbtCloudWorkspace(**resolved_val)
 
-
+@public
 class DbtCloudComponent(BaseDbtComponent):
     """Expose a dbt Cloud workspace to Dagster as a set of assets."""
 
