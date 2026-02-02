@@ -19,8 +19,8 @@ def get_version():
 
 
 ver = get_version()
-# dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "1!0+dev" else f"=={ver}"
+# dont pin dev installs or langscore custom releases to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" or "+langscore" in ver else f"=={ver}"
 setup(
     name="dagster-webserver",
     version=ver,
