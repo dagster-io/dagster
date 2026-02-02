@@ -1,6 +1,5 @@
 ---
-title: Configuring branch deployments manually with the dagster-cloud CLI (advanced)
-sidebar_label: Configuring branch deployments manually (advanced)
+title: Configuring branch deployments with the dagster-cloud CLI (advanced)
 description: Configure branch deployments for a Dagster project in Dagster+ Serverless or Hybrid using the dagster-cloud CLI.
 tags: [dagster-plus-feature]
 sidebar_position: 7320

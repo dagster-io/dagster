@@ -114,12 +114,36 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) are lightweight staging environments created for each code change. While you can use your existing production agent for branch deployments on Dagster+ Hybrid, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
+
+<Tabs>
+<TabItem value="dedicated-agent" label="Dedicated branch deployment agent setup (recommended)">
+
+If you have a dedicated branch deployment agent, you do not need to specify your full deployment in the branch deployment agent configuration:
 
 ```yaml
 # values.yaml
 dagsterCloud:
-  deployments: # can omit full deployments to serve only branch deployments in a new agent
+  branchDeployments: true
+```
+
+```shell
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+```
+
+:::
+
+</TabItem>
+<TabItem value="single-agent" label="Single agent setup">
+
+If you have a single agent that serves both your [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) and branch deployments, you will need to specify the full deployment in the agent configuration:
+
+```yaml
+# values.yaml
+dagsterCloud:
+  deployments:
     - prod
   branchDeployments: true
 ```
@@ -129,6 +153,9 @@ helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
 ```
+
+</TabItem>
+</Tabs>
 
 ### Deploy a high availability architecture
 

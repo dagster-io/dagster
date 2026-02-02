@@ -4427,6 +4427,10 @@
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
+      "source": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments-manual",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments-cli"
+    },
+    {
       "source": "/guides/build/components/asset-factories-to-components",
       "destination": "/guides/build/assets/creating-asset-factories"
     }
