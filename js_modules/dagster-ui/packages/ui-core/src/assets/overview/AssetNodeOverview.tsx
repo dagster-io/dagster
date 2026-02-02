@@ -130,7 +130,7 @@ export const AssetNodeOverview = ({
     1,
     liveData?.assetChecks.length,
     internalFreshnessPolicy,
-    rowCountMeta?.intValue,
+    rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null,
   ].filter(Boolean).length;
 
   const renderStatusSection = () => (
@@ -172,11 +172,11 @@ export const AssetNodeOverview = ({
             freshnessPolicy={internalFreshnessPolicy}
           />
         ) : undefined}
-        {rowCountMeta?.intValue ? (
+        {rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null ? (
           <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
             <Box>
-              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
+              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue ?? 0)}</Tag>
             </Box>
           </Box>
         ) : undefined}
