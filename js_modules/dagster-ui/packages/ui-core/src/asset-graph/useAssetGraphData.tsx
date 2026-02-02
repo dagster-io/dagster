@@ -1,4 +1,3 @@
-import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
@@ -208,24 +207,26 @@ const buildGraphQueryItems = (nodes: AssetNode[]) => {
 };
 
 export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: AssetKey) => {
-  const map = keyBy(items, (g) => g.name);
-  const start = map[tokenForAssetKey(assetKey)];
+  const map = new Map(items.map((g) => [g.name, g]));
+  const start = map.get(tokenForAssetKey(assetKey));
   if (!start) {
     return {upstream: 0, downstream: 0};
   }
 
   let upstreamDepth = -1;
   let candidates = new Set([start.name]);
+  const visitedUpstream = new Set<string>();
 
   while (candidates.size > 0) {
     const nextCandidates: Set<string> = new Set();
     upstreamDepth += 1;
 
     candidates.forEach((candidate) => {
-      const inputs = map[candidate]?.inputs ?? [];
-      inputs.flatMap((i) =>
+      visitedUpstream.add(candidate);
+      const inputs = map.get(candidate)?.inputs ?? [];
+      inputs.forEach((i) =>
         i.dependsOn.forEach((d) => {
-          if (!candidates.has(d.solid.name)) {
+          if (!visitedUpstream.has(d.solid.name) && !candidates.has(d.solid.name)) {
             nextCandidates.add(d.solid.name);
           }
         }),
@@ -236,16 +237,18 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
 
   let downstreamDepth = -1;
   candidates = new Set([start.name]);
+  const visitedDownstream = new Set<string>();
 
   while (candidates.size > 0) {
     const nextCandidates: Set<string> = new Set();
     downstreamDepth += 1;
 
     candidates.forEach((candidate) => {
-      const outputs = map[candidate]?.outputs ?? [];
-      outputs.flatMap((i) =>
+      visitedDownstream.add(candidate);
+      const outputs = map.get(candidate)?.outputs ?? [];
+      outputs.forEach((i) =>
         i.dependedBy.forEach((d) => {
-          if (!candidates.has(d.solid.name)) {
+          if (!visitedDownstream.has(d.solid.name) && !candidates.has(d.solid.name)) {
             nextCandidates.add(d.solid.name);
           }
         }),
