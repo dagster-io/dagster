@@ -253,7 +253,7 @@ def _get_repo_name(commit: git.Commit) -> str:
     """
     # Check files touched by this commit
     for file_path in commit.stats.files.keys():
-        if file_path.startswith("dagster-oss/"):
+        if str(file_path).startswith("dagster-oss/"):
             return "dagster"
 
     # If no dagster-oss files were touched, it's an internal commit
