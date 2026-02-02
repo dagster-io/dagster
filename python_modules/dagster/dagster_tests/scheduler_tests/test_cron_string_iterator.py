@@ -458,6 +458,48 @@ DST_PARAMS = [
             create_datetime(2023, 10, 29, 3, 45, 0, tz="Europe/Berlin"),
         ],
     ),
+    # Day-of-month step patterns that skip invalid days (e.g., day 31 in 30-day months)
+    # Tests fix from commit 00b9572d14b for croniter handling of step patterns
+    # Note: */10 means "every 10th step starting from 1", so days 1, 11, 21, 31
+    (
+        "UTC",
+        "0 0 */10 * *",  # Days 1, 11, 21, 31 at midnight
+        [
+            create_datetime(2024, 1, 1, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 1, 11, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 1, 21, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 1, 31, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 2, 1, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 2, 11, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 2, 21, 0, 0, 0, tz="UTC"),
+            # Feb 2024 has 29 days (leap year), so day 31 is skipped
+            create_datetime(2024, 3, 1, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 3, 11, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 3, 21, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 3, 31, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 4, 1, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 4, 11, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 4, 21, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 5, 1, 0, 0, 0, tz="UTC"),
+        ],
+    ),
+    # */30 means "every 30th step starting from 1", so days 1 and 31
+    (
+        "UTC",
+        "0 0 */30 * *",  # Days 1 and 31 at midnight
+        [
+            create_datetime(2024, 1, 1, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 1, 31, 0, 0, 0, tz="UTC"),
+            # Feb has no day 31, skip to March 1
+            create_datetime(2024, 2, 1, 0, 0, 0, tz="UTC"),
+            # Feb has no day 31
+            create_datetime(2024, 3, 1, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 3, 31, 0, 0, 0, tz="UTC"),
+            create_datetime(2024, 4, 1, 0, 0, 0, tz="UTC"),
+            # April has no day 31, skip to May 1
+            create_datetime(2024, 5, 1, 0, 0, 0, tz="UTC"),
+        ],
+    ),
 ]
 
 
