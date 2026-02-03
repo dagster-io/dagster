@@ -104,9 +104,9 @@ export const Styled = () => {
           </Menu>
         );
       }}
-      renderTagList={(tags, totalCount) => {
-        if (totalCount > 3) {
-          return <span>{totalCount} partitions selected</span>;
+      renderTagList={(tags) => {
+        if (tags.length > 3) {
+          return <span>{tags.length} partitions selected</span>;
         }
         return tags;
       }}

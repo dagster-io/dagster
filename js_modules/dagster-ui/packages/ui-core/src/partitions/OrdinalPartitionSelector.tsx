@@ -59,12 +59,6 @@ export const OrdinalPartitionSelector = ({
     [allPartitions, health],
   );
 
-  // Memoize selectedPartitions as a Set for O(1) lookups instead of O(n) includes()
-  const selectedPartitionsSet = React.useMemo(
-    () => new Set(selectedPartitions),
-    [selectedPartitions],
-  );
-
   return (
     <TagSelectorWithSearch
       allTags={allPartitions}
@@ -135,8 +129,7 @@ export const OrdinalPartitionSelector = ({
       )}
       renderDropdown={React.useCallback(
         (dropdown: React.ReactNode, {width, allTags}: TagSelectorDropdownProps) => {
-          // Use Set for O(1) lookup instead of O(n) includes() - critical for 100k+ partitions
-          const isAllSelected = allTags.every((t) => selectedPartitionsSet.has(t));
+          const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
           return (
             <Menu style={{width}}>
               <Box padding={4}>
@@ -190,11 +183,11 @@ export const OrdinalPartitionSelector = ({
             </Menu>
           );
         },
-        [isDynamic, selectedPartitionsSet, setSelectedPartitions, setShowCreatePartition, mode],
+        [isDynamic, selectedPartitions, setSelectedPartitions, setShowCreatePartition, mode],
       )}
-      renderTagList={(tags, totalCount) => {
-        if (totalCount > 4) {
-          return <span>{totalCount} partitions selected</span>;
+      renderTagList={(tags) => {
+        if (tags.length > 4) {
+          return <span>{tags.length} partitions selected</span>;
         }
         return tags;
       }}
