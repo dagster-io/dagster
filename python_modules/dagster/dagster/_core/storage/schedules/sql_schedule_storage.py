@@ -2,6 +2,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from functools import cache
 from typing import Any, Callable, ContextManager, NamedTuple, TypeVar  # noqa: UP035
 
 import sqlalchemy as db
@@ -270,7 +271,8 @@ class SqlScheduleStorage(ScheduleStorage):
     @property
     def supports_batch_queries(self) -> bool:
         return self.has_instigators_table() and self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID)
-
+    
+    @cache
     def has_instigators_table(self) -> bool:
         with self.connect() as conn:
             return self._has_instigators_table(conn)
@@ -577,7 +579,8 @@ class SqlScheduleStorage(ScheduleStorage):
                 conn.execute(AssetDaemonAssetEvaluationsTable.delete())
 
     # MIGRATIONS
-
+    
+    @cache
     def has_secondary_index_table(self) -> bool:
         with self.connect() as conn:
             return "secondary_indexes" in db.inspect(conn).get_table_names()
