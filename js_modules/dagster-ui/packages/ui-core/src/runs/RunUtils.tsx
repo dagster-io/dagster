@@ -399,6 +399,22 @@ export const TERMINATE_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
+export const SUBSCRIBE_TO_NOTIFICATIONS_MUTATION = gql`
+  mutation SubscribeToNotifications($runId: String!, $subscribe: Boolean!, $email: String!) {
+    subscribeToNotifications(runId: $runId, subscribe: $subscribe, email: $email) {
+      ...PythonErrorFragment
+      ... on SubscribeToNotificationsSuccess {
+        runID
+        subscribedToNotifications
+      }
+      ... on RunNotFoundError {
+        runId
+      }
+    }
+  }
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
 export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution(
     $executionParams: ExecutionParams
