@@ -13,6 +13,7 @@ import {
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
+import {ParsedQs} from 'qs';
 import * as React from 'react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
@@ -191,13 +192,16 @@ const AssetGraphExplorerWithData = ({
 
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
-    encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
-    decode: (qs) => {
+    encode: useCallback(
+      (arr: string[]) => ({expanded: arr.length ? arr.join(',') : undefined}),
+      [],
+    ),
+    decode: useCallback((qs: ParsedQs) => {
       if (typeof qs.expanded === 'string') {
         return qs.expanded.split(',').filter(Boolean);
       }
       return [];
-    },
+    }, []),
     isEmptyState: (val) => val.length === 0,
   });
 
@@ -409,43 +413,48 @@ const AssetGraphExplorerWithData = ({
     [groupedAssets, explorerPath, onChangeExplorerPath],
   );
 
+  const selectGroup = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+      zoomToGroup(groupId);
+      if (e.metaKey) {
+        toggleSelectAllGroupNodesById(e, groupId);
+      }
+    },
+    [zoomToGroup, toggleSelectAllGroupNodesById],
+  );
+
+  const selectAssetNode = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, node: GraphNode) => {
+      onSelectNode(e, node.assetKey, node);
+
+      const nodeBounds = layout && layout.nodes[node.id]?.bounds;
+      if (nodeBounds && viewportEl.current) {
+        viewportEl.current.zoomToSVGBox(nodeBounds, true);
+      } else {
+        const groupId = groupIdForNode(node);
+        if (!expandedGroups.includes(groupId)) {
+          setExpandedGroups([...expandedGroups, groupId]);
+        }
+      }
+    },
+    [onSelectNode, layout, setExpandedGroups, expandedGroups],
+  );
+
   const selectNodeById = React.useCallback(
     (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
       if (!nodeId) {
         return;
       }
       if (isGroupId(nodeId)) {
-        zoomToGroup(nodeId);
-
-        if (e.metaKey) {
-          toggleSelectAllGroupNodesById(e, nodeId);
-        }
-
+        selectGroup(e, nodeId);
         return;
       }
       const node = assetGraphData.nodes[nodeId];
-      if (!node) {
-        return;
-      }
-
-      onSelectNode(e, node.assetKey, node);
-
-      const nodeBounds = layout && layout.nodes[nodeId]?.bounds;
-      if (nodeBounds && viewportEl.current) {
-        viewportEl.current.zoomToSVGBox(nodeBounds, true);
-      } else {
-        setExpandedGroups([...expandedGroups, groupIdForNode(node)]);
+      if (node) {
+        selectAssetNode(e, node);
       }
     },
-    [
-      assetGraphData.nodes,
-      onSelectNode,
-      layout,
-      zoomToGroup,
-      toggleSelectAllGroupNodesById,
-      setExpandedGroups,
-      expandedGroups,
-    ],
+    [assetGraphData.nodes, selectGroup, selectAssetNode],
   );
 
   const [showSidebar, setShowSidebar] = React.useState(
@@ -897,8 +906,6 @@ const AssetGraphExplorerWithData = ({
             selectNode={selectNodeById}
             explorerPath={explorerPath}
             onChangeExplorerPath={onChangeExplorerPath}
-            expandedGroups={expandedGroups}
-            setExpandedGroups={setExpandedGroups}
             hideSidebar={() => {
               setShowSidebar(false);
             }}

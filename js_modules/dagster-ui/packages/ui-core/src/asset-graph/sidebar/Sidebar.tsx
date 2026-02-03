@@ -39,8 +39,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
-    expandedGroups: string[];
-    setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
     viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;
