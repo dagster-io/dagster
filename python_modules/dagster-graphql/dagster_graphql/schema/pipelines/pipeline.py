@@ -1323,9 +1323,14 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
     # doesn't inherit from base class
-    def __init__(self, remote_job):
+    def __init__(
+        self, remote_job: RemoteJob, batch_loader: Optional[RepositoryScopedBatchLoader] = None
+    ):
         super().__init__()  # pyright: ignore[reportCallIssue]
         self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
+        )
 
 
 class GrapheneGraph(graphene.ObjectType):
