@@ -46,6 +46,10 @@ other:
   label: 'other'
   permalink: '/integrations/other'
   description: 'Other integrations'
+reverse-etl:
+  label: 'reverse-etl'
+  permalink: '/integrations/reverse-etl'
+  description: 'Reverse ETL integrations'
 testing:
   label: 'testing'
   permalink: '/integrations/testing'

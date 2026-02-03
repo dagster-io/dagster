@@ -3,7 +3,7 @@ title: AWS Components
 sidebar_label: Components
 sidebar_position: 1
 description: Configuration-driven AWS resources using Dagster Components.
-tags: [dagster-supported, aws, components]
+tags: [dagster-supported, component]
 ---
 
 <p>{frontMatter.description}</p>
