@@ -17,11 +17,6 @@ class GCSResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="Project name",
     )
 
-    gcp_credentials: Optional[str] = Field(
-        default=None,
-        description="GCP authentication credentials (base64).",
-    )
-
     resource_key: Optional[str] = Field(
         default=None,
         description="The key under which the GCS resource will be bound to the definitions.",

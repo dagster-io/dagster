@@ -162,6 +162,4 @@ Resource Components
 
 .. autoclass:: dagster_gcp.GCSFileManagerResourceComponent
 
-.. autoclass:: dagster_gcp.GCSPickleIOManagerComponent
-
 .. autoclass:: dagster_gcp.DataprocResourceComponent

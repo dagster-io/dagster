@@ -1,6 +1,7 @@
 from typing import get_args, get_origin
 
 import pytest
+from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_gcp.bigquery.resources import BigQueryResource
@@ -8,11 +9,9 @@ from dagster_gcp.components import (
     BigQueryResourceComponent,
     DataprocResourceComponent,
     GCSFileManagerResourceComponent,
-    GCSPickleIOManagerComponent,
     GCSResourceComponent,
 )
 from dagster_gcp.dataproc.resources import DataprocResource
-from dagster_gcp.gcs.io_manager import GCSPickleIOManager
 from dagster_gcp.gcs.resources import GCSFileManagerResource, GCSResource
 
 
@@ -23,9 +22,8 @@ class TestComponentFieldsSync:
         "component_class, resource_class, exclude_fields",
         [
             (BigQueryResourceComponent, BigQueryResource, {"gcp_credentials"}),
-            (GCSResourceComponent, GCSResource, {"gcp_credentials"}),
+            (GCSResourceComponent, GCSResource, set()),
             (GCSFileManagerResourceComponent, GCSFileManagerResource, {"gcp_credentials"}),
-            (GCSPickleIOManagerComponent, GCSPickleIOManager, {"gcs"}),
             (DataprocResourceComponent, DataprocResource, set()),
         ],
     )
@@ -120,21 +118,22 @@ class TestYAMLIntegration:
                 defs_yaml_contents={
                     "type": "dagster_gcp.components.GCSResourceComponent",
                     "attributes": {
-                        "project": "my-gcp-project",
+                        "project": "{{ env.GCP_PROJECT }}",
                         "resource_key": "my_gcs",
                     },
                 },
             )
-            with scoped_definitions_load_context():
-                with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
-                    defs,
-                ):
-                    assert defs.resources
-                    assert "my_gcs" in defs.resources
-                    resource = defs.resources["my_gcs"]
-                    assert isinstance(resource, GCSResource)
-                    assert resource.project == "my-gcp-project"
+            with environ({"GCP_PROJECT": "my-gcp-project"}):
+                with scoped_definitions_load_context():
+                    with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+                        component,
+                        defs,
+                    ):
+                        assert defs.resources
+                        assert "my_gcs" in defs.resources
+                        resource = defs.resources["my_gcs"]
+                        assert isinstance(resource, GCSResource)
+                        assert resource.project == "my-gcp-project"
 
     def test_gcs_file_manager_component_yaml(self):
         """Verifies successful instantiation of GCSFileManagerResource from YAML."""
@@ -163,34 +162,6 @@ class TestYAMLIntegration:
                     assert resource.project == "my-gcp-project"
                     assert resource.gcs_bucket == "my-bucket"
                     assert resource.gcs_prefix == "dagster/data"
-
-    def test_io_manager_component_yaml(self):
-        """Verifies successful instantiation of GCSPickleIOManager from YAML."""
-        with create_defs_folder_sandbox() as sandbox:
-            defs_path = sandbox.scaffold_component(
-                component_cls=GCSPickleIOManagerComponent,
-                defs_yaml_contents={
-                    "type": "dagster_gcp.components.GCSPickleIOManagerComponent",
-                    "attributes": {
-                        "gcs_bucket": "my-io-bucket",
-                        "gcs_prefix": "custom/prefix",
-                        "project": "my-project",
-                        "resource_key": "io_manager",
-                    },
-                },
-            )
-            with scoped_definitions_load_context():
-                with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
-                    defs,
-                ):
-                    assert defs.resources
-                    assert "io_manager" in defs.resources
-                    resource = defs.resources["io_manager"]
-                    assert isinstance(resource, GCSPickleIOManager)
-                    assert resource.gcs_bucket == "my-io-bucket"
-                    assert resource.gcs_prefix == "custom/prefix"
-                    assert resource.gcs.project == "my-project"
 
     def test_dataproc_component_yaml(self):
         """Verifies successful instantiation of DataprocResource from YAML."""

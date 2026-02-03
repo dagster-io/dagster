@@ -95,6 +95,3 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         if self.resource_key is None:
             return dg.Definitions()
         return dg.Definitions(resources={self.resource_key: self.resource})
-
-
-DataprocResourceComponent.model_rebuild()
