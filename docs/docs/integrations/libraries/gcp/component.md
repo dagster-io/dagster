@@ -19,7 +19,6 @@ Components for interacting with BigQuery and Google Cloud Storage.
 - **BigQueryResourceComponent**: Provides a standard `BigQueryResource`.
 - **GCSResourceComponent**: Provides a standard `GCSResource`.
 - **GCSFileManagerResourceComponent**: Provides a `GCSFileManager` for artifact storage.
-- **GCSPickleIOManagerComponent**: Provides a `GCSPickleIOManager` for asset storage.
 
 ### Dataproc
 
