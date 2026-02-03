@@ -141,11 +141,9 @@ class DagsterLookerApiTranslator:
 
     def get_view_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
         lookml_view = check.inst(looker_structure.data, LookmlView)
-        metadata = (
-            {**TableMetadataSet(table_name=lookml_view.sql_table_name)}
-            if lookml_view.sql_table_name is not None
-            else {}
-        )
+        metadata: dict[str, Any] = {}
+        if lookml_view.sql_table_name is not None:
+            metadata = {**metadata, **TableMetadataSet(table_name=lookml_view.sql_table_name)}
         return AssetSpec(
             key=AssetKey(["view", lookml_view.view_name]),
             metadata=metadata,
