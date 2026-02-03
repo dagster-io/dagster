@@ -81,6 +81,8 @@ def test_dataset_translation() -> None:
     )
 
     assert asset_spec.key.path == ["Orders_Dataset"]
+    assert "dagster/table_name" in asset_spec.metadata
+    assert asset_spec.metadata["dagster/table_name"] == "Orders Dataset"
     assert asset_spec.metadata["dagster_sigma/web_url"].value == SAMPLE_DATASET_DATA["url"]
     assert asset_spec.metadata["dagster_sigma/created_at"].value == 1726175777.83
     assert asset_spec.metadata["dagster/column_schema"] == TableSchema(
@@ -131,6 +133,8 @@ def test_dataset_translation_custom_translator() -> None:
 
     assert asset_spec.key.path == ["sigma", "Orders_Dataset"]
     assert asset_spec.description == "Custom description"
+    assert "dagster/table_name" in asset_spec.metadata
+    assert asset_spec.metadata["dagster/table_name"] == "Orders Dataset"
 
 
 def test_workbook_translation_with_missing_table(caplog: pytest.LogCaptureFixture) -> None:

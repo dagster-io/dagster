@@ -134,11 +134,18 @@ def test_load_asset_specs(
     expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
+    lookml_view_asset = asset_specs_by_key.get(expected_lookml_view_asset_dep_key)
+    if lookml_view_asset is not None:
+        assert "dagster/table_name" in lookml_view_asset.metadata
+        assert lookml_view_asset.metadata["dagster/table_name"] == "my_table"
+
     lookml_explore_asset = asset_specs_by_key[expected_lookml_explore_asset_key]
     assert [dep.asset_key for dep in lookml_explore_asset.deps] == [
         expected_lookml_view_asset_dep_key
     ]
     assert lookml_explore_asset.tags == {"dagster/kind/looker": "", "dagster/kind/explore": ""}
+    assert "dagster/table_name" in lookml_explore_asset.metadata
+    assert lookml_explore_asset.metadata["dagster/table_name"] == "my_table"
     assert lookml_explore_asset.metadata.get("dagster-looker/web_url") == MetadataValue.url(
         "https://your.cloud.looker.com/explore/my_model/my_explore"
     )

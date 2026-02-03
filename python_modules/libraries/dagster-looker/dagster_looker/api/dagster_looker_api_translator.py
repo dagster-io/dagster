@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import deprecated, public
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
@@ -140,8 +141,14 @@ class DagsterLookerApiTranslator:
 
     def get_view_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
         lookml_view = check.inst(looker_structure.data, LookmlView)
+        metadata = (
+            {**TableMetadataSet(table_name=lookml_view.sql_table_name)}
+            if lookml_view.sql_table_name is not None
+            else {}
+        )
         return AssetSpec(
             key=AssetKey(["view", lookml_view.view_name]),
+            metadata=metadata,
         )
 
     @deprecated(
@@ -170,6 +177,14 @@ class DagsterLookerApiTranslator:
                 for lookml_explore_join in (lookml_explore.joins or [])
             ]
 
+            explore_table_name = explore_base_view.sql_table_name
+            metadata = {
+                "dagster-looker/web_url": MetadataValue.url(
+                    f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
+                ),
+            }
+            if explore_table_name is not None:
+                metadata = {**metadata, **TableMetadataSet(table_name=explore_table_name)}
             return AssetSpec(
                 key=AssetKey(check.not_none(lookml_explore.id)),
                 deps=list(
@@ -189,11 +204,7 @@ class DagsterLookerApiTranslator:
                     "dagster/kind/looker": "",
                     "dagster/kind/explore": "",
                 },
-                metadata={
-                    "dagster-looker/web_url": MetadataValue.url(
-                        f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
-                    ),
-                },
+                metadata=metadata,
             )
         elif isinstance(lookml_explore, DashboardFilter):
             lookml_model_name = check.not_none(lookml_explore.model)

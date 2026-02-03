@@ -5,7 +5,7 @@ from typing import Any, Literal, Optional, TypeAlias
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -344,9 +344,18 @@ class DagsterTableauTranslator:
                 ]
             )
 
+        table_name = _coerce_input_to_valid_name(data.properties["name"])
+        raw_storage = data.properties.get("connectionType") or data.properties.get(
+            "connection_type"
+        )
+        storage_kind = (
+            str(raw_storage).strip().lower()
+            if raw_storage is not None and str(raw_storage).strip()
+            else "tableau"
+        )
         return AssetSpec(
             key=asset_key,
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
+            tags={"dagster/storage_kind": storage_kind, **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
                     id=data.properties["luid"],
@@ -355,7 +364,8 @@ class DagsterTableauTranslator:
                     workbook_id=data.properties["workbook"]["luid"]
                     if not data.properties["isPublished"]
                     else None,
-                )
+                ),
+                **TableMetadataSet(table_name=table_name),
             },
             kinds=kinds,
         )

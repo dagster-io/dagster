@@ -177,10 +177,18 @@ def test_translator_spec(
         iter_data_source = iter(spec for spec in all_assets if "datasource" in spec.key.path[-1])
         published_data_source_asset_spec = next(iter_data_source)
         assert published_data_source_asset_spec.key.path == ["superstore_datasource"]
+        assert "dagster/table_name" in published_data_source_asset_spec.metadata
+        assert (
+            published_data_source_asset_spec.metadata["dagster/table_name"]
+            == "superstore_datasource"
+        )
+        assert "dagster/storage_kind" in published_data_source_asset_spec.tags
+        assert published_data_source_asset_spec.tags["dagster/storage_kind"] == "tableau"
         assert published_data_source_asset_spec.metadata == {
             "dagster-tableau/id": TEST_DATA_SOURCE_ID,
             "dagster-tableau/has_extracts": False,
             "dagster-tableau/is_published": True,
+            "dagster/table_name": "superstore_datasource",
         }
 
         embedded_data_source_asset_spec = next(iter_data_source)
@@ -189,11 +197,19 @@ def test_translator_spec(
             "embedded_datasource",
             "embedded_superstore_datasource",
         ]
+        assert "dagster/table_name" in embedded_data_source_asset_spec.metadata
+        assert (
+            embedded_data_source_asset_spec.metadata["dagster/table_name"]
+            == "embedded_superstore_datasource"
+        )
+        assert "dagster/storage_kind" in embedded_data_source_asset_spec.tags
+        assert embedded_data_source_asset_spec.tags["dagster/storage_kind"] == "tableau"
         assert embedded_data_source_asset_spec.metadata == {
             "dagster-tableau/id": TEST_EMBEDDED_DATA_SOURCE_ID,
             "dagster-tableau/has_extracts": True,
             "dagster-tableau/is_published": False,
             "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+            "dagster/table_name": "embedded_superstore_datasource",
         }
 
 

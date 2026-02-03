@@ -240,11 +240,12 @@ class DagsterSigmaTranslator:
                 ),
                 "dagster_sigma/properties": MetadataValue.json(data.properties),
                 **TableMetadataSet(
+                    table_name=data.properties["name"],
                     column_schema=TableSchema(
                         columns=[
                             TableColumn(name=column_name) for column_name in sorted(data.columns)
                         ]
-                    )
+                    ),
                 ),
             }
 

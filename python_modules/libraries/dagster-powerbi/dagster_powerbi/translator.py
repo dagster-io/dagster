@@ -358,13 +358,16 @@ class DagsterPowerBITranslator:
             or data.properties["connectionDetails"].get("database")
         )
         if not connection_name:
-            asset_key = AssetKey([_clean_asset_name(data.properties["datasourceId"])])
+            table_name = _clean_asset_name(data.properties["datasourceId"])
+            asset_key = AssetKey([table_name])
         else:
             obj_name = _get_last_filepath_component(urllib.parse.unquote(connection_name))
-            asset_key = AssetKey(path=[_clean_asset_name(obj_name)])
+            table_name = _clean_asset_name(obj_name)
+            asset_key = AssetKey(path=[table_name])
 
         return AssetSpec(
             key=asset_key,
+            metadata={**TableMetadataSet(table_name=table_name)},
             tags={**PowerBITagSet(asset_type="data_source")},
             kinds={"powerbi"},
         )
