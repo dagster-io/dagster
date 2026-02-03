@@ -31,7 +31,7 @@ type Props = {
   selectedTags: string[];
   setSelectedTags: (tags: string[]) => void;
   renderTag?: (tag: string, tagProps: TagSelectorTagProps) => React.ReactNode;
-  renderTagList?: (tags: React.ReactNode[]) => React.ReactNode;
+  renderTagList?: (tags: React.ReactNode[], totalCount: number) => React.ReactNode;
   renderDropdown?: (
     dropdown: React.ReactNode,
     dropdownProps: TagSelectorDropdownProps,
@@ -126,6 +126,9 @@ export const TagSelector = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
+  // Memoize selectedTags as a Set for O(1) lookups instead of O(n) includes()
+  const selectedTagsSet = React.useMemo(() => new Set(selectedTags), [selectedTags]);
+
   const dropdown = React.useMemo(() => {
     const dropdownContent = (
       <VirtualContainer
@@ -144,7 +147,8 @@ export const TagSelector = ({
             }
 
             function content(tag: string) {
-              const selected = selectedTags.includes(tag);
+              // Use Set for O(1) lookup instead of O(n) includes()
+              const selected = selectedTagsSet.has(tag);
               const toggle = () => {
                 setSelectedTags(
                   selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
@@ -180,6 +184,7 @@ export const TagSelector = ({
     renderDropdown,
     renderDropdownItem,
     selectedTags,
+    selectedTagsSet,
     setSelectedTags,
     totalHeight,
     viewport.width,
@@ -191,7 +196,14 @@ export const TagSelector = ({
     if (selectedTags.length === 0) {
       return <Placeholder>{placeholder || 'Select tags'}</Placeholder>;
     }
-    const tags = selectedTags.map((tag) =>
+    // Only render up to MAX_RENDERED_TAGS elements to avoid performance issues
+    // with large selections (e.g., 100k partitions). The renderTagList callback
+    // receives totalCount so it can display "X items selected" accurately.
+    const MAX_RENDERED_TAGS = 100;
+    const tagsToRender = selectedTags.slice(0, MAX_RENDERED_TAGS);
+    const totalCount = selectedTags.length;
+
+    const tags = tagsToRender.map((tag) =>
       (renderTag || defaultRenderTag)(
         tag,
         {
@@ -204,7 +216,7 @@ export const TagSelector = ({
       ),
     );
     if (renderTagList) {
-      return renderTagList(tags);
+      return renderTagList(tags, totalCount);
     }
     return tags;
   }, [selectedTags, renderTagList, placeholder, renderTag, setSelectedTags, disabled]);
