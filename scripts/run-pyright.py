@@ -314,15 +314,18 @@ def normalize_env(
             f"--reinstall-package {pkg}" for pkg in get_all_editable_packages(env)
         ]
 
+        # Use --no-config in uv pip install to avoid discovery of constraints in uv config further
+        # up the file tree.
         build_venv_cmd = " && ".join(
             [
                 f"uv venv --python={venv_python} --seed {venv_path}",
-                f"uv pip install --python {python_path} -U pip setuptools wheel",
+                f"uv pip install --no-config --python {python_path} -U pip setuptools wheel",
                 " ".join(
                     [
                         "uv",
                         "pip",
                         "install",
+                        "--no-config",
                         "-b",
                         get_pyspark_constraints_path(),
                         "--python",
