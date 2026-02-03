@@ -1,8 +1,7 @@
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 import dagster as dg
 from dagster._annotations import preview, public
-from dagster.components import Component, ComponentLoadContext, Model
 from pydantic import Field
 
 from dagster_azure.adls2.resources import (
@@ -15,7 +14,7 @@ from dagster_azure.adls2.resources import (
 
 @public
 @preview
-class ADLS2ResourceComponent(Component, dg.Resolvable, Model):
+class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """Component for Azure Data Lake Storage Gen2 Resource.
 
     Wraps ADLS2Resource for use in YAML-based configuration.
@@ -31,14 +30,14 @@ class ADLS2ResourceComponent(Component, dg.Resolvable, Model):
               storage_account: my_storage_account
               credential:
                 credential_type: sas
-                token: ${ADLS2_SAS_TOKEN}
+                token: "{{ env.ADLS2_SAS_TOKEN }}"
               resource_key: adls2
     """
 
-    storage_account: Optional[str] = Field(default=None, description="The storage account name")
+    storage_account: str = Field(description="The storage account name")
 
-    credential: Optional[Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential]] = Field(
-        default=None, description="The credentials with which to authenticate"
+    credential: Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential] = Field(
+        description="The credentials with which to authenticate"
     )
 
     resource_key: Optional[str] = Field(
@@ -48,11 +47,11 @@ class ADLS2ResourceComponent(Component, dg.Resolvable, Model):
     @property
     def resource(self) -> ADLS2Resource:
         return ADLS2Resource(
-            storage_account=cast("str", self.storage_account),
-            credential=self.credential or ADLS2DefaultAzureCredential(kwargs={}),
+            storage_account=self.storage_account,
+            credential=self.credential,
         )
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.resource_key is None:
             return dg.Definitions()
         return dg.Definitions(resources={self.resource_key: self.resource})

@@ -16,9 +16,6 @@ Components
 .. autoclass:: ADLS2ResourceComponent
    :members:
 
-.. autoclass:: ADLS2PickleIOManagerComponent
-   :members:
-
 Resources
 ^^^^^^^^^^
 
