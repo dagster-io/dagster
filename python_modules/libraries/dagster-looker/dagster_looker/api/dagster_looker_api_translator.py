@@ -149,6 +149,7 @@ class DagsterLookerApiTranslator:
         return AssetSpec(
             key=AssetKey(["view", lookml_view.view_name]),
             metadata=metadata,
+            tags={"dagster/storage_kind": "looker"},
         )
 
     @deprecated(
@@ -185,6 +186,12 @@ class DagsterLookerApiTranslator:
             }
             if explore_table_name is not None:
                 metadata = {**metadata, **TableMetadataSet(table_name=explore_table_name)}
+            raw_connection = getattr(lookml_explore, "connection_name", None)
+            storage_kind = (
+                str(raw_connection).strip().lower()
+                if raw_connection is not None and str(raw_connection).strip()
+                else "looker"
+            )
             return AssetSpec(
                 key=AssetKey(check.not_none(lookml_explore.id)),
                 deps=list(
@@ -201,6 +208,7 @@ class DagsterLookerApiTranslator:
                     }
                 ),
                 tags={
+                    "dagster/storage_kind": storage_kind,
                     "dagster/kind/looker": "",
                     "dagster/kind/explore": "",
                 },
