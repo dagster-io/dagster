@@ -1,6 +1,6 @@
-from unittest.mock import MagicMock, patch
 import base64
 import json
+from unittest.mock import MagicMock, patch
 
 from dagster import OutputContext, build_init_resource_context
 from dagster._core.storage.db_io_manager import TableSlice
