@@ -3,12 +3,10 @@ from typing import get_args, get_origin
 import pytest
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
-from dagster_azure.adls2.io_manager import ADLS2PickleIOManager
 from dagster_azure.adls2.resources import ADLS2Resource
 from dagster_azure.blob.resources import AzureBlobStorageResource
 from dagster_azure.components.adls2 import ADLS2ResourceComponent
 from dagster_azure.components.blob import AzureBlobStorageResourceComponent
-from dagster_azure.components.io_managers import ADLS2PickleIOManagerComponent
 
 
 @pytest.mark.parametrize(
@@ -16,7 +14,6 @@ from dagster_azure.components.io_managers import ADLS2PickleIOManagerComponent
     [
         (AzureBlobStorageResourceComponent, AzureBlobStorageResource),
         (ADLS2ResourceComponent, ADLS2Resource),
-        (ADLS2PickleIOManagerComponent, ADLS2PickleIOManager),
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
@@ -113,30 +110,3 @@ def test_adls2_component_integration(monkeypatch):
                 assert "my_adls2" in resources
                 resource = resources["my_adls2"]
                 assert isinstance(resource, ADLS2Resource)
-
-
-def test_adls2_io_manager_integration():
-    """Test the integration of the ADLS2 Pickle IO Manager component.
-    Validates that the component correctly builds the IO manager and links the resource key.
-    """
-    with create_defs_folder_sandbox() as sandbox:
-        defs_path = sandbox.scaffold_component(
-            component_cls=ADLS2PickleIOManagerComponent,
-            defs_yaml_contents={
-                "type": "dagster_azure.ADLS2PickleIOManagerComponent",
-                "attributes": {
-                    "adls2": "some_adls2_resource_key",
-                    "adls2_file_system": "dagster-data",
-                    "adls2_prefix": "pipeline_logs",
-                    "resource_key": "io_manager",
-                },
-            },
-        )
-        with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_, defs):
-                resources = defs.resources
-                assert resources is not None
-                assert "io_manager" in resources
-                io_manager = resources["io_manager"]
-                assert isinstance(io_manager, ADLS2PickleIOManager)
-                assert io_manager.adls2 == "some_adls2_resource_key"

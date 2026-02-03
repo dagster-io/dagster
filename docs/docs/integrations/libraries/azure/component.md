@@ -37,7 +37,6 @@ Components for interacting with Azure Blob Storage.
 Components for interacting with ADLS2.
 
 - **`ADLS2ResourceComponent`**: Provides an `ADLS2Resource`.
-- **`ADLS2PickleIOManagerComponent`**: Provides an `ADLS2PickleIOManager` for storing artifacts and outputs in ADLS2.
 
 ## Examples
 
@@ -49,7 +48,7 @@ attributes:
   account_url: "[https://myaccount.blob.core.windows.net](https://myaccount.blob.core.windows.net)"
   credential:
     credential_type: sas
-    sas_token: "{{ env.AZURE_SAS_TOKEN }}"
+    token: "{{ env.AZURE_SAS_TOKEN }}"
   resource_key: blob_storage
 ```
 ### ADLS2 with Shared Key Connect using a Storage Account Key.
@@ -62,19 +61,4 @@ attributes:
     credential_type: key
     storage_account_key: "{{ env.AZURE_STORAGE_KEY }}"
   resource_key: adls2
-```
-### IO Manager with Default Credentials Configure an IO Manager that uses the environment's default credentials (ideal for production/managed identity).
-
-```yaml
-type: dagster_azure.ADLS2PickleIOManagerComponent
-attributes:
-  adls2:
-    storage_account: mystorageaccount
-    credential:
-      credential_type: default
-      default_credential_kwargs: {}
-  adls2_file_system: dagster-data
-  adls2_prefix: io_manager
-  lease_duration: 60
-  resource_key: io_manager
 ```

@@ -1,8 +1,7 @@
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 import dagster as dg
 from dagster._annotations import preview, public
-from dagster.components import Component, ComponentLoadContext, Model
 from pydantic import Field
 
 from dagster_azure.blob.resources import (
@@ -16,7 +15,7 @@ from dagster_azure.blob.resources import (
 
 @public
 @preview
-class AzureBlobStorageResourceComponent(Component, dg.Resolvable, Model):
+class AzureBlobStorageResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """Component for Azure Blob Storage Resource.
 
     Wraps AzureBlobStorageResource for use in YAML-based configuration.
@@ -29,25 +28,21 @@ class AzureBlobStorageResourceComponent(Component, dg.Resolvable, Model):
           - name: blob_storage
             type: dagster_azure.AzureBlobStorageResourceComponent
             attributes:
-              account_url: ${AZURE_STORAGE_ACCOUNT_URL}
+              account_url: "https://myaccount.blob.core.windows.net"
               credential:
                 credential_type: key
-                key: ${AZURE_STORAGE_ACCOUNT_KEY}
+                key: "{{ env.AZURE_STORAGE_ACCOUNT_KEY }}"
               resource_key: blob_storage
     """
 
-    account_url: Optional[str] = Field(
-        default=None, description="The URL to the blob storage account"
-    )
+    account_url: str = Field(description="The URL to the blob storage account")
 
-    credential: Optional[
-        Union[
-            AzureBlobStorageSASTokenCredential,
-            AzureBlobStorageKeyCredential,
-            AzureBlobStorageDefaultCredential,
-            AzureBlobStorageAnonymousCredential,
-        ]
-    ] = Field(default=None, description="Azure credential configuration")
+    credential: Union[
+        AzureBlobStorageSASTokenCredential,
+        AzureBlobStorageKeyCredential,
+        AzureBlobStorageDefaultCredential,
+        AzureBlobStorageAnonymousCredential,
+    ] = Field(description="Azure credential configuration")
 
     resource_key: Optional[str] = Field(
         default=None, description="Resource key for binding to definitions"
@@ -56,11 +51,11 @@ class AzureBlobStorageResourceComponent(Component, dg.Resolvable, Model):
     @property
     def resource(self) -> AzureBlobStorageResource:
         return AzureBlobStorageResource(
-            account_url=cast("str", self.account_url),
-            credential=self.credential or AzureBlobStorageDefaultCredential(),
+            account_url=self.account_url,
+            credential=self.credential,
         )
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.resource_key is None:
             return dg.Definitions()
         return dg.Definitions(resources={self.resource_key: self.resource})
