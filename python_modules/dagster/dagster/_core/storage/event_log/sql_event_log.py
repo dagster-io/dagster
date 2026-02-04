@@ -3368,7 +3368,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
         return infos
 
-    @property
+    @cached_property
     def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(AssetCheckExecutionsTable.name)
 
