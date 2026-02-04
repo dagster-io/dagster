@@ -57,6 +57,7 @@ INTERNAL_AUTHOR_NAMES = [
     "Ben Gotow",
     "Isaac Hellendag",
     "Sean Mackesey",
+    "Dennis Hume",
 ]
 
 
@@ -102,10 +103,14 @@ class ParsedCommit:
     repo_name: str
     prefix: Optional[str]  # Library prefix like [dagster-dbt], [ui], etc.
     ignore: bool
+    synced_from_oss: bool = False  # True if commit was synced from dagster-io/dagster
 
     @property
     def pr_url(self) -> str:
-        return f"{GITHUB_URL}/{self.repo_name}/pull/{self.issue_number}"
+        # Synced OSS commits should link to the original dagster repo
+        if self.synced_from_oss:
+            return f"{GITHUB_URL}/dagster/pull/{self.issue_number}"
+        return f"{GITHUB_URL}/internal/pull/{self.issue_number}"
 
     @property
     def documented(self) -> bool:
@@ -246,10 +251,13 @@ def _get_libraries_version(new_version: str) -> str:
 
 
 def _get_repo_name(commit: git.Commit) -> str:
-    """Determine if commit belongs to OSS (dagster) or internal repo.
+    """Determine if commit belongs to OSS (dagster) or internal repo for categorization.
 
     After repo merge, we determine this by checking which files the commit touched.
     If any file is under dagster-oss/, it's considered an OSS commit.
+
+    Note: This is used for changelog categorization (e.g., Dagster Plus category),
+    not for PR URLs - all PR URLs now point to the internal repo.
     """
     # Check files touched by this commit
     for file_path in commit.stats.files.keys():
@@ -262,20 +270,32 @@ def _get_repo_name(commit: git.Commit) -> str:
 
 def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     """Extracts a set of useful information from the raw commit message."""
-    title = str(commit.message).splitlines()[0].strip()
+    commit_message = str(commit.message)
+    title = commit_message.splitlines()[0].strip()
     # me avoiding regex -- titles are formatted as "Lorem ipsum ... (#12345)" so we can just search
     # for the last octothorpe and chop off the closing paren
     repo_name = _get_repo_name(commit)
     issue_number = title.split("#")[-1][:-1]
+
+    # Check if this commit was synced from the OSS dagster repo
+    synced_from_oss = "Synced-From-Dagster" in commit_message
+
+    # Extract original author if this is a synced commit
+    original_author: Optional[Author] = None
+    if synced_from_oss:
+        # Look for ORIGINAL_AUTHOR=Name <email> pattern
+        match = re.search(r"ORIGINAL_AUTHOR=(.+?) <(.+?)>", commit_message)
+        if match:
+            original_author = Author(name=match.group(1), email=match.group(2))
 
     # find the first line that has `CHANGELOG` in the first few characters, then take the next
     # non-empty line
     found_start = False
     ignore = False
     raw_changelog_entry_lines: list[str] = []
-    has_testing_section = "## How I Tested These Changes" in str(commit.message)
+    has_testing_section = "## How I Tested These Changes" in commit_message
 
-    for line in str(commit.message).split("\n"):
+    for line in commit_message.split("\n"):
         if found_start and line.strip():
             if line.startswith(IGNORE_TOKEN):
                 ignore = True
@@ -316,13 +336,17 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         ):
             detected_prefix = "ui"
 
-    authors = [
-        Author(
-            name=str(author.name),
-            email=str(author.email),
-        )
-        for author in [commit.author, *commit.co_authors]
-    ]
+    # For synced commits, use the original author if available
+    if synced_from_oss and original_author:
+        authors = [original_author]
+    else:
+        authors = [
+            Author(
+                name=str(author.name),
+                email=str(author.email),
+            )
+            for author in [commit.author, *commit.co_authors]
+        ]
 
     # Create the commit object first
     parsed_commit = ParsedCommit(
@@ -335,6 +359,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         repo_name=repo_name,
         prefix=detected_prefix,
         ignore=ignore,
+        synced_from_oss=synced_from_oss,
     )
 
     # Use guessing logic to determine category
