@@ -819,7 +819,7 @@ class SqlRunStorage(RunStorage):
                 )
 
     # Checking for migrations
-    
+
     @cache
     def has_run_stats_index_cols(self) -> bool:
         with self.connect() as conn:
@@ -839,7 +839,7 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "backfill_id" in column_names
-    
+
     @cache
     def has_bulk_action_job_name_column(self) -> bool:
         with self.connect() as conn:
