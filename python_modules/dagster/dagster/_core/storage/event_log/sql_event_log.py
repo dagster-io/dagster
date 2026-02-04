@@ -3380,8 +3380,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
         return infos
 
-    @property
-    def supports_asset_checks(self):
+    @cached_property
+    def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(AssetCheckExecutionsTable.name)
 
     def get_latest_planned_materialization_info(
