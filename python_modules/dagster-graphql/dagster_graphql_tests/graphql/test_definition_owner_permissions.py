@@ -155,8 +155,16 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         return typename, backfill_id
 
-    def graphql_get_job_permissions(self, context, job_name: str):
-        selector = infer_job_selector(context, job_name)
+    def graphql_get_job_permissions(
+        self, context, job_name: str, asset_selection: Optional[Sequence[AssetKey]] = None
+    ):
+        gql_asset_selection = (
+            cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
+            if asset_selection
+            else None
+        )
+
+        selector = infer_job_selector(context, job_name, asset_selection=gql_asset_selection)
         result = execute_dagster_graphql(
             context,
             GET_JOB_PERMISSIONS_QUERY,
@@ -636,6 +644,27 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         can_launch, _ = self.graphql_get_job_permissions(graphql_context, "unowned_job")
         assert not can_launch
         typename, _ = self.graphql_launch_job_run(graphql_context, "unowned_job")
+        assert typename == "UnauthorizedError"
+
+    def test_implicit_asset_job_run_launch_permissions(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        can_launch, _ = self.graphql_get_job_permissions(
+            graphql_context, "__ASSET_JOB", asset_selection=[AssetKey(["owned_asset"])]
+        )
+        assert can_launch
+        typename = self.graphql_launch_asset_run(
+            graphql_context, asset_selection=[AssetKey(["owned_asset"])]
+        )
+        assert typename == "LaunchRunSuccess"
+
+        can_launch, _ = self.graphql_get_job_permissions(
+            graphql_context, "__ASSET_JOB", asset_selection=[AssetKey(["unowned_asset"])]
+        )
+        assert not can_launch
+        typename = self.graphql_launch_asset_run(
+            graphql_context, asset_selection=[AssetKey(["unowned_asset"])]
+        )
         assert typename == "UnauthorizedError"
 
     def test_job_reexecution_permissions(self, graphql_context: WorkspaceRequestContext):

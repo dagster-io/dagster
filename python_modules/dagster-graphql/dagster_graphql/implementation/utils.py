@@ -220,6 +220,18 @@ def has_permission_for_definition(
     if not graphene_info.context.viewer_has_any_owner_definition_permissions():
         return False
 
+    if (
+        isinstance(remote_definition, RemoteJob)
+        and is_implicit_asset_job_name(remote_definition.name)
+        and remote_definition.asset_selection
+    ):
+        return has_permission_for_asset_graph(
+            graphene_info,
+            graphene_info.context.asset_graph,
+            list(remote_definition.asset_selection),
+            permission,
+        )
+
     if isinstance(remote_definition, RemoteAssetCheckNode):
         owners = graphene_info.context.get_owners_for_selector(remote_definition.asset_check.key)
     else:
