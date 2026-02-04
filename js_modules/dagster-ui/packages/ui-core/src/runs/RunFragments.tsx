@@ -50,6 +50,7 @@ export const RUN_FRAGMENT = gql`
     }
     stepKeysToExecute
     updateTime
+    notificationSubscribers
     ...RunTimingFragment
   }
 
