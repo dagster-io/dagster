@@ -4046,7 +4046,7 @@ type PartitionedAssetConditionEvaluationNode {
   entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
-  numTrue: Int!
+  numTrue: Int
   numCandidates: Int
   childUniqueIds: [String!]!
 }
@@ -4075,7 +4075,7 @@ type AssetConditionEvaluationRecord {
   timestamp: Float!
   assetKey: AssetKey
   entityKey: EntityKey!
-  numRequested: Int!
+  numRequested: Int
   startTimestamp: Float
   endTimestamp: Float
   isLegacy: Boolean!
@@ -4091,7 +4091,7 @@ type AutomationConditionEvaluationNode {
   entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
-  numTrue: Int!
+  numTrue: Int
   numCandidates: Int
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
