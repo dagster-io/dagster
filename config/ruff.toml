@@ -18,10 +18,8 @@
 # [Config option reference]
 #   https://docs.astral.sh/ruff/settings/
 
-# NOTE: Keep at py39 for now to avoid formatter changes. Updating to py310 is a
-# separate phase that will handle the resulting type annotation upgrades.
-# See: https://github.com/dagster-io/internal/issues/20346
-target-version = "py39"
+# Target lowest supported Python version.
+target-version = "py310"
 
 # Codebase-wide default line length. Override in package-specific pyproject.toml where a different
 # length is desired.
