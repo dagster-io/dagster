@@ -1,5 +1,7 @@
+import json
 import re
 import readline
+import subprocess
 import sys
 import termios
 import tty
@@ -103,6 +105,7 @@ class ParsedCommit:
     repo_name: str
     prefix: Optional[str]  # Library prefix like [dagster-dbt], [ui], etc.
     ignore: bool
+    commit_hash: str = ""  # Git commit SHA
     synced_from_oss: bool = False  # True if commit was synced from dagster-io/dagster
 
     @property
@@ -249,6 +252,38 @@ def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
     return None
 
 
+def _fetch_pr_body(pr_url: str) -> Optional[str]:
+    """Fetch PR body/description from GitHub API."""
+    try:
+        if not re.match(r"https?://(?:www\.)?github\.com/", pr_url):
+            return None
+        url_parts = pr_url.split("/")
+        if len(url_parts) >= 6:
+            owner = url_parts[-4]
+            repo = url_parts[-3]
+            pr_number = url_parts[-1]
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}"
+            sleep(0.1)
+
+            response = requests.get(api_url, timeout=10)
+            response.raise_for_status()
+
+            pr_data = response.json()
+            body = pr_data.get("body", "")
+
+            # Truncate very long bodies to avoid token limits
+            if body and len(body) > 3000:
+                body = body[:3000] + "\n... (truncated)"
+
+            return body
+
+    except Exception:
+        pass
+
+    return None
+
+
 def _get_previous_version(new_version: str) -> str:
     split = new_version.split(".")
     previous_patch = int(split[-1]) - 1
@@ -374,6 +409,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         repo_name=repo_name,
         prefix=detected_prefix,
         ignore=ignore,
+        commit_hash=commit.hexsha,
         synced_from_oss=synced_from_oss,
     )
 
@@ -551,6 +587,8 @@ def _create_commit_display(
     controls.append(" Edit prefix  ")
     controls.append("[e]", style="bold green")
     controls.append(" Edit text  ")
+    controls.append("[g]", style="bold bright_blue")
+    controls.append(" AI generate  ")
     controls.append("[o]", style="bold blue")
     controls.append(" Open PR  ")
     controls.append("[t]", style="bold magenta")
@@ -670,6 +708,170 @@ def _guess_category(commit: ParsedCommit) -> str:
     return "New"
 
 
+@dataclass
+class AIChangelogSuggestion:
+    """AI-generated suggestion for changelog entry fields."""
+
+    description: str
+    category: str  # "New", "Bugfixes", "Documentation", "Dagster Plus"
+    prefix: Optional[str]  # e.g., "dagster-dbt", "ui", or None
+    should_thank: bool
+    should_skip: bool
+    reasoning: str
+
+
+def _get_commit_diff(commit_hash: str, max_lines: int = 200) -> str:
+    """Get the git diff for a commit, truncated to max_lines."""
+    try:
+        result = subprocess.run(
+            ["git", "show", "--stat", "--patch", commit_hash],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=OSS_ROOT.parent,  # Run from repo root
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout:
+            lines = result.stdout.split("\n")
+            if len(lines) > max_lines:
+                return (
+                    "\n".join(lines[:max_lines])
+                    + f"\n... (truncated, {len(lines) - max_lines} more lines)"
+                )
+            return result.stdout
+    except Exception:
+        pass
+    return "(could not fetch diff)"
+
+
+def _generate_changelog_with_ai(commit: ParsedCommit) -> Optional[AIChangelogSuggestion]:
+    """Use Claude CLI to generate changelog entry fields for a commit."""
+    # Fetch PR body from GitHub
+    pr_body = _fetch_pr_body(commit.pr_url) or "(could not fetch)"
+
+    # Get git diff for the commit
+    git_diff = _get_commit_diff(commit.commit_hash)
+
+    # Build the prompt with commit information
+    prompt = f"""You are helping generate a changelog entry for a software release. Analyze this commit and suggest the appropriate changelog fields.
+
+## Commit Information
+- **PR Title:** {commit.title}
+- **PR URL:** {commit.pr_url}
+- **Commit Hash:** {commit.commit_hash}
+- **Author:** {commit.primary_author.name} ({commit.primary_author.email})
+- **Is External Contributor:** {commit.is_community_contribution}
+- **Current Entry (if any):** {commit.changelog_entry or "(none)"}
+- **Repository Type:** {commit.repo_name} (dagster = open source, internal = Dagster Plus)
+
+## PR Description
+{pr_body}
+
+## Code Changes (git diff)
+```
+{git_diff}
+```
+
+## Guidelines
+1. **Description**: Write a concise, user-focused changelog entry (1-2 sentences). Start with a verb (Added, Fixed, Improved, etc.). End with a period. Focus on what changed for users, not implementation details.
+
+2. **Category**: Choose exactly one:
+   - "New" - New features or capabilities
+   - "Bugfixes" - Bug fixes
+   - "Documentation" - Documentation changes
+   - "Dagster Plus" - Changes specific to Dagster Plus (only for internal repo commits)
+
+3. **Prefix**: If the change is specific to a library or component, include a prefix:
+   - Use "ui" for frontend/UI changes
+   - Use "dagster-XXX" for library-specific changes (e.g., "dagster-dbt", "dagster-aws")
+   - Use null/None if the change is general
+
+4. **should_thank**: Set to true if this is a community contribution (external contributor) that deserves thanks in the changelog.
+
+5. **should_skip**: Set to true ONLY if this commit should NOT appear in the changelog (e.g., internal refactoring, CI changes, or changes with no user-facing impact).
+
+## Response Format
+Respond with ONLY a JSON object (no markdown, no explanation outside the JSON):
+{{
+  "description": "The changelog entry text ending with a period.",
+  "category": "New|Bugfixes|Documentation|Dagster Plus",
+  "prefix": "dagster-xxx" or "ui" or null,
+  "should_thank": true|false,
+  "should_skip": true|false,
+  "reasoning": "Brief explanation of your choices"
+}}"""
+
+    result = None
+    try:
+        # Call Claude CLI
+        result = subprocess.run(
+            [
+                "claude",
+                "-p",
+                prompt,
+                "--output-format",
+                "json",
+                "--model",
+                "claude-3-5-haiku-latest",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            return None
+
+        # Check for empty output
+        if not result.stdout or not result.stdout.strip():
+            return None
+
+        # Parse the JSON response - claude outputs a JSON object with a "result" field
+        response = json.loads(result.stdout)
+
+        # Extract the actual content from Claude's response
+        content = response.get("result", result.stdout)
+
+        # Try to parse the content as JSON (Claude should return raw JSON)
+        # Sometimes it might be wrapped in markdown code blocks or have text before/after
+        if isinstance(content, str):
+            content = content.strip()
+            # First try: extract JSON from markdown code block
+            code_block_match = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n```", content)
+            if code_block_match:
+                content = code_block_match.group(1).strip()
+            else:
+                # Second try: find inline JSON object (text before/after the {})
+                json_match = re.search(r"\{[\s\S]*\}", content)
+                if json_match:
+                    content = json_match.group(0)
+            suggestion_data = json.loads(content)
+        else:
+            suggestion_data = content
+
+        return AIChangelogSuggestion(
+            description=suggestion_data.get("description", ""),
+            category=suggestion_data.get("category", "New"),
+            prefix=suggestion_data.get("prefix"),
+            should_thank=suggestion_data.get("should_thank", False),
+            should_skip=suggestion_data.get("should_skip", False),
+            reasoning=suggestion_data.get("reasoning", ""),
+        )
+
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, KeyError, FileNotFoundError) as e:
+        console.print(f"[red]AI generation failed: {e}[/red]")
+        if result is not None:
+            console.print(f"[dim]Claude returncode: {result.returncode}[/dim]")
+            console.print(
+                f"[dim]Claude stdout: {result.stdout[:500] if result.stdout else '(empty)'}[/dim]"
+            )
+            console.print(
+                f"[dim]Claude stderr: {result.stderr[:500] if result.stderr else '(empty)'}[/dim]"
+            )
+        return None
+
+
 def _interactive_changelog_generation(new_version: str, prev_version: str) -> str:
     """Single-pass interactive changelog generation with keyboard shortcuts."""
     # Collect all commits first
@@ -734,7 +936,12 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                 # Setup commit state
                 should_thank = commit.is_community_contribution
                 is_discarded = not commit.changelog_entry
-                feedback_message = ""
+                # Suggest AI generation for undocumented commits
+                feedback_message = (
+                    "💡 Press [g] to generate changelog entry with AI"
+                    if not commit.changelog_entry
+                    else ""
+                )
 
                 # Update display for current commit
                 _update_display_and_refresh(
@@ -962,6 +1169,47 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                             )
                             live.update(display_panel)
                             live.refresh()
+
+                        elif action == "g":
+                            # AI generate changelog entry
+                            feedback_message = "🤖 Generating with AI..."
+                            _update_display_and_refresh(
+                                live,
+                                commit,
+                                i,
+                                len(processed_commits),
+                                should_thank,
+                                is_discarded,
+                                feedback_message,
+                            )
+
+                            suggestion = _generate_changelog_with_ai(commit)
+                            if suggestion:
+                                # Apply the AI suggestions
+                                commit = replace(
+                                    commit,
+                                    changelog_entry=suggestion.description,
+                                    changelog_category=suggestion.category,
+                                    prefix=suggestion.prefix,
+                                    ignore=False,
+                                )
+                                processed_commits[i - 1] = commit
+                                should_thank = suggestion.should_thank
+                                is_discarded = suggestion.should_skip
+
+                                feedback_message = f"🤖 AI suggestion applied. Reasoning: {suggestion.reasoning[:80]}..."
+                            else:
+                                feedback_message = "❌ AI generation failed"
+
+                            _update_display_and_refresh(
+                                live,
+                                commit,
+                                i,
+                                len(processed_commits),
+                                should_thank,
+                                is_discarded,
+                                feedback_message,
+                            )
 
                         elif action == "o":
                             # Open PR link in browser
