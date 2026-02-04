@@ -116,7 +116,7 @@ export const statusForEvaluation = (evaluation: Evaluation) => {
   const anyCandidatePartitions = numCandidates === null || numCandidates > 0;
   return numTrue === 0 && !anyCandidatePartitions
     ? AssetConditionEvaluationStatus.SKIPPED
-    : numTrue > 0
+    : numTrue && numTrue > 0
       ? AssetConditionEvaluationStatus.TRUE
       : AssetConditionEvaluationStatus.FALSE;
 };
