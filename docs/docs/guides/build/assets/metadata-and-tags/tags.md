@@ -51,15 +51,6 @@ A label will look like the following in the UI:
 
 ![Label in UI](/images/guides/build/assets/metadata-tags/label-ui.png)
 
-### Customizing run execution with tags
-
-While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
-
-- [Customizing Kubernetes config](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment)
-- [Specifying Celery config](/deployment/oss/deployment-options/kubernetes/kubernetes-and-celery)
-- [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/operate/managing-concurrency)
-- [Setting the priority of different runs](/deployment/execution/customizing-run-queue-priority)
-
 ### System tags
 
 #### Asset tags
@@ -72,7 +63,7 @@ The following table lists tags which Dagster may automatically add to assets.
 
 ### Run tags
 
-The following table lists the tags Dagster will automatically add to [job](/guides/build/jobs) runs when applicable:
+The following table lists the tags Dagster will automatically add to job runs when applicable:
 
 | Tag                     | Description                         |
 | ----------------------- | ----------------------------------- |
@@ -85,3 +76,12 @@ The following table lists the tags Dagster will automatically add to [job](/guid
 | `dagster/backfill`      | The backfill ID                     |
 | `dagster/parent_run_id` | The parent run of a re-executed run |
 | `dagster/image`         | The Docker image tag                |
+
+#### Customizing run execution with run tags
+
+While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
+
+- [Customizing Kubernetes config](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment)
+- [Specifying Celery config](/deployment/oss/deployment-options/kubernetes/kubernetes-and-celery)
+- [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/operate/managing-concurrency)
+- [Setting the priority of different runs](/deployment/execution/customizing-run-queue-priority)

@@ -49,6 +49,9 @@ _MASK_USING_ENVIRONMENT_LOG_MESSAGE = (r"\nUsing \S*\n", "\n")
 # Mask this until we figure out how to get rid of it.
 _MASK_EMPTY_WARNINGS = (r"\n +warnings.warn\(message\)\n", "")
 
+# Mask BetaWarning messages from dagster-evidence
+_MASK_BETA_WARNING = (r"/[^\n]*BetaWarning:[^\n]*\n[^\n]*\n", "")
+
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
 @pytest.mark.flaky(max_runs=2)
@@ -77,6 +80,7 @@ def test_components_docs_index(
                     MASK_JAFFLE_PLATFORM,
                     _MASK_USING_ENVIRONMENT_LOG_MESSAGE,
                     _MASK_EMPTY_WARNINGS,
+                    _MASK_BETA_WARNING,
                     MASK_PLUGIN_CACHE_REBUILD,
                 ],
                 # For multi-parameter tests which share snippets, we don't want to clear the
