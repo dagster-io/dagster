@@ -169,6 +169,18 @@ def _clean_changelog_entry(text: str) -> str:
     return text
 
 
+def _needs_period_fix(entry: Optional[str]) -> bool:
+    """Check if changelog entry needs a period added at the end."""
+    if not entry or entry == "<UNDOCUMENTED>":
+        return False
+    # Strip trailing whitespace and check if it ends with common punctuation
+    stripped = entry.rstrip()
+    if not stripped:
+        return False
+    # Allow period, exclamation, question mark, or closing paren/bracket as valid endings
+    return stripped[-1] not in ".!?)]"
+
+
 def _extract_prefix_from_text(text: str) -> tuple[Optional[str], str]:
     """Extract library prefix from changelog text and return (prefix, cleaned_text).
 
@@ -303,6 +315,9 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
             if INTERNAL_DEFAULT_STR in line:
                 # ignore changelog entry if it has not been updated
                 raw_changelog_entry_lines = []
+                break
+            # Stop collecting when we hit sync metadata from OSS repo
+            if line.startswith(("ORIGINAL_AUTHOR=", "Synced-From-Dagster", "GitOrigin-RevId:")):
                 break
             # Just collect the changelog entry text, ignore category checkboxes
             # Match only actual checkboxes like "- [x]", "- [X]", "- [ ]", not prefixes like "- [dagster]"
@@ -773,12 +788,46 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                                 )
                                 # Continue loop to show same commit
                             elif not is_discarded:
+                                # Check if entry needs period fix
+                                if _needs_period_fix(commit.changelog_entry):
+                                    feedback_message = (
+                                        "⚠️  Entry doesn't end with a period. Add one? [y/n]"
+                                    )
+                                    _update_display_and_refresh(
+                                        live,
+                                        commit,
+                                        i,
+                                        len(processed_commits),
+                                        should_thank,
+                                        is_discarded,
+                                        feedback_message,
+                                    )
+                                    # Get y/n response
+                                    old_settings = termios.tcgetattr(sys.stdin)
+                                    try:
+                                        tty.setraw(sys.stdin.fileno())
+                                        fix_response = sys.stdin.read(1).lower()
+                                    finally:
+                                        termios.tcsetattr(
+                                            sys.stdin, termios.TCSADRAIN, old_settings
+                                        )
+                                    if fix_response == "y":
+                                        # Auto-fix by adding period
+                                        assert commit.changelog_entry is not None
+                                        fixed_entry = commit.changelog_entry.rstrip() + "."
+                                        commit = replace(commit, changelog_entry=fixed_entry)
+                                        processed_commits[i - 1] = commit
+                                        feedback_message = "✅ Added period, adding to changelog"
+                                    else:
+                                        feedback_message = "✅ Added to changelog (without period)"
+
                                 # Add to changelog
                                 final_commit = replace(
                                     commit, ignore=not should_thank
                                 )  # Use ignore field to track thanks
                                 final_commits.append(final_commit)
-                                feedback_message = "✅ Added to changelog"
+                                if not feedback_message.startswith("✅"):
+                                    feedback_message = "✅ Added to changelog"
                                 _update_display_and_refresh(
                                     live,
                                     commit,
