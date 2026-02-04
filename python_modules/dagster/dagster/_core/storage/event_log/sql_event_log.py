@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from functools import cached_property
+from functools import cached_property, cache
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -228,6 +228,7 @@ class SqlEventLogStorage(EventLogStorage):
             "partition": partition,
         }
 
+    @cache
     def has_asset_key_col(self, column_name: str) -> bool:
         with self.index_connection() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
