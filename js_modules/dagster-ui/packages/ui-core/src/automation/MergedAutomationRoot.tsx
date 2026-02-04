@@ -1,6 +1,7 @@
 import {
   Body2,
   Box,
+  Caption,
   Colors,
   Icon,
   NonIdealState,
@@ -192,20 +193,30 @@ export const MergedAutomationRoot = () => {
     }
 
     return (
-      <AutomationsTable
-        headerCheckbox={
-          viewerHasAnyInstigationPermission ? (
+      <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
+        {viewerHasAnyInstigationPermission ? (
+          <Box padding={{horizontal: 24, bottom: 2}} border="bottom">
             <CheckAllBox
               checkedCount={checkedCount}
               totalCount={permissionedKeysOnScreen.length}
               onToggleAll={onToggleAll}
+              size="small"
+              label={
+                <Box margin={{left: 4}} style={{marginTop: '-1px'}}>
+                  <Caption>Select all</Caption>
+                </Box>
+              }
             />
-          ) : undefined
-        }
-        repos={repos}
-        checkedKeys={checkedKeys}
-        onToggleCheckFactory={onToggleFactory}
-      />
+          </Box>
+        ) : null}
+        <div style={{overflow: 'hidden'}}>
+          <AutomationsTable
+            repos={repos}
+            checkedKeys={checkedKeys}
+            onToggleCheckFactory={onToggleFactory}
+          />
+        </div>
+      </Box>
     );
   };
 
@@ -218,7 +229,7 @@ export const MergedAutomationRoot = () => {
         </Box>
       ) : null}
       <Box
-        padding={{horizontal: 24, vertical: 12}}
+        padding={{horizontal: 20, vertical: 12}}
         flex={{
           direction: 'row',
           alignItems: 'center',

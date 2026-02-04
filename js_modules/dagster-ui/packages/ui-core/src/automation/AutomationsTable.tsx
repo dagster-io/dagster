@@ -22,7 +22,6 @@ type Repository = {
 
 interface Props {
   repos: Repository[];
-  headerCheckbox: React.ReactNode;
   checkedKeys: Set<string>;
   onToggleCheckFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
 }
@@ -89,70 +88,68 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <div style={{overflow: 'hidden'}}>
-      <Container ref={parentRef}>
-        <Inner $totalHeight={totalHeight}>
-          {items.map(({index, key, size, start}) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const row: RowType = flattened[index]!;
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const type = row!.type;
-            if (type === 'header') {
-              return (
-                <Row $height={size} $start={start} key={key}>
-                  <DynamicRepoRow
-                    repoAddress={row.repoAddress}
-                    ref={rowVirtualizer.measureElement}
-                    index={index}
-                    onToggle={onToggle}
-                    onToggleAll={onToggleAll}
-                    expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
-                    showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                    rightElement={<></>}
-                  />
-                </Row>
-              );
-            }
+    <Container ref={parentRef}>
+      <Inner $totalHeight={totalHeight}>
+        {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const row: RowType = flattened[index]!;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const type = row!.type;
+          if (type === 'header') {
+            return (
+              <Row $height={size} $start={start} key={key}>
+                <DynamicRepoRow
+                  repoAddress={row.repoAddress}
+                  ref={rowVirtualizer.measureElement}
+                  index={index}
+                  onToggle={onToggle}
+                  onToggleAll={onToggleAll}
+                  expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
+                  showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+                  rightElement={<></>}
+                />
+              </Row>
+            );
+          }
 
-            if (type === 'sensor') {
-              const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
-              return (
-                <Row $height={size} $start={start} key={key}>
-                  <ObserveAutomationSensorRow
-                    key={key}
-                    index={index}
-                    ref={rowVirtualizer.measureElement}
-                    name={row.sensor}
-                    checked={checkedKeys.has(sensorKey)}
-                    onToggleChecked={onToggleCheckFactory(sensorKey)}
-                    repoAddress={row.repoAddress}
-                  />
-                </Row>
-              );
-            }
+          if (type === 'sensor') {
+            const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
+            return (
+              <Row $height={size} $start={start} key={key}>
+                <ObserveAutomationSensorRow
+                  key={key}
+                  index={index}
+                  ref={rowVirtualizer.measureElement}
+                  name={row.sensor}
+                  checked={checkedKeys.has(sensorKey)}
+                  onToggleChecked={onToggleCheckFactory(sensorKey)}
+                  repoAddress={row.repoAddress}
+                />
+              </Row>
+            );
+          }
 
-            if (type === 'schedule') {
-              const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
+          if (type === 'schedule') {
+            const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
 
-              return (
-                <Row $height={size} $start={start} key={key}>
-                  <ObserveAutomationScheduleRow
-                    key={key}
-                    index={index}
-                    ref={rowVirtualizer.measureElement}
-                    name={row.schedule}
-                    checked={checkedKeys.has(scheduleKey)}
-                    onToggleChecked={onToggleCheckFactory(scheduleKey)}
-                    repoAddress={row.repoAddress}
-                  />
-                </Row>
-              );
-            }
+            return (
+              <Row $height={size} $start={start} key={key}>
+                <ObserveAutomationScheduleRow
+                  key={key}
+                  index={index}
+                  ref={rowVirtualizer.measureElement}
+                  name={row.schedule}
+                  checked={checkedKeys.has(scheduleKey)}
+                  onToggleChecked={onToggleCheckFactory(scheduleKey)}
+                  repoAddress={row.repoAddress}
+                />
+              </Row>
+            );
+          }
 
-            return <div key={key} />;
-          })}
-        </Inner>
-      </Container>
-    </div>
+          return <div key={key} />;
+        })}
+      </Inner>
+    </Container>
   );
 };
