@@ -113,28 +113,33 @@ mid_iteration_terminate_scenarios = [
         initial_spec=two_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1, hours=1)
         .with_all_eager(),
-        execution_fn=lambda state: state.with_runs(
-            *[
-                run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
-                for i in range(25)
-            ],
-            run_request(["C"], partition_key=day_partition_key(state.current_time)),
-        )
-        .evaluate_tick(stop_mid_iteration=True)
-        .assert_requested_runs_for_stopped_iteration(
-            1,
-            run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
-            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
-        )
-        .with_current_time_advanced(minutes=10)
-        .start_asset_daemon()  # starts the daemon again for non-sensor tests
-        .evaluate_tick()
-        .assert_requested_runs()  # doesn't resubmit the stopped runs
-        .with_current_time_advanced(hours=1)
-        .evaluate_tick()
-        .assert_requested_runs(
-            run_request(
-                asset_keys=["A", "B"], partition_key=hour_partition_key(state.current_time, delta=1)
+        execution_fn=lambda state: (
+            state.with_runs(
+                *[
+                    run_request(
+                        ["A"], partition_key=hour_partition_key(state.current_time, delta=-i)
+                    )
+                    for i in range(25)
+                ],
+                run_request(["C"], partition_key=day_partition_key(state.current_time)),
+            )
+            .evaluate_tick(stop_mid_iteration=True)
+            .assert_requested_runs_for_stopped_iteration(
+                1,
+                run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
+                run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
+            )
+            .with_current_time_advanced(minutes=10)
+            .start_asset_daemon()  # starts the daemon again for non-sensor tests
+            .evaluate_tick()
+            .assert_requested_runs()  # doesn't resubmit the stopped runs
+            .with_current_time_advanced(hours=1)
+            .evaluate_tick()
+            .assert_requested_runs(
+                run_request(
+                    asset_keys=["A", "B"],
+                    partition_key=hour_partition_key(state.current_time, delta=1),
+                )
             )
         ),
     ),
@@ -183,69 +188,79 @@ auto_materialize_sensor_scenarios = [
         )
         .with_current_time("2020-01-01T00:05")
         .with_additional_repositories([extra_definitions]),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(run_request(["A"]))
-        .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
-        # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # still no runs should be requested
-        .with_current_time_advanced(minutes=50)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # moved to a new cron schedule tick, request another run
-        .with_current_time_advanced(minutes=10)
-        .evaluate_tick()
-        .assert_requested_runs(run_request(["A"]))
-        .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)]),
+        execution_fn=lambda state: (
+            state.evaluate_tick()
+            .assert_requested_runs(run_request(["A"]))
+            .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
+            # next tick should not request any more runs
+            .with_current_time_advanced(seconds=30)
+            .evaluate_tick()
+            .assert_requested_runs()
+            # still no runs should be requested
+            .with_current_time_advanced(minutes=50)
+            .evaluate_tick()
+            .assert_requested_runs()
+            # moved to a new cron schedule tick, request another run
+            .with_current_time_advanced(minutes=10)
+            .evaluate_tick()
+            .assert_requested_runs(run_request(["A"]))
+            .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
+        ),
     ),
     AssetDaemonScenario(
         id="sensor_interval_respected",
         initial_spec=two_assets_in_sequence.with_all_eager().with_additional_repositories(
             [extra_definitions]
         ),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
-        .evaluate_tick()
-        .assert_requested_runs()  # No runs initially
-        .with_runs(run_request(["A"]))
-        .evaluate_tick()
-        .assert_requested_runs()  # Still no runs because no time has passed
-        .with_current_time_advanced(seconds=10)  # 5 seconds later, no new tick
-        .evaluate_tick()
-        .assert_requested_runs()
-        .with_current_time_advanced(seconds=20)  # Once 30 seconds have passed, runs are created
-        .evaluate_tick()
-        .assert_requested_runs(run_request(["B"])),
+        execution_fn=lambda state: (
+            state.with_runs(run_request(["A", "B"]))
+            .evaluate_tick()
+            .assert_requested_runs()  # No runs initially
+            .with_runs(run_request(["A"]))
+            .evaluate_tick()
+            .assert_requested_runs()  # Still no runs because no time has passed
+            .with_current_time_advanced(seconds=10)  # 5 seconds later, no new tick
+            .evaluate_tick()
+            .assert_requested_runs()
+            .with_current_time_advanced(seconds=20)  # Once 30 seconds have passed, runs are created
+            .evaluate_tick()
+            .assert_requested_runs(run_request(["B"]))
+        ),
     ),
     AssetDaemonScenario(
         id="one_asset_never_materialized",
         initial_spec=one_asset.with_all_eager().with_additional_repositories([extra_definitions]),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(run_request(asset_keys=["A"]))
-        .assert_evaluation(
-            "A", [AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing())]
+        execution_fn=lambda state: (
+            state.evaluate_tick()
+            .assert_requested_runs(run_request(asset_keys=["A"]))
+            .assert_evaluation(
+                "A", [AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing())]
+            )
         ),
     ),
     AssetDaemonScenario(
         id="one_asset_already_launched",
         initial_spec=one_asset.with_all_eager().with_additional_repositories([extra_definitions]),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(run_request(asset_keys=["A"]))
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs(),
+        execution_fn=lambda state: (
+            state.evaluate_tick()
+            .assert_requested_runs(run_request(asset_keys=["A"]))
+            .with_current_time_advanced(seconds=30)
+            .evaluate_tick()
+            .assert_requested_runs()
+        ),
     ),
     AssetDaemonScenario(
         id="one_upstream_observable_asset",
         initial_spec=one_upstream_observable_asset.with_asset_properties(
             automation_condition=AutomationCondition.cron_tick_passed("*/10 * * * *"),
         ),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs()
-        .with_current_time_advanced(minutes=10)
-        .evaluate_tick()
-        .assert_requested_runs(run_request(["A", "B"])),
+        execution_fn=lambda state: (
+            state.evaluate_tick()
+            .assert_requested_runs()
+            .with_current_time_advanced(minutes=10)
+            .evaluate_tick()
+            .assert_requested_runs(run_request(["A", "B"]))
+        ),
     ),
 ]
 

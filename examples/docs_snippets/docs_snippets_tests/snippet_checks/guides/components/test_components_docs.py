@@ -99,8 +99,8 @@ def test_components_docs_index(
         # Scaffold project
         scaffold_project_snip_no = next_snip_no()
         get_letter = make_letter_iterator()
-        get_scaffold_project_snip_name = (
-            lambda: f"{scaffold_project_snip_no}-{get_letter()}-{package_manager}-scaffold.txt"
+        get_scaffold_project_snip_name = lambda: (
+            f"{scaffold_project_snip_no}-{get_letter()}-{package_manager}-scaffold.txt"
         )
         if package_manager == "uv":
             context.run_command_and_snippet_output(

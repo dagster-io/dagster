@@ -592,10 +592,8 @@ def multer_resource(init_context):
 
 @resource(config_schema={"num_one": Field(Int), "num_two": Field(Int)})
 def double_adder_resource(init_context):
-    return (
-        lambda x: x
-        + init_context.resource_config["num_one"]
-        + init_context.resource_config["num_two"]
+    return lambda x: (
+        x + init_context.resource_config["num_one"] + init_context.resource_config["num_two"]
     )
 
 

@@ -45,9 +45,11 @@ def check_accuracy_names(
     suspicious_patterns = ["TEST", "XXXX", "N/A", "Unknown", "Placeholder"]
 
     suspicious_names = raw_customers["name"].apply(
-        lambda x: any(pattern in str(x).upper() for pattern in suspicious_patterns)
-        if pd.notna(x)
-        else False
+        lambda x: (
+            any(pattern in str(x).upper() for pattern in suspicious_patterns)
+            if pd.notna(x)
+            else False
+        )
     )
     suspicious_count = suspicious_names.sum()
     total = len(raw_customers)

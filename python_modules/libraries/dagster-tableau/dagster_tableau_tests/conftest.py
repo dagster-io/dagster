@@ -1,5 +1,3 @@
-# ruff: noqa: SLF001
-
 import uuid
 from unittest.mock import MagicMock, PropertyMock, patch
 

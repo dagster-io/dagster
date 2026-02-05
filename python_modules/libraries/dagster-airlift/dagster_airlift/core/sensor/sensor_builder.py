@@ -226,7 +226,9 @@ def _get_transformer_result(
 
     with user_code_error_boundary(
         AirliftSensorEventTransformerError,
-        lambda: f"Error occurred during event transformation for {airflow_data.airflow_instance.name}",
+        lambda: (
+            f"Error occurred during event transformation for {airflow_data.airflow_instance.name}"
+        ),
     ):
         updated_asset_events = list(event_transformer_fn(context, airflow_data, all_asset_events))
 

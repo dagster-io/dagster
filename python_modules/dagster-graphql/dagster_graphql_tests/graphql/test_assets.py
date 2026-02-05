@@ -3242,17 +3242,19 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             DagsterEventType.ASSET_MATERIALIZATION.value: lambda asset_key: StepMaterializationData(
                 AssetMaterialization(asset_key=asset_key)
             ),
-            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: lambda asset_key: AssetMaterializationPlannedData(
-                asset_key=asset_key
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: lambda asset_key: (
+                AssetMaterializationPlannedData(asset_key=asset_key)
             ),
             DagsterEventType.ASSET_OBSERVATION.value: lambda asset_key: AssetObservationData(
                 AssetObservation(asset_key=asset_key)
             ),
-            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: lambda asset_key: AssetFailedToMaterializeData(
-                AssetMaterializationFailure(
-                    asset_key=asset_key,
-                    failure_type=AssetMaterializationFailureType.FAILED,
-                    reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: lambda asset_key: (
+                AssetFailedToMaterializeData(
+                    AssetMaterializationFailure(
+                        asset_key=asset_key,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+                    )
                 )
             ),
         }

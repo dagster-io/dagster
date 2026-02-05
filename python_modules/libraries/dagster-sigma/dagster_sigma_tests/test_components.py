@@ -98,9 +98,11 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
+            lambda asset_spec: (
+                "snowflake" in asset_spec.kinds
+                and "dbt" in asset_spec.kinds
+                and asset_spec.tags.get("foo") == "bar"
+            ),
             False,
         ),
         ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
@@ -116,8 +118,9 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"deps": ["customers"]},
-            lambda asset_spec: len(asset_spec.deps) == 1
-            and asset_spec.deps[0].asset_key == AssetKey("customers"),
+            lambda asset_spec: (
+                len(asset_spec.deps) == 1 and asset_spec.deps[0].asset_key == AssetKey("customers")
+            ),
             False,
         ),
         (

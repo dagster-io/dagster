@@ -26,7 +26,7 @@ target-version = "py310"
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.11.5"
+required-version = "0.15.0"
 
 [lint]
 
@@ -93,8 +93,31 @@ ignore = [
   # These will be enabled in later phases of the ruff unification objective.
   # See: https://github.com/dagster-io/internal/issues/20346
   "UP007",  # (non-pep604-annotation) Use X | Y for Union types
-  "UP038",  # (non-pep604-isinstance) Use X | Y in isinstance/issubclass instead of (X, Y)
   "UP045",  # (non-pep604-annotation) Use X | None for Optional types
+
+  ##### STABILIZED RULES (ruff 0.15.0 upgrade)
+  # These rules became stable in ruff 0.15.0. Ignoring until violations are fixed.
+
+  # (~280 violations at ruff 0.15.0 upgrade)
+  "RUF043",  # (pytest-raises-match-pattern) Pattern contains metacharacters but is not a raw string
+
+  # (~870 violations at ruff 0.15.0 upgrade)
+  "RUF059",  # (unused-unpacked-variable) Unpacked variable is never used
+
+  # (~62 violations at ruff 0.15.0 upgrade)
+  "PLW0108",  # (unnecessary-lambda) Lambda may be unnecessary; consider inlining inner function
+
+  # (~17 violations at ruff 0.15.0 upgrade)
+  "PLW1641",  # (eq-without-hash) Object does not implement `__hash__` method
+
+  # (~3 violations at ruff 0.15.0 upgrade)
+  "UP042",  # (str-enum-inheritance) Class should inherit from `StrEnum`
+
+  # (~6 violations at ruff 0.15.0 upgrade)
+  "UP046",  # (generic-subclass) Use type parameters instead of `Generic` subclass
+
+  # (~12 violations at ruff 0.15.0 upgrade)
+  "UP047",  # (generic-function) Use type parameters for generic functions
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
