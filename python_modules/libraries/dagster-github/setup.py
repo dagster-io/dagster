@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        "dagster==1.12.14rc1",
+        "dagster==1.12.14rc2",
         # Using a Github app requires signing your own JWT :(
         # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
         "pyjwt[crypto]",

@@ -43,7 +43,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        "dagster==1.12.14rc1",
+        "dagster==1.12.14rc2",
         f"kubernetes<{KUBERNETES_VERSION_UPPER_BOUND}",
         # exclude a google-auth release that added an overly restrictive urllib3 pin that confuses dependency resolvers
         "google-auth!=2.23.1",
