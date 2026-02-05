@@ -2,7 +2,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -23,12 +22,6 @@ def mcp_group():
 @mcp_group.command(name="serve", cls=DgClickCommand)
 @cli_telemetry_wrapper
 def serve_command():
-    if sys.version_info[:2] < (3, 10):
-        exit_with_error(
-            "The MCP server is only supported on Python 3.10 and above. "
-            "Please upgrade your Python version and reinstall `dagster-dg-cli`.",
-        )
-
     from dagster_dg_cli.mcp.server import mcp
 
     mcp.run(transport="stdio")

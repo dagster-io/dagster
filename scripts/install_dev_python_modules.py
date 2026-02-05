@@ -113,10 +113,9 @@ def main(
         "python_modules/libraries/dagstermill",
     ]
 
-    if sys.version_info >= (3, 10):
-        editable_target_paths += [
-            "python_modules/libraries/dagster-ge",
-        ]
+    editable_target_paths += [
+        "python_modules/libraries/dagster-ge",
+    ]
 
     if sys.version_info <= (3, 12):
         editable_target_paths += [

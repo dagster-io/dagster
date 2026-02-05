@@ -93,7 +93,6 @@ ignore = [
   # These will be enabled in later phases of the ruff unification objective.
   # See: https://github.com/dagster-io/internal/issues/20346
   "UP007",  # (non-pep604-annotation) Use X | Y for Union types
-  "UP036",  # (outdated-version-block) Version blocks that are now always true for Python 3.10+
   "UP038",  # (non-pep604-isinstance) Use X | Y in isinstance/issubclass instead of (X, Y)
   "UP045",  # (non-pep604-annotation) Use X | None for Optional types
 ]

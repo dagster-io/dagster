@@ -1,6 +1,5 @@
 # Copied from https://github.com/syrusakbary/aiodataloader
 
-import sys
 from asyncio import (
     AbstractEventLoop,
     Future,
@@ -13,12 +12,7 @@ from asyncio import (
 from collections import namedtuple
 from collections.abc import Callable, Coroutine, Iterable, Iterator, MutableMapping
 from functools import partial
-from typing import Any, Generic, Optional, TypeVar, Union
-
-if sys.version_info >= (3, 10):
-    from typing import TypeGuard
-else:
-    from typing import TypeGuard
+from typing import Any, Generic, Optional, TypeGuard, TypeVar, Union
 
 __version__ = "0.4.0"
 
