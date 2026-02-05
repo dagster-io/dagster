@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.12.14 (core) / 0.28.14 (libraries)
+
+### New
+
+- `@asset_check` and `AssetCheckSpec` now support a `partitions_def` parameter, allowing checks to execute against specific partitions of their upstream asset rather than the entire contents. If set, the partition definition must match the definition of the targeted asset.
+- [ui] The "Select all" checkbox has been restored to the Automations list.
+
+### Bugfixes
+
+- Fixed performance issue where the partition selector would freeze for 30+ seconds when selecting "All" on assets with large (100k+) partition sets. (Thanks, [@ljodea](https://github.com/ljodea)!)
+- Fixed an issue with cron schedules using step patterns (like `*/10` or `*/30`) in the day-of-month field where invalid days weren't properly skipped.
+- [ui] Fixed an issue that could cause incorrect partition statuses to be displayed in the UI.
+- [ui] Partition percentages now round in a more intuitive way.
+- [ui] Row count metadata is now displayed even when set to zero.
+- [dagster-databricks] Fixed an issue where op name generation would occasionally lead to collisions.
+- [dagster-sigma] When building assets for Sigma workbooks that depend on tables unknown to Dagster, an error is logged instead of throwing an exception.
+- [dagster-k8s] Fixed an issue where `PipesK8sClient` would sometimes fail when containers in the `ignored_containers` list failed.
+- [dagster-github] Ensured compatibility with `pyjwt>=2.11.0`,which introduced breaking changes.
+
+### Documentation
+
+- Added an example of censoring PII in run logs.
+- Updated branch deployment docs to include single-agent setup.
+
 ## 1.12.13 (core) / 0.28.13 (libraries)
 
 ### New
