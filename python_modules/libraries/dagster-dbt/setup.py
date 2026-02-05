@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.14",  # dbt-core incompatible with Python 3.14
     install_requires=[
-        "dagster==1.12.14rc3",
+        "dagster==1.12.14rc0",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
         f"dbt-core>=1.7,<{DBT_CORE_VERSION_UPPER_BOUND}",
         "gitpython",
