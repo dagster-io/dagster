@@ -11,10 +11,10 @@ from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_github.resources import GithubClient, GithubResource
 
 FAKE_PRIVATE_RSA_KEY = (
-    rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
+    rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
     .private_bytes(
-        encoding=serialization.Encoding.PEM,  # type: ignore  # (bad stubs)
-        format=serialization.PrivateFormat.TraditionalOpenSSL,  # type: ignore  # (bad stubs)
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
         encryption_algorithm=serialization.NoEncryption(),
     )
     .decode("utf-8")
