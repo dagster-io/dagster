@@ -110,9 +110,6 @@ ignore = [
   # (~17 violations at ruff 0.15.0 upgrade)
   "PLW1641",  # (eq-without-hash) Object does not implement `__hash__` method
 
-  # (~3 violations at ruff 0.15.0 upgrade)
-  "UP042",  # (str-enum-inheritance) Class should inherit from `StrEnum`
-
   # (~6 violations at ruff 0.15.0 upgrade)
   "UP046",  # (generic-subclass) Use type parameters instead of `Generic` subclass
 
