@@ -245,13 +245,15 @@ def tail_cloudwatch_events(
     log_group: str,
     log_stream: str,
     start_time: Optional[int] = None,
+    polling_wait_time:int = 5,
+    logs_lines_per_call: int = 10,
     max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
 ) -> Generator[list["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
     params: dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
-        "limit": 10,
+        "limit": logs_lines_per_call,
     }
 
     if start_time is not None:
@@ -272,7 +274,7 @@ def tail_cloudwatch_events(
         next_token = response["nextForwardToken"]
 
         # Always wait before polling again to avoid excessive API calls
-        time.sleep(10)
+        time.sleep(polling_wait_time)
 
         # Update to the new token (or same token if no new events)
         params["nextToken"] = next_token
