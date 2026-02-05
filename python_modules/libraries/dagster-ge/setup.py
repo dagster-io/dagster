@@ -30,8 +30,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.14",  # great_expectations incompatible with Python 3.14
     install_requires=[
-        "dagster==1.12.14rc0",
-        "dagster-pandas==0.28.14rc0",
+        f"dagster{pin}",
+        f"dagster-pandas{pin}",
         "pandas<3.0.0",
         "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
