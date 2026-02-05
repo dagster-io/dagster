@@ -388,7 +388,7 @@ class LegacyRuleEvaluationContext:
             AssetSubsetWithMetadata,
         )
 
-        mapping = defaultdict(lambda: self.empty_subset())
+        mapping = defaultdict(self.empty_subset)
         has_new_metadata_subset = self.empty_subset()
         for frozen_metadata, asset_partitions in asset_partitions_by_frozen_metadata.items():
             mapping[frozen_metadata] = ValidAssetSubset.from_asset_partitions_set(

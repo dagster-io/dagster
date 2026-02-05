@@ -49,12 +49,12 @@ class DltLoadSpecModel(Resolvable):
 
     pipeline: Annotated[
         Pipeline,
-        Resolver(lambda ctx, path: _load_object_from_python_path(ctx, path), model_field_type=str),
+        Resolver(_load_object_from_python_path, model_field_type=str),
     ]
     source: Annotated[
         DltSource,
         Resolver(
-            lambda ctx, path: _load_object_from_python_path(ctx, path),
+            _load_object_from_python_path,
             model_field_type=str,
         ),
     ]

@@ -378,7 +378,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         # find all of the log_keys to read from and sort them in the order to be read
         log_keys = sorted(
             self.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=io_type),
-            key=lambda x: "/".join(x),
+            key="/".join,
         )
         if len(log_keys) == 0:
             return [], None

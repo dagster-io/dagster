@@ -71,7 +71,7 @@ def log_telemetry_action(
     start_path: Optional[Path] = None,
 ) -> None:
     return shared_log_telemetry_action(
-        lambda: get_telemetry_settings_for_cli(),
+        get_telemetry_settings_for_cli,
         action,
         client_time,
         elapsed_time,

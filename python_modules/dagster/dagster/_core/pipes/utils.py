@@ -194,7 +194,7 @@ class PipesFileMessageReader(PipesMessageReader):
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
         try:
-            for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
+            for line in tail_file(self._path, is_resource_complete.is_set):
                 message = json.loads(line)
                 handler.handle_message(message)
         except:

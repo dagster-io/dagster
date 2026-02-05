@@ -117,7 +117,7 @@ def execute_job_backfill_iteration(
             list(
                 submit_backfill_runs(
                     instance,
-                    lambda: workspace_process_context.create_request_context(),
+                    workspace_process_context.create_request_context,
                     backfill,
                     chunk,
                     submit_threadpool_executor,

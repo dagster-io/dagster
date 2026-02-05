@@ -103,9 +103,6 @@ ignore = [
 
   # (~870 violations at ruff 0.15.0 upgrade)
   "RUF059",  # (unused-unpacked-variable) Unpacked variable is never used
-
-  # (~62 violations at ruff 0.15.0 upgrade)
-  "PLW0108",  # (unnecessary-lambda) Lambda may be unnecessary; consider inlining inner function
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.

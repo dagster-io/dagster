@@ -125,7 +125,7 @@ PATH_OPTIONS = {
                 path_type=Path,
             ),
             help="Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.",
-            default=lambda: Path.cwd(),  # defer for tests
+            default=Path.cwd,  # defer for tests
         ),
     ]
 }
