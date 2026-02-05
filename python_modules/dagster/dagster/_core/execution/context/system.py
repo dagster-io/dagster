@@ -958,24 +958,25 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # job_def.partitions_def will be None, but the assets targeted in this step might still be
         # partitioned. All assets within a step are expected to either have the same partitions_def
         # or no partitions_def. Get the partitions_def from one of the assets that has one.
-        return self.asset_partitions_def
+        return self.entity_partitions_def
 
     @cached_property
     def assets_def(self) -> Optional[AssetsDefinition]:
         return self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
 
     @cached_property
-    def asset_partitions_def(self) -> Optional[PartitionsDefinition]:
+    def entity_partitions_def(self) -> Optional[PartitionsDefinition]:
         """If the current step is executing a partitioned asset, returns the PartitionsDefinition
         for that asset. If there are one or more partitioned assets executing in the step, they're
         expected to all have the same PartitionsDefinition.
         """
         if self.assets_def is not None:
-            for asset_key in self.assets_def.keys:
-                partitions_def = self.job_def.asset_layer.get(asset_key).partitions_def
-                if partitions_def is not None:
-                    return partitions_def
-
+            for spec in self.assets_def.specs:
+                if spec.partitions_def is not None:
+                    return spec.partitions_def
+            for check_spec in self.assets_def.check_specs:
+                if check_spec.partitions_def is not None:
+                    return check_spec.partitions_def
         return None
 
     @property
@@ -1083,7 +1084,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
             if upstream_asset_partitions_def is not None:
-                partitions_def = self.asset_partitions_def if assets_def else None
+                partitions_def = self.entity_partitions_def if assets_def else None
                 with partition_loading_context(dynamic_partitions_store=self.instance):
                     partitions_subset = (
                         partitions_def.empty_subset().with_partition_key_range(
