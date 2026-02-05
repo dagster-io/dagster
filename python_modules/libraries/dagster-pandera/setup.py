@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        "dagster==1.12.14rc0",
+        "dagster==1.12.14rc1",
         "pandas<3.0.0",
         "pandera>=0.24.0",
     ],
