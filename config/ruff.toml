@@ -109,9 +109,6 @@ ignore = [
 
   # (~17 violations at ruff 0.15.0 upgrade)
   "PLW1641",  # (eq-without-hash) Object does not implement `__hash__` method
-
-  # (~12 violations at ruff 0.15.0 upgrade)
-  "UP047",  # (generic-function) Use type parameters for generic functions
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
