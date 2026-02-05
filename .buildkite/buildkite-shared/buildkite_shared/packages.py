@@ -9,6 +9,9 @@ from buildkite_shared.environment import is_feature_branch, run_all_tests
 from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_packages import PythonPackages, changed_filetypes
 
+# Prefix used when OSS repo is nested within internal repo
+_OSS_PREFIX = "dagster-oss"
+
 
 def requirements(name: str, directory: str):
     # First try to infer requirements from the python package
@@ -57,12 +60,16 @@ def skip_reason(
         return None
 
     for change in ChangedFiles.all:
+        # Adjust change path to remove dagster-oss/ prefix
+        norm_change = (
+            Path(*change.parts[1:]) if next(iter(change.parts), None) == _OSS_PREFIX else change
+        )
         if (
             # Our change is in this package's directory
-            (Path(directory) in change.parents)
+            Path(directory) in norm_change.parents
             # The file can alter behavior - exclude things like README changes
             # which we tend to include in .md files
-            and change.suffix in changed_filetypes
+            and norm_change.suffix in changed_filetypes
         ):
             logging.info(f"Building {name} because it has changed")
             return None
