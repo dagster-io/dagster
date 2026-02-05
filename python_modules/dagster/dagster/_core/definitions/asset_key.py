@@ -268,6 +268,14 @@ def asset_keys_from_defs_and_coercibles(
     for el in assets:
         if isinstance(el, AssetsDefinition):
             result.extend(el.keys)
+
+        elif (
+            isinstance(el, Sequence)
+            and not isinstance(el, (str, AssetKey))
+            and all(isinstance(x, str) for x in el)
+        ):
+            result.extend(AssetKey.from_user_string(x) for x in el)
+
         else:
             result.append(
                 AssetKey.from_user_string(el)
