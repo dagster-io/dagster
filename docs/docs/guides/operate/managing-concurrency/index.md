@@ -3,6 +3,8 @@ title: Managing concurrency
 sidebar_label: Managing concurrency
 description: How to limit the number of concurrent runs for jobs, assets, or for an instance of Dagster.
 sidebar_position: 50
+canonicalUrl: '/guides/operate/managing-concurrency'
+slug: '/guides/operate/managing-concurrency'
 ---
 
 This guide covers managing concurrency of Dagster assets, jobs, and Dagster instances to help prevent performance problems and downtime.

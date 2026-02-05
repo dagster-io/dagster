@@ -193,7 +193,10 @@ def skip_if_no_non_docs_markdown_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+    if any(
+        path.suffix == ".md" and Path("dagster-oss/docs") not in path.parents
+        for path in ChangedFiles.all
+    ):
         return None
 
     return "No markdown changes outside of docs"
@@ -293,13 +296,13 @@ def skip_if_no_docs_changes():
         return None
 
     # If anything changes in the docs directory
-    if any(Path("docs") in path.parents for path in ChangedFiles.all):
-        logging.info("Run docs steps because files in the docs directory changed")
+    if any(Path("dagster-oss/docs") in path.parents for path in ChangedFiles.all):
+        logging.info("Run docs steps because files in the dagster-oss/docs directory changed")
         return None
 
     # If anything changes in the examples directory. This is where our docs snippets live.
-    if any(Path("examples") in path.parents for path in ChangedFiles.all):
-        logging.info("Run docs steps because files in the examples directory changed")
+    if any(Path("dagster-oss/examples") in path.parents for path in ChangedFiles.all):
+        logging.info("Run docs steps because files in the dagster-oss/examples directory changed")
         return None
 
     return "No docs changes"

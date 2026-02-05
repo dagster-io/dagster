@@ -14,7 +14,7 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
   title="src/<project_name>/defs/assets.py"
 />
 
-## Limit concurrent runs across all branch deployments (Dagster+ only) {#branch-deployment-concurrency}
+## Limit concurrent runs across all branch deployments (Dagster+ only) \{#branch-deployment-concurrency}
 
 In Dagster+, you can limit the total number of concurrent runs across all [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) using the organization-scoped `max_concurrent_branch_deployment_runs` setting. By default, this value is 50.
 
