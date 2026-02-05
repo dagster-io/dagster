@@ -44,7 +44,7 @@ def test_external_schedule_client_timeout(instance, env_var_default_val: Optiona
     with get_bar_repo_handle(instance) as repository_handle:
         with pytest.raises(
             DagsterUserCodeUnreachableError,
-            match="User code server request timed out due to taking longer than 1 seconds to complete.",
+            match=r"User code server request timed out due to taking longer than 1 seconds to complete.",
         ):
             sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance, repository_handle, "schedule_times_out", None, None, timeout=1

@@ -1206,7 +1206,7 @@ def test_hidden_annotations() -> None:
 
     with pytest.raises(
         CheckError,
-        match="Invariant failed. Description: Attempted to mark undefined parameter `baz` deprecated.",
+        match=r"Invariant failed. Description: Attempted to mark undefined parameter `baz` deprecated.",
     ):
 
         @deprecated_param(param="baz", breaking_version="2.0")

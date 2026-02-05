@@ -62,7 +62,7 @@ def test_load_config_missing_file():
     with tempfile.TemporaryDirectory() as tmpdir:
         eval_dir = Path(tmpdir)
 
-        with pytest.raises(click.UsageError, match="Configuration file .* not found"):
+        with pytest.raises(click.UsageError, match=r"Configuration file .* not found"):
             load_config(eval_dir)
 
 

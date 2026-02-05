@@ -386,7 +386,7 @@ def test_run_step_priority(concurrency_instance_op_granularity):
 
         with pytest.raises(
             Exception,
-            match="Tried to claim a concurrency slot with a priority -2147483648 that was not in the allowed range of a 32-bit signed integer.",
+            match=r"Tried to claim a concurrency slot with a priority -2147483648 that was not in the allowed range of a 32-bit signed integer.",
         ):
             low_context.claim("foo", "too_low_step", step_priority=-(2**31 - 1) + 1000 - 1)
 
@@ -394,7 +394,7 @@ def test_run_step_priority(concurrency_instance_op_granularity):
 
         with pytest.raises(
             Exception,
-            match="Tried to claim a concurrency slot with a priority 2147483648 that was not in the allowed range of a 32-bit signed integer.",
+            match=r"Tried to claim a concurrency slot with a priority 2147483648 that was not in the allowed range of a 32-bit signed integer.",
         ):
             regular_context.claim("foo", "too_high_step", step_priority=(2**31 - 1) + 1)
 

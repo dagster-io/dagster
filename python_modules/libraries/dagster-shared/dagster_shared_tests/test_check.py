@@ -1533,13 +1533,13 @@ def test_iterable():
     assert check.iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
     assert list(check.iterable_param((i for i in [1, 2]), "thisisfine")) == [1, 2]
 
-    with pytest.raises(CheckError, match="Iterable.*str"):
+    with pytest.raises(CheckError, match=r"Iterable.*str"):
         check.iterable_param("lkjsdkf", "stringisiterable")
 
-    with pytest.raises(CheckError, match="Iterable.*None"):
+    with pytest.raises(CheckError, match=r"Iterable.*None"):
         check.iterable_param(None, "nonenotallowed")  # pyright: ignore[reportArgumentType]
 
-    with pytest.raises(CheckError, match="Iterable.*int"):
+    with pytest.raises(CheckError, match=r"Iterable.*int"):
         check.iterable_param(1, "intnotallowed")  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
@@ -1570,10 +1570,10 @@ def test_opt_iterable():
 
     check.opt_iterable_param(None, "noneisallowed")
 
-    with pytest.raises(CheckError, match="Iterable.*str"):
+    with pytest.raises(CheckError, match=r"Iterable.*str"):
         check.opt_iterable_param("lkjsdkf", "stringisiterable")
 
-    with pytest.raises(CheckError, match="Iterable.*int"):
+    with pytest.raises(CheckError, match=r"Iterable.*int"):
         check.opt_iterable_param(1, "intnotallowed")  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):

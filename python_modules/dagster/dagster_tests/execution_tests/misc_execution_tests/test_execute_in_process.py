@@ -214,7 +214,7 @@ def test_output_value_error():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Attempted to retrieve top-level outputs for 'my_job', which has no outputs.",
+        match=r"Attempted to retrieve top-level outputs for 'my_job', which has no outputs.",
     ):
         result.output_value()
 

@@ -1799,7 +1799,7 @@ def test_other_asset_provides_req():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
+        match=r"resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
     ):
         create_test_asset_job(assets=[asset_reqs_foo, asset_provides_foo])
 
@@ -1816,7 +1816,7 @@ def test_transitive_deps_not_provided():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by resource with key 'unused' was not provided.",
+        match=r"resource with key 'foo' required by resource with key 'unused' was not provided.",
     ):
         create_test_asset_job(assets=[the_asset])
 
@@ -1856,7 +1856,7 @@ def test_transitive_io_manager_dep_not_provided():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
+            r"resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
             " was not provided."
         ),
     ):

@@ -98,9 +98,6 @@ ignore = [
   ##### STABILIZED RULES (ruff 0.15.0 upgrade)
   # These rules became stable in ruff 0.15.0. Ignoring until violations are fixed.
 
-  # (~280 violations at ruff 0.15.0 upgrade)
-  "RUF043",  # (pytest-raises-match-pattern) Pattern contains metacharacters but is not a raw string
-
   # (~870 violations at ruff 0.15.0 upgrade)
   "RUF059",  # (unused-unpacked-variable) Unpacked variable is never used
 ]

@@ -409,7 +409,7 @@ def test_nested_function_resource_runtime_config() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Any partially configured, nested resources must be provided as a top level resource.",
+        match=r"Any partially configured, nested resources must be provided as a top level resource.",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions

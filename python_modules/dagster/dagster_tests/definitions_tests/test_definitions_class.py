@@ -606,7 +606,7 @@ def test_asset_missing_resources():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by op 'asset_foo' was not provided.",
+        match=r"resource with key 'foo' required by op 'asset_foo' was not provided.",
     ):
         Definitions.validate_loadable(dg.Definitions(assets=[asset_foo]))
 
@@ -649,7 +649,7 @@ def test_asset_missing_io_manager():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not"
+            r"io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not"
             " provided."
         ),
     ):
@@ -687,7 +687,7 @@ def test_conflicting_asset_resource_defs():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Conflicting versions of resource with key 'foo' were provided to "
+            r"Conflicting versions of resource with key 'foo' were provided to "
             "different assets. When constructing a job, all resource definitions "
             "provided to assets must match by reference equality for a given key."
         ),
@@ -725,7 +725,7 @@ def test_graph_backed_asset_resources():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Conflicting versions of resource with key 'foo' were provided to different assets."
+            r"Conflicting versions of resource with key 'foo' were provided to different assets."
             " When constructing a job, all resource definitions provided to assets must match by"
             " reference equality for a given key."
         ),
@@ -742,7 +742,7 @@ def test_job_with_reserved_name():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
+            r"Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
         ),
     ):
         Definitions.validate_loadable(dg.Definitions(jobs=[the_job]))
@@ -941,7 +941,7 @@ def test_merge_unbound_defs_err_resolved():
     defs1.resolve_all_asset_specs()
     with pytest.raises(
         CheckError,
-        match="Definitions object 0 has previously been resolved.",
+        match=r"Definitions object 0 has previously been resolved.",
     ):
         Definitions.merge_unbound_defs(defs1, defs2)
 

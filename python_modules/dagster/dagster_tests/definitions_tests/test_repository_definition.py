@@ -94,7 +94,7 @@ def test_dupe_op_repo_definition():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Conflicting definitions found in repository with name 'same'. Op/Graph definition"
+            r"Conflicting definitions found in repository with name 'same'. Op/Graph definition"
             " names must be unique within a repository."
         ),
     ):
@@ -489,7 +489,7 @@ def test_dupe_unresolved_job_defs():
 def test_job_validation():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Object mapped to my_job is not an instance of JobDefinition or GraphDefinition.",
+        match=r"Object mapped to my_job is not an instance of JobDefinition or GraphDefinition.",
     ):
 
         @dg.repository  # pyright: ignore[reportArgumentType]
@@ -562,7 +562,7 @@ def test_lazy_graph():
     with pytest.raises(
         CheckError,
         match=(
-            "Invariant failed. Description: Bad constructor for job my_graph: must return"
+            r"Invariant failed. Description: Bad constructor for job my_graph: must return"
             " JobDefinition"
         ),
     ):
@@ -699,7 +699,7 @@ def test_direct_asset_unsatified_resource():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'a' required by op 'asset1' was not provided.",
+        match=r"resource with key 'a' required by op 'asset1' was not provided.",
     ):
         my_repo.get_all_jobs()
 
@@ -719,7 +719,7 @@ def test_direct_asset_unsatified_resource_transitive():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'b' required by resource with key 'a' was not provided.",
+        match=r"resource with key 'b' required by resource with key 'a' was not provided.",
     ):
         my_repo.get_all_jobs()
 
@@ -736,7 +736,7 @@ def test_source_asset_unsatisfied_resource():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'foo' required by resource with key 'foo__io_manager' was not"
+            r"resource with key 'foo' required by resource with key 'foo__io_manager' was not"
             " provided."
         ),
     ):
@@ -764,7 +764,7 @@ def test_source_asset_unsatisfied_resource_transitive():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'bar' required by resource with key 'foo' was not provided.",
+        match=r"resource with key 'bar' required by resource with key 'foo' was not provided.",
     ):
         the_repo.get_all_jobs()
 
@@ -784,7 +784,7 @@ def test_direct_asset_resource_conflicts():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        match=r"Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
         the_repo.get_all_jobs()
 
@@ -810,7 +810,7 @@ def test_source_asset_resource_conflicts():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        match=r"Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
         the_repo.get_all_jobs()
 
@@ -826,7 +826,7 @@ def test_source_asset_resource_conflicts():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        match=r"Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
         other_repo.get_all_jobs()
 
@@ -925,7 +925,7 @@ def test_duplicate_graph_target_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
+            r"sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -937,7 +937,7 @@ def test_duplicate_graph_target_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "schedule '_the_schedule' targets job 'foo', but a different job with the same name"
+            r"schedule '_the_schedule' targets job 'foo', but a different job with the same name"
             " was provided."
         ),
     ):
@@ -975,7 +975,7 @@ def test_duplicate_unresolved_job_target_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved"
+            r"sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved"
             " asset job with the same name was provided."
         ),
     ):
@@ -987,7 +987,7 @@ def test_duplicate_unresolved_job_target_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "schedule '_the_schedule' targets unresolved asset job 'foo', but a different"
+            r"schedule '_the_schedule' targets unresolved asset job 'foo', but a different"
             " unresolved asset job with the same name was provided."
         ),
     ):
@@ -1016,7 +1016,7 @@ def test_duplicate_job_target_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
+            r"sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -1028,7 +1028,7 @@ def test_duplicate_job_target_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "schedule '_the_schedule' targets job 'foo', but a different job with the same name was"
+            r"schedule '_the_schedule' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -1057,7 +1057,7 @@ def test_dupe_jobs_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "schedule '_the_schedule' targets job 'foo', but a different job with the same name was"
+            r"schedule '_the_schedule' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -1069,7 +1069,7 @@ def test_dupe_jobs_invalid():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
+            r"sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -1446,7 +1446,7 @@ def test_auto_materialize_sensors_conflict():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Automation policy sensors '[ab]' and '[ab]' have overlapping asset selections: they both "
+        match=r"Automation policy sensors '[ab]' and '[ab]' have overlapping asset selections: they both "
         "target 'asset1'. Each asset must only be targeted by one automation policy sensor.",
     ):
 

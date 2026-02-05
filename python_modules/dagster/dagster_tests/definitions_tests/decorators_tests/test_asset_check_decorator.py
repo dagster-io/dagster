@@ -534,7 +534,7 @@ def test_definitions_conflicting_checks() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Duplicate asset check key.+asset1.+check1",
+        match=r"Duplicate asset check key.+asset1.+check1",
     ):
         Definitions.validate_loadable(dg.Definitions(asset_checks=[make_check(), make_check()]))
 

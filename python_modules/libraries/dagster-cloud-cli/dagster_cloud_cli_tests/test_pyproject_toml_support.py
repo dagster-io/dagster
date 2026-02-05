@@ -137,7 +137,7 @@ name = "invalid-toml"
     pyproject_path = Path(temp_dir) / "pyproject.toml"
     pyproject_path.write_text(invalid_toml)
 
-    with pytest.raises(ValueError, match="Error parsing pyproject.toml"):
+    with pytest.raises(ValueError, match=r"Error parsing pyproject.toml"):
         deps.get_pyproject_toml_deps(temp_dir)
 
 
