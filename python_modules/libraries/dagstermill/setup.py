@@ -30,7 +30,7 @@ setup(
     ],
     python_requires=">=3.10,<3.15",
     install_requires=[
-        "dagster==1.12.14rc4",
+        "dagster==1.12.14",
         # ipykernel 5.4.0 and 5.4.1 broke papermill
         # see https://github.com/dagster-io/dagster/issues/3401,
         # https://github.com/nteract/papermill/issues/519,

@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_looker_tests*"]),
     install_requires=[
-        "dagster==1.12.14rc4",
+        "dagster==1.12.14",
         "lkml",
         # Remove pin after resolution of: https://github.com/looker-open-source/sdk-codegen/issues/1518
         "looker_sdk<24.18.0",

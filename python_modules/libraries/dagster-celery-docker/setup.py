@@ -30,9 +30,9 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        "dagster==1.12.14rc4",
-        "dagster-celery==0.28.14rc4",
-        "dagster-graphql==1.12.14rc4",
+        "dagster==1.12.14",
+        "dagster-celery==0.28.14",
+        "dagster-graphql==1.12.14",
         "docker",
     ],
     extras_require={

@@ -40,7 +40,7 @@ setup(
         "azure-ai-ml<2.0.0,>=1.28.0",
         "azure-storage-blob<13.0.0,>=12.5.0",
         "azure-storage-file-datalake<13.0.0,>=12.5",
-        "dagster==1.12.14rc4",
+        "dagster==1.12.14",
     ],
     entry_points={"console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"]},
     zip_safe=False,
