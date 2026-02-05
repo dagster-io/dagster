@@ -4,6 +4,7 @@ import os
 import random
 import string
 import sys
+import time
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
@@ -14,7 +15,11 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import DagsterInvariantViolationError
-from dagster._core.pipes.client import PipesLaunchedData, PipesMessageReader, PipesParams
+from dagster._core.pipes.client import (
+    PipesLaunchedData,
+    PipesMessageReader,
+    PipesParams,
+)
 from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
@@ -73,7 +78,9 @@ class PipesS3LogReader(PipesChunkedLogReader):
         self.log_position = 0
 
         super().__init__(
-            interval=interval, target_stream=target_stream or sys.stdout, debug_info=debug_info
+            interval=interval,
+            target_stream=target_stream or sys.stdout,
+            debug_info=debug_info,
         )
 
     @property
@@ -184,7 +191,9 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         self._handler = handler
         try:
             # use buffered stdio to shift the pipes messages to the tail of logs
-            yield {PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR}
+            yield {
+                PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR
+            }
         finally:
             self._handler = None
 
@@ -199,9 +208,7 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
     def no_messages_debug_text(self) -> str:
-        return (
-            "Attempted to read messages by extracting them from the tail of lambda logs directly."
-        )
+        return "Attempted to read messages by extracting them from the tail of lambda logs directly."
 
 
 # Number of retries to attempt getting cloudwatch logs when faced with a throttling exception.
@@ -244,12 +251,17 @@ def tail_cloudwatch_events(
     params: dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
+        "limit": 10,
     }
 
     if start_time is not None:
         params["startTime"] = start_time
+        params["startFromHead"] = True  # Required when using startTime to read forward
 
     response = get_log_events(client=client, max_retries=max_retries, **params)
+    # Remove startTime after first call to avoid conflicts with nextToken
+    params.pop("startTime", None)
+    params["startFromHead"] = True  # Required when using nextToken
 
     while True:
         events = response.get("events")
@@ -257,7 +269,13 @@ def tail_cloudwatch_events(
         if events:
             yield events
 
-        params["nextToken"] = response["nextForwardToken"]
+        next_token = response["nextForwardToken"]
+
+        # Always wait before polling again to avoid excessive API calls
+        time.sleep(10)
+
+        # Update to the new token (or same token if no new events)
+        params["nextToken"] = next_token
 
         response = get_log_events(client=client, max_retries=max_retries, **params)
 
@@ -308,13 +326,18 @@ class PipesCloudWatchLogReader(PipesLogReader):
             return False
 
     def start(self, params: PipesParams, is_session_closed: Event) -> None:
+        # Guard against multiple starts
+        if self.thread is not None:
+            return
+
         if not self.target_is_readable(params):
             raise DagsterInvariantViolationError(
                 "log_group and log_stream must be set either in the constructor or in Pipes params."
             )
 
         self.thread = Thread(
-            target=self._start, kwargs={"params": params, "is_session_closed": is_session_closed}
+            target=self._start,
+            kwargs={"params": params, "is_session_closed": is_session_closed},
         )
         self.thread.start()
 
@@ -324,7 +347,11 @@ class PipesCloudWatchLogReader(PipesLogReader):
         start_time = cast("int", self.start_time or params.get("start_time"))
 
         for events in tail_cloudwatch_events(
-            self.client, log_group, log_stream, start_time=start_time, max_retries=self.max_retries
+            self.client,
+            log_group,
+            log_stream,
+            start_time=start_time,
+            max_retries=self.max_retries,
         ):
             for event in events:
                 for line in event.get("message", "").splitlines():
@@ -407,7 +434,9 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if cursor is not None:
             params["nextToken"] = cursor
 
-        response = get_log_events(client=self.client, max_retries=self.max_retries, **params)
+        response = get_log_events(
+            client=self.client, max_retries=self.max_retries, **params
+        )
 
         events = response.get("events")
 
@@ -416,7 +445,9 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         else:
             cursor = cast("str", response["nextForwardToken"])
             return cursor, "\n".join(
-                cast("str", event.get("message")) for event in events if event.get("message")
+                cast("str", event.get("message"))
+                for event in events
+                if event.get("message")
             )
 
     def no_messages_debug_text(self) -> str:
