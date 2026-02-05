@@ -194,7 +194,7 @@ def test_basic_component_load(
         setup_airbyte_component(
             defs_yaml_contents=component_body,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -317,7 +317,7 @@ def test_basic_component_filter(
                 {"attributes": {"connection_selector": connection_selector}},
             ),
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -417,7 +417,7 @@ class TestAirbyteTranslation(TestTranslation):
             setup_airbyte_component(
                 defs_yaml_contents=body,
             ) as (
-                component,
+                _component,
                 defs,
             ),
         ):

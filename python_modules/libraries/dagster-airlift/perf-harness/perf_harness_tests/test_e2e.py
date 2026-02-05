@@ -20,7 +20,7 @@ def module_and_instance_fixture(request) -> str:
 
 @pytest.fixture(name="dagster_dev_cmd")
 def dagster_dev_cmd_fixture(module_and_instance: tuple) -> list[str]:
-    module, instance = module_and_instance
+    module, _instance = module_and_instance
     return ["dagster", "dev", "-m", module, "-p", "3333"]
 
 

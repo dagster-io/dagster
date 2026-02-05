@@ -228,7 +228,7 @@ class TestDltTranslation(TestTranslationBatched):
                 defs_yaml_contents=body,
                 setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
             ) as (
-                component,
+                _component,
                 defs,
             ),
         ):
@@ -300,7 +300,7 @@ def test_scaffold_component_with_source_and_destination(source: str, destination
 
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
-            defs,
+            _defs,
         ):
             assert isinstance(component, DltLoadCollectionComponent)
             # scaffolder generates a silly sample load right now because the complex parsing logic is flaky

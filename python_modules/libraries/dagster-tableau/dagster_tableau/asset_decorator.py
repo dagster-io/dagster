@@ -110,7 +110,7 @@ def tableau_assets(
     """
     dagster_tableau_translator = dagster_tableau_translator or DagsterTableauTranslator()
 
-    external_asset_specs, materializable_asset_specs = (
+    _external_asset_specs, materializable_asset_specs = (
         parse_tableau_external_and_materializable_asset_specs(
             load_tableau_asset_specs(
                 workspace=workspace,

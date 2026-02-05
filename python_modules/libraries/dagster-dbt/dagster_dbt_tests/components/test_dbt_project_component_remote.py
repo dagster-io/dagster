@@ -283,7 +283,7 @@ def test_scaffold_component_with_git_url_params(
         # Verify the component can be loaded without error
         with (
             scoped_definitions_load_context(),
-            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
         ):
             assert isinstance(component, DbtProjectComponent)
             assert isinstance(component.project, RemoteGitDbtProjectManager)

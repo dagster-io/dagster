@@ -126,7 +126,7 @@ class TestSlingOpCustomization(TestOpCustomization):
     ) -> None:
         with temp_sling_component_instance([{"path": "./replication.yaml", "op": attributes}]) as (
             component,
-            defs,
+            _defs,
         ):
             replications = component.replications
             assert len(replications) == 1

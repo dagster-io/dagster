@@ -472,7 +472,7 @@ def create_assets_def_from_fn_and_decorator_args(
 
     validate_resource_annotated_function(fn)
 
-    out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
+    out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=args.key,
         key_prefix=args.key_prefix,
         name=args.name,

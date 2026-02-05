@@ -79,7 +79,7 @@ def test_basic_component_load(
                 },
             }
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -201,7 +201,7 @@ def test_translation(
             setup_powerbi_component(
                 defs_yaml_contents=body,
             ) as (
-                component,
+                _component,
                 defs,
             ),
         ):
@@ -254,7 +254,7 @@ def test_per_content_type_translation(
         setup_powerbi_component(
             defs_yaml_contents=body,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):

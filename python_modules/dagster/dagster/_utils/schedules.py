@@ -82,7 +82,7 @@ def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
 
 def cron_string_repeats_every_hour(cron_string: str) -> bool:
     """Returns if the given cron schedule repeats every hour."""
-    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
+    cron_parts, _nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
     return len(cron_parts[1]) == 1 and cron_parts[1][0] == "*"
 
 

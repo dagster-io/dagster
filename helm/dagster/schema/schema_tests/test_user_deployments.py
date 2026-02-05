@@ -1275,7 +1275,7 @@ def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launc
     assert len(user_deployments) == 1
 
     image = user_deployments[0].spec.template.spec.containers[0].image
-    image_name, image_tag = image.split(":")
+    _image_name, _image_tag = image.split(":")
 
     deployed_sidecars = user_deployments[0].spec.template.spec.containers[1:]
     assert deployed_sidecars == [

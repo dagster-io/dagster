@@ -441,8 +441,8 @@ def test_asset_backfill_status_count_with_backfill_policies():
 
     (
         completed_backfill_data,
-        requested_asset_partitions,
-        fail_and_downstream_asset_partitions,
+        _requested_asset_partitions,
+        _fail_and_downstream_asset_partitions,
     ) = run_backfill_to_completion(
         instance=instance,
         asset_graph=asset_graph,

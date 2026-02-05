@@ -1081,7 +1081,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         metadata: Optional[RawMetadataMapping] = None,
     ) -> "RunStatusSensorDefinition":
         """Returns a copy of this sensor with the attributes replaced."""
-        job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)
+        _job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)
 
         # We need to store the run_status and monitored_jobs for reconstruction
         # Extract monitored_jobs from the wrapped function's closure if possible

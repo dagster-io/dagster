@@ -100,7 +100,7 @@ def test_s3_component_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert isinstance(defs.resources["my_s3"], S3Resource)
                 assert defs.resources["my_s3"].region_name == "us-east-1"
@@ -120,7 +120,7 @@ def test_s3_no_resource_key():
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources == {}
 
 
@@ -138,7 +138,7 @@ def test_s3_explicit_key():
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert "s3" in defs.resources
                 assert isinstance(defs.resources["s3"], S3Resource)
@@ -165,7 +165,7 @@ def test_s3_file_manager_integration(monkeypatch):
         )
 
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert "my_file_manager" in defs.resources
                 resource = defs.resources["my_file_manager"]
@@ -198,7 +198,7 @@ def test_athena_component_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert defs.resources["athena"].workgroup == "primary"
 
@@ -227,7 +227,7 @@ def test_redshift_component_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert defs.resources["redshift"].host == "cluster.redshift.amazonaws.com"
                 assert defs.resources["redshift"].port == 5439
@@ -252,7 +252,7 @@ def test_ssm_component_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert defs.resources["ssm"].region_name == "us-east-1"
 
@@ -274,7 +274,7 @@ def test_parameter_store_defaults_behavior():
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert defs.resources["parameter_store"].parameters == []
 
@@ -297,7 +297,7 @@ def test_parameter_store_complex_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 res = defs.resources["parameter_store"]
                 assert res.region_name == "us-west-1"
@@ -324,7 +324,7 @@ def test_secrets_manager_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert isinstance(defs.resources["secretsmanager"], SecretsManagerResource)
                 assert defs.resources["secretsmanager"].region_name == "us-east-1"
@@ -347,7 +347,7 @@ def test_secrets_manager_secrets_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert defs.resources["my_secrets"].secrets == [
                     "arn:aws:secretsmanager:us-east-1:123:secret:db"
@@ -377,7 +377,7 @@ def test_rds_component_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert isinstance(defs.resources["production_db"], RDSResource)
                 assert defs.resources["production_db"].endpoint_url == "https://rds.amazonaws.com"
@@ -402,7 +402,7 @@ def test_ecr_public_component_integration(monkeypatch):
             },
         )
         with scoped_definitions_load_context():
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
                 assert defs.resources
                 assert "public_ecr" in defs.resources
                 resource = defs.resources["public_ecr"]

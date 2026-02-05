@@ -2386,7 +2386,7 @@ class TestEventLogStorage:
             storage_id_3, storage_id_2, storage_id_1 = [
                 event.storage_id for event in result.records
             ]
-            timestamp_3, timestamp_2, timestamp_1 = [event.timestamp for event in result.records]
+            timestamp_3, _timestamp_2, timestamp_1 = [event.timestamp for event in result.records]
 
             # apply a limit
             result = storage.fetch_run_status_changes(DagsterEventType.RUN_SUCCESS, limit=2)

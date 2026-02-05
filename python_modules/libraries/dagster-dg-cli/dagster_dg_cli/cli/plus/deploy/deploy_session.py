@@ -45,7 +45,7 @@ def _guess_deployment_type(
 def _guess_and_prompt_deployment_type(
     project_dir: Path, full_deployment_name: str, skip_confirmation_prompt: bool
 ) -> DgPlusDeploymentType:
-    deployment_type, branch_name = _guess_deployment_type(project_dir, full_deployment_name)
+    deployment_type, _branch_name = _guess_deployment_type(project_dir, full_deployment_name)
 
     if not skip_confirmation_prompt and not click.confirm("Do you want to continue?"):
         click.echo("Deployment cancelled.")

@@ -487,7 +487,7 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
 @click.argument("build_output_dir", type=click.Path(exists=False))
 @util.python_version_option()
 def deps_main(project_dir, build_output_dir, python_version):
-    deps_pex_path, dagster_version = build_deps_pex(
+    _deps_pex_path, _dagster_version = build_deps_pex(
         project_dir, build_output_dir, util.parse_python_version(python_version)
     )
 

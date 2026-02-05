@@ -171,7 +171,7 @@ def test_translation(
         with (
             setup_sigma_component(
                 defs_yaml_contents=body,
-            ) as (component, defs),
+            ) as (_component, defs),
         ):
             if "key_prefix" in attributes:
                 key = AssetKey(["cool_prefix", "Sample_Workbook"])
@@ -210,7 +210,7 @@ def test_per_content_type_translation(sigma_sample_data: Any, sigma_auth_token: 
         setup_sigma_component(
             defs_yaml_contents=body,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
