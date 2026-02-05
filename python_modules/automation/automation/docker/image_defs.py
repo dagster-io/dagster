@@ -3,9 +3,11 @@ import contextlib
 import os
 import shutil
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Optional
 
 import dagster._check as check
+from dagster._utils import discover_oss_root
 
 from automation.docker.dagster_docker import DagsterDockerImage, default_images_path
 from automation.git import git_repo_root
@@ -27,7 +29,7 @@ def copy_directories(
 
         paths_to_copy = []
         for path in paths:
-            src_path = os.path.join(git_repo_root(cwd), path)
+            src_path = os.path.join(discover_oss_root(Path(cwd)), path)
             check.invariant(
                 os.path.exists(src_path), "Path for copying to image build does not exist"
             )
