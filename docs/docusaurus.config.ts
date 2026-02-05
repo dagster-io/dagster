@@ -198,6 +198,7 @@ const config: Config = {
             <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
             <a href='https://www.dagster.io/security/'>Security</a>
             <a href='https://github.com/dagster-io/dagster/discussions/27332'>Feedback</a>
+            <a onClick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Cookie Preferences</a>
           </div>
 
           <div class='footer__items--right'>
@@ -214,6 +215,8 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
 
   presets: [
+    // Ensure Osano loads before classic preset (and its plugins like gtag)
+    [require.resolve('./src/presets/osano'), {}],
     [
       '@docusaurus/preset-classic',
       {
