@@ -198,6 +198,8 @@ class DefaultPartitionsSubset(
     def __eq__(self, other: object) -> bool:
         return isinstance(other, DefaultPartitionsSubset) and self.subset == other.subset
 
+    __hash__ = None
+
     def __len__(self) -> int:
         return len(self.subset)
 

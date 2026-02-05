@@ -232,6 +232,8 @@ class PartitionDimensionDefinition(
             and self.partitions_def == other.partitions_def
         )
 
+    __hash__ = None
+
 
 class MultiDimensionalPartitionKeyIterator:
     """Helper class to iterate through all the partition keys in a MultiPartitionsDefinition."""

@@ -106,9 +106,6 @@ ignore = [
 
   # (~62 violations at ruff 0.15.0 upgrade)
   "PLW0108",  # (unnecessary-lambda) Lambda may be unnecessary; consider inlining inner function
-
-  # (~17 violations at ruff 0.15.0 upgrade)
-  "PLW1641",  # (eq-without-hash) Object does not implement `__hash__` method
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.

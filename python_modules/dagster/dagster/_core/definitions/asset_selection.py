@@ -744,6 +744,8 @@ class OperandListAssetSelection(AssetSelection):
     def needs_parentheses_when_operand(self) -> bool:
         return True
 
+    __hash__ = None
+
 
 @whitelist_for_serdes
 class AndAssetSelection(OperandListAssetSelection):

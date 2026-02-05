@@ -25,6 +25,8 @@ class AirbyteSyncMode(ABC):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, AirbyteSyncMode) and self.to_json() == other.to_json()
 
+    __hash__ = None
+
     def __init__(self, json_repr: dict[str, Any]):
         self.json_repr = json_repr
 

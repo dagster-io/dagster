@@ -685,6 +685,8 @@ class RunConfig:
 
         return self.to_config_dict() == other.to_config_dict()
 
+    __hash__ = None
+
 
 CoercibleToRunConfig: TypeAlias = Union[dict[str, Any], RunConfig]
 

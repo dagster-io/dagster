@@ -36,3 +36,5 @@ class Partition(Generic[T_cov]):
             return False
         else:
             return self.value == other.value and self.name == other.name
+
+    __hash__ = None

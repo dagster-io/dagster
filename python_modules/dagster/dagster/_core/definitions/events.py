@@ -180,6 +180,8 @@ class Output(Generic[T], EventWithMetadata):
             tags=self.tags,
         )
 
+    __hash__ = None
+
 
 class DynamicOutput(Generic[T]):
     """Variant of :py:class:`Output <dagster.Output>` used to support
@@ -249,6 +251,8 @@ class DynamicOutput(Generic[T]):
             and self.mapping_key == other.mapping_key
             and self.metadata == other.metadata
         )
+
+    __hash__ = None
 
 
 @whitelist_for_serdes

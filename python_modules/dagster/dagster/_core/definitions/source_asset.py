@@ -512,3 +512,5 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 and self.resource_defs == other.resource_defs
                 and self.observe_fn == other.observe_fn
             )
+
+    __hash__ = None

@@ -74,6 +74,8 @@ class DbtManifestAssetSelection(AssetSelection):
             and self.selector == other.selector
         )
 
+    __hash__ = None
+
     @classmethod
     def build(
         cls,

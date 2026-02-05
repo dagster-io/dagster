@@ -120,6 +120,8 @@ class ToposortedPriorityQueue:
                 )
             raise TypeError()
 
+        __hash__ = None
+
     def __init__(
         self,
         asset_graph_view: AssetGraphView,
