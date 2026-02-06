@@ -242,6 +242,9 @@ const config: Config = {
             require.resolve('./src/styles/custom.scss'),
           ],
         },
+        googleTagManager: {
+          containerId: 'GTM-T3P7KMM4',
+        },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
           //lastmod: 'date',
@@ -256,12 +259,6 @@ const config: Config = {
             return items;
           },
         },
-        ...(process.env.GOOGLE_ANALYTICS_TRACKING_ID && {
-          gtag: {
-            trackingID: process.env.GOOGLE_ANALYTICS_TRACKING_ID,
-            anonymizeIP: true,
-          },
-        }),
       } satisfies Preset.Options,
     ],
   ],
