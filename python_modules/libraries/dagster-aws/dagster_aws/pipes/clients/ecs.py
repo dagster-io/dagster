@@ -57,9 +57,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         self._client: ECSClient = client or boto3.client("ecs")
         self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
-        self.forward_termination = check.bool_param(
-            forward_termination, "forward_termination"
-        )
+        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -121,21 +119,16 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
             log_configurations = {
                 container["name"]: container.get("logConfiguration")  # pyright: ignore (reportTypedDictNotRequiredAccess)
-                for container in task_definition_response["taskDefinition"][
-                    "containerDefinitions"
-                ]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                for container in task_definition_response["taskDefinition"]["containerDefinitions"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             }
 
             all_container_names = {
                 container["name"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
-                for container in task_definition_response["taskDefinition"][
-                    "containerDefinitions"
-                ]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                for container in task_definition_response["taskDefinition"]["containerDefinitions"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             }
 
             container_names_with_overrides = {
-                container_override["name"]
-                for container_override in overrides["containerOverrides"]
+                container_override["name"] for container_override in overrides["containerOverrides"]
             }
 
             pipes_args = session.get_bootstrap_env_vars()
@@ -154,9 +147,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             # set environment variables for existing overrides
 
             for container_override in overrides["containerOverrides"]:
-                container_override["environment"] = container_override.get(
-                    "environment", []
-                )
+                container_override["environment"] = container_override.get("environment", [])
                 container_override["environment"].extend(environment_overrides)
 
             # set environment variables for containers that are not in the overrides
@@ -253,9 +244,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                                     client=self._message_reader.client,
                                     log_group=params["log_group"],
                                     log_stream=params["log_stream"],
-                                    start_time=int(
-                                        session.created_at.timestamp() * 1000
-                                    ),
+                                    start_time=int(session.created_at.timestamp() * 1000),
                                     debug_info=f"reader for container {container_name}",
                                 ),
                             )
@@ -270,9 +259,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 for task in response["tasks"]:
                     for container in task["containers"]:  # pyright: ignore (reportTypedDictNotRequiredAccess)
                         if container.get("exitCode") not in (0, None):
-                            failed_containers[container["runtimeId"]] = container.get(
-                                "exitCode"
-                            )  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                            failed_containers[container["runtimeId"]] = container.get("exitCode")  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
                 if failed_containers:
                     raise RuntimeError(
@@ -284,9 +271,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     context.log.warning(
                         "[pipes] Dagster process interrupted, terminating ECS tasks"
                     )
-                    self._terminate(
-                        context=context, wait_response=response, cluster=cluster
-                    )
+                    self._terminate(context=context, wait_response=response, cluster=cluster)
                 raise
 
         context.log.info(f"[pipes] ECS task {task_arn} completed")
@@ -307,9 +292,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         if cluster:
             params["cluster"] = cluster
 
-        waiter_params = (
-            {"WaiterConfig": waiter_config, **params} if waiter_config else params
-        )
+        waiter_params = {"WaiterConfig": waiter_config, **params} if waiter_config else params
 
         waiter.wait(**waiter_params)
 
@@ -348,6 +331,4 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 reason="Dagster process was interrupted",
             )
         except botocore.exceptions.ClientError as e:  # pyright: ignore (reportAttributeAccessIssue)
-            context.log.warning(
-                f"[pipes] Couldn't stop ECS task {task} in cluster {cluster}:\n{e}"
-            )
+            context.log.warning(f"[pipes] Couldn't stop ECS task {task} in cluster {cluster}:\n{e}")

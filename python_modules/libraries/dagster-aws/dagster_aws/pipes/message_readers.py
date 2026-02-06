@@ -191,9 +191,7 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         self._handler = handler
         try:
             # use buffered stdio to shift the pipes messages to the tail of logs
-            yield {
-                PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR
-            }
+            yield {PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR}
         finally:
             self._handler = None
 
@@ -208,7 +206,9 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
             extract_message_or_forward_to_stdout(handler, log_line)
 
     def no_messages_debug_text(self) -> str:
-        return "Attempted to read messages by extracting them from the tail of lambda logs directly."
+        return (
+            "Attempted to read messages by extracting them from the tail of lambda logs directly."
+        )
 
 
 # Number of retries to attempt getting cloudwatch logs when faced with a throttling exception.
@@ -245,7 +245,7 @@ def tail_cloudwatch_events(
     log_group: str,
     log_stream: str,
     start_time: Optional[int] = None,
-    polling_wait_time:int = 5,
+    polling_wait_time: int = 5,
     logs_lines_per_call: int = 10,
     max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
 ) -> Generator[list["OutputLogEventTypeDef"], None, None]:
@@ -436,9 +436,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if cursor is not None:
             params["nextToken"] = cursor
 
-        response = get_log_events(
-            client=self.client, max_retries=self.max_retries, **params
-        )
+        response = get_log_events(client=self.client, max_retries=self.max_retries, **params)
 
         events = response.get("events")
 
@@ -447,9 +445,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         else:
             cursor = cast("str", response["nextForwardToken"])
             return cursor, "\n".join(
-                cast("str", event.get("message"))
-                for event in events
-                if event.get("message")
+                cast("str", event.get("message")) for event in events if event.get("message")
             )
 
     def no_messages_debug_text(self) -> str:
