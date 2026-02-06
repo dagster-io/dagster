@@ -25,4 +25,3 @@ module.exports = function osanoPreset(_context, _options) {
     ],
   };
 };
-
