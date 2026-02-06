@@ -136,7 +136,9 @@ export class BaseSelectionVisitor
 
   public visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
     const parent = ctx.parent;
-    if (!parent) return;
+    if (!parent) {
+      return;
+    }
     const attributeValue = parent.getChild(2) as ParserRuleContext;
     if (this.cursorIndex === (attributeValue?.stop?.stop ?? 0) + 1) {
       this.forceVisit(attributeValue);
