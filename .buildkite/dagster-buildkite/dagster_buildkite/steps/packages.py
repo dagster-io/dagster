@@ -339,7 +339,9 @@ def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: list[str]) -> list[
         os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
     return [
-        p for p in all_files_in_root if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
+        p
+        for p in all_files_in_root
+        if p not in custom_pkg_roots and os.path.exists(os.path.join(GIT_REPO_ROOT, p, "tox.ini"))
     ]
 
 

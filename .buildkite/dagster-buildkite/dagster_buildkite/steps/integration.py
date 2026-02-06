@@ -173,7 +173,7 @@ def skip_if_not_azure_commit():
     """If no dagster-azure files are changed, skip the azure live tests."""
     return (
         None
-        if (any("dagster-azure" in str(path) for path in ChangedFiles.all))
+        if (any("dagster-azure" in str(path) for path in ChangedFiles.all_oss))
         else "Not a dagster-azure commit"
     )
 
@@ -182,7 +182,7 @@ def skip_if_not_gcp_commit():
     """If no dagster-gcp files are changed, skip the gcp live tests."""
     return (
         None
-        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all))
+        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all_oss))
         else "Not a dagster-gcp commit"
     )
 
