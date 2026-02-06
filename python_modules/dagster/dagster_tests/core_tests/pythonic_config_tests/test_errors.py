@@ -30,7 +30,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -59,7 +59,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -85,12 +85,12 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)
 
 
 If this config type represents a resource dependency, its annotation must either:
     - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
-    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency\\[MyUnsupportedType\\]""",
+    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency\[MyUnsupportedType\]""",
     ):
         MyBadResource(unsupported_param=MyUnsupportedType())
 
@@ -110,7 +110,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -128,7 +128,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.asset
@@ -140,7 +140,7 @@ def test_unsupported_primitive_config_type_directly_on_op() -> None:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match=r"""Error defining Dagster config class.
-Unable to resolve config type typing.Tuple\\[str, str\\] to a supported Dagster config type.
+Unable to resolve config type typing.Tuple\[str, str\] to a supported Dagster config type.
 
 
 This config type can be a:
@@ -148,7 +148,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -158,7 +158,7 @@ This config type can be a:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match=r"""Error defining Dagster config class.
-Unable to resolve config type typing.Tuple\\[str, str\\] to a supported Dagster config type.
+Unable to resolve config type typing.Tuple\[str, str\] to a supported Dagster config type.
 
 
 This config type can be a:
@@ -166,7 +166,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.asset
