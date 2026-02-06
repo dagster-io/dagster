@@ -120,7 +120,7 @@ class ToposortedPriorityQueue:
                 )
             raise TypeError()
 
-        __hash__ = None
+        __hash__ = None  # pyright: ignore[reportAssignmentType]
 
     def __init__(
         self,

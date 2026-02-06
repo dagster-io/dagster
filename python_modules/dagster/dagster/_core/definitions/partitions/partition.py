@@ -37,4 +37,4 @@ class Partition(Generic[T_cov]):
         else:
             return self.value == other.value and self.name == other.name
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]

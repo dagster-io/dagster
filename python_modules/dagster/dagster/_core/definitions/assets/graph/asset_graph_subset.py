@@ -210,7 +210,7 @@ class AssetGraphSubset(NamedTuple):
     def __ne__(self, other) -> bool:
         return not self.__eq__(other)
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
     def __repr__(self) -> str:
         return (

@@ -342,4 +342,4 @@ class AutoMaterializePolicy(
             or self.to_automation_condition() == other.to_automation_condition()
         )
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]

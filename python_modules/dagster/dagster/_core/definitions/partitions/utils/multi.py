@@ -232,7 +232,7 @@ class PartitionDimensionDefinition(
             and self.partitions_def == other.partitions_def
         )
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
 
 class MultiDimensionalPartitionKeyIterator:

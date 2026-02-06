@@ -744,7 +744,7 @@ class OperandListAssetSelection(AssetSelection):
     def needs_parentheses_when_operand(self) -> bool:
         return True
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
 
 @whitelist_for_serdes

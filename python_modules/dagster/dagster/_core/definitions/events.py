@@ -180,7 +180,7 @@ class Output(Generic[T], EventWithMetadata):
             tags=self.tags,
         )
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
 
 class DynamicOutput(Generic[T]):
@@ -252,7 +252,7 @@ class DynamicOutput(Generic[T]):
             and self.metadata == other.metadata
         )
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
 
 @whitelist_for_serdes

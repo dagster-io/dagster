@@ -169,7 +169,7 @@ class ManagedElementDiff(
             == sorted(list(other.nested.items()), key=lambda x: x[0])
         )
 
-    __hash__ = None
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
     def get_diff_display_entries(
         self, indent: int = 0
