@@ -15,11 +15,7 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import DagsterInvariantViolationError
-from dagster._core.pipes.client import (
-    PipesLaunchedData,
-    PipesMessageReader,
-    PipesParams,
-)
+from dagster._core.pipes.client import PipesLaunchedData, PipesMessageReader, PipesParams
 from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,

@@ -9,9 +9,7 @@ from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
-from dagster._core.execution.context.asset_execution_context import (
-    AssetExecutionContext,
-)
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -21,10 +19,7 @@ from dagster._core.pipes.client import (
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 
 from dagster_aws.pipes.clients.utils import WaiterConfig
-from dagster_aws.pipes.message_readers import (
-    PipesCloudWatchLogReader,
-    PipesCloudWatchMessageReader,
-)
+from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
     from mypy_boto3_ecs.client import ECSClient
