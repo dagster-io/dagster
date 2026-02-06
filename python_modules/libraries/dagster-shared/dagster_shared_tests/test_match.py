@@ -26,6 +26,10 @@ class MyTuple(NamedTuple):
         (5, Union[int, str], True),
         ("hi", Union[int, str], True),
         (5.0, Union[int, str], False),
+        # Union via pipe syntax (types.UnionType)
+        (5, int | str, True),
+        ("hi", int | str, True),
+        (5.0, int | str, False),
         # Literal
         ("hello", Literal["hello", "world"], True),
         ("nope", Literal["hello", "world"], False),
