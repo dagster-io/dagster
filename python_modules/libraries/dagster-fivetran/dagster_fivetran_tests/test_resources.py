@@ -571,3 +571,91 @@ def test_fetch_workspace_data_empty_groups_warning(
         # Verify warning was logged
         assert any("No Fivetran groups found" in record.message for record in caplog.records)
         assert any("RBAC" in record.message for record in caplog.records)
+
+
+def test_fetch_workspace_data_broken_connector_excluded_by_default(
+    broken_connector_fetch_workspace_data_api_mocks: responses.RequestsMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that broken connectors are excluded by default."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    workspace_data = resource.fetch_fivetran_workspace_data()
+
+    # Verify broken connector is excluded
+    assert len(workspace_data.connectors_by_id) == 0
+
+    # Verify warning was logged
+    assert any(
+        "Ignoring broken connector" in record.message for record in caplog.records
+    )
+    assert any(
+        "include_broken_connectors=True" in record.message for record in caplog.records
+    )
+
+
+def test_fetch_workspace_data_broken_connector_included_when_enabled(
+    broken_connector_fetch_workspace_data_api_mocks: responses.RequestsMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that broken connectors are included when include_broken_connectors=True."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID,
+        api_key=TEST_API_KEY,
+        api_secret=TEST_API_SECRET,
+        include_broken_connectors=True,
+    )
+
+    workspace_data = resource.fetch_fivetran_workspace_data()
+
+    # Verify broken connector is included
+    assert len(workspace_data.connectors_by_id) == 1
+    assert TEST_CONNECTOR_ID in workspace_data.connectors_by_id
+
+    # Verify no "Ignoring broken connector" warning was logged
+    assert not any(
+        "Ignoring broken connector" in record.message for record in caplog.records
+    )
+
+
+def test_fetch_workspace_data_incomplete_connector_always_excluded(
+    incomplete_connector_fetch_workspace_data_api_mocks: responses.RequestsMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that incomplete connectors are always excluded regardless of include_broken_connectors."""
+    # Test with include_broken_connectors=False (default)
+    resource_default = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    workspace_data_default = resource_default.fetch_fivetran_workspace_data()
+
+    # Verify incomplete connector is excluded
+    assert len(workspace_data_default.connectors_by_id) == 0
+
+    # Verify warning was logged for incomplete connector
+    assert any(
+        "Ignoring incomplete connector" in record.message for record in caplog.records
+    )
+
+    # Clear the log and test with include_broken_connectors=True
+    caplog.clear()
+
+    resource_with_broken = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID,
+        api_key=TEST_API_KEY,
+        api_secret=TEST_API_SECRET,
+        include_broken_connectors=True,
+    )
+
+    workspace_data_with_broken = resource_with_broken.fetch_fivetran_workspace_data()
+
+    # Verify incomplete connector is still excluded even with include_broken_connectors=True
+    assert len(workspace_data_with_broken.connectors_by_id) == 0
+
+    # Verify warning was still logged for incomplete connector
+    assert any(
+        "Ignoring incomplete connector" in record.message for record in caplog.records
+    )

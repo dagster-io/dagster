@@ -9,6 +9,7 @@ from dagster_fivetran import (
     FivetranConnectorTableProps,
     FivetranWorkspace,
 )
+from dagster_fivetran.translator import FivetranConnector, FivetranConnectorSetupStateType
 
 from dagster_fivetran_tests.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
 
@@ -63,3 +64,54 @@ def test_translator_custom_metadata(
             "table_name_in_destination_1",
         ]
         assert "dagster/kind/fivetran" in asset_spec.tags
+
+
+def test_fivetran_connector_setup_state_properties() -> None:
+    """Test the is_connected, is_incomplete, and is_broken properties of FivetranConnector."""
+    # Test CONNECTED state
+    connected_connector = FivetranConnector(
+        id="test_id",
+        name="test_name",
+        service="test_service",
+        group_id="test_group_id",
+        setup_state=FivetranConnectorSetupStateType.CONNECTED.value,
+        sync_state="scheduled",
+        paused=False,
+        succeeded_at=None,
+        failed_at=None,
+    )
+    assert connected_connector.is_connected is True
+    assert connected_connector.is_incomplete is False
+    assert connected_connector.is_broken is False
+
+    # Test INCOMPLETE state
+    incomplete_connector = FivetranConnector(
+        id="test_id",
+        name="test_name",
+        service="test_service",
+        group_id="test_group_id",
+        setup_state=FivetranConnectorSetupStateType.INCOMPLETE.value,
+        sync_state="scheduled",
+        paused=False,
+        succeeded_at=None,
+        failed_at=None,
+    )
+    assert incomplete_connector.is_connected is False
+    assert incomplete_connector.is_incomplete is True
+    assert incomplete_connector.is_broken is False
+
+    # Test BROKEN state
+    broken_connector = FivetranConnector(
+        id="test_id",
+        name="test_name",
+        service="test_service",
+        group_id="test_group_id",
+        setup_state=FivetranConnectorSetupStateType.BROKEN.value,
+        sync_state="scheduled",
+        paused=False,
+        succeeded_at=None,
+        failed_at=None,
+    )
+    assert broken_connector.is_connected is False
+    assert broken_connector.is_incomplete is False
+    assert broken_connector.is_broken is True

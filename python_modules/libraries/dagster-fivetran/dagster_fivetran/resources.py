@@ -996,6 +996,15 @@ class FivetranWorkspace(ConfigurableResource):
             "Defaults to True."
         ),
     )
+    include_broken_connectors: bool = Field(
+        default=False,
+        description=(
+            "Whether to include connectors with setup_state 'broken' in the asset graph. "
+            "Broken connectors may have valid schema configurations and can be useful for "
+            "dependency visualization even if they are currently experiencing issues. "
+            "Defaults to False."
+        ),
+    )
 
     @cached_property
     def _log(self) -> logging.Logger:
@@ -1057,10 +1066,19 @@ class FivetranWorkspace(ConfigurableResource):
                 connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,
                 )
-                if not connector.is_connected:
+                # Skip incomplete connectors (never synced) regardless of setting
+                if connector.is_incomplete:
                     self._log.warning(
-                        f"Ignoring incomplete or broken connector `{connector.name}`. "
-                        f"Dagster requires a connector to be connected before fetching its data."
+                        f"Ignoring incomplete connector `{connector.name}`. "
+                        f"Dagster requires a connector to be synced at least once before fetching its data."
+                    )
+                    continue
+
+                # Skip broken connectors unless include_broken_connectors is True
+                if connector.is_broken and not self.include_broken_connectors:
+                    self._log.warning(
+                        f"Ignoring broken connector `{connector.name}`. "
+                        f"Set include_broken_connectors=True to include broken connectors in the asset graph."
                     )
                     continue
 

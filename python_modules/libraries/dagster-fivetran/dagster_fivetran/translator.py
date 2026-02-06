@@ -78,6 +78,14 @@ class FivetranConnector:
         return self.setup_state == FivetranConnectorSetupStateType.CONNECTED.value
 
     @property
+    def is_incomplete(self) -> bool:
+        return self.setup_state == FivetranConnectorSetupStateType.INCOMPLETE.value
+
+    @property
+    def is_broken(self) -> bool:
+        return self.setup_state == FivetranConnectorSetupStateType.BROKEN.value
+
+    @property
     def is_paused(self) -> bool:
         return self.paused
 
