@@ -8,7 +8,7 @@ As open source project maintainers, we collect usage statistics to better unders
 
 We collect telemetry from both the frontend and backend. We do not collect any data processed by Dagster pipelines, and we do not collect any identifiable information about your Dagster definitions, including the names of your assets, ops, or jobs.
 
-Front end telemetry is collected from a JavaScript bundle hosted unminified at `https://dagster.io/oss-telemetry.js`. This bundle may change over time.
+Front end telemetry is collected from a JavaScript bundle hosted unminified at [https://dagster-website.vercel.app/oss-telemetry.js](https://dagster-website.vercel.app/oss-telemetry.js). This bundle may change over time.
 
 Backend telemetry collection is logged at `$DAGSTER_HOME/logs/` if `$DAGSTER_HOME` is set or `~/.dagster/logs/` if not set.
 
