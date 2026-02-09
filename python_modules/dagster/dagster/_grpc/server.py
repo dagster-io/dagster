@@ -263,13 +263,15 @@ class LoadedRepositories:
         with enter_loadable_target_origin_load_context(loadable_target_origin):
             with user_code_error_boundary(
                 DagsterUserCodeLoadError,
-                lambda: "Error occurred during the loading of Dagster definitions in\n"
-                + ", ".join(
-                    [
-                        f"{k}={v}"
-                        for k, v in loadable_target_origin._asdict().items()
-                        if v is not None
-                    ]
+                lambda: (
+                    "Error occurred during the loading of Dagster definitions in\n"
+                    + ", ".join(
+                        [
+                            f"{k}={v}"
+                            for k, v in loadable_target_origin._asdict().items()
+                            if v is not None
+                        ]
+                    )
                 ),
             ):
                 loadable_targets = get_loadable_targets(
@@ -292,8 +294,10 @@ class LoadedRepositories:
                 )
                 with user_code_error_boundary(
                     DagsterUserCodeLoadError,
-                    lambda: "Error occurred during the loading of Dagster definitions in "
-                    + pointer.describe(),
+                    lambda: (
+                        "Error occurred during the loading of Dagster definitions in "
+                        + pointer.describe()
+                    ),
                 ):
                     repo_def = recon_repo.get_definition()
                     # force load of all lazy constructed code artifacts to prevent
@@ -472,9 +476,8 @@ class DagsterApiServer(DagsterApiServicer):
             self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
             if using_dagster_dev() and not use_verbose():
-                removed_system_frame_hint = (
-                    lambda is_first_hidden_frame,
-                    i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
+                removed_system_frame_hint = lambda is_first_hidden_frame, i: (
+                    f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
                     if is_first_hidden_frame
                     else f"  [{i} dagster system frames hidden]\n"
                 )

@@ -56,9 +56,11 @@ test_cases = [
     TranslationTestCase(
         name="tags-and-kinds",
         attributes={"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-        assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
-        and "dbt" in asset_spec.kinds
-        and asset_spec.tags.get("foo") == "bar",
+        assertion=lambda asset_spec: (
+            "snowflake" in asset_spec.kinds
+            and "dbt" in asset_spec.kinds
+            and asset_spec.tags.get("foo") == "bar"
+        ),
     ),
     TranslationTestCase(
         name="code-version",
@@ -78,8 +80,9 @@ test_cases = [
     TranslationTestCase(
         name="deps",
         attributes={"deps": ["nonexistent"]},
-        assertion=lambda asset_spec: len(asset_spec.deps) == 1
-        and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
+        assertion=lambda asset_spec: (
+            len(asset_spec.deps) == 1 and asset_spec.deps[0].asset_key == AssetKey("nonexistent")
+        ),
     ),
     TranslationTestCase(
         name="automation_condition",

@@ -215,7 +215,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         yield from fivetran.sync_and_poll(context=context)
 
     def _load_asset_specs(self, state: FivetranWorkspaceData) -> Sequence[dg.AssetSpec]:
-        connector_selector_fn = self.connector_selector or (lambda connector: bool(connector))
+        connector_selector_fn = self.connector_selector or (bool)
         return [
             self.translator.get_asset_spec(props).merge_attributes(
                 metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: self.translator}

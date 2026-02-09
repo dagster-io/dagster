@@ -71,7 +71,8 @@ class ComputeLogManager(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra=lambda schema, model: ComputeLogManager.json_schema_extra(schema, model),
+        # Lambda required: defers evaluation until class is fully defined
+        json_schema_extra=lambda schema, model: ComputeLogManager.json_schema_extra(schema, model),  # noqa: PLW0108
     )
 
     @staticmethod

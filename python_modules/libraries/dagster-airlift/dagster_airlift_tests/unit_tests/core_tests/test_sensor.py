@@ -436,7 +436,7 @@ def test_pluggable_transformation(init_load_context: None, instance: DagsterInst
                 )
         return new_events
 
-    result, context = build_and_invoke_sensor(
+    result, _context = build_and_invoke_sensor(
         assets_per_task={
             "dag": {"task": [("a", [])]},
         },
@@ -520,7 +520,7 @@ def test_dag_level_override_materializations(
     freeze_datetime = datetime(2021, 1, 1)
 
     with freeze_time(freeze_datetime):
-        result, context = build_and_invoke_sensor(
+        result, _context = build_and_invoke_sensor(
             assets_per_task={},
             dag_level_asset_overrides={"dag": ["a", "b"]},
             instance=instance,

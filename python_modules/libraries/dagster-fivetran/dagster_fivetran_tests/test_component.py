@@ -76,7 +76,7 @@ def test_basic_component_load(
         setup_fivetran_component(
             defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -175,7 +175,7 @@ def test_basic_component_filter(
                 {"attributes": {"connector_selector": connector_selector}},
             ),
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -235,7 +235,7 @@ class TestFivetranTranslation(TestTranslation):
             setup_fivetran_component(
                 defs_yaml_contents=body,
             ) as (
-                component,
+                _component,
                 defs,
             ),
         ):

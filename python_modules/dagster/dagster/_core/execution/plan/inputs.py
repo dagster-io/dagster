@@ -419,7 +419,9 @@ class FromConfig(StepInputSource):
     ) -> Iterator[object]:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
-            msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
+            msg_fn=lambda: (
+                f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":'
+            ),
             log_manager=step_context.log,
         ):
             dagster_type = self.get_associated_input_def(step_context.job_def).dagster_type
@@ -609,7 +611,9 @@ def _load_input_with_input_manager(
     step_context = cast("StepExecutionContext", context.step_context)
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
-        msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
+        msg_fn=lambda: (
+            f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":'
+        ),
         step_context=step_context,
         step_key=step_context.step.key,
         input_name=context.name,

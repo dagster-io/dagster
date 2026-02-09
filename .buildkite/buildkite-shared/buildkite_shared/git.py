@@ -18,15 +18,32 @@ def get_commit_message(rev):
     )
 
 
+# Prefix used when OSS repo is nested within internal repo
+_OSS_PREFIX = "dagster-oss"
+
+
+def _strip_oss_prefix(path: Path) -> Path:
+    """If the path is within the dagster-oss/ directory, strip that prefix."""
+    return Path(*path.parts[1:]) if next(iter(path.parts), None) == _OSS_PREFIX else path
+
+
 @dataclass
 class GitInfo:
     directory: Path
     base_branch: Optional[str] = "master"
 
 
+INTERNAL_OSS_PREFIX = Path("dagster-oss")
+
+
 class ChangedFiles:
     _repositories: set[Path] = set()
     all: set[Path] = set()
+
+    # All changed files in OSS dagster. If we're in an internal repo, this is a
+    # filtered subset of `all` with the dagster-oss/ prefix stripped. If we're
+    # already in dagster-oss, this is the same as `all`.
+    all_oss: set[Path] = set()
 
     @classmethod
     def load_from_git(cls, git_info: GitInfo) -> None:
@@ -66,9 +83,18 @@ class ChangedFiles:
             .strip()
             .split("\n")
         )
+
         for path in sorted(paths):
             if path:
                 logging.info("  - " + path)
                 cls.all.add(Path(path))
 
+        if (git_info.directory / INTERNAL_OSS_PREFIX).exists():  # is internal
+            cls.all_oss = {
+                _strip_oss_prefix(path) for path in cls.all if path.parts[0] == _OSS_PREFIX
+            }
+        else:
+            cls.all_oss = cls.all
+
+        cls._repositories.add(git_info.directory)
         os.chdir(original_directory)

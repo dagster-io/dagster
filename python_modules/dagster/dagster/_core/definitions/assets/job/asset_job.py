@@ -430,7 +430,7 @@ def build_node_deps(
     Mapping[NodeHandle, AssetsDefinition],
 ]:
     # sort so that nodes get a consistent name
-    assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: (sorted(ak for ak in ad.keys)))
+    assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: sorted(ak for ak in ad.keys))
 
     # if the same graph/op is used in multiple assets_definitions, their invocations must have
     # different names. we keep track of definitions that share a name and add a suffix to their

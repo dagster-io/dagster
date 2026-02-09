@@ -62,7 +62,7 @@ def test_op_input_arguments():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            '"context" is not a valid name in Dagster. It conflicts with a Dagster or python '
+            r'"context" is not a valid name in Dagster. It conflicts with a Dagster or python '
             "reserved keyword."
         ),
     ):

@@ -5,6 +5,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -925,7 +926,7 @@ def get_type_str(t: Any) -> str:
         # It's a parametric type like list[str], Union[int, str], etc.
         args = get_args(t)
         arg_strs = sorted([get_type_str(a) for a in args])
-        if origin is Union:
+        if origin in (Union, UnionType):
             return " | ".join(arg_strs)
         if origin is Literal:
             arg_strs = [f'"{a}"' for a in arg_strs]

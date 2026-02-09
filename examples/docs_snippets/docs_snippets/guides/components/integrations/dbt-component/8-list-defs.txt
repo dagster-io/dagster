@@ -14,7 +14,7 @@ dg list defs
 │              │ │               │         │ stg_payments  │ duckdb │ as well as some derived facts based on         │ │
 │              │ │               │         │               │        │ payments                                       │ │
 │              │ │               │         │               │        │                                                │ │
-│              │ │               │         │               │        │ ###…                                           │ │
+│              │ │               │         │               │        │ #### …                                         │ │
 │              │ ├───────────────┼─────────┼───────────────┼────────┼────────────────────────────────────────────────┤ │
 │              │ │ raw_customers │ default │               │ dbt    │ dbt seed raw_customers                         │ │
 │              │ │               │         │               │ duckdb │                                                │ │
@@ -44,7 +44,7 @@ dg list defs
 │              │ │               │         │               │        │     with source as (                           │ │
 │              │ │               │         │               │        │                                                │ │
 │              │ │               │         │               │        │         {#-                                    │ │
-│              │ │               │         │               │        │         Normally we…                           │ │
+│              │ │               │         │               │        │         Normally we would …                    │ │
 │              │ ├───────────────┼─────────┼───────────────┼────────┼────────────────────────────────────────────────┤ │
 │              │ │ stg_orders    │ default │ raw_orders    │ dbt    │ dbt model stg_orders                           │ │
 │              │ │               │         │               │ duckdb │                                                │ │
@@ -53,7 +53,7 @@ dg list defs
 │              │ │               │         │               │        │     with source as (                           │ │
 │              │ │               │         │               │        │                                                │ │
 │              │ │               │         │               │        │         {#-                                    │ │
-│              │ │               │         │               │        │         Normally we wo…                        │ │
+│              │ │               │         │               │        │         Normally we would sel…                 │ │
 │              │ ├───────────────┼─────────┼───────────────┼────────┼────────────────────────────────────────────────┤ │
 │              │ │ stg_payments  │ default │ raw_payments  │ dbt    │ dbt model stg_payments                         │ │
 │              │ │               │         │               │ duckdb │                                                │ │
@@ -62,7 +62,7 @@ dg list defs
 │              │ │               │         │               │        │     with source as (                           │ │
 │              │ │               │         │               │        │                                                │ │
 │              │ │               │         │               │        │         {#-                                    │ │
-│              │ │               │         │               │        │         Normally…                              │ │
+│              │ │               │         │               │        │         Normally we wou…                       │ │
 │              │ └───────────────┴─────────┴───────────────┴────────┴────────────────────────────────────────────────┘ │
 │ Asset Checks │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳┳┓ │
 │              │ ┃ Key                                                                                             ┃┃┃ │

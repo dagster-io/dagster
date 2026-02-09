@@ -149,11 +149,11 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
     if not is_feature_branch():
         return None
 
-    if any(path.suffix == ".py" for path in ChangedFiles.all):
+    if any(path.suffix == ".py" for path in ChangedFiles.all_oss):
         return None
 
     if overrides and any(
-        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
+        Path(override) in path.parents for override in overrides for path in ChangedFiles.all_oss
     ):
         return None
 
@@ -167,7 +167,7 @@ def skip_if_no_pyright_requirements_txt_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.match("pyright/*/requirements.txt") for path in ChangedFiles.all):
+    if any(path.match("pyright/*/requirements.txt") for path in ChangedFiles.all_oss):
         return None
 
     return "No pyright requirements.txt changes"
@@ -180,7 +180,7 @@ def skip_if_no_yaml_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all):
+    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all_oss):
         return None
 
     return "No yaml changes"
@@ -193,7 +193,10 @@ def skip_if_no_non_docs_markdown_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+    if any(
+        path.suffix == ".md" and Path("dagster-oss/docs") not in path.parents
+        for path in ChangedFiles.all_oss
+    ):
         return None
 
     return "No markdown changes outside of docs"
@@ -201,18 +204,18 @@ def skip_if_no_non_docs_markdown_changes():
 
 @functools.cache
 def has_helm_changes():
-    return any(Path("helm") in path.parents for path in ChangedFiles.all)
+    return any(Path("helm") in path.parents for path in ChangedFiles.all_oss)
 
 
 @functools.cache
 def has_dagster_airlift_changes():
-    return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
+    return any("dagster-airlift" in str(path) for path in ChangedFiles.all_oss)
 
 
 @functools.cache
 def has_dg_changes():
     return any(
-        "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in ChangedFiles.all
+        "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in ChangedFiles.all_oss
     )
 
 
@@ -232,7 +235,7 @@ def has_component_integration_changes():
     ]
     return any(
         any(integration in str(path) for integration in component_integrations)
-        for path in ChangedFiles.all
+        for path in ChangedFiles.all_oss
     )
 
 
@@ -241,7 +244,7 @@ def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(
         Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
-        for path in ChangedFiles.all
+        for path in ChangedFiles.all_oss
     )
 
 
@@ -250,10 +253,10 @@ def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
     return (
         None
         if (
-            any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all)
+            any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all_oss)
             # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
             # Do not skip tests if changes are made to this test suite.
-            or any("dagster-dbt/kitchen-sink" in str(path) for path in ChangedFiles.all)
+            or any("dagster-dbt/kitchen-sink" in str(path) for path in ChangedFiles.all_oss)
         )
         else "Not a dagster-dbt Cloud commit"
     )
@@ -263,7 +266,7 @@ def skip_if_not_dagster_dbt_commit() -> Optional[str]:
     """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
     return (
         None
-        if (any("dagster_dbt" in str(path) for path in ChangedFiles.all))
+        if (any("dagster_dbt" in str(path) for path in ChangedFiles.all_oss))
         else "Not a dagster-dbt commit"
     )
 
@@ -293,13 +296,13 @@ def skip_if_no_docs_changes():
         return None
 
     # If anything changes in the docs directory
-    if any(Path("docs") in path.parents for path in ChangedFiles.all):
-        logging.info("Run docs steps because files in the docs directory changed")
+    if any(Path("dagster-oss/docs") in path.parents for path in ChangedFiles.all_oss):
+        logging.info("Run docs steps because files in the dagster-oss/docs directory changed")
         return None
 
     # If anything changes in the examples directory. This is where our docs snippets live.
-    if any(Path("examples") in path.parents for path in ChangedFiles.all):
-        logging.info("Run docs steps because files in the examples directory changed")
+    if any(Path("dagster-oss/examples") in path.parents for path in ChangedFiles.all_oss):
+        logging.info("Run docs steps because files in the dagster-oss/examples directory changed")
         return None
 
     return "No docs changes"

@@ -1406,15 +1406,13 @@ def _get_failed_and_downstream_asset_graph_subset(
 ) -> AssetGraphSubset:
     failed_and_downstream_subset = bfs_filter_asset_graph_view(
         asset_graph_view,
-        lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=_get_subset_in_target_subset(
-                    asset_graph_view,
-                    candidate_asset_graph_subset,
-                    asset_backfill_data.target_subset,
-                ),
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
+        lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
+            passed_asset_graph_subset=_get_subset_in_target_subset(
+                asset_graph_view,
+                candidate_asset_graph_subset,
+                asset_backfill_data.target_subset,
+            ),
+            excluded_asset_graph_subsets_and_reasons=[],
         ),
         initial_asset_graph_subset=failed_asset_graph_subset,
         include_full_execution_set=False,
@@ -1620,16 +1618,17 @@ def _execute_asset_backfill_iteration_inner(
 
     asset_subset_to_request, not_requested_and_reasons = bfs_filter_asset_graph_view(
         asset_graph_view,
-        lambda candidate_asset_graph_subset,
-        visited: _should_backfill_atomic_asset_graph_subset_unit(
-            asset_graph_view=asset_graph_view,
-            candidate_asset_graph_subset_unit=candidate_asset_graph_subset,
-            asset_graph_subset_matched_so_far=visited,
-            materialized_subset=updated_materialized_subset,
-            requested_subset=asset_backfill_data.requested_subset,
-            target_subset=asset_backfill_data.target_subset,
-            failed_and_downstream_subset=failed_and_downstream_subset,
-            logger=logger,
+        lambda candidate_asset_graph_subset, visited: (
+            _should_backfill_atomic_asset_graph_subset_unit(
+                asset_graph_view=asset_graph_view,
+                candidate_asset_graph_subset_unit=candidate_asset_graph_subset,
+                asset_graph_subset_matched_so_far=visited,
+                materialized_subset=updated_materialized_subset,
+                requested_subset=asset_backfill_data.requested_subset,
+                target_subset=asset_backfill_data.target_subset,
+                failed_and_downstream_subset=failed_and_downstream_subset,
+                logger=logger,
+            )
         ),
         initial_asset_graph_subset=candidate_asset_graph_subset,
         include_full_execution_set=True,

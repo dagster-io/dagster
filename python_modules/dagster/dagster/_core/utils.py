@@ -199,7 +199,7 @@ def imap(
         iterable: The iterator to apply the function to.
         func: The function to apply to each element of the iterator.
     """
-    work_queue: deque[Future] = deque([])
+    work_queue: deque[Future] = deque()
 
     # create a small task which waits on the iterator
     # and enqueues work items as they become available

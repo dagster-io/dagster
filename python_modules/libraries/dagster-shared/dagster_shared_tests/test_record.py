@@ -464,7 +464,7 @@ def test_lazy_import():
     assert AnnotatedModel(foos=[])
 
     with pytest.raises(
-        check.CheckError, match="Expected <class 'dagster_shared.utils.test.TestType'>"
+        check.CheckError, match=r"Expected <class 'dagster_shared.utils.test.TestType'>"
     ):
         AnnotatedModel(foos=[1, 2, 3])  # pyright: ignore[reportArgumentType]
 
@@ -949,7 +949,7 @@ def test_pydantic() -> None:
 
 def test_runtime_typecheck_pydantic_field() -> None:
     with pytest.raises(
-        CheckError, match="pydantic.Field is not supported as a default value for @record fields.*"
+        CheckError, match=r"pydantic.Field is not supported as a default value for @record fields.*"
     ):
 
         @record

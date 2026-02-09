@@ -28,9 +28,11 @@ def get_airflow_instance() -> AirflowInstance:
 
 def eager_asset(assets_def: AssetsDefinition) -> AssetsDefinition:
     return assets_def.map_asset_specs(
-        lambda spec: spec._replace(automation_condition=AutomationCondition.eager())
-        if spec.automation_condition is None
-        else spec
+        lambda spec: (
+            spec._replace(automation_condition=AutomationCondition.eager())
+            if spec.automation_condition is None
+            else spec
+        )
     )
 
 
@@ -43,11 +45,11 @@ def apply_eager_automation(defs: Definitions) -> Definitions:
             continue
         assets.append(
             asset.map_asset_specs(
-                lambda spec: spec.replace_attributes(
-                    automation_condition=AutomationCondition.eager()
+                lambda spec: (
+                    spec.replace_attributes(automation_condition=AutomationCondition.eager())
+                    if spec.automation_condition is None
+                    else spec
                 )
-                if spec.automation_condition is None
-                else spec
             )
         )
     return Definitions(

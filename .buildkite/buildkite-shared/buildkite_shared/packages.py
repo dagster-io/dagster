@@ -56,10 +56,10 @@ def skip_reason(
         logging.info(f"Building {name} we're not on a feature branch")
         return None
 
-    for change in ChangedFiles.all:
+    for change in ChangedFiles.all_oss:
         if (
             # Our change is in this package's directory
-            (Path(directory) in change.parents)
+            Path(directory) in change.parents
             # The file can alter behavior - exclude things like README changes
             # which we tend to include in .md files
             and change.suffix in changed_filetypes

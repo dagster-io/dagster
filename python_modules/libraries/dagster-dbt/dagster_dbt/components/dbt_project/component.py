@@ -221,7 +221,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 },
             ],
         ),
-    ] = field(default_factory=lambda: DagsterDbtComponentTranslatorSettings())
+    ] = field(default_factory=DagsterDbtComponentTranslatorSettings)
     prepare_if_dev: Annotated[
         bool,
         Resolver.default(

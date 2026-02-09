@@ -4,8 +4,6 @@ description: API reference for the Dagster Hightouch integration.
 sidebar_position: 500
 ---
 
-# dagster-hightouch API reference
-
 ## Components
 
 The `HightouchSyncComponent` is the modern, declarative way to define Hightouch syncs as Dagster assets.

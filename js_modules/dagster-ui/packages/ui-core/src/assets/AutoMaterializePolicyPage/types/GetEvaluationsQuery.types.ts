@@ -345,7 +345,7 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
   description: string;
   startTimestamp: number | null;
   endTimestamp: number | null;
-  numTrue: number;
+  numTrue: number | null;
   uniqueId: string;
   childUniqueIds: Array<string>;
   numCandidates: number | null;
@@ -374,7 +374,7 @@ export type NewEvaluationNodeFragment = {
   startTimestamp: number | null;
   endTimestamp: number | null;
   numCandidates: number | null;
-  numTrue: number;
+  numTrue: number | null;
   isPartitioned: boolean;
   childUniqueIds: Array<string>;
   operatorType: string;
@@ -398,7 +398,7 @@ export type AssetConditionEvaluationRecordFragment = {
   __typename: 'AssetConditionEvaluationRecord';
   id: string;
   evaluationId: string;
-  numRequested: number;
+  numRequested: number | null;
   runIds: Array<string>;
   timestamp: number;
   startTimestamp: number | null;
@@ -414,7 +414,7 @@ export type AssetConditionEvaluationRecordFragment = {
           description: string;
           startTimestamp: number | null;
           endTimestamp: number | null;
-          numTrue: number;
+          numTrue: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
           numCandidates: number | null;
@@ -812,7 +812,7 @@ export type AssetConditionEvaluationRecordFragment = {
     startTimestamp: number | null;
     endTimestamp: number | null;
     numCandidates: number | null;
-    numTrue: number;
+    numTrue: number | null;
     isPartitioned: boolean;
     childUniqueIds: Array<string>;
     operatorType: string;
@@ -864,7 +864,7 @@ export type GetEvaluationsQuery = {
           __typename: 'AssetConditionEvaluationRecord';
           id: string;
           evaluationId: string;
-          numRequested: number;
+          numRequested: number | null;
           runIds: Array<string>;
           timestamp: number;
           startTimestamp: number | null;
@@ -880,7 +880,7 @@ export type GetEvaluationsQuery = {
                   description: string;
                   startTimestamp: number | null;
                   endTimestamp: number | null;
-                  numTrue: number;
+                  numTrue: number | null;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
                   numCandidates: number | null;
@@ -1298,7 +1298,7 @@ export type GetEvaluationsQuery = {
             startTimestamp: number | null;
             endTimestamp: number | null;
             numCandidates: number | null;
-            numTrue: number;
+            numTrue: number | null;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
             operatorType: string;
@@ -1339,7 +1339,7 @@ export type GetSlimEvaluationsQuery = {
           __typename: 'AssetConditionEvaluationRecord';
           id: string;
           evaluationId: string;
-          numRequested: number;
+          numRequested: number | null;
           runIds: Array<string>;
           timestamp: number;
           startTimestamp: number | null;
@@ -1355,7 +1355,7 @@ export type GetSlimEvaluationsQuery = {
                   description: string;
                   startTimestamp: number | null;
                   endTimestamp: number | null;
-                  numTrue: number;
+                  numTrue: number | null;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
                   numCandidates: number | null;
@@ -1773,7 +1773,7 @@ export type GetSlimEvaluationsQuery = {
             startTimestamp: number | null;
             endTimestamp: number | null;
             numCandidates: number | null;
-            numTrue: number;
+            numTrue: number | null;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
             operatorType: string;
@@ -1815,7 +1815,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
           description: string;
           startTimestamp: number | null;
           endTimestamp: number | null;
-          numTrue: number;
+          numTrue: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
           numCandidates: number | null;

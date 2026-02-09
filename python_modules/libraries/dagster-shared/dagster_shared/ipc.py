@@ -144,7 +144,7 @@ def interrupt_on_ipc_shutdown_message(pipe_fd: int) -> Iterator[None]:
     """
     # Important to use `send_interrupt` here rather than unconditionally sending a signal. Sending a
     # signal, even to the process itself, often has strange behavior on windows.
-    with monitor_ipc_shutdown_pipe(pipe_fd, handler=lambda: send_interrupt()):
+    with monitor_ipc_shutdown_pipe(pipe_fd, handler=send_interrupt):
         yield
 
 

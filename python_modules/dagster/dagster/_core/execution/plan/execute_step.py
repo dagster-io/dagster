@@ -813,7 +813,9 @@ def _store_output(
         for elt in iterate_with_context(
             lambda: op_execution_error_boundary(
                 DagsterExecutionHandleOutputError,
-                msg_fn=lambda: f'Error occurred while handling output "{output_context.name}" of step "{step_context.step.key}":',
+                msg_fn=lambda: (
+                    f'Error occurred while handling output "{output_context.name}" of step "{step_context.step.key}":'
+                ),
                 step_context=step_context,
                 step_key=step_context.step.key,
                 output_name=output_context.name,

@@ -191,7 +191,7 @@ class _ObservableSourceAsset:
         self.tags = tags
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
-        source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
+        source_asset_key, _source_asset_name = resolve_asset_key_and_name_for_decorator(
             key=self.key,
             key_prefix=self.key_prefix,
             name=self.name,

@@ -239,8 +239,8 @@ def test_invalid_compute_config(databricks_config_path: str):
         )
         with pytest.raises(ComponentTreeException, match="Error while loading component"):
             with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                component,
-                defs,
+                _component,
+                _defs,
             ):
                 pass
 

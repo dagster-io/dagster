@@ -61,7 +61,7 @@ def test_new_resource_runtime() -> None:
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "resources" at the root.',
+        match=r'Missing required config entry "resources" at the root.',
     ):
         res = defs.resolve_implicit_global_asset_job_def().execute_in_process()
 

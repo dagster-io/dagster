@@ -133,7 +133,7 @@ def test_env_var_err() -> None:
     with pytest.raises(
         dg.DagsterInvalidConfigError,
         match=(
-            'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
+            r'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
         ),
     ):
         defs.resolve_implicit_global_asset_job_def().execute_in_process()
@@ -145,7 +145,7 @@ def test_env_var_err() -> None:
     )
     with pytest.raises(
         dg.DagsterInvalidConfigError,
-        match="Invalid use of environment variable wrapper.",
+        match=r"Invalid use of environment variable wrapper.",
     ):
         defs.resolve_implicit_global_asset_job_def().execute_in_process(
             {"resources": {"a_resource": {"config": {"a_str": dg.EnvVar("UNSET_ENV_VAR_RUNTIME")}}}}
@@ -278,7 +278,7 @@ def test_env_var_err_at_instantiation() -> None:
     with pytest.raises(
         dg.DagsterInvalidConfigError,
         match=(
-            'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
+            r'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
         ),
     ):
         ResourceWithString(

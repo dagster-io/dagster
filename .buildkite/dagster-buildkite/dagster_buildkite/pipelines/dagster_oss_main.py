@@ -3,7 +3,7 @@ import os
 import re
 from typing import Optional
 
-from buildkite_shared.environment import is_release_branch, safe_getenv
+from buildkite_shared.environment import safe_getenv
 from buildkite_shared.packages import run_all_tests
 from buildkite_shared.quarantine import (
     filter_and_print_steps_by_quarantined,
@@ -84,7 +84,7 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
         and not os.getenv("CI_DISABLE_INTEGRATION_TESTS")
         and not os.getenv("TRIGGERED_BY_INTERNAL")
     ):
-        if branch_name == "master" or is_release_branch(branch_name):
+        if branch_name == "master":
             pipeline_name = "internal"
             trigger_branch = branch_name  # build on matching internal release branch
             async_step = True

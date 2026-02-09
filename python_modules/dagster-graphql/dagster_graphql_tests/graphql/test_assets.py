@@ -2162,6 +2162,52 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert materialized_ranges[0]["startTime"] == _get_datetime_float(time_0)
         assert materialized_ranges[0]["endTime"] == _get_datetime_float(time_3)
 
+    def test_time_partitions_overlapping_statuses(self, graphql_context: WorkspaceRequestContext):
+        """Test that overlapping partition statuses (e.g., both MATERIALIZED and FAILED) are properly flattened.
+
+        This test verifies that when a partition is both materialized and failed, the flattening
+        logic correctly applies priority (MATERIALIZING > FAILED > MATERIALIZED) to return
+        non-overlapping ranges.
+
+        Without the flattening logic (the old build_time_partition_ranges_generic), this
+        test would fail because overlapping ranges would be returned instead of properly
+        prioritized non-overlapping ranges.
+        """
+        # First materialize partition "b", then fail it
+        _create_partitioned_run(
+            graphql_context, "fail_partition_materialization_job", partition_key="b"
+        )
+
+        # Now fail the same partition - it should now show as FAILED (higher priority)
+        _create_partitioned_run(
+            graphql_context,
+            "fail_partition_materialization_job",
+            partition_key="b",
+            tags={"fail": "true"},
+        )
+
+        graphql_context.clear_loaders()
+
+        # Query partition statuses
+        selector = infer_job_selector(graphql_context, "fail_partition_materialization_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_1D_ASSET_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+
+        # Should show as FAILED (higher priority than MATERIALIZED), not both
+        # The old code without flattening logic would potentially show overlapping ranges
+        failed_partitions = asset_node["assetPartitionStatuses"]["failedPartitions"]
+        materialized_partitions = asset_node["assetPartitionStatuses"]["materializedPartitions"]
+
+        assert "b" in failed_partitions
+        assert "b" not in materialized_partitions  # Should not be in materialized since it failed
+
     def test_asset_observations(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "observation_job")
         result = execute_dagster_graphql(
@@ -3196,17 +3242,19 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             DagsterEventType.ASSET_MATERIALIZATION.value: lambda asset_key: StepMaterializationData(
                 AssetMaterialization(asset_key=asset_key)
             ),
-            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: lambda asset_key: AssetMaterializationPlannedData(
-                asset_key=asset_key
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: lambda asset_key: (
+                AssetMaterializationPlannedData(asset_key=asset_key)
             ),
             DagsterEventType.ASSET_OBSERVATION.value: lambda asset_key: AssetObservationData(
                 AssetObservation(asset_key=asset_key)
             ),
-            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: lambda asset_key: AssetFailedToMaterializeData(
-                AssetMaterializationFailure(
-                    asset_key=asset_key,
-                    failure_type=AssetMaterializationFailureType.FAILED,
-                    reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: lambda asset_key: (
+                AssetFailedToMaterializeData(
+                    AssetMaterializationFailure(
+                        asset_key=asset_key,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+                    )
                 )
             ),
         }

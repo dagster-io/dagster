@@ -39,7 +39,7 @@ def test_top_level_inputs_execution():
     with pytest.raises(
         dg.DagsterTypeCheckDidNotPass,
         match=(
-            'Type check failed for step input "leaf_in" - expected type "Int". Description: Value'
+            r'Type check failed for step input "leaf_in" - expected type "Int". Description: Value'
             ' "bad_value" of python type "str" must be a int.'
         ),
     ):
@@ -802,7 +802,7 @@ def test_top_level_graph_config_mapping_failure():
     with pytest.raises(
         dg.DagsterInvalidConfigError,
         match=(
-            "In job 'my_nested_graph', top level graph 'my_nested_graph' has a configuration error."
+            r"In job 'my_nested_graph', top level graph 'my_nested_graph' has a configuration error."
         ),
     ):
         my_nested_graph.execute_in_process()
@@ -932,7 +932,7 @@ def test_graph_configured_error_in_fn():
     with pytest.raises(
         dg.DagsterConfigMappingFunctionError,
         match=(
-            "The config mapping function on a `configured` GraphDefinition has thrown an "
+            r"The config mapping function on a `configured` GraphDefinition has thrown an "
             "unexpected error during its execution."
         ),
     ):
@@ -1105,7 +1105,7 @@ def test_input_values_name_not_found():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Error when constructing JobDefinition 'my_graph': Input value provided for key 'z',"
+            r"Error when constructing JobDefinition 'my_graph': Input value provided for key 'z',"
             " but job has no top-level input with that name."
         ),
     ):
@@ -1188,7 +1188,7 @@ def test_unsatisfied_input_nested():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Input 'x' of graph 'the_graph' has no way of being resolved.",
+        match=r"Input 'x' of graph 'the_graph' has no way of being resolved.",
     ):
         the_top_level_graph.to_job()
 

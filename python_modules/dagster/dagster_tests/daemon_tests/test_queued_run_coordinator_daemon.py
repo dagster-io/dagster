@@ -1371,7 +1371,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance,
         caplog,
     ):
-        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
+        run_id_1, run_id_2, _run_id_3 = [make_new_run_id() for _ in range(3)]
         workspace = concurrency_limited_workspace_context.create_request_context()
         remote_job = self.get_concurrency_job(workspace)
         foo_key = dg.AssetKey(["prefix", "foo_limited_asset"])

@@ -17,7 +17,10 @@ from dagster._core.definitions.partitions.definition import (
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils.time_window import PartitionRangeStatus
+from dagster._core.definitions.partitions.utils.time_window import (
+    PartitionRangeStatus,
+    fetch_flattened_time_window_ranges,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
@@ -27,7 +30,6 @@ from dagster._core.storage.event_log.sql_event_log import get_max_event_records_
 
 from dagster_graphql.implementation.partition_status_utils import (
     build_multi_partition_ranges_generic,
-    build_time_partition_ranges_generic,
     extract_partition_keys_by_status,
 )
 
@@ -469,8 +471,9 @@ def build_partition_statuses(
     )
 
     if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
-        # Use shared utility to build generic ranges
-        generic_ranges = build_time_partition_ranges_generic(
+        # Use flattened ranges to handle overlapping statuses
+        # (e.g., a partition can be both MATERIALIZED and FAILED)
+        flattened_ranges = fetch_flattened_time_window_ranges(
             {
                 PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,
                 PartitionRangeStatus.FAILED: cast(
@@ -482,16 +485,20 @@ def build_partition_statuses(
             }
         )
 
-        # Convert generic ranges to GraphQL types
+        # Convert flattened ranges to GraphQL types
         graphene_ranges = [
             GrapheneTimePartitionRangeStatus(
-                startTime=r.start_time,
-                endTime=r.end_time,
-                startKey=r.start_key,
-                endKey=r.end_key,
+                startTime=r.time_window.start.timestamp(),
+                endTime=r.time_window.end.timestamp(),
+                startKey=materialized_partitions_subset.partitions_def.get_partition_key_range_for_time_window(
+                    r.time_window
+                ).start,
+                endKey=materialized_partitions_subset.partitions_def.get_partition_key_range_for_time_window(
+                    r.time_window
+                ).end,
                 status=r.status,
             )
-            for r in generic_ranges
+            for r in flattened_ranges
         ]
         return GrapheneTimePartitionStatuses(ranges=graphene_ranges)
     elif isinstance(partitions_def, MultiPartitionsDefinition):

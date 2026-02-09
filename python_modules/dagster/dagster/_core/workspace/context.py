@@ -403,7 +403,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             return self.get_full_job(selector)
 
         return await self.get_code_location(selector.location_name).gen_subset_job(
-            selector, lambda selector: self.get_full_job(selector)
+            selector, self.get_full_job
         )
 
     def get_execution_plan(

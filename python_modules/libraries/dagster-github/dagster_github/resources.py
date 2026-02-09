@@ -154,7 +154,7 @@ class GithubClient:
                 # JWT expiration time
                 "exp": expires,
                 # GitHub App's identifier
-                "iss": self.app_id,
+                "iss": str(self.app_id),
             },
             self.app_private_rsa_key,
             algorithm="RS256",

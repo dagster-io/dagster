@@ -928,7 +928,7 @@ def test_context_on_resource_basic() -> None:
             self.get_resource_context()
 
     with pytest.raises(
-        CheckError, match="Attempted to get context before resource was initialized."
+        CheckError, match=r"Attempted to get context before resource was initialized."
     ):
         ContextUsingResource().access_context()
 
@@ -966,7 +966,7 @@ def test_context_on_resource_use_instance() -> None:
             return context.instance.storage_directory()
 
     with pytest.raises(
-        CheckError, match="Attempted to get context before resource was initialized."
+        CheckError, match=r"Attempted to get context before resource was initialized."
     ):
         OutputDirResource(output_dir=None).get_effective_output_dir()
 
@@ -1054,7 +1054,7 @@ def test_context_on_resource_nested() -> None:
         output_dir: OutputDirResource
 
     with pytest.raises(
-        CheckError, match="Attempted to get context before resource was initialized."
+        CheckError, match=r"Attempted to get context before resource was initialized."
     ):
         OutputDirWrapperResource(
             output_dir=OutputDirResource(output_dir=None)

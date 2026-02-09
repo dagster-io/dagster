@@ -133,9 +133,8 @@ def list_definitions(
 
         logger = logging.getLogger("dagster")
 
-        removed_system_frame_hint = (
-            lambda is_first_hidden_frame,
-            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
+        removed_system_frame_hint = lambda is_first_hidden_frame, i: (
+            f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
             if is_first_hidden_frame
             else f"  [{i} dagster system frames hidden]\n"
         )

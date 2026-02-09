@@ -341,7 +341,7 @@ def test_partitions_def_changes():
         # Changed to an unpartitioned asset
         with pytest.raises(
             CheckError,
-            match="was partitioned when originally stored, but is no longer partitioned.",
+            match=r"was partitioned when originally stored, but is no longer partitioned.",
         ):
             asset_graph_view.get_entity_subset_from_asset_graph_subset(
                 AssetGraphSubset(

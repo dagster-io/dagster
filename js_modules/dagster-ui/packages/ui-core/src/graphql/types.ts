@@ -400,7 +400,7 @@ export type AssetConditionEvaluationRecord = {
   evaluationNodes: Array<AutomationConditionEvaluationNode>;
   id: Scalars['ID']['output'];
   isLegacy: Scalars['Boolean']['output'];
-  numRequested: Scalars['Int']['output'];
+  numRequested: Maybe<Scalars['Int']['output']>;
   rootUniqueId: Scalars['String']['output'];
   runIds: Array<Scalars['String']['output']>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -935,7 +935,7 @@ export type AutomationConditionEvaluationNode = {
   expandedLabel: Array<Scalars['String']['output']>;
   isPartitioned: Scalars['Boolean']['output'];
   numCandidates: Maybe<Scalars['Int']['output']>;
-  numTrue: Scalars['Int']['output'];
+  numTrue: Maybe<Scalars['Int']['output']>;
   operatorType: Scalars['String']['output'];
   sinceMetadata: Maybe<SinceConditionMetadata>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -3779,7 +3779,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   endTimestamp: Maybe<Scalars['Float']['output']>;
   entityKey: EntityKey;
   numCandidates: Maybe<Scalars['Int']['output']>;
-  numTrue: Scalars['Int']['output'];
+  numTrue: Maybe<Scalars['Int']['output']>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   uniqueId: Scalars['String']['output'];
 };

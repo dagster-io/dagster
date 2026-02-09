@@ -47,9 +47,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
         -1 * int(step.tags.get(DAGSTER_CELERY_STEP_PRIORITY_TAG, task_default_priority))
         + -1 * _get_run_priority(job_context)
     )
-    priority_for_key = lambda step_key: (
-        priority_for_step(execution_plan.get_step_by_key(step_key))
-    )
+    priority_for_key = lambda step_key: priority_for_step(execution_plan.get_step_by_key(step_key))
     _warn_on_priority_misuse(job_context, execution_plan)
 
     step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]

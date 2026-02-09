@@ -1,4 +1,5 @@
 import inspect
+from types import UnionType
 from typing import TYPE_CHECKING, Any, Union, get_type_hints
 
 from dagster_airbyte.managed.generated import destinations, sources
@@ -33,7 +34,7 @@ def get_param_value(param_name, param_type) -> Any:
         return 1
     elif param_type == bool:
         return True
-    elif getattr(param_type, "__origin__", None) == Union:
+    elif getattr(param_type, "__origin__", None) in (Union, UnionType):
         return get_param_value(param_name, param_type.__args__[0])
     elif getattr(param_type, "__origin__", None) == list:
         return [get_param_value(param_name, param_type.__args__[0])]

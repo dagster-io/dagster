@@ -534,7 +534,7 @@ def get_partition_set_execution_param_data(
 ) -> Union[PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap]:
     (
         job_def,
-        partitions_def,
+        _partitions_def,
         partitioned_config,
     ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
 

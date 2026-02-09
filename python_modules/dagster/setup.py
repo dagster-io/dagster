@@ -137,7 +137,7 @@ setup(
             "rapidfuzz",
             "flaky",
             "psutil",
-            "ruff==0.11.5",
+            "ruff==0.15.0",
         ],
         "test-components": [
             "tomlkit",
@@ -168,7 +168,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.11.5",
+            "ruff==0.15.0",
         ],
     },
     entry_points={

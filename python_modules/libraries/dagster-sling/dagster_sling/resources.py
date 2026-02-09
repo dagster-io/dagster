@@ -8,7 +8,6 @@ import time
 import uuid
 from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
-from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Optional, Union
 
 import sling
@@ -309,17 +308,6 @@ class SlingResource(ConfigurableResource):
             assert isinstance(line, bytes)
             fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
             yield self._clean_line(fmt_line)
-
-    def _exec_sling_cmd(
-        self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
-    ) -> Generator[str, None, None]:
-        with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
-            if proc.stdout:
-                yield from self._process_stdout(proc.stdout, encoding=encoding)
-
-            proc.wait()
-            if proc.returncode != 0:
-                raise Exception("Sling command failed with error code %s", proc.returncode)
 
     def _parse_json_table_output(self, table_output: dict[str, Any]) -> list[dict[str, str]]:
         column_keys: list[str] = table_output["fields"]

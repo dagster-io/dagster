@@ -685,6 +685,8 @@ class RunConfig:
 
         return self.to_config_dict() == other.to_config_dict()
 
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
+
 
 CoercibleToRunConfig: TypeAlias = Union[dict[str, Any], RunConfig]
 

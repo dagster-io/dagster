@@ -106,7 +106,7 @@ class ScenarioSpec:
 
     asset_specs: Sequence[Union[dg.AssetSpec, MultiAssetSpec]]
     check_specs: Sequence[dg.AssetCheckSpec] = field(default_factory=list)
-    current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
+    current_time: datetime.datetime = field(default_factory=get_current_datetime)
     sensors: Sequence[dg.SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
 
@@ -255,7 +255,7 @@ class ScenarioState:
     """A reference to the state of a specific scenario alongside an instance."""
 
     scenario_spec: ScenarioSpec
-    instance: dg.DagsterInstance = field(default_factory=lambda: DagsterInstance.ephemeral())
+    instance: dg.DagsterInstance = field(default_factory=DagsterInstance.ephemeral)
     logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
 
     @property

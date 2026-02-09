@@ -99,9 +99,8 @@ def definitions_validate_command_impl(
     logger = logging.getLogger("dagster")
     logging.captureWarnings(True)
 
-    removed_system_frame_hint = (
-        lambda is_first_hidden_frame,
-        i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
+    removed_system_frame_hint = lambda is_first_hidden_frame, i: (
+        f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
         if is_first_hidden_frame
         else f"  [{i} dagster system frames hidden]\n"
     )

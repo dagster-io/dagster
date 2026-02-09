@@ -23,5 +23,7 @@ dg list components
 ├───────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
 │ dagster_evidence.EvidenceProject                  │ Expose an Evidence.dev dashboard as a Dagster asset.             │
 ├───────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ dagster_evidence.EvidenceProjectComponentV2       │ Evidence.dev project component with state-backed definitions.    │
+├───────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
 │ dagster_sling.SlingReplicationCollectionComponent │ Expose one or more Sling replications to Dagster as assets.      │
 └───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘

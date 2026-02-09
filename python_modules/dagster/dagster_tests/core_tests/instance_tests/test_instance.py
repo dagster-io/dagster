@@ -227,7 +227,7 @@ def test_run_queue_key():
     with pytest.raises(
         dg.DagsterInvalidConfigError,
         match=(
-            "Found config for `run_queue` which is incompatible with `run_coordinator` config"
+            r"Found config for `run_queue` which is incompatible with `run_coordinator` config"
             " entry."
         ),
     ):
@@ -1106,6 +1106,6 @@ def test_invalid_run_id():
     with dg.instance_for_test() as instance:
         with pytest.raises(
             CheckError,
-            match="run_id must be a valid UUID. Got invalid_run_id",
+            match=r"run_id must be a valid UUID. Got invalid_run_id",
         ):
             create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")

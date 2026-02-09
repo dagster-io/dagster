@@ -1,7 +1,7 @@
 import inspect
-import sys
 from collections.abc import Mapping
 from enum import Enum
+from types import UnionType
 from typing import Annotated, Any, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 from dagster_shared.dagster_model.pydantic_compat_layer import (
@@ -35,14 +35,7 @@ from dagster._core.errors import (
 )
 from dagster._utils.typing_api import is_closed_python_optional_type
 
-if sys.version_info >= (3, 10):
-    # Support models being built with the `Foo | Bar` syntax,
-    # not just `Union[Foo, Bar]`
-    from types import UnionType
-
-    _UNION_TYPES = [Union, UnionType]
-else:
-    _UNION_TYPES = [Union]
+_UNION_TYPES = [Union, UnionType]
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470

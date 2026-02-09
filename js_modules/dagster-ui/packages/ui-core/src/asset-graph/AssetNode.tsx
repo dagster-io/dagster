@@ -317,7 +317,7 @@ const PartitionsFacetContent = ({
   }
 
   const {numMaterialized, numPartitions, numFailed} = partitionStats;
-  const filledPct = Math.round((numMaterialized / numPartitions) * 100);
+  const filledPct = Math.floor((numMaterialized / numPartitions) * 100);
   const displayText =
     numFailed > 0
       ? `${filledPct}% filled (${compactNumber(numFailed)} failed)`

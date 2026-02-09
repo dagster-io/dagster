@@ -568,6 +568,8 @@ class TimeWindowPartitionsSubset(
             and self.included_time_windows == other.included_time_windows
         )
 
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
+
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
         from dagster._core.definitions.partitions.snap import TimeWindowPartitionsSnap
 

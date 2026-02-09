@@ -709,7 +709,7 @@ def test_op_selection_nested_unsatisfied_input_values():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an"
+            r"Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an"
             " input_value for input 'x', but downstream input x of op 'the_graph.ingest' has no"
             " other way of being loaded."
         ),

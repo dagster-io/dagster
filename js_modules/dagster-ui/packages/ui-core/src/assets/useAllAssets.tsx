@@ -30,14 +30,22 @@ const RETRY_INTERVAL = 1000; // 1 second
 
 const DEFAULT_BATCH_LIMIT = 1000;
 
+// Note: This hook is a bit odd - we use weakMapMemoize instead of useMemo! We do this
+// so that many instances of `useAllAssetsNodes` (eg: in a scrolling list of assets
+// each using useAssetHealthData) all share the SAME cache of allAssetNodes / allAssetKeys.
+// Otherwise there's one-computation-per-hook, even with correct use of useMemo.
+//
+export const nodesAndKeysForEntries = weakMapMemoize(
+  (assetEntries: Record<string, LocationWorkspaceAssetsQuery>) => {
+    const allAssetNodes = getAllAssetNodes(assetEntries);
+    const allAssetKeys = new Set(allAssetNodes.map((node) => tokenForAssetKey(node.key)));
+    return {allAssetKeys, allAssetNodes};
+  },
+);
+
 export function useAllAssetsNodes() {
   const {assetEntries, loadingAssets: loading} = useContext(WorkspaceContext);
-  const allAssetNodes = useMemo(() => getAllAssetNodes(assetEntries), [assetEntries]);
-
-  const allAssetKeys = useMemo(() => {
-    return new Set(allAssetNodes.map((node) => tokenForAssetKey(node.key)));
-  }, [allAssetNodes]);
-
+  const {allAssetNodes, allAssetKeys} = nodesAndKeysForEntries(assetEntries);
   return {assets: allAssetNodes, allAssetKeys, loading};
 }
 

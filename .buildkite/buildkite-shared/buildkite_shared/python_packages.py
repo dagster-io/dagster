@@ -3,14 +3,10 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
 import logging
 import subprocess
-
-# TODO: core doesn't exist in python 3.12, so remove this once we've migrated to setuptools
-from distutils import core as distutils_core  # pyright: ignore[reportAttributeAccessIssue]
-from importlib import reload
 from pathlib import Path
 from typing import Optional
 
-import tomli
+import tomllib  # requires Python 3.11+
 from buildkite_shared.git import ChangedFiles, GitInfo
 from pkg_resources import Requirement, parse_requirements
 
@@ -35,28 +31,16 @@ class PythonPackage:
     def __init__(self, setup_path: Path):
         self.directory = setup_path
 
-        if (setup_path / "setup.py").exists():
-            # run_setup stores state in a global variable. Reload the module
-            # each time we use it - otherwise we'll get the previous invocation's
-            # distribution if our setup.py doesn't implement setup() correctly
-            reload(distutils_core)
+        pyproject_toml = setup_path / "pyproject.toml"
 
-            distribution = distutils_core.run_setup(str(setup_path / "setup.py"), stop_after="init")
-
-            self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
-            self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
-            self.name = distribution.get_name()
-        else:
-            pyproject_toml = setup_path / "pyproject.toml"
-            assert pyproject_toml.exists(), (
-                f"expected pyproject.toml to exist in directory {setup_path}"
-            )
-
+        # Prefer pyproject.toml over setup.py. This supports the migration from
+        # setup.py to pyproject.toml - packages may have both during transition.
+        if pyproject_toml.exists():
             try:
                 with open(pyproject_toml, "rb") as f:
-                    project = tomli.load(f)["project"]
+                    project = tomllib.load(f)["project"]
             except KeyError:
-                # this directory has a pyproject.toml but isn't really a python projects,
+                # this directory has a pyproject.toml but isn't really a python project,
                 # ie docs/
                 self.name = setup_path.name
                 self._install_requires = []
@@ -65,6 +49,28 @@ class PythonPackage:
                 self.name = project["name"]
                 self._install_requires = project.get("dependencies", [])
                 self._extras_require = project.get("optional-dependencies", {})
+        elif (setup_path / "setup.py").exists():
+            # Legacy fallback using distutils (deprecated in 3.10, removed in 3.12)
+            # Import lazily to avoid import error on Python 3.12+
+            from distutils import (
+                core as distutils_core,  # pyright: ignore[reportAttributeAccessIssue]
+            )
+            from importlib import reload
+
+            # run_setup stores state in a global variable. Reload the module
+            # each time we use it - otherwise we'll get the previous invocation's
+            # distribution if our setup.py doesn't implement setup() correctly
+            reload(distutils_core)
+
+            distribution = distutils_core.run_setup(str(setup_path / "setup.py"), stop_after="init")
+
+            self._install_requires = distribution.install_requires or []  # type: ignore[attr-defined]
+            self._extras_require = distribution.extras_require or {}  # type: ignore[attr-defined]
+            self.name = distribution.get_name()
+        else:
+            raise ValueError(
+                f"expected pyproject.toml or setup.py to exist in directory {setup_path}"
+            )
 
     @property
     def install_requires(self) -> set[Requirement]:

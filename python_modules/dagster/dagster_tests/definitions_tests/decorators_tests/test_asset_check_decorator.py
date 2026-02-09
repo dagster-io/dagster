@@ -534,7 +534,7 @@ def test_definitions_conflicting_checks() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Duplicate asset check key.+asset1.+check1",
+        match=r"Duplicate asset check key.+asset1.+check1",
     ):
         Definitions.validate_loadable(dg.Definitions(asset_checks=[make_check(), make_check()]))
 
@@ -1343,3 +1343,39 @@ def test_unpartitioned_check_on_partitioned_asset() -> None:
 
     # This should not raise an error - unpartitioned checks can target partitioned assets
     dg.Definitions.validate_loadable(dg.Definitions(assets=[my_asset], asset_checks=[my_check]))
+
+
+def test_execute_partitioned_asset_check_with_input() -> None:
+    """Test that executing a partitioned asset check that receives the asset value as input works.
+
+    This is a regression test for a bug where entity_partitions_def (formerly asset_partitions_def)
+    only looked at asset specs, not check specs, causing input loading to fail for partitioned checks.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def my_asset() -> int:
+        return 1
+
+    @dg.asset_check(asset=my_asset, partitions_def=partitions_def)
+    def my_check(my_asset: int) -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=my_asset > 0)
+
+    defs = dg.Definitions(
+        assets=[my_asset],
+        asset_checks=[my_check],
+        jobs=[
+            dg.define_asset_job(
+                "job1",
+                selection=AssetSelection.all() | AssetSelection.all_asset_checks(),
+                partitions_def=partitions_def,
+            )
+        ],
+    )
+    job_def = defs.resolve_job_def("job1")
+    result = job_def.execute_in_process(partition_key="a")
+
+    assert result.success
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    assert check_evals[0].passed

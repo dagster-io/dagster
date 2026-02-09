@@ -1529,11 +1529,9 @@ def make_random_subset(
 
     return bfs_filter_asset_graph_view(
         asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
+        condition_fn=lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
+            passed_asset_graph_subset=candidate_asset_graph_subset,
+            excluded_asset_graph_subsets_and_reasons=[],
         ),
         initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
             root_asset_partitions, asset_graph
@@ -1562,11 +1560,9 @@ def make_subset_from_partition_keys(
 
     return bfs_filter_asset_graph_view(
         asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
+        condition_fn=lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
+            passed_asset_graph_subset=candidate_asset_graph_subset,
+            excluded_asset_graph_subsets_and_reasons=[],
         ),
         initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
             root_asset_partitions, asset_graph
@@ -1989,8 +1985,8 @@ def test_asset_backfill_status_counts():
 
     (
         completed_backfill_data,
-        requested_asset_partitions,
-        fail_and_downstream_asset_partitions,
+        _requested_asset_partitions,
+        _fail_and_downstream_asset_partitions,
     ) = run_backfill_to_completion(
         instance=instance,
         asset_graph=asset_graph,
