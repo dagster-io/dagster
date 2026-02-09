@@ -17,6 +17,7 @@ export type ValidateSubscriptionEmailResult =
 export function validateSubscriptionEmail(
   email: string,
   existingEmails: string[],
+  subscribe: boolean,
 ): ValidateSubscriptionEmailResult {
   const trimmed = email.trim();
   if (!trimmed) {
@@ -25,8 +26,11 @@ export function validateSubscriptionEmail(
   if (!isValidEmail(trimmed)) {
     return {valid: false, error: 'Enter a valid email address (e.g. name@example.com)'};
   }
-  if (existingEmails.includes(trimmed)) {
+  if (existingEmails.includes(trimmed) && subscribe) {
     return {valid: false, error: 'This email is already subscribed'};
+  }
+  if (!existingEmails.includes(trimmed) && !subscribe) {
+    return {valid: false, error: 'This email is not subscribed'};
   }
   return {valid: true, error: null};
 }

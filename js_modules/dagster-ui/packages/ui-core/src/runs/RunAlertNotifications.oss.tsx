@@ -31,10 +31,11 @@ export const RunAlertNotifications = (
 
   const handleAddEmail = async () => {
     setLoading(true);
-    const trimmed = emailInput.trim();
+    const trimmed = emailInput.trim().toLowerCase();
     setValidationError(null);
+    const isSubscribing = true;
 
-    const validation = validateSubscriptionEmail(trimmed, subscribers);
+    const validation = validateSubscriptionEmail(trimmed, subscribers, isSubscribing);
     if (!validation.valid) {
       setValidationError(validation.error);
       setLoading(false);
@@ -57,9 +58,10 @@ export const RunAlertNotifications = (
   const handleRemoveEmail = async () => {
     setLoading(true);
 
-    const trimmed = emailInput.trim();
+    const trimmed = emailInput.trim().toLowerCase();
+    const isSubscribing = false;
 
-    const validation = validateSubscriptionEmail(trimmed, subscribers);
+    const validation = validateSubscriptionEmail(trimmed, subscribers, isSubscribing);
     if (!validation.valid) {
       setValidationError(validation.error);
       setLoading(false);
@@ -67,11 +69,17 @@ export const RunAlertNotifications = (
     }
 
     const result = await subscribeToNotifications({
-      variables: { runId, subscribe: false, trimmed },
+      variables: { runId, subscribe: false, email: trimmed },
     });
     const data = result.data?.subscribeToNotifications;
     if (data?.__typename === 'SubscribeToNotificationsSuccess') {
       setSubscribers((prev) => prev.filter((e) => e !== trimmed));
+      setEmailInput('');
+    } else {
+      setValidationError(data?.__typename === 'EmailNotFoundError' 
+        ? `Email ${trimmed} not found` 
+        : data?.__typename ? `Error: ${data.__typename}` : 'Failed to unsubscribe'
+      );
     }
     setLoading(false);
   };
@@ -90,7 +98,7 @@ export const RunAlertNotifications = (
   return (
     <>
       <Tooltip content={doneStatuses.has(runStatus) ? "Notifications are not available for completed runs" : "Manage email notifications when this run completes"}>
-        <Button disabled={doneStatuses.has(runStatus)} icon={<Icon name="notifications" />} onClick={() => setDialogOpen(true)}>
+        <Button disabled={!doneStatuses.has(runStatus)} icon={<Icon name="notifications" />} onClick={() => setDialogOpen(true)}>
           Notify on completion
         </Button>
       </Tooltip>
