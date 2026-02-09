@@ -11,18 +11,19 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import { useState } from 'react';
-
+import { RunStatus } from '../graphql/types';
 import { useMutation } from '../apollo-client';
 import { SUBSCRIBE_TO_NOTIFICATIONS_MUTATION } from './RunUtils';
 import { validateSubscriptionEmail } from './runNotificationEmail';
+import { doneStatuses } from './RunStatuses';
 
 export const RunAlertNotifications = (
-  {runId, run_subscribers}: 
-  {runId: string, run_subscribers: string[]},
+  {runId, runSubscribers, runStatus}: 
+  {runId: string, runSubscribers: string[], runStatus: RunStatus},
 ) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
-  const [subscribers, setSubscribers] = useState<string[]>(run_subscribers);
+  const [subscribers, setSubscribers] = useState<string[]>(runSubscribers);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -88,8 +89,8 @@ export const RunAlertNotifications = (
 
   return (
     <>
-      <Tooltip content="Manage email notifications when this run completes">
-        <Button icon={<Icon name="notifications" />} onClick={() => setDialogOpen(true)}>
+      <Tooltip content={doneStatuses.has(runStatus) ? "Notifications are not available for completed runs" : "Manage email notifications when this run completes"}>
+        <Button disabled={doneStatuses.has(runStatus)} icon={<Icon name="notifications" />} onClick={() => setDialogOpen(true)}>
           Notify on completion
         </Button>
       </Tooltip>
@@ -99,7 +100,7 @@ export const RunAlertNotifications = (
         canOutsideClickClose
         canEscapeKeyClose
         title="Notify when run completes"
-        style={{ width: 480 }}
+        style={{ width: 475 }}
       >
         <DialogBody>
           <Box flex={{ direction: 'column', gap: 16 }}>
@@ -109,7 +110,7 @@ export const RunAlertNotifications = (
                   value={emailInput}
                   onChange={handleEmailInputChange}
                   placeholder="Email address"
-                  style={{ flex: 1 }}
+                  fill={true}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
