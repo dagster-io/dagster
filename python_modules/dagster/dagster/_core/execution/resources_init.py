@@ -14,6 +14,7 @@ from dagster._core.definitions.resource_definition import (
     ScopedResourcesBuilder,
     has_at_least_one_parameter,
 )
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -29,6 +30,7 @@ from dagster._core.execution.plan.inputs import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
 from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
+from dagster._core.execution.plan.handle import NodeHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
