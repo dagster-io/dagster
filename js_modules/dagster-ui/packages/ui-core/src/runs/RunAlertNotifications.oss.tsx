@@ -24,16 +24,19 @@ export const RunAlertNotifications = (
   const [emailInput, setEmailInput] = useState('');
   const [subscribers, setSubscribers] = useState<string[]>(run_subscribers);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [subscribeToNotifications] = useMutation(SUBSCRIBE_TO_NOTIFICATIONS_MUTATION);
 
   const handleAddEmail = async () => {
+    setLoading(true);
     const trimmed = emailInput.trim();
     setValidationError(null);
 
     const validation = validateSubscriptionEmail(trimmed, subscribers);
     if (!validation.valid) {
       setValidationError(validation.error);
+      setLoading(false);
       return;
     }
 
@@ -47,16 +50,29 @@ export const RunAlertNotifications = (
     } else {
       setValidationError(data?.__typename ? `Error: ${data.__typename}` : 'Failed to subscribe');
     }
+    setLoading(false);
   };
 
-  const handleRemoveEmail = async (email: string) => {
+  const handleRemoveEmail = async () => {
+    setLoading(true);
+
+    const trimmed = emailInput.trim();
+
+    const validation = validateSubscriptionEmail(trimmed, subscribers);
+    if (!validation.valid) {
+      setValidationError(validation.error);
+      setLoading(false);
+      return;
+    }
+
     const result = await subscribeToNotifications({
-      variables: { runId, subscribe: false, email },
+      variables: { runId, subscribe: false, trimmed },
     });
     const data = result.data?.subscribeToNotifications;
     if (data?.__typename === 'SubscribeToNotificationsSuccess') {
-      setSubscribers((prev) => prev.filter((e) => e !== email));
+      setSubscribers((prev) => prev.filter((e) => e !== trimmed));
     }
+    setLoading(false);
   };
 
   const handleCloseDialog = () => {
@@ -83,7 +99,7 @@ export const RunAlertNotifications = (
         canOutsideClickClose
         canEscapeKeyClose
         title="Notify when run completes"
-        style={{ width: 420 }}
+        style={{ width: 480 }}
       >
         <DialogBody>
           <Box flex={{ direction: 'column', gap: 16 }}>
@@ -101,8 +117,11 @@ export const RunAlertNotifications = (
                     }
                   }}
                 />
-                <Button intent="primary" onClick={handleAddEmail}>
+                <Button intent="primary" loading={loading} onClick={handleAddEmail}>
                   Subscribe
+                </Button>
+                <Button intent="danger" loading={loading} onClick={handleRemoveEmail}>
+                  Unsubscribe
                 </Button>
               </Box>
               {validationError ? (
@@ -115,38 +134,6 @@ export const RunAlertNotifications = (
                 </Box>
               ) : null}
             </Box>
-            {subscribers.length > 0 ? (
-              <Box flex={{ direction: 'column', gap: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>Subscribed emails</div>
-                <Box
-                  flex={{ direction: 'column', gap: 4 }}
-                  style={{ maxHeight: 200, overflow: 'auto' }}
-                >
-                  {subscribers.map((email) => (
-                    <Box
-                      key={email}
-                      flex={{
-                        direction: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 8,
-                      }}
-                      padding={{ vertical: 8, horizontal: 8 }}
-                      background={Colors.backgroundDefault()}
-                      border="all"
-                      style={{ borderRadius: 4 }}
-                    >
-                      <div style={{ fontSize: 13 }}>{email}</div>
-                      <Button
-                        icon={<Icon name="close" />}
-                        onClick={() => handleRemoveEmail(email)}
-                        title="Remove"
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            ) : null}
           </Box>
         </DialogBody>
         <DialogFooter topBorder>
