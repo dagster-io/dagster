@@ -1035,6 +1035,13 @@ class FivetranWorkspace(ConfigurableResource):
         client = self.get_client()
         groups = client.get_groups()["items"]
 
+        if not groups:
+            self._log.warning(
+                "No Fivetran groups found. This may indicate that your API credentials lack "
+                "permission to access any groups. Check your Fivetran RBAC settings "
+                "to ensure your API key has access to the relevant groups."
+            )
+
         for group in groups:
             group_id = group["id"]
 

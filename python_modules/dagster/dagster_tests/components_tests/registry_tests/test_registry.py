@@ -67,9 +67,10 @@ def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]
     return [component_type["key"] for component_type in component_type_list]
 
 
-def _find_repo_root():
+# Works from both standalone OSS and monorepo
+def _find_oss_root():
     current = Path(__file__).parent
-    while not (current / ".git").exists():
+    while not ((current / ".git").exists() or current.name == "dagster-oss"):
         if current == Path("/"):
             raise Exception("Could not find the repository root.")
         current = current.parent
@@ -86,7 +87,7 @@ def _generate_test_component_source(number: int) -> str:
     """)
 
 
-_repo_root = _find_repo_root()
+_repo_root = _find_oss_root()
 
 
 def _get_editable_package_root(pkg_name: str) -> str:

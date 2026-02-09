@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_health.asset_materialization_health import 
     MinimalAssetMaterializationHealthState,
 )
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.definitions.partitions.utils import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.event_api import EventLogCursor
@@ -526,9 +527,10 @@ class GrapheneAsset(graphene.ObjectType):
         if freshness_state is not None:
             ts = freshness_state.updated_timestamp
         else:
-            freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
-                [self._asset_key]
-            ).get(self._asset_key)
+            freshness_state_record = await FreshnessStateRecord.gen(
+                graphene_info.context, self._asset_key
+            )
+
             ts = freshness_state_record.updated_at.timestamp() if freshness_state_record else None
 
         return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds

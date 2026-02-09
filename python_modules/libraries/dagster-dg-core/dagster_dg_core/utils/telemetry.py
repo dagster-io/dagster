@@ -2,6 +2,7 @@ import datetime
 import sys
 from collections.abc import Callable, Mapping
 from functools import wraps
+from pathlib import Path
 from typing import Any, Optional, TypeVar, Union, overload
 
 import click
@@ -16,6 +17,27 @@ from typing_extensions import ParamSpec
 
 from dagster_dg_core.config import DgCliConfig, load_dg_user_file_config
 from dagster_dg_core.version import __version__
+
+
+def _get_project_telemetry_metadata(start_path: Optional[Path] = None) -> dict[str, str]:
+    """Load project telemetry metadata (e.g., project_id) from .dg/telemetry.yaml if it exists.
+
+    Walks up from start_path (or cwd if not provided) to find the nearest .dg/telemetry.yaml file.
+    """
+    import yaml
+
+    project_telemetry_data = {}
+    path = start_path or Path.cwd()
+    while path != path.parent:
+        telemetry_file = path / ".dg" / "telemetry.yaml"
+        if telemetry_file.exists():
+            data = yaml.safe_load(telemetry_file.read_text())
+            if data and isinstance(data, dict):
+                if "project_id" in data:
+                    project_telemetry_data["project_id"] = str(data["project_id"])
+            break
+        path = path.parent
+    return project_telemetry_data
 
 
 def get_telemetry_enabled_for_cli() -> bool:
@@ -46,13 +68,18 @@ def log_telemetry_action(
     client_time: Optional[datetime.datetime] = None,
     elapsed_time: Optional[datetime.timedelta] = None,
     metadata: Optional[Mapping[str, str]] = None,
+    start_path: Optional[Path] = None,
 ) -> None:
     return shared_log_telemetry_action(
         lambda: get_telemetry_settings_for_cli(),
         action,
         client_time,
         elapsed_time,
-        {"dagster_dg_version": __version__, **(metadata or {})},
+        {
+            **(metadata or {}),
+            "dagster_dg_version": __version__,
+            **_get_project_telemetry_metadata(start_path),
+        },
     )
 
 
@@ -98,10 +125,14 @@ def _cli_telemetry_wrapper(
     @wraps(f)
     def wrap(*args: P.args, **kwargs: P.kwargs) -> T:
         start_time = datetime.datetime.now()
+        # Extract target_path from kwargs if available (from --target-path CLI option)
+        raw_start_path = kwargs.get("target_path")
+        telemetry_start_path = raw_start_path if isinstance(raw_start_path, Path) else None
         log_telemetry_action(
             action=f.__name__ + "_started",
             client_time=start_time,
             metadata=metadata,
+            start_path=telemetry_start_path,
         )
         exception_name = None
         try:
@@ -122,6 +153,7 @@ def _cli_telemetry_wrapper(
                     "exception": str(exception_name),
                     **(metadata or {}),
                 },
+                start_path=telemetry_start_path,
             )
         return result
 

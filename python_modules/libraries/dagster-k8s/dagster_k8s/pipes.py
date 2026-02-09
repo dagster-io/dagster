@@ -527,6 +527,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                     namespace=namespace,
                     pod_name=pod_name,
                     enable_multi_container_logs=enable_multi_container_logs,
+                    ignore_containers=ignore_containers,
                 ):
                     # wait until the pod is fully terminated (or raise an exception if it failed)
                     client.wait_for_pod(
@@ -550,6 +551,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         namespace: str,
         pod_name: str,
         enable_multi_container_logs: bool = False,
+        ignore_containers: Optional[set] = None,
     ) -> Iterator:
         """Consume pod logs in the background if possible simple context manager to setup pod log consumption.
 
@@ -574,6 +576,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 # the ready state in the second while loop, which respects the below timeout only.
                 # Very rarely, the pod will be Evicted there and we have to wait the default, unless set.
                 wait_timeout=WAIT_TIMEOUT_FOR_READY,
+                ignore_containers=ignore_containers,
             )
 
             if enable_multi_container_logs:

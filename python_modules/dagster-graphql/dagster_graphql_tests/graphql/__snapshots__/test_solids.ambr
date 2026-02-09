@@ -2358,6 +2358,38 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'partitioned_asset_for_checks',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'partitioned_asset_for_checks',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'partitioned_asset_for_checks_partitioned_asset_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'partitioned_asset_for_checks_partitioned_asset_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'passthrough',
           }),
           'invocations': list([

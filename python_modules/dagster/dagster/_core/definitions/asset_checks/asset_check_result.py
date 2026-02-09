@@ -172,6 +172,15 @@ class AssetCheckResult(
         else:
             target_materialization_data = None
 
+        if step_context.has_partition_key:
+            check_spec = assets_def_for_check.get_spec_for_check_key(check_key)
+            if check_spec.partitions_def is not None:
+                partition = step_context.partition_key
+            else:
+                partition = None
+        else:
+            partition = None
+
         return AssetCheckEvaluation(
             check_name=check_key.name,
             asset_key=check_key.asset_key,
@@ -181,6 +190,7 @@ class AssetCheckResult(
             severity=self.severity,
             description=self.description,
             blocking=assets_def_for_check.get_spec_for_check_key(check_key).blocking,
+            partition=partition,
         )
 
     def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":  # pyright: ignore[reportIncompatibleMethodOverride]

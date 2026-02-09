@@ -1,25 +1,58 @@
 """
-Copybara configuration for importing PRs from dagster-io/dagster/scripts back to internal.
+Copybara configuration for importing PRs from dagster-io/dagster back to internal.
 """
 core.workflow(
     name="pr_import",
     origin=git.github_pr_origin(
         url="https://github.com/dagster-io/dagster",
-        branch="main",
+        branch="master",
     ),
     destination=git.github_pr_destination(
         url="https://github.com/dagster-io/internal",
         destination_ref="master",
-        pr_branch="scripts_pr_${CONTEXT_REFERENCE}",
+        pr_branch="dagster_sync_pr_${CONTEXT_REFERENCE}",
     ),
-    origin_files=glob(["scripts/**"]),
-    destination_files=glob(["dagster-oss-temp/scripts/**"]),
+    origin_files=glob(["**"]),
+    destination_files=glob(["dagster-oss/**"]),
     authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
     transformations=[
-        core.move("scripts", "dagster-oss-temp/scripts"),
+        core.move("", "dagster-oss"),
         metadata.save_author("ORIGINAL_AUTHOR"),
         metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = " dagster-io/dagster#"),
     ],
     set_rev_id = False,
     mode="CHANGE_REQUEST",
+)
+
+"""
+Copybara configuration for syncing commits from dagster-io/dagster master to internal monorepo.
+"""
+core.workflow(
+    name="sync-internal",
+    origin = git.origin(
+        url = "https://github.com/dagster-io/dagster.git",
+        ref = "master",
+    ),
+    destination = git.destination(
+        url = "https://github.com/dagster-io/internal.git",
+        fetch = "master",
+        push = "master",
+    ),
+    origin_files = glob(["**"]),
+    destination_files = glob(["dagster-oss/**"]),
+    authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
+    transformations = [
+        # Error on commits that were synced FROM internal
+        metadata.verify_match(
+            regex = "Synced-From-Internal",
+            verify_no_match = True,
+        ),
+        core.move("", "dagster-oss"),
+        metadata.save_author("ORIGINAL_AUTHOR"),
+        metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
+        # Mark this commit as coming from dagster so sync-dagster won't re-sync it
+        metadata.replace_message("${COPYBARA_CURRENT_MESSAGE}\n\nSynced-From-Dagster"),
+    ],
+    mode = "ITERATIVE",
+    reversible_check = True,
 )

@@ -35,7 +35,14 @@ class ChangedFiles:
             return None
 
         original_directory = os.getcwd()
+        logging.info(
+            f"ChangedFiles.load_from_git: original_directory={original_directory}, git_info.directory={git_info.directory}"
+        )
         os.chdir(git_info.directory)
+        logging.info(f"ChangedFiles.load_from_git: after chdir, cwd={os.getcwd()}")
+
+        # Mark current directory as safe (needed when running from internal repo's dagster-oss/)
+        subprocess.call(["git", "config", "--global", "--add", "safe.directory", os.getcwd()])
 
         subprocess.call(["git", "fetch", "origin", str(git_info.base_branch)])
         origin = get_commit(f"origin/{git_info.base_branch}")
@@ -50,6 +57,9 @@ class ChangedFiles:
                     "diff",
                     f"origin/{git_info.base_branch}...HEAD",
                     "--name-only",
+                    "--relative",  # Paths relative to cwd
+                    "--",
+                    ".",  # Only files in current directory
                 ]
             )
             .decode("utf-8")
@@ -57,7 +67,8 @@ class ChangedFiles:
             .split("\n")
         )
         for path in sorted(paths):
-            logging.info("  - " + path)
-            cls.all.add(git_info.directory / path)
+            if path:
+                logging.info("  - " + path)
+                cls.all.add(Path(path))
 
         os.chdir(original_directory)

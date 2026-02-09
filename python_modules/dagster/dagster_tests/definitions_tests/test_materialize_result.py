@@ -94,6 +94,58 @@ def test_return_materialization_with_asset_checks():
         assert direct_results
 
 
+def test_materialize_result_check_targets_current_materialization():
+    with dg.instance_for_test() as instance:
+
+        @dg.asset(check_specs=[dg.AssetCheckSpec(name="my_check", asset=dg.AssetKey("my_asset"))])
+        def my_asset(context: AssetExecutionContext):
+            return dg.MaterializeResult(
+                check_results=[dg.AssetCheckResult(check_name="my_check", passed=True)]
+            )
+
+        # First materialization
+        result1 = dg.materialize([my_asset], instance=instance)
+        assert result1.success
+
+        # Get first check evaluation
+        check_evals1 = result1.get_asset_check_evaluations()
+        assert len(check_evals1) == 1
+        check_eval1 = check_evals1[0]
+
+        # Get first materialization
+        mat_record1 = instance.fetch_materializations(my_asset.key, limit=1).records[0]
+
+        # Verify first check references first materialization
+        assert check_eval1.target_materialization_data is not None
+        assert check_eval1.target_materialization_data.storage_id == mat_record1.storage_id
+        assert check_eval1.target_materialization_data.run_id == result1.run_id
+
+        # Second materialization
+        result2 = dg.materialize([my_asset], instance=instance)
+        assert result2.success
+
+        # Get second check evaluation
+        check_evals2 = result2.get_asset_check_evaluations()
+        assert len(check_evals2) == 1
+        check_eval2 = check_evals2[0]
+
+        # Get second materialization (most recent)
+        mat_record2 = instance.fetch_materializations(my_asset.key, limit=1).records[0]
+
+        # Verify we have a *new* materialization (different storage_id)
+        assert mat_record2.storage_id != mat_record1.storage_id
+
+        # Second check must reference *second* materialization, not first
+        assert check_eval2.target_materialization_data is not None
+        assert check_eval2.target_materialization_data.storage_id == mat_record2.storage_id, (
+            "Check from run 2 should reference materialization from run 2, not run 1. "
+        )
+        assert check_eval2.target_materialization_data.storage_id != mat_record1.storage_id, (
+            "Check should not reference old materialization"
+        )
+        assert check_eval2.target_materialization_data.run_id == result2.run_id
+
+
 def test_multi_asset():
     @dg.multi_asset(outs={"one": dg.AssetOut(), "two": dg.AssetOut()})
     def outs_multi_asset():

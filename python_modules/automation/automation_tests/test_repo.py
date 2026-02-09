@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from automation.utils import discover_git_root, get_all_repo_packages, git_ls_files, pushd
+from automation.utils import discover_oss_root, get_all_repo_packages, git_ls_files, pushd
 
 
 # We want to make sure all of our packages are published with `py.typed` files unless explicitly
 # excluded.
 def test_all_packages_have_py_typed():
-    git_root = discover_git_root(Path(__file__))
+    git_root = discover_oss_root(Path(__file__))
     with pushd(git_root):
         package_roots = get_all_repo_packages()
         missing_py_typed_file = []

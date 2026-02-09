@@ -202,6 +202,7 @@ describe('AutomationStateChangeDialog', () => {
 
   describe('Mutation: start', () => {
     it('starts sensors', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStartKansasSuccess(100), buildStartLouisianaSuccess(100)];
 
       render(
@@ -215,7 +216,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -229,6 +230,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('shows error when starting a sensor fails', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStartKansasSuccess(100), buildStartLouisianaError(100)];
 
       render(
@@ -242,7 +244,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -262,6 +264,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('starts schedules', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStartColoradoSuccess(100), buildStartAlaskaSuccess(100)];
 
       render(
@@ -275,7 +278,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -289,6 +292,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('shows error when starting a schedule fails', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStartAlaskaSuccess(100), buildStartColoradoError(100)];
 
       render(
@@ -302,7 +306,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -322,6 +326,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('starts a combination of schedules and sensors', async () => {
+      const user = userEvent.setup();
       const mocks = [
         buildStartKansasSuccess(100),
         buildStartLouisianaSuccess(100),
@@ -345,7 +350,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -359,6 +364,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('shows errors when starting a combination of schedules and sensors', async () => {
+      const user = userEvent.setup();
       const mocks = [
         buildStartKansasSuccess(100),
         buildStartLouisianaError(100),
@@ -382,7 +388,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -409,6 +415,7 @@ describe('AutomationStateChangeDialog', () => {
 
   describe('Mutation: stop', () => {
     it('stops sensors', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStopMinnesotaSuccess(100), buildStopOregonSuccess(100)];
 
       render(
@@ -422,7 +429,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -436,6 +443,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('shows error when stopping a sensor fails', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStopMinnesotaSuccess(100), buildStopOregonError(100)];
 
       render(
@@ -449,7 +457,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -469,6 +477,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('stops schedules', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStopDelawareSuccess(100), buildStopHawaiiSuccess(100)];
 
       render(
@@ -482,7 +491,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -496,6 +505,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('shows error when stopping a schedule fails', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStopDelawareSuccess(100), buildStopHawaiiError(100)];
 
       render(
@@ -509,7 +519,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -529,6 +539,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('stops a combination of sensors and schedules', async () => {
+      const user = userEvent.setup();
       const mocks = [
         buildStopMinnesotaSuccess(100),
         buildStopOregonSuccess(100),
@@ -552,7 +563,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -566,6 +577,7 @@ describe('AutomationStateChangeDialog', () => {
     });
 
     it('shows errors when stopping a combination of schedules and sensors', async () => {
+      const user = userEvent.setup();
       const mocks = [
         buildStopMinnesotaSuccess(100),
         buildStopOregonError(100),
@@ -589,7 +601,7 @@ describe('AutomationStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
