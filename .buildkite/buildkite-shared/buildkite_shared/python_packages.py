@@ -8,7 +8,14 @@ from typing import Optional
 
 import tomllib  # requires Python 3.11+
 from buildkite_shared.git import ChangedFiles, GitInfo
-from pkg_resources import Requirement, parse_requirements
+from packaging.requirements import Requirement
+
+
+def parse_requirements(lines: list[str]) -> list[Requirement]:
+    return [
+        Requirement(line) for line in lines if line.strip() and not line.strip().startswith("#")
+    ]
+
 
 changed_filetypes = [
     ".py",

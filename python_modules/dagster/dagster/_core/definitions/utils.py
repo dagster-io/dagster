@@ -320,14 +320,14 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[tuple[str, str]]) -> M
         DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
             parse error.
     """
-    import pkg_resources  # expensive, import only on use
+    import importlib.resources
 
     pkg_resource_defs = check.sequence_param(pkg_resource_defs, "pkg_resource_defs", of_type=tuple)
 
     try:
         yaml_strings = [
-            pkg_resources.resource_string(*pkg_resource_def).decode("utf-8")
-            for pkg_resource_def in pkg_resource_defs
+            importlib.resources.files(pkg_name).joinpath(filename).read_text()
+            for pkg_name, filename in pkg_resource_defs
         ]
     except (ModuleNotFoundError, FileNotFoundError, UnicodeDecodeError) as err:
         raise DagsterInvariantViolationError(

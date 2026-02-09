@@ -94,7 +94,11 @@ setup(
         "python-dotenv",
         "pytz",
         "requests",
-        "setuptools",
+        # setuptools <82 to provide pkg_resources for third-party deps that still
+        # import it at runtime (e.g. aws-msk-iam-sasl-signer, pyfilesystem2, flatdict).
+        # setuptools 82 removed pkg_resources entirely. Can be removed once all
+        # transitive deps have migrated away from pkg_resources.
+        "setuptools<82",
         "six",  # for vendored dateutil
         "tabulate",
         "tomli<3",
