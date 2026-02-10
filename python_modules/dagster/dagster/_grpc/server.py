@@ -1610,7 +1610,9 @@ class GrpcServerProcess:
         self._heartbeat_timeout = heartbeat_timeout
         self._fixed_server_id = fixed_server_id
         self._startup_timeout = startup_timeout
-        self._cwd = cwd
+        self._cwd = cwd or (
+            self._loadable_target_origin.working_directory if self._loadable_target_origin else None
+        )
         self._log_level = log_level
         self._inject_env_vars_from_instance = inject_env_vars_from_instance
         self._container_image = container_image
