@@ -15,6 +15,7 @@ setup(
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=[
+        "packaging",
         "typing_extensions>=4.2",
     ],
 )

@@ -4,10 +4,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Optional
 
-import pkg_resources
 from buildkite_shared.environment import is_feature_branch, run_all_tests
 from buildkite_shared.git import ChangedFiles
-from buildkite_shared.python_packages import PythonPackages, changed_filetypes
+from buildkite_shared.python_packages import PythonPackages, changed_filetypes, parse_requirements
 
 
 def requirements(name: str, directory: str):
@@ -20,8 +19,8 @@ def requirements(name: str, directory: str):
     # we can use a buildkite_deps.txt file to capture requirements
     buildkite_deps_txt = Path(directory) / "buildkite_deps.txt"
     if buildkite_deps_txt.exists():
-        parsed = pkg_resources.parse_requirements(buildkite_deps_txt.read_text())
-        return [requirement for requirement in parsed]
+        parsed = parse_requirements(buildkite_deps_txt.read_text().splitlines())
+        return list(parsed)
 
     # Otherwise return nothing
     return []
