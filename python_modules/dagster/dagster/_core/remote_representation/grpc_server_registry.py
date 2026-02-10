@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 from contextlib import AbstractContextManager
@@ -192,6 +193,11 @@ class GrpcServerRegistry(AbstractContextManager):
             active_entry = self._active_entries[origin_id]
             refresh_server = loadable_target_origin != active_entry.loadable_target_origin
 
+        if os.getenv("DAGSTER_IS_DEV_CLI"):
+            cwd = loadable_target_origin.working_directory
+        else:
+            cwd = None
+
         if refresh_server:
             try:
                 server_process = GrpcServerProcess(
@@ -202,6 +208,7 @@ class GrpcServerRegistry(AbstractContextManager):
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,
                     startup_timeout=self._startup_timeout,
+                    cwd=cwd,
                     log_level=self._log_level,
                     inject_env_vars_from_instance=self._inject_env_vars_from_instance,
                     container_image=self._container_image,

@@ -2,23 +2,28 @@ import shutil
 import signal
 import tempfile
 import textwrap
+import time
 from pathlib import Path
 
 import pytest
 from dagster_dg_core.context import DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR
 from dagster_dg_core.utils import activate_venv, discover_repo_root, is_windows, pushd
+from dagster_graphql.client import DagsterGraphQLClient
 from dagster_shared.utils import environ
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
+    _assert_no_child_processes_running,
     assert_projects_loaded_and_exit,
     assert_runner_result,
     create_project_from_components,
     find_free_port,
+    get_child_processes,
     install_editable_dg_dev_packages_to_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     launch_dev_command,
+    wait_for_projects_loaded,
 )
 
 
@@ -310,3 +315,114 @@ def test_dev_uses_active_venv_when_flag_set():
                 assert "Using active Python environment:" in combined_output, (
                     f"Expected log message about using active Python environment, but got:\n{combined_output}"
                 )
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_uses_working_directory_when_set(monkeypatch):
+    """In a multi-project dg workspace, verify that each code location's gRPC process is started
+    with its own project directory as the working directory.
+    """
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
+
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        with activate_venv(workspace_path / ".venv"):
+            # Create two projects in the workspace
+            result = runner.invoke_create_dagster(
+                "project",
+                "--use-editable-dagster",
+                "project-1",
+                "--uv-sync",
+            )
+
+            assert result.exit_code == 0, result.output
+
+            result = runner.invoke_create_dagster(
+                "project",
+                "--use-editable-dagster",
+                "project-2",
+                "--uv-sync",
+            )
+            assert result.exit_code == 0, result.output
+
+            # Add a trivial defs file to each project that records os.getcwd() in asset metadata
+            for name, asset_name in (
+                ("project-1", "asset_project_1"),
+                ("project-2", "asset_project_2"),
+            ):
+                defs_path = Path(name) / "src" / name.replace("-", "_") / "definitions.py"
+                defs_path.write_text(
+                    textwrap.dedent(
+                        f"""
+                        import os
+                        import dagster as dg
+
+                        @dg.asset(name="{asset_name}", metadata={{"cwd": os.getcwd()}})
+                        def {asset_name}():
+                            ...
+                        """
+                    ).strip()
+                )
+
+            port = find_free_port()
+            dev_process = launch_dev_command(["--port", str(port)])
+
+            projects = {"project-1", "project-2"}
+
+            try:
+                # Wait until both code locations have loaded
+                wait_for_projects_loaded(projects, port, dev_process)
+
+                # Query asset metadata via GraphQL to verify cwd per project
+                client = DagsterGraphQLClient(hostname="localhost", port_number=port)
+
+                query = """
+                query AssetNodeQuery($assetKey: AssetKeyInput!) {
+                  assetNodeOrError(assetKey: $assetKey) {
+                    __typename
+                    ... on AssetNode {
+                      assetKey { path }
+                      metadataEntries {
+                        label
+                        __typename
+                        ... on TextMetadataEntry {
+                          text
+                        }
+                      }
+                    }
+                  }
+                }
+                """
+
+                def get_cwd_for(asset_name: str) -> str:
+                    result = client._execute(  # noqa: SLF001
+                        query,
+                        variables={"assetKey": {"path": [asset_name]}},
+                    )
+                    node = result["assetNodeOrError"]
+                    assert node["__typename"] == "AssetNode"
+                    entries = {
+                        e["label"]: e
+                        for e in node["metadataEntries"]
+                        if e["__typename"] == "TextMetadataEntry"
+                    }
+                    assert "cwd" in entries
+                    return entries["cwd"]["text"]
+
+                cwd1 = Path(get_cwd_for("asset_project_1"))
+                cwd2 = Path(get_cwd_for("asset_project_2"))
+
+                # Each cwd should point inside its corresponding project directory
+                # (working_directory may be project root or project/src depending on workspace)
+                assert "project-1" in str(cwd1), f"Expected cwd to contain 'project-1', got {cwd1}"
+                assert "project-2" in str(cwd2), f"Expected cwd to contain 'project-2', got {cwd2}"
+                assert cwd1 != cwd2
+            finally:
+                child_procs = get_child_processes(dev_process.pid)
+                dev_process.send_signal(signal.SIGINT)
+                dev_process.communicate()
+                time.sleep(3)  # allow code server processes to shut down
+                _assert_no_child_processes_running(child_procs)
