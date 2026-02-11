@@ -308,6 +308,9 @@ class DbtProject(IHaveNew):
             if not state_path.is_absolute():
                 state_path = project_dir.joinpath(state_path)
 
+        if isinstance(target_path, str):
+            target_path = Path(target_path)
+
         return super().__new__(
             cls,
             name=dbt_project_yml["name"],

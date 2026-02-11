@@ -1,4 +1,5 @@
 import multiprocessing
+from pathlib import Path
 
 import msgpack
 import pytest
@@ -134,3 +135,10 @@ def test_seed_command_succeeds_after_invalidation() -> None:
         result = dbt.cli(["seed"]).wait()
 
         assert result.is_successful(), "dbt seed failed"
+
+def test_target_path_as_string() -> None:
+    """Test that target_path can be provided as a string and is correctly converted to Path."""
+    with copy_directory(test_jaffle_shop_path) as project_dir:
+        target_path_str = "custom_target"
+        my_project = DbtProject(project_dir, target_path=target_path_str)
+        assert my_project.target_path == Path(target_path_str)
