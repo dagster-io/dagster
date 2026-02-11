@@ -205,9 +205,13 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 field_key, field = field_info
 
             if field and field.discriminator:
-                nested_dict = value
-
                 discriminator_key = check.not_none(field.discriminator)
+                
+                if isinstance(value, dict) and discriminator_key in value:
+                    modified_data_by_config_key[config_key] = value
+                    continue
+
+                nested_dict = value
                 if isinstance(value, Config):
                     nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
                         discriminator_key,
@@ -222,11 +226,11 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 discriminated_value, nested_values = nested_items[0]
 
                 modified_data_by_config_key[config_key] = {
-                    **nested_values,
+                    **(nested_values if isinstance(nested_values, dict) else {}),
                     discriminator_key: discriminated_value,
                 }
-
-            # If the passed value matches the name of an expected Enum value, convert it to the value
+                continue 
+           
             elif (
                 field
                 and safe_is_subclass(field.annotation, Enum)
