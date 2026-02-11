@@ -221,6 +221,20 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
+def test_target_path_from_component_string(dbt_path: Path) -> None:
+    component = load_component_for_test(
+        DbtProjectComponent,
+        {
+            "project": {
+                "project_dir": str(dbt_path),
+                "target_path": "tmp_dbt_target",
+            }
+        },
+    )
+    assert isinstance(component.dbt_project.target_path, Path)
+    assert component.dbt_project.target_path == Path("tmp_dbt_target")
+
+
 class TestDbtTranslation(TestTranslation):
     def test_translation(
         self,
