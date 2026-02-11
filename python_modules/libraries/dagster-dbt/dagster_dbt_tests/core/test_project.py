@@ -1,4 +1,5 @@
 import multiprocessing
+from pathlib import Path
 
 import msgpack
 import pytest
@@ -111,6 +112,14 @@ def test_invalidate_seeds_handles_missing_partial_parse() -> None:
         # Should not raise an error
         preparer = DagsterDbtProjectPreparer()
         preparer._invalidate_seeds_in_partial_parse(my_project)  # noqa: SLF001
+
+
+def test_accepts_string_target_path(project_dir) -> None:
+    project_dir_path = Path(project_dir)
+    string_target_path = str(project_dir_path / "dbt_target")
+    my_project = DbtProject(project_dir_path, target_path=string_target_path)
+    assert isinstance(my_project.target_path, Path)
+    assert my_project.target_path == Path(string_target_path)
 
 
 def test_seed_command_succeeds_after_invalidation() -> None:
