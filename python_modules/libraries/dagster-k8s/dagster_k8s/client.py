@@ -686,9 +686,14 @@ class DagsterKubernetesClient:
             all_statuses = []
             all_statuses.extend(pod.status.init_container_statuses or [])
             all_statuses.extend(pod.status.container_statuses or [])
-            initcontainers = set(s.name for s in (pod.status.init_container_statuses or []))
 
             # Filter out ignored containers
+            initcontainers = set(
+                s.name
+                for s in (pod.status.init_container_statuses or [])
+                if s.name not in ignore_containers
+            )
+
             all_statuses = [s for s in all_statuses if s.name not in ignore_containers]
 
             # Always get the first status from the list, which will first get the
