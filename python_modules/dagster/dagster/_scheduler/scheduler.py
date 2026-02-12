@@ -439,7 +439,7 @@ def launch_scheduled_runs(
                         del scheduler_run_futures[schedule.selector_id]
                     else:
                         elapsed_seconds = now_timestamp - future_info.start_timestamp
-                        if elapsed_seconds > tick_timeout_seconds:
+                        if tick_timeout_seconds > 0 and elapsed_seconds > tick_timeout_seconds:
                             logger.warning(
                                 f"Schedule tick for '{future_info.schedule_name}' has been running "
                                 f"for {elapsed_seconds:.0f} seconds (timeout: {tick_timeout_seconds}s). "
