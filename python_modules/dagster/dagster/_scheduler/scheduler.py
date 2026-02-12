@@ -438,17 +438,14 @@ def launch_scheduled_runs(
                             )
                         del scheduler_run_futures[schedule.selector_id]
                     else:
-                        # Check if the future has been running longer than the timeout
                         elapsed_seconds = now_timestamp - future_info.start_timestamp
                         if elapsed_seconds > tick_timeout_seconds:
-                            # Future has timed out - cancel it and log a warning
                             logger.warning(
                                 f"Schedule tick for '{future_info.schedule_name}' has been running "
                                 f"for {elapsed_seconds:.0f} seconds (timeout: {tick_timeout_seconds}s). "
                                 f"Cancelling stuck evaluation. This may indicate a hung run launcher "
                                 f"or network issues with the Kubernetes API."
                             )
-                            # Cancel the future (best effort - may not actually stop the thread)
                             future_info.future.cancel()
                             del scheduler_run_futures[schedule.selector_id]
                             # Continue to allow a new evaluation to start

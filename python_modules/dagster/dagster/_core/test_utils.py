@@ -621,7 +621,6 @@ def wait_for_futures(futures: dict[str, Any], timeout: Optional[float] = None):
         else:
             future_timeout = None
 
-        # Support both raw Future objects and ScheduleFutureInfo (which has a .future attribute)
         future = getattr(future_or_info, "future", future_or_info)
 
         if not future.done():
