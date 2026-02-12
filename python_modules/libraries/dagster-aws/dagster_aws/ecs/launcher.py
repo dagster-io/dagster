@@ -693,10 +693,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         arn = task["taskArn"]
         cluster_arn = task["clusterArn"]
 
-        if tags.cluster is not None and tags.cluster != cluster_arn:
-            warnings.warn(
-                f"Run cluster ARN {cluster_arn} does not match run tag cluster {tags.cluster}. "
+        if tags.cluster is not None:
+            cluster_name_from_arn = (
+                cluster_arn.split("/")[-1] if "/" in cluster_arn else cluster_arn
             )
+            tags_cluster_name = tags.cluster.split("/")[-1] if "/" in tags.cluster else tags.cluster
+            if cluster_name_from_arn != tags_cluster_name:
+                warnings.warn(
+                    f"Run cluster ARN {cluster_arn} does not match run tag cluster {tags.cluster}. "
+                )
 
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)

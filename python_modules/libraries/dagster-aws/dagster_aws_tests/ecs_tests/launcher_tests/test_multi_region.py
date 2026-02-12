@@ -106,6 +106,42 @@ def test_multi_region_launch(
     assert instance.run_launcher.terminate(run.run_id)
 
 
+def test_cross_region_cluster_name_matches_arn(
+    ecs,
+    instance,
+    workspace,
+    job,
+    remote_job,
+    subnet,
+    security_group,
+):
+    """Plain cluster name in tag should not warn when AWS returns the full ARN."""
+    run = instance.create_run_for_job(
+        job,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
+    )
+    # Use a plain cluster name -- AWS will return the full ARN
+    instance.add_run_tags(
+        run.run_id,
+        {
+            "ecs/region": "eu-north-1",
+            "ecs/cluster": "my-eu-cluster",
+            "ecs/security_groups": security_group.id,
+            "ecs/subnets": subnet.id,
+        },
+    )
+
+    import warnings as _warnings
+
+    with _warnings.catch_warnings(record=True) as caught:
+        _warnings.simplefilter("always")
+        instance.launch_run(run.run_id, workspace)
+
+    cluster_warnings = [w for w in caught if "does not match run tag cluster" in str(w.message)]
+    assert len(cluster_warnings) == 0, f"Unexpected warning: {cluster_warnings}"
+
+
 @pytest.mark.parametrize(
     "missing_tag",
     [
