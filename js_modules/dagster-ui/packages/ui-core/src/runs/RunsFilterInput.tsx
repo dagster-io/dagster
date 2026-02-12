@@ -157,7 +157,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
-      const [key, value = ''] = item.value.split('=');
+      const [key, value = ''] = item.value.split(/=(.+)/);
       if (obj.tags) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         obj.tags.push({key: key!, value});
