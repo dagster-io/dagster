@@ -48,6 +48,7 @@ from dagster._grpc.server import open_server_process
 from dagster._record import copy
 from dagster._scheduler.scheduler import (
     RETAIN_ORPHANED_STATE_INTERVAL_SECONDS,
+    ScheduleFutureInfo,
     ScheduleIterationTimes,
     launch_scheduled_runs,
 )
@@ -3171,3 +3172,96 @@ class TestSchedulerRun:
             )
             assert "tag_foo" not in no_tags_with_run_tags_run.tags
             assert no_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"
+
+
+def test_stuck_future_timeout():
+    """Test that stuck schedule evaluation futures are cleaned up after timeout.
+
+    This test verifies that when a schedule evaluation hangs (e.g., due to a hung
+    run launcher), the scheduler will timeout and clean up the stuck future,
+    allowing new evaluations to proceed.
+    """
+    freeze_datetime = feb_27_2019_start_of_day()
+
+    test_timeout_seconds = 2
+
+    with dg.instance_for_test(
+        overrides={
+            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"},
+            "schedules": {
+                "use_threads": True,
+                "schedule_tick_timeout_seconds": test_timeout_seconds,
+            },
+        },
+        synchronous_run_coordinator=True,
+    ) as instance:
+        with create_test_daemon_workspace_context(
+            workspace_load_target=workspace_load_target(), instance=instance
+        ) as workspace_context:
+            remote_repo = cast(
+                "CodeLocation",
+                next(
+                    iter(
+                        workspace_context.create_request_context()
+                        .get_code_location_entries()
+                        .values()
+                    )
+                ).code_location,
+            ).get_repository("the_repo")
+
+            with freeze_time(freeze_datetime):
+                schedule = remote_repo.get_schedule("simple_schedule")
+                instance.start_schedule(schedule)
+
+                # Use BlockingThreadPoolExecutor to simulate a stuck evaluation
+                blocking_executor = BlockingThreadPoolExecutor()
+
+                futures: dict[str, ScheduleFutureInfo] = {}
+                iteration_times: dict[str, ScheduleIterationTimes] = {}
+                logger = get_default_daemon_logger("SchedulerDaemon")
+
+                # First evaluation - this will block
+                list(
+                    launch_scheduled_runs(
+                        workspace_context,
+                        logger,
+                        get_current_datetime(),
+                        iteration_times=iteration_times,
+                        threadpool_executor=blocking_executor,
+                        scheduler_run_futures=futures,
+                    )
+                )
+
+                # Verify a future was created
+                assert len(futures) == 1
+                selector_id = next(iter(futures.keys()))
+                assert isinstance(futures[selector_id], ScheduleFutureInfo)
+                assert futures[selector_id].schedule_name == "simple_schedule"
+
+                assert not futures[selector_id].future.done()
+
+            # Now advance time past the timeout
+            freeze_datetime_after_timeout = freeze_datetime + datetime.timedelta(
+                seconds=test_timeout_seconds + 1
+            )
+
+            with freeze_time(freeze_datetime_after_timeout):
+                # Run another iteration - this should detect the timeout and cleanup
+                list(
+                    launch_scheduled_runs(
+                        workspace_context,
+                        logger,
+                        get_current_datetime(),
+                        iteration_times=iteration_times,
+                        threadpool_executor=blocking_executor,
+                        scheduler_run_futures=futures,
+                    )
+                )
+
+                # The stuck future should have been cleaned up
+                if len(futures) > 0:
+                    # If there's a future, it should be a new one (different start time)
+                    new_future_info = futures[selector_id]
+                    assert new_future_info.start_timestamp > freeze_datetime.timestamp()
+
+                blocking_executor.allow()

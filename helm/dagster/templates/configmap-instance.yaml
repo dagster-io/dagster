@@ -143,6 +143,9 @@ data:
       {{- if $schedules.numSubmitWorkers }}
       num_submit_workers: {{ $schedules.numSubmitWorkers }}
       {{- end }}
+      {{- if $schedules.scheduleTickTimeoutSeconds }}
+      schedule_tick_timeout_seconds: {{ $schedules.scheduleTickTimeoutSeconds }}
+      {{- end }}
     {{- end }}
     
     {{- $backfills := .Values.dagsterDaemon.backfills }}

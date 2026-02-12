@@ -1204,6 +1204,11 @@ dagsterDaemon:
     # Uncomment to use a threadpool to submit runs from a single schedule tick in parallel. Can be
     # used to decrease latency when a schedule emits multiple run requests within a single tick.
     # numSubmitWorkers: 4
+    # Timeout in seconds for a single schedule tick evaluation. If a schedule tick takes longer
+    # than this timeout (e.g., due to a hung run launcher or network issues), it will be cancelled
+    # and a new evaluation will be allowed to start. Set to 0 to disable timeout (not recommended).
+    # Default: 600 seconds (10 minutes).
+    scheduleTickTimeoutSeconds: 600
 
     # Uncomment to configure the backfill daemon.
     # Warning: Code deployments with version before 1.9.7 don't support this configuration and might fail.

@@ -607,14 +607,22 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures: dict[str, Future], timeout: Optional[float] = None):
+def wait_for_futures(futures: dict[str, Any], timeout: Optional[float] = None):
+    """Wait for futures to complete and return their results.
+
+    Supports both raw Future objects and ScheduleFutureInfo objects (which contain
+    a Future in their .future attribute).
+    """
     start_time = time.time()
     results = {}
-    for target_id, future in futures.copy().items():
+    for target_id, future_or_info in futures.copy().items():
         if timeout is not None:
             future_timeout = max(0, timeout - (time.time() - start_time))
         else:
             future_timeout = None
+
+        # Support both raw Future objects and ScheduleFutureInfo (which has a .future attribute)
+        future = getattr(future_or_info, "future", future_or_info)
 
         if not future.done():
             results[target_id] = future.result(timeout=future_timeout)
