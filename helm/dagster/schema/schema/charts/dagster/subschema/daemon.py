@@ -70,6 +70,7 @@ class Schedules(BaseModel):
     useThreads: bool
     numWorkers: Optional[int] = None
     numSubmitWorkers: Optional[int] = None
+    scheduleTickTimeoutSeconds: Optional[int] = None
 
 
 class Backfills(BaseModel):
