@@ -14,7 +14,6 @@ from dagster._core.definitions.resource_definition import (
     ScopedResourcesBuilder,
     has_at_least_one_parameter,
 )
-from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -30,7 +29,6 @@ from dagster._core.execution.plan.inputs import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
 from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
-from dagster._core.execution.plan.handle import NodeHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
@@ -151,7 +149,7 @@ def _core_resource_initialization_event_generator(
             resource_origins = None
             if job_def and execution_plan:
                 resource_origins = get_resource_origins_mapping(execution_plan, job_def)
-            
+
             yield DagsterEvent.resource_init_start(
                 job_name,
                 cast("ExecutionPlan", execution_plan),
@@ -367,7 +365,7 @@ def get_resource_origins_mapping(
     job_def: JobDefinition,
 ) -> dict[str, set[str]]:
     """Returns a mapping of resource keys to the set of origins where they are required.
-    
+
     Origins can be:
     - op names (for compute functions)
     - hook names
@@ -384,7 +382,7 @@ def get_resource_origins_mapping(
         node_name = node_def.name
 
         # Check op compute resource requirements
-        for resource_key in node_def.required_resource_keys:
+        for resource_key in node_def.required_resource_keys:  # type: ignore[attr-defined]
             if resource_key not in resource_origins:
                 resource_origins[resource_key] = set()
             resource_origins[resource_key].add(f"op '{node_name}'")
@@ -400,18 +398,22 @@ def get_resource_origins_mapping(
         # Check input/output manager requirements
         for step_input in step.step_inputs:
             input_def = node_def.input_def_named(step_input.name)
-            
+
             if input_def.input_manager_key:
                 if input_def.input_manager_key not in resource_origins:
                     resource_origins[input_def.input_manager_key] = set()
-                resource_origins[input_def.input_manager_key].add(f"input_manager for '{node_name}.{step_input.name}'")
+                resource_origins[input_def.input_manager_key].add(
+                    f"input_manager for '{node_name}.{step_input.name}'"
+                )
 
         for step_output in step.step_outputs:
             output_def = node_def.output_def_named(step_output.name)
             if output_def.io_manager_key:
                 if output_def.io_manager_key not in resource_origins:
                     resource_origins[output_def.io_manager_key] = set()
-                resource_origins[output_def.io_manager_key].add(f"io_manager for '{node_name}.{step_output.name}'")
+                resource_origins[output_def.io_manager_key].add(
+                    f"io_manager for '{node_name}.{step_output.name}'"
+                )
 
     return resource_origins
 
