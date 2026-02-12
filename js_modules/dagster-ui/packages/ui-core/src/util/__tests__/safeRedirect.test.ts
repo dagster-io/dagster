@@ -80,9 +80,8 @@ describe('safeRedirect', () => {
 
   beforeEach(() => {
     hrefSetter = jest.fn();
-    // @ts-expect-error - overriding read-only property for testing
-    delete window.location;
-    window.location = {...originalLocation, href: ''} as Location;
+    delete (window as any).location;
+    window.location = {...originalLocation, href: ''} as string & Location;
     Object.defineProperty(window.location, 'href', {
       set: hrefSetter,
       get: () => '',
@@ -91,7 +90,7 @@ describe('safeRedirect', () => {
   });
 
   afterEach(() => {
-    window.location = originalLocation;
+    window.location = originalLocation as string & Location;
   });
 
   test('navigates for a safe URL', () => {
