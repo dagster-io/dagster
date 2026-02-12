@@ -444,7 +444,7 @@ def launch_scheduled_runs(
                                 f"Schedule tick for '{future_info.schedule_name}' has been running "
                                 f"for {elapsed_seconds:.0f} seconds (timeout: {tick_timeout_seconds}s). "
                                 f"Cancelling stuck evaluation. This may indicate a hung run launcher "
-                                f"or network issues with the Kubernetes API."
+                                f"or network issues."
                             )
                             future_info.future.cancel()
                             del scheduler_run_futures[schedule.selector_id]
