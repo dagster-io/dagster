@@ -269,6 +269,8 @@ class DbtProject(IHaveNew):
         if not project_dir.exists():
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
 
+        target_path = Path(target_path)
+
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
