@@ -108,8 +108,6 @@ function renderStatusTag(
       partitionStats.numSkipped
     : 0;
 
-  const partitionSummary = partitionStats && totalPartitions > 0;
-
   if (status === 'NOT_EVALUATED') {
     return (
       <BaseTag
@@ -120,6 +118,8 @@ function renderStatusTag(
       />
     );
   }
+
+  const partitionSummary = partitionStats && totalPartitions > 0;
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
@@ -170,16 +170,16 @@ const CheckRow = ({
 export const CheckStatusRow = ({
   assetCheck,
   assetKey,
-  useLatestStatus = false,
+  preferLatestStatus = false,
 }: {
   assetCheck: AssetCheckLiveFragment;
   assetKey: AssetKeyInput;
-  useLatestStatus?: boolean;
+  preferLatestStatus?: boolean;
 }) => {
   const {executionForLatestMaterialization: execution} = assetCheck;
 
   // Use aggregate status by default, or latest execution status if requested
-  const status = useLatestStatus ? execution?.status : getAggregateCheckIconType(assetCheck);
+  const status = preferLatestStatus ? execution?.status : getAggregateCheckIconType(assetCheck);
 
   // Note: this uses BaseTag for a "grayer" style than the default tag intent
   if (!execution || status === 'NOT_EVALUATED' || !status) {

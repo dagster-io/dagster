@@ -82,12 +82,12 @@ export const ChecksSummaryPopover = ({
   type,
   assetKey,
   assetChecks,
-  useLatestStatus = false,
+  preferLatestStatus = false,
 }: {
   type: AssetCheckIconType;
   assetKey: AssetKeyInput;
   assetChecks: AssetCheckLiveFragment[];
-  useLatestStatus?: boolean;
+  preferLatestStatus?: boolean;
 }) => {
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
@@ -99,7 +99,7 @@ export const ChecksSummaryPopover = ({
           key={check.name}
           assetCheck={check}
           assetKey={assetKey}
-          useLatestStatus={useLatestStatus}
+          preferLatestStatus={preferLatestStatus}
         />
       ))}
     </Box>
@@ -202,7 +202,7 @@ export const AssetChecksStatusSummary = ({
               type={type}
               assetKey={assetKey}
               assetChecks={liveData.assetChecks.filter((a) => iconTypeFunction(a) === type)}
-              useLatestStatus={rendering === 'tags'}
+              preferLatestStatus={rendering === 'tags'}
             />
           }
           position="top-left"

@@ -19,7 +19,6 @@ import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {useAssetCheckPartitionDetail} from './useAssetCheckPartitionDetail';
 import {getExecutionStatusIcon} from './util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {AssetCheckExecutionResolvedStatus} from '../../graphql/types';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {linkToRunEvent, titleForRun} from '../../runs/RunUtils';
 import {AssetKey} from '../types';
@@ -135,7 +134,7 @@ export const AssetCheckPartitionDetail = ({
             <Subheading>Latest execution</Subheading>
             <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
               {getExecutionStatusIcon(
-                latestExecution.status as AssetCheckExecutionResolvedStatus,
+                latestExecution.status,
                 latestExecution.evaluation.severity,
               )}
               <Timestamp timestamp={{unix: latestExecution.evaluation.timestamp}} />
