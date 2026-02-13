@@ -429,7 +429,7 @@ def schedules_daemon_config() -> Field:
                 description=(
                     "Maximum time in seconds to wait for a schedule tick future to complete before"
                     " timing out and canceling it. Helps prevent stuck schedule evaluations from"
-                    " blocking the daemon. Defaults to 600 (10 minutes). Set to 0 to disable timeout."
+                    " blocking the daemon. Defaults to 600 (10 minutes). Set to -1 to disable timeout."
                 ),
             ),
         },
