@@ -122,6 +122,15 @@ class TableauWorkbookSelectorByProjectId(dg.Model, dg.Resolvable):
     ]
 
 
+class TableauWorkbookSelectorByProjectName(dg.Model, dg.Resolvable):
+    """Selector for filtering Tableau workbooks by project name."""
+
+    by_project_name: Annotated[
+        Sequence[str],
+        Field(..., description="A list of project names to include workbooks from."),
+    ]
+
+
 def _resolve_workbook_selector(
     context: dg.ResolutionContext, model: BaseModel
 ) -> Optional[Callable[[TableauWorkbookMetadata], bool]]:
@@ -142,6 +151,17 @@ def _resolve_workbook_selector(
         return lambda workbook_metadata: (
             workbook_metadata.project_id in project_ids_to_include
             if workbook_metadata.project_id
+            else False
+        )
+    elif isinstance(model, TableauWorkbookSelectorByProjectName.model()):
+        resolved = resolve_fields(
+            model=model, resolved_cls=TableauWorkbookSelectorByProjectName, context=context
+        )
+        # Store the project names to filter by - will be matched against workbook metadata project_name
+        project_names_to_include = set(resolved["by_project_name"])
+        return lambda workbook_metadata: (
+            workbook_metadata.project_name in project_names_to_include
+            if workbook_metadata.project_name
             else False
         )
     else:
@@ -247,7 +267,9 @@ class TableauComponent(StateBackedComponent, Resolvable):
         dg.Resolver(
             _resolve_workbook_selector,
             model_field_type=Union[
-                TableauWorkbookSelectorById.model(), TableauWorkbookSelectorByProjectId.model()
+                TableauWorkbookSelectorById.model(),
+                TableauWorkbookSelectorByProjectId.model(),
+                TableauWorkbookSelectorByProjectName.model(),
             ],
             description="Function used to select Tableau workbooks to pull into Dagster.",
         ),
