@@ -191,13 +191,13 @@ def test_component_workbook_selector_by_id(
             # Second load, should have assets from the filtered workbook
             asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
 
-            # Assets from selected workbook (TEST_WORKBOOK) SHOULD be present
-            # Check for sheets from TEST_WORKBOOK
+            # Assets from workbook with TEST_WORKBOOK_ID SHOULD be present
+            # Check for sheets from workbook with TEST_WORKBOOK_ID
             assert AssetKey(["test_workbook", "sheet", "sales"]) in asset_keys
             assert AssetKey(["test_workbook", "sheet", "account"]) in asset_keys
             # Hidden sheets from selected workbook SHOULD be present
             assert AssetKey(["test_workbook", "sheet", "hidden"]) in asset_keys
-            # Check for dashboards from TEST_WORKBOOK
+            # Check for dashboards from workbook with TEST_WORKBOOK_ID
             assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) in asset_keys
             # Embedded datasources from selected workbook SHOULD be present
             assert (
@@ -209,7 +209,7 @@ def test_component_workbook_selector_by_id(
             assert AssetKey(["superstore_datasource"]) in asset_keys
             assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
 
-            # Assets from unselected workbook (TEST_WORKBOOK_2) should NOT be present
+            # Assets from workbook with TEST_SECOND_WORKBOOK_ID should NOT be present
             assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
             assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
             assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
@@ -252,15 +252,15 @@ def test_component_workbook_selector_with_multiple_ids(
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            # Should have assets from the matched workbook (TEST_WORKBOOK)
+            # Should have assets from workbook with TEST_WORKBOOK_ID
             asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
 
-            # Assets from selected workbook (TEST_WORKBOOK) SHOULD be present
+            # Assets from workbook with TEST_WORKBOOK_ID SHOULD be present
             assert AssetKey(["test_workbook", "sheet", "sales"]) in asset_keys
             assert AssetKey(["test_workbook", "sheet", "account"]) in asset_keys
             # Hidden sheets from selected workbook SHOULD be present
             assert AssetKey(["test_workbook", "sheet", "hidden"]) in asset_keys
-            # Check for dashboards from TEST_WORKBOOK
+            # Check for dashboards from workbook with TEST_WORKBOOK_ID
             assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) in asset_keys
             # Embedded datasources from selected workbook SHOULD be present
             assert (
@@ -272,7 +272,7 @@ def test_component_workbook_selector_with_multiple_ids(
             assert AssetKey(["superstore_datasource"]) in asset_keys
             assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
 
-            # Assets from unselected workbook (TEST_WORKBOOK_2) should NOT be present
+            # Assets from workbook with TEST_SECOND_WORKBOOK_ID should NOT be present
             assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
             assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
             assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
@@ -283,3 +283,191 @@ def test_component_workbook_selector_with_multiple_ids(
 
             # Check total number of assets
             assert len(asset_keys) == 7
+
+
+def test_component_workbook_selector_by_project_id(
+    workspace_data_two_workbooks, get_workbooks_two_workbooks
+) -> None:
+    """Test component with workbook selector filtering by project ID."""
+    body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
+    body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
+    # Add workbook selector to filter by project ID
+    body["attributes"]["workbook_selector"] = {
+        "by_project_id": ["test_project_id"]  # TEST_PROJECT_ID from conftest
+    }
+
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=TableauComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # First load, nothing there
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
+            assert isinstance(component, TableauComponent)
+            asyncio.run(component.refresh_state(sandbox.project_root))
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # Second load, should have assets from workbooks in the selected project
+            asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
+
+            # Assets from workbook with TEST_WORKBOOK_ID (project TEST_PROJECT_ID) SHOULD be present
+            # Check for sheets from workbook with TEST_WORKBOOK_ID
+            assert AssetKey(["test_workbook", "sheet", "sales"]) in asset_keys
+            assert AssetKey(["test_workbook", "sheet", "account"]) in asset_keys
+            # Hidden sheets from selected workbook SHOULD be present
+            assert AssetKey(["test_workbook", "sheet", "hidden"]) in asset_keys
+            # Check for dashboards from workbook with TEST_WORKBOOK_ID
+            assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) in asset_keys
+            # Embedded datasources from selected workbook SHOULD be present
+            assert (
+                AssetKey(["test_workbook", "embedded_datasource", "embedded_superstore_datasource"])
+                in asset_keys
+            )
+
+            # Published data sources (not workbook-specific) SHOULD be present
+            assert AssetKey(["superstore_datasource"]) in asset_keys
+            assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
+
+            # Assets from workbook with TEST_SECOND_WORKBOOK_ID (project TEST_SECOND_PROJECT_ID) should NOT be present
+            assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
+            assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
+            assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
+            assert (
+                AssetKey(["second_workbook", "embedded_datasource", "embedded_sales_datasource"])
+                not in asset_keys
+            )
+
+            # Check total number of assets
+            assert len(asset_keys) == 7
+
+
+def test_component_workbook_selector_by_project_id_with_multiple_ids(
+    workspace_data_two_workbooks, get_workbooks_two_workbooks
+) -> None:
+    """Test that workbook selector works with multiple project IDs and filters correctly."""
+    body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
+    body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
+    # Add workbook selector with multiple project IDs (only one will match our test data)
+    body["attributes"]["workbook_selector"] = {
+        "by_project_id": ["test_project_id", "non-existent-project-id"]
+    }
+
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=TableauComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            assert isinstance(component, TableauComponent)
+            asyncio.run(component.refresh_state(sandbox.project_root))
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # Should have assets from workbooks in the matched project (has workbook with TEST_WORKBOOK_ID)
+            asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
+
+            # Assets from workbook with TEST_WORKBOOK_ID (project TEST_PROJECT_ID) SHOULD be present
+            assert AssetKey(["test_workbook", "sheet", "sales"]) in asset_keys
+            assert AssetKey(["test_workbook", "sheet", "account"]) in asset_keys
+            # Hidden sheets from selected workbook SHOULD be present
+            assert AssetKey(["test_workbook", "sheet", "hidden"]) in asset_keys
+            # Check for dashboards from workbook with TEST_WORKBOOK_ID
+            assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) in asset_keys
+            # Embedded datasources from selected workbook SHOULD be present
+            assert (
+                AssetKey(["test_workbook", "embedded_datasource", "embedded_superstore_datasource"])
+                in asset_keys
+            )
+
+            # Published data sources (not workbook-specific) SHOULD be present
+            assert AssetKey(["superstore_datasource"]) in asset_keys
+            assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
+
+            # Assets from workbook with TEST_SECOND_WORKBOOK_ID (project TEST_SECOND_PROJECT_ID) should NOT be present
+            assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
+            assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
+            assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
+            assert (
+                AssetKey(["second_workbook", "embedded_datasource", "embedded_sales_datasource"])
+                not in asset_keys
+            )
+
+            # Check total number of assets
+            assert len(asset_keys) == 7
+
+
+def test_component_workbook_selector_by_project_id_no_match(
+    workspace_data_two_workbooks, get_workbooks_two_workbooks
+) -> None:
+    """Test that workbook selector with non-matching project ID returns only standalone data sources."""
+    body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
+    body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
+    # Add workbook selector with project ID that doesn't match any workbooks
+    body["attributes"]["workbook_selector"] = {"by_project_id": ["non-existent-project-id"]}
+
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=TableauComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            assert isinstance(component, TableauComponent)
+            asyncio.run(component.refresh_state(sandbox.project_root))
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # Should have only standalone published data sources (no workbook-related assets)
+            asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
+
+            # Published data sources (not workbook-specific) SHOULD be present
+            assert AssetKey(["superstore_datasource"]) in asset_keys
+            assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
+
+            # ALL workbook-related assets should NOT be present (from both workbooks)
+            # First workbook assets should NOT be present
+            assert AssetKey(["test_workbook", "sheet", "sales"]) not in asset_keys
+            assert AssetKey(["test_workbook", "sheet", "account"]) not in asset_keys
+            assert AssetKey(["test_workbook", "sheet", "hidden"]) not in asset_keys
+            assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) not in asset_keys
+            assert (
+                AssetKey(["test_workbook", "embedded_datasource", "embedded_superstore_datasource"])
+                not in asset_keys
+            )
+
+            # Second workbook assets should NOT be present
+            assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
+            assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
+            assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
+            assert (
+                AssetKey(["second_workbook", "embedded_datasource", "embedded_sales_datasource"])
+                not in asset_keys
+            )
+
+            # Check total number of assets - only 2 published datasources
+            assert len(asset_keys) == 2

@@ -500,7 +500,7 @@ def build_data_sources_item_fixture():
     type(mock_data_source_2).content_url = PropertyMock(return_value=None)
     type(mock_data_source_2).created_at = PropertyMock(return_value=None)
     type(mock_data_source_2).updated_at = PropertyMock(return_value=None)
-    type(mock_data_source_1).has_extracts = PropertyMock(return_value=True)
+    type(mock_data_source_2).has_extracts = PropertyMock(return_value=True)
 
     yield [mock_data_source_1, mock_data_source_2]
 
