@@ -613,7 +613,7 @@ def _is_result_object_type(ttype):
     return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
 
 
-VALID_POOL_NAME_REGEX_STR = r"^[A-Za-z0-9_\/]+$"  # standard name regex with slashes
+VALID_POOL_NAME_REGEX_STR = r"^\S+$"  # any non-whitespace characters
 VALID_POOL_NAME_REGEX = re.compile(VALID_POOL_NAME_REGEX_STR)
 
 
