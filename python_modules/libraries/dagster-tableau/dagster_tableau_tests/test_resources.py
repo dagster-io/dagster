@@ -546,3 +546,194 @@ def test_fetch_tableau_workspace_data_with_both_selectors_both_match(
     assert get_workbooks.call_count == 1
     assert get_workbook.call_count == 1
     assert len(response.workbooks_by_id) == 1
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data_project_selector_filters_data_sources(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    """Test that project selector filters standalone data sources by their project."""
+    from unittest.mock import PropertyMock, patch
+
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+
+    # Create mock data sources with different projects
+    mock_ds_matching = MagicMock()
+    type(mock_ds_matching).id = PropertyMock(return_value="ds1")
+    type(mock_ds_matching).name = PropertyMock(return_value="Matching DS")
+    type(mock_ds_matching).has_extracts = PropertyMock(return_value=False)
+    type(mock_ds_matching).project_id = PropertyMock(return_value="matching_project_id")
+    type(mock_ds_matching).project_name = PropertyMock(return_value="matching_project")
+
+    mock_ds_non_matching = MagicMock()
+    type(mock_ds_non_matching).id = PropertyMock(return_value="ds2")
+    type(mock_ds_non_matching).name = PropertyMock(return_value="Non-matching DS")
+    type(mock_ds_non_matching).has_extracts = PropertyMock(return_value=False)
+    type(mock_ds_non_matching).project_id = PropertyMock(return_value="other_project_id")
+    type(mock_ds_non_matching).project_name = PropertyMock(return_value="other_project")
+
+    # Patch BaseTableauClient.get_data_sources to return our custom data sources
+    with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
+        mock_get_ds.return_value = [mock_ds_matching, mock_ds_non_matching]
+
+        resource = clazz(**resource_args)  # type: ignore
+
+        from dagster_tableau.translator import TableauWorkbookMetadata
+
+        # Project selector that only matches the first data source's project
+        def project_selector(metadata: TableauWorkbookMetadata) -> bool:
+            return metadata.project_id == "matching_project_id"
+
+        response = resource.fetch_tableau_workspace_data(project_selector_fn=project_selector)
+
+        # Should filter data sources by project
+        # Workbook has test_project_id which doesn't match, so no workbooks
+        assert len(response.workbooks_by_id) == 0
+        # Should only have the matching data source
+        assert len(response.data_sources_by_id) == 1
+        assert "ds1" in response.data_sources_by_id
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data_project_selector_excludes_non_matching_data_sources(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    """Test that data sources from non-matching projects are excluded."""
+    from unittest.mock import PropertyMock, patch
+
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+
+    # Create mock data source in a different project
+    mock_ds = MagicMock()
+    type(mock_ds).id = PropertyMock(return_value="ds1")
+    type(mock_ds).name = PropertyMock(return_value="Other Project DS")
+    type(mock_ds).has_extracts = PropertyMock(return_value=False)
+    type(mock_ds).project_id = PropertyMock(return_value="other_project_id")
+    type(mock_ds).project_name = PropertyMock(return_value="other_project")
+
+    # Patch BaseTableauClient.get_data_sources to return our custom data source
+    with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
+        mock_get_ds.return_value = [mock_ds]
+
+        resource = clazz(**resource_args)  # type: ignore
+
+        from dagster_tableau.translator import TableauWorkbookMetadata
+
+        # Project selector that matches the workbook's project but not the data source's
+        def project_selector(metadata: TableauWorkbookMetadata) -> bool:
+            return metadata.project_id == "test_project_id"
+
+        response = resource.fetch_tableau_workspace_data(project_selector_fn=project_selector)
+
+        # Should include the workbook (matches project selector)
+        assert len(response.workbooks_by_id) == 1
+        # Should have embedded data sources from the workbook's sheets (3 total)
+        # but NOT the standalone data source we patched in (different project)
+        assert len(response.data_sources_by_id) == 3
+        # Verify the patched standalone data source is NOT included
+        assert "ds1" not in response.data_sources_by_id
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data_project_selector_by_name_filters_data_sources(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    """Test that project selector by name filters data sources correctly."""
+    from unittest.mock import PropertyMock, patch
+
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+
+    # Create mock data source with specific project name
+    mock_ds = MagicMock()
+    type(mock_ds).id = PropertyMock(return_value="ds1")
+    type(mock_ds).name = PropertyMock(return_value="My DS")
+    type(mock_ds).has_extracts = PropertyMock(return_value=False)
+    type(mock_ds).project_id = PropertyMock(return_value="proj1")
+    type(mock_ds).project_name = PropertyMock(return_value="Analytics Project")
+
+    # Patch BaseTableauClient.get_data_sources to return our custom data source
+    with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
+        mock_get_ds.return_value = [mock_ds]
+
+        resource = clazz(**resource_args)  # type: ignore
+
+        from dagster_tableau.translator import TableauWorkbookMetadata
+
+        # Project selector that matches by project name
+        def project_selector(metadata: TableauWorkbookMetadata) -> bool:
+            return metadata.project_name == "Analytics Project"
+
+        response = resource.fetch_tableau_workspace_data(project_selector_fn=project_selector)
+
+        # Should include the data source (matches by project name)
+        assert len(response.data_sources_by_id) == 1
+        assert "ds1" in response.data_sources_by_id

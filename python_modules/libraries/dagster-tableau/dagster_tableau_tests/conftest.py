@@ -490,6 +490,8 @@ def build_data_sources_item_fixture():
     type(mock_data_source_1).created_at = PropertyMock(return_value=None)
     type(mock_data_source_1).updated_at = PropertyMock(return_value=None)
     type(mock_data_source_1).has_extracts = PropertyMock(return_value=False)
+    type(mock_data_source_1).project_id = PropertyMock(return_value=TEST_PROJECT_ID)
+    type(mock_data_source_1).project_name = PropertyMock(return_value=TEST_PROJECT_NAME)
 
     mock_data_source_2 = MagicMock()
     type(mock_data_source_2).id = PropertyMock(return_value=SAMPLE_DATA_SOURCE_HIDDEN_SHEET["luid"])
@@ -501,6 +503,8 @@ def build_data_sources_item_fixture():
     type(mock_data_source_2).created_at = PropertyMock(return_value=None)
     type(mock_data_source_2).updated_at = PropertyMock(return_value=None)
     type(mock_data_source_2).has_extracts = PropertyMock(return_value=True)
+    type(mock_data_source_2).project_id = PropertyMock(return_value=TEST_PROJECT_ID)
+    type(mock_data_source_2).project_name = PropertyMock(return_value=TEST_PROJECT_NAME)
 
     yield [mock_data_source_1, mock_data_source_2]
 

@@ -759,11 +759,27 @@ class BaseTableauWorkspace(ConfigurableResource):
 
             """
             We add to the data all the published-data-sources, that weren't already added from a workbook.
+            If a project selector is active, only include data sources from matching projects.
             """
             for published_data_source in client.get_data_sources():
                 # if we already processed this data_source, skip it
                 if published_data_source.id in data_source_ids:
                     continue
+
+                # If project selector is provided, check if data source's project matches
+                if project_selector_fn:
+                    # Data sources have project_id and project_name,
+                    # create a temporary metadata object to check against project selector
+                    # We use a dummy ID since we're only checking project attributes
+                    data_source_metadata = TableauWorkbookMetadata(
+                        id="",  # Not used for project filtering
+                        project_id=published_data_source.project_id,
+                        project_name=published_data_source.project_name,
+                    )
+
+                    # Skip data source if it doesn't match the project selector
+                    if not project_selector_fn(data_source_metadata):
+                        continue
 
                 data_sources.append(
                     TableauContentData(

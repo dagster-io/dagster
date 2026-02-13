@@ -442,35 +442,9 @@ def test_component_workbook_selector_by_project_id_no_match(
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            # Should have only standalone published data sources (no workbook-related assets)
+            # Should have no assets since project doesn't match (data sources are also filtered by project)
             asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
-
-            # Published data sources (not workbook-specific) SHOULD be present
-            assert AssetKey(["superstore_datasource"]) in asset_keys
-            assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
-
-            # ALL workbook-related assets should NOT be present (from both workbooks)
-            # First workbook assets should NOT be present
-            assert AssetKey(["test_workbook", "sheet", "sales"]) not in asset_keys
-            assert AssetKey(["test_workbook", "sheet", "account"]) not in asset_keys
-            assert AssetKey(["test_workbook", "sheet", "hidden"]) not in asset_keys
-            assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) not in asset_keys
-            assert (
-                AssetKey(["test_workbook", "embedded_datasource", "embedded_superstore_datasource"])
-                not in asset_keys
-            )
-
-            # Second workbook assets should NOT be present
-            assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
-            assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
-            assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
-            assert (
-                AssetKey(["second_workbook", "embedded_datasource", "embedded_sales_datasource"])
-                not in asset_keys
-            )
-
-            # Check total number of assets - only 2 published datasources
-            assert len(asset_keys) == 2
+            assert len(asset_keys) == 0
 
 
 def test_component_workbook_selector_by_project_name(
@@ -630,32 +604,6 @@ def test_component_workbook_selector_by_project_name_no_match(
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            # Should have only standalone published data sources (no workbook-related assets)
+            # Should have no assets since project doesn't match (data sources are also filtered by project)
             asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
-
-            # Published data sources (not workbook-specific) SHOULD be present
-            assert AssetKey(["superstore_datasource"]) in asset_keys
-            assert AssetKey(["hidden_sheet_datasource"]) in asset_keys
-
-            # ALL workbook-related assets should NOT be present (from both workbooks)
-            # Assets from workbook with TEST_WORKBOOK_ID should NOT be present
-            assert AssetKey(["test_workbook", "sheet", "sales"]) not in asset_keys
-            assert AssetKey(["test_workbook", "sheet", "account"]) not in asset_keys
-            assert AssetKey(["test_workbook", "sheet", "hidden"]) not in asset_keys
-            assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) not in asset_keys
-            assert (
-                AssetKey(["test_workbook", "embedded_datasource", "embedded_superstore_datasource"])
-                not in asset_keys
-            )
-
-            # Assets from workbook with TEST_SECOND_WORKBOOK_ID should NOT be present
-            assert AssetKey(["second_workbook", "sheet", "revenue"]) not in asset_keys
-            assert AssetKey(["second_workbook", "sheet", "profit"]) not in asset_keys
-            assert AssetKey(["second_workbook", "dashboard", "dashboard_revenue"]) not in asset_keys
-            assert (
-                AssetKey(["second_workbook", "embedded_datasource", "embedded_sales_datasource"])
-                not in asset_keys
-            )
-
-            # Check total number of assets - only 2 published datasources
-            assert len(asset_keys) == 2
+            assert len(asset_keys) == 0
