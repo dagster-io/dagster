@@ -1855,7 +1855,7 @@ export type ExecutionStepUpForRetryEvent = ErrorEvent &
     level: LogLevel;
     message: Scalars['String']['output'];
     runId: Scalars['String']['output'];
-    secondsToWait: Maybe<Scalars['Int']['output']>;
+    secondsToWait: Maybe<Scalars['Float']['output']>;
     solidHandleID: Maybe<Scalars['String']['output']>;
     stepKey: Maybe<Scalars['String']['output']>;
     timestamp: Scalars['String']['output'];
@@ -9493,7 +9493,7 @@ export const buildExecutionStepUpForRetryEvent = (
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptas',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'maiores',
     secondsToWait:
-      overrides && overrides.hasOwnProperty('secondsToWait') ? overrides.secondsToWait! : 9376,
+      overrides && overrides.hasOwnProperty('secondsToWait') ? overrides.secondsToWait! : 9.38,
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'nostrum',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'sed',

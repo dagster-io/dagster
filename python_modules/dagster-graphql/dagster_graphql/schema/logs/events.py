@@ -171,7 +171,7 @@ class GrapheneExecutionStepRestartEvent(graphene.ObjectType):
 
 
 class GrapheneExecutionStepUpForRetryEvent(graphene.ObjectType):
-    secondsToWait = graphene.Field(graphene.Int)
+    secondsToWait = graphene.Field(graphene.Float)
 
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneErrorEvent)

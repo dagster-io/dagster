@@ -181,7 +181,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent & ErrorEve
   solidHandleID: String
   eventType: DagsterEventType
   error: PythonError
-  secondsToWait: Int
+  secondsToWait: Float
 }
 
 type ExpectationResult implements DisplayableEvent {
