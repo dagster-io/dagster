@@ -602,12 +602,14 @@ class BaseTableauWorkspace(ConfigurableResource):
     def fetch_tableau_workspace_data(
         self,
         workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+        project_selector_fn: Optional[WorkbookSelectorFn] = None,
     ) -> TableauWorkspaceData:
         """Retrieves all Tableau content from the workspace and returns it as a TableauWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Tableau API.
 
         Args:
-            workbook_selector_fn: Optional function to filter workbooks based on their metadata.
+            workbook_selector_fn: Optional function to filter workbooks by their ID.
+            project_selector_fn: Optional function to filter workbooks by their project.
 
         Returns:
             TableauWorkspaceData: A snapshot of the Tableau workspace's content.
@@ -615,8 +617,8 @@ class BaseTableauWorkspace(ConfigurableResource):
         with self.get_client() as client:
             all_workbooks = list(client.get_workbooks())
 
-            # Apply workbook filter if provided
-            if workbook_selector_fn:
+            # Apply filters if provided (workbooks matching either selector are included)
+            if workbook_selector_fn or project_selector_fn:
                 filtered_workbooks = []
                 for wb in all_workbooks:
                     # Create TableauWorkbookMetadata from the workbook list item
@@ -625,7 +627,14 @@ class BaseTableauWorkspace(ConfigurableResource):
                         project_name=wb.project_name,
                         project_id=wb.project_id,
                     )
-                    if workbook_selector_fn(workbook_metadata):
+                    # Include workbook if it matches either selector (OR logic)
+                    matches_workbook = (
+                        workbook_selector_fn(workbook_metadata) if workbook_selector_fn else False
+                    )
+                    matches_project = (
+                        project_selector_fn(workbook_metadata) if project_selector_fn else False
+                    )
+                    if matches_workbook or matches_project:
                         filtered_workbooks.append(wb)
                 all_workbooks = filtered_workbooks
 

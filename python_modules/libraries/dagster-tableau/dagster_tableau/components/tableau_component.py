@@ -104,68 +104,102 @@ class TableauServerWorkspaceArgs(Model, Resolvable):
     )
 
 
-class TableauWorkbookSelectorById(dg.Model, dg.Resolvable):
+class TableauWorkbookSelector(dg.Model, dg.Resolvable):
     """Selector for filtering Tableau workbooks by ID."""
 
-    by_id: Annotated[
-        Sequence[str],
-        Field(..., description="A list of workbook IDs to include in the collection."),
-    ]
+    ids: Annotated[
+        Optional[Sequence[str]],
+        Field(default=None, description="A list of workbook IDs to include in the collection."),
+    ] = None
 
 
-class TableauWorkbookSelectorByProjectId(dg.Model, dg.Resolvable):
-    """Selector for filtering Tableau workbooks by project ID."""
+class TableauProjectsSelector(dg.Model, dg.Resolvable):
+    """Selector for filtering Tableau projects by ID or name.
 
-    by_project_id: Annotated[
-        Sequence[str],
-        Field(..., description="A list of project IDs to include workbooks from."),
-    ]
+    Workbooks belonging to the selected projects will be included.
+    At least one of ids or names must be provided.
+    """
+
+    ids: Annotated[
+        Optional[Sequence[str]],
+        Field(default=None, description="A list of project IDs to include workbooks from."),
+    ] = None
+    names: Annotated[
+        Optional[Sequence[str]],
+        Field(default=None, description="A list of project names to include workbooks from."),
+    ] = None
 
 
-class TableauWorkbookSelectorByProjectName(dg.Model, dg.Resolvable):
-    """Selector for filtering Tableau workbooks by project name."""
+class TableauSelector(dg.Model, dg.Resolvable):
+    """Unified selector for filtering Tableau content by workbooks and/or projects."""
 
-    by_project_name: Annotated[
-        Sequence[str],
-        Field(..., description="A list of project names to include workbooks from."),
-    ]
+    workbooks: Annotated[
+        Optional[TableauWorkbookSelector],
+        Field(default=None, description="Workbook selector configuration."),
+    ] = None
+    projects: Annotated[
+        Optional[TableauProjectsSelector],
+        Field(default=None, description="Project selector configuration."),
+    ] = None
 
 
-def _resolve_workbook_selector(
+@dataclass
+class ResolvedTableauSelector:
+    """Resolved Tableau selector containing the filter functions."""
+
+    workbook_filter_fn: Optional[Callable[[TableauWorkbookMetadata], bool]] = None
+    project_filter_fn: Optional[Callable[[TableauWorkbookMetadata], bool]] = None
+
+
+def _resolve_tableau_selector(
     context: dg.ResolutionContext, model: BaseModel
-) -> Optional[Callable[[TableauWorkbookMetadata], bool]]:
-    """Resolves workbook selector configuration into a filter function."""
-    if isinstance(model, TableauWorkbookSelectorById.model()):
-        resolved = resolve_fields(
-            model=model, resolved_cls=TableauWorkbookSelectorById, context=context
-        )
-        # Store the IDs to filter by - will be matched against workbook metadata id
-        ids_to_include = set(resolved["by_id"])
-        return lambda workbook_metadata: workbook_metadata.id in ids_to_include
-    elif isinstance(model, TableauWorkbookSelectorByProjectId.model()):
-        resolved = resolve_fields(
-            model=model, resolved_cls=TableauWorkbookSelectorByProjectId, context=context
-        )
-        # Store the project IDs to filter by - will be matched against workbook metadata project_id
-        project_ids_to_include = set(resolved["by_project_id"])
-        return lambda workbook_metadata: (
-            workbook_metadata.project_id in project_ids_to_include
-            if workbook_metadata.project_id
-            else False
-        )
-    elif isinstance(model, TableauWorkbookSelectorByProjectName.model()):
-        resolved = resolve_fields(
-            model=model, resolved_cls=TableauWorkbookSelectorByProjectName, context=context
-        )
-        # Store the project names to filter by - will be matched against workbook metadata project_name
-        project_names_to_include = set(resolved["by_project_name"])
-        return lambda workbook_metadata: (
-            workbook_metadata.project_name in project_names_to_include
-            if workbook_metadata.project_name
-            else False
-        )
-    else:
-        check.failed(f"Unknown workbook selector type: {type(model)}")
+) -> ResolvedTableauSelector:
+    """Resolves TableauSelector configuration into workbook and project filter functions.
+
+    Returns:
+        A ResolvedTableauSelector containing the workbook and project filter functions.
+    """
+    if not isinstance(model, TableauSelector.model()):
+        check.failed(f"Expected TableauSelector, got {type(model)}")
+
+    resolved = resolve_fields(model=model, resolved_cls=TableauSelector, context=context)
+
+    # Resolve workbook selector
+    workbook_filter_fn = None
+    workbooks_config = resolved.get("workbooks")
+    if workbooks_config and workbooks_config.ids:
+        ids_to_include = set(workbooks_config.ids)
+        workbook_filter_fn = lambda workbook_metadata: workbook_metadata.id in ids_to_include
+
+    # Resolve project selector
+    project_filter_fn = None
+    projects_config = resolved.get("projects")
+    if projects_config:
+        project_ids_to_include = set(projects_config.ids or [])
+        project_names_to_include = set(projects_config.names or [])
+
+        if project_ids_to_include or project_names_to_include:
+
+            def matches_project(workbook_metadata: TableauWorkbookMetadata) -> bool:
+                # Check if workbook's project matches by ID or name
+                matches_id = (
+                    workbook_metadata.project_id in project_ids_to_include
+                    if workbook_metadata.project_id and project_ids_to_include
+                    else False
+                )
+                matches_name = (
+                    workbook_metadata.project_name in project_names_to_include
+                    if workbook_metadata.project_name and project_names_to_include
+                    else False
+                )
+                # Return True if matches by either ID or name
+                return matches_id or matches_name
+
+            project_filter_fn = matches_project
+
+    return ResolvedTableauSelector(
+        workbook_filter_fn=workbook_filter_fn, project_filter_fn=project_filter_fn
+    )
 
 
 def _resolve_tableau_workspace(
@@ -225,10 +259,14 @@ class TableauComponent(StateBackedComponent, Resolvable):
                 username: "{{ env.TABLEAU_USERNAME }}"
                 site_name: my_site
                 pod_name: 10ax
-              workbook_selector:
-                by_id:
-                  - "abc123-def456"
-                  - "xyz789-uvw012"
+              tableau_selector:
+                workbooks:
+                  ids:
+                    - "abc123-def456"
+                    - "xyz789-uvw012"
+                projects:
+                  names:
+                    - "my_project"
     """
 
     workspace: Annotated[
@@ -262,18 +300,14 @@ class TableauComponent(StateBackedComponent, Resolvable):
             ],
         ),
     ]
-    workbook_selector: Annotated[
-        Optional[Callable[[TableauWorkbookMetadata], bool]],
+    tableau_selector: Annotated[
+        ResolvedTableauSelector,
         dg.Resolver(
-            _resolve_workbook_selector,
-            model_field_type=Union[
-                TableauWorkbookSelectorById.model(),
-                TableauWorkbookSelectorByProjectId.model(),
-                TableauWorkbookSelectorByProjectName.model(),
-            ],
-            description="Function used to select Tableau workbooks to pull into Dagster.",
+            _resolve_tableau_selector,
+            model_field_type=TableauSelector.model(),
+            description="Unified selector for filtering Tableau content by workbooks and/or projects.",
         ),
-    ] = None
+    ] = field(default_factory=ResolvedTableauSelector)
 
     # Takes a list of workbook names or ids to enable refresh for, or True to enable for all embedded datasources
     enable_embedded_datasource_refresh: Union[bool, list[str]] = False
@@ -358,9 +392,14 @@ class TableauComponent(StateBackedComponent, Resolvable):
 
     async def write_state_to_path(self, state_path: Path) -> None:
         """Fetches Tableau workspace data and writes it to the state path."""
-        # Fetch the workspace data with optional workbook filtering
+        # Extract workbook and project selectors from the resolved tableau_selector
+        workbook_selector_fn = self.tableau_selector.workbook_filter_fn
+        project_selector_fn = self.tableau_selector.project_filter_fn
+
+        # Fetch the workspace data with optional workbook and project filtering
         workspace_data = self.workspace.fetch_tableau_workspace_data(
-            workbook_selector_fn=self.workbook_selector
+            workbook_selector_fn=workbook_selector_fn,
+            project_selector_fn=project_selector_fn,
         )
 
         # Serialize and write to path

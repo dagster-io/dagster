@@ -163,8 +163,8 @@ def test_component_workbook_selector_by_id(
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
     # Add workbook selector to filter to only TEST_WORKBOOK_ID
-    body["attributes"]["workbook_selector"] = {
-        "by_id": ["b75fc023-a7ca-4115-857b-4342028640d0"]  # TEST_WORKBOOK_ID
+    body["attributes"]["tableau_selector"] = {
+        "workbooks": {"ids": ["b75fc023-a7ca-4115-857b-4342028640d0"]}  # TEST_WORKBOOK_ID
     }
 
     with (
@@ -229,8 +229,8 @@ def test_component_workbook_selector_with_multiple_ids(
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
     # Add workbook selector with multiple IDs (only one will match our test data)
-    body["attributes"]["workbook_selector"] = {
-        "by_id": ["b75fc023-a7ca-4115-857b-4342028640d0", "non-existent-id"]
+    body["attributes"]["tableau_selector"] = {
+        "workbooks": {"ids": ["b75fc023-a7ca-4115-857b-4342028640d0", "non-existent-id"]}
     }
 
     with (
@@ -288,12 +288,12 @@ def test_component_workbook_selector_with_multiple_ids(
 def test_component_workbook_selector_by_project_id(
     workspace_data_two_workbooks, get_workbooks_two_workbooks
 ) -> None:
-    """Test component with workbook selector filtering by project ID."""
+    """Test component with project selector filtering by project ID."""
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
-    # Add workbook selector to filter by project ID
-    body["attributes"]["workbook_selector"] = {
-        "by_project_id": ["test_project_id"]  # TEST_PROJECT_ID from conftest
+    # Add project selector to filter by project ID
+    body["attributes"]["tableau_selector"] = {
+        "projects": {"ids": ["test_project_id"]}  # TEST_PROJECT_ID from conftest
     }
 
     with (
@@ -354,12 +354,12 @@ def test_component_workbook_selector_by_project_id(
 def test_component_workbook_selector_by_project_id_with_multiple_ids(
     workspace_data_two_workbooks, get_workbooks_two_workbooks
 ) -> None:
-    """Test that workbook selector works with multiple project IDs and filters correctly."""
+    """Test that project selector works with multiple project IDs and filters correctly."""
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
-    # Add workbook selector with multiple project IDs (only one will match our test data)
-    body["attributes"]["workbook_selector"] = {
-        "by_project_id": ["test_project_id", "non-existent-project-id"]
+    # Add project selector with multiple project IDs (only one will match our test data)
+    body["attributes"]["tableau_selector"] = {
+        "projects": {"ids": ["test_project_id", "non-existent-project-id"]}
     }
 
     with (
@@ -417,11 +417,11 @@ def test_component_workbook_selector_by_project_id_with_multiple_ids(
 def test_component_workbook_selector_by_project_id_no_match(
     workspace_data_two_workbooks, get_workbooks_two_workbooks
 ) -> None:
-    """Test that workbook selector with non-matching project ID returns only standalone data sources."""
+    """Test that project selector with non-matching project ID returns only standalone data sources."""
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
-    # Add workbook selector with project ID that doesn't match any workbooks
-    body["attributes"]["workbook_selector"] = {"by_project_id": ["non-existent-project-id"]}
+    # Add project selector with project ID that doesn't match any workbooks
+    body["attributes"]["tableau_selector"] = {"projects": {"ids": ["non-existent-project-id"]}}
 
     with (
         instance_for_test(),
@@ -476,12 +476,12 @@ def test_component_workbook_selector_by_project_id_no_match(
 def test_component_workbook_selector_by_project_name(
     workspace_data_two_workbooks, get_workbooks_two_workbooks
 ) -> None:
-    """Test component with workbook selector filtering by project name."""
+    """Test component with project selector filtering by project name."""
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
-    # Add workbook selector to filter by project name
-    body["attributes"]["workbook_selector"] = {
-        "by_project_name": ["test_project_name"]  # TEST_PROJECT_NAME from conftest
+    # Add project selector to filter by project name
+    body["attributes"]["tableau_selector"] = {
+        "projects": {"names": ["test_project_name"]}  # TEST_PROJECT_NAME from conftest
     }
 
     with (
@@ -542,12 +542,12 @@ def test_component_workbook_selector_by_project_name(
 def test_component_workbook_selector_by_project_name_with_multiple_names(
     workspace_data_two_workbooks, get_workbooks_two_workbooks
 ) -> None:
-    """Test that workbook selector works with multiple project names and filters correctly."""
+    """Test that project selector works with multiple project names and filters correctly."""
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
-    # Add workbook selector with multiple project names (only one will match)
-    body["attributes"]["workbook_selector"] = {
-        "by_project_name": ["test_project_name", "non-existent-project-name"]
+    # Add project selector with multiple project names (only one will match)
+    body["attributes"]["tableau_selector"] = {
+        "projects": {"names": ["test_project_name", "non-existent-project-name"]}
     }
 
     with (
@@ -605,11 +605,11 @@ def test_component_workbook_selector_by_project_name_with_multiple_names(
 def test_component_workbook_selector_by_project_name_no_match(
     workspace_data_two_workbooks, get_workbooks_two_workbooks
 ) -> None:
-    """Test that workbook selector with non-matching project name returns only standalone data sources."""
+    """Test that project selector with non-matching project name returns only standalone data sources."""
     body = copy.deepcopy(BASIC_TABLEAU_COMPONENT_BODY)
     body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
-    # Add workbook selector with project name that doesn't match any workbooks
-    body["attributes"]["workbook_selector"] = {"by_project_name": ["non-existent-project-name"]}
+    # Add project selector with project name that doesn't match any workbooks
+    body["attributes"]["tableau_selector"] = {"projects": {"names": ["non-existent-project-name"]}}
 
     with (
         instance_for_test(),
