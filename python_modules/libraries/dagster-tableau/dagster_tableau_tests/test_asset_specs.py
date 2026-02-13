@@ -99,6 +99,8 @@ def test_invalid_workbook(
     resource.build_client()
 
     # Test invalid workbook
+    # Clear side_effect first so return_value takes precedence
+    get_workbook.side_effect = None
     get_workbook.return_value = {"data": {"workbooks": None}}
     with pytest.raises(
         CheckError, match=f"Invalid data for Tableau workbook for id {workbook_id}."

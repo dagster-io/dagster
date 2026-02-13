@@ -153,3 +153,99 @@ def test_fetch_tableau_workspace_data(
         )
         == "Embedded Superstore Datasource"
     )
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data_with_workbook_selector_by_id(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    workbook_id: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    """Test that fetch_tableau_workspace_data filters workbooks by ID when selector is provided."""
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+    resource = clazz(**resource_args)  # type: ignore
+
+    # Import after resource is created to avoid import errors
+    from dagster_tableau.translator import TableauWorkbookMetadata
+
+    # Create a workbook selector that matches the test workbook ID
+    def workbook_selector(metadata: TableauWorkbookMetadata) -> bool:
+        return metadata.id == workbook_id
+
+    response = resource.fetch_tableau_workspace_data(workbook_selector_fn=workbook_selector)
+
+    # Verify that workbooks were filtered
+    assert get_workbooks.call_count == 1
+    assert get_workbook.call_count == 1  # Should only fetch the matching workbook
+    assert len(response.workbooks_by_id) == 1
+    assert workbook_id in response.workbooks_by_id
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data_with_workbook_selector_excludes_non_matching_workbooks(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    workbook_id: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    """Test that fetch_tableau_workspace_data excludes non-matching workbooks."""
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+    resource = clazz(**resource_args)  # type: ignore
+
+    from dagster_tableau.translator import TableauWorkbookMetadata
+
+    # Create a workbook selector that never matches
+    def workbook_selector(metadata: TableauWorkbookMetadata) -> bool:
+        return metadata.id == "non-existent-workbook-id"
+
+    response = resource.fetch_tableau_workspace_data(workbook_selector_fn=workbook_selector)
+
+    # Verify that no workbooks were fetched
+    assert get_workbooks.call_count == 1
+    assert get_workbook.call_count == 0  # Should not fetch any workbooks
+    assert len(response.workbooks_by_id) == 0
+    assert len(response.sheets_by_id) == 0
+    assert len(response.dashboards_by_id) == 0

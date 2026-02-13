@@ -81,8 +81,8 @@ class TableauWorkbookMetadata:
     """Represents the metadata of a Tableau workbook, based on data as returned from the API."""
 
     id: str
-    project_name: str
-    project_id: str
+    project_name: Optional[str]
+    project_id: Optional[str]
 
     @classmethod
     def from_workbook_properties(

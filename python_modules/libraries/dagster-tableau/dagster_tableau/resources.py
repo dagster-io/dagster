@@ -44,6 +44,7 @@ from dagster_tableau.translator import (
     TableauTagSet,
     TableauTranslatorData,
     TableauViewMetadataSet,
+    TableauWorkbookMetadata,
     TableauWorkspaceData,
     WorkbookSelectorFn,
 )
@@ -600,15 +601,34 @@ class BaseTableauWorkspace(ConfigurableResource):
     @cached_method
     def fetch_tableau_workspace_data(
         self,
+        workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
     ) -> TableauWorkspaceData:
         """Retrieves all Tableau content from the workspace and returns it as a TableauWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Tableau API.
+
+        Args:
+            workbook_selector_fn: Optional function to filter workbooks based on their metadata.
 
         Returns:
             TableauWorkspaceData: A snapshot of the Tableau workspace's content.
         """
         with self.get_client() as client:
             all_workbooks = list(client.get_workbooks())
+
+            # Apply workbook filter if provided
+            if workbook_selector_fn:
+                filtered_workbooks = []
+                for wb in all_workbooks:
+                    # Create TableauWorkbookMetadata from the workbook list item
+                    workbook_metadata = TableauWorkbookMetadata(
+                        id=check.not_none(wb.id),
+                        project_name=wb.project_name,
+                        project_id=wb.project_id,
+                    )
+                    if workbook_selector_fn(workbook_metadata):
+                        filtered_workbooks.append(wb)
+                all_workbooks = filtered_workbooks
+
             workbooks: list[TableauContentData] = []
             sheets: list[TableauContentData] = []
             dashboards: list[TableauContentData] = []

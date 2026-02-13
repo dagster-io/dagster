@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -32,6 +33,7 @@ from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauDataSourceMetadataSet,
     TableauTranslatorData,
+    TableauWorkbookMetadata,
     TableauWorkspaceData,
 )
 
@@ -102,6 +104,30 @@ class TableauServerWorkspaceArgs(Model, Resolvable):
     )
 
 
+class TableauWorkbookSelectorById(dg.Model, dg.Resolvable):
+    """Selector for filtering Tableau workbooks by ID."""
+
+    by_id: Annotated[
+        Sequence[str],
+        Field(..., description="A list of workbook IDs to include in the collection."),
+    ]
+
+
+def _resolve_workbook_selector(
+    context: dg.ResolutionContext, model: BaseModel
+) -> Optional[Callable[[TableauWorkbookMetadata], bool]]:
+    """Resolves workbook selector configuration into a filter function."""
+    if isinstance(model, TableauWorkbookSelectorById.model()):
+        resolved = resolve_fields(
+            model=model, resolved_cls=TableauWorkbookSelectorById, context=context
+        )
+        # Store the IDs to filter by - will be matched against workbook metadata id
+        ids_to_include = set(resolved["by_id"])
+        return lambda workbook_metadata: workbook_metadata.id in ids_to_include
+    else:
+        check.failed(f"Unknown workbook selector type: {type(model)}")
+
+
 def _resolve_tableau_workspace(
     context: ResolutionContext, model: BaseModel
 ) -> BaseTableauWorkspace:
@@ -159,6 +185,10 @@ class TableauComponent(StateBackedComponent, Resolvable):
                 username: "{{ env.TABLEAU_USERNAME }}"
                 site_name: my_site
                 pod_name: 10ax
+              workbook_selector:
+                by_id:
+                  - "abc123-def456"
+                  - "xyz789-uvw012"
     """
 
     workspace: Annotated[
@@ -192,6 +222,14 @@ class TableauComponent(StateBackedComponent, Resolvable):
             ],
         ),
     ]
+    workbook_selector: Annotated[
+        Optional[Callable[[TableauWorkbookMetadata], bool]],
+        dg.Resolver(
+            _resolve_workbook_selector,
+            model_field_type=TableauWorkbookSelectorById.model(),
+            description="Function used to select Tableau workbooks to pull into Dagster.",
+        ),
+    ] = None
 
     # Takes a list of workbook names or ids to enable refresh for, or True to enable for all embedded datasources
     enable_embedded_datasource_refresh: Union[bool, list[str]] = False
@@ -276,8 +314,10 @@ class TableauComponent(StateBackedComponent, Resolvable):
 
     async def write_state_to_path(self, state_path: Path) -> None:
         """Fetches Tableau workspace data and writes it to the state path."""
-        # Fetch the workspace data
-        workspace_data = self.workspace.fetch_tableau_workspace_data()
+        # Fetch the workspace data with optional workbook filtering
+        workspace_data = self.workspace.fetch_tableau_workspace_data(
+            workbook_selector_fn=self.workbook_selector
+        )
 
         # Serialize and write to path
         state_path.write_text(dg.serialize_value(workspace_data))
