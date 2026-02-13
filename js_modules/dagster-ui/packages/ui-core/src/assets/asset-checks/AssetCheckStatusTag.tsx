@@ -95,10 +95,13 @@ const STATUS_TAG_CONFIG: Record<AssetCheckIconType, StatusTagConfig> = {
   },
 };
 
-function renderStatusTag(
-  status: AssetCheckIconType,
-  partitionStats?: AssetCheckPartitionStats | null,
-): React.ReactNode {
+const StatusTag = ({
+  status,
+  partitionStats,
+}: {
+  status: AssetCheckIconType;
+  partitionStats?: AssetCheckPartitionStats | null;
+}) => {
   const config = STATUS_TAG_CONFIG[status];
   const totalPartitions = partitionStats
     ? partitionStats.numSucceeded +
@@ -124,20 +127,21 @@ function renderStatusTag(
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Tag icon={config.icon} intent={config.intent}>
-        {config.showSpinner && (
+        {config.showSpinner ? (
           <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
             <Spinner purpose="body-text" />
             {config.label}
           </Box>
+        ) : (
+          config.label
         )}
-        {!config.showSpinner && config.label}
       </Tag>
       {partitionSummary && config.partitionText && (
         <Caption>{config.partitionText(partitionStats, totalPartitions)}</Caption>
       )}
     </Box>
   );
-}
+};
 
 const CheckRow = ({
   icon,
@@ -295,7 +299,7 @@ export const AssetCheckStatusTag = ({
     // When check is provided, always use aggregate status
     if (check) {
       const aggregateStatus = getAggregateCheckIconType(check);
-      return renderStatusTag(aggregateStatus, partitionStats);
+      return <StatusTag status={aggregateStatus} partitionStats={partitionStats} />;
     }
 
     // Fall back to execution-only rendering when no check provided

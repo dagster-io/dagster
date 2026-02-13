@@ -104,13 +104,16 @@ export function assetCheckExecutionStatusIcon(status: AssetCheckExecutionResolve
 }
 
 /**
- * Get colored icon for an asset check execution status.
+ * Colored icon for an asset check execution status.
  * For individual execution records (e.g., historical view).
  */
-export function getExecutionStatusIcon(
-  status: AssetCheckExecutionResolvedStatus,
-  severity?: AssetCheckSeverity | null,
-): React.ReactNode {
+export const ExecutionStatusIcon = ({
+  status,
+  severity,
+}: {
+  status: AssetCheckExecutionResolvedStatus;
+  severity?: AssetCheckSeverity | null;
+}) => {
   const isWarn = severity === AssetCheckSeverity.WARN;
 
   switch (status) {
@@ -138,7 +141,7 @@ export function getExecutionStatusIcon(
     default:
       assertUnreachable(status);
   }
-}
+};
 
 export type AssetCheckIconType =
   | AssetCheckExecutionResolvedStatus
@@ -161,32 +164,58 @@ type AssetCheckPartitionRangeStatus =
   | 'IN_PROGRESS'
   | 'SKIPPED';
 
-/**
- * Helper function to increment partition stats based on status.
- * Reduces duplication when processing partition ranges.
- */
-function incrementStatsForStatus(
-  stats: AssetCheckPartitionStats,
+const EMPTY_STATS: AssetCheckPartitionStats = {
+  numSucceeded: 0,
+  numFailed: 0,
+  numExecutionFailed: 0,
+  numInProgress: 0,
+  numSkipped: 0,
+};
+
+function statsForStatus(
   status: AssetCheckPartitionRangeStatus,
   count: number = 1,
-): void {
+): AssetCheckPartitionStats {
   switch (status) {
     case 'SUCCEEDED':
-      stats.numSucceeded += count;
-      break;
+      return {...EMPTY_STATS, numSucceeded: count};
     case 'FAILED':
-      stats.numFailed += count;
-      break;
+      return {...EMPTY_STATS, numFailed: count};
     case 'EXECUTION_FAILED':
-      stats.numExecutionFailed += count;
-      break;
+      return {...EMPTY_STATS, numExecutionFailed: count};
     case 'IN_PROGRESS':
-      stats.numInProgress += count;
-      break;
+      return {...EMPTY_STATS, numInProgress: count};
     case 'SKIPPED':
-      stats.numSkipped += count;
-      break;
+      return {...EMPTY_STATS, numSkipped: count};
   }
+}
+
+function mergeStats(
+  a: AssetCheckPartitionStats,
+  b: AssetCheckPartitionStats,
+): AssetCheckPartitionStats {
+  return {
+    numSucceeded: a.numSucceeded + b.numSucceeded,
+    numFailed: a.numFailed + b.numFailed,
+    numExecutionFailed: a.numExecutionFailed + b.numExecutionFailed,
+    numInProgress: a.numInProgress + b.numInProgress,
+    numSkipped: a.numSkipped + b.numSkipped,
+  };
+}
+
+function statsFromDefaultPartitions(
+  statuses: Extract<
+    NonNullable<AssetCheckWithPartitionStatuses['partitionStatuses']>,
+    {__typename: 'AssetCheckDefaultPartitionStatuses'}
+  >,
+): AssetCheckPartitionStats {
+  return {
+    numSucceeded: statuses.succeededPartitions?.length || 0,
+    numFailed: statuses.failedPartitions?.length || 0,
+    numExecutionFailed: statuses.executionFailedPartitions?.length || 0,
+    numInProgress: statuses.inProgressPartitions?.length || 0,
+    numSkipped: statuses.skippedPartitions?.length || 0,
+  };
 }
 
 /**
@@ -200,45 +229,31 @@ export function getCheckPartitionStats(
     return null;
   }
 
-  const stats: AssetCheckPartitionStats = {
-    numSucceeded: 0,
-    numFailed: 0,
-    numExecutionFailed: 0,
-    numInProgress: 0,
-    numSkipped: 0,
-  };
-
   const statuses = check.partitionStatuses;
+  let stats: AssetCheckPartitionStats;
 
   if (statuses.__typename === 'AssetCheckDefaultPartitionStatuses') {
-    stats.numSucceeded = statuses.succeededPartitions?.length || 0;
-    stats.numFailed = statuses.failedPartitions?.length || 0;
-    stats.numExecutionFailed = statuses.executionFailedPartitions?.length || 0;
-    stats.numInProgress = statuses.inProgressPartitions?.length || 0;
-    stats.numSkipped = statuses.skippedPartitions?.length || 0;
+    stats = statsFromDefaultPartitions(statuses);
   } else if (statuses.__typename === 'AssetCheckTimePartitionStatuses') {
-    // Count partitions across ranges
-    // Note: rangeLength is simplified to 1. This could be enhanced to calculate
-    // actual time range lengths based on partition definition.
-    statuses.ranges?.forEach((range) => {
-      incrementStatsForStatus(stats, range.status, 1);
-    });
+    stats = (statuses.ranges ?? []).reduce(
+      (acc, range) => mergeStats(acc, statsForStatus(range.status, 1)),
+      EMPTY_STATS,
+    );
   } else if (statuses.__typename === 'AssetCheckMultiPartitionStatuses') {
-    // Handle multi-partition by flattening secondary dimensions
-    statuses.ranges?.forEach((range) => {
+    stats = (statuses.ranges ?? []).reduce((acc, range) => {
       const secondaryDim = range.secondaryDim;
       if (secondaryDim.__typename === 'AssetCheckDefaultPartitionStatuses') {
-        stats.numSucceeded += secondaryDim.succeededPartitions?.length || 0;
-        stats.numFailed += secondaryDim.failedPartitions?.length || 0;
-        stats.numExecutionFailed += secondaryDim.executionFailedPartitions?.length || 0;
-        stats.numInProgress += secondaryDim.inProgressPartitions?.length || 0;
-        stats.numSkipped += secondaryDim.skippedPartitions?.length || 0;
+        return mergeStats(acc, statsFromDefaultPartitions(secondaryDim));
       } else if (secondaryDim.__typename === 'AssetCheckTimePartitionStatuses') {
-        secondaryDim.ranges?.forEach((r) => {
-          incrementStatsForStatus(stats, r.status, 1);
-        });
+        return (secondaryDim.ranges ?? []).reduce(
+          (innerAcc, r) => mergeStats(innerAcc, statsForStatus(r.status, 1)),
+          acc,
+        );
       }
-    });
+      return acc;
+    }, EMPTY_STATS);
+  } else {
+    return null;
   }
 
   // If all counts are zero, the check is not actually partitioned (empty arrays)
