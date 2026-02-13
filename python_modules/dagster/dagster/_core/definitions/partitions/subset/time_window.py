@@ -1,5 +1,7 @@
 import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
@@ -25,6 +27,23 @@ from dagster._serdes import whitelist_for_serdes
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
     from dagster._core.instance import DynamicPartitionsStore
+
+_skip_num_partitions_serialization: ContextVar[bool] = ContextVar(
+    "skip_num_partitions_serialization", default=False
+)
+
+
+@contextmanager
+def skip_num_partitions_serialization_ctx() -> Iterator[None]:
+    """Context manager that disables pre-computation of num_partitions during serialization.
+
+    Used in contexts where computing num_partitions is expensive and not needed immediately.
+    """
+    token = _skip_num_partitions_serialization.set(True)
+    try:
+        yield
+    finally:
+        _skip_num_partitions_serialization.reset(token)
 
 
 def _attempt_coerce_to_time_window_subset(subset: "PartitionsSubset") -> "PartitionsSubset":
@@ -55,6 +74,8 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
         # value.num_partitions will calculate the number of partitions if the field is None
         # We want to check if the field is None and replace the value with the calculated value
         # for serialization
+        if _skip_num_partitions_serialization.get():
+            return value
         if value._asdict()["num_partitions"] is None:
             return TimeWindowPartitionsSubset(
                 partitions_def=value.partitions_def,

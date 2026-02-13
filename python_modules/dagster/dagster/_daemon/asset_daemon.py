@@ -36,6 +36,9 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.subset.time_window import (
+    skip_num_partitions_serialization_ctx,
+)
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -196,6 +199,13 @@ def get_current_evaluation_id(
     return cursor.evaluation_id
 
 
+def _serialize_asset_daemon_cursor(cursor: AssetDaemonCursor) -> str:
+    # num_partitions can be slow to pre-compute for DA sensors and the pre-computation doesn't
+    # help with performance
+    with skip_num_partitions_serialization_ctx():
+        return serialize_value(cursor)
+
+
 def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCursor) -> str:
     """This method compresses the serialized cursor and returns a b64 encoded string to be stored
     as a string value.
@@ -203,7 +213,7 @@ def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCurso
     # increment the version if the cursor format changes
     VERSION = "0"
 
-    serialized_bytes = serialize_value(cursor).encode("utf-8")
+    serialized_bytes = _serialize_asset_daemon_cursor(cursor).encode("utf-8")
     compressed_bytes = zlib.compress(serialized_bytes)
     encoded_cursor = base64.b64encode(compressed_bytes).decode("utf-8")
     return VERSION + encoded_cursor
@@ -1189,7 +1199,11 @@ class AssetDaemon(DagsterDaemon):
                 )
             else:
                 instance.daemon_cursor_storage.set_cursor_values(
-                    {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(new_cursor)}
+                    {
+                        _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: _serialize_asset_daemon_cursor(
+                            new_cursor
+                        )
+                    }
                 )
 
             check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")
