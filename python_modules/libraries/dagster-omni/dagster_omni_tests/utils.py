@@ -120,7 +120,7 @@ def get_sample_documents_api_response() -> dict[str, Any]:
                 },
                 "hasDashboard": True,
                 "identifier": "12db1a0a",
-                "labels": [{"name": "Marketing", "verified": False}],
+                "labels": ["Marketing"],
                 "name": "Blob Web Traffic",
                 "owner": {"id": "9e8719d9-276a-4964-9395-a493189a247c", "name": "Blobby"},
                 "scope": "public",

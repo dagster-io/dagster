@@ -26,8 +26,14 @@ class OmniLabel:
     verified: bool
 
     @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "OmniLabel":
-        """Create OmniLabel from JSON response data."""
+    def from_json(cls, data: dict[str, Any] | str) -> "OmniLabel":
+        """Create OmniLabel from JSON response data.
+
+        The documents endpoint returns labels as strings, while the labels
+        endpoint returns full objects with name/verified/homepage/usage_count.
+        """
+        if isinstance(data, str):
+            return cls(name=data, verified=False)
         return cls(name=data["name"], verified=data["verified"])
 
 
