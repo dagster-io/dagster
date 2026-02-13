@@ -4155,6 +4155,9 @@ type Mutation {
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
+  reportAssetCheckEvaluation(
+    eventParams: ReportAssetCheckEvaluationParams!
+  ): ReportAssetCheckEvaluationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
@@ -4234,6 +4237,23 @@ union ReportRunlessAssetEventsResult =
 
 type ReportRunlessAssetEventsSuccess {
   assetKey: AssetKey!
+}
+
+union ReportAssetCheckEvaluationResult =
+  | UnauthorizedError
+  | PythonError
+  | ReportAssetCheckEvaluationSuccess
+
+type ReportAssetCheckEvaluationSuccess {
+  assetKey: AssetKey!
+}
+
+input ReportAssetCheckEvaluationParams {
+  assetKey: AssetKeyInput!
+  checkName: String!
+  passed: Boolean!
+  severity: AssetCheckSeverity = null
+  serializedMetadata: String = null
 }
 
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError

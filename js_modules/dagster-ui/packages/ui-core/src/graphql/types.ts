@@ -3063,6 +3063,7 @@ export type Mutation = {
   reexecutePartitionBackfill: LaunchBackfillResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
+  reportAssetCheckEvaluation: ReportAssetCheckEvaluationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   resetSchedule: ScheduleMutationResult;
   resetSensor: SensorOrError;
@@ -3160,6 +3161,10 @@ export type MutationReexecutePartitionBackfillArgs = {
 
 export type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars['String']['input'];
+};
+
+export type MutationReportAssetCheckEvaluationArgs = {
+  eventParams: ReportAssetCheckEvaluationParams;
 };
 
 export type MutationReportRunlessAssetEventsArgs = {
@@ -4635,6 +4640,24 @@ export type ReloadWorkspaceMutation = {
 };
 
 export type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace;
+
+export type ReportAssetCheckEvaluationParams = {
+  assetKey: AssetKeyInput;
+  checkName: Scalars['String']['input'];
+  passed: Scalars['Boolean']['input'];
+  serializedMetadata?: InputMaybe<Scalars['String']['input']>;
+  severity?: InputMaybe<AssetCheckSeverity>;
+};
+
+export type ReportAssetCheckEvaluationResult =
+  | PythonError
+  | ReportAssetCheckEvaluationSuccess
+  | UnauthorizedError;
+
+export type ReportAssetCheckEvaluationSuccess = {
+  __typename: 'ReportAssetCheckEvaluationSuccess';
+  assetKey: AssetKey;
+};
 
 export type ReportRunlessAssetEventsParams = {
   assetKey: AssetKeyInput;
@@ -11604,6 +11627,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
+    reportAssetCheckEvaluation:
+      overrides && overrides.hasOwnProperty('reportAssetCheckEvaluation')
+        ? overrides.reportAssetCheckEvaluation!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
     reportRunlessAssetEvents:
       overrides && overrides.hasOwnProperty('reportRunlessAssetEvents')
         ? overrides.reportRunlessAssetEvents!
@@ -13939,6 +13968,49 @@ export const buildReloadWorkspaceMutation = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
+  };
+};
+
+export const buildReportAssetCheckEvaluationParams = (
+  overrides?: Partial<ReportAssetCheckEvaluationParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ReportAssetCheckEvaluationParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportAssetCheckEvaluationParams');
+  return {
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKeyInput')
+          ? ({} as AssetKeyInput)
+          : buildAssetKeyInput({}, relationshipsToOmit),
+    checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'aut',
+    passed: overrides && overrides.hasOwnProperty('passed') ? overrides.passed! : false,
+    serializedMetadata:
+      overrides && overrides.hasOwnProperty('serializedMetadata')
+        ? overrides.serializedMetadata!
+        : 'nisi',
+    severity:
+      overrides && overrides.hasOwnProperty('severity')
+        ? overrides.severity!
+        : AssetCheckSeverity.ERROR,
+  };
+};
+
+export const buildReportAssetCheckEvaluationSuccess = (
+  overrides?: Partial<ReportAssetCheckEvaluationSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ReportAssetCheckEvaluationSuccess'} & ReportAssetCheckEvaluationSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportAssetCheckEvaluationSuccess');
+  return {
+    __typename: 'ReportAssetCheckEvaluationSuccess',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
   };
 };
 

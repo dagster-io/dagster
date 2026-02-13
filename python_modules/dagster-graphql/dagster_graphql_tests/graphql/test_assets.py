@@ -17,6 +17,10 @@ from dagster import (
     define_asset_job,
     repository,
 )
+from dagster._core.definitions.asset_checks.asset_check_spec import (
+    AssetCheckKey,
+    AssetCheckSeverity,
+)
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import (
     AssetMaterializationFailure,
@@ -246,6 +250,23 @@ mutation reportRunlessAssetEvents($eventParams: ReportRunlessAssetEventsParams!)
       }
     }
   }
+}
+"""
+
+REPORT_ASSET_CHECK_EVALUATION = """
+mutation reportAssetCheckEvaluation($eventParams: ReportAssetCheckEvaluationParams!) {
+    reportAssetCheckEvaluation(eventParams: $eventParams) {
+        __typename
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on ReportAssetCheckEvaluationSuccess {
+            assetKey {
+                path
+            }
+        }
+    }
 }
 """
 
@@ -1368,6 +1389,114 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 observation = event_records[i].asset_observation
                 assert observation
                 assert observation.description == description
+
+    def test_report_asset_check_evaluation(self, graphql_context: WorkspaceRequestContext):
+        asset_key = AssetKey("asset1")
+        check_name = "my_check"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_ASSET_CHECK_EVALUATION,
+            variables={
+                "eventParams": {
+                    "assetKey": {"path": asset_key.path},
+                    "checkName": check_name,
+                    "passed": True,
+                    "severity": "WARN",
+                }
+            },
+        )
+
+        assert result.data
+        assert result.data["reportAssetCheckEvaluation"]
+        assert (
+            result.data["reportAssetCheckEvaluation"]["__typename"]
+            == "ReportAssetCheckEvaluationSuccess"
+        )
+        assert result.data["reportAssetCheckEvaluation"]["assetKey"]["path"] == list(asset_key.path)
+
+        check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
+        record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+            [check_key]
+        ).get(check_key)
+        assert record is not None
+        assert record.event is not None
+        evaluation = record.event.asset_check_evaluation
+        assert evaluation is not None
+        assert evaluation.check_name == check_name
+        assert evaluation.passed is True
+        assert evaluation.severity == AssetCheckSeverity.WARN
+
+    def test_report_asset_check_evaluation_failed(self, graphql_context: WorkspaceRequestContext):
+        """Test reporting a failed check; severity defaults to ERROR when omitted."""
+        asset_key = AssetKey("asset1")
+        check_name = "my_failed_check"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_ASSET_CHECK_EVALUATION,
+            variables={
+                "eventParams": {
+                    "assetKey": {"path": asset_key.path},
+                    "checkName": check_name,
+                    "passed": False,
+                }
+            },
+        )
+
+        assert result.data
+        assert (
+            result.data["reportAssetCheckEvaluation"]["__typename"]
+            == "ReportAssetCheckEvaluationSuccess"
+        )
+
+        check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
+        record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+            [check_key]
+        ).get(check_key)
+        assert record is not None
+        assert record.event is not None
+        evaluation = record.event.asset_check_evaluation
+        assert evaluation is not None
+        assert evaluation.passed is False
+        assert evaluation.severity == AssetCheckSeverity.ERROR
+
+    def test_report_asset_check_evaluation_with_metadata(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        asset_key = AssetKey("asset1")
+        check_name = "my_metadata_check"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_ASSET_CHECK_EVALUATION,
+            variables={
+                "eventParams": {
+                    "assetKey": {"path": asset_key.path},
+                    "checkName": check_name,
+                    "passed": True,
+                    "severity": "WARN",
+                    "serializedMetadata": json.dumps({"row_count": 100, "status": "healthy"}),
+                }
+            },
+        )
+
+        assert result.data
+        assert (
+            result.data["reportAssetCheckEvaluation"]["__typename"]
+            == "ReportAssetCheckEvaluationSuccess"
+        )
+
+        check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
+        record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+            [check_key]
+        ).get(check_key)
+        assert record is not None
+        assert record.event is not None
+        evaluation = record.event.asset_check_evaluation
+        assert evaluation is not None
+        assert evaluation.metadata is not None
+        assert len(evaluation.metadata) == 2
 
     def test_asset_asof_timestamp(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "asset_tag_job")

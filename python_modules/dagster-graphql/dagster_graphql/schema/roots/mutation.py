@@ -1,8 +1,10 @@
+import json
 from collections.abc import Sequence
 from typing import Optional, Union
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSelector
@@ -13,6 +15,7 @@ from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from dagster_graphql.implementation.execution import (
     delete_pipeline_run,
+    report_asset_check_evaluation,
     report_runless_asset_events,
     terminate_pipeline_execution,
     terminate_pipeline_execution_for_runs,
@@ -72,6 +75,7 @@ from dagster_graphql.schema.inputs import (
     GrapheneLaunchBackfillParams,
     GraphenePartitionsByAssetSelector,
     GrapheneReexecutionParams,
+    GrapheneReportAssetCheckEvaluationParams,
     GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
@@ -892,6 +896,65 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
         )
 
 
+class GrapheneReportAssetCheckEvaluationSuccess(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "ReportAssetCheckEvaluationSuccess"
+
+
+class GrapheneReportAssetCheckEvaluationResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReportAssetCheckEvaluationSuccess,
+        )
+        name = "ReportAssetCheckEvaluationResult"
+
+
+class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
+    """Reports an asset check evaluation result."""
+
+    Output = graphene.NonNull(GrapheneReportAssetCheckEvaluationResult)
+
+    class Arguments:
+        eventParams = graphene.Argument(graphene.NonNull(GrapheneReportAssetCheckEvaluationParams))
+
+    class Meta:
+        name = "ReportAssetCheckEvaluationMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        eventParams: GrapheneReportAssetCheckEvaluationParams,
+    ):
+        asset_key = AssetKey.from_graphql_input(eventParams["assetKey"])
+        check_name = eventParams["checkName"]
+        passed = eventParams["passed"]
+        severity_raw = eventParams.get("severity")
+        severity = AssetCheckSeverity(severity_raw) if severity_raw else AssetCheckSeverity.ERROR
+        serialized_metadata = eventParams.get("serializedMetadata")
+        metadata = json.loads(serialized_metadata) if serialized_metadata else None
+
+        asset_graph = graphene_info.context.asset_graph
+
+        assert_permission_for_asset_graph(
+            graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS
+        )
+
+        return report_asset_check_evaluation(
+            graphene_info,
+            asset_key=asset_key,
+            check_name=check_name,
+            passed=passed,
+            severity=severity,
+            metadata=metadata,
+        )
+
+
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
     """Output indicating that telemetry was logged."""
 
@@ -1082,6 +1145,7 @@ class GrapheneMutation(graphene.ObjectType):
     shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
     wipeAssets = GrapheneAssetWipeMutation.Field()
     reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
+    reportAssetCheckEvaluation = GrapheneReportAssetCheckEvaluationMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     reexecutePartitionBackfill = GrapheneReexecuteBackfillMutation.Field()

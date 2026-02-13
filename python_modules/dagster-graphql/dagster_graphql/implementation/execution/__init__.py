@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union  # noqa: F40
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.events import (
@@ -25,12 +26,18 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+    from dagster._core.definitions.metadata import RawMetadataValue
+
     from dagster_graphql.schema.errors import (
         GrapheneAssetNotFoundError,
         GrapheneUnauthorizedError,
         GrapheneUnsupportedOperationError,
     )
-    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+    from dagster_graphql.schema.roots.mutation import (
+        GrapheneReportAssetCheckEvaluationSuccess,
+        GrapheneTerminateRunPolicy,
+    )
 
 
 from dagster_graphql.implementation.execution.backfill import (
@@ -417,3 +424,25 @@ def report_runless_asset_events(
         )
 
     return GrapheneReportRunlessAssetEventsSuccess(assetKey=asset_key)
+
+
+def report_asset_check_evaluation(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    check_name: str,
+    passed: bool,
+    severity: "AssetCheckSeverity",
+    metadata: Optional[Mapping[str, "RawMetadataValue"]] = None,
+) -> "GrapheneReportAssetCheckEvaluationSuccess":
+    from dagster_graphql.schema.roots.mutation import GrapheneReportAssetCheckEvaluationSuccess
+
+    instance = graphene_info.context.instance
+    evaluation = AssetCheckEvaluation(
+        asset_key=asset_key,
+        check_name=check_name,
+        passed=passed,
+        severity=severity,
+        metadata=metadata or {},
+    )
+    instance.report_runless_asset_event(evaluation)
+    return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)
