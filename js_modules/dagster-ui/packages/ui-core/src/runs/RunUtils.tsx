@@ -99,7 +99,7 @@ export async function handleLaunchResult(
         },
       });
     }
-    document.dispatchEvent(new CustomEvent('run-launched'));
+    document.dispatchEvent(new CustomEvent('run-launched', {detail: {runIds: [result.run.id]}}));
   } else if (result.__typename === 'InvalidSubsetError') {
     showCustomAlert({body: result.message});
   } else if (result.__typename === 'PythonError') {
@@ -181,7 +181,7 @@ export async function handleLaunchMultipleResult(
       }
     }
   }
-  document.dispatchEvent(new CustomEvent('run-launched'));
+  document.dispatchEvent(new CustomEvent('run-launched', {detail: {runIds: successfulRunIds}}));
 
   // link to runs page filtered to run IDs
   const params = new URLSearchParams();
@@ -394,22 +394,6 @@ export const TERMINATE_MUTATION = gql`
         }
       }
       ...PythonErrorFragment
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const SUBSCRIBE_TO_NOTIFICATIONS_MUTATION = gql`
-  mutation SubscribeToNotifications($runId: String!, $subscribe: Boolean!, $email: String!) {
-    subscribeToNotifications(runId: $runId, subscribe: $subscribe, email: $email) {
-      ...PythonErrorFragment
-      ... on SubscribeToNotificationsSuccess {
-        runID
-        subscribedToNotifications
-      }
-      ... on RunNotFoundError {
-        runId
-      }
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
