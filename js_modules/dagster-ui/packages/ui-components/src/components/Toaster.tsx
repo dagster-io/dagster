@@ -59,7 +59,9 @@ const Toast = (props: ToastProps) => {
     }
 
     if (action.type === 'custom') {
-      return action.element;
+      return (
+        <span onClick={() => toast.dismiss(id)}>{action.element}</span>
+      );
     }
 
     return (
@@ -87,11 +89,19 @@ const Toast = (props: ToastProps) => {
         flex={{direction: 'row', alignItems: 'center', gap: 8}}
         className={styles.toastInner}
       >
-        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
+        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8, grow: 1}}>
           {iconName ? <Icon name={iconName} color={Colors.accentPrimary()} /> : null}
           <div className={styles.toastMessage}>{message}</div>
         </Box>
         {actionElement()}
+        <button
+          type="button"
+          aria-label="Dismiss"
+          className={styles.toastCloseButton}
+          onClick={() => toast.dismiss(id)}
+        >
+          <Icon name="close" color={Colors.textDefault()} />
+        </button>
       </Box>
     </div>
   );

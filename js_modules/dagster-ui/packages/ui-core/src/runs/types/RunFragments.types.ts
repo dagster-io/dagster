@@ -24,7 +24,6 @@ export type RunFragment = {
   startTime: number | null;
   endTime: number | null;
   hasConcurrencyKeySlots: boolean;
-  notificationSubscribers: Array<string>;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;

@@ -104,7 +104,7 @@ export const GlobalStyleProvider = () => {
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />
-      <Toaster richColors />
+      <Toaster richColors closeButton visibleToasts={9} />
     </>
   );
 };
