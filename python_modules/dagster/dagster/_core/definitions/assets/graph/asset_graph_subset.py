@@ -1,7 +1,7 @@
 import operator
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Sequence, Union  # noqa: UP035
 
 from dagster_shared.serdes import (
     NamedTupleSerializer,
@@ -42,6 +42,46 @@ class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
                     )
 
         return value._replace(**replaced_value_by_field_name)
+
+
+def union_subsets(asset_graph_subsets: Sequence["AssetGraphSubset"]) -> "AssetGraphSubset":
+    if len(asset_graph_subsets) == 1:
+        return asset_graph_subsets[0]
+
+    partition_subsets_by_asset_key = defaultdict(list)
+
+    result_non_partitioned_asset_keys = set()
+
+    for asset_graph_subset in asset_graph_subsets:
+        for asset_key in asset_graph_subset.asset_keys:
+            if asset_key in asset_graph_subset.non_partitioned_asset_keys:
+                check.invariant(asset_key not in partition_subsets_by_asset_key)
+                result_non_partitioned_asset_keys = operator.or_(
+                    result_non_partitioned_asset_keys, {asset_key}
+                )
+            else:
+                check.invariant(asset_key not in asset_graph_subset.non_partitioned_asset_keys)
+                other_subset = asset_graph_subset.get_partitions_subset(asset_key)
+                if other_subset is not None:
+                    partition_subsets_by_asset_key[asset_key].append(other_subset)
+
+                partition_subsets_by_asset_key[asset_key].append(
+                    asset_graph_subset.get_partitions_subset(asset_key)
+                )
+
+    result_partition_subsets_by_asset_key = {}
+    for asset_key, partition_subsets in partition_subsets_by_asset_key.items():
+        if len(partition_subsets) > 1:
+            result_partition_subsets_by_asset_key[asset_key] = partition_subsets[0].multi_union(
+                partition_subsets[1:]
+            )
+        else:
+            result_partition_subsets_by_asset_key[asset_key] = partition_subsets[0]
+
+    return AssetGraphSubset(
+        partitions_subsets_by_asset_key=result_partition_subsets_by_asset_key,
+        non_partitioned_asset_keys=result_non_partitioned_asset_keys,
+    )
 
 
 @whitelist_for_serdes(serializer=PartitionsSubsetMappingNamedTupleSerializer)
