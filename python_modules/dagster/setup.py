@@ -174,6 +174,10 @@ setup(
         "ruff": [
             "ruff==0.15.0",
         ],
+        "mariadb": [
+            "pymysql>=1.0.0",
+            "pandas>=1.3.0",
+        ],
     },
     entry_points={
         "console_scripts": [
