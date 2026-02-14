@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
+from functools import cache
 from typing import Any, Callable, ContextManager, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import sqlalchemy as db
@@ -787,11 +788,13 @@ class SqlRunStorage(RunStorage):
 
     # Checking for migrations
 
+    @cache
     def has_run_stats_index_cols(self) -> bool:
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "start_time" in column_names and "end_time" in column_names
 
+    @cache
     def has_bulk_actions_selector_cols(self) -> bool:
         with self.connect() as conn:
             column_names = [
@@ -799,11 +802,13 @@ class SqlRunStorage(RunStorage):
             ]
             return "selector_id" in column_names
 
+    @cache
     def has_backfill_id_column(self) -> bool:
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "backfill_id" in column_names
 
+    @cache
     def has_bulk_action_job_name_column(self) -> bool:
         with self.connect() as conn:
             column_names = [
@@ -811,6 +816,7 @@ class SqlRunStorage(RunStorage):
             ]
             return "job_name" in column_names
 
+    @cache
     def has_backfill_tags_table(self) -> bool:
         with self.connect() as conn:
             return BackfillTagsTable.name in db.inspect(conn).get_table_names()
