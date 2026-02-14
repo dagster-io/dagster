@@ -40,6 +40,9 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound=BaseModel)
 
+# Valid file extensions for component definition files
+VALID_DEF_EXTENSIONS = (".yaml", ".yml")
+
 ResolvableToComponentPath = Union[Path, "ComponentPath", str]
 
 
@@ -224,7 +227,7 @@ class DefsFolderComponent(Component):
     - **Hierarchical Organization**: Enables nested folder structures for complex projects
 
     The component automatically scans its directory for:
-    - YAML component definitions (``defs.yaml`` files)
+    - YAML component definitions (``defs.yaml`` or ``defs.yml`` files)
     - Python modules containing Dagster definitions
     - Nested subdirectories containing more components
 
@@ -281,7 +284,7 @@ class DefsFolderComponent(Component):
 
     The component automatically discovers children using these patterns:
 
-    1. **YAML Components**: Subdirectories with ``defs.yaml`` files
+    1. **YAML Components**: Subdirectories with ``defs.yaml`` or ``defs.yml`` files
     2. **Python Modules**: Any ``.py`` files containing Dagster definitions
     3. **Nested Folders**: Subdirectories that contain any of the above
 
@@ -453,11 +456,12 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
     return context.load_structural_component_at_path(decl.path)
 
 
-# When we remove component.yaml, we can remove this function for just a defs.yaml check
+# When we remove component.yaml, we can remove this function for just a defs.yaml/yml check
 def find_defs_or_component_yaml(path: Path) -> Optional[Path]:
-    # Check for defs.yaml has precedence, component.yaml is deprecated
+    # Check for defs.yaml/yml has precedence, component.yaml is deprecated
+    # Try both .yaml and .yml extensions
     return next(
-        (p for p in (path / "defs.yaml", path / "component.yaml") if p.exists()),
+        (p for p in (path / "defs.yaml", path / "defs.yml", path / "component.yaml") if p.exists()),
         None,
     )
 
