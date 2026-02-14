@@ -67,10 +67,12 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         Resolver.default(description="Filter which Databricks jobs to include"),
     ] = None
 
-    assets_by_task_key: Annotated[
-        Optional[dict[str, list[ResolvedAssetSpec]]],
+    assets_by_job_task_key: Annotated[
+        Optional[dict[str, dict[str, list[ResolvedAssetSpec]]]],
         Resolver.default(
-            description="Optional mapping of Databricks task keys to lists of Dagster AssetSpecs.",
+            description="Optional mapping of Databricks job names to task keys to lists of Dagster AssetSpecs. "
+            "Structure: {job_name: {task_key: [AssetSpec, ...]}}. "
+            "Both job name and task key are required to uniquely identify a task.",
         ),
     ] = None
 
@@ -119,7 +121,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         return Definitions(assets=databricks_assets)
 
     def _create_job_asset_def(
-        self, job: DatabricksJob, specs: list[Any], task_key_map: dict
+        self, job: DatabricksJob, specs: list[Any], task_key_map: dict[AssetKey, str]
     ) -> AssetsDefinition:
         asset_name = f"databricks_job_{job.job_id}"
 
@@ -128,10 +130,12 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             client = self.workspace.get_client()
             selected_keys = context.selected_asset_keys
 
+            # Get tasks to run from the job-specific mapping
+            job_task_mapping = (self.assets_by_job_task_key or {}).get(job.name, {})
             tasks_to_run = [
                 task_key
-                for task_key, specs in (self.assets_by_task_key or {}).items()
-                if any(spec.key in selected_keys for spec in specs)
+                for task_key, task_specs in job_task_mapping.items()
+                if any(spec.key in selected_keys for spec in task_specs)
             ]
             context.log.info(f"Triggering Databricks job {job.job_id} for tasks: {tasks_to_run}")
 
@@ -155,14 +159,8 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
             for spec in specs:
                 if spec.key in selected_keys:
-                    current_task_key = next(
-                        (
-                            t_key
-                            for t_key, t_specs in (self.assets_by_task_key or {}).items()
-                            if any(s.key == spec.key for s in t_specs)
-                        ),
-                        "unknown",
-                    )
+                    # Look up task key from the map we built during spec creation
+                    current_task_key = task_key_map.get(spec.key, "unknown")
                     yield MaterializeResult(
                         asset_key=spec.key,
                         metadata={
@@ -176,10 +174,18 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         return _execution_fn
 
     def get_asset_specs(self, task: DatabricksBaseTask, job_name: str) -> list[AssetSpec]:
-        """Return a list of AssetSpec objects for the given task."""
-        task_key = task.task_key
+        """Return a list of AssetSpec objects for the given task.
 
-        if self.assets_by_task_key and task_key in self.assets_by_task_key:
+        If assets_by_job_task_key is configured with a mapping for this job and task,
+        returns the configured specs with Databricks metadata added.
+        Otherwise, returns a default spec with key [job_name, task_key].
+        """
+        task_key = task.task_key
+        clean_job = snake_case(job_name)
+
+        # Look up by job name first, then task key
+        job_mapping = (self.assets_by_job_task_key or {}).get(job_name, {})
+        if task_key in job_mapping:
             return [
                 spec.merge_attributes(
                     kinds={"databricks"},
@@ -188,10 +194,9 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                         "dagster-databricks/job_name": job_name,
                     },
                 )
-                for spec in self.assets_by_task_key[task_key]
+                for spec in job_mapping[task_key]
             ]
 
-        clean_job = snake_case(job_name)
         clean_task = snake_case(task_key)
 
         return [
