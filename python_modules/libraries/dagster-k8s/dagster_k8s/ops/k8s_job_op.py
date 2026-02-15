@@ -132,6 +132,12 @@ K8S_JOB_OP_CONFIG = merge_dicts(
                 " merging dictionary fields."
             ),
         ),
+        "retry_on_preemption": Field(
+            bool,
+            is_required=False,
+            default_value=False,
+            description="Whether the K8s job should be retried if it's preempted by the cluster.",
+        ),
     },
 )
 
@@ -167,6 +173,7 @@ def execute_k8s_job(
     k8s_job_name: Optional[str] = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
     delete_failed_k8s_jobs: Optional[bool] = True,
+    retry_on_preemption: Optional[bool] = False,
     _kubeconfig_file_context: Optional[str] = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
@@ -297,6 +304,7 @@ def execute_k8s_job(
     k8s_job_config = DagsterK8sJobConfig(
         job_image=image,
         dagster_home=None,
+        retry_on_preemption=retry_on_preemption,
     )
 
     job_name = k8s_job_name or get_k8s_job_name(
@@ -490,5 +498,13 @@ def k8s_job_op(context):
         merge_behavior = K8sConfigMergeBehavior(context.op_config.pop("merge_behavior"))
     else:
         merge_behavior = K8sConfigMergeBehavior.DEEP
+    
+    op_config = context.op_config
+    retry_on_preemption_value = op_config.pop("retry_on_preemption", False)
 
-    execute_k8s_job(context, merge_behavior=merge_behavior, **context.op_config)
+    execute_k8s_job(
+        context,
+        merge_behavior=merge_behavior,
+        retry_on_preemption=retry_on_preemption_value,
+        **op_config,
+    )

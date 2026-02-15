@@ -70,6 +70,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         run_k8s_config=None,
         only_allow_user_defined_k8s_config_fields=None,
         only_allow_user_defined_env_vars=None,
+        retry_on_preemption=False, # Added default here
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -125,6 +126,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._only_allow_user_defined_k8s_config_fields = only_allow_user_defined_k8s_config_fields
         self._only_allow_user_defined_env_vars = only_allow_user_defined_env_vars
+        self._retry_on_preemption = check.bool_param(retry_on_preemption, "retry_on_preemption")
         super().__init__()
 
     @property
@@ -451,6 +453,86 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        
         if status.failed and not status.active:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+            if self._retry_on_preemption:
+                try:
+                    # Get the full job spec to check backoff_limit
+                    job = self._api_client.get_job(
+                        job_name=job_name, namespace=container_context.namespace
+                    )
+                    if not job:
+                        # Should not happen if status was found
+                        return CheckRunHealthResult(WorkerStatus.FAILED, f"K8s job {job_name} not found after getting status.")
+
+                    # Check pod status for eviction
+                    # The job UID is the correct controller UID for pods created by this job.
+                    job_uid = job.metadata.uid
+                    
+                    # Use the CoreV1Api to list pods
+                    pod_list = self._api_client.core_api.list_namespaced_pod(
+                        namespace=container_context.namespace,
+                        label_selector=f"controller-uid={job_uid}",
+                    )
+
+                    was_preempted = False
+                    if pod_list and pod_list.items:
+                        # Typically there's one pod, or multiple if previous ones failed.
+                        # We are interested in the status of the pod(s) that led to the job failure.
+                        # Sorting by creation timestamp might be useful if there are multiple,
+                        # but often the "latest" pod is the one of interest.
+                        # For simplicity, check if *any* pod associated with the job was evicted.
+                        # More sophisticated logic might be needed if a job creates multiple pods
+                        # sequentially for different tasks (not typical for Dagster runs).
+                        for pod_item in pod_list.items:
+                            if pod_item.status and pod_item.status.reason == "Evicted":
+                                was_preempted = True
+                                logging.info(
+                                    f"Pod {pod_item.metadata.name} for job {job_name} was Evicted."
+                                )
+                                break # Found an evicted pod
+                    
+                    if was_preempted:
+                        backoff_limit = job.spec.backoff_limit
+                        # backoff_limit might be None if not explicitly set in the job spec by user or our logic
+                        effective_backoff_limit = backoff_limit if backoff_limit is not None else 0
+
+                        if effective_backoff_limit > 0:
+                            # Check if the number of failures has already reached backoff_limit
+                            # status.failed is the count of failed pods for this job.
+                            if status.failed is not None and status.failed >= effective_backoff_limit:
+                                return CheckRunHealthResult(
+                                    WorkerStatus.FAILED,
+                                    f"K8s job {job_name} failed after {status.failed} attempts (backoffLimit: {effective_backoff_limit}), preemption may have occurred.",
+                                )
+                            else:
+                                logging.info(
+                                    f"K8s job {job_name} was preempted but has backoffLimit ({effective_backoff_limit}) > 0"
+                                    f" and {status.failed or 0} failures. Considering as RUNNING for retry."
+                                )
+                                return CheckRunHealthResult(
+                                    WorkerStatus.RUNNING, # Report as running to allow K8s to retry
+                                    f"K8s job {job_name} preempted, will retry (failures: {status.failed or 0}/{effective_backoff_limit}).",
+                                )
+                        else: # backoff_limit is 0
+                            return CheckRunHealthResult(
+                                WorkerStatus.FAILED,
+                                f"K8s job {job_name} preempted but backoffLimit is 0.",
+                            )
+                    else: # Not preempted
+                        return CheckRunHealthResult(
+                            WorkerStatus.FAILED, f"K8s job {job_name} failed (not due to preemption)."
+                        )
+
+                except Exception as e:
+                    logging.exception(
+                        f"Error encountered when checking for preemption for failed job {job_name}"
+                    )
+                    return CheckRunHealthResult(
+                        WorkerStatus.FAILED,
+                        f"K8s job {job_name} failed. Error during preemption check: {e}",
+                    )
+            else: # Not retry_on_preemption
+                return CheckRunHealthResult(WorkerStatus.FAILED, f"K8s job {job_name} failed.")
+
         return CheckRunHealthResult(WorkerStatus.RUNNING)

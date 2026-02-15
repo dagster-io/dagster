@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 import random
 import string
 from collections.abc import Mapping, Sequence
@@ -308,6 +309,7 @@ class DagsterK8sJobConfig(
             ("resources", Mapping[str, Any]),
             ("scheduler_name", Optional[str]),
             ("security_context", Mapping[str, Any]),
+            ("retry_on_preemption", bool),
         ],
     )
 ):
@@ -378,6 +380,7 @@ class DagsterK8sJobConfig(
         resources: Optional[Mapping[str, Any]] = None,
         scheduler_name: Optional[str] = None,
         security_context: Optional[Mapping[str, Any]] = None,
+        retry_on_preemption: Optional[bool] = None,
     ):
         return super().__new__(
             cls,
@@ -409,6 +412,9 @@ class DagsterK8sJobConfig(
             resources=check.opt_mapping_param(resources, "resources", key_type=str),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
             security_context=check.opt_mapping_param(security_context, "security_context"),
+            retry_on_preemption=check.opt_bool_param(
+                retry_on_preemption, "retry_on_preemption", False
+            ),
         )
 
     @classmethod
@@ -522,6 +528,12 @@ class DagsterK8sJobConfig(
                     is_required=False,
                     description="List of environment variable names that are allowed to be set on "
                     "a per-run or per-code-location basis - e.g. using tags on the run. ",
+                ),
+                "retry_on_preemption": Field(
+                    bool,
+                    is_required=False,
+                    default_value=False,
+                    description="Whether to retry the job if it is preempted by Kubernetes.",
                 ),
             },
         )
@@ -674,6 +686,12 @@ class DagsterK8sJobConfig(
                     "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container"
                 ),
             ),
+            "retry_on_preemption": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description="Whether to retry the job if it is preempted by Kubernetes.",
+            ),
         }
 
     @classmethod
@@ -756,7 +774,11 @@ class DagsterK8sJobConfig(
 
     @staticmethod
     def from_dict(config: Mapping[str, Any]):
-        return DagsterK8sJobConfig(**config)
+        # Deepcopy to prevent issues with callers mutating the config dict
+        # while it's still being used elsewhere
+        copied_config = copy.deepcopy(config)
+        copied_config.setdefault("retry_on_preemption", False)
+        return DagsterK8sJobConfig(**copied_config)
 
 
 def construct_dagster_k8s_job(
@@ -940,6 +962,68 @@ def construct_dagster_k8s_job(
         user_defined_k8s_config.job_spec_config,
         {"template": template},
     )
+
+    # Handle retry_on_preemption logic
+    if job_config.retry_on_preemption:
+        # Ensure backoff_limit is at least 1
+        user_defined_backoff_limit = user_defined_k8s_config.job_spec_config.get(
+            "backoff_limit"
+        )
+        if user_defined_backoff_limit == 0:
+            logging.warning(
+                "User defined backoff_limit is 0 but retry_on_preemption is True. "
+                "Overriding backoff_limit to 1."
+            )
+            job_spec_config["backoff_limit"] = 1
+        elif user_defined_backoff_limit is None:
+            job_spec_config["backoff_limit"] = 1  # Default to 1 if not set by user
+        elif user_defined_backoff_limit < 0:
+            logging.warning(
+                "User defined backoff_limit is %s but retry_on_preemption is True. "
+                "Overriding backoff_limit to 1." % user_defined_backoff_limit
+            )
+            job_spec_config["backoff_limit"] = 1
+        else:
+            # User defined backoff_limit is >=1, respect it
+            job_spec_config["backoff_limit"] = user_defined_backoff_limit
+
+        # Ensure restart_policy is "Never"
+        user_defined_restart_policy = user_defined_k8s_config.pod_spec_config.get(
+            "restart_policy"
+        )
+        if user_defined_restart_policy and user_defined_restart_policy != "Never":
+            logging.warning(
+                "User defined pod_spec_config.restart_policy is '%s' but "
+                "retry_on_preemption is True. Overriding restart_policy to 'Never'."
+                % user_defined_restart_policy
+            )
+            template["spec"]["restart_policy"] = "Never"
+        else:
+            # Default to "Never" if not set by user or if user set it to "Never"
+            template["spec"]["restart_policy"] = "Never"
+            # Update job_spec_config's template as it's already been composed
+            job_spec_config["template"]["spec"]["restart_policy"] = "Never"
+
+    else:
+        # retry_on_preemption is False
+        # Set backoff_limit to DEFAULT_K8S_JOB_BACKOFF_LIMIT (0) unless overridden by user
+        user_defined_backoff_limit = user_defined_k8s_config.job_spec_config.get(
+            "backoff_limit"
+        )
+        if user_defined_backoff_limit is None:
+            job_spec_config["backoff_limit"] = DEFAULT_K8S_JOB_BACKOFF_LIMIT
+        else:
+            # Respect user-defined backoff_limit if retry_on_preemption is False
+            job_spec_config["backoff_limit"] = user_defined_backoff_limit
+        
+        # Respect user-defined restart_policy if retry_on_preemption is False
+        # The default is "Never" as set during template creation, if user doesn't specify.
+        user_defined_restart_policy = user_defined_k8s_config.pod_spec_config.get("restart_policy")
+        if user_defined_restart_policy:
+            template["spec"]["restart_policy"] = user_defined_restart_policy
+             # Update job_spec_config's template as it's already been composed
+            job_spec_config["template"]["spec"]["restart_policy"] = user_defined_restart_policy
+
 
     user_defined_job_metadata = copy.deepcopy(dict(user_defined_k8s_config.job_metadata))
     user_defined_job_labels = user_defined_job_metadata.pop("labels", {})
