@@ -110,6 +110,9 @@ export const RegExps = {
   VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+$/i,
 };
 
+const MAX_YAML_LINT_CHARS = 200_000;
+const MAX_YAML_LINT_LINES = 5_000;
+
 const defineYamlMode = () => {
   CodeMirror.defineMode('yaml', () => {
     return {
@@ -774,6 +777,21 @@ const registerYamlLint = () => {
       editor: any,
     ): Promise<Array<CodemirrorLintError>> => {
       const codeMirrorDoc = editor.getDoc();
+
+      const lineCount = text.split('\n').length;
+      if (text.length > MAX_YAML_LINT_CHARS || lineCount > MAX_YAML_LINT_LINES) {
+        return [
+          {
+            message:
+              `YAML lint skipped for ${lineCount} lines / ${text.length} chars ` +
+              `to keep the editor responsive.`,
+            severity: 'warning',
+            type: 'syntax',
+            from: {line: 0, ch: 0},
+            to: {line: 0, ch: 0},
+          },
+        ];
+      }
 
       // TODO: In some scenarios where every line yields an error `parseDocument` can take 1s+
       // and returns 20,000+ errors. The library does not have a "bail out" option but we need one.

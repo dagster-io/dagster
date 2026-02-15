@@ -1,7 +1,8 @@
 import logging
+import os
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import Optional
 
 from dagster import (
@@ -24,6 +25,10 @@ from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
+RUN_MONITORING_RUN_FETCH_CHUNK_SIZE = max(
+    1,
+    int(os.getenv("DAGSTER_RUN_MONITORING_RUN_FETCH_CHUNK_SIZE", "1000")),
+)
 
 
 def monitor_starting_run(
@@ -179,49 +184,69 @@ def execute_run_monitoring_iteration(
 ) -> Iterator[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
 
-    # TODO: consider limiting number of runs to fetch
-    run_records = list(
-        instance.get_run_records(
-            filters=RunsFilter(
-                statuses=IN_PROGRESS_RUN_STATUSES
-                + [DagsterRunStatus.CANCELING, DagsterRunStatus.NOT_STARTED]
+    def _get_run_record_batches() -> Iterator[Sequence[RunRecord]]:
+        cursor = None
+        while True:
+            run_records = instance.get_run_records(
+                filters=RunsFilter(
+                    statuses=IN_PROGRESS_RUN_STATUSES
+                    + [DagsterRunStatus.CANCELING, DagsterRunStatus.NOT_STARTED]
+                ),
+                limit=RUN_MONITORING_RUN_FETCH_CHUNK_SIZE,
+                cursor=cursor,
             )
-        )
-    )
+            if not run_records:
+                break
+            yield run_records
+            if len(run_records) < RUN_MONITORING_RUN_FETCH_CHUNK_SIZE:
+                break
+            cursor = run_records[-1].dagster_run.run_id
 
-    if not run_records:
+    run_record_batches = _get_run_record_batches()
+    total_runs = 0
+    batch_count = 0
+    workspace = workspace_process_context.create_request_context()
+    for run_records in run_record_batches:
+        if not run_records:
+            continue
+        batch_count += 1
+        total_runs += len(run_records)
+        logger.info(f"Collected {len(run_records)} runs for monitoring (batch {batch_count})")
+        for run_record in run_records:
+            try:
+                logger.info(f"Checking run {run_record.dagster_run.run_id}")
+
+                if (
+                    instance.run_monitoring_start_timeout_seconds > 0
+                    and run_record.dagster_run.status
+                    in {DagsterRunStatus.STARTING, DagsterRunStatus.NOT_STARTED}
+                ):
+                    monitor_starting_run(instance, run_record, logger)
+                elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
+                    monitor_started_run(instance, workspace, run_record, logger)
+                elif (
+                    instance.run_monitoring_cancel_timeout_seconds > 0
+                    and run_record.dagster_run.status == DagsterRunStatus.CANCELING
+                ):
+                    monitor_canceling_run(instance, run_record, logger)
+                    pass
+                else:
+                    check.invariant(
+                        False, f"Unexpected run status: {run_record.dagster_run.status}"
+                    )
+            except Exception:
+                yield DaemonErrorCapture.process_exception(
+                    exc_info=sys.exc_info(),
+                    logger=logger,
+                    log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",
+                )
+            else:
+                yield
+
+    if batch_count == 0:
         return
 
-    logger.info(f"Collected {len(run_records)} runs for monitoring")
-    workspace = workspace_process_context.create_request_context()
-    for run_record in run_records:
-        try:
-            logger.info(f"Checking run {run_record.dagster_run.run_id}")
-
-            if (
-                instance.run_monitoring_start_timeout_seconds > 0
-                and run_record.dagster_run.status
-                in {DagsterRunStatus.STARTING, DagsterRunStatus.NOT_STARTED}
-            ):
-                monitor_starting_run(instance, run_record, logger)
-            elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
-                monitor_started_run(instance, workspace, run_record, logger)
-            elif (
-                instance.run_monitoring_cancel_timeout_seconds > 0
-                and run_record.dagster_run.status == DagsterRunStatus.CANCELING
-            ):
-                monitor_canceling_run(instance, run_record, logger)
-                pass
-            else:
-                check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
-        except Exception:
-            yield DaemonErrorCapture.process_exception(
-                exc_info=sys.exc_info(),
-                logger=logger,
-                log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",
-            )
-        else:
-            yield
+    logger.info(f"Collected {total_runs} runs for monitoring across {batch_count} batches")
 
 
 def check_run_timeout(
@@ -235,11 +260,7 @@ def check_run_timeout(
         MAX_RUNTIME_SECONDS_TAG, run_record.dagster_run.tags.get("dagster/max_runtime_seconds")
     )
     if max_time_str:
-        try:
-            max_time = float(max_time_str)
-        except ValueError:
-            logger.warning(f"Invalid max runtime value: {max_time_str}")
-            max_time = None
+        max_time = float(max_time_str)
     else:
         max_time = default_timeout_seconds
 

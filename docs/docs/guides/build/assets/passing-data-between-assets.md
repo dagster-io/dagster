@@ -118,3 +118,7 @@ The downsides of this approach are:
 ## Related resources
 
 {/* TODO: add links to relevant API documentation here. */}
+- <PyObject section="assets" module="dagster" object="AssetIn" />
+- <PyObject section="assets" module="dagster" object="AssetOut" />
+- <PyObject section="io-managers" module="dagster" object="IOManager" />
+- <PyObject section="execution" module="dagster" object="AssetExecutionContext" />

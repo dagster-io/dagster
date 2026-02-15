@@ -922,13 +922,21 @@ def _handle_dynamic_partitions_requests(
     context: SensorLaunchContext,
 ) -> None:
     for request in dynamic_partitions_requests:
-        existent_partitions = []
-        nonexistent_partitions = []
-        for partition_key in request.partition_keys:
-            if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
-                existent_partitions.append(partition_key)
-            else:
-                nonexistent_partitions.append(partition_key)
+        existing_partitions = set(
+            instance.get_dynamic_partitions_by_keys(
+                request.partitions_def_name, request.partition_keys
+            )
+        )
+        existent_partitions = [
+            partition_key
+            for partition_key in request.partition_keys
+            if partition_key in existing_partitions
+        ]
+        nonexistent_partitions = [
+            partition_key
+            for partition_key in request.partition_keys
+            if partition_key not in existing_partitions
+        ]
 
         if isinstance(request, AddDynamicPartitionsRequest):
             if nonexistent_partitions:
@@ -958,9 +966,7 @@ def _handle_dynamic_partitions_requests(
             )
         elif isinstance(request, DeleteDynamicPartitionsRequest):
             if existent_partitions:
-                # TODO add a bulk delete method to the instance
-                for partition in existent_partitions:
-                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+                instance.delete_dynamic_partitions(request.partitions_def_name, existent_partitions)
 
                 context.logger.info(
                     "Deleted partition keys from dynamic partitions definition"

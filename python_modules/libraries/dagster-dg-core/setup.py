@@ -20,7 +20,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="",  # TODO - fill out description
+    description="Core utilities for Dagster dg.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dg-core"
     ),
@@ -50,7 +50,7 @@ setup(
         "setuptools",  # Needed to parse setup.cfg
         "packaging",
         "python-dotenv",
-        "typer>=0.15.1,<1.0",
+        "typer<0.17.0",
         f"dagster-shared{pin}",
         f"dagster-cloud-cli{pin}",
     ],

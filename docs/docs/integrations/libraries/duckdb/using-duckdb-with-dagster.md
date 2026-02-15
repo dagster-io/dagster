@@ -11,7 +11,8 @@ The `dagster-duckdb` library provides two ways to interact with DuckDB tables:
 - [Resource](/guides/build/external-resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject section="libraries" integration="duckdb" module="dagster_duckdb" object="DuckDBResource" />.
 - [I/O manager](/guides/build/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as DuckdB tables to Dagster. Available I/O managers: <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />, <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />.
 
-This tutorial is divided into two sections to demonstrate the differences between the DuckDB resource and the DuckDB I/O manager. Each section will create the same assets, but the first section will use the DuckDB resource to store data in DuckDB, whereas the second section will use the DuckDB I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. {/* TODO fix link See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources. */}
+This tutorial is divided into two sections to demonstrate the differences between the DuckDB resource and the DuckDB I/O manager. Each section will create the same assets, but the first section will use the DuckDB resource to store data in DuckDB, whereas the second section will use the DuckDB I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources.
+{/* TODO fix link See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources. */}
 
 In [Option 1](#option-1-using-the-duckdb-resource) you will:
 
@@ -24,8 +25,6 @@ In [Option 2](#option-2-using-the-duckdb-io-manager) you will:
 - Set up and configure the DuckDB I/O manager.
 - Use Pandas to create a DataFrame, then delegate responsibility creating a table to the DuckDB I/O manager.
 - Use the DuckDB I/O manager to load the table into memory so that you can interact with it using the Pandas library.
-
-When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. {/* See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more. */}
 
 By the end of the tutorial, you will:
 
@@ -109,12 +108,10 @@ When finished, your code should look like the following:
 
 ## Option 2: Using the DuckDB I/O manager
 
-You may want to use an I/O manager to handle storing DataFrames as tables in DuckDB and loading DuckDB tables as DataFrames in downstream assets. You may want to use an I/O manager if:
+You may want to use an I/O manager to handle storing DataFrames as tables in DuckDB and loading DuckDB tables as DataFrames in downstream assets. See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) for more guidance. You may want to use an I/O manager if:
 
 - You want your data to be loaded in memory so that you can interact with it using Python.
 - You'd like to have Dagster manage how you store the data and load it as an input in downstream assets.
-
-{/* Using an I/O manager is not required, and you can reference [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more. */}
 
 This section of the guide focuses on storing and loading Pandas DataFrames in DuckDB, but Dagster also supports using PySpark and Polars DataFrames with DuckDB. The concepts from this guide apply to working with PySpark and Polars DataFrames, and you can learn more about setting up and using the DuckDB I/O manager with PySpark and Polars DataFrames in the [reference guide](/integrations/libraries/duckdb/reference).
 

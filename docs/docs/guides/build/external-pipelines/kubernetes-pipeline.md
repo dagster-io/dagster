@@ -164,8 +164,8 @@ Here's what we did in this example:
 
   These arguments are passed to the `run` method of <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
 
-- Returned a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the execution in Kubernetes has completed.
 {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
+- Returned a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in Kubernetes has completed.
 
 :::note
 
