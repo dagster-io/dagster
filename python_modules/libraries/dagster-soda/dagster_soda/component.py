@@ -13,6 +13,7 @@ from dagster import (
     multi_asset_check,
 )
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 from dagster.components.scaffold.scaffold import scaffold_with
 from pydantic import Field
@@ -168,6 +169,24 @@ def _to_dagster_severity(severity: str) -> Any:
     return AssetCheckSeverity.WARN
 
 
+def _build_soda_result_map(dataset_results: list[Any]) -> dict[str, Any]:
+    """Build a map from Dagster-style check name (sanitized) to Soda check result.
+
+    Matches on soda_check.name / check_name / identity and optionally definition.
+    """
+    result_map: dict[str, Any] = {}
+    for soda_check in dataset_results:
+        name_key = _sanitize_check_name(_get_check_name(soda_check))
+        if name_key and name_key != "check":
+            result_map[name_key] = soda_check
+        definition = getattr(soda_check, "definition", None)
+        if definition:
+            def_key = _sanitize_check_name(str(definition))
+            if def_key and def_key != "check":
+                result_map.setdefault(def_key, soda_check)
+    return result_map
+
+
 @scaffold_with(SodaScanComponentScaffolder)
 class SodaScanComponent(Component, Model, Resolvable):
     """A Dagster component that runs Soda Core scans and maps SodaCL check results to Dagster asset checks."""
@@ -251,74 +270,113 @@ class SodaScanComponent(Component, Model, Resolvable):
                         name=f"soda_scan_{dataset.replace('.', '_')}",
                         description=f"SodaCL checks for dataset {dataset}",
                     )
-                    def _multi_check() -> Iterator[AssetCheckResult]:
-                        config_path = Path(self.configuration_path)
-                        if not config_path.is_absolute():
-                            config_path = proj_root / config_path
-
-                        resolved_checks_paths: list[Path] = []
-                        for cp in self.checks_paths:
-                            p = Path(cp)
-                            if not p.is_absolute():
-                                p = proj_root / p
-                            if p.exists():
-                                resolved_checks_paths.append(p)
-
-                        scan = Scan()
-                        scan.set_data_source_name(self.data_source_name)
-                        _add_configuration(scan, str(config_path))
-
-                        for checks_file in resolved_checks_paths:
-                            _add_sodacl_file(scan, str(checks_file))
-
-                        scan.execute()
-
-                        if hasattr(scan, "get_scan_results"):
-                            scan_results = scan.get_scan_results()
-                        elif hasattr(scan, "build_scan_results"):
-                            scan_results = scan.build_scan_results()
-                        else:
-                            scan_results = scan
-                        dataset_results = _filter_results_for_dataset(scan_results, dataset)
-
-                        for i in range(len(spec_names)):
-                            check_name = spec_names[i]
-                            if i < len(dataset_results):
-                                soda_check = dataset_results[i]
-                                outcome = _get_outcome(soda_check)
-                                severity = _get_severity(soda_check)
-                                passed = outcome != "fail"
-
-                                metadata: dict[str, Any] = {
-                                    "soda_outcome": outcome,
-                                    "severity": severity,
-                                }
-                                soda_check_name = _get_check_name(soda_check)
-                                if soda_check_name != "unknown":
-                                    metadata["soda_check_name"] = soda_check_name
-                                if hasattr(soda_check, "definition") and soda_check.definition:
-                                    metadata["check_definition"] = str(soda_check.definition)
-
+                    def _multi_check(
+                        context: AssetCheckExecutionContext,
+                    ) -> Iterator[AssetCheckResult]:
+                        def _yield_failed_all(message: str) -> Iterator[AssetCheckResult]:
+                            for check_name in spec_names:
                                 yield AssetCheckResult(
-                                    passed=passed,
+                                    passed=False,
                                     asset_key=asset_key,
                                     check_name=check_name,
-                                    severity=_to_dagster_severity(severity),
                                     metadata={
-                                        k: MetadataValue.text(str(v)) for k, v in metadata.items()
+                                        "error": MetadataValue.text(message),
                                     },
                                 )
+
+                        try:
+                            config_path = Path(self.configuration_path)
+                            if not config_path.is_absolute():
+                                config_path = proj_root / config_path
+
+                            resolved_checks_paths: list[Path] = []
+                            for cp in self.checks_paths:
+                                p = Path(cp)
+                                if not p.is_absolute():
+                                    p = proj_root / p
+                                if p.exists():
+                                    resolved_checks_paths.append(p)
+
+                            scan = Scan()
+                            scan.set_data_source_name(self.data_source_name)
+                            _add_configuration(scan, str(config_path))
+
+                            for checks_file in resolved_checks_paths:
+                                _add_sodacl_file(scan, str(checks_file))
+
+                            scan.execute()
+
+                            if hasattr(scan, "get_scan_results"):
+                                scan_results = scan.get_scan_results()
+                            elif hasattr(scan, "build_scan_results"):
+                                scan_results = scan.build_scan_results()
                             else:
+                                scan_results = scan
+                            dataset_results = _filter_results_for_dataset(scan_results, dataset)
+                        except Exception as e:
+                            yield from _yield_failed_all(
+                                f"Soda scan failed: {type(e).__name__}: {e}"
+                            )
+                            return
+
+                        if len(dataset_results) != len(spec_names):
+                            mismatch_msg = (
+                                f"Count mismatch: expected {len(spec_names)} check(s) from "
+                                f"SodaCL spec, got {len(dataset_results)} Soda result(s). "
+                                "Cannot safely map results to Dagster checks."
+                            )
+                            yield from _yield_failed_all(mismatch_msg)
+                            return
+
+                        result_map = _build_soda_result_map(dataset_results)
+
+                        for check_name in spec_names:
+                            soda_check = result_map.get(check_name)
+                            if soda_check is None:
+                                context.log.warning(
+                                    "No matching Soda result for check '%s'; yielding failed result.",
+                                    check_name,
+                                )
                                 yield AssetCheckResult(
-                                    passed=True,
+                                    passed=False,
                                     asset_key=asset_key,
                                     check_name=check_name,
                                     metadata={
-                                        "message": MetadataValue.text(
-                                            "No Soda result returned for this check"
+                                        "error": MetadataValue.text(
+                                            f"No matching Soda result for check '{check_name}'"
                                         ),
                                     },
                                 )
+                                continue
+
+                            outcome = _get_outcome(soda_check)
+                            severity = _get_severity(soda_check)
+                            passed = outcome != "fail"
+
+                            metadata: dict[str, Any] = {
+                                "soda_outcome": outcome,
+                                "severity": severity,
+                            }
+                            soda_check_name = _get_check_name(soda_check)
+                            if soda_check_name != "unknown":
+                                metadata["soda_check_name"] = soda_check_name
+                            else:
+                                context.log.warning(
+                                    "Check name resolved to unknown for spec '%s'",
+                                    check_name,
+                                )
+                            if hasattr(soda_check, "definition") and soda_check.definition:
+                                metadata["check_definition"] = str(soda_check.definition)
+
+                            yield AssetCheckResult(
+                                passed=passed,
+                                asset_key=asset_key,
+                                check_name=check_name,
+                                severity=_to_dagster_severity(severity),
+                                metadata={
+                                    k: MetadataValue.text(str(v)) for k, v in metadata.items()
+                                },
+                            )
 
                     return _multi_check
 
