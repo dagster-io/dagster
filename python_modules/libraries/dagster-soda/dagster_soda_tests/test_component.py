@@ -7,7 +7,7 @@ from typing import cast
 from unittest import mock
 
 import pytest
-from dagster import AssetCheckResult, AssetKey
+from dagster import AssetCheckResult, AssetKey, build_op_context
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.component_tree import TestComponentTree
 from dagster_soda.component import (
@@ -294,11 +294,107 @@ def test_execution_yields_asset_check_results_pass_and_fail(tmp_path: Path) -> N
         mock_scan.get_scan_results.return_value = mock_scan_results
         mock_scan.build_scan_results.return_value = mock_scan_results
 
-        # Invoke the check op directly (multi_asset_check yields AssetCheckResults)
-        results = list(cast("Iterable[AssetCheckResult]", check_def()))
+        # Invoke the check op with context (multi_asset_check expects AssetCheckExecutionContext)
+        results = list(cast("Iterable[AssetCheckResult]", check_def(build_op_context())))
 
     assert len(results) == 2
     by_name = {r.check_name: r for r in results}
     assert by_name["row_count___0"].passed is True
     assert by_name["freshness_updated_at____1d"].passed is False
     assert all(r.asset_key == AssetKey("my_table") for r in results)
+
+
+def test_execution_count_mismatch_yields_failed_for_all(tmp_path: Path) -> None:
+    """When Soda returns a different number of results than spec names, yield failed for all."""
+    (tmp_path / "checks.yml").write_text(
+        textwrap.dedent("""
+            checks for my_table:
+              - row_count > 0
+              - freshness(updated_at) < 1d
+        """)
+    )
+    (tmp_path / "configuration.yml").write_text("data_source ds: {}")
+
+    # Only one Soda result for two spec names -> count mismatch
+    mock_check = mock.Mock(
+        table="my_table",
+        outcome="pass",
+        name="row_count___0",
+        severity="warn",
+        definition="row_count > 0",
+    )
+    mock_scan_results = mock.Mock(checks=[mock_check])
+
+    component = SodaScanComponent(
+        checks_paths=[str(tmp_path / "checks.yml")],
+        configuration_path=str(tmp_path / "configuration.yml"),
+        data_source_name="ds",
+        asset_key_map={"my_table": "my_table"},
+    )
+    tree = TestComponentTree(defs_module=mock.Mock(), project_root=tmp_path)
+    defs = component.build_defs(tree.load_context)
+
+    asset_checks = list(defs.asset_checks) if defs.asset_checks else []
+    assert len(asset_checks) == 1
+    check_def = asset_checks[0]
+
+    with mock.patch("dagster_soda.component.Scan") as MockScan:
+        mock_scan = mock.Mock()
+        MockScan.return_value = mock_scan
+        mock_scan.get_scan_results.return_value = mock_scan_results
+        mock_scan.build_scan_results.return_value = mock_scan_results
+
+        results = list(cast("Iterable[AssetCheckResult]", check_def(build_op_context())))
+
+    assert len(results) == 2
+    for r in results:
+        assert r.passed is False
+        assert r.asset_key == AssetKey("my_table")
+        err = r.metadata.get("error")
+        assert err is not None
+        err_text = str(err.value) if hasattr(err, "value") else str(err)
+        assert "Count mismatch" in err_text
+        assert "2" in err_text
+        assert "1" in err_text
+
+
+def test_execution_scan_exception_yields_failed_for_all(tmp_path: Path) -> None:
+    """When scan.execute() raises (e.g. DB connection error), yield failed for all with error metadata."""
+    (tmp_path / "checks.yml").write_text(
+        textwrap.dedent("""
+            checks for my_table:
+              - row_count > 0
+        """)
+    )
+    (tmp_path / "configuration.yml").write_text("data_source ds: {}")
+
+    component = SodaScanComponent(
+        checks_paths=[str(tmp_path / "checks.yml")],
+        configuration_path=str(tmp_path / "configuration.yml"),
+        data_source_name="ds",
+        asset_key_map={"my_table": "my_table"},
+    )
+    tree = TestComponentTree(defs_module=mock.Mock(), project_root=tmp_path)
+    defs = component.build_defs(tree.load_context)
+
+    asset_checks = list(defs.asset_checks) if defs.asset_checks else []
+    assert len(asset_checks) == 1
+    check_def = asset_checks[0]
+
+    with mock.patch("dagster_soda.component.Scan") as MockScan:
+        mock_scan = mock.Mock()
+        MockScan.return_value = mock_scan
+        mock_scan.execute.side_effect = RuntimeError("Connection refused")
+
+        results = list(cast("Iterable[AssetCheckResult]", check_def(build_op_context())))
+
+    assert len(results) == 1
+    r = results[0]
+    assert r.passed is False
+    assert r.asset_key == AssetKey("my_table")
+    assert r.check_name == "row_count___0"
+    err = r.metadata.get("error")
+    assert err is not None
+    err_text = str(err.value) if hasattr(err, "value") else str(err)
+    assert "Soda scan failed" in err_text
+    assert "Connection refused" in err_text
