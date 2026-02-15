@@ -31,7 +31,7 @@ def key_from_str(key_str):
         key_str (str): A string containing the private key data.
 
     Returns:
-        paramiko.RSAKey: An RSA key object created from the provided string.
+        paramiko.PKey: A key object created from the provided string.
 
     Raises:
         ValueError: If the key string is invalid or cannot be parsed.
@@ -40,9 +40,17 @@ def key_from_str(key_str):
 
     # py2 StringIO doesn't support with
     key_file = StringIO(key_str)
-    result = paramiko.RSAKey.from_private_key(key_file)
-    key_file.close()
-    return result
+    try:
+        # Try parsing with different key types
+        for key_class in [paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey, paramiko.DSSKey]:
+            try:
+                result = key_class.from_private_key(key_file)
+                return result
+            except paramiko.ssh_exception.SSHException:
+                key_file.seek(0)  # Reset file pointer for next attempt
+        raise paramiko.ssh_exception.SSHException("Unable to parse the key with any known key type")
+    finally:
+        key_file.close()
 
 
 @beta
