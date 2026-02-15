@@ -1,0 +1,4 @@
+# Ignore any upstream gitignore pattern for "lib". This is included because "lib" is an important
+# folder in scaffolded `dg` projects, but "lib" is also present in Github's default gitignore file
+# for Python projects.
+!lib

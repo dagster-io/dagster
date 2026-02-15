@@ -265,7 +265,7 @@ def _validate_dependencies(
                     raise DagsterInvalidDefinitionError(
                         f'Invalid dependencies: node "{dep.node}" does not have output '
                         f'"{dep.output}". Listed as dependency for node "{from_node} input '
-                        f'"{from_input}"'
+                        f'"{from_input}" Available outputs: {list(node_dict[dep.node].definition.output_dict.keys())}'
                     )
 
                 input_def = node_dict[from_node].definition.input_def_named(from_input)
