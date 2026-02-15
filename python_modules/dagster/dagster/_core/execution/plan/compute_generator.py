@@ -367,9 +367,10 @@ def validate_and_coerce_op_result_to_iterator(
                     context.log.warning(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.describe_op()}. '
-                        "This value will be passed to downstream "
+                        "This value will not be passed to downstream "
                         f"{context.op_def.node_type_str}s. For conditional "
                         "execution, results must be yielded: "
                         "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
+                    return
                 yield Output(output_name=output_def.name, value=element)

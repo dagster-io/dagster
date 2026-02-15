@@ -163,4 +163,4 @@ def test_warning_for_conditional_output(capsys):
         maybe, run_config={"ops": {"maybe": {"config": {"return": False}}}}
     )
     assert result.success
-    assert "This value will be passed to downstream ops" in capsys.readouterr().err
+    assert "This value will not be passed to downstream ops" in capsys.readouterr().err
