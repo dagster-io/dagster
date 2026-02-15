@@ -474,15 +474,19 @@ class SlingResource(ConfigurableResource):
 
         logger.debug(f"Running Sling replication with command: {cmd}")
 
+        exception = None
         # Get start time from wall clock
         start_time = time.time()
-
-        results = sling._run(  # noqa
-            cmd=cmd,
-            temp_file=temp_file,
-            return_output=True,
-            env=env,
-        )
+        try:
+            results = sling._run(  # noqa
+                cmd=cmd,
+                temp_file=temp_file,
+                return_output=True,
+                env=env,
+            )
+        except Exception as e:
+            results = str(e)
+            exception = e
 
         end_time = time.time()
 
@@ -490,6 +494,15 @@ class SlingResource(ConfigurableResource):
             clean_line = self._clean_line(row)
             logger.debug(clean_line + "\n")
             self._stdout.append(clean_line)
+
+        matched = re.findall(
+            r"(?:(?:stream )|(?:Sling Replication [|] .* [|] ))(\S+)\n[\S\s]*?execution (succeeded|failed)",
+            results,
+        )
+
+        replication_results = {
+            stream_name: stream_result for (stream_name, stream_result) in matched
+        }
 
         for stream_definition in stream_definitions:
             asset_key = dagster_sling_translator.get_asset_spec(stream_definition).key
@@ -508,10 +521,16 @@ class SlingResource(ConfigurableResource):
                 ),
             }
 
-            if context.has_assets_def:
-                yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+            if replication_results.get(stream_definition["name"], "") == "succeeded":
+                if context.has_assets_def:
+                    yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+                else:
+                    yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
             else:
-                yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+                pass
+
+        if exception:
+            raise exception
 
     def _stream_sling_replicate(
         self,
@@ -550,33 +569,21 @@ class SlingResource(ConfigurableResource):
 
         # Get start time from wall clock
         start_time = time.time()
+        failed_stream = []
 
-        for line in sling._exec_cmd(cmd, env=env):  # noqa
-            if line == "":  # if empty line -- skipped
-                continue
-            text = self._clean_timestamp_log(line)  # else clean timestamp
-            logger.info(text)  # log info to dagster log
+        try:
+            for line in sling._exec_cmd(cmd, env=env):  # noqa
+                if line == "":  # if empty line -- skipped
+                    continue
+                text = self._clean_timestamp_log(line)  # else clean timestamp
+                logger.info(text)  # log info to dagster log
 
-            # if no current stream is chosen
-            if current_stream is None:
-                # Try to match stream name with stream keyword
-                matched = re.findall("stream (.*)$", text)
+                # if no current stream is chosen
+                if current_stream is None:
+                    # Try to match stream name with stream keyword
+                    matched = re.findall("stream (.*)$", text)
 
-                # If found, extract stream name, stream config, asset key
-                if matched:
-                    current_stream = matched[0]
-                    current_config = replication_config.get("streams", {}).get(current_stream, {})
-                    asset_key = dagster_sling_translator.get_asset_spec(
-                        {"name": current_stream, "config": current_config}
-                    ).key
-                    if debug:
-                        logger.debug(current_stream)
-                        logger.debug(current_config)
-                        logger.debug(asset_key)
-                # Else search for single replication format
-                else:
                     # If found, extract stream name, stream config, asset key
-                    matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
                     if matched:
                         current_stream = matched[0]
                         current_config = replication_config.get("streams", {}).get(
@@ -589,30 +596,57 @@ class SlingResource(ConfigurableResource):
                             logger.debug(current_stream)
                             logger.debug(current_config)
                             logger.debug(asset_key)
-                    # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
+                    # Else search for single replication format
                     else:
-                        if debug:
-                            logger.debug("no match stream name")
-            # If current stream is already choose
-            else:
-                # Search whether the current stream ended
-                matched = re.findall("execution succeeded", text)
+                        # If found, extract stream name, stream config, asset key
+                        matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
+                        if matched:
+                            current_stream = matched[0]
+                            current_config = replication_config.get("streams", {}).get(
+                                current_stream, {}
+                            )
+                            asset_key = dagster_sling_translator.get_asset_spec(
+                                {"name": current_stream, "config": current_config}
+                            ).key
+                            if debug:
+                                logger.debug(current_stream)
+                                logger.debug(current_config)
+                                logger.debug(asset_key)
+                        # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
+                        else:
+                            if debug:
+                                logger.debug("no match stream name")
+                # If current stream is already choose
+                else:
+                    # Search whether the current stream ended
+                    matched = re.findall("execution (succeeded|failed)", text)
 
-                if matched:
-                    # If yes, query metadata and materialize asset
-                    metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
-                    start_time = time.time()
-                    metadata["stream_name"] = current_stream
-                    logger.debug(metadata)
-                    if context.has_assets_def:
-                        yield MaterializeResult(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
-                    else:
-                        yield AssetMaterialization(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                    if matched:
+                        if matched[0] == "succeeded":
+                            # If yes, query metadata and materialize asset
+                            metadata = self._query_metadata(
+                                "\n".join(metadata_text), start_time=start_time
+                            )
+                            start_time = time.time()
+                            metadata["stream_name"] = current_stream
+                            logger.debug(metadata)
+                            if context.has_assets_def:
+                                yield MaterializeResult(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                            else:
+                                yield AssetMaterialization(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                        else:
+                            start_time = time.time()
+                            logger.info(f"{current_stream} failed")
+                            failed_stream.append(current_stream)
+                        current_stream = None
+                        metadata_text = []
 
-                    current_stream = None
-                    metadata_text = []
+                    metadata_text.append(text)
 
-                metadata_text.append(text)
+        except Exception as e:
+            os.remove(temp_file)
+            fail_string = ",".join(failed_stream)
+            raise Exception(f"Sling replication fail: {fail_string} failed") from e
 
         # clean up unused file
         os.remove(temp_file)
