@@ -1,7 +1,9 @@
 import logging
 import os
+import random
 import sys
 import threading
+import time
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
@@ -106,6 +108,10 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
+
+LOCATION_LOAD_RETRY_BASE_DELAY = 1.0
+LOCATION_LOAD_RETRY_MAX_DELAY = 60.0
+LOCATION_LOAD_RETRY_JITTER = 0.2
 
 RemoteDefinition = Union[
     RemoteAssetNode,
@@ -956,6 +962,15 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             )
 
         self._current_workspace: CurrentWorkspace = CurrentWorkspace(code_location_entries={})
+        self._retry_cv = threading.Condition()
+        self._retry_state: dict[str, dict[str, Union[float, int]]] = {}
+        self._retry_shutdown = False
+        self._retry_thread = threading.Thread(
+            target=self._retry_loop,
+            name="code-location-load-retry",
+            daemon=True,
+        )
+        self._retry_thread.start()
         self._update_workspace(
             {
                 origin.location_name: self._load_location(origin, reload=False)
@@ -1159,13 +1174,15 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             )
 
     def reload_code_location(self, name: str) -> None:
-        new_entry = self._load_location(
-            self._current_workspace.code_location_entries[name].origin, reload=True
-        )
         with self._lock:
-            # Relying on GC to clean up the old location once nothing else
-            # is referencing it
+            origin = self._current_workspace.code_location_entries[name].origin
+
+        new_entry = self._load_location(origin, reload=True)
+
+        with self._lock:
             self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
+
+        self._reconcile_retry_for_entry(name, new_entry)
 
     def shutdown_code_location(self, name: str) -> None:
         with self._lock:
@@ -1186,7 +1203,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
         self._update_workspace(updated_locations)
 
     def _update_workspace(self, new_locations: dict[str, CodeLocationEntry]):
-        # minimize lock time by only holding while swapping data old to new
         with self._lock:
             previous_events = self._watch_thread_shutdown_events
             self._watch_thread_shutdown_events = {}
@@ -1202,6 +1218,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                 if isinstance(entry.origin, GrpcServerCodeLocationOrigin):
                     self._start_watch_thread(entry.origin)
 
+        # Unschedule retries for locations that were removed (outside _lock)
+        with self._retry_cv:
+            removed = set(self._retry_state.keys()) - set(new_locations.keys())
+            for loc in removed:
+                del self._retry_state[loc]
+            if removed:
+                self._retry_cv.notify()
+
         # clean up previous locations
         for event in previous_events.values():
             event.set()
@@ -1212,6 +1236,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
         for entry in previous_locations.values():
             if entry.code_location:
                 entry.code_location.cleanup()
+
+        # Schedule/unschedule retries based on the new workspace state
+        for name, entry in new_locations.items():
+            self._reconcile_retry_for_entry(name, entry)
 
     def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
@@ -1240,22 +1268,123 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             self.refresh_code_location(event.location_name)
 
     def refresh_code_location(self, name: str) -> None:
-        # This method reloads the webserver's copy of the code from the remote gRPC server without
-        # restarting it, and returns a new request context created from the updated process context
-        new_entry = self._load_location(
-            self._current_workspace.code_location_entries[name].origin, reload=False
-        )
         with self._lock:
-            # Relying on GC to clean up the old location once nothing else
-            # is referencing it
+            origin = self._current_workspace.code_location_entries[name].origin
+
+        new_entry = self._load_location(origin, reload=False)
+
+        with self._lock:
             self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
+
+        self._reconcile_retry_for_entry(name, new_entry)
+
+    def _is_grpc_origin(self, origin: CodeLocationOrigin) -> bool:
+        return isinstance(origin, GrpcServerCodeLocationOrigin)
+
+    def _reconcile_retry_for_entry(self, location_name: str, entry: CodeLocationEntry) -> None:
+        if self._is_grpc_origin(entry.origin) and entry.load_error is not None:
+            self._schedule_location_retry(location_name)
+        else:
+            self._unschedule_location_retry(location_name)
+
+    def _schedule_location_retry(self, location_name: str) -> None:
+        """Schedule background retries for a location that is currently in load_error."""
+        now = time.time()
+        with self._retry_cv:
+            if location_name not in self._retry_state:
+                self._retry_state[location_name] = {
+                    "attempt": 0,
+                    "next_ts": now + LOCATION_LOAD_RETRY_BASE_DELAY,
+                }
+                self._retry_cv.notify()
+
+    def _unschedule_location_retry(self, location_name: str) -> None:
+        with self._retry_cv:
+            if location_name in self._retry_state:
+                del self._retry_state[location_name]
+                self._retry_cv.notify()
+
+    def _retry_loop(self) -> None:
+        while True:
+            with self._retry_cv:
+                if self._retry_shutdown:
+                    return
+
+                if not self._retry_state:
+                    self._retry_cv.wait(timeout=1.0)
+                    continue
+
+                now = time.time()
+                next_ts = min(st["next_ts"] for st in self._retry_state.values())
+                wait_for = max(0.0, next_ts - now)
+                self._retry_cv.wait(timeout=wait_for)
+
+                if self._retry_shutdown:
+                    return
+
+                now = time.time()
+                due = [name for name, st in self._retry_state.items() if st["next_ts"] <= now]
+
+            # ---- work OUTSIDE retry_cv ----
+            for name in due:
+                # Snapshot the entry without nesting locks
+                with self._lock:
+                    entry = self._current_workspace.code_location_entries.get(name)
+
+                # If location disappeared, unschedule (outside _lock)
+                if entry is None:
+                    self._unschedule_location_retry(name)
+                    continue
+
+                # Retry only for grpc origins
+                if not self._is_grpc_origin(entry.origin):
+                    self._unschedule_location_retry(name)
+                    continue
+
+                # If error already cleared, stop
+                if not self.has_code_location_error(name):
+                    self._unschedule_location_retry(name)
+                    continue
+
+                try:
+                    self.refresh_code_location(name)
+                except Exception:
+                    # refresh_code_location already captures errors into entry;
+                    # we don't want the retry loop to crash
+                    pass
+
+                # Update backoff / stop if recovered
+                if self.has_code_location_error(name):
+                    with self._retry_cv:
+                        st = self._retry_state.get(name)
+                        if not st:
+                            continue
+                        attempt = int(st["attempt"]) + 1
+                        base = LOCATION_LOAD_RETRY_BASE_DELAY * (2**attempt)
+                        delay = min(LOCATION_LOAD_RETRY_MAX_DELAY, base)
+                        jitter = 1.0 + random.uniform(
+                            -LOCATION_LOAD_RETRY_JITTER, LOCATION_LOAD_RETRY_JITTER
+                        )
+                        st["attempt"] = attempt
+                        st["next_ts"] = time.time() + (delay * jitter)
+                        self._retry_cv.notify()
+                else:
+                    self._unschedule_location_retry(name)
+
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        with self._retry_cv:
+            self._retry_shutdown = True
+            self._retry_cv.notify_all()
+        self._retry_thread.join(timeout=5)
+
+        with self._retry_cv:
+            self._retry_state.clear()
+
+        self._update_workspace({})
+        self._stack.close()
 
     def __enter__(self) -> Self:
         return self
-
-    def __exit__(self, exception_type, exception_value, traceback) -> None:
-        self._update_workspace({})  # update to empty to close all current locations
-        self._stack.close()
 
     def copy_for_test_instance(self, instance: DagsterInstance) -> "WorkspaceProcessContext":
         """Make a copy with a different instance, created for tests."""
