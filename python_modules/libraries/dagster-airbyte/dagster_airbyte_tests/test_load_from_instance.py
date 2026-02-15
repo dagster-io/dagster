@@ -68,6 +68,9 @@ def airbyte_instance_fixture(request):
 @pytest.mark.parametrize(
     "connection_to_auto_materialize_policy_fn", [None, lambda _: AutoMaterializePolicy.lazy()]
 )
+@pytest.mark.parametrize(
+    "stream_to_asset_map", [None, {"tests/releases": "releases"}]
+)
 def test_load_from_instance(
     with_destination_database_and_schema,
     use_normalization_tables,
@@ -77,6 +80,7 @@ def test_load_from_instance(
     connection_to_asset_key_fn,
     connection_to_freshness_policy_fn,
     connection_to_auto_materialize_policy_fn,
+    stream_to_asset_map,
     airbyte_instance: AirbyteResource,
 ):
     load_calls = []
@@ -132,6 +136,7 @@ def test_load_from_instance(
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
             connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
+            stream_to_asset_map=stream_to_asset_map,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
@@ -143,6 +148,7 @@ def test_load_from_instance(
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
             connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
+            stream_to_asset_map=stream_to_asset_map,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
     ab_assets = list(with_resources(ab_assets, {"test_io_manager": test_io_manager}))
