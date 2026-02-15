@@ -133,6 +133,30 @@ The following example uses a `@multi_asset_sensor` to monitor two assets that tr
   title="src/<project_name>/defs/assets.py"
 />
 
+
+## Using cursors to retain state between evaluations
+
+Dagster allows users to use cursors inside sensors to retain state between evaluations. This is useful for keeping track of progress and avoiding duplicate work across sensor evaluations.
+
+When using `@asset_sensor`, the cursor is used internally to control asset materializations. However, you can update the cursor inside the sensor function to retain state between evaluations without being overridden by the internal cursor update.
+
+In the following example, the `@asset_sensor` decorator defines a custom evaluation function that updates the cursor inside the sensor function to retain state between evaluations:
+
+```python
+from dagster import asset_sensor, RunRequest, SkipReason
+
+@asset_sensor(asset_key="my_asset")
+def my_asset_sensor(context, event):
+    # Custom logic to determine if a run should be triggered
+    if event.dagster_event_type == "ASSET_MATERIALIZATION":
+        context.update_cursor("custom_cursor_value")
+        return RunRequest(run_key="my_run_key")
+    else:
+        return SkipReason("No new materialization events found.")
+```
+
+In this example, the cursor is updated with a custom value inside the sensor function, allowing you to retain state between evaluations without being overridden by the internal cursor update.
+
 ## Next steps
 
 - Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors

@@ -160,7 +160,10 @@ class AssetSensorDefinition(SensorDefinition, IHasInternalInit):
                     yield from result
                 elif isinstance(result, (SkipReason, RunRequest)):
                     yield result
-                context.update_cursor(str(event_record.storage_id))
+
+                if not context.cursor_updated:
+                    context.update_cursor(str(event_record.storage_id))
+                    
 
             return _fn
 
