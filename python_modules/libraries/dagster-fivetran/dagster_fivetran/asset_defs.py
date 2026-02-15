@@ -12,6 +12,7 @@ from dagster import (
     OpExecutionContext,
     _check as check,
     multi_asset,
+    RetryPolicy,
 )
 from dagster._annotations import deprecated
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -109,6 +110,7 @@ def _build_fivetran_assets(
     max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
     connection_metadata: Optional["FivetranConnectionMetadata"] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
     check.invariant(
@@ -163,6 +165,7 @@ def _build_fivetran_assets(
         resource_defs=resource_defs,
         op_tags=op_tags,
         specs=asset_specs,
+        retry_policy=retry_policy,
     )
     def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
         fivetran_output = fivetran.sync_and_poll(
@@ -407,6 +410,8 @@ def _build_fivetran_assets_from_metadata(
     poll_timeout: Optional[float],
     fetch_column_metadata: bool,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> AssetsDefinition:
     metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
     connector_id = cast("str", metadata["connector_id"])
@@ -434,12 +439,13 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
-        asset_tags=build_kind_tag(storage_kind) if storage_kind else None,
+        asset_tags={**(build_kind_tag(storage_kind) if storage_kind else {}), **(tags or {})},
         fetch_column_metadata=fetch_column_metadata,
         infer_missing_tables=False,
         op_tags=None,
         translator=translator,
         connection_metadata=connection_metadata,
+        retry_policy=retry_policy,
     )[0]
 
 
@@ -457,6 +463,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         poll_timeout: Optional[float],
         fetch_column_metadata: bool,
         translator: Optional[type[DagsterFivetranTranslator]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -487,6 +494,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._poll_timeout = poll_timeout
         self._fetch_column_metadata = fetch_column_metadata
         self._translator = translator
+        self._tags = tags
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -568,6 +576,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
+        retries = None
+        if self._tags and "dagster/max_retries" in self._tags:
+            retries = int(self._tags["dagster/max_retries"])
         return [
             _build_fivetran_assets_from_metadata(
                 meta,
@@ -578,6 +589,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 poll_timeout=self._poll_timeout,
                 fetch_column_metadata=self._fetch_column_metadata,
                 translator=self._translator,
+                tags=self._tags,
+                retry_policy=RetryPolicy(max_retries=retries) if retries else None,
             )
             for meta in data
         ]
@@ -605,6 +618,7 @@ def load_assets_from_fivetran_instance(
     poll_timeout: Optional[float] = None,
     fetch_column_metadata: bool = True,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -634,6 +648,9 @@ def load_assets_from_fivetran_instance(
             timed out. By default, this will never time out.
         fetch_column_metadata (bool): If True, will fetch column schema information for each table in the connector.
             This will induce additional API calls.
+        tags(Optional[Mapping[str, Any]]): Tags that can alter behavior when building or using this function by putting in specific keys, and then the program alters the steps according to the value in the key value pair. 
+            Namely if you use the key, dagster/max_retries, the int you place afterward will be the amount of times that the RetryPolicy will work. Can be further devoloped upon.
+        
 
     **Examples:**
 
@@ -668,45 +685,53 @@ def load_assets_from_fivetran_instance(
             connector_filter=lambda meta: "snowflake" in meta.name,
         )
     """
-    if isinstance(key_prefix, str):
-        key_prefix = [key_prefix]
-    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+    try:
+        if isinstance(key_prefix, str):
+            key_prefix = [key_prefix]
+        key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    check.invariant(
-        not (
-            (
-                key_prefix
-                or connector_to_group_fn
-                or io_manager_key
-                or connector_to_io_manager_key_fn
-                or connector_to_asset_key_fn
-            )
-            and translator
-        ),
-        "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
-    )
-    connector_to_group_fn = connector_to_group_fn or _clean_name
+        check.invariant(
+            not (
+                (
+                    key_prefix
+                    or connector_to_group_fn
+                    or io_manager_key
+                    or connector_to_io_manager_key_fn
+                    or connector_to_asset_key_fn
+                )
+                and translator
+            ),
+            "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
+        )
+        connector_to_group_fn = connector_to_group_fn or _clean_name
 
-    check.invariant(
-        not io_manager_key or not connector_to_io_manager_key_fn,
-        "Cannot specify both io_manager_key and connector_to_io_manager_key_fn",
-    )
-    if not connector_to_io_manager_key_fn:
-        connector_to_io_manager_key_fn = lambda _: io_manager_key
+        check.invariant(
+            not io_manager_key or not connector_to_io_manager_key_fn,
+            "Cannot specify both io_manager_key and connector_to_io_manager_key_fn",
+        )
+        if not connector_to_io_manager_key_fn:
+            connector_to_io_manager_key_fn = lambda _: io_manager_key
 
-    return FivetranInstanceCacheableAssetsDefinition(
-        fivetran_resource_def=fivetran,
-        key_prefix=key_prefix,
-        connector_to_group_fn=connector_to_group_fn,
-        connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
-        connector_filter=connector_filter,
-        connector_to_asset_key_fn=connector_to_asset_key_fn,
-        destination_ids=destination_ids,
-        poll_interval=poll_interval,
-        poll_timeout=poll_timeout,
-        fetch_column_metadata=fetch_column_metadata,
-        translator=translator,
-    )
+        return FivetranInstanceCacheableAssetsDefinition(
+            fivetran_resource_def=fivetran,
+            key_prefix=key_prefix,
+            connector_to_group_fn=connector_to_group_fn,
+            connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
+            connector_filter=connector_filter,
+            connector_to_asset_key_fn=connector_to_asset_key_fn,
+            destination_ids=destination_ids,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+            fetch_column_metadata=fetch_column_metadata,
+            translator=translator,
+            tags=tags,
+        )
+    except Exception as e:
+        logger.warning(
+            "An error occurred while loading an asset from a fivetran instance",
+            f"Exception: {e}",
+            exc_info=True,
+        )
 
 
 # -----------------------
