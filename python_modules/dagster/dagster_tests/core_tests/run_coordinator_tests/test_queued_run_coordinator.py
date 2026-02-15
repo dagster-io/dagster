@@ -5,6 +5,7 @@ import pytest
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteJob
+from dagster._core.run_coordinator.queued_run_coordinator import QueueTooLongFailure
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -182,6 +183,27 @@ class TestQueuedRunCoordinator:
         coordinator.cancel_run(run.run_id)
         stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.CANCELED
+
+    def test_cancel_queue(self, workspace, remote_job):
+        with dg.instance_for_test(
+            overrides={
+                "run_coordinator": {
+                    "module": "dagster._core.run_coordinator",
+                    "class": "QueuedRunCoordinator",
+                    "config": {
+                        "max_concurrent_runs": 1,
+                        "cancel_queue_at_length": 1,
+                    },
+                }
+            }
+        ) as instance:
+            coordinator = instance.run_coordinator
+            with pytest.raises(QueueTooLongFailure):
+                for _ in range(2):
+                    run = self.create_run_for_test(
+                        instance, remote_job, status=DagsterRunStatus.QUEUED
+                    )
+                    coordinator.submit_run(dg.SubmitRunContext(run, workspace))
 
 
 def test_thread_config():
