@@ -18,6 +18,16 @@ def test_terminate_run_status_success(mock_client: MockClient):
 
 
 @python_client_test_suite
+def test_force_terminate_run_status_success(mock_client: MockClient):
+    expected_result = None
+    response = {"terminateRun": {"__typename": "TerminateRunSuccess", "run": expected_result}}
+    mock_client.mock_gql_client.execute.return_value = response
+
+    actual_result = mock_client.python_client.terminate_run(RUN_ID, True)
+    assert actual_result == expected_result
+
+
+@python_client_test_suite
 def test_terminate_run_not_failure(mock_client: MockClient):
     error_type, error_message = "TerminateRunFailure", "Unable to terminate run"
     response = {"terminateRun": {"__typename": "TerminateRunFailure", "message": error_message}}

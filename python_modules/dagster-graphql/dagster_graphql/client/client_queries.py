@@ -128,8 +128,14 @@ mutation GraphQLClientShutdownCodeLocation($repositoryLocationName: String!) {
 """
 
 TERMINATE_RUN_JOB_MUTATION = """
-mutation GraphQLClientTerminateRun($runId: String!) {
-  terminateRun(runId: $runId){
+mutation GraphQLClientTerminateRun(
+  $runId: String! 
+  $terminatePolicy: TerminateRunPolicy = SAFE_TERMINATE
+) {
+  terminateRun(
+    runId: $runId
+    terminatePolicy: $terminatePolicy
+  ) {
     __typename
     ... on TerminateRunSuccess{
       run {
@@ -151,8 +157,14 @@ mutation GraphQLClientTerminateRun($runId: String!) {
 """
 
 TERMINATE_RUNS_JOB_MUTATION = """
-mutation GraphQLClientTerminateRuns($runIds: [String!]!) {
-  terminateRuns(runIds: $runIds) {
+mutation GraphQLClientTerminateRuns(
+  $runIds: [String!]! 
+  $terminatePolicy: TerminateRunPolicy = SAFE_TERMINATE
+) {
+  terminateRuns(
+    runIds: $runIds
+    terminatePolicy: $terminatePolicy
+  ) {
     __typename
     ... on TerminateRunsResult {
       terminateRunResults {
