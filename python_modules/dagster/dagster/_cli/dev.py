@@ -106,6 +106,12 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     default=False,
     help="Show verbose stack traces for errors in the code server.",
 )
+@click.option(
+    "--project",
+    help="Specify the project directory to target.",
+    required=False,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),
+)
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
@@ -124,6 +130,7 @@ def dev_command(
     use_legacy_code_server_behavior: bool,
     shutdown_pipe: Optional[int],
     verbose: bool,
+    project: Optional[str],
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -168,6 +175,9 @@ def dev_command_impl(
     os.environ["DAGSTER_IS_DEV_CLI"] = "1"
     os.environ["DAGSTER_verbose"] = "1" if verbose else ""
 
+    if project:
+        os.environ["DAGSTER_PROJECT"] = project
+
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
@@ -211,6 +221,9 @@ def dev_command_impl(
                 code_server_log_level,
                 *workspace_args,
             ]
+
+            if project:
+                args.extend(["--project", project])
 
             webserver_read_fd, webserver_write_fd = get_ipc_shutdown_pipe()
             webserver_process = open_ipc_subprocess(
