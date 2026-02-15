@@ -304,8 +304,8 @@ def test_execution_yields_asset_check_results_pass_and_fail(tmp_path: Path) -> N
     assert all(r.asset_key == AssetKey("my_table") for r in results)
 
 
-def test_execution_count_mismatch_yields_failed_for_all(tmp_path: Path) -> None:
-    """When Soda returns a different number of results than spec names, yield failed for all."""
+def test_execution_missing_check_yields_specific_failure(tmp_path: Path) -> None:
+    """When Soda returns fewer results than specs, matched spec passes, missing spec fails with specific error."""
     (tmp_path / "checks.yml").write_text(
         textwrap.dedent("""
             checks for my_table:
@@ -315,7 +315,7 @@ def test_execution_count_mismatch_yields_failed_for_all(tmp_path: Path) -> None:
     )
     (tmp_path / "configuration.yml").write_text("data_source ds: {}")
 
-    # Only one Soda result for two spec names -> count mismatch
+    # One Soda result for two spec names -> one matched (pass), one missing (fail with specific message)
     mock_check = mock.Mock(
         table="my_table",
         outcome="pass",
@@ -347,15 +347,17 @@ def test_execution_count_mismatch_yields_failed_for_all(tmp_path: Path) -> None:
         results = list(cast("Iterable[AssetCheckResult]", check_def(build_op_context())))
 
     assert len(results) == 2
-    for r in results:
-        assert r.passed is False
-        assert r.asset_key == AssetKey("my_table")
-        err = r.metadata.get("error")
-        assert err is not None
-        err_text = str(err.value) if hasattr(err, "value") else str(err)
-        assert "Count mismatch" in err_text
-        assert "2" in err_text
-        assert "1" in err_text
+    by_name = {r.check_name: r for r in results}
+    # Matched spec passes normally
+    assert by_name["row_count___0"].passed is True
+    assert by_name["row_count___0"].asset_key == AssetKey("my_table")
+    # Missing spec fails with specific metadata error
+    assert by_name["freshness_updated_at____1d"].passed is False
+    assert by_name["freshness_updated_at____1d"].asset_key == AssetKey("my_table")
+    err = by_name["freshness_updated_at____1d"].metadata.get("error")
+    assert err is not None
+    err_text = str(err.value) if hasattr(err, "value") else str(err)
+    assert err_text == "No matching Soda result for check 'freshness_updated_at____1d'"
 
 
 def test_execution_scan_exception_yields_failed_for_all(tmp_path: Path) -> None:

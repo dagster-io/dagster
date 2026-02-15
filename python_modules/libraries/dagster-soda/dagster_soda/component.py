@@ -169,21 +169,32 @@ def _to_dagster_severity(severity: str) -> Any:
     return AssetCheckSeverity.WARN
 
 
-def _build_soda_result_map(dataset_results: list[Any]) -> dict[str, Any]:
+def _build_soda_result_map(
+    dataset_results: list[Any], context: AssetCheckExecutionContext
+) -> dict[str, Any]:
     """Build a map from Dagster-style check name (sanitized) to Soda check result.
 
     Matches on soda_check.name / check_name / identity and optionally definition.
+    Logs a warning when a key collision occurs (duplicate key overwritten).
     """
     result_map: dict[str, Any] = {}
     for soda_check in dataset_results:
         name_key = _sanitize_check_name(_get_check_name(soda_check))
         if name_key and name_key != "check":
+            if name_key in result_map:
+                context.log.warning(
+                    "Duplicate key collision in Soda result map for key: %s", name_key
+                )
             result_map[name_key] = soda_check
         definition = getattr(soda_check, "definition", None)
         if definition:
             def_key = _sanitize_check_name(str(definition))
             if def_key and def_key != "check":
-                result_map.setdefault(def_key, soda_check)
+                if def_key in result_map:
+                    context.log.warning(
+                        "Duplicate key collision in Soda result map for key: %s", def_key
+                    )
+                result_map[def_key] = soda_check
     return result_map
 
 
@@ -319,16 +330,7 @@ class SodaScanComponent(Component, Model, Resolvable):
                             )
                             return
 
-                        if len(dataset_results) != len(spec_names):
-                            mismatch_msg = (
-                                f"Count mismatch: expected {len(spec_names)} check(s) from "
-                                f"SodaCL spec, got {len(dataset_results)} Soda result(s). "
-                                "Cannot safely map results to Dagster checks."
-                            )
-                            yield from _yield_failed_all(mismatch_msg)
-                            return
-
-                        result_map = _build_soda_result_map(dataset_results)
+                        result_map = _build_soda_result_map(dataset_results, context)
 
                         for check_name in spec_names:
                             soda_check = result_map.get(check_name)
