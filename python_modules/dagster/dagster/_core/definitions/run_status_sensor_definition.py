@@ -371,7 +371,7 @@ def build_run_status_sensor_context(
             result = my_job.execute_in_process(instance=instance)
 
             dagster_run = result.dagster_run
-            dagster_event = result.get_job_success_event() # or get_job_failure_event()
+            dagster_event = result.get_run_success_event() # or get_run_failure_event()
 
             context = build_run_status_sensor_context(
                 sensor_name="run_status_sensor_to_invoke",
