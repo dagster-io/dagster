@@ -1538,6 +1538,40 @@ Fixed an issue with the identification of the base repository URL the `DAGSTER_C
 - [bigquery-insights][bugfix] Support querying for insights from the configured `execution_project` if defined.
 - [bigquery-insights][bugfix] When `execution_project` is defined in the dbt profile, fall back to fetching the dataset from the dbt profile's `project` if the dataset cannot be found in the `execution_project`.
 
+
+
+### Performance
+
+- Added tips for debugging performance issues with Dagster jobs:
+  - **Check Executor Configuration**:
+    - The default `multiprocess_executor` spins up a process for each op, which can become a bottleneck if you have many small ops.
+    - Try using the `in_process_executor` to see if it improves performance.
+    - Example:
+      ```python
+      from dagster import job, in_process_executor
+
+      @job(executor_def=in_process_executor)
+      def my_job():
+          # your ops here
+      ```
+
+  - **Use Py-Spy**:
+    - Py-Spy is a sampling profiler for Python programs. It can help you identify slow parts of your Dagster processes.
+    - Install Py-Spy: `pip install py-spy`
+    - Run Py-Spy: `py-spy top --pid <dagster_process_pid>`
+
+  - **Database Performance**:
+    - Writing to SQLite can be a bottleneck. Consider using PostgreSQL for better performance.
+    - Update your Dagster configuration to use PostgreSQL and compare the performance.
+
+  - **Profiling and Logging**:
+    - Enable detailed logging to identify slow operations.
+    - Use Python's built-in profiling tools to gather more insights.
+
+  For more detailed information, refer to the [Dagster documentation](https://docs.dagster.io/).
+
+
+
 ## 1.10.1 (core) / 0.26.1 (libraries)
 
 ### Bugfixes
