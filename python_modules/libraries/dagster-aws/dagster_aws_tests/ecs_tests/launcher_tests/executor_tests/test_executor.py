@@ -115,6 +115,7 @@ def test_executor_init(instance_cm: Callable[..., ContextManager[DagsterInstance
                         }
                     ],
                 },
+                "run_task_kwargs": {"networkConfiguration": None},
             },
         )
 
@@ -154,6 +155,8 @@ def test_executor_init(instance_cm: Callable[..., ContextManager[DagsterInstance
             )
 
             assert run_task_kwargs["launchType"] == "FARGATE"  # this comes from the Run Launcher
+
+            assert "networkConfiguration" not in run_task_kwargs
 
             overrides = run_task_kwargs["overrides"]
 
