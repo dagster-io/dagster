@@ -1,9 +1,0 @@
-type: dagster.PythonScriptComponent
-
-attributes:
-  execution:
-    path: export_customers.py
-  assets:
-    - key: customers_export
-      deps:
-        - "{{ context.load_component('dbt_ingest').asset_key_for_model('customers') }}"

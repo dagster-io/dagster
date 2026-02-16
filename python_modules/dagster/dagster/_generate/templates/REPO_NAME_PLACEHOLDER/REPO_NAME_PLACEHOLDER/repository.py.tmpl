@@ -1,8 +1,0 @@
-from dagster import load_assets_from_modules, repository
-
-from . import assets
-
-
-@repository
-def {{ repo_name }}():
-    return [load_assets_from_modules([assets])]

@@ -1,9 +1,0 @@
-name: "dbt_project"
-version: "0.0.1"
-config-version: 2
-
-# highlight-start
-query-comment:
-  comment: "bigquery_dagster_dbt_v1_opaque_id[[[{{ node.unique_id }}:{{ invocation_id }}]]]"
-  append: true
-# highlight-end

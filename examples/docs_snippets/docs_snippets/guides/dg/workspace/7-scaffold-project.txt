@@ -1,6 +1,0 @@
-uvx create-dagster project projects/project-2
-
-Creating a Dagster project at /.../dagster-workspace/projects/project-2.
-Scaffolded files for Dagster project at /.../dagster-workspace/projects/project-2.
-A `uv` installation was detected. Run `uv sync`? This will create a uv.lock file and the virtual environment you need to activate in order to work on this project. If you wish to use a non-uv package manager, choose "n". (y/n) [y]: Running `uv sync --group dev`...
-...

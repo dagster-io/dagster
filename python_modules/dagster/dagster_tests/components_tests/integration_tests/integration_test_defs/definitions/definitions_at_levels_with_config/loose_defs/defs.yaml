@@ -1,8 +1,0 @@
-type: dagster.DefsFolderComponent
-
-post_processing:
-  assets:
-    - target: "*"
-      attributes:
-        tags:
-          loose_defs_tag: "true"

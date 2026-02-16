@@ -1,9 +1,0 @@
-src
-└── etl_tutorial
-    ├── __init__.py
-    ├── definitions.py
-    └── defs
-        ├── __init__.py
-        ├── assets.py
-        └── transform
-            └── defs.yaml

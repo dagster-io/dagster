@@ -1,8 +1,0 @@
-dg list registry-modules
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Module                         ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster                        │
-│ my_existing_project.components │
-└────────────────────────────────┘

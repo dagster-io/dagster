@@ -1,4 +1,0 @@
-loggers:
-  my_json_logger:
-    config:
-      log_level: INFO

@@ -1,3 +1,0 @@
-load_from:
-  - python_module: dagster_tests.daemon_sensor_tests.locations_for_code_location_scoped_sensor_test.code_location_with_sensor
-  - python_module: dagster_tests.daemon_sensor_tests.locations_for_code_location_scoped_sensor_test.code_location_with_duplicate_job_name

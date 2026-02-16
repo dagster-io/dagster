@@ -1,4 +1,0 @@
-echo 'SNOWFLAKE_ACCOUNT=...' >> .env
-echo 'SNOWFLAKE_USER=...' >> .env
-echo 'SNOWFLAKE_PASSWORD=...' >> .env
-echo "SNOWFLAKE_DATABASE=sandbox" >> .env

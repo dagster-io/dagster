@@ -1,2 +1,0 @@
-include LICENSE
-include dagster_duckdb_polars/py.typed

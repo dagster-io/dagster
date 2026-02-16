@@ -1,3 +1,0 @@
-dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth
-
-Creating defs at /.../my-project/src/my_project/defs/airflow.

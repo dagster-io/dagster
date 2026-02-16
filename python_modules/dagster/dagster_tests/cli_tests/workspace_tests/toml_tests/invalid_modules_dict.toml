@@ -1,8 +1,0 @@
-[tool.dagster]
-modules = [
-    { name = 1 },
-    { name = "foo" },
-    { type = "module" },
-    { type = true },
-    { bar = "foo" },
-]

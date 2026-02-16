@@ -1,6 +1,0 @@
-type: dagster_dlt.DltLoadCollectionComponent
-
-attributes:
-  loads:
-    - source: .loads.my_load_source
-      pipeline: .loads.my_load_pipeline

@@ -1,7 +1,0 @@
-locations:
-  - location_name: example_location
-    code_source:
-      python_file: repo.py
-    build:
-      directory: ./example_location
-      registry: 764506304434.dkr.ecr.us-east-1.amazonaws.com/branch-deployment-agent

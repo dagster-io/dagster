@@ -1,4 +1,0 @@
-# workspace.yaml
-
-load_from:
-  - python_module: hello_world_module.definitions

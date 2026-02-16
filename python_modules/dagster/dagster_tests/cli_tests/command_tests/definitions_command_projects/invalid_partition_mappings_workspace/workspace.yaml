@@ -1,3 +1,0 @@
-load_from:
-  - python_file: defs1.py
-  - python_file: defs2.py

@@ -1,4 +1,0 @@
-dg scaffold component CustomSlingReplicationComponent
-
-Creating module at: /.../my-project/src/my_project/components
-Scaffolded Dagster component at /.../my-project/src/my_project/components/custom_sling_replication_component.py.

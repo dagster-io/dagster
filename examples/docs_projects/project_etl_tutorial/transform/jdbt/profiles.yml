@@ -1,8 +1,0 @@
-jdbt:
-  outputs:
-    prod:
-      type: duckdb
-      path: /tmp/jaffle_platform.duckdb
-      threads: 1
-
-  target: prod

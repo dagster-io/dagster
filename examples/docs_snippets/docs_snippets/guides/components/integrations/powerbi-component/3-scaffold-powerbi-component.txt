@@ -1,3 +1,0 @@
-dg scaffold defs dagster_powerbi.PowerBIWorkspaceComponent powerbi_ingest
-
-Creating defs at /.../my-project/src/my_project/defs/powerbi_ingest.

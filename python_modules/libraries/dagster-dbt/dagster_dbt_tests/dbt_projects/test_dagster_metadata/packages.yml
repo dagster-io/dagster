@@ -1,6 +1,0 @@
-# We keep use `packages.yml` for compatability with `dbt-core==1.5.*`.
-# Once we remove support for that version, we should rename this file to `dependencies.yml`
-packages:
-  - git: "https://github.com/dagster-io/dagster.git"
-    subdirectory: "python_modules/libraries/dagster-dbt/dbt_packages/dagster"
-    revision: master

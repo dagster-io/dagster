@@ -1,4 +1,0 @@
-type: my_project.components.DataProcessor
-template_vars_module: .template_vars
-attributes:
-  table_name: "{{ table_prefix }}_data"

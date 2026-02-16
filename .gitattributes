@@ -1,3 +1,0 @@
-*.py diff=python
-**/uv.lock linguist-generated
-**/*.ambr linguist-generated

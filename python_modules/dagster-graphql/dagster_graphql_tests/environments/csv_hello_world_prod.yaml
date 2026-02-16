@@ -1,4 +1,0 @@
-solids:
-  sum_solid:
-    inputs:
-      num: "data/num_prod.csv"

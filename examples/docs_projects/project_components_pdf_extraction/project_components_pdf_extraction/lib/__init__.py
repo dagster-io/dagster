@@ -1,1 +1,0 @@
-from project_components_pdf_extraction.lib.pdf_extraction import PdfExtraction as PdfExtraction

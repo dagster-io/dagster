@@ -1,9 +1,0 @@
----
-description:
-globs:
-alwaysApply: false
----
-
-When updating tests in this directory, always run them to validate that they succeed. To do so, run
-
-cd $DAGSTER_GIT_REPO_DIR/examples/docs_snippets && tox -e docs_snapshot_update -- {{path to test file}}

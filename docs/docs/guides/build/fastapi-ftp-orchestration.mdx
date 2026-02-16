@@ -1,0 +1,79 @@
+---
+title: Orchestrating FTP pipelines with FastAPI and Dagster
+---
+
+# Orchestrating FTP pipelines with FastAPI and Dagster
+
+This guide shows how to use Dagster to orchestrate file pipelines using an external FastAPI service.
+
+## Architecture
+
+Dagster orchestrates pipeline steps, while FastAPI performs the FTP and decryption work.
+
+
+
+Dagster → FastAPI → FTP → decrypt → store → archive
+
+
+## FastAPI service
+
+Example FastAPI endpoint:
+
+```python
+@app.post("/run-job")
+async def run_job(request: JobRequest):
+    job_id = str(uuid.uuid4())
+    asyncio.create_task(run_ftp_download(job_id, request.params))
+    return {"job_id": job_id}
+
+Dagster asset calling FastAPI
+from dagster import asset
+import requests
+
+@asset
+def download_files(context):
+
+    response = requests.post(
+        "http://ftp-server:8080/run-job",
+        json={
+            "job": "ftp_download",
+            "params": {
+                "file_pattern": "*.csv",
+                "destination": "C:/data"
+            }
+        }
+    )
+
+    job_id = response.json()["job_id"]
+
+    context.log.info(f"Started FTP download job: {job_id}")
+
+    return job_id
+
+Downstream processing asset
+@asset(deps=[download_files])
+def decrypt_files(context, download_files):
+
+    context.log.info("Decrypting downloaded files")
+
+    return "success"
+
+Benefits
+
+Using FastAPI with Dagster allows:
+
+• Isolation of infrastructure logic
+• Reusable external job execution
+• Horizontal scalability
+• Reliable orchestration
+• Better error handling
+
+When to use this pattern
+
+Use this pattern when orchestrating:
+
+• FTP pipelines
+• ETL pipelines
+• external scripts
+• ML preprocessing pipelines
+• LLM data ingestion pipelines

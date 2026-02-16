@@ -1,5 +1,0 @@
-directory_type = "project"
-
-[project]
-root_module = "my_existing_project"
-code_location_target_module = "my_existing_project.definitions"

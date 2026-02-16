@@ -1,5 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: extra_repo.py
-      attribute: extra
-      location_name: test_cli_location

@@ -1,5 +1,0 @@
-type: .MyComponent
-
-attributes:
-  a_string: "{{ fake.x }}"
-  an_int: 3

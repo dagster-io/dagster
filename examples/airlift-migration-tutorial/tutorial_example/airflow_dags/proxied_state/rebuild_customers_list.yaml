@@ -1,7 +1,0 @@
-tasks:
-  - id: load_raw_customers
-    proxied: False
-  - id: build_dbt_models
-    proxied: False
-  - id: export_customers
-    proxied: False

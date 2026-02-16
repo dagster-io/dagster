@@ -1,4 +1,0 @@
-load_from:
-  - python_module:
-      module_name: dagster_tests.cli_tests.command_tests.test_cli_commands
-      attribute: bar

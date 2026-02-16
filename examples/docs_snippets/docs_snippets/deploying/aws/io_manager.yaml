@@ -1,5 +1,0 @@
-resources:
-  io_manager:
-    config:
-      s3_bucket: my-cool-bucket
-      s3_prefix: good/prefix-for-files-

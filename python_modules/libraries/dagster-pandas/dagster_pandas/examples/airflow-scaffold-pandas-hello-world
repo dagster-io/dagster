@@ -1,1 +1,0 @@
-dagster-airflow scaffold --image dagster-pandas-hello-world -e pandas_hello_world.yaml pandas_hello_world

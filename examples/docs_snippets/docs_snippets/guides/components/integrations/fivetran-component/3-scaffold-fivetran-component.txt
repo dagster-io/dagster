@@ -1,4 +1,0 @@
-dg scaffold defs dagster_fivetran.FivetranAccountComponent fivetran_ingest \
-  --account-id test_account --api-key "{{ env.FIVETRAN_API_KEY }}" --api-secret "{{ env.FIVETRAN_API_SECRET }}"
-
-Creating defs at /.../my-project/src/my_project/defs/fivetran_ingest.

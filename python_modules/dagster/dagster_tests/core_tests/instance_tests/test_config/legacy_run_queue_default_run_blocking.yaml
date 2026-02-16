@@ -1,9 +1,0 @@
-run_queue:
-  max_concurrent_runs: 5
-  tag_concurrency_limits:
-    - key: "dagster/solid_selection"
-      limit: 2
-  max_user_code_failure_retries: 3
-  user_code_failure_retry_delay: 10
-  block_op_concurrency_limited_runs:
-    enabled: false

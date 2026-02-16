@@ -1,5 +1,0 @@
-type: .MyComponent
-
-attributes:
-  a_string: "{{ error() }}"
-  an_int: 3

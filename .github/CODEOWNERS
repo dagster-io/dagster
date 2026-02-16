@@ -1,6 +1,0 @@
-# Automatically request docs team for docs PR review
-/docs/                                  @dagster-io/docs
-
-# Automatically request education team for examples and basics tutorial PR review
-/docs/docs/examples                     @dehume
-/docs/docs/dagster-basics-tutorial      @dehume

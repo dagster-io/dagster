@@ -1,3 +1,0 @@
-dg scaffold defs dagster_tutorial.components.tutorial.Tutorial tutorial
-
-Creating defs at <YOUR PATH>/dagster-tutorial/src/dagster_tutorial/defs/tutorial.

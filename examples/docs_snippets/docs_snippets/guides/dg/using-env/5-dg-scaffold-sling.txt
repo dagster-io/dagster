@@ -1,3 +1,0 @@
-dg scaffold defs dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake
-
-Creating defs at /.../ingestion/src/ingestion/defs/ingest_to_snowflake.

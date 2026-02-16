@@ -1,5 +1,0 @@
-load_from:
-  - grpc_server:
-      host: codelocation
-      port: 3030
-      location_name: "example-code"

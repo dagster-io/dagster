@@ -1,7 +1,0 @@
-.imageName :global(.bp5-popover-target) {
-  display: inline;
-  overflow: hidden;
-  position: relative;
-  top: 2px;
-  margin-left: 2px;
-}

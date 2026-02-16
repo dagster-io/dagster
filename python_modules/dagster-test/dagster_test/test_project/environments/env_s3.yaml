@@ -1,4 +1,0 @@
-resources:
-  io_manager:
-    config:
-      s3_bucket: dagster-scratch-80542c2

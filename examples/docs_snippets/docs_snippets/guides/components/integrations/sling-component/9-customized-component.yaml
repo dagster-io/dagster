@@ -1,9 +1,0 @@
-type: dagster_sling.SlingReplicationCollectionComponent
-
-attributes:
-  connections:
-    DUCKDB:
-      type: duckdb
-      instance: /tmp/my_project.duckdb
-  replications:
-    - path: ./replication.yaml

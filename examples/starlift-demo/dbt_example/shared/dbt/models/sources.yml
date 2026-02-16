@@ -1,8 +1,0 @@
-version: 2
-
-sources:
-  - name: lakehouse
-    database: jaffle_shop
-    schema: lakehouse
-    tables:
-      - name: iris

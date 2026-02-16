@@ -1,4 +1,0 @@
-type: my_project.components.MyComponent
-attributes:
-  connection_string: "{{ database_url }}"
-  table_name: "{{ get_table_name('sales') }}"

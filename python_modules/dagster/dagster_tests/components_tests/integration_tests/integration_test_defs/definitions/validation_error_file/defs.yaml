@@ -1,4 +1,0 @@
-type: dagster.DefsFolderComponent
-
-attributes:
-  definitions_path: {}

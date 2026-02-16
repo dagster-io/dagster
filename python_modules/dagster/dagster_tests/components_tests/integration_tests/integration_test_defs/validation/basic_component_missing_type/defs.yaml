@@ -1,4 +1,0 @@
-type: .MyComponentDoesNotExist
-
-attributes:
-  a_string: "test"
