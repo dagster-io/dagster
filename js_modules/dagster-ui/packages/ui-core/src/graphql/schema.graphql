@@ -4254,6 +4254,7 @@ input ReportAssetCheckEvaluationParams {
   passed: Boolean!
   severity: AssetCheckSeverity = null
   serializedMetadata: String = null
+  partition: String = null
 }
 
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError

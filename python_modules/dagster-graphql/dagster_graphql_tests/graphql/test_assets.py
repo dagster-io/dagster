@@ -1498,6 +1498,44 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert evaluation.metadata is not None
         assert len(evaluation.metadata) == 2
 
+    def test_report_asset_check_evaluation_with_partition(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        asset_key = AssetKey("asset1")
+        check_name = "my_partition_check"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_ASSET_CHECK_EVALUATION,
+            variables={
+                "eventParams": {
+                    "assetKey": {"path": asset_key.path},
+                    "checkName": check_name,
+                    "passed": True,
+                    "severity": "WARN",
+                    "partition": "2024-01-01",
+                }
+            },
+        )
+
+        assert result.data
+        assert (
+            result.data["reportAssetCheckEvaluation"]["__typename"]
+            == "ReportAssetCheckEvaluationSuccess"
+        )
+
+        check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
+        record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+            [check_key]
+        ).get(check_key)
+        assert record is not None
+        assert record.event is not None
+        evaluation = record.event.asset_check_evaluation
+        assert evaluation is not None
+        assert evaluation.passed is True
+        assert evaluation.severity == AssetCheckSeverity.WARN
+        assert evaluation.partition == "2024-01-01"
+
     def test_asset_asof_timestamp(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "asset_tag_job")
         result = execute_dagster_graphql(

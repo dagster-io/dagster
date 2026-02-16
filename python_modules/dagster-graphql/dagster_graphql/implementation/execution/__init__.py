@@ -433,6 +433,7 @@ def report_asset_check_evaluation(
     passed: bool,
     severity: "AssetCheckSeverity",
     metadata: Optional[Mapping[str, "RawMetadataValue"]] = None,
+    partition: Optional[str] = None,
 ) -> "GrapheneReportAssetCheckEvaluationSuccess":
     from dagster_graphql.schema.roots.mutation import GrapheneReportAssetCheckEvaluationSuccess
 
@@ -443,6 +444,7 @@ def report_asset_check_evaluation(
         passed=passed,
         severity=severity,
         metadata=metadata or {},
+        partition=partition,
     )
     instance.report_runless_asset_event(evaluation)
     return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)
