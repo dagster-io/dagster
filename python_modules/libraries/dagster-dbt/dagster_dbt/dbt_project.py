@@ -205,6 +205,11 @@ class DbtProject(IHaveNew):
             like when deploying using PEX.
         state_path (Optional[Union[str, Path]]):
             The path, relative to the project directory, to reference artifacts from another run.
+        generate_cli_args (Optional[Sequence[str]]):
+            The arguments to pass to the dbt cli to generate a manifest.json during
+            development time preparation. If omitted, ["parse", "--quiet"] is used.
+            Example: ["parse", "--quiet", "--vars", "{'my_variable': 'my_value'}"]
+
 
     Examples:
         Creating a DbtProject with by referencing the dbt project directory:
@@ -240,6 +245,20 @@ class DbtProject(IHaveNew):
                 target=get_env(),
             )
 
+        Creating a DbtProject that passes dbt variables during manifest generation:
+
+        .. code-block:: python
+            from pathlib import Path
+            from dagster_dbt import DbtProject
+            my_project = DbtProject(
+                project_dir=Path("path/to/dbt_project"),
+                generate_cli_args=[
+                    "parse",
+                    "--quiet",
+                    "--vars",
+                    "{'my_variable': 'my_value'}"
+                ],
+            )
     """
 
     name: str
@@ -253,6 +272,7 @@ class DbtProject(IHaveNew):
     state_path: Optional[Path]
     has_uninstalled_deps: bool
     preparer: DbtProjectPreparer
+    generate_cli_args: Optional[Sequence[str]]
 
     def __new__(
         cls,
@@ -264,6 +284,7 @@ class DbtProject(IHaveNew):
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
+        generate_cli_args: Optional[Sequence[str]] = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
@@ -282,7 +303,10 @@ class DbtProject(IHaveNew):
                 f"profiles {profiles_dir} does not exist."
             )
 
-        preparer = DagsterDbtProjectPreparer()
+        if generate_cli_args:
+            preparer = DagsterDbtProjectPreparer(generate_cli_args=generate_cli_args)
+        else:
+            preparer = DagsterDbtProjectPreparer()
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
@@ -323,6 +347,7 @@ class DbtProject(IHaveNew):
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
             preparer=preparer,
+            generate_cli_args=generate_cli_args,
         )
 
     @public
