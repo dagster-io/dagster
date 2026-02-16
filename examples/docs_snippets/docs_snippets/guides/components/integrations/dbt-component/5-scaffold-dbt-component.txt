@@ -1,4 +1,0 @@
-dg scaffold defs dagster_dbt.DbtProjectComponent dbt_ingest \
-  --project-path "dbt"
-
-Creating defs at /.../my-project/src/my_project/defs/dbt_ingest.

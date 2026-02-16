@@ -1,1 +1,0 @@
-uvx create-dagster project my-project && cd my-project/src

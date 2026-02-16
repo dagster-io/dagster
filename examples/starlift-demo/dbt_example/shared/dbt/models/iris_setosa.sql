@@ -1,1 +1,0 @@
-select * from {{ source('lakehouse', 'iris') }} where species = 'Iris-setosa'

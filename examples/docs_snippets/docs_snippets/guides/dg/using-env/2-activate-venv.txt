@@ -1,1 +1,0 @@
-cd ingestion && source .venv/bin/activate

@@ -1,4 +1,0 @@
-uvx-U create-dagster project my-project \
-    && cd my-project/src \
-    && uv add dagster-sling \
-    && dg scaffold defs dagster_sling.SlingReplicationCollectionComponent my_sling_sync

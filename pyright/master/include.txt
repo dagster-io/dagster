@@ -1,5 +1,0 @@
-docs/sphinx/_ext/dagster-sphinx
-python_modules
-examples
-integration_tests
-scripts

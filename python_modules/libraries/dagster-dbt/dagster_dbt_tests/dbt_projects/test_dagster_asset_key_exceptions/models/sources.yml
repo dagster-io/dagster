@@ -1,6 +1,0 @@
-version: 2
-
-sources:
-  - name: jaffle_shop
-    tables:
-      - name: stg_customers

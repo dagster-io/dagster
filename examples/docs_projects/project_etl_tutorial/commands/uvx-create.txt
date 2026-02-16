@@ -1,5 +1,0 @@
-uvx create-dagster project etl-tutorial
-
-Creating a Dagster project at <YOUR PATH>/etl-tutorial.
-Scaffolded files for Dagster project at <YOUR PATH>/etl-tutorial.
-...

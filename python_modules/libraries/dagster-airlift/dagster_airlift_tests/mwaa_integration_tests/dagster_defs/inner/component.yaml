@@ -1,9 +1,0 @@
-type: dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent
-
-attributes:
-  name: my_airflow_instance
-  auth:
-    type: mwaa
-    env_name: "{{ env.AIRLIFT_MWAA_TEST_ENV_NAME }}"
-    region_name: "{{ env.AIRLIFT_MWAA_TEST_REGION }}"
-    profile_name: "{{ env.AIRLIFT_MWAA_TEST_PROFILE }}"

@@ -1,4 +1,0 @@
-locations:
-  - location_name: pipes_external_airflow_demo
-    code_source:
-      module_name: pipes_external_airflow_demo.definitions

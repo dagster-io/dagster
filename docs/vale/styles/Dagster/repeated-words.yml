@@ -1,8 +1,0 @@
-## This rule catches instances of repeated words. Ex: This //is is// a sentence.
-
-extends: repetition
-message: "'%s' is repeated!"
-level: error
-alpha: true
-tokens:
-  - '[^\s]+'

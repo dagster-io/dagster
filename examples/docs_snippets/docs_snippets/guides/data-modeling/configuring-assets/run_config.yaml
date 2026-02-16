@@ -1,4 +1,0 @@
-ops:
-  forecast_model:
-    config:
-      lookback_window_days: 7

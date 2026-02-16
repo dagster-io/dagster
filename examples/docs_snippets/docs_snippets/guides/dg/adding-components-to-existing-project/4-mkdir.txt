@@ -1,1 +1,0 @@
-mkdir -p my_existing_project/elt/sling

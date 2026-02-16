@@ -1,9 +1,0 @@
-## This rule finds missing instances of 'to'. Ex: It would be great // // write a story.
-
-extends: sequence
-message: "Missing 'to': Did you mean '%[2]s %[3]s *to* %[4]s'?"
-tokens:
-  - tag: MD
-  - pattern: be
-  - tag: JJ
-  - tag: VB|VBN

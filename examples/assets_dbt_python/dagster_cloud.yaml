@@ -1,4 +1,0 @@
-locations:
-  - location_name: assets_dbt_python
-    code_source:
-      module_name: assets_dbt_python.definitions

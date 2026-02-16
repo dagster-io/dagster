@@ -1,4 +1,0 @@
-ops:
-  get_environment:
-    config:
-      looking_for: FIND_ME

@@ -1,8 +1,0 @@
-type: dagster_census.CensusComponent
-
-attributes:
-  workspace:
-    api_key: "{{ env.CENSUS_API_KEY }}"
-  sync_selector:
-    by_name:
-      - census_sync_1

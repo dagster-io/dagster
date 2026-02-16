@@ -1,8 +1,0 @@
-success_multiple_deployments:
-  command: "dg api deployment list --json"
-
-success_multiple_deployments_text:
-  command: "dg api deployment list"
-
-empty_deployments:
-  command: "dg api deployment list --json"

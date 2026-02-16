@@ -1,9 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: repo.py
-      attribute: empty_repo
-      location_name: empty_repo
-  - python_file:
-      relative_path: repo.py
-      attribute: test_repo
-      location_name: test_location

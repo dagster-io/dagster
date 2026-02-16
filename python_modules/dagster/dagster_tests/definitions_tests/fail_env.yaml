@@ -1,4 +1,0 @@
-ops:
-  can_fail:
-    config:
-      error: true

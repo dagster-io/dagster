@@ -1,7 +1,0 @@
-type: dagster_dbt.DbtProjectComponent
-
-attributes:
-  project: jaffle_shop
-
-  translation:
-    key: "some_prefix/{{node.name}}"

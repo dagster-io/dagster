@@ -1,4 +1,0 @@
-loggers:
-  console:
-    config:
-      log_level: ERROR

@@ -1,7 +1,0 @@
-type: .MyComponent
-
-attributes:
-  a_string: "a string"
-  an_int: 5
-
-an_extra_top_level_value: "extra top level value"

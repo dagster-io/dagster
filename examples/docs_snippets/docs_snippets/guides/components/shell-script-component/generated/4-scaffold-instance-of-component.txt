@@ -1,3 +1,0 @@
-dg scaffold defs 'my_project.components.shell_command.ShellCommand' my_shell_command
-
-Creating defs at /.../my-project/src/my_project/defs/my_shell_command.

@@ -1,1 +1,0 @@
-from dagster_looker.api.components.looker_component import LookerComponent as LookerComponent

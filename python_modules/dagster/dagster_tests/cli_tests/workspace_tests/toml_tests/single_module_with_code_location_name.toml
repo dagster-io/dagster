@@ -1,4 +1,0 @@
-[tool.dagster]
-
-module_name = "baaz"
-code_location_name = "bar"

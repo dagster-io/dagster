@@ -1,5 +1,0 @@
-resources:
-  op:
-    config:
-      num_one: 10
-      num_two: 12

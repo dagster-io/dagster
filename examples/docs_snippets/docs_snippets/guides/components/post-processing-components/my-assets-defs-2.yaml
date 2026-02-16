@@ -1,8 +1,0 @@
-type: dagster.DefsFolderComponent
-
-attributes: {}
-post_processing:
-  assets:
-    - attributes:
-        kinds:
-        - "some_kind"

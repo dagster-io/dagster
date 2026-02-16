@@ -1,2 +1,0 @@
-type: dagster_tests.components_tests.integration_tests.lib.duckdb_component.step_one.DuckDbComponent
-attributes: null

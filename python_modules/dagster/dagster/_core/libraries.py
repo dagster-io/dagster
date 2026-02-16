@@ -1,1 +1,0 @@
-from dagster_shared.libraries import DagsterLibraryRegistry as DagsterLibraryRegistry

@@ -1,5 +1,0 @@
-resources:
-  file_dirs:
-    config:
-      write_file_dir: /write_files/
-      count_file_dir: /count_files/

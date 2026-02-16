@@ -1,3 +1,0 @@
-dg scaffold defs dagster_looker.LookerComponent looker_ingest
-
-Creating defs at /.../my-project/src/my_project/defs/looker_ingest.

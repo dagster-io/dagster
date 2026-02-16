@@ -1,9 +1,0 @@
-type: dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent
-
-attributes:
-  name: kitchen_sink_instance
-  auth:
-    type: basic_auth
-    username: admin
-    password: admin
-    webserver_url: http://localhost:8080

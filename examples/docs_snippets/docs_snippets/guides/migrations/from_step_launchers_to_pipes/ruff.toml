@@ -1,4 +1,0 @@
-[lint]
-extend-select = ["I"]
-[lint.isort]
-known-first-party = ["my_lib"]

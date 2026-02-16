@@ -1,8 +1,0 @@
-type: dagster.PythonScriptComponent
-template_vars_module: .template_vars
-attributes:
-  execution:
-    path: process_data.py
-  assets:
-    - key: processed_data
-      tags: "{{ generate_compliance_tags('internal', has_pii=false) }}"

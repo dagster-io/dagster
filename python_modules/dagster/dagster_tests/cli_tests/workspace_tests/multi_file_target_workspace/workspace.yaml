@@ -1,9 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: example_one/jobs.py
-      working_directory: example_one
-      location_name: one
-  - python_file:
-      relative_path: example_two/jobs.py
-      working_directory: example_two
-      location_name: two

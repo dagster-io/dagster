@@ -1,8 +1,0 @@
-tree src/my_project/defs
-
-src/my_project/defs
-├── __init__.py
-└── airflow
-    └── defs.yaml
-
-2 directories, 2 files

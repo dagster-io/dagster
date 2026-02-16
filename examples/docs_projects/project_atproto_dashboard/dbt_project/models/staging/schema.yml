@@ -1,7 +1,0 @@
-version: 2
-
-models:
-  - name: stg_profiles
-    description: "raw data from r2 bucket"
-  - name: stg_feed_snapshots
-    description: "raw posts data from r2 bucket"

@@ -1,4 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: alternate_entrypoint_project/definitions.py
-      executable_path: fake_executable

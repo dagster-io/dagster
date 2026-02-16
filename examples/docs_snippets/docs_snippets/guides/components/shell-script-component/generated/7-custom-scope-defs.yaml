@@ -1,8 +1,0 @@
-
-type: my_project.components.shell_command.ShellCommand
-
-attributes:
-  script_path: script.sh
-  asset_specs:
-    - key: my_asset
-      partitions_def: '{{ daily_partitions }}'

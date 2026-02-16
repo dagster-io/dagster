@@ -1,6 +1,0 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
-[tool.dg.project]
-defs_module = "kitchen_sink.dagster_defs.inner_component_defs"

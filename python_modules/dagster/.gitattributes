@@ -1,2 +1,0 @@
-dagster_tests/**/snapshots/* linguist-generated=true
-dagster/_core/definitions/antlr_asset_selection/generated/* linguist-generated=true

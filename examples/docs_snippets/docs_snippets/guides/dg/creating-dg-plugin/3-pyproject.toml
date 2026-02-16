@@ -1,3 +1,0 @@
-...
-[project.entry-points]
-"dagster_dg_cli.registry_modules" = { my_library = "my_library" }

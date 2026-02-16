@@ -1,7 +1,0 @@
-my-project/src/my_project/defs/generate_revenue_report/
-├── defs.yaml
-├── scripts/
-│   ├── process_sales_data.py
-│   └── generate_reports.py
-└── utils/
-    └── data_helpers.py

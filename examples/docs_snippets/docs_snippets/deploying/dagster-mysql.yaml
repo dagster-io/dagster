@@ -1,8 +1,0 @@
-storage:
-  mysql:
-    mysql_db:
-    username: { username }
-    password: { password }
-    hostname: { hostname }
-    db_name: { database }
-    port: { port }

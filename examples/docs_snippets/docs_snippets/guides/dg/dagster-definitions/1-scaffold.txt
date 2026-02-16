@@ -1,3 +1,0 @@
-dg scaffold defs dagster.asset assets/my_asset.py
-
-Creating defs at /.../my-project/src/my_project/defs/assets/my_asset.py.

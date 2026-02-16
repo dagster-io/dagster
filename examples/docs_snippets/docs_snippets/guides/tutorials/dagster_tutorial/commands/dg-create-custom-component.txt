@@ -1,4 +1,0 @@
-dg scaffold component Tutorial
-
-Creating module at: <YOUR PATH>/dagster-tutorial/src/dagster_tutorial/components
-Scaffolded Dagster component at <YOUR PATH>/dagster-tutorial/src/dagster_tutorial/components/tutorial.py.

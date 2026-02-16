@@ -1,1 +1,0 @@
-project_name: "retail"
