@@ -445,7 +445,7 @@ class FivetranResource(ConfigurableResource):
 @dagster_maintained_resource
 @resource(config_schema=FivetranResource.to_config_schema())
 def fivetran_resource(context: InitResourceContext) -> FivetranResource:
-    """This resource allows users to programatically interface with the Fivetran REST API to launch
+    """This resource allows users to programmatically interface with the Fivetran REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
 

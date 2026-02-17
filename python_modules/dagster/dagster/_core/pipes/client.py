@@ -262,7 +262,7 @@ def _check_result_from_pipes_results(
         check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
     ]
 
-    # return the single asset check result if thats what we got
+    # return the single asset check result if that's what we got
     if len(mat_results) == 0 and len(check_results) == 1:
         return next(iter(check_results))
 

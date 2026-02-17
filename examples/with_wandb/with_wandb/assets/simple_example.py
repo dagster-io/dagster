@@ -41,7 +41,7 @@ def create_my_final_list(my_first_list: list[int]) -> list[int]:
     Returns:
         List[int]: The content of the new Artifact.
 
-    my_first_list is unpickled from the Artifact. We then concatene that list with another one into
+    my_first_list is unpickled from the Artifact. We then concatenate that list with another one into
     a new Artifact.
     """
     return my_first_list + [4, 5, 7]

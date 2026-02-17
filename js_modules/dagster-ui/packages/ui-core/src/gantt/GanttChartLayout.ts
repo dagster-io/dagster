@@ -322,7 +322,7 @@ export const boxStyleFor = (
 };
 
 // Does a shallow clone of the boxes so attributes (`width`, `x`, etc) can be mutated.
-// This requires special logic because (for easy graph travesal), boxes.children references
+// This requires special logic because (for easy graph traversal), boxes.children references
 // other elements of the boxes array. A basic deepClone would replicate these into
 // copies rather than references.
 const cloneLayout = ({boxes, markers}: GanttChartLayout): GanttChartLayout => {

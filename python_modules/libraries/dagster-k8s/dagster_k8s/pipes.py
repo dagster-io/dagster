@@ -308,7 +308,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
                     continue
 
         # After stream is initially yielded in above loop this while loop is a safeguard against the
-        # stream ending while the pod has not exitted. If so, we need to refresh the stream.
+        # stream ending while the pod has not exited. If so, we need to refresh the stream.
         while not pod_exit_event.is_set():
             # List the pods now and then use the status to decide whether we should exit
             pods = list_namespaced_pod(

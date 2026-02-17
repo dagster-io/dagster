@@ -156,7 +156,7 @@ def test_launch_assets() -> None:
                     "dg",
                     "launch",
                     "--assets",
-                    "nonexistant",
+                    "nonexistent",
                 ],
                 check=False,
                 capture_output=True,

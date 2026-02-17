@@ -370,7 +370,7 @@ def retry_partition_backfill(
             # determine the subset that should be retried by removing the successfully materialized subset from
             # the target subset. This ensures that if the backfill was canceled or marked failed that all
             # non-materialized asset partitions will be retried. asset_backfill_data.failed_and_downstream_asset
-            # only contains asset partitions who's materialization runs failed and their downsteam assets, not
+            # only contains asset partitions who's materialization runs failed and their downstream assets, not
             # asset partitions that never got materialization runs.
             assets_to_request = assets_to_request - asset_backfill_data.materialized_subset
         if assets_to_request.num_partitions_and_non_partitioned_assets == 0:

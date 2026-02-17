@@ -562,7 +562,7 @@ class ActiveExecution:
                 self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_resource_init_failure:
             # Resources are only initialized without a step key in the
-            # in-process case, and resource initalization happens before the
+            # in-process case, and resource initialization happens before the
             # ActiveExecution object is created.
             check.invariant(
                 dagster_event.step_key is not None,

@@ -43,7 +43,7 @@ class AirflowEphemeralDatabase(AirflowDatabase):
         os.makedirs(airflow_home_path, exist_ok=True)
         with Locker(airflow_home_path):
             airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
-            # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
+            # because AIRFLOW_HOME has been overridden airflow needs to be reloaded
             if is_airflow_2_loaded_in_environment():
                 importlib.reload(airflow.configuration)
                 importlib.reload(airflow.settings)

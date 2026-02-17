@@ -38,7 +38,7 @@ class RetryPolicy(
         [
             ("max_retries", PublicAttr[int]),
             ("delay", PublicAttr[check.Numeric | None]),
-            # declarative time modulation to allow calc witout running user function
+            # declarative time modulation to allow calc without running user function
             ("backoff", PublicAttr[Backoff | None]),
             ("jitter", PublicAttr[Jitter | None]),
         ],

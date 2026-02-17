@@ -66,7 +66,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
 
     End users should prefer the :func:`@op <op>` decorator. OpDefinition is generally intended to be
-    used by framework authors or for programatically generated ops.
+    used by framework authors or for programmatically generated ops.
 
     Args:
         name (str): Name of the op. Must be unique within any :py:class:`GraphDefinition` or

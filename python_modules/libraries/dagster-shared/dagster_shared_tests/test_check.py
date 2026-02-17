@@ -934,7 +934,7 @@ def test_two_dim_list_param():
         assert check.two_dim_list_param([], "something")
 
     with pytest.raises(CheckError):
-        assert check.two_dim_list_param([[1, 2], 3], "soemthing")
+        assert check.two_dim_list_param([[1, 2], 3], "something")
 
     with pytest.raises(CheckError):
         assert check.two_dim_list_param([[1, 2], [3.0, 4.1]], "something", of_type=int)
@@ -1741,7 +1741,7 @@ BUILD_CASES = [
         MyTypedDict,
         [
             {"foo": "f", "bar": "b"},
-            {},  # cant actually validate TypeDict structure, just that its a dict
+            {},  # can't actually validate TypeDict structure, just that its a dict
         ],
         [None, Foo()],
     ),

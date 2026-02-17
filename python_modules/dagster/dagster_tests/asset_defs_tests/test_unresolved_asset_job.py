@@ -879,7 +879,7 @@ def test_backfill_policy():
 
 
 def test_metadata():
-    unresolved = dg.define_asset_job("exmaple", metadata={"foo": "bar", "four": 4})
+    unresolved = dg.define_asset_job("example", metadata={"foo": "bar", "four": 4})
     assert unresolved.metadata
 
     blanked = unresolved.with_metadata({})

@@ -188,7 +188,7 @@ def test_all_deps_blocking_checks_passed_condition(real_check: bool) -> None:
     # now A gets rematerialized, blocking checks haven't been executed yet
     instance.report_runless_asset_event(dg.AssetMaterialization("A"))
 
-    # in sqllite the check evaluation create_timestamp is only second-level precision
+    # in sqlite the check evaluation create_timestamp is only second-level precision
     time.sleep(1)
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0

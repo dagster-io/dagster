@@ -96,7 +96,7 @@ def execute_docker_container(
             launched container. Default: None.
         registry: (Optional[Mapping[str, str]]): Information for using a non local/public Docker
             registry. Can have "url", "username", or "password" keys.
-        env_vars (Optional[Sequence[str]]): List of environemnt variables to include in the launched
+        env_vars (Optional[Sequence[str]]): List of environment variables to include in the launched
             container. ach can be of the form KEY=VALUE or just KEY (in which case the value will be
             pulled from the calling environment.
         container_kwargs (Optional[Dict[str[Any]]]): key-value pairs that can be passed into

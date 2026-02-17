@@ -15,7 +15,7 @@ class TemporalContext:
     respect to the effective time.
 
     Last event id: Our event log has a monotonically increasing event id. This is used to
-    cursor the event log. This event_id is also propogated to derived tables to indicate
+    cursor the event log. This event_id is also propagated to derived tables to indicate
     when that record is valid.  This allows us to query the state of the event log
     at a given point in time.
 

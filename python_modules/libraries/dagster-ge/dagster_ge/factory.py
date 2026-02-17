@@ -73,7 +73,7 @@ def ge_validation_op_factory(
             https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/how_to_create_a_batch_of_data_from_an_in_memory_spark_or_pandas_dataframe
         data_asset_name (str): the name of the data asset that this op will be validating.
         suite_name (str): the name of your expectation suite, see your great_expectations.yml
-        batch_identifier_fn (dict): A dicitonary of batch identifiers to uniquely identify this
+        batch_identifier_fn (dict): A dictionary of batch identifiers to uniquely identify this
             batch of data. To learn more about batch identifiers, see:
             https://docs.greatexpectations.io/docs/reference/datasources#batches.
         input_dagster_type (DagsterType): the Dagster type used to type check the input to the op.

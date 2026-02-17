@@ -309,7 +309,7 @@ def clause_to_subset(
     Args:
         graph (Dict[str, Dict[T, Set[T]]]): the input and output dependency graph.
         clause (str): the subselection query in model selection syntax, e.g. "*some_solid+" will
-            select all of some_solid's upstream dependencies and its direct downstream dependecies.
+            select all of some_solid's upstream dependencies and its direct downstream dependencies.
         item_name_to_item_fn (Callable[[str], T]): Converts item names found in the clause to items
             of the type held in the graph.
 
@@ -329,7 +329,7 @@ def clause_to_subset(
     subset_list: list[T_Hashable] = []
     traverser = Traverser(graph=graph)
     subset_list.append(item)
-    # traverse graph to get up/downsteam items
+    # traverse graph to get up/downstream items
     subset_list += traverser.fetch_upstream(item, up_depth)
     subset_list += traverser.fetch_downstream(item, down_depth)
 
@@ -340,7 +340,7 @@ def parse_op_queries(
     graph_def: "GraphDefinition",
     op_queries: Sequence[str],
 ) -> AbstractSet[str]:
-    """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
+    """Take pipeline definition and a list of solid selection queries (including names of solid
         invocations. See syntax examples below) and return a set of the qualified solid names.
 
     It currently only supports top-level solids.

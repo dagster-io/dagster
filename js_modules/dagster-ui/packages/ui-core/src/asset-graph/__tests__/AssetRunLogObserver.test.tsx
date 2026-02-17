@@ -42,7 +42,7 @@ describe('AssetRunLogObserver', () => {
       received.push(...events);
     };
 
-    // Note: Putting htis in the mocks array twice allows us to
+    // Note: Putting this in the mocks array twice allows us to
     // subscribe / unsubscribe / subscribe again.
     render(
       <MockedProvider mocks={[SubscriptionMock, SubscriptionMock]}>

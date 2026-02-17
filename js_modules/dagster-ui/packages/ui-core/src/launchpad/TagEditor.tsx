@@ -158,7 +158,7 @@ export const EditableTagList = ({
               const anyOverride = editState.some((editable) => editable.key === key);
               if (anyOverride) {
                 return (
-                  <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                  <Tooltip key={key} content="Overridden by custom tag value" placement="top">
                     <span style={{opacity: 0.2}}>
                       <RunTag tag={tag} key={idx} />
                     </span>
@@ -233,7 +233,7 @@ export const TagContainer = ({
               const anyOverride = tagsFromSession.some((sessionTag) => sessionTag.key === key);
               if (anyOverride) {
                 return (
-                  <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                  <Tooltip key={key} content="Overridden by custom tag value" placement="top">
                     <span style={{opacity: 0.2}}>
                       <RunTag tag={tag} key={idx} actions={actions} />
                     </span>

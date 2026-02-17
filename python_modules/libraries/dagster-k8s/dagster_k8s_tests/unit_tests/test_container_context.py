@@ -640,7 +640,7 @@ def test_only_allows_pod_template_spec_metadata():
         run_k8s_config=UserDefinedDagsterK8sConfig(pod_template_spec_metadata={"labels": labels})
     ).validate_user_k8s_config_for_run(only_allow_user_defined_k8s_config_fields, None)
 
-    # cannot set as top-level field on K8sContainerContext becuase it also sets job_metadata
+    # cannot set as top-level field on K8sContainerContext because it also sets job_metadata
     with pytest.raises(
         Exception, match="Attempted to create a pod with fields that violated the allowed list"
     ):

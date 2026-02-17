@@ -516,7 +516,7 @@ class AssetSelection(ABC):
     def resolve_checks_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
-        """By default, resolve to checks that target the selected assets. This is overriden for particular selections."""
+        """By default, resolve to checks that target the selected assets. This is overridden for particular selections."""
         asset_keys = self.resolve(asset_graph)
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 

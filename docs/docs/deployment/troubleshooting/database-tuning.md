@@ -254,7 +254,7 @@ From the [Postgresql documentation](https://www.postgresql.org/docs/current/rout
 
 > The usual goal of routine vacuuming is to do standard VACUUMs often enough to avoid needing VACUUM FULL. The autovacuum daemon attempts to work this way, and in fact will never issue VACUUM FULL. In this approach, **the idea is not to keep tables at their minimum size, but to maintain steady-state usage of disk space: each table occupies space equivalent to its minimum size plus however much space gets used up between vacuum runs. Although VACUUM FULL can be used to shrink a table back to its minimum size and return the disk space to the operating system, there is not much point in this if the table will just grow again in the future.** Thus, moderately-frequent standard VACUUM runs are a better approach than infrequent VACUUM FULL runs for maintaining heavily-updated tables.
 
-## Step 3: Shrink the datbase with `pg_repack`
+## Step 3: Shrink the database with `pg_repack`
 
 Running `pg_repack` on the database can cut the overall disk usage in a few hours with little to no downtime.
 

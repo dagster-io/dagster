@@ -118,12 +118,12 @@ class DagsterGraphQLClient:
         except TransportServerError as exc:
             raise DagsterGraphQLClientError(
                 f"Server error with code {exc.code}\nand message {exc}\n"
-                f"occured during execution of query \n{query}\n with variables"
+                f"occurred during execution of query \n{query}\n with variables"
                 f" \n{variables}\n"
             ) from exc
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
-                f"Exception occured during execution of query \n{query}\n with variables"
+                f"Exception occurred during execution of query \n{query}\n with variables"
                 f" \n{variables}\n"
             ) from exc
 
@@ -276,7 +276,7 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
             DagsterGraphQLClientError("InvalidOutputError", body=error_object): some solid has an invalid output within the job.
                 The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
-            DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occured during execution.
+            DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occurred during execution.
                 This indicates that a conflicting job run already exists in run storage.
             DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the job

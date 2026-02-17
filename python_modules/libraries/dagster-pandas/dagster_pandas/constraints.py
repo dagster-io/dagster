@@ -330,7 +330,7 @@ class StrictColumnsConstraint(DataFrameConstraint):
             if column not in self.strict_column_list:
                 raise DataFrameConstraintViolationException(
                     constraint_name=self.name,
-                    constraint_description=f"Expected {self.strict_column_list}. Recevied {columns_received}.",
+                    constraint_description=f"Expected {self.strict_column_list}. Received {columns_received}.",
                 )
 
 

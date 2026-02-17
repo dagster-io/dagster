@@ -640,7 +640,7 @@ describe('LaunchAssetExecutionButton', () => {
       await screen.findByTestId('backfill-preview-modal-content');
     });
 
-    it('should offer to materialize all partitions if roots have different partition defintions ("pureAll" case)', async () => {
+    it('should offer to materialize all partitions if roots have different partition definitions ("pureAll" case)', async () => {
       const LaunchPureAllMutationMock = buildExpectedLaunchBackfillMutation({
         tags: [...UI_EXECUTION_TAGS],
         assetSelection: [

@@ -68,7 +68,7 @@ def test_active_execution_plan():
         assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_success(step_1.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
@@ -81,13 +81,13 @@ def test_active_execution_plan():
         assert step_3.key == "mult_three"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_success(step_2.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_success(step_3.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_3.key, "result"))
@@ -99,7 +99,7 @@ def test_active_execution_plan():
         assert step_4.key == "adder"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         assert not active_execution.is_complete
 
@@ -119,7 +119,7 @@ def test_failing_execution_plan():
         assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_success(step_1.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
@@ -132,19 +132,19 @@ def test_failing_execution_plan():
         assert step_3.key == "mult_three"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_success(step_2.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         # uh oh failure
         active_execution.mark_failed(step_3.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_3.key, "result"))
 
-        # cant progres to 4th step
+        # can't progress to 4th step
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0
 
@@ -171,7 +171,7 @@ def test_retries_active_execution():
         assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_up_for_retry(step_1.key)
 
@@ -196,18 +196,18 @@ def test_retries_active_execution():
         assert step_3.key == "mult_three"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_success(step_2.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         # uh oh failure
         active_execution.mark_failed(step_3.key)
 
-        # cant progres to 4th step
+        # can't progress to 4th step
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0
 
@@ -235,7 +235,7 @@ def test_retries_disabled_active_execution():
             assert step_1.key == "return_two"
 
             steps = active_execution.get_steps_to_execute()
-            assert len(steps) == 0  # cant progress
+            assert len(steps) == 0  # can't progress
 
             # raises
             active_execution.mark_up_for_retry(step_1.key)
@@ -252,12 +252,12 @@ def test_retries_deferred_active_execution():
         assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress
+        assert len(steps) == 0  # can't progress
 
         active_execution.mark_up_for_retry(step_1.key)
 
         steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 0  # cant progress, retries are deferred
+        assert len(steps) == 0  # can't progress, retries are deferred
 
         assert not active_execution.is_complete
 

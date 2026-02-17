@@ -62,7 +62,7 @@ const initializeState = ({
   selectedRunsAllQueued,
 }: PropsForInitializer): TerminationDialogState => {
   // If any selected runs have `canTerminate`, we don't necessarily have to force and we
-  // can show the "safe" terimnation option
+  // can show the "safe" termination option
   const safeTerminationPossible =
     !selectedRunsAllQueued && Object.keys(selectedRuns).some((id) => selectedRuns[id]);
   return {

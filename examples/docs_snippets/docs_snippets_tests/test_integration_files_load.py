@@ -8,7 +8,7 @@ import dagster as dg
 snippets_folder = dg.file_relative_path(__file__, "../docs_snippets/integrations")
 
 EXCLUDED_FILES = {
-    # exclude community integrations because they require non-editable dagster depdendencies
+    # exclude community integrations because they require non-editable dagster dependencies
     f"{snippets_folder}/cube.py",
     f"{snippets_folder}/hightouch.py",
     f"{snippets_folder}/hashicorp.py",

@@ -19,7 +19,7 @@ def pickle_to_s3(object: Any, key: str) -> None:  # noqa: A002
 
 
 def fetch_products() -> DataFrame:
-    return DataFrame({"product": ["knive"], "category": ["kitchenware"]})
+    return DataFrame({"product": ["knife"], "category": ["kitchenware"]})
 
 
 @io_manager

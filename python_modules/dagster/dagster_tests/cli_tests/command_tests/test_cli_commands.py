@@ -351,7 +351,7 @@ def grpc_server_bar_pipeline_args() -> Iterator[tuple[dict[str, Any], dg.Dagster
         yield parsed_cli_args, instance
 
 
-# This iterates over a list of contextmanagers that can be used to contruct
+# This iterates over a list of contextmanagers that can be used to construct
 # (parsed_cli_args, instance tuples)
 def launch_command_contexts():
     for job_target_args in valid_remote_job_args():
@@ -392,7 +392,7 @@ def grpc_server_scheduler_cli_args(overrides=None):
             yield args, instance
 
 
-# Returns a list of contextmanagers that can be used to contruct
+# Returns a list of contextmanagers that can be used to construct
 # (cli_args, instance) tuples for schedule calls
 def schedule_command_contexts():
     return [

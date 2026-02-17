@@ -576,7 +576,7 @@
     y_axis_gridlines: true
     show_view_names: false
     y_axes: [{label: '', orientation: left, series: [{axisId: store_weather.average_max_temparature,
-            id: store_weather.average_max_temparature, name: Average Max Temparature}],
+            id: store_weather.average_max_temparature, name: Average Max Temperature}],
         showLabels: true, showValues: true, unpinAxis: false, tickDensity: default,
         type: linear}, {label: '', orientation: right, series: [{axisId: transactions__line_items.total_sales_per_store,
             id: transactions__line_items.total_sales_per_store, name: Total Sales
@@ -1076,7 +1076,7 @@
     y_axis_gridlines: true
     show_view_names: false
     y_axes: [{label: '', orientation: left, series: [{axisId: store_weather.average_max_temparature,
-            id: store_weather.average_max_temparature, name: Average Max Temparature}],
+            id: store_weather.average_max_temparature, name: Average Max Temperature}],
         showLabels: true, showValues: true, unpinAxis: false, tickDensity: default,
         type: linear}, {label: '', orientation: right, series: [{axisId: transactions__line_items.total_sales_per_store,
             id: transactions__line_items.total_sales_per_store, name: Total Sales

@@ -189,5 +189,5 @@ def construct_automapped_dag_assets_defs(
 
 
 def make_default_dag_asset_key(instance_name: str, dag_id: str) -> AssetKey:
-    """Conventional asset key representing a successful run of an airfow dag."""
+    """Conventional asset key representing a successful run of an airflow dag."""
     return AssetKey([instance_name, "dag", convert_to_valid_dagster_name(dag_id)])

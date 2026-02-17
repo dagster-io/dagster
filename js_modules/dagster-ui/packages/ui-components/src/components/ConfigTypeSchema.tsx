@@ -19,7 +19,7 @@ interface ConfigTypeSchemaProps {
 
 // Either type is guaranteed not to be undefined or if its possibly undefined
 // then pass in the type name. This is a union to avoid called of ConfigEditorHelp from needing to pass a type name
-// which doens't make sense at the root
+// which doesn't make sense at the root
 type renderTypeRecursiveType = ((
   type: TypeData,
   typeLookup: {[typeName: string]: TypeData},

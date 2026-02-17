@@ -2004,7 +2004,7 @@ def _get_cant_run_because_of_parent_reason(
         if parent_node.backfill_policy is None:
             required_parent_subset = parent_subset
         else:
-            # with a self dependancy, all of its parent partitions need to either have already
+            # with a self dependency, all of its parent partitions need to either have already
             # been materialized or be in the candidate subset
             required_parent_subset = parent_subset.compute_difference(
                 entity_subset_to_filter

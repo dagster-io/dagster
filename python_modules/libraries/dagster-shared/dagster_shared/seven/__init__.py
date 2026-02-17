@@ -116,7 +116,7 @@ def get_import_error_message(import_error: ImportError) -> str:
 
 
 def is_subclass(child_type: type[Any], parent_type: type[Any]):
-    """Due to some pathological interactions betwen bugs in the Python typing library
+    """Due to some pathological interactions between bugs in the Python typing library
     (https://github.com/python/cpython/issues/88459 and
     https://github.com/python/cpython/issues/89010), some types (list[str] in Python 3.9, for
     example) pass inspect.isclass check above but then raise an exception if issubclass is called

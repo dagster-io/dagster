@@ -75,7 +75,7 @@ class PrometheusResource(ConfigurableResource):
                 url, method, timeout, headers, and content
                 May be used to implement additional functionality not
                 supported by the built-in default handler (such as SSL
-                client certicates, and HTTP authentication mechanisms).
+                client certificates, and HTTP authentication mechanisms).
                 'url' is the URL for the request, the 'gateway' argument
                 described earlier will form the basis of this URL.
                 'method' is the HTTP method which should be used when

@@ -327,7 +327,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     hasWipePermission = graphene.NonNull(graphene.Boolean)
     hasReportRunlessAssetEventPermission = graphene.NonNull(graphene.Boolean)
 
-    # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
+    # the actual checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
     assetCheckOrError = graphene.Field(

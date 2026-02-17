@@ -329,7 +329,7 @@ def test_multi_partition_subset_to_range_conversion():
         dg.MultiPartitionKey({"number": "2", "color": "yellow"}),
         dg.MultiPartitionKey({"number": "3", "color": "yellow"}),
     ]
-    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # getting ranges from subsets for a multi partition definition constructs ranges for each
     # key of the dimension with the fewest unique values
     expected_ranges = [
         dg.PartitionKeyRange(
@@ -481,7 +481,7 @@ def test_multi_partition_subset_to_range_conversion_grouping_choices():
         dg.MultiPartitionKey({"number": "1", "color": "yellow"}),
         dg.MultiPartitionKey({"number": "1", "color": "blue"}),
     ]
-    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # getting ranges from subsets for a multi partition definition constructs ranges for each
     # key of the primary dimension
     expected_ranges = [
         dg.PartitionKeyRange(
@@ -561,7 +561,7 @@ def test_multi_partition_subset_to_range_conversion_time_partition():
         dg.MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "yellow"}),
         dg.MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "blue"}),
     ]
-    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # getting ranges from subsets for a multi partition definition constructs ranges for each
     # key of the primary dimension
     expected_ranges = [
         dg.PartitionKeyRange(

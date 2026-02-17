@@ -110,7 +110,7 @@ def celery_k8s_job_executor(init_context):
         job_image=exc_cfg.get("job_image") or os.getenv("DAGSTER_CURRENT_IMAGE"), exc_config=exc_cfg
     )
 
-    # Set on the instance but overrideable here
+    # Set on the instance but overridable here
     broker = run_launcher.broker or exc_cfg.get("broker")
     backend = run_launcher.backend or exc_cfg.get("backend")
     config_source = run_launcher.config_source or exc_cfg.get("config_source")
@@ -520,7 +520,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             pod_names = api_client.get_pod_names_in_job(job_name, namespace=job_namespace)
         except kubernetes.client.rest.ApiException:
             instance.report_engine_event(
-                f"Encountered unexpected error retreiving Pods for Kubernetes job {job_name} for step {step_key}, "
+                f"Encountered unexpected error retrieving Pods for Kubernetes job {job_name} for step {step_key}, "
                 "exiting.",
                 dagster_run,
                 EngineEventData(

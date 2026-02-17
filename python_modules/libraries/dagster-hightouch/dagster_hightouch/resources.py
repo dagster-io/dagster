@@ -145,7 +145,7 @@ class HightouchResource:
             sync_id (str): The Hightouch Sync ID
             sync_request_id (str): The Hightouch Sync Request ID to poll against.
             fail_on_warning (bool): Whether a warning is considered a failure for this sync.
-            poll_interval (float): The time in seconds that will be waited between succcessive polls
+            poll_interval (float): The time in seconds that will be waited between successive polls
             poll_timeout (float): The maximum time that will be waited before this operation
                 times out.
 
@@ -211,7 +211,7 @@ class HightouchResource:
             sync_id (str): The Hightouch Sync ID
             sync_request_id (str): The Hightouch Sync Request ID to poll against.
             fail_on_warning (bool): Whether a warning is considered a failure for this sync.
-            poll_interval (float): The time in seconds that will be waited between succcessive polls
+            poll_interval (float): The time in seconds that will be waited between successive polls
             poll_timeout (float): The maximum time that will be waited before this operation
                 times out.
 
@@ -253,7 +253,7 @@ class HightouchResource:
     description="This resource helps manage Fivetran connectors",
 )
 def ht_resource(context) -> HightouchResource:
-    """This resource allows users to programatically interface with the Hightouch REST API to triggers
+    """This resource allows users to programmatically interface with the Hightouch REST API to triggers
     syncs and monitor their progress.
     """
     return HightouchResource(

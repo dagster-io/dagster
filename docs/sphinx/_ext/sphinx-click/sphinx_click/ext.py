@@ -283,7 +283,7 @@ def _format_subcommand(command: click.Command) -> ty.Generator[str, None, None]:
     #     for line in statemachine.string2lines(short_help, tab_width=4, convert_whitespace=True):
     #         yield _indent(line)
 
-    # NOTE: this was overriden from the default implementation to show the entirety of the help
+    # NOTE: this was overridden from the default implementation to show the entirety of the help
     # text, similar to the formatting logic for `.. option`s. The commented code above was the
     # original implementation using `get_short_help_str()`. See open issue here:
     #

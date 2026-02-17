@@ -80,7 +80,7 @@ CODE_ZIP_NAME = "code.zip"
             is_required=False,
             description=(
                 "Absolute path to the package that contains the job definition(s) whose steps will"
-                " execute remotely on EMR. This is a path on the local fileystem of the process"
+                " execute remotely on EMR. This is a path on the local filesystem of the process"
                 " executing the job. The expectation is that this package will also be available on"
                 " the python path of the launched process running the Spark step on EMR, either"
                 " deployed on step launch via the deploy_local_job_package option, referenced on s3"
@@ -93,7 +93,7 @@ CODE_ZIP_NAME = "code.zip"
             is_required=False,
             description=(
                 "(legacy) Absolute path to the package that contains the pipeline definition(s)"
-                " whose steps will execute remotely on EMR. This is a path on the local fileystem"
+                " whose steps will execute remotely on EMR. This is a path on the local filesystem"
                 " of the process executing the pipeline. The expectation is that this package will"
                 " also be available on the python path of the launched process running the Spark"
                 " step on EMR, either deployed on step launch via the deploy_local_pipeline_package"

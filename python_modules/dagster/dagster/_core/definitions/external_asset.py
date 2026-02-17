@@ -55,7 +55,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> list[AssetsDefinit
     1) DagsterInstance exposes `report_runless_event` that can be used to generate events for
         external assets directly on an instance. See docs.
     2) Sensors can build these events and return them using :py:class:`SensorResult`. A use
-        case for this is using a sensor to continously monitor the metadata exhaust from
+        case for this is using a sensor to continuously monitor the metadata exhaust from
         an external system and inserting events that
         reflect that exhaust. See docs.
     3) Dagster Cloud exposes a REST API for ingesting runless events. Users can copy and
@@ -76,7 +76,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> list[AssetsDefinit
     their entire data platform to a single orchestration engine.
 
     External assets do not have all the features of normal assets: they cannot be
-    materialized ad hoc by Dagster (this is diabled in the UI); cannot be backfilled; cannot
+    materialized ad hoc by Dagster (this is disabled in the UI); cannot be backfilled; cannot
     be scheduled using auto-materialize policies; and opt out of other features around
     direct materialization, both now and in the future. External assets also provide fewer
     guarantees around the correctness of information of their information in the asset

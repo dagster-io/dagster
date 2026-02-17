@@ -1447,7 +1447,7 @@ def tuple_param(
     additional_message: str | None = None,
 ) -> tuple[T, ...]:
     """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
-    `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
+    `obj` may be of any length, but each element must match the `of_type` argument. `of_shape`
     defines a fixed-length tuple type-- each element must match the corresponding element in
     `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
     """
@@ -1537,7 +1537,7 @@ def opt_nullable_tuple_param(
 ) -> tuple[T, ...] | None:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
     is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
-    must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
+    must match the `of_type` argument. `of_shape` defines a fixed-length tuple type-- each element
     must match the corresponding element in `of_shape`. Passing both `of_type` and `of_shape` will
     raise an error.
     """
@@ -1563,7 +1563,7 @@ def is_tuple(
     additional_message: str | None = None,
 ) -> tuple:
     """Ensure target is a tuple and is of a specified type. `of_type` defines a variadic tuple
-    type-- `obj` may be of any length, but each element must match the `of_type` argmument.
+    type-- `obj` may be of any length, but each element must match the `of_type` argument.
     `of_shape` defines a fixed-length tuple type-- each element must match the corresponding element
     in `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
     """

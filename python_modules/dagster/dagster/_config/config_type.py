@@ -405,7 +405,7 @@ class ScalarUnion(ConfigType):
             The schema of a non-scalar Dagster configuration type. For example, :py:class:`List`,
             :py:class:`Dict`, or :py:class:`~dagster.Selector`.
         key (Optional[str]):
-            The configuation type's unique key. If not set, then the key will be set to
+            The configuration type's unique key. If not set, then the key will be set to
             ``ScalarUnion.{scalar_type}-{non_scalar_schema}``.
 
     **Examples:**

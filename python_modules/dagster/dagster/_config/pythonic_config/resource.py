@@ -242,7 +242,7 @@ class ConfigurableResourceFactory(
                 k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
             resolved_config_dict=resolved_config_dict,
-            # These are unfortunately named very similarily
+            # These are unfortunately named very similarly
             config_schema=_curry_config_schema(schema, resolved_config_dict),
             schema=schema,
             nested_resources={k: v for k, v in resource_pointers.items()},

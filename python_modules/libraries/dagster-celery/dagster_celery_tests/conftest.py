@@ -19,7 +19,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 @pytest.fixture(scope="session")
 def rabbitmq():
     if IS_BUILDKITE:
-        # Set the enviornment variable that celery uses in the start_worker() test function
+        # Set the environment variable that celery uses in the start_worker() test function
         # to find the broker host
         with environ({"TEST_BROKER": os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")}):
             yield

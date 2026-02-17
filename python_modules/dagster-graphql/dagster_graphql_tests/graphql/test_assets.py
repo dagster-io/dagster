@@ -3561,7 +3561,7 @@ class TestAssetWipe(ExecutingGraphQLContextTestMatrix):
         assert result.data["wipeAssets"]["__typename"] == "UnsupportedOperationError"
         assert "Partitioned asset wipe is not supported yet" in result.data["wipeAssets"]["message"]
 
-        # wipe for non-existant asset
+        # wipe for non-existent asset
         result = execute_dagster_graphql(
             graphql_context,
             WIPE_ASSETS,

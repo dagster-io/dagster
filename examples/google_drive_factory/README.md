@@ -41,5 +41,5 @@ The csvs used in this demo can be found on this [site](https://www.realtor.com/r
 
 1. Create a new project in the [Google Cloud Console](https://console.cloud.google.com/).
 2. Enable the Google Drive API for your project.
-3. Create Service account credentials and download the JSON key file. and save in enviroment variable
+3. Create Service account credentials and download the JSON key file. and save in environment variable
 4. Share the Google Drive folder with the service account email address.

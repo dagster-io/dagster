@@ -157,8 +157,8 @@ class AssetGraphView(LoadingContext):
 
     # In our transitional period there are lots of code path that take
     # a AssetGraphView and then call methods on the queryer. This is
-    # formal accesor to we can do this legally, instead of using noqa accesses
-    # of a private proeprty
+    # formal accessor to we can do this legally, instead of using noqa accesses
+    # of a private property
     def get_inner_queryer_for_back_compat(self) -> "CachingInstanceQueryer":
         return self._queryer
 
@@ -751,7 +751,7 @@ class AssetGraphView(LoadingContext):
         self, key: AssetKey, from_subset: EntitySubset
     ) -> EntitySubset[AssetKey]:
         """Returns a subset which is the subset of the input subset that has never been materialized
-        (if it is a materializable asset) or observered (if it is an observable asset).
+        (if it is a materializable asset) or observed (if it is an observable asset).
         """
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 

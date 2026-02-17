@@ -832,7 +832,7 @@ This optional migration makes performance improvements to the runs page in Dagit
 
 ### Deprecation: Metadata API Renames
 
-Dagster’s metadata API has undergone a signficant overhaul. Changes include:
+Dagster’s metadata API has undergone a significant overhaul. Changes include:
 
 - To reflect the fact that metadata can be specified on definitions in addition to events, the following names are changing. The old names are deprecated, and will function as aliases for the new names until 0.15.0:
   - `EventMetadata` > `MetadataValue`
@@ -1669,7 +1669,7 @@ In addition to the names of individual solids, the new `solid_selection` argumen
 queries like `*solid_name++` (i.e., `solid_name`, all of its ancestors, its immediate descendants,
 and their immediate descendants), previously supported only in Dagit views.
 
-### Removal of deprectated properties, methods, and arguments
+### Removal of deprecated properties, methods, and arguments
 
 - The deprecated `runtime_type` property on `InputDefinition` and `OutputDefinition` has been
   removed. Use `dagster_type` instead.

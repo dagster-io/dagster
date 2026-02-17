@@ -125,7 +125,7 @@ def parse_time_string(datetime_str) -> datetime:
 
 def is_second_ambiguous_time(dt: datetime, tz: str):
     """Returns if a datetime is the second instance of an ambiguous time in the given timezone due
-    to DST transitions. Assumes that dt is alraedy in the specified timezone.
+    to DST transitions. Assumes that dt is already in the specified timezone.
     """
     # UTC is never ambiguous
     if tz.upper() == "UTC":

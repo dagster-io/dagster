@@ -291,7 +291,7 @@ export const GraphQueryInput = React.memo(
       };
     }, [flattenGraphsEnabled]);
 
-    const uncomitted = (pendingValue || '*') !== (props.value || '*');
+    const uncommitted = (pendingValue || '*') !== (props.value || '*');
     const flattenGraphsFlag = props.flattenGraphs ? '!' : '';
 
     const opCountInfo = props.linkToPreview && (
@@ -372,12 +372,12 @@ export const GraphQueryInput = React.memo(
               onKeyDown={onKeyDown}
               style={{
                 width: props.width || '24vw',
-                paddingRight: focused && uncomitted ? 55 : '',
+                paddingRight: focused && uncommitted ? 55 : '',
               }}
               className={props.className}
               ref={inputRef}
             />
-            {focused && uncomitted && <EnterHint>Enter</EnterHint>}
+            {focused && uncommitted && <EnterHint>Enter</EnterHint>}
             {focused &&
               props.linkToPreview &&
               (flattenGraphsEnabled ? (

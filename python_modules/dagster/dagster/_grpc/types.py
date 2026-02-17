@@ -208,7 +208,7 @@ class ExecuteStepArgs(IHaveNew):
         ]
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
-        """Get the env vars for overriding the Click args of this step. Used in conjuction with
+        """Get the env vars for overriding the Click args of this step. Used in conjunction with
         get_command_args(skip_serialized_namedtuple=True).
         """
         return [

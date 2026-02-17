@@ -43,7 +43,7 @@ def validate_column(column: Column):
     elif isinstance(column.type, db.Text) and column.unique:
         raise Exception(
             f"Column {column} is type TEXT and has a UNIQUE constraint; "
-            "cannot use bare db.Text type w/ a UNIQUE constaint "
+            "cannot use bare db.Text type w/ a UNIQUE constraint "
             "since it is incompatible with certain databases (MySQL). "
             "Use MySQLCompatibilityTypes.UniqueText or a fixed-length db.String(123) instead."
         )

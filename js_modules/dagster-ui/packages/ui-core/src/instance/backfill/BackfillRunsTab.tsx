@@ -59,7 +59,7 @@ export const BackfillRunsTab = ({
       maxNowMs: backfill.endTimestamp ? backfill.endTimestamp * 1000 : undefined,
       hourWindowStorageKey: BACKFILL_RUNS_HOUR_WINDOW_KEY,
       hourWindowDefault: '1',
-      lookaheadHours: 0.1, // no ticks, so miminal "future" needed
+      lookaheadHours: 0.1, // no ticks, so minimal "future" needed
     });
 
   const filter: RunsFilter = useMemo(

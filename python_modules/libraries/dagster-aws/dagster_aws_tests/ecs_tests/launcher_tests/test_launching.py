@@ -96,7 +96,7 @@ def test_default_launcher(
         )
         assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][1]["value"] == run.job_name
 
-    # We set job-specific overides
+    # We set job-specific overrides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
     override = overrides[0]
@@ -261,7 +261,7 @@ def test_launcher_dont_use_current_task(
     assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
     assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
-    # We set job-specific overides
+    # We set job-specific overrides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
     override = overrides[0]
@@ -869,7 +869,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
             sidecar["name"],
         ]
 
-        # We set job-specific overides
+        # We set job-specific overrides
         overrides = task["overrides"]["containerOverrides"]
         assert len(overrides) == 1
         override = overrides[0]
@@ -942,7 +942,7 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
         assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
 
-        # We set job-specific overides
+        # We set job-specific overrides
         overrides = task["overrides"]["containerOverrides"]
         assert len(overrides) == 1
         override = overrides[0]
@@ -1323,7 +1323,7 @@ def test_status(
         assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
 
         task["containers"][0]["exitCode"] = 1
-        # Without logs (or on a failure fetching logs) the health check sitll fails
+        # Without logs (or on a failure fetching logs) the health check still fails
 
         failure_health_check = instance.run_launcher.check_run_worker_health(run)
         assert failure_health_check.status == WorkerStatus.FAILED

@@ -30,7 +30,7 @@ def iris_setosa(iris_db: SnowflakeResource) -> None:
     with iris_db.get_connection() as conn:
         conn.cursor().execute(
             """
-            CREATE OR REPALCE TABLE iris_setosa as (
+            CREATE OR REPLACE TABLE iris_setosa as (
             SELECT *
             FROM iris.iris_dataset
             WHERE species = 'Iris-setosa'

@@ -8,7 +8,7 @@ from dagster_shared.seven import json
 @record
 class LogLineCursor:
     """Representation of a log line cursor, to keep track of the place in the logs.
-    The captured logs are stored in multiple files in the same direcotry. The cursor keeps
+    The captured logs are stored in multiple files in the same directory. The cursor keeps
     track of the file name and the number of lines read so far.
 
     line=-1 means that the entire file has been read and the next file should be read. This covers the
@@ -17,7 +17,7 @@ class LogLineCursor:
     line=n means lines 0 through n-1 have been read from the file.
 
     has_more_now indicates if there are more log lines that can be read immediately. If the process writing
-    logs is still running, but has not writen a log file, has_more_now will be False once all currently readable
+    logs is still running, but has not written a log file, has_more_now will be False once all currently readable
     log files have been read. It does not mean that no new logs will be written in the future.
     """
 

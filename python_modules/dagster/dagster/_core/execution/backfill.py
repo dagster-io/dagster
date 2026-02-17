@@ -589,7 +589,7 @@ def cancel_backfill_runs_and_cancellation_complete(
             run_id = run.run_id
             logger.info(f"Terminating submitted run {run_id}")
 
-            # in both cases this will synchonrously set its status to CANCELING or CANCELED,
+            # in both cases this will synchronously set its status to CANCELING or CANCELED,
             # ensuring that it will not be returned in the next loop
 
             if run.status == DagsterRunStatus.QUEUED:

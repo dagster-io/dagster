@@ -199,7 +199,7 @@ class EventMethods:
         kept in a batch-specific buffer (identified by `batch_metadata.id`) until either the buffer
         reaches the event batch size or the end of the batch is reached (signaled by
         `batch_metadata.is_end`). When this point is reached, all events in the buffer will be sent
-        to the storage layer in a single batch. If an error occurrs during batch writing, then we
+        to the storage layer in a single batch. If an error occurs during batch writing, then we
         fall back to iterative individual event writes.
 
         Args:
@@ -402,7 +402,7 @@ class EventMethods:
 
         message = check.opt_str_param(
             message,
-            "mesage",
+            "message",
             "This run has been marked as canceled from outside the execution context.",
         )
 

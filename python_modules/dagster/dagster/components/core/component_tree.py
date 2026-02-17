@@ -55,7 +55,7 @@ class ComponentTreeException(Exception):
 
 
 @record(
-    checked=False,  # cant handle ModuleType
+    checked=False,  # can't handle ModuleType
 )
 class ComponentTree(IHaveNew):
     """The hierarchy of Component instances defined in the project.

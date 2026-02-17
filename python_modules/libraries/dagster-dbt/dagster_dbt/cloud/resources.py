@@ -435,7 +435,7 @@ class DbtCloudClient:
                 polls of the dbt Cloud API.
             poll_timeout (float): The maximum time (in seconds) that should be waited for this run
                 to complete. If this threshold is exceeded, the run will be cancelled and an
-                exception will be thrown. By default, this will poll forver.
+                exception will be thrown. By default, this will poll forever.
             href (str): For internal use, generally should not be set manually.
 
         Returns:
@@ -514,7 +514,7 @@ class DbtCloudClient:
                 polls of the dbt Cloud API.
             poll_timeout (float): The maximum time (in seconds) that should be waited for this run
                 to complete. If this threshold is exceeded, the run will be cancelled and an
-                exception will be thrown. By default, this will poll forver.
+                exception will be thrown. By default, this will poll forever.
 
         Returns:
             :py:class:`~DbtCloudOutput`: Class containing details about the specific job run and the
@@ -666,7 +666,7 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
     description="This resource helps interact with dbt Cloud connectors",
 )
 def dbt_cloud_resource(context) -> DbtCloudResource:
-    """This resource allows users to programatically interface with the dbt Cloud Administrative REST
+    """This resource allows users to programmatically interface with the dbt Cloud Administrative REST
     API (v2) to launch jobs and monitor their progress. This currently implements only a subset of
     the functionality exposed by the API.
 

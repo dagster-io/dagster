@@ -33,7 +33,7 @@ def get_dynamic_job_resource_init_failure(
             if init_count == init_context.resource_config["allowed_initializations"]:
                 raise Exception("too many initializations.")
 
-        # We have not yet reached the allowed initializaton number, allow
+        # We have not yet reached the allowed initialization number, allow
         # initialization to complete and add to total init number.
         with open(os.path.join(init_context.resource_config["path"], "count.pkl"), "wb") as f:
             init_count += 1
@@ -87,7 +87,7 @@ def get_dynamic_job_op_failure(
             if run_count == context.op_config["allowed_runs"]:
                 raise Exception("oof")
 
-        # We have not yet reached the allowed initializaton number, allow
+        # We have not yet reached the allowed initialization number, allow
         # initialization to complete and add to total init number.
         with open(os.path.join(context.op_config["path"], "count.pkl"), "wb") as f:
             run_count += 1

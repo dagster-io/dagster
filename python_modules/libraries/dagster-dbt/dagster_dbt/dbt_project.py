@@ -216,7 +216,7 @@ class DbtProject(IHaveNew):
 
             my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
-        Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
+        Creating a DbtProject that changes target based on environment variables and uses managed state artifacts:
 
         .. code-block:: python
 

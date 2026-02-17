@@ -41,7 +41,7 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
     )
     if will_retry_tag_value is None:
         # If the run doesn't have the WILL_RETRY_TAG, and the run is failed, we
-        # recalculate if the run should be retried to ensure backward compatibilty
+        # recalculate if the run should be retried to ensure backward compatibility
         if run.status == DagsterRunStatus.FAILURE:
             should_retry_run = auto_reexecution_should_retry_run(instance, run, run_failure_reason)
             # add the tag to the run so that it can be used in other parts of the system
@@ -89,7 +89,7 @@ def get_automatically_retried_run_if_exists(
         (retried_run for retried_run in run_group if run.run_id == retried_run.parent_run_id), None
     )
     if child_run is not None and child_run.tags.get(RETRY_NUMBER_TAG) is not None:
-        # We use the presense of RETRY_NUMBER_TAG to confirm that the child run was launched
+        # We use the presence of RETRY_NUMBER_TAG to confirm that the child run was launched
         # by the automatic retry daemon. If the child run was launched by the user, the tag
         # should not be present.
         return child_run
@@ -270,7 +270,7 @@ def consume_new_runs_for_automatic_reexecution(
             # Since something failed when retrying this run, mark that we will not retry it so that we
             # don't retry it again in the future, and so that the tags reflect the state of the system.
             # We may want to split out the kinds of exceptions and handle them differently in the future so
-            # that this can be more resiliant to transient errors. However, this would also require some changes
+            # that this can be more resilient to transient errors. However, this would also require some changes
             # to the EventLogConsumerDaemon so that the cursors are not updated in a way that prevents this run
             # from being processed in the next tick.
             workspace_process_context.instance.add_run_tags(

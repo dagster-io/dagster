@@ -19,7 +19,7 @@ const minuteResolutionLabel = (ms: number) =>
 const hourResolutionLabel = (ms: number) => `${Math.round(ms / ONE_HOUR)}h`;
 
 // We want to gracefully transition the tick marks shown as you zoom, but it's
-// nontrivial to programatically pick good intervals. (500ms => 1s => 5s, etc.)
+// nontrivial to programmatically pick good intervals. (500ms => 1s => 5s, etc.)
 // This lookup table defines the available tick mark intervals and the labeling
 // that should be used for each one("2:00" or "2m" or "2s" or "0.05s", etc.).
 //

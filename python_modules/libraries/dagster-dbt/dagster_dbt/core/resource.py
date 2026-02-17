@@ -225,7 +225,7 @@ class DbtCliResource(ConfigurableResource):
         project_dir = os.fspath(project_dir)
         state_path = state_path and os.fspath(state_path)
 
-        # static typing doesn't understand whats going on here, thinks these fields dont exist
+        # static typing doesn't understand what's going on here, thinks these fields dont exist
         super().__init__(
             project_dir=project_dir,  # type: ignore
             global_config_flags=global_config_flags or [],  # type: ignore
@@ -635,7 +635,7 @@ class DbtCliResource(ConfigurableResource):
         )
         env = {
             # Allow IO streaming when running in Windows.
-            # Also, allow it to be overriden by the current environment.
+            # Also, allow it to be overridden by the current environment.
             "PYTHONLEGACYWINDOWSSTDIO": "1",
             # Pass the current environment variables to the dbt CLI invocation.
             **os.environ.copy(),

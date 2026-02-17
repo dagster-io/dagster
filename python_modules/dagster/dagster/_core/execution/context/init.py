@@ -225,7 +225,7 @@ class UnboundInitResourceContext(InitResourceContext):
 
     @property
     def resources(self) -> Resources:
-        """The resources that are available to the resource that we are initalizing."""
+        """The resources that are available to the resource that we are initializing."""
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "

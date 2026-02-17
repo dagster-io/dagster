@@ -274,7 +274,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             is not True
         ):
             context.log.warning(
-                f"[pipes] Recieved {self.message_reader}, but CloudWatch logging is not enabled for {self.AWS_SERVICE_NAME} job. Dagster won't be able to receive logs and messages from the job."
+                f"[pipes] Received {self.message_reader}, but CloudWatch logging is not enabled for {self.AWS_SERVICE_NAME} job. Dagster won't be able to receive logs and messages from the job."
             )
             return
 

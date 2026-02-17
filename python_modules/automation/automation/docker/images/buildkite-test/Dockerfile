@@ -31,7 +31,7 @@ RUN apt-get update -yqq \
     && dpkg-reconfigure --frontend=noninteractive locales \
     && update-locale LANG=en_US.UTF-8
 
-# Envionment variables that will be referenced during installation of various packages
+# Environment variables that will be referenced during installation of various packages
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \

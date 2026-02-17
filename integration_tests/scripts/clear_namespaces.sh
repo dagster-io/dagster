@@ -4,4 +4,4 @@
 # --no-cleanup
 
 kubectl delete `kubectl get ns -o name | grep dagster-test` &
-echo "Deleting namespaces in the backgound"
+echo "Deleting namespaces in the background"

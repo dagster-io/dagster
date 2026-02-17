@@ -185,7 +185,7 @@ def _coerce_type(
         _process_annotated(ttype, args, eval_ctx)
         return _coerce_type(args[0], eval_ctx)
 
-    # cant do isinstance against TypeDict (and we cant subclass check for it)
+    # can't do isinstance against TypeDict (and we can't subclass check for it)
     # so just coerce any dict subclasses in to dict
     if isinstance(ttype, type) and issubclass(ttype, dict):
         return dict

@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
-# whih encodes the execution type the of asset. "Unexecutable" assets are assets
+# which encodes the execution type the of asset. "Unexecutable" assets are assets
 # that cannot be materialized in Dagster, but can have events in the event
 # log keyed off of them, making Dagster usable as a observability and lineage tool
 # for externally materialized assets.

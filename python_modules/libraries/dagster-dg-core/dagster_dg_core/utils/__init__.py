@@ -23,8 +23,8 @@ from dagster_dg_core.error import DgError
 if TYPE_CHECKING:
     import tomlkit
 
-# There is some weirdness concerning the availabilty of hashlib.HASH between different Python
-# versions, so for nowe we avoid trying to import it and just alias the type to Any.
+# There is some weirdness concerning the availability of hashlib.HASH between different Python
+# versions, so for now we avoid trying to import it and just alias the type to Any.
 Hash: TypeAlias = Any
 
 CLI_CONFIG_KEY = "config"
@@ -130,7 +130,7 @@ def cross_platfrom_string_path(path: str):
 
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
 # variable is set (common during development) and does not match the venv resolved by uv, it prints
-# undesireable warnings.
+# undesirable warnings.
 def strip_activated_venv_from_env_vars(env: Mapping[str, str]) -> Mapping[str, str]:
     return {k: v for k, v in env.items() if not k == "VIRTUAL_ENV"}
 

@@ -79,7 +79,7 @@ class DagsterDbtTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a dbt resource (models, tests, sources, etc).
 
-    This class is exposed so that methods can be overriden to customize how Dagster asset metadata
+    This class is exposed so that methods can be overridden to customize how Dagster asset metadata
     is derived.
     """
 

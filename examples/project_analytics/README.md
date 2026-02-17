@@ -24,7 +24,7 @@ visualize the growth of a package over time.
 This project demonstrates the use of partitions and software-defined assets.
 Daily partitions are created for fetching data related to both
 
-## Prequisites
+## Prerequisites
 
 ### Local Development
 

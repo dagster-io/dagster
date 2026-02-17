@@ -6,7 +6,7 @@
 # Ideally, this would be the only pyright environment we need to define. This is not possible
 # because of dependency conflicts in between Dagster packages/examples. For ease of maintenance,
 # this file should maintain a complete list of Dagster packages, with packages excluded from the
-# enviroment commented out.
+# environment commented out.
 #
 # NOTE: It is important that dagster-* dependencies of any package listed here are also listed.
 # e.g. if examples/foo depends on python_modules/libraries/dagster-foo, then dagster-foo must be

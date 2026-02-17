@@ -306,7 +306,7 @@ def test_map_asset_specs_nonarg_dep_removal() -> None:
     )
     new_spec = next(iter(new_asset.specs))
     assert new_spec.deps == []
-    # Ensure that dep removal propogated to the underlying op
+    # Ensure that dep removal propagated to the underlying op
     assert new_asset.keys_by_input_name == {}
     assert len(new_asset.op.input_defs) == 0
 

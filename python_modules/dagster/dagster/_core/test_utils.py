@@ -743,7 +743,7 @@ def get_freezable_log_manager():
             )
             record.created = get_current_timestamp()
             record.msecs = (record.created - int(record.created)) * 1000
-            record.relativeCreated = record.created  # this is incorrect. You really want to get the start time of the program, but we don't have a great way to do that. Since this is just for testing, we ignore the incosistency.
+            record.relativeCreated = record.created  # this is incorrect. You really want to get the start time of the program, but we don't have a great way to do that. Since this is just for testing, we ignore the inconsistency.
             return record
 
     return FreezableLogManager

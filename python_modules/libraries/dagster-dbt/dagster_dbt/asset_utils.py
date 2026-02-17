@@ -1073,7 +1073,7 @@ def get_subset_selection_for_context(
             subsetted execution context.
 
             If the current execution context is not performing a subsetted execution,
-            return CLI arguments composed of the inputed selection and exclusion arguments.
+            return CLI arguments composed of the inputted selection and exclusion arguments.
         Optional[str]: A value for the DBT_INDIRECT_SELECTION environment variable. If None, then
             the environment variable is not set and will either use dbt's default (eager) or the
             user's setting.
@@ -1211,7 +1211,7 @@ def get_dbt_resource_names_for_asset_keys(
             for dbt_resource_props in dbt_resource_props_gen
         ]
 
-    # Explictly select a dbt resource by its fully qualified name (FQN).
+    # Explicitly select a dbt resource by its fully qualified name (FQN).
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
 
@@ -1236,7 +1236,7 @@ def get_dbt_test_names_for_check_keys(
     if translator.settings.enable_dbt_selection_by_name:
         return [asset_check_key.name for asset_check_key in check_keys]
 
-    # Explictly select a dbt test by its fully qualified name (FQN).
+    # Explicitly select a dbt test by its fully qualified name (FQN).
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
 

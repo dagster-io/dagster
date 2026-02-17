@@ -68,7 +68,7 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
 
 
 class DatahubConnection(Config):
-    bootstrap: str = Field(description="Kafka Boostrap Servers. Comma delimited")
+    bootstrap: str = Field(description="Kafka Bootstrap Servers. Comma delimited")
     schema_registry_url: str = Field(description="Schema Registry Location.")
     schema_registry_config: dict[str, Any] = Field(
         default={}, description="Extra Schema Registry Config."
