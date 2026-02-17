@@ -52,7 +52,6 @@ _MASK_BETA_WARNING = (r"/[^\n]*BetaWarning:[^\n]*\n[^\n]*\n", "")
 
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
-@pytest.mark.skip(reason="Skipping test_components_docs_index")
 @pytest.mark.flaky(max_runs=2)
 def test_components_docs_index(
     package_manager: DgTestPackageManager, update_snippets: bool
@@ -360,8 +359,7 @@ def test_components_docs_index(
             )
 
             # Run dbt, check works
-            if not update_snippets:
-                _run_command("dg launch --assets '*'")
+            _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",

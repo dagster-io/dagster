@@ -1,5 +1,0 @@
-dg scaffold defs dagster_dbt.DbtProjectComponent dbt_ingest \
-  --git-url "https://github.com/dagster-io/jaffle-platform.git" \
-  --project-path "jdbt"
-
-Creating defs at /.../my-project/src/my_project/defs/dbt_ingest.

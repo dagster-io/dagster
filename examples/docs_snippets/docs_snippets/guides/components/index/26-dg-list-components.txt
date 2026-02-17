@@ -19,6 +19,8 @@ dg list components
 │ dagster.UvRunComponent                            │ Represents a Python script, alongside the set of assets or asset │
 │                                                   │ checks that it is responsible for executing.                     │
 ├───────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ dagster_dbt.DbtCloudComponent                     │ Expose a dbt Cloud workspace to Dagster as a set of assets.      │
+├───────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
 │ dagster_dbt.DbtProjectComponent                   │ Expose a DBT project to Dagster as a set of assets.              │
 ├───────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
 │ dagster_evidence.EvidenceProject                  │ Expose an Evidence.dev dashboard as a Dagster asset.             │
