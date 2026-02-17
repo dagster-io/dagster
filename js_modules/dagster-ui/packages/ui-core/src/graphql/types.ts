@@ -265,6 +265,7 @@ export type AssetCheckExecution = {
   evaluation: Maybe<AssetCheckEvaluation>;
   id: Scalars['String']['output'];
   partition: Maybe<Scalars['String']['output']>;
+  run: Maybe<Run>;
   runId: Scalars['String']['output'];
   status: AssetCheckExecutionResolvedStatus;
   stepKey: Maybe<Scalars['String']['output']>;
@@ -6787,6 +6788,12 @@ export const buildAssetCheckExecution = (
           : buildAssetCheckEvaluation({}, relationshipsToOmit),
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'enim',
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+          ? ({} as Run)
+          : buildRun({}, relationshipsToOmit),
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
     status:
       overrides && overrides.hasOwnProperty('status')
