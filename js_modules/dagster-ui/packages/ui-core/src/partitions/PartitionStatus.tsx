@@ -135,7 +135,6 @@ export const PartitionStatus = React.memo(
                 position: 'absolute',
                 zIndex: s.start.idx === 0 || s.end.idx === highestIndex ? 3 : 2,
                 top: 0,
-                height,
               }}
             >
               {hideStatusTooltip || tooltipMessage ? (
