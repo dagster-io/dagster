@@ -154,7 +154,33 @@ dev = [
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*,*.pdf,*.svg,package-lock.json,*.lock,*.css,*.min.*'
+skip = '.git*,*.pdf,*.svg,*.css,*.min.*,*.umd.js,*.inv,*.csv,*.sql,*.lock,package-lock.json,.yarn,*.ipynb,.cache,*/_vendored/*,__snapshots__,pyright/,manifest.json,*/fonts/Global*'
 check-hidden = true
-ignore-regex = '^\s*"image/\S+": ".*'
-# ignore-words-list = ''
+# Ignore camelCase/PascalCase identifiers and embedded base64 images in notebooks
+ignore-regex = '^\s*"image/\S+": ".*|\b[a-z]+[A-Z]\w*\b|\b[A-Z][a-z]+[A-Z]\w*\b'
+# aks/AKS - Azure Kubernetes Service
+# ser - serializer abbreviation
+# ags - AssetGraphSubset variable
+# nd - 2nd abbreviation
+# fo - abbreviation
+# connexion - Python library name
+# failer - class name (thing that fails)
+# noo/noes - intentional in test exception messages
+# doesnot - used as test asset key path component
+# arameters - intentional typo in YAML validation tests
+# datas - appears in test fixture file paths
+# astroid - Python AST analysis library
+# lacker - appears in sample data
+# coo - abbreviation
+# welp - colloquial English in comment
+# parms/parm - used in external API references
+# serie - chart data series variable (singular)
+# noes - intentional ("Oh noes!") in test
+# ue - partial word in test autocomplete fixtures
+# blocs - valid word (sections/blocks)
+# busses - intentional in Vale style guide (maps to "buses")
+# implementors - valid English variant
+# unparseable - used in codebase as variable/comment term
+# re-use, re-used, re-using, re-usable, re-declare - acceptable hyphenated English
+# alpha-numeric - acceptable hyphenated English
+ignore-words-list = 'aks,ser,ags,nd,fo,connexion,failer,noo,doesnot,arameters,datas,astroid,lacker,coo,welp,parms,parm,serie,noes,ue,blocs,busses,implementors,unparseable,re-use,re-used,re-using,re-usable,re-declare,alpha-numeric'
