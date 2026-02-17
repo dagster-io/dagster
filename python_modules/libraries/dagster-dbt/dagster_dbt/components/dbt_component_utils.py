@@ -5,7 +5,7 @@ import json
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster as dg
 from dagster.components.resolved.context import ResolutionContext
@@ -61,7 +61,7 @@ def build_op_spec(
 
 
 def resolve_cli_args(
-    cli_args: list[Union[str, dict[str, Any]]],
+    cli_args: list[str | dict[str, Any]],
     context: dg.AssetExecutionContext,
 ) -> list[str]:
     """Resolve and normalize CLI args using the current resolution context and partition scope."""
@@ -82,7 +82,7 @@ def resolve_cli_args(
         .resolve_value(cli_args, as_type=list[str])
     )
 
-    def _normalize_arg(arg: Union[str, dict[str, Any]]) -> list[str]:
+    def _normalize_arg(arg: str | dict[str, Any]) -> list[str]:
         if isinstance(arg, str):
             return [arg]
 

@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from dataclasses import replace
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
 
 import dagster as dg
 from dagster import AssetExecutionContext, Definitions, multi_asset
@@ -59,7 +59,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
     ]
 
     cli_args: Annotated[
-        list[Union[str, dict[str, Any]]],
+        list[str | dict[str, Any]],
         Resolver.passthrough(
             description="Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.",
             examples=[
