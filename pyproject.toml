@@ -151,3 +151,10 @@ module_name = "dagster_test.toys.repo"
 dev = [
     "erk>=0.6.0",
 ]
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.pdf,*.svg,package-lock.json,*.lock,*.css,*.min.*'
+check-hidden = true
+ignore-regex = '^\s*"image/\S+": ".*'
+# ignore-words-list = ''
