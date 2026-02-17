@@ -34,6 +34,8 @@ export const RunAlertNotifications = ({
       unobserveRunCompletion(runId);
       setNotifyOn(false);
     } else {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default')
+        Notification.requestPermission();
       observeRunCompletion(runId);
       setNotifyOn(true);
     }
