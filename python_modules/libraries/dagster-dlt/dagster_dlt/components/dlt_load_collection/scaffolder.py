@@ -125,14 +125,13 @@ class DltLoadCollectionScaffolder(Scaffolder[DltScaffolderParams]):
             # Given source and destination, we can use dlt init to scaffold the source
             # code and some sample pipelines and sources.
             if request.params and request.params.source and request.params.destination:
-                yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
-                try:
-                    subprocess.check_call(
-                        ["dlt", "init", request.params.source, request.params.destination],
-                        stdin=yes.stdout,
-                    )
-                finally:
-                    yes.kill()
+                # Use subprocess with text input instead of Unix 'yes' command for cross-platform compatibility
+                subprocess.run(
+                    ["dlt", "init", request.params.source, request.params.destination],
+                    input="y\n" * 100,  # Provide enough 'y' responses for any prompts
+                    text=True,
+                    check=True,
+                )
                 # dlt init scaffolds a Python file with some example pipelines, nested in functions
                 # we extract them into top-level objects which we stash in loads.py as a sample
                 examples_python_file = next(Path(".").glob("*.py"))

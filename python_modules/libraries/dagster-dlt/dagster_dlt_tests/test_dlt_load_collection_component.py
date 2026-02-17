@@ -32,8 +32,13 @@ from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline 
 
 
 def dlt_init(source: str, dest: str) -> None:
-    yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
-    subprocess.check_call(["dlt", "init", source, dest], stdin=yes.stdout)
+    # Use text input instead of Unix 'yes' command for cross-platform compatibility
+    subprocess.run(
+        ["dlt", "init", source, dest],
+        input="y\n" * 100,
+        text=True,
+        check=True,
+    )
 
 
 @contextmanager
