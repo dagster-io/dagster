@@ -7,7 +7,7 @@ from dagster.components.utils.defs_state import DefsStateConfigArgs
 from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
-from dagster_dbt.components.base import _set_resolution_context
+from dagster_dbt.components._dbt_component_utils import _set_resolution_context
 
 
 @pytest.fixture
