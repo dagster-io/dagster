@@ -51,7 +51,9 @@ def get_public_dagster_packages(dagster_root: Optional[Path] = None) -> list[Pub
 
     for package_name in top_level_packages:
         package_dir = python_modules_dir / package_name
-        if package_dir.exists() and (package_dir / "setup.py").exists():
+        if package_dir.exists() and (
+            (package_dir / "setup.py").exists() or (package_dir / "pyproject.toml").exists()
+        ):
             packages.append(
                 PublicPackage(
                     name=package_name,
@@ -69,7 +71,7 @@ def get_public_dagster_packages(dagster_root: Optional[Path] = None) -> list[Pub
                 lib_dir.is_dir()
                 and lib_dir.name.startswith("dagster-")
                 and not lib_dir.name.startswith(".")
-                and (lib_dir / "setup.py").exists()
+                and ((lib_dir / "setup.py").exists() or (lib_dir / "pyproject.toml").exists())
             ):
                 packages.append(
                     PublicPackage(

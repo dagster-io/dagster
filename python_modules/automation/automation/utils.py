@@ -53,14 +53,41 @@ def git_ls_files(pattern: str) -> list[str]:
     )
 
 
+def _pyproject_toml_is_package(path: str) -> bool:
+    """Check if a pyproject.toml file defines a Python package (has a [project] section)."""
+    with open(path) as f:
+        content = f.read()
+    return "\n[project]" in content or content.startswith("[project]")
+
+
 def get_all_repo_packages() -> list[Path]:
     oss_root = discover_oss_root(Path(__file__))
     with pushd(oss_root):
-        return [
-            Path(p).parent
-            for p in subprocess.run(
-                ["git", "ls-files", "**/setup.py"], check=True, text=True, capture_output=True
+        setup_paths = (
+            subprocess.run(
+                ["git", "ls-files", "python_modules/**/setup.py"],
+                check=True,
+                text=True,
+                capture_output=True,
             )
             .stdout.strip()
             .split("\n")
-        ]
+        )
+        pyproject_paths = (
+            subprocess.run(
+                ["git", "ls-files", "python_modules/**/pyproject.toml"],
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+            .stdout.strip()
+            .split("\n")
+        )
+        package_dirs = set()
+        for p in setup_paths:
+            if p:
+                package_dirs.add(Path(p).parent)
+        for p in pyproject_paths:
+            if p and _pyproject_toml_is_package(p):
+                package_dirs.add(Path(p).parent)
+        return sorted(package_dirs)

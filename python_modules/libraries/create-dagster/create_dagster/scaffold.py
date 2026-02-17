@@ -241,11 +241,15 @@ def _get_pyproject_toml_uv_sources(lib_paths: list[Path]) -> str:
 
 
 def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
-    return [
-        p.parent
-        for p in (
-            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
-            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
-            *editable_dagster_root.glob("python_modules/libraries/create-dagster/setup.py"),
-        )
-    ]
+    package_dirs = set()
+    for pattern in [
+        "python_modules/dagster*/setup.py",
+        "python_modules/dagster*/pyproject.toml",
+        "python_modules/libraries/dagster*/setup.py",
+        "python_modules/libraries/dagster*/pyproject.toml",
+        "python_modules/libraries/create-dagster/setup.py",
+        "python_modules/libraries/create-dagster/pyproject.toml",
+    ]:
+        for p in editable_dagster_root.glob(pattern):
+            package_dirs.add(p.parent)
+    return sorted(package_dirs)

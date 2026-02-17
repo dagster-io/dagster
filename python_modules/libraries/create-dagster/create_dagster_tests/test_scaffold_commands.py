@@ -451,6 +451,8 @@ def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None
                 "-e",
                 f"{root}/python_modules/dagster",
                 "-e",
+                f"{root}/python_modules/dagster-pipes",
+                "-e",
                 f"{root}/python_modules/libraries/dagster-shared",
             ],
             check=True,
