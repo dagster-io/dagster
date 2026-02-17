@@ -23,7 +23,7 @@ from dagster_dbt.asset_utils import (
     build_dbt_specs,
 )
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
-from dagster_dbt.components._dbt_component_utils import (
+from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
     _set_resolution_context,
     build_op_spec,
