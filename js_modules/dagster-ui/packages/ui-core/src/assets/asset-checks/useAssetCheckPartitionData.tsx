@@ -18,6 +18,8 @@ export interface AssetCheckPartitionData {
   statusForPartition: (dimensionKey: string) => AssetCheckPartitionStatus;
   statusForPartitionKeys: (dimensionKeys: string[]) => AssetCheckPartitionStatus;
   statusForDim0Aggregate: (dim0Key: string) => AssetCheckPartitionStatus;
+  statusForDimAggregate: (dimIdx: number, key: string) => AssetCheckPartitionStatus;
+  statusesForDimAggregate: (dimIdx: number, key: string) => AssetCheckPartitionStatus[];
 }
 
 export interface AssetCheckPartitionDimension {
@@ -117,16 +119,9 @@ const STATUS_SEVERITY: AssetCheckPartitionStatus[] = [
 ];
 
 function worstStatus(statuses: AssetCheckPartitionStatus[]): AssetCheckPartitionStatus {
-  let worst = AssetCheckPartitionStatus.SUCCEEDED;
-  let worstIdx = STATUS_SEVERITY.indexOf(worst);
-  for (const s of statuses) {
-    const idx = STATUS_SEVERITY.indexOf(s);
-    if (idx < worstIdx) {
-      worst = s;
-      worstIdx = idx;
-    }
-  }
-  return worst;
+  const values = new Set(statuses.map((status) => STATUS_SEVERITY.indexOf(status)));
+  const min = Math.min(...Array.from(values));
+  return STATUS_SEVERITY[min] ?? AssetCheckPartitionStatus.SUCCEEDED;
 }
 
 function buildAssetCheckPartitionData(
@@ -318,6 +313,41 @@ function buildAssetCheckPartitionData(
     return worstStatus(Array.from(dim1Map.values()));
   };
 
+  const statusForDimAggregate = (dimIdx: number, key: string): AssetCheckPartitionStatus => {
+    if (!isMultiPartition) {
+      return partitionStatusMap.get(key) ?? AssetCheckPartitionStatus.MISSING;
+    }
+    if (dimIdx === 0) {
+      return statusForDim0Aggregate(key);
+    }
+    // For dim1, aggregate across all dim0 keys
+    const dim0Keys = dimensions[0]?.partitionKeys ?? [];
+    const statuses: AssetCheckPartitionStatus[] = [];
+    for (const d0 of dim0Keys) {
+      statuses.push(multiPartitionStatusMap.get(d0)?.get(key) ?? AssetCheckPartitionStatus.MISSING);
+    }
+    return statuses.length === 0 ? AssetCheckPartitionStatus.MISSING : worstStatus(statuses);
+  };
+
+  // Returns all distinct statuses for a dimension key (for multi-status display in status bar)
+  const statusesForDimAggregate = (dimIdx: number, key: string): AssetCheckPartitionStatus[] => {
+    if (!isMultiPartition) {
+      return [partitionStatusMap.get(key) ?? AssetCheckPartitionStatus.MISSING];
+    }
+    const otherDimIdx = dimIdx === 0 ? 1 : 0;
+    const otherKeys = dimensions[otherDimIdx]?.partitionKeys ?? [];
+    const statusSet = new Set<AssetCheckPartitionStatus>();
+    for (const otherKey of otherKeys) {
+      const cellKeys = dimIdx === 0 ? [key, otherKey] : [otherKey, key];
+      statusSet.add(statusForPartitionKeys(cellKeys));
+    }
+    if (statusSet.size === 0) {
+      return [AssetCheckPartitionStatus.MISSING];
+    }
+    // Sort by severity for consistent ordering
+    return STATUS_SEVERITY.filter((s) => statusSet.has(s));
+  };
+
   return {
     assetKey,
     checkName,
@@ -326,6 +356,8 @@ function buildAssetCheckPartitionData(
     statusForPartition,
     statusForPartitionKeys,
     statusForDim0Aggregate,
+    statusForDimAggregate,
+    statusesForDimAggregate,
   };
 }
 

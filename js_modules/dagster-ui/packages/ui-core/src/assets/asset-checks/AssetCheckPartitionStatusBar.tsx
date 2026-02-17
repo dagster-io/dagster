@@ -18,6 +18,7 @@ import {usePartitionDragSelection} from '../../partitions/usePartitionDragSelect
 interface AssetCheckPartitionStatusBarProps {
   partitionKeys: string[];
   statusForPartition: (key: string) => AssetCheckPartitionStatus;
+  statusesForPartition?: (key: string) => AssetCheckPartitionStatus[];
   selected?: string[];
   onSelect?: (selected: string[]) => void;
   splitPartitions?: boolean;
@@ -26,7 +27,7 @@ interface AssetCheckPartitionStatusBarProps {
 type ColorSegment = {
   start: {idx: number; key: string};
   end: {idx: number; key: string};
-  status: AssetCheckPartitionStatus;
+  statuses: AssetCheckPartitionStatus[];
   style: React.CSSProperties;
   label: string;
 };
@@ -34,6 +35,7 @@ type ColorSegment = {
 export const AssetCheckPartitionStatusBar = ({
   partitionKeys,
   statusForPartition,
+  statusesForPartition,
   selected,
   onSelect,
   splitPartitions = false,
@@ -51,6 +53,35 @@ export const AssetCheckPartitionStatusBar = ({
 
   // Build segments from partition data
   const segments: ColorSegment[] = useMemo(() => {
+    if (statusesForPartition) {
+      // Multi-status path: serialize status arrays for span grouping
+      const statusArrayCache = new Map<string, AssetCheckPartitionStatus[]>();
+      const spans = assembleIntoSpans(partitionKeys, (key) => {
+        const statuses = statusesForPartition(key);
+        const serialized = statuses.join(',');
+        statusArrayCache.set(serialized, statuses);
+        return serialized;
+      });
+      return spans
+        .map((span) => {
+          const startKey = partitionKeys[span.startIdx];
+          const endKey = partitionKeys[span.endIdx];
+          if (!startKey || !endKey) {
+            return null;
+          }
+          const statuses = statusArrayCache.get(span.status) ?? [AssetCheckPartitionStatus.MISSING];
+          return {
+            start: {idx: span.startIdx, key: startKey},
+            end: {idx: span.endIdx, key: endKey},
+            statuses,
+            style: assetCheckPartitionStatusesToStyle(statuses),
+            label: statuses.map(assetCheckPartitionStatusToText).join(', '),
+          };
+        })
+        .filter((s): s is ColorSegment => s !== null);
+    }
+
+    // Single-status path (original behavior)
     const spans = assembleIntoSpans(partitionKeys, (key) => statusForPartition(key));
     return spans
       .map((span) => {
@@ -62,13 +93,13 @@ export const AssetCheckPartitionStatusBar = ({
         return {
           start: {idx: span.startIdx, key: startKey},
           end: {idx: span.endIdx, key: endKey},
-          status: span.status,
+          statuses: [span.status],
           style: assetCheckPartitionStatusesToStyle([span.status]),
           label: assetCheckPartitionStatusToText(span.status),
         };
       })
       .filter((s): s is ColorSegment => s !== null);
-  }, [partitionKeys, statusForPartition]);
+  }, [partitionKeys, statusForPartition, statusesForPartition]);
 
   const highestIndex = segments.map((s) => s.end.idx).reduce((prev, cur) => Math.max(prev, cur), 0);
   const indexToPct = (idx: number) => `${((idx * 100) / partitionKeys.length).toFixed(3)}%`;
@@ -111,6 +142,7 @@ export const AssetCheckPartitionStatusBar = ({
               position: 'absolute',
               zIndex: s.start.idx === 0 || s.end.idx === highestIndex ? 3 : 2,
               top: 0,
+              height: PARTITION_STATUS_BAR_HEIGHT,
             }}
           >
             <Tooltip
