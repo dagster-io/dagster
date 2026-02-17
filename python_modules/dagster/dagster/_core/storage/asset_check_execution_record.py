@@ -197,7 +197,7 @@ class AssetCheckExecutionRecord(
             latest_materialization = records.records[0] if records.records else None
 
         if not latest_materialization:
-            # no previous materialization, so it's executing against the lastest version
+            # no previous materialization, so it's executing against the latest version
             return True
 
         latest_materialization_run_id = latest_materialization.event_log_entry.run_id

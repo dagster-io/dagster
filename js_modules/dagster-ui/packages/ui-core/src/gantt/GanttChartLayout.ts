@@ -518,7 +518,7 @@ export const adjustLayoutWithRunMetadata = (
       width: BOX_WIDTH,
     }));
   } else {
-    throw new Error('Invalid mdoe ');
+    throw new Error('Invalid mode');
   }
 
   return {boxes, markers};

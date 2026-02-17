@@ -157,7 +157,7 @@ class Shape(_ConfigHasFields):
 class Map(ConfigType):
     """Defines a config dict with arbitrary scalar keys and typed values.
 
-    A map can contrain arbitrary keys of the specified scalar type, each of which has
+    A map can contain arbitrary keys of the specified scalar type, each of which has
     type checked values. Unlike :py:class:`Shape` and :py:class:`Permissive`, scalar
     keys other than strings can be used, and unlike :py:class:`Permissive`, all
     values are type checked.

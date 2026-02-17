@@ -277,7 +277,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
                 "mem_io_manager with the in_process_executor.\n"
                 "For more information on io managers, visit "
                 "https://docs.dagster.io/guides/build/io-managers/ \n"
-                "For more information on executors, vist "
+                "For more information on executors, visit "
                 "https://docs.dagster.io/guides/operate/run-executors"
             ) from e
 

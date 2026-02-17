@@ -104,7 +104,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self._server_termination_event = server_termination_event
 
         # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
-        # hearbeat, at which point this event is set. The cleanup thread will then set the server
+        # heartbeat, at which point this event is set. The cleanup thread will then set the server
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
         self.__cleanup_thread = threading.Thread(

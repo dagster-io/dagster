@@ -40,7 +40,7 @@ def _build_asset_dependencies(
         # node has been visited
         if visited_nodes[node_name]:
             return
-        # mark node as visted
+        # mark node as visited
         visited_nodes[node_name] = True
         # traverse upstream nodes
         for output_handle in graph.dependency_structure.all_upstream_outputs_from_node(node_name):
