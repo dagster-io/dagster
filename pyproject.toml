@@ -154,7 +154,7 @@ dev = [
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*,*.pdf,*.svg,*.css,*.min.*,*.umd.js,*.inv,*.csv,*.sql,*.lock,package-lock.json,.yarn,*.ipynb,.cache,*/_vendored/*,__snapshots__,pyright/,manifest.json,*/fonts/Global*'
+skip = '.git*,*.pdf,*.svg,*.css,*.min.*,*.umd.js,*.inv,*.csv,*.sql,*.lock,package-lock.json,.yarn,*.ipynb,.cache,.npm,*/_vendored/*,__snapshots__,pyright/,manifest.json,*/fonts/Global*'
 check-hidden = true
 # Ignore camelCase/PascalCase identifiers and embedded base64 images in notebooks
 ignore-regex = '^\s*"image/\S+": ".*|\b[a-z]+[A-Z]\w*\b|\b[A-Z][a-z]+[A-Z]\w*\b'
@@ -183,4 +183,9 @@ ignore-regex = '^\s*"image/\S+": ".*|\b[a-z]+[A-Z]\w*\b|\b[A-Z][a-z]+[A-Z]\w*\b'
 # unparseable - used in codebase as variable/comment term
 # re-use, re-used, re-using, re-usable, re-declare - acceptable hyphenated English
 # alpha-numeric - acceptable hyphenated English
-ignore-words-list = 'aks,ser,ags,nd,fo,connexion,failer,noo,doesnot,arameters,datas,astroid,lacker,coo,welp,parms,parm,serie,noes,ue,blocs,busses,implementors,unparseable,re-use,re-used,re-using,re-usable,re-declare,alpha-numeric'
+# seve - truncated "seven" in test fixture display
+# abd - asset key names in test data
+# efine - part of "[r]efine" UI text
+# custome - truncated "customer" in table display
+# nin - dbt jinja filter name in sample manifests
+ignore-words-list = 'aks,ser,ags,nd,fo,connexion,failer,noo,doesnot,arameters,datas,astroid,lacker,coo,welp,parms,parm,serie,noes,ue,blocs,busses,implementors,unparseable,re-use,re-used,re-using,re-usable,re-declare,alpha-numeric,seve,abd,efine,custome,nin'
