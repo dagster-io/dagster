@@ -16,7 +16,7 @@ attributes:
     amount_column: SALE_AMOUNT
     start_date: "2024-01-01"
 
-  connection: "{{ context.load_component('snowflake_connection') }}"
+  connection: "{{ load_component_at_path('snowflake_connection') }}"
 
   assets:
     - key: ANALYTICS/DAILY_REVENUE

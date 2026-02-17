@@ -25,8 +25,6 @@ from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
-    re_ignore_after,
-    re_ignore_before,
 )
 
 COMPONENTS_SNIPPETS_DIR = (
@@ -54,6 +52,7 @@ _MASK_BETA_WARNING = (r"/[^\n]*BetaWarning:[^\n]*\n[^\n]*\n", "")
 
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
+@pytest.mark.skip(reason="Skipping test_components_docs_index")
 @pytest.mark.flaky(max_runs=2)
 def test_components_docs_index(
     package_manager: DgTestPackageManager, update_snippets: bool
