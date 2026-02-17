@@ -31,6 +31,7 @@ def skip_reason(
     name: Optional[str] = None,
     always_run_if: Optional[Callable[[], bool]] = None,
     skip_if: Optional[Callable[[], Optional[str]]] = None,
+    is_oss: bool = False,
 ) -> Optional[str]:
     """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
     We actually use this to determine whether or not to run the package.
@@ -55,7 +56,10 @@ def skip_reason(
         logging.info(f"Building {name} we're not on a feature branch")
         return None
 
-    for change in ChangedFiles.all_oss:
+    # OSS directory paths are always relative to the OSS root, so we need to
+    # compare against changes relative to OSS root.
+    changeset = ChangedFiles.all_oss if is_oss else ChangedFiles.all
+    for change in changeset:
         if (
             # Our change is in this package's directory
             Path(directory) in change.parents

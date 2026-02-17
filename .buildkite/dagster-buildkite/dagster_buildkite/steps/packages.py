@@ -274,7 +274,9 @@ class PackageSpec:
                 )
             return self._skip_reason
 
-        self._skip_reason = skip_reason(self.directory, self.name, self.always_run_if, self.skip_if)
+        self._skip_reason = skip_reason(
+            self.directory, self.name, self.always_run_if, self.skip_if, is_oss=True
+        )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
 
