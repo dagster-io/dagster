@@ -8,7 +8,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypeAlias,
     TypeGuard,
-    Union,
     cast,
     overload,
 )
@@ -33,10 +32,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext
 
 IOManagerFunctionWithContext = Callable[["InitResourceContext"], "IOManager"]
-IOManagerFunction: TypeAlias = Union[
-    IOManagerFunctionWithContext,
-    Callable[[], "IOManager"],
-]
+IOManagerFunction: TypeAlias = IOManagerFunctionWithContext | Callable[[], "IOManager"]
 
 
 def is_io_manager_context_provided(
@@ -182,16 +178,13 @@ def io_manager(
 
 @public
 def io_manager(
-    config_schema: Union[IOManagerFunction, CoercableToConfigSchema] = None,
+    config_schema: IOManagerFunction | CoercableToConfigSchema = None,
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
-) -> Union[
-    IOManagerDefinition,
-    Callable[[IOManagerFunction], IOManagerDefinition],
-]:
+) -> IOManagerDefinition | Callable[[IOManagerFunction], IOManagerDefinition]:
     """Define an IO manager.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.

@@ -6,7 +6,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Optional
 
 import jwt
 import requests
@@ -167,7 +167,7 @@ class BaseTableauClient:
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[AssetObservation, Output]]:
+    ) -> Iterator[AssetObservation | Output]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
         refreshed_workbook_ids = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
@@ -196,7 +196,7 @@ class BaseTableauClient:
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
         self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[AssetObservation, Output]]:
+    ) -> Iterator[AssetObservation | Output]:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
         """
@@ -578,7 +578,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
 
-    _client: Optional[Union[TableauCloudClient, TableauServerClient]] = PrivateAttr(default=None)
+    _client: Optional[TableauCloudClient | TableauServerClient] = PrivateAttr(default=None)
 
     @property
     @cached_method
@@ -590,7 +590,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         raise NotImplementedError()
 
     @contextmanager
-    def get_client(self) -> Iterator[Union[TableauCloudClient, TableauServerClient]]:
+    def get_client(self) -> Iterator[TableauCloudClient | TableauServerClient]:
         if not self._client:
             self.build_client()
 
@@ -848,7 +848,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def refresh_and_poll(
         self, context: AssetExecutionContext
-    ) -> Iterator[Union[Output, ObserveResult, AssetObservation]]:
+    ) -> Iterator[Output | ObserveResult | AssetObservation]:
         """Executes a refresh and poll process to materialize Tableau assets,
         including data sources with extracts, views and workbooks.
         This method can only be used in the context of an asset execution.

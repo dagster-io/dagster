@@ -7,7 +7,7 @@ and codegens a file that contains dagster configurations for these parameters.
 import re
 import sys
 from enum import Enum
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, cast
 
 import click
 import requests
@@ -194,8 +194,8 @@ class SparkConfigNode:
             assert self.value
             self.value.write(printer)
         else:
-            self.children = cast("dict[str, Union[SparkConfig, SparkConfigNode]]", self.children)
-            retdict: dict[str, Union[SparkConfig, SparkConfigNode]]
+            self.children = cast("dict[str, SparkConfig | SparkConfigNode]", self.children)
+            retdict: dict[str, SparkConfig | SparkConfigNode]
             if self.value:
                 retdict = {"root": self.value}
                 retdict.update(self.children)

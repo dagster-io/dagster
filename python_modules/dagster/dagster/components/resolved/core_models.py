@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 from dagster_shared.record import record
 
@@ -154,7 +154,7 @@ class OpSpec(Model, Resolvable):
         Optional[BackfillPolicy],
         Resolver(
             resolve_backfill_policy,
-            model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
+            model_field_type=SingleRunBackfillPolicyModel | MultiRunBackfillPolicyModel,
         ),
     ] = None
 
@@ -248,13 +248,11 @@ class SharedAssetKwargs(Resolvable):
         Resolver(
             resolve_partitions_def,
             description="The partitions definition for the asset.",
-            model_field_type=Union[
-                HourlyPartitionsDefinitionModel,
-                DailyPartitionsDefinitionModel,
-                WeeklyPartitionsDefinitionModel,
-                TimeWindowPartitionsDefinitionModel,
-                StaticPartitionsDefinitionModel,
-            ],
+            model_field_type=HourlyPartitionsDefinitionModel
+            | DailyPartitionsDefinitionModel
+            | WeeklyPartitionsDefinitionModel
+            | TimeWindowPartitionsDefinitionModel
+            | StaticPartitionsDefinitionModel,
         ),
     ] = None
     freshness_policy: Annotated[

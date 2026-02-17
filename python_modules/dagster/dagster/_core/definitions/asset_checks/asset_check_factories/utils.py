@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
@@ -47,7 +47,7 @@ TIMEZONE_PARAM_KEY = "timezone"
 
 
 def ensure_no_duplicate_assets(
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
 ) -> None:
     """Finds duplicate assets in the provided list of assets, and errors if any are present.
 
@@ -66,7 +66,7 @@ def ensure_no_duplicate_assets(
 
 
 def asset_to_keys_iterable(
-    asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
+    asset: CoercibleToAssetKey | AssetsDefinition | SourceAsset,
 ) -> Iterator[AssetKey]:
     if isinstance(asset, AssetsDefinition):
         yield from asset.keys
@@ -77,7 +77,7 @@ def asset_to_keys_iterable(
 
 
 def assets_to_keys(
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
 ) -> Sequence[AssetKey]:
     """Converts the provided assets to a sequence of their contained AssetKeys."""
     return [asset_key for asset in assets for asset_key in asset_to_keys_iterable(asset)]

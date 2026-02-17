@@ -7,7 +7,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, NamedTuple, Optional, cast  # noqa: UP035
 from unittest import mock
 
 import dagster as dg
@@ -104,7 +104,7 @@ class MultiAssetSpec(NamedTuple):
 class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
-    asset_specs: Sequence[Union[dg.AssetSpec, MultiAssetSpec]]
+    asset_specs: Sequence[dg.AssetSpec | MultiAssetSpec]
     check_specs: Sequence[dg.AssetCheckSpec] = field(default_factory=list)
     current_time: datetime.datetime = field(default_factory=get_current_datetime)
     sensors: Sequence[dg.SensorDefinition] = field(default_factory=list)
@@ -200,7 +200,7 @@ class ScenarioSpec:
             self, additional_repo_specs=[*self.additional_repo_specs, *scenario_specs]
         )
 
-    def with_current_time(self, time: Union[str, datetime.datetime]) -> "ScenarioSpec":
+    def with_current_time(self, time: str | datetime.datetime) -> "ScenarioSpec":
         if isinstance(time, str):
             time = parse_time_string(time)
         return dataclasses.replace(self, current_time=time)
@@ -266,7 +266,7 @@ class ScenarioState:
     def asset_graph(self) -> AssetGraph:
         return self.scenario_spec.asset_graph
 
-    def with_current_time(self, time: Union[str, datetime.datetime]) -> Self:
+    def with_current_time(self, time: str | datetime.datetime) -> Self:
         return dataclasses.replace(self, scenario_spec=self.scenario_spec.with_current_time(time))
 
     def with_current_time_advanced(self, **kwargs) -> Self:

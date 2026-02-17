@@ -2,7 +2,7 @@ from abc import ABC
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
@@ -186,7 +186,7 @@ class CronFreshnessPolicy(FreshnessPolicy, IHaveNew):
     def __new__(
         cls,
         deadline_cron: str,
-        lower_bound_delta: Union[timedelta, SerializableTimeDelta],
+        lower_bound_delta: timedelta | SerializableTimeDelta,
         timezone: str = "UTC",
     ):
         check.str_param(deadline_cron, "deadline_cron")

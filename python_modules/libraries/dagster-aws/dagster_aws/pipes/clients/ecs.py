@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import botocore
@@ -62,7 +62,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         run_task_params: "RunTaskRequestTypeDef",
         extras: Optional[dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
@@ -313,7 +313,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
     def _terminate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         wait_response: "DescribeTasksResponseTypeDef",
         cluster: Optional[str] = None,
     ):

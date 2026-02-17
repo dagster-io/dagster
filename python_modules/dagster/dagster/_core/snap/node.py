@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property, partial
-from typing import Optional, Union
+from typing import Optional
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -249,10 +249,7 @@ def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
 
 
 def _by_name(
-    snap: Union[
-        InputDefSnap,
-        OutputDefSnap,
-    ],
+    snap: InputDefSnap | OutputDefSnap,
 ) -> str:
     return snap.name
 
@@ -309,7 +306,7 @@ def build_op_def_snap(op_def: OpDefinition, job_def: JobDefinition) -> OpDefSnap
 
 
 # shared impl for GraphDefSnap and OpDefSnap
-def _get_input_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> InputDefSnap:
+def _get_input_snap(node_def: GraphDefSnap | OpDefSnap, name: str) -> InputDefSnap:
     check.str_param(name, "name")
     inp = node_def.input_def_map.get(name)
     if inp:
@@ -319,7 +316,7 @@ def _get_input_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> Inpu
 
 
 # shared impl for GraphDefSnap and OpDefSnap
-def _get_output_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> OutputDefSnap:
+def _get_output_snap(node_def: GraphDefSnap | OpDefSnap, name: str) -> OutputDefSnap:
     check.str_param(name, "name")
     inp = node_def.output_def_map.get(name)
     if inp:

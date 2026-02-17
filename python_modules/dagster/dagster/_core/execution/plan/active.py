@@ -1,7 +1,7 @@
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from typing_extensions import Self
 
@@ -455,7 +455,7 @@ class ActiveExecution:
         return sorted(steps, key=self._sort_key_fn)
 
     def plan_events_iterator(
-        self, job_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+        self, job_context: PlanExecutionContext | PlanOrchestrationContext
     ) -> Iterator[DagsterEvent]:
         """Process all steps that can be skipped and abandoned."""
         steps_to_skip = self.get_steps_to_skip()
@@ -697,7 +697,7 @@ class ActiveExecution:
         return [self.get_step_by_key(step_key) for step_key in self._in_flight]
 
     def concurrency_event_iterator(
-        self, plan_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+        self, plan_context: PlanExecutionContext | PlanOrchestrationContext
     ) -> Iterator[DagsterEvent]:
         if not self._instance_concurrency_context:
             return

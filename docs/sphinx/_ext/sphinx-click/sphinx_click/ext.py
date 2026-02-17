@@ -232,7 +232,7 @@ def _format_arguments(ctx: click.Context) -> ty.Generator[str, None, None]:
 
 
 def _format_envvar(
-    param: ty.Union[click.core.Option, click.Argument],
+    param: click.core.Option | click.Argument,
 ) -> ty.Generator[str, None, None]:
     """Format the envvars of a `click.Option` or `click.Argument`."""
     yield f".. envvar:: {param.envvar}"
@@ -434,7 +434,7 @@ class ClickDirective(rst.Directive):
         "show-nested": directives.flag,
     }
 
-    def _load_module(self, module_path: str) -> ty.Union[click.Command, click.Group]:
+    def _load_module(self, module_path: str) -> click.Command | click.Group:
         """Load the module."""
         try:
             module_name, attr_name = module_path.split(":", 1)

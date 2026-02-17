@@ -4,15 +4,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Annotated,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Generic, Optional, TypeVar  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -287,7 +279,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def execution_set_entity_keys(
         self,
-    ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]:
+    ) -> AbstractSet[AssetKey | AssetCheckKey]:
         return self.resolve_to_singular_repo_scoped_node().execution_set_entity_keys
 
     @cached_property
@@ -746,7 +738,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
 
     def get_repo_scoped_node(
         self, key: EntityKey, repository_selector: "RepositorySelector"
-    ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
+    ) -> Optional[RemoteRepositoryAssetNode | RemoteAssetCheckNode]:
         if not self.has(key):
             return None
         node = self.get(key)

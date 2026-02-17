@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 
 import pytest
 from dagster_shared.seven import resolve_module_pattern
@@ -142,4 +142,4 @@ def test_resolve_module_pattern_embedded_wildcard_end(monkeypatch, matches_exist
 
 @dataclass
 class _FakeModuleSpec:
-    submodule_search_locations: Union[list[str], None] = None
+    submodule_search_locations: list[str] | None = None

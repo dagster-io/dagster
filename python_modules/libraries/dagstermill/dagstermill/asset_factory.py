@@ -1,7 +1,7 @@
 import pickle
 import tempfile
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster import (
@@ -77,9 +77,9 @@ def define_dagstermill_asset(
     notebook_path: str,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
+    deps: Optional[Iterable[CoercibleToAssetKey | AssetsDefinition | SourceAsset]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
-    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
+    config_schema: Optional[Any | Mapping[str, Any]] = None,
     required_resource_keys: Optional[set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
@@ -89,7 +89,7 @@ def define_dagstermill_asset(
     io_manager_key: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     save_notebook_on_failure: bool = False,
-    non_argument_deps: Optional[Union[set[AssetKey], set[str]]] = None,
+    non_argument_deps: Optional[set[AssetKey] | set[str]] = None,
     asset_tags: Optional[Mapping[str, Any]] = None,
 ) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.

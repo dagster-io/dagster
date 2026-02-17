@@ -2,7 +2,7 @@ import enum
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Sequence
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, TypeAlias
 
 import click
 import dagster._check as check
@@ -233,7 +233,7 @@ class ManagedElementDiff(
 # Union type representing the status of a managed element - can either
 # return the (potentially empty) diff between the configured and deployed
 # stack, or an error.
-ManagedElementCheckResult = Union[ManagedElementDiff, ManagedElementError]
+ManagedElementCheckResult: TypeAlias = ManagedElementDiff | ManagedElementError
 
 
 class ManagedElementReconciler(ABC):

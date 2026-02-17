@@ -8,7 +8,7 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Final, Literal, NamedTuple, Optional, Union, cast
+from typing import Any, Final, Literal, NamedTuple, Optional, cast
 
 import orjson
 from dagster import (
@@ -94,9 +94,7 @@ class DbtCliInvocation:
     raise_on_error: bool
     cli_version: version.Version
     project: Optional[DbtProject] = field(default=None)
-    context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
-        default=None, repr=False
-    )
+    context: Optional[OpExecutionContext | AssetExecutionContext] = field(default=None, repr=False)
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
@@ -104,7 +102,7 @@ class DbtCliInvocation:
     postprocessing_threadpool_num_threads: int = field(
         init=False, default=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
     )
-    _stdout: list[Union[str, dict[str, Any]]] = field(init=False, default_factory=list)
+    _stdout: list[str | dict[str, Any]] = field(init=False, default_factory=list)
     _error_messages: list[str] = field(init=False, default_factory=list)
 
     # Caches fetching relation column metadata to avoid redundant queries to the database.
@@ -146,7 +144,7 @@ class DbtCliInvocation:
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
-        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+        context: Optional[OpExecutionContext | AssetExecutionContext],
         adapter: Optional[BaseAdapter],
         cli_version: version.Version,
         dbt_project: Optional[DbtProject] = None,
@@ -297,7 +295,7 @@ class DbtCliInvocation:
     @public
     def stream(
         self,
-    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
+    ) -> "DbtEventIterator[Output | AssetMaterialization | AssetObservation | AssetCheckResult | AssetCheckEvaluation]":
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
@@ -383,12 +381,10 @@ class DbtCliInvocation:
     @public
     def get_artifact(
         self,
-        artifact: Union[
-            Literal["manifest.json"],
-            Literal["catalog.json"],
-            Literal["run_results.json"],
-            Literal["sources.json"],
-        ],
+        artifact: Literal["manifest.json"]
+        | Literal["catalog.json"]
+        | Literal["run_results.json"]
+        | Literal["sources.json"],
     ) -> dict[str, Any]:
         """Retrieve a dbt artifact from the target path.
 
@@ -421,7 +417,7 @@ class DbtCliInvocation:
         """The dbt CLI command that was invoked."""
         return " ".join(cast("Sequence[str]", self.process.args))
 
-    def _stream_stdout(self) -> Iterator[Union[str, dict[str, Any]]]:
+    def _stream_stdout(self) -> Iterator[str | dict[str, Any]]:
         """Stream the stdout from the dbt CLI process."""
         try:
             if not self.process.stdout or self.process.stdout.closed:

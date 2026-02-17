@@ -1,10 +1,10 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, TypeAlias, cast
 
 import dagster_shared.check as check
 
-KeyPathSegment = Union[str, int]
+KeyPathSegment: TypeAlias = str | int
 KeyPath = Sequence[KeyPathSegment]
 
 

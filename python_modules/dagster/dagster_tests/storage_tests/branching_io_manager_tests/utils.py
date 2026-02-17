@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster as dg
 from dagster import AssetKey, DagsterInstance, Definitions, InputContext, OutputContext
@@ -102,7 +102,7 @@ class AssetBasedInMemoryIOManager(dg.IOManager):
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _keys_from_context(
-        self, context: Union[dg.InputContext, dg.OutputContext]
+        self, context: dg.InputContext | dg.OutputContext
     ) -> Optional[Sequence[tuple[str, ...]]]:
         if not context.has_asset_key:
             return None
@@ -160,7 +160,7 @@ class ConfigurableAssetBasedInMemoryIOManager(dg.ConfigurableIOManager):
         return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _keys_from_context(
-        self, context: Union[dg.InputContext, dg.OutputContext]
+        self, context: dg.InputContext | dg.OutputContext
     ) -> Optional[Sequence[tuple[str, ...]]]:
         if not context.has_asset_key:
             return None

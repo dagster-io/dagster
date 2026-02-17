@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Optional, TypeAlias, Union
+from typing import Annotated, Any, Optional, TypeAlias
 
 import dagster as dg
 from dagster._annotations import public
@@ -52,13 +52,13 @@ class PowerBIServicePrincipalModel(Model):
     tenant_id: str
 
 
-PowerBICredentialsModel: TypeAlias = Union[PowerBITokenModel, PowerBIServicePrincipalModel]
+PowerBICredentialsModel: TypeAlias = PowerBITokenModel | PowerBIServicePrincipalModel
 
 
 def resolve_powerbi_credentials(
     context: ResolutionContext,
     credentials,
-) -> Union[PowerBIToken, PowerBIServicePrincipal]:
+) -> PowerBIToken | PowerBIServicePrincipal:
     if hasattr(credentials, "token"):
         return PowerBIToken(api_token=context.resolve_value(credentials.token, as_type=str))
     return PowerBIServicePrincipal(
@@ -145,7 +145,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_multilayer_translation,
-        model_field_type=Union[str, PowerBIAssetArgs.model()],
+        model_field_type=str | PowerBIAssetArgs.model(),
     ),
 ]
 
@@ -153,7 +153,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
 @dataclass
 class PowerBIWorkspaceModel(Resolvable):
     credentials: Annotated[
-        Union[PowerBIToken, PowerBIServicePrincipal],
+        PowerBIToken | PowerBIServicePrincipal,
         Resolver(
             resolve_powerbi_credentials,
             model_field_type=PowerBICredentialsModel,
@@ -200,7 +200,7 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
     ]
     use_workspace_scan: bool = True
     # Takes a list of semantic model names to enable refresh for, or True to enable for all semantic models
-    enable_semantic_model_refresh: Union[bool, list[str]] = False
+    enable_semantic_model_refresh: bool | list[str] = False
     translation: Optional[ResolvedMultilayerTranslationFn] = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots

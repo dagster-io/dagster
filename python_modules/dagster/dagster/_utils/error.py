@@ -5,7 +5,7 @@ import sys
 import traceback
 import uuid
 from types import TracebackType
-from typing import Optional, TypeAlias, Union
+from typing import Optional, TypeAlias
 
 from dagster_shared.error import SerializableErrorInfo
 
@@ -13,10 +13,9 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeExecutionError
 from dagster._serdes import serialize_value
 
-ExceptionInfo: TypeAlias = Union[
-    tuple[type[BaseException], BaseException, TracebackType],
-    tuple[None, None, None],
-]
+ExceptionInfo: TypeAlias = (
+    tuple[type[BaseException], BaseException, TracebackType] | tuple[None, None, None]
+)
 
 ERROR_CLASS_NAME_SIZE_LIMIT = 1000
 

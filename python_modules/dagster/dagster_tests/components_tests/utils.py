@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Iterable, Mapping, Optional, TypeVar, Union  # noqa: UP035
+from typing import Any, Iterable, Mapping, Optional, TypeVar  # noqa: UP035
 
 import dagster as dg
 import tomlkit
@@ -34,7 +34,7 @@ T_Component = TypeVar("T_Component", bound=Component)
 
 def load_context_and_component_for_test(
     component_type: type[T_Component],
-    attrs: Union[str, dict[str, Any]],
+    attrs: str | dict[str, Any],
     template_vars_module: Optional[str] = None,
 ) -> tuple[dg.ComponentLoadContext, T_Component]:
     context = ComponentTree.for_test().load_context
@@ -57,7 +57,7 @@ def load_context_and_component_for_test(
 
 
 def load_component_for_test(
-    component_type: type[T_Component], attrs: Union[str, dict[str, Any]]
+    component_type: type[T_Component], attrs: str | dict[str, Any]
 ) -> T_Component:
     _, component = load_context_and_component_for_test(component_type, attrs)
     return component

@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional
 
 from dagster_shared.record import ImportFrom, record
 
@@ -214,8 +214,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_logs_for_run(
         self,
         run_id: str,
-        cursor: Optional[Union[str, int]] = None,
-        of_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
+        cursor: Optional[str | int] = None,
+        of_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> Sequence["EventLogEntry"]:
@@ -245,7 +245,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self,
         run_id: str,
         cursor: Optional[str] = None,
-        of_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
+        of_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> EventLogConnection:
@@ -345,7 +345,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_logs_for_all_runs_by_log_id(
         self,
         after_cursor: int = -1,
-        dagster_event_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
+        dagster_event_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
         limit: Optional[int] = None,
     ) -> Mapping[int, "EventLogEntry"]:
         """Get event records across all runs. Only supported for non sharded sql storage."""
@@ -685,7 +685,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def fetch_materializations(
         self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
+        records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -695,7 +695,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def fetch_failed_materializations(
         self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
+        records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -705,7 +705,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def fetch_observations(
         self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
+        records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -719,7 +719,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def fetch_run_status_changes(
         self,
-        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        records_filter: DagsterEventType | RunStatusChangeRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,

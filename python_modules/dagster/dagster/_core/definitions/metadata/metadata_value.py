@@ -114,7 +114,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def path(path: Union[str, PathLike]) -> "PathMetadataValue":
+    def path(path: str | PathLike) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`PathMetadataValue`.
 
@@ -137,7 +137,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def notebook(path: Union[str, PathLike]) -> "NotebookMetadataValue":
+    def notebook(path: str | PathLike) -> "NotebookMetadataValue":
         """Static constructor for a metadata value wrapping a notebook path as
         :py:class:`NotebookMetadataValue`.
 
@@ -160,7 +160,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def json(data: Union[Sequence[Any], Mapping[str, Any]]) -> "JsonMetadataValue":
+    def json(data: Sequence[Any] | Mapping[str, Any]) -> "JsonMetadataValue":
         """Static constructor for a metadata value wrapping a json-serializable list or dict
         as :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events.
@@ -577,7 +577,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
 
     fspath: str
 
-    def __new__(cls, path: Optional[Union[str, PathLike]]):
+    def __new__(cls, path: Optional[str | PathLike]):
         return super().__new__(
             cls,
             # coerces to str
@@ -608,7 +608,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
 
     fspath: str
 
-    def __new__(cls, path: Optional[Union[str, PathLike]]):
+    def __new__(cls, path: Optional[str | PathLike]):
         return super().__new__(
             cls,
             # coerces to str
@@ -656,7 +656,7 @@ class JsonDataFieldSerializer(FieldSerializer):
 @public
 class JsonMetadataValue(
     IHaveNew,
-    MetadataValue[Optional[Union[Sequence[Any], Mapping[str, Any]]]],
+    MetadataValue[Optional[Sequence[Any] | Mapping[str, Any]]],
 ):
     """Container class for JSON metadata entry data.
 
@@ -664,9 +664,9 @@ class JsonMetadataValue(
         data (Union[Sequence[Any], Dict[str, Any]]): The JSON data.
     """
 
-    data: PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]
+    data: PublicAttr[Optional[Sequence[Any] | Mapping[str, Any]]]
 
-    def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
+    def __new__(cls, data: Optional[Sequence[Any] | Mapping[str, Any]]):
         try:
             # check that the value is JSON serializable (and do any transformation
             # that json.dumps would do under the hood, like enums to string values)
@@ -677,7 +677,7 @@ class JsonMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
+    def value(self) -> Optional[Sequence[Any] | Mapping[str, Any]]:
         """Optional[Union[Sequence[Any], Dict[str, Any]]]: The wrapped JSON data."""
         return self.data
 
@@ -1053,7 +1053,7 @@ class ObjectMetadataValue(
 
     def __new__(
         cls,
-        inst: Union[str, object],
+        inst: str | object,
         **kwargs,
     ):
         if isinstance(inst, str):

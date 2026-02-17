@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dateutil
 from dagster import (
@@ -62,7 +62,7 @@ def result_to_events(
     manifest_json: Optional[Mapping[str, Any]] = None,
     extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     generate_asset_outputs: bool = False,
-) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
+) -> Iterator[AssetMaterialization | AssetObservation | Output]:
     """This is a hacky solution that attempts to consolidate parsing many of the potential formats
     that dbt can provide its results in. This is known to work for CLI Outputs for dbt versions 0.18+,
     as well as RPC responses for a similar time period, but as the RPC response schema is not documented
@@ -149,7 +149,7 @@ def generate_events(
     dbt_output: DbtCloudOutput,
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
-) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
+) -> Iterator[AssetMaterialization | AssetObservation]:
     """This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.
 

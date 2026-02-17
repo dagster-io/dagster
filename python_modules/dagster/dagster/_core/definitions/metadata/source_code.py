@@ -60,7 +60,7 @@ class UrlCodeReference(DagsterModel):
         return self.url
 
 
-CodeReference: TypeAlias = Union[LocalFileCodeReference, UrlCodeReference]
+CodeReference: TypeAlias = LocalFileCodeReference | UrlCodeReference
 
 
 @public
@@ -178,7 +178,7 @@ def _with_code_source_single_definition(
                 if existing_source_code_metadata.code_references
                 else []
             )
-            sources_for_asset: list[Union[LocalFileCodeReference, UrlCodeReference]] = [
+            sources_for_asset: list[LocalFileCodeReference | UrlCodeReference] = [
                 *existing_code_references,
                 *sources,
             ]
@@ -309,7 +309,7 @@ def _convert_local_path_to_git_path_single_definition(
         if not existing_source_code_metadata.code_references:
             continue
 
-        sources_for_asset: list[Union[LocalFileCodeReference, UrlCodeReference]] = [
+        sources_for_asset: list[LocalFileCodeReference | UrlCodeReference] = [
             convert_local_path_to_git_path(
                 base_git_url,
                 file_path_mapping,

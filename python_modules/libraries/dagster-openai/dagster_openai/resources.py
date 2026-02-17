@@ -3,7 +3,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Optional, Union
+from typing import Optional
 from weakref import WeakKeyDictionary
 
 from dagster import (
@@ -57,7 +57,7 @@ def _add_to_asset_metadata(
 
 @public
 def with_usage_metadata(
-    context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
+    context: AssetExecutionContext | OpExecutionContext, output_name: Optional[str], func
 ):
     """This wrapper can be used on any endpoint of the
     `openai library <https://github.com/openai/openai-python>`_
@@ -240,7 +240,7 @@ class OpenAIResource(ConfigurableResource):
     @public
     @contextmanager
     def get_client(
-        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext]
+        self, context: AssetExecutionContext | AssetCheckExecutionContext | OpExecutionContext
     ) -> Generator[Client, None, None]:
         """Yields an ``openai.Client`` for interacting with the OpenAI API.
 
@@ -376,7 +376,7 @@ class OpenAIResource(ConfigurableResource):
 
     def _get_client(
         self,
-        context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext],
+        context: AssetExecutionContext | AssetCheckExecutionContext | OpExecutionContext,
         asset_key: Optional[AssetKey] = None,
     ) -> Generator[Client, None, None]:
         if isinstance(context, AssetExecutionContext):

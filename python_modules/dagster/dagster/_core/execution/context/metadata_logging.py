@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import record
@@ -20,9 +20,7 @@ class AssetMetadataHandle:
 
 @record
 class OutputMetadataAccumulator:
-    per_output_metadata: Mapping[
-        Union[OutputMetadataHandle, AssetMetadataHandle], Mapping[str, Any]
-    ]
+    per_output_metadata: Mapping[OutputMetadataHandle | AssetMetadataHandle, Mapping[str, Any]]
 
     @staticmethod
     def empty() -> "OutputMetadataAccumulator":
@@ -61,7 +59,7 @@ class OutputMetadataAccumulator:
         )
 
     def _with_metadata(
-        self, handle: Union[OutputMetadataHandle, AssetMetadataHandle], metadata: Mapping[str, Any]
+        self, handle: OutputMetadataHandle | AssetMetadataHandle, metadata: Mapping[str, Any]
     ) -> "OutputMetadataAccumulator":
         return OutputMetadataAccumulator(
             per_output_metadata=merge_dicts(

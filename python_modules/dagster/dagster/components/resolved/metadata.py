@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from pydantic.fields import FieldInfo
 
@@ -31,7 +31,7 @@ class ResolvableFieldInfo(FieldInfo):  # pyright: ignore[reportGeneralTypeIssues
 
 
 def _subschemas_on_path(
-    valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
+    valpath: Sequence[str | int], json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
 ) -> Iterator[Mapping[str, Any]]:
     """Given a valpath and the json schema of a given target type, returns the subschemas at each step of the path."""
     # List[ComplexType] (e.g.) will contain a reference to the complex type schema in the
@@ -75,9 +75,7 @@ def _get_additional_required_scope(subschema: Mapping[str, Any]) -> Set[str]:
     return set(raw) if raw else set()
 
 
-def get_required_scope(
-    valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any]
-) -> Set[str]:
+def get_required_scope(valpath: Sequence[str | int], json_schema: Mapping[str, Any]) -> Set[str]:
     """Given a valpath and the json schema of a given target type, determines the available rendering scope."""
     required_scope = set()
     for subschema in _subschemas_on_path(valpath, json_schema, json_schema):

@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Union
+from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -152,10 +152,7 @@ class DynamicPartitionsRequestMixin:
 
     def get_dynamic_partitions_request(
         self,
-    ) -> Union[
-        AddDynamicPartitionsRequest,
-        DeleteDynamicPartitionsRequest,
-    ]:
+    ) -> AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest:
         raise NotImplementedError()
 
     def resolve_partitionKeys(self, _graphene_info: ResolveInfo):
@@ -178,19 +175,14 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
     def __init__(
         self,
-        dynamic_partition_request: Union[
-            AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
-        ],
+        dynamic_partition_request: AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest,
     ):
         super().__init__()
         self._dynamic_partitions_request = dynamic_partition_request
 
     def get_dynamic_partitions_request(
         self,
-    ) -> Union[
-        AddDynamicPartitionsRequest,
-        DeleteDynamicPartitionsRequest,
-    ]:
+    ) -> AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest:
         return self._dynamic_partitions_request
 
 
@@ -206,7 +198,7 @@ class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, grap
 
     def get_dynamic_partitions_request(
         self,
-    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]:
+    ) -> AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest:
         if self._dynamic_partitions_request_result.added_partitions is not None:
             return AddDynamicPartitionsRequest(
                 partition_keys=self._dynamic_partitions_request_result.added_partitions,
@@ -338,7 +330,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
 
     def __init__(
         self,
-        selector: Union[ScheduleSelector, SensorSelector],
+        selector: ScheduleSelector | SensorSelector,
         timestamp: Optional[float],
         cursor: Optional[str] = None,
     ):
@@ -362,7 +354,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 raise UserFacingGraphQLError(
                     GrapheneSensorNotFoundError(self._selector.sensor_name)
                 )
-            sensor_data: Union[SensorExecutionData, SerializableErrorInfo]
+            sensor_data: SensorExecutionData | SerializableErrorInfo
             try:
                 sensor_data = code_location.get_sensor_execution_data(
                     name=self._selector.sensor_name,
@@ -393,7 +385,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 timezone_str = "UTC"
 
             next_tick_datetime = next(schedule.execution_time_iterator(self.timestamp))
-            schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
+            schedule_data: ScheduleExecutionData | SerializableErrorInfo
             try:
                 schedule_data = code_location.get_schedule_execution_data(
                     instance=graphene_info.context.instance,
@@ -418,15 +410,15 @@ class GrapheneTickEvaluation(graphene.ObjectType):
     error = graphene.Field(GraphenePythonError)
     cursor = graphene.String()
 
-    _execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo]
+    _execution_data: ScheduleExecutionData | SensorExecutionData | SerializableErrorInfo
 
     class Meta:
         name = "TickEvaluation"
 
     def __init__(
         self,
-        execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo],
-        instigator: Union[RemoteSensor, RemoteSchedule],
+        execution_data: ScheduleExecutionData | SensorExecutionData | SerializableErrorInfo,
+        instigator: RemoteSensor | RemoteSchedule,
     ):
         check.inst_param(
             execution_data,

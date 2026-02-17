@@ -79,7 +79,7 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 
-SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, Union[int, Exception]]
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int | Exception]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
 
 
@@ -315,7 +315,7 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
 
 
 def ensure_gen(
-    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
+    thing_or_gen: T | Iterator[T] | Generator[T, Any, Any],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
         thing_or_gen = cast("T", thing_or_gen)
@@ -699,7 +699,7 @@ def xor(a: object, b: object) -> bool:
     return bool(a) != bool(b)
 
 
-def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
+def tail_file(path_or_fd: str | int, should_stop: Callable[[], bool]) -> Iterator[str]:
     with open(path_or_fd) as output_stream:
         while True:
             line = output_stream.readline()

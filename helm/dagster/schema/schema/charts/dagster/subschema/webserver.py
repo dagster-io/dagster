@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel
@@ -24,7 +24,7 @@ class Webserver(BaseModel, extra="forbid"):
     pathPrefix: Optional[str] = None
     service: kubernetes.Service
     workspace: Workspace
-    env: Union[dict[str, str], list[kubernetes.EnvVar]]
+    env: dict[str, str] | list[kubernetes.EnvVar]
     envConfigMaps: list[kubernetes.ConfigMapEnvSource]
     envSecrets: list[kubernetes.SecretEnvSource]
     deploymentLabels: dict[str, str]

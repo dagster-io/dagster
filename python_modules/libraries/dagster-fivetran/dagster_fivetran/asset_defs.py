@@ -3,7 +3,7 @@ import inspect
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -446,7 +446,7 @@ def _build_fivetran_assets_from_metadata(
 class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        fivetran_resource_def: Union[FivetranResource, ResourceDefinition],
+        fivetran_resource_def: FivetranResource | ResourceDefinition,
         key_prefix: Sequence[str],
         connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
@@ -591,7 +591,7 @@ _clean_name = clean_name_lower
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
 def load_assets_from_fivetran_instance(
-    fivetran: Union[FivetranResource, ResourceDefinition],
+    fivetran: FivetranResource | ResourceDefinition,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = None,
     io_manager_key: Optional[str] = None,

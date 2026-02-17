@@ -4,7 +4,7 @@ import os
 import os.path
 import threading
 from sys import platform
-from typing import Optional, Union
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.execution.telemetry import RunTelemetryData
@@ -67,7 +67,7 @@ def _get_container_metrics(
     previous_cpu_usage_ms: Optional[float] = None,
     previous_measurement_timestamp: Optional[float] = None,
     logger: Optional[logging.Logger] = None,
-) -> dict[str, Union[float, None]]:
+) -> dict[str, float | None]:
     metrics = retrieve_containerized_utilization_metrics(logger=logger)
 
     # calculate cpu_limit

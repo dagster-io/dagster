@@ -4,7 +4,7 @@ import functools
 import math
 import re
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._time import get_current_datetime, get_timezone
@@ -71,7 +71,7 @@ def is_valid_cron_string(cron_string: str) -> bool:
     return True
 
 
-def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
+def is_valid_cron_schedule(cron_schedule: str | Sequence[str]) -> bool:
     return (
         is_valid_cron_string(cron_schedule)
         if isinstance(cron_schedule, str)
@@ -624,7 +624,7 @@ def _has_out_of_range_cron_interval_str(cron_string: str):
     return False
 
 
-def has_out_of_range_cron_interval(cron_schedule: Union[str, Sequence[str]]):
+def has_out_of_range_cron_interval(cron_schedule: str | Sequence[str]):
     """Utility function to detect cron schedules like '*/90 * * * *', which are valid cron schedules
     but which evaluate to once every hour, not once every 90 minutes as might be expected.  This is
     useful to detect so that we can issue warnings or some other kind of feedback to the user.  This
@@ -821,7 +821,7 @@ def reverse_cron_string_iterator(
 
 def schedule_execution_time_iterator(
     start_timestamp: float,
-    cron_schedule: Union[str, Sequence[str]],
+    cron_schedule: str | Sequence[str],
     execution_timezone: Optional[str],
     ascending: bool = True,
 ) -> Iterator[datetime.datetime]:

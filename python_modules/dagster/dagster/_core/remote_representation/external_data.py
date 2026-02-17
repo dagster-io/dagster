@@ -9,7 +9,7 @@ import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Final, NamedTuple, Optional, TypeAlias, Union, cast
+from typing import Any, Final, NamedTuple, Optional, TypeAlias, cast
 
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.serdes.serdes import (
@@ -250,7 +250,7 @@ class JobRefSnap:
 @record_custom
 class ScheduleSnap(IHaveNew):
     name: str
-    cron_schedule: Union[str, Sequence[str]]
+    cron_schedule: str | Sequence[str]
     job_name: str
     op_selection: Optional[Sequence[str]]
     mode: Optional[str]
@@ -267,7 +267,7 @@ class ScheduleSnap(IHaveNew):
     def __new__(
         cls,
         name: str,
-        cron_schedule: Union[str, Sequence[str]],
+        cron_schedule: str | Sequence[str],
         job_name: str,
         op_selection: Optional[Sequence[str]],
         mode: Optional[str],
@@ -708,7 +708,7 @@ class ResourceConfigEnvVarSnap:
     name: str
 
 
-ResourceValueSnap: TypeAlias = Union[str, ResourceConfigEnvVarSnap]
+ResourceValueSnap: TypeAlias = str | ResourceConfigEnvVarSnap
 
 
 UNKNOWN_RESOURCE_TYPE = "Unknown"
@@ -1007,7 +1007,7 @@ class AssetNodeSnap(IHaveNew):
     auto_materialize_policy: Optional[AutoMaterializePolicy]
     automation_condition_snapshot: Optional[AutomationConditionSnapshot]
     backfill_policy: Optional[BackfillPolicy]
-    auto_observe_interval_minutes: Optional[Union[float, int]]
+    auto_observe_interval_minutes: Optional[float | int]
     owners: Optional[Sequence[str]]
 
     def __new__(
@@ -1039,7 +1039,7 @@ class AssetNodeSnap(IHaveNew):
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
-        auto_observe_interval_minutes: Optional[Union[float, int]] = None,
+        auto_observe_interval_minutes: Optional[float | int] = None,
         owners: Optional[Sequence[str]] = None,
     ):
         metadata = normalize_metadata(

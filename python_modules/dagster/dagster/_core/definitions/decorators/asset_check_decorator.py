@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeAlias, Union
+from typing import Any, Optional, TypeAlias
 
 from dagster import _check as check
 from dagster._annotations import public
@@ -101,7 +101,7 @@ def _build_asset_check_named_ins(
 @public
 def asset_check(
     *,
-    asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
+    asset: CoercibleToAssetKey | AssetsDefinition | SourceAsset,
     name: Optional[str] = None,
     description: Optional[str] = None,
     blocking: bool = False,

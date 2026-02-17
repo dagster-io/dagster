@@ -553,11 +553,11 @@ def capture_error(  # pyright: ignore[reportOverlappingOverload]
 
 
 def capture_error(
-    fn: Union[Callable[P, T], Callable[P, Awaitable[T]]],
-) -> Union[
-    Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]],
-    Callable[P, Awaitable[Union[T, "GrapheneError", "GraphenePythonError"]]],
-]:
+    fn: Callable[P, T] | Callable[P, Awaitable[T]],
+) -> (
+    Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]
+    | Callable[P, Awaitable[Union[T, "GrapheneError", "GraphenePythonError"]]]
+):
     if iscoroutinefunction(fn):
 
         @functools.wraps(fn)

@@ -1,6 +1,6 @@
 import json
 import subprocess
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
@@ -621,7 +621,7 @@ def test_user_deployment_default_image_tag_is_chart_version(
 
 
 @pytest.mark.parametrize("tag", [5176135, "abc1234", "20220531.1", "1234"])
-def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[str, int]):
+def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: str | int):
     deployment = create_simple_user_deployment("foo")
     deployment.image.tag = tag
 
@@ -1418,7 +1418,7 @@ def test_subchart_default_postgres_password(subchart_template: HelmTemplate):
 
 
 @pytest.mark.parametrize("tag", [5176135, "abc1234"])
-def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union[str, int]):
+def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: str | int):
     deployment_values = DagsterUserDeploymentsHelmValues.construct(
         deployments=[
             UserDeployment.construct(

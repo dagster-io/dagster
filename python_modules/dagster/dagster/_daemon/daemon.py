@@ -11,7 +11,7 @@ from collections.abc import Generator, Mapping
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import Any, Generic, Optional, TypeAlias, TypeVar, Union
+from typing import Any, Generic, Optional, TypeAlias, TypeVar
 
 from dagster import (
     DagsterInstance,
@@ -57,7 +57,7 @@ class SpanMarker(Enum):
     END_SPAN = "END_SPAN"
 
 
-DaemonIterator: TypeAlias = Generator[Union[None, SerializableErrorInfo, SpanMarker], None, None]
+DaemonIterator: TypeAlias = Generator[None | SerializableErrorInfo | SpanMarker, None, None]
 
 TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 

@@ -8,7 +8,7 @@ import time
 import uuid
 from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
-from typing import IO, Any, AnyStr, Optional, Union
+from typing import IO, Any, AnyStr, Optional
 
 import sling
 from dagster import (
@@ -149,7 +149,7 @@ class SlingResource(ConfigurableResource):
 
     @staticmethod
     def _get_replication_streams_for_context(
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
     ) -> dict[str, Any]:
         """Computes the sling replication streams config for a given execution context with an
         assets def, possibly involving a subset selection of sling assets.
@@ -215,7 +215,7 @@ class SlingResource(ConfigurableResource):
         return d
 
     def _query_metadata(
-        self, metadata_string: str, start_time: float, base_metadata: Union[list, None] = None
+        self, metadata_string: str, start_time: float, base_metadata: list | None = None
     ):
         """Metadata quering using regular expression from standard sling log.
 
@@ -366,7 +366,7 @@ class SlingResource(ConfigurableResource):
     def replicate(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
@@ -407,7 +407,7 @@ class SlingResource(ConfigurableResource):
     def _replicate(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
@@ -442,12 +442,12 @@ class SlingResource(ConfigurableResource):
 
     def _batch_sling_replicate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         env: dict,
         debug: bool,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in batch mode."""
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
@@ -515,12 +515,12 @@ class SlingResource(ConfigurableResource):
 
     def _stream_sling_replicate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         env: dict,
         debug: bool,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in stream mode."""
         # define variable to use to compute metadata during run
         current_stream = None

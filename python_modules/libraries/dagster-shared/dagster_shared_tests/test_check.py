@@ -1709,7 +1709,8 @@ BUILD_CASES = [
         [[]],  # avoid importing TestType
         [[Foo()]],
     ),
-    (Union[bool, Foo], [True], [None]),
+    (Union[bool, Foo], [True], [None]),  # noqa: UP007
+    (bool | Foo, [True], [None]),
     (Union[Foo, "Bar"], [Bar()], [None]),
     (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
     (TypeVar("T", bound=Optional[Foo]), [None], [Bar()]),
@@ -1790,7 +1791,7 @@ def test_forward_ref_flow() -> None:
 
 
 def test_never():
-    def _val() -> Union[int, str]:
+    def _val() -> int | str:
         return 4
 
     v = _val()

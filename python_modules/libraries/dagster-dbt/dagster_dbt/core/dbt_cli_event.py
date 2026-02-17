@@ -3,7 +3,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import InitVar, dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import AbstractSet, Any, NamedTuple, Optional, TypedDict, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple, Optional, TypedDict, cast  # noqa: UP035
 
 import dateutil.parser
 from dagster import (
@@ -385,10 +385,10 @@ class DbtCliEventMessage(ABC):
         self,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
-        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+        context: Optional[OpExecutionContext | AssetExecutionContext],
         target_path: Optional[Path],
         project: Optional[DbtProject],
-    ) -> Iterator[Union[Output, AssetMaterialization]]:
+    ) -> Iterator[Output | AssetMaterialization]:
         asset_key = dagster_dbt_translator.get_asset_spec(manifest, self._unique_id, project).key
         metadata = self._get_materialization_metadata(dagster_dbt_translator, manifest, target_path)
         if context and context.has_assets_def:
@@ -428,7 +428,7 @@ class DbtCliEventMessage(ABC):
         )
 
     def _get_result_check_keys(
-        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]]
+        self, context: Optional[OpExecutionContext | AssetExecutionContext]
     ) -> AbstractSet[AssetCheckKey]:
         """Returns the set of check keys for which we should emit AssetCheckResult events."""
         if context is None or not context.has_assets_def:
@@ -495,8 +495,8 @@ class DbtCliEventMessage(ABC):
         manifest: Mapping[str, Any],
         translator: DagsterDbtTranslator,
         project: Optional[DbtProject],
-        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
-    ) -> Iterator[Union[AssetCheckResult, AssetCheckEvaluation, AssetObservation]]:
+        context: Optional[OpExecutionContext | AssetExecutionContext],
+    ) -> Iterator[AssetCheckResult | AssetCheckEvaluation | AssetObservation]:
         """Converts a dbt CLI event to a set of Dagster events corresponding to a test execution."""
         key = get_asset_check_key_for_test(manifest, translator, self._unique_id, project=project)
 
@@ -528,13 +528,11 @@ class DbtCliEventMessage(ABC):
         self,
         manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
+        context: Optional[OpExecutionContext | AssetExecutionContext] = None,
         target_path: Optional[Path] = None,
         project: Optional[DbtProject] = None,
     ) -> Iterator[
-        Union[
-            Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
-        ]
+        Output | AssetMaterialization | AssetObservation | AssetCheckResult | AssetCheckEvaluation
     ]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 

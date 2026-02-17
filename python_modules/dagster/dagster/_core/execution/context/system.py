@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
 from collections.abc import Iterable, Mapping
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -477,7 +477,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_output_metadata_capture = {}
 
         self._metadata_accumulator = OutputMetadataAccumulator.empty()
-        self._seen_outputs: dict[str, Union[str, set[str]]] = {}
+        self._seen_outputs: dict[str, str | set[str]] = {}
 
         self._data_version_cache = DataVersionCache(self)
 
@@ -1188,7 +1188,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
         partitions_def = cast(
-            "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]", partitions_def
+            "TimeWindowPartitionsDefinition | MultiPartitionsDefinition", partitions_def
         )
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
@@ -1212,12 +1212,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if self.has_partition_key:
             return cast(
-                "Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition]", partitions_def
+                "MultiPartitionsDefinition | TimeWindowPartitionsDefinition", partitions_def
             ).time_window_for_partition_key(self.partition_key)
         elif self.has_partition_key_range:
             partition_key_range = self.partition_key_range
             partitions_def = cast(
-                "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]", partitions_def
+                "TimeWindowPartitionsDefinition | MultiPartitionsDefinition", partitions_def
             )
             return TimeWindow(
                 partitions_def.time_window_for_partition_key(partition_key_range.start).start,
@@ -1259,7 +1259,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
         upstream_asset_partitions_def = cast(
-            "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]",
+            "TimeWindowPartitionsDefinition | MultiPartitionsDefinition",
             upstream_asset_partitions_def,
         )
         partition_key_range = self.asset_partition_key_range_for_input(input_name)

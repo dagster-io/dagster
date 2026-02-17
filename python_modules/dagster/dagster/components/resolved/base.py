@@ -212,7 +212,7 @@ def derive_model_type(
 
             # make all fields injectable
             if field_type != str:
-                field_type = Union[field_type, str]
+                field_type = field_type | str
 
             model_fields[field_name] = (
                 field_type,

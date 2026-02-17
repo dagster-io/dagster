@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import (
     AssetCheckEvaluation,
@@ -111,7 +111,7 @@ class DbtCloudJobRunResults:
         manifest: Mapping[str, Any],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[AssetExecutionContext] = None,
-    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
+    ) -> Iterator[AssetCheckEvaluation | AssetCheckResult | AssetMaterialization | Output]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:

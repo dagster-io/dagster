@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 import dagster as dg
 import pytest
@@ -13,8 +13,8 @@ def test_extract_primitive_coercion():
         primitive_float: Optional[float] = None
         int_metadata_value: Optional[dg.IntMetadataValue] = None
         url_metadata_value: Optional[dg.UrlMetadataValue] = None
-        url_or_str_metadata_value: Optional[Union[dg.UrlMetadataValue, str]] = None
-        url_or_str_order_reversed_metadata_value: Optional[Union[str, dg.UrlMetadataValue]] = None
+        url_or_str_metadata_value: Optional[dg.UrlMetadataValue | str] = None
+        url_or_str_order_reversed_metadata_value: Optional[str | dg.UrlMetadataValue] = None
 
         @classmethod
         def namespace(cls) -> str:

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -22,7 +22,7 @@ class IngressPath(BaseModel):
     path: str
     pathType: IngressPathType
     serviceName: str
-    servicePort: Union[str, int]
+    servicePort: str | int
 
 
 class WebserverIngressConfiguration(BaseModel):

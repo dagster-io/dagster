@@ -15,7 +15,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypedDict,
     TypeVar,
-    Union,
     cast,
 )
 from weakref import WeakSet
@@ -46,7 +45,7 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
 T = TypeVar("T", bound=Any)
 
 
-def coerce_valid_log_level(log_level: Union[str, int]) -> int:
+def coerce_valid_log_level(log_level: str | int) -> int:
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
         return log_level

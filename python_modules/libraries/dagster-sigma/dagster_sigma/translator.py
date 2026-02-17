@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._annotations import deprecated
@@ -168,13 +168,13 @@ class DagsterSigmaTranslator:
         additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
     )
     def get_asset_key(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return self.get_asset_spec(data).key
 
     def get_asset_spec(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetSpec:
         """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
         if isinstance(data, SigmaWorkbookTranslatorData):

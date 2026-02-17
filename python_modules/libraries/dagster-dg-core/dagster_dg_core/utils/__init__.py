@@ -166,7 +166,7 @@ def discover_venv(path: Path) -> Path:
 
 
 @contextlib.contextmanager
-def pushd(path: Union[str, Path]) -> Iterator[None]:
+def pushd(path: str | Path) -> Iterator[None]:
     old_cwd = os.getcwd()
     os.chdir(path)
     try:
@@ -259,7 +259,7 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
 
 def hash_directory_metadata(
     hasher: Hash,
-    path: Union[str, Path],
+    path: str | Path,
     includes: Optional[Sequence[str]],
     excludes: Sequence[str],
     error_on_missing: bool,
@@ -284,7 +284,7 @@ def hash_directory_metadata(
             hash_file_metadata(hasher, filepath, error_on_missing)
 
 
-def hash_file_metadata(hasher: Hash, path: Union[str, Path], error_on_missing) -> None:
+def hash_file_metadata(hasher: Hash, path: str | Path, error_on_missing) -> None:
     """Hashes the metadata of a file.
 
     Args:
@@ -518,7 +518,7 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ##### TOML MANIPULATION
 # ########################
 
-TomlPath: TypeAlias = tuple[Union[str, int], ...]
+TomlPath: TypeAlias = tuple[str | int, ...]
 TomlDoc: TypeAlias = Union["tomlkit.TOMLDocument", dict[str, Any]]
 
 
@@ -531,7 +531,7 @@ def load_toml_as_dict(path: Path) -> dict[str, Any]:
 def get_toml_node(
     doc: TomlDoc,
     path: TomlPath,
-    expected_type: Union[type[T], tuple[type[T], ...]],
+    expected_type: type[T] | tuple[type[T], ...],
 ) -> T:
     """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
     it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
@@ -669,7 +669,7 @@ def toml_path_from_str(path: str) -> TomlPath:
 
 def create_toml_node(
     doc: dict[str, Any],
-    path: tuple[Union[str, int], ...],
+    path: tuple[str | int, ...],
     value: object,
 ) -> None:
     """Set a toml node at a path that consists of a sequence of keys and integer indices.
@@ -716,8 +716,8 @@ def create_toml_node(
 
 
 def _get_new_container_node(
-    representative_key: Union[int, str],
-) -> Union[dict[str, Any], list[Any]]:
+    representative_key: int | str,
+) -> dict[str, Any] | list[Any]:
     return [] if isinstance(representative_key, int) else {}
 
 
@@ -734,7 +734,7 @@ def capture_stdout() -> Iterator[TextIO]:
 
 
 @contextlib.contextmanager
-def activate_venv(venv_path: Union[str, Path]) -> Iterator[None]:
+def activate_venv(venv_path: str | Path) -> Iterator[None]:
     """Simulated activation of the passed in virtual environment for the current process."""
     venv_path = (Path(venv_path) if isinstance(venv_path, str) else venv_path).absolute()
     with environ(

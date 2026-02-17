@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import time
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import AssetKey, Output, asset, define_asset_job
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -195,7 +195,7 @@ GET_PARTITION_BACKFILLS_QUERY = """
 
 def _seed_runs(
     graphql_context,
-    partition_runs: list[tuple[DagsterRunStatus, Union[str, PartitionKeyRange]]],
+    partition_runs: list[tuple[DagsterRunStatus, str | PartitionKeyRange]],
     backfill_id: str,
 ) -> None:
     for status, partition_or_range in partition_runs:

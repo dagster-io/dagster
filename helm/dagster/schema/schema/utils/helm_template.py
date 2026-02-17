@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster._check as check
 import yaml
@@ -34,7 +34,7 @@ class HelmTemplate:
 
     def render(
         self,
-        values: Optional[Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues]] = None,
+        values: Optional[DagsterHelmValues | DagsterUserDeploymentsHelmValues] = None,
         values_dict: Optional[dict[str, Any]] = None,
         chart_version: Optional[str] = None,
     ) -> list[Any]:

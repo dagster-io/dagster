@@ -20,7 +20,7 @@ from dagster._utils.tags import normalize_tags
 if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
 
-PartitionConfigFn: TypeAlias = "Callable[[str], Union[RunConfig, Mapping[str, Any]]]"
+PartitionConfigFn: TypeAlias = "Callable[[str], RunConfig | Mapping[str, Any]]"
 T_PartitionsDefinition = TypeVar(
     "T_PartitionsDefinition",
     bound="PartitionsDefinition",

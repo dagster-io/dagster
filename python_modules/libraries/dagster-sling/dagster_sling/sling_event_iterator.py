@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
 
 from dagster import (
     AssetMaterialization,
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from dagster_sling.resources import SlingResource
 
 
-SlingEventType = Union[AssetMaterialization, MaterializeResult]
+SlingEventType: TypeAlias = AssetMaterialization | MaterializeResult
 
 # We define SlingEventIterator as a generic type for the sake of type hinting.
 # This is so that users who inspect the type of the return value of `SlingResource.replicate()`
@@ -77,7 +77,7 @@ def fetch_row_count_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
     replication_config: dict[str, Any],
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
 ) -> dict[str, Any]:
     target_name = replication_config["target"]
     if not materialization.metadata:
@@ -104,7 +104,7 @@ def fetch_column_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
     replication_config: dict[str, Any],
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
 ) -> dict[str, Any]:
     target_name = replication_config["target"]
 
@@ -178,7 +178,7 @@ class SlingEventIterator(Iterator[T]):
         events: Iterator[T],
         sling_cli: "SlingResource",
         replication_config: dict[str, Any],
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
     ) -> None:
         self._inner_iterator = events
         self._sling_cli = sling_cli

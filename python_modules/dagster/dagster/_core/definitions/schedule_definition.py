@@ -52,17 +52,22 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
+RunRequestIterator: TypeAlias = Iterator[RunRequest | SkipReason]
 
-ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, CoercibleToRunConfig, RunRequestIterator, Sequence[RunRequest], None
-]
+ScheduleEvaluationFunctionReturn: TypeAlias = (
+    RunRequest
+    | SkipReason
+    | CoercibleToRunConfig
+    | RunRequestIterator
+    | Sequence[RunRequest]
+    | None
+)
 RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 
-ScheduleRunConfigFunction: TypeAlias = Union[
-    Callable[["ScheduleEvaluationContext"], CoercibleToRunConfig],
-    Callable[[], CoercibleToRunConfig],
-]
+ScheduleRunConfigFunction: TypeAlias = (
+    Callable[["ScheduleEvaluationContext"], CoercibleToRunConfig]
+    | Callable[[], CoercibleToRunConfig]
+)
 
 ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Mapping[str, str]]
 ScheduleShouldExecuteFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], bool]
@@ -584,7 +589,7 @@ class ScheduleDefinition(IHasInternalInit):
         self,
         name: Optional[str] = None,
         *,
-        cron_schedule: Optional[Union[str, Sequence[str]]] = None,
+        cron_schedule: Optional[str | Sequence[str]] = None,
         job_name: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
@@ -681,9 +686,7 @@ class ScheduleDefinition(IHasInternalInit):
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[Union[Callable[..., Any], DecoratedScheduleFunction]] = (
-                None
-            )
+            self._execution_fn: Optional[Callable[..., Any] | DecoratedScheduleFunction] = None
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:
@@ -817,7 +820,7 @@ class ScheduleDefinition(IHasInternalInit):
     def dagster_internal_init(
         *,
         name: Optional[str],
-        cron_schedule: Optional[Union[str, Sequence[str]]],
+        cron_schedule: Optional[str | Sequence[str]],
         job_name: Optional[str],
         run_config: Optional[Any],
         run_config_fn: Optional[ScheduleRunConfigFunction],
@@ -909,7 +912,7 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def cron_schedule(self) -> Union[str, Sequence[str]]:
+    def cron_schedule(self) -> str | Sequence[str]:
         """Union[str, Sequence[str]]: The cron schedule representing when this schedule will be evaluated."""
         return self._cron_schedule  # type: ignore
 
@@ -957,7 +960,7 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> JobDefinition | UnresolvedAssetJobDefinition:
         """Union[JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """

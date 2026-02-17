@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 from dagster_shared.serdes import NamedTupleSerializer
 
@@ -117,7 +117,7 @@ class TimeWindowPartitionsSubset(
         cls,
         partitions_def: TimeWindowPartitionsDefinition,
         num_partitions: Optional[int],
-        included_time_windows: Sequence[Union[PersistedTimeWindow, TimeWindow]],
+        included_time_windows: Sequence[PersistedTimeWindow | TimeWindow],
     ):
         included_time_windows = [
             PersistedTimeWindow.from_public_time_window(tw, partitions_def.timezone)

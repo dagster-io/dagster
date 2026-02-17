@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping
 from datetime import datetime, timezone
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import (
     AssetExecutionContext,
@@ -90,7 +90,7 @@ class DagsterDltResource(ConfigurableResource):
 
     def extract_resource_metadata(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         resource: DltResource,
         load_info: LoadInfo,
         dlt_pipeline: Pipeline,
@@ -176,7 +176,7 @@ class DagsterDltResource(ConfigurableResource):
     @public
     def run(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         dlt_source: Optional[DltSource] = None,
         dlt_pipeline: Optional[Pipeline] = None,
         dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
@@ -237,7 +237,7 @@ class DagsterDltResource(ConfigurableResource):
 
     def _run(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         dlt_source: DltSource,
         dlt_pipeline: Pipeline,
         dagster_dlt_translator: DagsterDltTranslator,

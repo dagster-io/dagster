@@ -2,7 +2,7 @@ import json
 from abc import ABC
 from collections.abc import Mapping
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
@@ -89,7 +89,7 @@ class AirbyteSyncMode(ABC):
     def incremental_append_dedup(
         cls,
         cursor_field: Optional[str] = None,
-        primary_key: Optional[Union[str, list[str]]] = None,
+        primary_key: Optional[str | list[str]] = None,
     ) -> "AirbyteSyncMode":
         """Syncs new records from the source, appending to an append-only history
         table in the destination. Also generates a deduplicated view mirroring the
@@ -266,7 +266,7 @@ class AirbyteConnection:
         stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
         destination_namespace: Optional[
-            Union[AirbyteDestinationNamespace, str]
+            AirbyteDestinationNamespace | str
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
         prefix: Optional[str] = None,
     ):

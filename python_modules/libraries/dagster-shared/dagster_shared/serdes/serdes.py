@@ -63,15 +63,15 @@ if TYPE_CHECKING:
 ###################################################################################################
 
 
-JsonSerializableValue: TypeAlias = Union[
-    Sequence["JsonSerializableValue"],
-    Mapping[str, "JsonSerializableValue"],
-    str,
-    int,
-    float,
-    bool,
-    None,
-]
+JsonSerializableValue: TypeAlias = (
+    Sequence["JsonSerializableValue"]
+    | Mapping[str, "JsonSerializableValue"]
+    | str
+    | int
+    | float
+    | bool
+    | None
+)
 
 PackableValue: TypeAlias = Union[
     Sequence["PackableValue"],
@@ -235,7 +235,7 @@ _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
 T = TypeVar("T")
 U = TypeVar("U")
 T_Type = TypeVar("T_Type", bound=type[object])
-T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
+T_Scalar = TypeVar("T_Scalar", bound=str | int | float | bool | None)
 
 
 @overload
@@ -270,7 +270,7 @@ def whitelist_for_serdes(
     skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
-) -> Union[T_Type, Callable[[T_Type], T_Type]]:
+) -> T_Type | Callable[[T_Type], T_Type]:
     """Decorator to whitelist an object (NamedTuple / dataclass / pydantic model) or
     Enum subclass to be serializable. Various arguments can be passed to alter
     serialization behavior for backcompat purposes.
@@ -1107,7 +1107,7 @@ def deserialize_value(
     val: str,
     as_type: tuple[type[T_PackableValue], type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]: ...
+) -> T_PackableValue | U_PackableValue: ...
 
 
 @overload
@@ -1129,10 +1129,10 @@ def deserialize_value(
 def deserialize_value(
     val: str,
     as_type: Optional[
-        Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
+        type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
+) -> PackableValue | T_PackableValue | T_PackableValue | U_PackableValue:
     """Deserialize a json encoded string to a Python object.
 
     Two steps:
@@ -1164,20 +1164,18 @@ def deserialize_values(
 @overload
 def deserialize_values(
     vals: Iterable[str],
-    as_type: Optional[
-        Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
-    ],
+    as_type: Optional[type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]],
     whitelist_map: WhitelistMap = ...,
-) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
+) -> Sequence[PackableValue | T_PackableValue | T_PackableValue | U_PackableValue]: ...
 
 
 def deserialize_values(
     vals: Iterable[str],
     as_type: Optional[
-        Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
+        type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
+) -> Sequence[PackableValue | T_PackableValue | T_PackableValue | U_PackableValue]:
     """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
     with (
         disable_dagster_warnings(),
@@ -1264,7 +1262,7 @@ def unpack_value(
     val: JsonSerializableValue,
     as_type: tuple[type[T_PackableValue], type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]: ...
+) -> T_PackableValue | U_PackableValue: ...
 
 
 @overload
@@ -1286,10 +1284,10 @@ def unpack_value(
 def unpack_value(
     val: JsonSerializableValue,
     as_type: Optional[
-        Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
+        type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
+) -> PackableValue | T_PackableValue | T_PackableValue | U_PackableValue:
     """Convert a JSON-serializable complex of dicts, lists, and scalars into domain objects.
 
     Dicts with special keys are processed specially:

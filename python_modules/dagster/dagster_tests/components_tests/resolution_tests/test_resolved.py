@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Annotated, Literal, NamedTuple, Optional, TypeAlias, Union
+from typing import Annotated, Literal, NamedTuple, Optional, TypeAlias
 
 import dagster as dg
 import pytest
@@ -255,7 +255,7 @@ def test_component_docs():
         asset_key: str = Field(
             ..., description="The asset key to test. Slashes are parsed into key parts."
         )
-        tests: list[Union[RangeTest, SumTest]]
+        tests: list[RangeTest | SumTest]
 
         def build_defs(self, context):
             return dg.Definitions()
@@ -532,7 +532,7 @@ def test_containers():
         t: tuple[ResolvedFoo, ...]
         s: Sequence[ResolvedFoo]
         mli: Optional[list[ResolvedFoo]]
-        uli: Union[list[ResolvedFoo], str]
+        uli: list[ResolvedFoo] | str
 
     t = Target.resolve_from_yaml("""
 li:

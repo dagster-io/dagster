@@ -14,7 +14,6 @@ from typing import (  # noqa: UP035
     NamedTuple,
     Optional,
     TypeAlias,
-    Union,
     cast,
 )
 
@@ -406,7 +405,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         run_id,
         cursor: Optional[str] = None,
-        of_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
+        of_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> EventLogConnection:
@@ -859,7 +858,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _apply_tags_table_joins(
         self,
         table: db.Table,
-        tags: Mapping[str, Union[str, Sequence[str]]],
+        tags: Mapping[str, str | Sequence[str]],
         asset_key: Optional[AssetKey],
     ) -> db.Table:
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
@@ -971,7 +970,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def fetch_materializations(
         self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
+        records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -997,7 +996,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def fetch_failed_materializations(
         self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
+        records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1006,7 +1005,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def fetch_observations(
         self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
+        records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1032,7 +1031,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def fetch_run_status_changes(
         self,
-        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        records_filter: DagsterEventType | RunStatusChangeRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -1067,7 +1066,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_logs_for_all_runs_by_log_id(
         self,
         after_cursor: int = -1,
-        dagster_event_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
+        dagster_event_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
         limit: Optional[int] = None,
     ) -> Mapping[int, EventLogEntry]:
         check.int_param(after_cursor, "after_cursor")

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import pytest
 import responses
@@ -249,7 +249,7 @@ def test_translator_invariant_group_name_with_asset_decorator(
 def test_selections(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
+    context_type: type[AssetExecutionContext] | type[OpExecutionContext],
     select: Optional[str],
     exclude: Optional[str],
     selector: Optional[str],

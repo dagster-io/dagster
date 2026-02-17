@@ -10,7 +10,6 @@ from typing import (  # noqa: UP035
     NamedTuple,
     Optional,
     TypeAlias,
-    Union,
     cast,
 )
 
@@ -706,7 +705,7 @@ class MultiDependencyDefinition(
         [
             (
                 "dependencies",
-                PublicAttr[Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]]],
+                PublicAttr[Sequence[DependencyDefinition | type["MappedInputPlaceholder"]]],
             )
         ],
     ),
@@ -754,7 +753,7 @@ class MultiDependencyDefinition(
 
     def __new__(
         cls,
-        dependencies: Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]],
+        dependencies: Sequence[DependencyDefinition | type["MappedInputPlaceholder"]],
     ):
         from dagster._core.definitions.composition import MappedInputPlaceholder
 
@@ -789,7 +788,7 @@ class MultiDependencyDefinition(
     @public
     def get_dependencies_and_mappings(
         self,
-    ) -> Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[DependencyDefinition | type["MappedInputPlaceholder"]]:
         """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
 
@@ -830,7 +829,7 @@ class BlockingAssetChecksDependencyDefinition(
     @public
     def get_dependencies_and_mappings(
         self,
-    ) -> Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[DependencyDefinition | type["MappedInputPlaceholder"]]:
         return self.get_node_dependencies()
 
 
@@ -847,7 +846,7 @@ class DynamicCollectDependencyDefinition(
 
 DepTypeAndOutputs: TypeAlias = tuple[
     DependencyType,
-    Union[NodeOutput, list[Union[NodeOutput, type["MappedInputPlaceholder"]]]],
+    NodeOutput | list[NodeOutput | type["MappedInputPlaceholder"]],
 ]
 
 InputToOutputMap: TypeAlias = dict[NodeInput, DepTypeAndOutputs]
@@ -870,7 +869,7 @@ def _create_handle_dict(
             if isinstance(
                 dep_def, (MultiDependencyDefinition, BlockingAssetChecksDependencyDefinition)
             ):
-                handles: list[Union[NodeOutput, type[MappedInputPlaceholder]]] = []
+                handles: list[NodeOutput | type[MappedInputPlaceholder]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
                         handles.append(node_dict[inner_dep.node].get_output(inner_dep.output))
@@ -1110,14 +1109,14 @@ class DependencyStructure:
 
     def get_fan_in_deps(
         self, node_input: NodeInput
-    ) -> Sequence[Union[NodeOutput, type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[NodeOutput | type["MappedInputPlaceholder"]]:
         check.inst_param(node_input, "node_input", NodeInput)
         dep_type, deps = self._input_to_output_map[node_input]
         check.invariant(
             dep_type == DependencyType.FAN_IN,
             f"Cannot call get_multi_dep when dep is not fan in, got {dep_type}",
         )
-        return cast("list[Union[NodeOutput, type[MappedInputPlaceholder]]]", deps)
+        return cast("list[NodeOutput | type[MappedInputPlaceholder]]", deps)
 
     def has_dynamic_fan_in_dep(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)

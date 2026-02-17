@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
@@ -69,7 +69,7 @@ def fetch_asset_condition_evaluation_record_for_partition(
 
 
 def entity_key_from_graphql_input(
-    graphene_input: Union[GrapheneAssetKeyInput, GrapheneAssetCheckHandleInput],
+    graphene_input: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
 ) -> EntityKey:
     if "path" in graphene_input:
         return AssetKey.from_graphql_input(graphene_input)
@@ -79,7 +79,7 @@ def entity_key_from_graphql_input(
 
 def fetch_true_partitions_for_evaluation_node(
     graphene_info: "ResolveInfo",
-    graphene_entity_key: Union[GrapheneAssetKeyInput, GrapheneAssetCheckHandleInput],
+    graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
     evaluation_id: int,
     node_unique_id: str,
 ) -> Sequence[str]:
@@ -114,7 +114,7 @@ def fetch_true_partitions_for_evaluation_node(
 
 def fetch_asset_condition_evaluation_records_for_asset_key(
     graphene_info: "ResolveInfo",
-    graphene_entity_key: Union[GrapheneAssetKeyInput, GrapheneAssetCheckHandleInput],
+    graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
     limit: int,
     cursor: Optional[str],
 ) -> GrapheneAssetConditionEvaluationRecordsOrError:

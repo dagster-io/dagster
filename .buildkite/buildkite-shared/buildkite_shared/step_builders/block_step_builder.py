@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict, Union
+from typing import Optional, TypedDict
 
 
 class InputSelectOption(TypedDict):
@@ -30,7 +30,7 @@ BlockStepConfiguration = TypedDict(
         "block": str,
         "key": Optional[str],
         "prompt": Optional[str],
-        "fields": list[Union[InputSelectField, InputTextField]],
+        "fields": list[InputSelectField | InputTextField],
         "depends_on": Optional[list[str]],
         "if": Optional[str],
         "skip": Optional[str],

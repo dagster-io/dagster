@@ -740,14 +740,14 @@ class FromUnresolvedStepOutput(IHaveNew):
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 @record_custom
 class FromDynamicCollect(IHaveNew):
-    source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]
+    source: FromPendingDynamicStepOutput | FromUnresolvedStepOutput
     # deprecated, preserved for back-compat
     node_handle: NodeHandle
     input_name: str
 
     def __new__(
         cls,
-        source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput],
+        source: FromPendingDynamicStepOutput | FromUnresolvedStepOutput,
         # deprecated, preserved for back-compat
         node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
@@ -798,7 +798,7 @@ class UnresolvedMappedStepInput:
 
     name: str
     dagster_type_key: str
-    source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]
+    source: FromPendingDynamicStepOutput | FromUnresolvedStepOutput
 
     @property
     def resolved_by_step_key(self) -> str:
@@ -848,11 +848,8 @@ class UnresolvedCollectStepInput:
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
-StepInputSourceUnion = Union[
-    StepInputSource,
-    FromDynamicCollect,
-    FromUnresolvedStepOutput,
-    FromPendingDynamicStepOutput,
-]
+StepInputSourceUnion: TypeAlias = (
+    StepInputSource | FromDynamicCollect | FromUnresolvedStepOutput | FromPendingDynamicStepOutput
+)
 
 StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore

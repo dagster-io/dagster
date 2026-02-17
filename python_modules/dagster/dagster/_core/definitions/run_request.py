@@ -176,7 +176,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         self,
         target_definition: "JobDefinition",
         dynamic_partitions_requests: Sequence[
-            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+            AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
         ],
         dynamic_partitions_store: Optional["DynamicPartitionsStore"],
     ) -> "RunRequest":
@@ -297,13 +297,11 @@ class SensorResult(
             ("cursor", Optional[str]),
             (
                 "dynamic_partitions_requests",
-                Optional[
-                    Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
-                ],
+                Optional[Sequence[DeleteDynamicPartitionsRequest | AddDynamicPartitionsRequest]],
             ),
             (
                 "asset_events",
-                list[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
+                list[AssetObservation | AssetMaterialization | AssetCheckEvaluation],
             ),
             (
                 "automation_condition_evaluations",
@@ -336,13 +334,13 @@ class SensorResult(
     def __new__(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
-        skip_reason: Optional[Union[str, SkipReason]] = None,
+        skip_reason: Optional[str | SkipReason] = None,
         cursor: Optional[str] = None,
         dynamic_partitions_requests: Optional[
-            Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
+            Sequence[DeleteDynamicPartitionsRequest | AddDynamicPartitionsRequest]
         ] = None,
         asset_events: Optional[
-            Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]
+            Sequence[AssetObservation | AssetMaterialization | AssetCheckEvaluation]
         ] = None,
         **kwargs,
     ):

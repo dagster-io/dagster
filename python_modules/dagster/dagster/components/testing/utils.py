@@ -24,7 +24,7 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
@@ -195,7 +195,7 @@ class DefsFolderSandbox:
     def scaffold_component(
         self,
         component_cls: Any,
-        defs_path: Optional[Union[Path, str]] = None,
+        defs_path: Optional[Path | str] = None,
         scaffold_params: Optional[dict[str, Any]] = None,
         scaffold_format: ScaffoldFormatOptions = "yaml",
         defs_yaml_contents: Optional[dict[str, Any]] = None,

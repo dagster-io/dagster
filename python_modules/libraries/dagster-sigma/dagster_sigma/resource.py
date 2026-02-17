@@ -10,7 +10,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import aiohttp
 import dagster._check as check
@@ -724,12 +724,12 @@ class SigmaOrganization(ConfigurableResource):
 def load_sigma_asset_specs(
     organization: SigmaOrganization,
     dagster_sigma_translator: Optional[
-        Union[DagsterSigmaTranslator, type[DagsterSigmaTranslator]]
+        DagsterSigmaTranslator | type[DagsterSigmaTranslator]
     ] = None,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
     fetch_lineage_data: bool = True,
-    snapshot_path: Optional[Union[str, Path]] = None,
+    snapshot_path: Optional[str | Path] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
@@ -779,7 +779,7 @@ def load_sigma_asset_specs(
 
 def _get_translator_spec_assert_keys_match(
     translator: DagsterSigmaTranslator,
-    data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData],
+    data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData,
 ) -> AssetSpec:
     key = translator.get_asset_key(data)
     spec = translator.get_asset_spec(data)

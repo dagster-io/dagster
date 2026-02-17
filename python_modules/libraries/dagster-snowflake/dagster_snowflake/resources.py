@@ -520,8 +520,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
     @public
     @contextmanager
     def get_connection(
-        self, raw_conn: bool = True
-    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
+        self,
+        raw_conn: bool = True,
+        # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
+    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:  # noqa: UP007
         """Gets a connection to Snowflake as a context manager.
 
         If connector configuration is not set, SnowflakeResource.get_connection() will return a
@@ -880,8 +882,10 @@ class SnowflakeConnection:
     @public
     @contextmanager
     def get_connection(
-        self, raw_conn: bool = True
-    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
+        self,
+        raw_conn: bool = True,
+        # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
+    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:  # noqa: UP007
         """Gets a connection to Snowflake as a context manager.
 
         If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
@@ -912,7 +916,7 @@ class SnowflakeConnection:
     def execute_query(
         self,
         sql: str,
-        parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
+        parameters: Optional[Sequence[Any] | Mapping[Any, Any]] = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
     ):
@@ -961,7 +965,7 @@ class SnowflakeConnection:
     def execute_queries(
         self,
         sql_queries: Sequence[str],
-        parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
+        parameters: Optional[Sequence[Any] | Mapping[Any, Any]] = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
     ) -> Optional[Sequence[Any]]:
@@ -1104,7 +1108,8 @@ def snowflake_resource(context) -> SnowflakeConnection:
 
 def fetch_last_updated_timestamps(
     *,
-    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],
+    # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
+    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],  # noqa: UP007
     schema: str,
     tables: Sequence[str],
     database: Optional[str] = None,

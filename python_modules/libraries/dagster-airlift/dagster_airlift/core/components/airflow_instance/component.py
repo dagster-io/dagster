@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 from dagster import ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
@@ -77,7 +77,7 @@ class InDagsterAssetRef(Resolvable):
     by_key: ResolvedAssetKey
 
 
-def resolve_mapped_asset(context: ResolutionContext, model) -> Union[AssetKey, AssetSpec]:
+def resolve_mapped_asset(context: ResolutionContext, model) -> AssetKey | AssetSpec:
     if isinstance(model, InAirflowAsset.model()):
         return InAirflowAsset.resolve_from_model(context, model).spec
     elif isinstance(model, InDagsterAssetRef.model()):
@@ -87,10 +87,10 @@ def resolve_mapped_asset(context: ResolutionContext, model) -> Union[AssetKey, A
 
 
 ResolvedMappedAsset: TypeAlias = Annotated[
-    Union[AssetKey, AssetSpec],
+    AssetKey | AssetSpec,
     Resolver(
         resolve_mapped_asset,
-        model_field_type=Union[InAirflowAsset.model(), InDagsterAssetRef.model()],
+        model_field_type=InAirflowAsset.model() | InDagsterAssetRef.model(),
     ),
 ]
 
@@ -197,9 +197,8 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
     AirflowAuthBackend,
     Resolver(
         resolve_auth,
-        model_field_type=Union[
-            ResolvedAirflowBasicAuthBackend.model(), ResolvedAirflowMwaaAuthBackend.model()
-        ],
+        model_field_type=ResolvedAirflowBasicAuthBackend.model()
+        | ResolvedAirflowMwaaAuthBackend.model(),
     ),
 ]
 
@@ -313,7 +312,7 @@ def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
 
 def handle_iterator(
     mappings: Optional[Sequence[AirflowDagMapping]],
-) -> Iterator[tuple[Union[TaskHandle, DagHandle], Sequence[ResolvedMappedAsset]]]:
+) -> Iterator[tuple[TaskHandle | DagHandle, Sequence[ResolvedMappedAsset]]]:
     if mappings is None:
         return
     for mapping in mappings:

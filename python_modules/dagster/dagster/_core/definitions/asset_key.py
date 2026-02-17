@@ -1,7 +1,7 @@
 import re
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, TypeVar, Union
 
 import dagster_shared.seven as seven
 from dagster_pipes import to_assey_key_path
@@ -55,7 +55,7 @@ class AssetKey(IHaveNew):
 
     def __new__(
         cls,
-        path: Union[str, Sequence[str]],
+        path: str | Sequence[str],
     ):
         if isinstance(path, str):
             parts = (path,)
@@ -176,9 +176,9 @@ class AssetKey(IHaveNew):
         return AssetKey(list(prefix) + list(self.path))
 
 
-CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
-CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
-CoercibleToAssetKeySubset = Union[str, Sequence[str]]
+CoercibleToAssetKey: TypeAlias = AssetKey | str | Sequence[str]
+CoercibleToAssetKeyPrefix: TypeAlias = str | Sequence[str]
+CoercibleToAssetKeySubset: TypeAlias = str | Sequence[str]
 
 
 def check_opt_coercible_to_asset_key_prefix_param(
@@ -250,7 +250,7 @@ class AssetCheckKey(NamedTuple):
         return AssetCheckKey(asset_key, self.name)
 
 
-EntityKey = Union[AssetKey, AssetCheckKey]
+EntityKey: TypeAlias = AssetKey | AssetCheckKey
 T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
 
 

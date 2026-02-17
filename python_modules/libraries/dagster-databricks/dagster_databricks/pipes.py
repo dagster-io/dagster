@@ -8,7 +8,7 @@ import sys
 import time
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
-from typing import Any, Literal, Optional, TextIO, Union
+from typing import Any, Literal, Optional, TextIO
 
 import dagster._check as check
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -70,14 +70,14 @@ class BasePipesDatabricksClient(PipesClient):
     def run(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
         **kwargs,
     ):
         raise NotImplementedError()
 
     def _poll_til_success(
-        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+        self, context: OpExecutionContext | AssetExecutionContext, run_id: int
     ) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
@@ -242,7 +242,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
         task: jobs.SubmitTask,
         submit_args: Optional[Mapping[str, Any]] = None,
@@ -306,7 +306,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
 
     def _enrich_submit_task_dict(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
     ) -> dict[str, Any]:
@@ -603,7 +603,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
         task: jobs.SubmitTask,
         submit_args: Optional[Mapping[str, Any]] = None,
@@ -668,7 +668,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
 
     def _enrich_submit_task_dict(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
     ) -> dict[str, Any]:

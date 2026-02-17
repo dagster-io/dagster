@@ -5,7 +5,7 @@ import tempfile
 from abc import abstractmethod
 from collections.abc import Awaitable
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
 from dagster_shared import check
@@ -242,7 +242,7 @@ class StateBackedComponent(Component):
         """
 
     @abstractmethod
-    def write_state_to_path(self, state_path: Path) -> Union[None, Awaitable[None]]:
+    def write_state_to_path(self, state_path: Path) -> None | Awaitable[None]:
         """Fetches and writes required state to a local file. This method can be
         implemented as either sync or async.
 

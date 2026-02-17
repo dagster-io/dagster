@@ -381,7 +381,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def _graphene_asset_owner_from_owner_str(
         self, owner_str: str
-    ) -> Union[GrapheneUserAssetOwner, GrapheneTeamAssetOwner]:
+    ) -> GrapheneUserAssetOwner | GrapheneTeamAssetOwner:
         # TODO: (prha) switch to use definition_owner_from_owner_str once we have switched the frontend
         # typename checks
         if is_valid_email(owner_str):
@@ -464,7 +464,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def get_node_definition_snap(
         self,
         graphene_info: ResolveInfo,
-    ) -> Optional[Union[GraphDefSnap, OpDefSnap]]:
+    ) -> Optional[GraphDefSnap | OpDefSnap]:
         selector = self._job_selector()
         if selector is None:
             return None
@@ -516,7 +516,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def get_required_resource_keys(
         self,
         graphene_info: ResolveInfo,
-        node_def_snap: Union[GraphDefSnap, OpDefSnap],
+        node_def_snap: GraphDefSnap | OpDefSnap,
     ) -> Sequence[str]:
         all_keys = self.get_required_resource_keys_rec(graphene_info, node_def_snap)
         return list(set(all_keys))
@@ -524,7 +524,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def get_required_resource_keys_rec(
         self,
         graphene_info: ResolveInfo,
-        node_def_snap: Union[GraphDefSnap, OpDefSnap],
+        node_def_snap: GraphDefSnap | OpDefSnap,
     ) -> Sequence[str]:
         if isinstance(node_def_snap, GraphDefSnap):
             constituent_node_names = [
@@ -1207,7 +1207,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_op(
         self, graphene_info: ResolveInfo
-    ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
+    ) -> Optional[GrapheneSolidDefinition | GrapheneCompositeSolidDefinition]:
         if not self.is_executable:
             return None
         job = self.get_remote_job(graphene_info)

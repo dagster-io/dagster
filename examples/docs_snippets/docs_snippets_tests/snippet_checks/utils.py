@@ -10,7 +10,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Literal, Optional, TypeAlias
 
 import pexpect
 
@@ -64,7 +64,7 @@ USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 
 
 def _run_command(
-    cmd: Union[str, Sequence[str]],
+    cmd: str | Sequence[str],
     expect_error: bool = False,
     input_str: Optional[str] = None,
 ) -> str:
@@ -298,8 +298,8 @@ class SnippetGenerationContext:
 
     def run_command_and_snippet_output(
         self,
-        cmd: Union[str, Sequence[str]],
-        snippet_path: Optional[Union[Path, str]] = None,
+        cmd: str | Sequence[str],
+        snippet_path: Optional[Path | str] = None,
         snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
         custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
         ignore_output: bool = False,
@@ -350,8 +350,8 @@ class SnippetGenerationContext:
 
     def check_file(
         self,
-        file_path: Union[Path, str],
-        snippet_path: Optional[Union[Path, str]] = None,
+        file_path: Path | str,
+        snippet_path: Optional[Path | str] = None,
         snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
     ):
         """Check that the contents of the file at `file_path` match the contents of the snippet
@@ -387,9 +387,9 @@ class SnippetGenerationContext:
 
     def create_file(
         self,
-        file_path: Union[Path, str],
+        file_path: Path | str,
         contents: str,
-        snippet_path: Optional[Union[Path, str]] = None,
+        snippet_path: Optional[Path | str] = None,
         snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
     ):
         """Create a file with the given contents. If `snippet_path` is provided, outputs

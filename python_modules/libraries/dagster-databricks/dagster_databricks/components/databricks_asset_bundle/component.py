@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 
 from dagster import (
     AssetExecutionContext,
@@ -89,17 +89,13 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ),
     ]
     compute_config: Annotated[
-        Union[
-            ResolvedDatabricksNewClusterConfig,
-            ResolvedDatabricksExistingClusterConfig,
-            ResolvedDatabricksServerlessConfig,
-        ],
+        ResolvedDatabricksNewClusterConfig
+        | ResolvedDatabricksExistingClusterConfig
+        | ResolvedDatabricksServerlessConfig,
         Resolver.default(
-            model_field_type=Union[
-                ResolvedDatabricksNewClusterConfig,
-                ResolvedDatabricksExistingClusterConfig,
-                ResolvedDatabricksServerlessConfig,
-            ],
+            model_field_type=ResolvedDatabricksNewClusterConfig
+            | ResolvedDatabricksExistingClusterConfig
+            | ResolvedDatabricksServerlessConfig,
             description=(
                 "A mapping defining a Databricks compute config. "
                 "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "

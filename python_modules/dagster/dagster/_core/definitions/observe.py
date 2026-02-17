@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def observe(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[AssetsDefinition | SourceAsset],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,

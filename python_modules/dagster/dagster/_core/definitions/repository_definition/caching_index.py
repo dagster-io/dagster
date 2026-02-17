@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import Generic, Optional, Union, cast
+from typing import Generic, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -15,7 +15,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
         definition_class_name: str,
         definition_kind: str,
         definitions: Mapping[
-            str, Union[T_RepositoryLevelDefinition, Callable[[], T_RepositoryLevelDefinition]]
+            str, T_RepositoryLevelDefinition | Callable[[], T_RepositoryLevelDefinition]
         ],
         validation_fn: Callable[[T_RepositoryLevelDefinition], T_RepositoryLevelDefinition],
         lazy_definitions_fn: Optional[Callable[[], Sequence[T_RepositoryLevelDefinition]]] = None,
@@ -42,7 +42,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
         ] = validation_fn
 
         self._definitions: Mapping[
-            str, Union[T_RepositoryLevelDefinition, Callable[[], T_RepositoryLevelDefinition]]
+            str, T_RepositoryLevelDefinition | Callable[[], T_RepositoryLevelDefinition]
         ] = definitions
         self._definition_cache: dict[str, T_RepositoryLevelDefinition] = {}
         self._definition_names: Optional[Sequence[str]] = None

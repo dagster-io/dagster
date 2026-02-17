@@ -2,7 +2,7 @@ import inspect
 import json
 from collections import OrderedDict, defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, TypeAlias, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public, superseded
@@ -219,7 +219,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
-        monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+        monitored_assets: Sequence[AssetKey] | AssetSelection,
         last_tick_completion_time: Optional[float] = None,
         last_run_key: Optional[str] = None,
         cursor: Optional[str] = None,
@@ -981,7 +981,7 @@ def get_cursor_from_latest_materializations(
 
 def build_multi_asset_sensor_context(
     *,
-    monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+    monitored_assets: Sequence[AssetKey] | AssetSelection,
     repository_def: Optional["RepositoryDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
@@ -1078,14 +1078,14 @@ def build_multi_asset_sensor_context(
     )
 
 
-AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason, SensorResult]],
-    Sequence[RunRequest],
-    RunRequest,
-    SkipReason,
-    None,
-    SensorResult,
-]
+AssetMaterializationFunctionReturn: TypeAlias = (
+    Iterator[RunRequest | SkipReason | SensorResult]
+    | Sequence[RunRequest]
+    | RunRequest
+    | SkipReason
+    | None
+    | SensorResult
+)
 AssetMaterializationFunction = Callable[
     ...,
     AssetMaterializationFunctionReturn,
@@ -1142,7 +1142,7 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
     def __init__(
         self,
         name: str,
-        monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+        monitored_assets: Sequence[AssetKey] | AssetSelection,
         job_name: Optional[str],
         asset_materialization_fn: MultiAssetMaterializationFunction,
         minimum_interval_seconds: Optional[int] = None,
@@ -1297,7 +1297,7 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
     def dagster_internal_init(  # type: ignore
         *,
         name: str,
-        monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+        monitored_assets: Sequence[AssetKey] | AssetSelection,
         job_name: Optional[str],
         asset_materialization_fn: MultiAssetMaterializationFunction,
         minimum_interval_seconds: Optional[int],

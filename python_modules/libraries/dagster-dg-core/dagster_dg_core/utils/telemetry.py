@@ -3,7 +3,7 @@ import sys
 from collections.abc import Callable, Mapping
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, overload
 
 import click
 from dagster_shared.telemetry import (
@@ -101,7 +101,7 @@ def cli_telemetry_wrapper(
 
 def cli_telemetry_wrapper(
     target_fn: Optional[T_Callable] = None, *, metadata: Optional[Mapping[str, str]] = None
-) -> Union[T_Callable, Callable[[Callable[P, T]], Callable[P, T]]]:
+) -> T_Callable | Callable[[Callable[P, T]], Callable[P, T]]:
     """Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
     """

@@ -172,7 +172,7 @@ def job(
     partitions_def: Optional["PartitionsDefinition"] = None,
     input_values: Optional[Mapping[str, object]] = None,
     owners: Optional[Sequence[str]] = None,
-) -> Union[JobDefinition, _Job]:
+) -> JobDefinition | _Job:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
     Using this decorator allows you to build an executable job by writing a function that invokes

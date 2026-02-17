@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import (
     AssetCheckEvaluation,
@@ -53,7 +53,7 @@ class DbtCloudCliInvocation:
 
     def wait(
         self, timeout: Optional[float] = None
-    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
+    ) -> Iterator[AssetCheckEvaluation | AssetCheckResult | AssetMaterialization | Output]:
         run = self.run_handler.wait(timeout=timeout)
 
         # Write dbt Cloud run logs to stdout

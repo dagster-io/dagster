@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, public
@@ -37,9 +37,7 @@ class DynamicPartitionsDefinition(
             (
                 "partition_fn",
                 PublicAttr[
-                    Optional[
-                        Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
-                    ]
+                    Optional[Callable[[Optional[datetime]], Sequence[Partition] | Sequence[str]]]
                 ],
             ),
             ("name", PublicAttr[Optional[str]]),
@@ -78,7 +76,7 @@ class DynamicPartitionsDefinition(
     def __new__(
         cls,
         partition_fn: Optional[
-            Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
+            Callable[[Optional[datetime]], Sequence[Partition] | Sequence[str]]
         ] = None,
         name: Optional[str] = None,
     ):

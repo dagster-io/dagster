@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Callable, Generator
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, overload
 
 from dagster._symbol_annotations.public import public
 
@@ -62,7 +62,7 @@ def template_var() -> Callable[[TemplateVarFn], TemplateVarFn]: ...
 @public
 def template_var(
     fn: Optional[TemplateVarFn] = None,
-) -> Union[TemplateVarFn, Callable[[TemplateVarFn], TemplateVarFn]]:
+) -> TemplateVarFn | Callable[[TemplateVarFn], TemplateVarFn]:
     """Decorator that marks a function as a template variable for use in component YAML definitions.
 
     Template variables provide dynamic values and functions that can be injected into component

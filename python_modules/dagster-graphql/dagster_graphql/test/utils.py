@@ -4,7 +4,7 @@ import tempfile
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, TypeAlias, Union, cast
+from typing import Any, Optional, TypeAlias, cast
 
 import dagster._check as check
 import graphene
@@ -305,7 +305,7 @@ def materialize_assets(
     partition_keys: Optional[Sequence[str]] = None,
     run_config_data: Optional[Mapping[str, Any]] = None,
     location_name: Optional[str] = None,
-) -> Union[GqlResult, Sequence[GqlResult]]:
+) -> GqlResult | Sequence[GqlResult]:
     from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 
     gql_asset_selection = cast(

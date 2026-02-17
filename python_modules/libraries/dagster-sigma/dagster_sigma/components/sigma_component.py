@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, Optional, TypeAlias
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -64,7 +64,7 @@ def resolve_sigma_organization(context: ResolutionContext, model) -> SigmaOrgani
     )
 
 
-SigmaTranslatorData: TypeAlias = Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+SigmaTranslatorData: TypeAlias = SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
 SigmaTranslationFn: TypeAlias = TranslationFn[SigmaTranslatorData]
 
 ResolvedTargetedSigmaTranslationFn = Annotated[
@@ -133,7 +133,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_multilayer_translation,
-        model_field_type=Union[str, SigmaAssetArgs.model()],
+        model_field_type=str | SigmaAssetArgs.model(),
     ),
 ]
 

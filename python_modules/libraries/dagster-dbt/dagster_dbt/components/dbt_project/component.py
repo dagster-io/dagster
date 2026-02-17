@@ -6,7 +6,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 import dagster as dg
 from dagster._annotations import public
@@ -129,10 +129,10 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     """
 
     project: Annotated[
-        Union[DbtProject, DbtProjectManager],
+        DbtProject | DbtProjectManager,
         Resolver(
             resolve_dbt_project,
-            model_field_type=Union[str, DbtProjectArgs.model(), RemoteGitDbtProjectManager.model()],
+            model_field_type=str | DbtProjectArgs.model() | RemoteGitDbtProjectManager.model(),
             description="The path to the dbt project or a mapping defining a DbtProject",
             examples=[
                 "{{ project_root }}/path/to/dbt_project",
@@ -145,7 +145,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         ),
     ]
     cli_args: Annotated[
-        list[Union[str, dict[str, Any]]],
+        list[str | dict[str, Any]],
         Resolver.passthrough(
             description="Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.",
             examples=[
@@ -424,7 +424,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             .resolve_value(self.cli_args, as_type=list[str])
         )
 
-        def _normalize_arg(arg: Union[str, dict[str, Any]]) -> list[str]:
+        def _normalize_arg(arg: str | dict[str, Any]) -> list[str]:
             if isinstance(arg, str):
                 return [arg]
 

@@ -2,7 +2,7 @@ import logging
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
@@ -54,7 +54,7 @@ CHECKPOINT_COUNT = 25
 
 @record
 class BackfillRunRequest:
-    key_or_range: Union[str, PartitionKeyRange]
+    key_or_range: str | PartitionKeyRange
     run_tags: Mapping[str, str]
     run_config: Mapping[str, Any]
 
@@ -227,7 +227,7 @@ def _get_partitions_chunk(
     backfill_job: PartitionBackfill,
     chunk_size: int,
     partition_set: RemotePartitionSet,
-) -> tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
+) -> tuple[Sequence[str | PartitionKeyRange], str, bool]:
     partition_names = cast("Sequence[str]", backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
     backfill_policy = partition_set.backfill_policy
@@ -326,7 +326,7 @@ def submit_backfill_runs(
     instance: DagsterInstance,
     create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
-    partition_names_or_ranges: Optional[Sequence[Union[str, PartitionKeyRange]]] = None,
+    partition_names_or_ranges: Optional[Sequence[str | PartitionKeyRange]] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
@@ -380,8 +380,8 @@ def submit_backfill_runs(
     # Partition-scoped run config is prohibited at the definitions level for a jobs that materialize
     # ranges, so we can assume that all partition data will have the same run config and tags as the
     # first partition.
-    tags_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, str]]
-    run_config_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, Any]]
+    tags_by_key_or_range: Mapping[str | PartitionKeyRange, Mapping[str, str]]
+    run_config_by_key_or_range: Mapping[str | PartitionKeyRange, Mapping[str, Any]]
     if isinstance(partition_names_or_ranges[0], PartitionKeyRange):
         partition_set_run_config = partition_set_execution_data.partition_data[0].run_config
 
@@ -465,7 +465,7 @@ def create_backfill_run(
     remote_job: RemoteJob,
     remote_partition_set: RemotePartitionSet,
     backfill_job: PartitionBackfill,
-    partition_key_or_range: Union[str, PartitionKeyRange],
+    partition_key_or_range: str | PartitionKeyRange,
     run_tags: Mapping[str, str],
     run_config: Mapping[str, Any],
 ) -> Optional[DagsterRun]:
@@ -572,7 +572,7 @@ def create_backfill_run(
 def _fetch_last_run(
     instance: DagsterInstance,
     remote_partition_set: RemotePartitionSet,
-    partition_key_or_range: Union[str, PartitionKeyRange],
+    partition_key_or_range: str | PartitionKeyRange,
 ) -> Optional[DagsterRun]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(remote_partition_set, "remote_partition_set", RemotePartitionSet)

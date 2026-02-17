@@ -1,6 +1,6 @@
 import itertools
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, cast  # noqa: UP035
 
 from dagster import _check as check
 from dagster._core.definitions.dependency import (
@@ -127,7 +127,7 @@ def _get_graph_subset(
             continue
 
         node_handle = NodeHandle(node.name, parent=parent_handle)
-        node_def: Union[SubselectedGraphDefinition, NodeDefinition] = node.definition
+        node_def: SubselectedGraphDefinition | NodeDefinition = node.definition
         node_selection_tree = selection_tree.get_child(node.name)
 
         # subselect graph if any nodes inside the graph are selected
@@ -183,7 +183,7 @@ def _get_graph_subset(
                 ]
                 node_deps[node_input.input_name] = MultiDependencyDefinition(
                     cast(
-                        "list[Union[DependencyDefinition, type[MappedInputPlaceholder]]]",
+                        "list[DependencyDefinition | type[MappedInputPlaceholder]]",
                         multi_dependencies,
                     )
                 )

@@ -66,7 +66,7 @@ class DataVersionsByPartition(
 ):
     def __new__(
         cls,
-        data_versions_by_partition: Mapping[str, Union[str, DataVersion]],
+        data_versions_by_partition: Mapping[str, str | DataVersion],
     ):
         check.dict_param(
             data_versions_by_partition,
@@ -215,7 +215,7 @@ def get_input_event_pointer_tag(input_key: "AssetKey") -> str:
 
 
 def compute_logical_data_version(
-    code_version: Union[str, UnknownValue],
+    code_version: str | UnknownValue,
     input_data_versions: Mapping["AssetKey", DataVersion],
 ) -> DataVersion:
     """Compute a data version for a value as a hash of input data versions and code version.

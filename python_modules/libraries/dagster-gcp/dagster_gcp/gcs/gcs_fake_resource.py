@@ -1,4 +1,4 @@
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster._utils.cached_method import cached_method
 
@@ -24,7 +24,7 @@ class FakeGCSBlob:
         self.mock_extras.download_as_bytes(*args, **kwargs)
         return self.data
 
-    def upload_from_string(self, data: Union[bytes, str], *args, **kwargs):
+    def upload_from_string(self, data: bytes | str, *args, **kwargs):
         self.mock_extras.upload_from_string(*args, **kwargs)
         if isinstance(data, str):
             self.data = data.encode()
@@ -74,7 +74,7 @@ class FakeGCSClient:
 
     def list_blobs(
         self,
-        bucket_or_name: Union[FakeGCSBucket, str],
+        bucket_or_name: FakeGCSBucket | str,
         *args,
         prefix: Optional[str] = None,
         **kwargs,

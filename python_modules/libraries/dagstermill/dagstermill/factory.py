@@ -5,7 +5,7 @@ import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import nbformat
 import papermill
@@ -352,10 +352,10 @@ def define_dagstermill_op(
     notebook_path: str,
     ins: Optional[Mapping[str, In]] = None,
     outs: Optional[Mapping[str, Out]] = None,
-    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
+    config_schema: Optional[Any | Mapping[str, Any]] = None,
     required_resource_keys: Optional[set[str]] = None,
     output_notebook_name: Optional[str] = None,
-    asset_key_prefix: Optional[Union[Sequence[str], str]] = None,
+    asset_key_prefix: Optional[Sequence[str] | str] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     io_manager_key: Optional[str] = None,

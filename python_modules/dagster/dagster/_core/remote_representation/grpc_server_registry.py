@@ -1,7 +1,7 @@
 import sys
 import threading
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeGuard, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeGuard, cast
 
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
@@ -81,7 +81,7 @@ class GrpcServerRegistry(AbstractContextManager):
         self.server_command = server_command
 
         # map of servers being currently returned, keyed by origin ID
-        self._active_entries: dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
+        self._active_entries: dict[str, ServerRegistryEntry | ErrorRegistryEntry] = {}
 
         self._waited_for_processes = False
 
@@ -156,7 +156,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
     def get_grpc_server_entry(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
-    ) -> Union[ServerRegistryEntry, ErrorRegistryEntry]:
+    ) -> ServerRegistryEntry | ErrorRegistryEntry:
         check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
 
         with self._lock:
@@ -174,7 +174,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
     def _get_grpc_server_entry(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
-    ) -> Union[ServerRegistryEntry, ErrorRegistryEntry]:
+    ) -> ServerRegistryEntry | ErrorRegistryEntry:
         # deferred for import perf
         from dagster._grpc.server import GrpcServerProcess
 

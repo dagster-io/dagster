@@ -48,9 +48,7 @@ class WorkspaceFileTarget(WorkspaceLoadTarget):
 class InProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
     """A workspace load target that is in-process and does not spin up a gRPC server."""
 
-    def __init__(
-        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
-    ):
+    def __init__(self, origin: InProcessCodeLocationOrigin | Sequence[InProcessCodeLocationOrigin]):
         self._origins = cast(
             "Sequence[InProcessCodeLocationOrigin]",
             origin if isinstance(origin, list) else [origin],

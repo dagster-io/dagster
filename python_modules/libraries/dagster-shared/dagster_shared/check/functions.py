@@ -8,8 +8,8 @@ from typing import (  # noqa: UP035
     Callable,
     NoReturn,
     Optional,
+    TypeAlias,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -17,13 +17,13 @@ from typing_extensions import Never
 
 from dagster_shared.check.record import is_record
 
-TypeOrTupleOfTypes = Union[type, tuple[type, ...]]
-Numeric = Union[int, float]
+TypeOrTupleOfTypes: TypeAlias = type | tuple[type, ...]
+Numeric: TypeAlias = int | float
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 
-TTypeOrTupleOfTTypes = Union[type[T], tuple[type[T], ...]]
+TTypeOrTupleOfTTypes: TypeAlias = type[T] | tuple[type[T], ...]
 
 
 # This module contains runtime type-checking code used throughout Dagster. It is divided into three
@@ -697,7 +697,7 @@ def opt_inst_param(
 
 def inst(
     obj: object,
-    ttype: Union[type[T], tuple[type[T], ...]],
+    ttype: type[T] | tuple[type[T], ...],
     additional_message: Optional[str] = None,
 ) -> T:
     if not isinstance(obj, ttype):
@@ -707,7 +707,7 @@ def inst(
 
 def opt_inst(
     obj: object,
-    ttype: Union[type[T], tuple[type[T], ...]],
+    ttype: type[T] | tuple[type[T], ...],
     additional_message: Optional[str] = None,
 ) -> Optional[T]:
     if obj is not None and not isinstance(obj, ttype):
@@ -1063,7 +1063,7 @@ def opt_numeric_param(
 
 
 def path_param(
-    obj: Union[str, PathLike], param_name: str, additional_message: Optional[str] = None
+    obj: str | PathLike, param_name: str, additional_message: Optional[str] = None
 ) -> str:
     if not isinstance(obj, (str, PathLike)):
         raise _param_type_mismatch_exception(obj, (str, PathLike), param_name, additional_message)
@@ -1080,26 +1080,26 @@ def opt_path_param(
 def opt_path_param(
     obj: None,
     param_name: str,
-    default: Union[str, PathLike],
+    default: str | PathLike,
     additional_message: Optional[str] = ...,
 ) -> str: ...
 
 
 @overload
 def opt_path_param(
-    obj: Union[str, PathLike],
+    obj: str | PathLike,
     param_name: str,
-    default: Optional[Union[str, PathLike]] = ...,
+    default: Optional[str | PathLike] = ...,
     additional_message: Optional[str] = ...,
 ) -> str: ...
 
 
 def opt_path_param(
-    obj: Optional[Union[str, PathLike]],
+    obj: Optional[str | PathLike],
     param_name: str,
-    default: Optional[Union[str, PathLike]] = None,
+    default: Optional[str | PathLike] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Union[str, PathLike]]:
+) -> Optional[str | PathLike]:
     if obj is None:
         return str(default) if default is not None else None
     else:

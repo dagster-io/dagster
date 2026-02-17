@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import Optional, TypeAlias, Union
+from typing import Optional, TypeAlias
 
 from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -128,10 +128,10 @@ class PackageSpec:
     name: Optional[str] = None
     package_type: Optional[str] = None
     unsupported_python_versions: Optional[
-        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
+        list[AvailablePythonVersion] | UnsupportedVersionsFunction
     ] = None
-    pytest_extra_cmds: Optional[Union[list[str], PytestExtraCommandsFunction]] = None
-    pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = None
+    pytest_extra_cmds: Optional[list[str] | PytestExtraCommandsFunction] = None
+    pytest_step_dependencies: Optional[list[str] | PytestDependenciesFunction] = None
     pytest_tox_factors: Optional[list[ToxFactor]] = None
     env_vars: Optional[list[str]] = None
     tox_file: Optional[str] = None

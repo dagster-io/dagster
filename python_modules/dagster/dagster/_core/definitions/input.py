@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Callable, Mapping
 from types import UnionType
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 from dagster_shared.error import DagsterError
 from dagster_shared.record import IHaveNew, record, record_custom
@@ -87,7 +87,7 @@ class InputDefinition:
     _input_manager_key: Optional[str]
     _raw_metadata: ArbitraryMetadataMapping
     _metadata: Mapping[str, MetadataValue]
-    _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
+    _asset_key: Optional[AssetKey | Callable[["InputContext"], AssetKey]]
     _asset_partitions_fn: Optional[Callable[["InputContext"], set[str]]]
 
     def __init__(
@@ -97,8 +97,8 @@ class InputDefinition:
         description: Optional[str] = None,
         default_value: object = NoValueSentinel,
         metadata: Optional[ArbitraryMetadataMapping] = None,
-        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
-        asset_partitions: Optional[Union[set[str], Callable[["InputContext"], set[str]]]] = None,
+        asset_key: Optional[AssetKey | Callable[["InputContext"], AssetKey]] = None,
+        asset_partitions: Optional[set[str] | Callable[["InputContext"], set[str]]] = None,
         input_manager_key: Optional[str] = None,
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
@@ -373,7 +373,7 @@ class InputMapping:
     dagster_type: Optional[DagsterType] = None
 
     @property
-    def maps_to(self) -> Union[InputPointer, FanInInputPointer]:
+    def maps_to(self) -> InputPointer | FanInInputPointer:
         if self.fan_in_index is not None:
             return FanInInputPointer(
                 self.mapped_node_name, self.mapped_node_input_name, self.fan_in_index
@@ -422,22 +422,22 @@ class In(IHaveNew):
             upstream output.
     """
 
-    dagster_type: PublicAttr[Union[DagsterType, type[NoValueSentinel]]]
+    dagster_type: PublicAttr[DagsterType | type[NoValueSentinel]]
     description: PublicAttr[Optional[str]]
     default_value: PublicAttr[Any]
     metadata: PublicAttr[Mapping[str, Any]]
-    asset_key: PublicAttr[Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]]
-    asset_partitions: PublicAttr[Optional[Union[set[str], Callable[["InputContext"], set[str]]]]]
+    asset_key: PublicAttr[Optional[AssetKey | Callable[["InputContext"], AssetKey]]]
+    asset_partitions: PublicAttr[Optional[set[str] | Callable[["InputContext"], set[str]]]]
     input_manager_key: PublicAttr[Optional[str]]
 
     def __new__(
         cls,
-        dagster_type: Union[type, UnionType, DagsterType] = NoValueSentinel,
+        dagster_type: type | UnionType | DagsterType = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
-        asset_partitions: Optional[Union[set[str], Callable[["InputContext"], set[str]]]] = None,
+        asset_key: Optional[AssetKey | Callable[["InputContext"], AssetKey]] = None,
+        asset_partitions: Optional[set[str] | Callable[["InputContext"], set[str]]] = None,
         input_manager_key: Optional[str] = None,
     ):
         return super().__new__(

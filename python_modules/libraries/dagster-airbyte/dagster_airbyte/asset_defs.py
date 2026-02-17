@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial
 from itertools import chain
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, cast
 
 import yaml
 from dagster import (
@@ -267,7 +267,7 @@ def build_airbyte_assets(
     asset_key_prefix: Optional[Sequence[str]] = None,
     group_name: Optional[str] = None,
     normalization_tables: Optional[Mapping[str, set[str]]] = None,
-    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
+    deps: Optional[Iterable[CoercibleToAssetKey | AssetsDefinition | SourceAsset]] = None,
     upstream_assets: Optional[set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
@@ -710,7 +710,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
 class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: Union[ResourceDefinition, AirbyteResource],
+        airbyte_resource_def: ResourceDefinition | AirbyteResource,
         workspace_id: Optional[str],
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
@@ -915,7 +915,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
     )
 )
 def load_assets_from_airbyte_instance(
-    airbyte: Union[AirbyteResource, ResourceDefinition],
+    airbyte: AirbyteResource | ResourceDefinition,
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
@@ -1053,7 +1053,7 @@ def load_assets_from_airbyte_instance(
 @beta
 def build_airbyte_assets_definitions(
     *,
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+    workspace: AirbyteWorkspace | AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetsDefinition]:

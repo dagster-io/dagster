@@ -138,15 +138,15 @@ def test_is_typing_type():
 
 def test_flatten_unions() -> None:
     assert flatten_unions(str) == {str}
-    assert flatten_unions(typing.Union[str, float]) == {str, float}
-    assert flatten_unions(typing.Union[str, float, int]) == {str, float, int}
+    assert flatten_unions(typing.Union[str, float]) == {str, float}  # noqa: UP007
+    assert flatten_unions(typing.Union[str, float, int]) == {str, float, int}  # noqa: UP007
     assert flatten_unions(typing.Optional[str]) == {str, type(None)}
-    assert flatten_unions(typing.Optional[typing.Union[str, float]]) == {
+    assert flatten_unions(typing.Optional[str | float]) == {
         str,
         float,
         type(None),
     }
-    assert flatten_unions(typing.Union[typing.Union[str, float], int]) == {
+    assert flatten_unions(typing.Union[str | float, int]) == {  # noqa: UP007
         str,
         float,
         int,

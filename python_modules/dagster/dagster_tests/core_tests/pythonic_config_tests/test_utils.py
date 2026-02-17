@@ -13,14 +13,14 @@ def test_is_closed_python_optional_type() -> None:
     assert not is_closed_python_optional_type(str)
     assert not is_closed_python_optional_type(int)
 
-    assert is_closed_python_optional_type(Union[str, None])
-    assert is_closed_python_optional_type(Union[int, None])
+    assert is_closed_python_optional_type(Union[str, None])  # noqa: UP007
+    assert is_closed_python_optional_type(Union[int, None])  # noqa: UP007
 
-    assert is_closed_python_optional_type(Union[None, str])
-    assert is_closed_python_optional_type(Union[None, int])
+    assert is_closed_python_optional_type(Union[None, str])  # noqa: UP007
+    assert is_closed_python_optional_type(Union[None, int])  # noqa: UP007
 
-    assert not is_closed_python_optional_type(Union[str, int])
-    assert not is_closed_python_optional_type(Union[str, int, None])
+    assert not is_closed_python_optional_type(Union[str, int])  # noqa: UP007
+    assert not is_closed_python_optional_type(Union[str, int, None])  # noqa: UP007
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python3.10")

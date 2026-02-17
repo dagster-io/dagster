@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -24,7 +24,7 @@ class AssetIn(
             ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
             ("input_manager_key", PublicAttr[Optional[str]]),
             ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
-            ("dagster_type", PublicAttr[Union[DagsterType, type[NoValueSentinel]]]),
+            ("dagster_type", PublicAttr[DagsterType | type[NoValueSentinel]]),
         ],
     )
 ):
@@ -55,7 +55,7 @@ class AssetIn(
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
-        dagster_type: Union[DagsterType, type] = NoValueSentinel,
+        dagster_type: DagsterType | type = NoValueSentinel,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -88,4 +88,4 @@ class AssetIn(
         return self.key or AssetKey.from_coercible(input_name).with_prefix(self.key_prefix or [])
 
 
-CoercibleToAssetIn = Union[AssetIn, CoercibleToAssetKey]
+CoercibleToAssetIn: TypeAlias = AssetIn | CoercibleToAssetKey

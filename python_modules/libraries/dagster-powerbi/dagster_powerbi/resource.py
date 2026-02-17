@@ -4,7 +4,7 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -393,7 +393,7 @@ class PowerBIWorkspace(ConfigurableResource):
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
     dagster_powerbi_translator: Optional[
-        Union[DagsterPowerBITranslator, type[DagsterPowerBITranslator]]
+        DagsterPowerBITranslator | type[DagsterPowerBITranslator]
     ] = None,
     use_workspace_scan: bool = True,
 ) -> Sequence[AssetSpec]:

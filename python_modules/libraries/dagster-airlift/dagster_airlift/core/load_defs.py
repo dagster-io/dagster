@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 from dagster import AssetsDefinition, AssetSpec, Definitions
 from dagster._annotations import beta
@@ -281,7 +281,7 @@ def _apply_airflow_data_to_specs(
 
 
 def replace_assets_in_defs(
-    defs: Definitions, assets: Iterable[Union[AssetSpec, AssetsDefinition]]
+    defs: Definitions, assets: Iterable[AssetSpec | AssetsDefinition]
 ) -> Definitions:
     return Definitions(
         assets=list(assets),
@@ -368,7 +368,7 @@ def construct_dataset_specs(
 
 
 def _get_dag_to_spec_mapping(
-    mapped_assets: Sequence[Union[AssetSpec, AssetsDefinition]],
+    mapped_assets: Sequence[AssetSpec | AssetsDefinition],
 ) -> Mapping[str, Sequence[AssetSpec]]:
     res = defaultdict(list)
     for spec in spec_iterator(mapped_assets):

@@ -6,7 +6,6 @@ from typing import (  # noqa: UP035
     Any,
     Callable,
     Optional,
-    Union,
     cast,
     overload,
 )
@@ -91,7 +90,7 @@ def event_list_hook(
     name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     decorated_fn: Optional[Callable[..., Any]] = None,
-) -> Union[HookDefinition, _Hook]:
+) -> HookDefinition | _Hook:
     """Create a generic hook with the specified parameters from the decorated function.
 
     This decorator is currently used internally by Dagster machinery to support success_hook and
@@ -155,7 +154,7 @@ def success_hook(
     *,
     name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[HookDefinition, Callable[[SuccessOrFailureHookFn], HookDefinition]]:
+) -> HookDefinition | Callable[[SuccessOrFailureHookFn], HookDefinition]:
     """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:
@@ -224,9 +223,9 @@ def failure_hook(
 
 @public
 def failure_hook(
-    name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
+    name: Optional[SuccessOrFailureHookFn | str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[HookDefinition, Callable[[SuccessOrFailureHookFn], HookDefinition]]:
+) -> HookDefinition | Callable[[SuccessOrFailureHookFn], HookDefinition]:
     """Create a hook on step failure events with the specified parameters from the decorated function.
 
     Args:

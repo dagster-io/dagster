@@ -2497,7 +2497,7 @@ class HellobatonSource(GeneratedAirbyteSource):
 
 class SendgridSource(GeneratedAirbyteSource):
     @public
-    def __init__(self, name: str, apikey: str, start_time: Union[int, str]):
+    def __init__(self, name: str, apikey: str, start_time: int | str):
         """Airbyte Source for Sendgrid.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/sendgrid

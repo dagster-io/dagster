@@ -447,19 +447,19 @@ class SensorEvaluationContext:
         return self._log_key
 
 
-SensorReturnTypesUnion: TypeAlias = Union[
-    Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult]],
-    Sequence[RunRequest],
-    SkipReason,
-    RunRequest,
-    DagsterRunReaction,
-    SensorResult,
-    None,
-]
+SensorReturnTypesUnion: TypeAlias = (
+    Iterator[SkipReason | RunRequest | DagsterRunReaction | SensorResult]
+    | Sequence[RunRequest]
+    | SkipReason
+    | RunRequest
+    | DagsterRunReaction
+    | SensorResult
+    | None
+)
 RawSensorEvaluationFunction: TypeAlias = Callable[..., SensorReturnTypesUnion]
 
 SensorEvaluationFunction: TypeAlias = Callable[
-    ..., Sequence[Union[None, SensorResult, SkipReason, RunRequest]]
+    ..., Sequence[None | SensorResult | SkipReason | RunRequest]
 ]
 
 
@@ -489,7 +489,7 @@ def validate_and_get_resource_dict(
 
 def _check_dynamic_partitions_requests(
     dynamic_partitions_requests: Sequence[
-        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
     ],
 ) -> None:
     req_keys_to_add_by_partitions_def_name = defaultdict(set)
@@ -740,13 +740,12 @@ class SensorDefinition(IHasInternalInit):
         self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
             evaluation_fn, "evaluation_fn"
         )
-        self._evaluation_fn: Union[
-            SensorEvaluationFunction,
-            Callable[
-                [SensorEvaluationContext],
-                list[Union[SkipReason, RunRequest, DagsterRunReaction]],
-            ],
-        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
+        self._evaluation_fn: (
+            SensorEvaluationFunction
+            | Callable[
+                [SensorEvaluationContext], list[SkipReason | RunRequest | DagsterRunReaction]
+            ]
+        ) = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
@@ -941,7 +940,7 @@ class SensorDefinition(IHasInternalInit):
         run_requests: list[RunRequest] = []
         dagster_run_reactions: list[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
-            Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+            Sequence[AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest]
         ] = []
         updated_cursor = context.cursor
         asset_events = []
@@ -1055,7 +1054,7 @@ class SensorDefinition(IHasInternalInit):
         context: SensorEvaluationContext,
         asset_selection: Optional[AssetSelection],
         dynamic_partitions_requests: Sequence[
-            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+            AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
         ],
     ) -> Sequence[RunRequest]:
         def _get_repo_job_by_name(context: SensorEvaluationContext, job_name: str) -> JobDefinition:
@@ -1204,9 +1203,9 @@ class SensorExecutionData(IHaveNew):
     dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]
     log_key: Optional[Sequence[str]]
     dynamic_partitions_requests: Optional[
-        Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+        Sequence[AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest]
     ]
-    asset_events: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+    asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation]
     automation_condition_evaluations: Sequence[AutomationConditionEvaluation]
 
     def __new__(
@@ -1217,10 +1216,10 @@ class SensorExecutionData(IHaveNew):
         dagster_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
         log_key: Optional[Sequence[str]] = None,
         dynamic_partitions_requests: Optional[
-            Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+            Sequence[AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest]
         ] = None,
         asset_events: Optional[
-            Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+            Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation]
         ] = None,
         automation_condition_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
     ):

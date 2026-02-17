@@ -9,7 +9,6 @@ from typing import (  # noqa: UP035
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import Self
@@ -151,7 +150,7 @@ class EntitySubset(Generic[T_EntityKey]):
     def is_partitioned(self) -> bool:
         return isinstance(self._value, PartitionsSubset)
 
-    def get_internal_value(self) -> Union[bool, PartitionsSubset]:
+    def get_internal_value(self) -> bool | PartitionsSubset:
         return self._value
 
     def get_internal_subset_value(self) -> PartitionsSubset:

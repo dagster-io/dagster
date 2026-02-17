@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster import AssetKey
@@ -641,7 +641,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
     @public
     def __init__(
         self,
-        airbyte: Union[AirbyteResource, ResourceDefinition],
+        airbyte: AirbyteResource | ResourceDefinition,
         connections: Iterable[AirbyteConnection],
         delete_unmentioned_resources: bool = False,
     ):
@@ -732,7 +732,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
 @beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
-    airbyte: Union[AirbyteResource, ResourceDefinition],
+    airbyte: AirbyteResource | ResourceDefinition,
     connections: Iterable[AirbyteConnection],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,

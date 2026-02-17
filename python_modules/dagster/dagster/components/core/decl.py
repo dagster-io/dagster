@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from functools import cached_property
 from pathlib import Path
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar
 
 from dagster_shared.record import record
 from dagster_shared.serdes.objects import EnvRegistryKey
@@ -352,7 +352,7 @@ def build_component_decls_from_directory_items(
 
 def build_component_decl_from_python_file(
     context: ComponentDeclLoadContext,
-) -> Union[ComponentLoaderDecl, PythonFileDecl]:
+) -> ComponentLoaderDecl | PythonFileDecl:
     # backcompat for component.yaml
     component_def_path = context.path
     module = context.load_defs_relative_python_module(component_def_path)

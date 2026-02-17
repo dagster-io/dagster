@@ -317,7 +317,7 @@ class RunFailureReason(Enum):
 
 def _assert_type(
     method: str,
-    expected_type: Union[DagsterEventType, Sequence[DagsterEventType]],
+    expected_type: DagsterEventType | Sequence[DagsterEventType],
     actual_type: DagsterEventType,
 ) -> None:
     _expected_type = (
@@ -466,7 +466,7 @@ class DagsterEvent(
         [
             ("event_type_value", str),
             ("job_name", str),
-            ("step_handle", Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]]),
+            ("step_handle", Optional[StepHandle | ResolvedFromDynamicStepHandle]),
             ("node_handle", Optional[NodeHandle]),
             ("step_kind_value", Optional[str]),
             ("logging_tags", Optional[Mapping[str, str]]),
@@ -523,7 +523,7 @@ class DagsterEvent(
         job_context: IPlanContext,
         message: Optional[str] = None,
         event_specific_data: Optional["EventSpecificData"] = None,
-        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
+        step_handle: Optional[StepHandle | ResolvedFromDynamicStepHandle] = None,
     ) -> "DagsterEvent":
         check.opt_inst_param(
             step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
@@ -568,7 +568,7 @@ class DagsterEvent(
         cls,
         event_type_value: str,
         job_name: str,
-        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
+        step_handle: Optional[StepHandle | ResolvedFromDynamicStepHandle] = None,
         node_handle: Optional[NodeHandle] = None,
         step_kind_value: Optional[str] = None,
         logging_tags: Optional[Mapping[str, str]] = None,
@@ -1238,7 +1238,7 @@ class DagsterEvent(
 
     @staticmethod
     def job_failure(
-        job_context_or_name: Union[IPlanContext, str],
+        job_context_or_name: IPlanContext | str,
         context_msg: str,
         failure_reason: RunFailureReason,
         error_info: Optional[SerializableErrorInfo] = None,

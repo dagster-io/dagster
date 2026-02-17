@@ -54,7 +54,7 @@ def is_executable_step(
 class IExecutionStep:
     @property
     @abstractmethod
-    def handle(self) -> Union[StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle]:
+    def handle(self) -> StepHandle | UnresolvedStepHandle | ResolvedFromDynamicStepHandle:
         pass
 
     @property
@@ -86,7 +86,7 @@ class IExecutionStep:
     @abstractmethod
     def step_inputs(
         self,
-    ) -> Sequence[Union[StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput]]:
+    ) -> Sequence[StepInput | UnresolvedCollectStepInput | UnresolvedMappedStepInput]:
         pass
 
     @property
@@ -97,7 +97,7 @@ class IExecutionStep:
     @abstractmethod
     def step_input_named(
         self, name: str
-    ) -> Union[StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput]:
+    ) -> StepInput | UnresolvedCollectStepInput | UnresolvedMappedStepInput:
         pass
 
     @abstractmethod
@@ -119,7 +119,7 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ExecutionStep",
         [
-            ("handle", Union[StepHandle, ResolvedFromDynamicStepHandle]),
+            ("handle", StepHandle | ResolvedFromDynamicStepHandle),
             ("job_name", str),
             ("step_input_dict", Mapping[str, StepInput]),
             ("step_output_dict", Mapping[str, StepOutput]),
@@ -135,7 +135,7 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
 
     def __new__(
         cls,
-        handle: Union[StepHandle, ResolvedFromDynamicStepHandle],
+        handle: StepHandle | ResolvedFromDynamicStepHandle,
         job_name: str,
         step_inputs: Sequence[StepInput],
         step_outputs: Sequence[StepOutput],
@@ -225,7 +225,7 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
         [
             ("handle", UnresolvedStepHandle),
             ("job_name", str),
-            ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedMappedStepInput]]),
+            ("step_input_dict", Mapping[str, StepInput | UnresolvedMappedStepInput]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
             ("pool", Optional[str]),
@@ -239,7 +239,7 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
         cls,
         handle: UnresolvedStepHandle,
         job_name: str,
-        step_inputs: Sequence[Union[StepInput, UnresolvedMappedStepInput]],
+        step_inputs: Sequence[StepInput | UnresolvedMappedStepInput],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
         pool: Optional[str],
@@ -279,10 +279,10 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
         return list(self.step_output_dict.values())
 
     @property
-    def step_inputs(self) -> Sequence[Union[StepInput, UnresolvedMappedStepInput]]:
+    def step_inputs(self) -> Sequence[StepInput | UnresolvedMappedStepInput]:
         return list(self.step_input_dict.values())
 
-    def step_input_named(self, name: str) -> Union[StepInput, UnresolvedMappedStepInput]:
+    def step_input_named(self, name: str) -> StepInput | UnresolvedMappedStepInput:
         check.str_param(name, "name")
         return self.step_input_dict[name]
 
@@ -372,7 +372,7 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
 
 
 def _resolved_input(
-    step_input: Union[StepInput, UnresolvedMappedStepInput],
+    step_input: StepInput | UnresolvedMappedStepInput,
     map_key: str,
 ):
     if isinstance(step_input, StepInput):
@@ -387,7 +387,7 @@ class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVaria
         [
             ("handle", StepHandle),
             ("job_name", str),
-            ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedCollectStepInput]]),
+            ("step_input_dict", Mapping[str, StepInput | UnresolvedCollectStepInput]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
             ("pool", Optional[str]),
@@ -401,7 +401,7 @@ class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVaria
         cls,
         handle: StepHandle,
         job_name: str,
-        step_inputs: Sequence[Union[StepInput, UnresolvedCollectStepInput]],
+        step_inputs: Sequence[StepInput | UnresolvedCollectStepInput],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
         pool: Optional[str],
@@ -437,14 +437,14 @@ class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVaria
         return StepKind.UNRESOLVED_COLLECT
 
     @property
-    def step_inputs(self) -> Sequence[Union[StepInput, UnresolvedCollectStepInput]]:
+    def step_inputs(self) -> Sequence[StepInput | UnresolvedCollectStepInput]:
         return list(self.step_input_dict.values())
 
     @property
     def step_outputs(self) -> Sequence[StepOutput]:
         return list(self.step_output_dict.values())
 
-    def step_input_named(self, name: str) -> Union[StepInput, UnresolvedCollectStepInput]:
+    def step_input_named(self, name: str) -> StepInput | UnresolvedCollectStepInput:
         check.str_param(name, "name")
         return self.step_input_dict[name]
 

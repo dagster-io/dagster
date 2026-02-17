@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.seven import get_import_error_message, import_module_from_path
@@ -61,7 +61,7 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
 
 
 def load_python_file(
-    python_file: Union[str, Path],
+    python_file: str | Path,
     working_directory: Optional[str],
     add_uuid_suffix: bool = False,
 ) -> ModuleType:

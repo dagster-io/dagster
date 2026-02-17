@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -514,9 +514,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # must resort to querying the event log
             return self._get_planned_materializations_for_run_from_events(run_id=run_id)
 
-    def is_asset_planned_for_run(
-        self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]
-    ) -> bool:
+    def is_asset_planned_for_run(self, run_id: str, asset: AssetKey | AssetKeyPartitionKey) -> bool:
         """Returns True if the asset is planned to be materialized by the run."""
         run = self._get_run_by_id(run_id=run_id)
         if not run:

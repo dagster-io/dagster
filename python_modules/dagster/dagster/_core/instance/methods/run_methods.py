@@ -3,7 +3,7 @@
 from collections.abc import Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import (
@@ -115,7 +115,7 @@ class RunMethods:
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         resolved_op_selection: Optional[Set[str]] = None,
-        status: Optional[Union[DagsterRunStatus, str]] = None,
+        status: Optional[DagsterRunStatus | str] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
@@ -268,7 +268,7 @@ class RunMethods:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[JobBucket | TagBucket] = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         return self._run_storage_impl.get_runs(filters, cursor, limit, bucket_by, ascending)

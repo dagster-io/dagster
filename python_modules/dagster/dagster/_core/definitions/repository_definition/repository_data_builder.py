@@ -2,7 +2,7 @@ import json
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from inspect import isfunction
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._config.pythonic_config import (
@@ -168,7 +168,7 @@ def build_caching_repository_data_from_list(
     )
 
     schedule_and_sensor_names: set[str] = set()
-    jobs: dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
+    jobs: dict[str, JobDefinition | Callable[[], JobDefinition]] = {}
     coerced_graphs: dict[str, JobDefinition] = {}
     unresolved_jobs: dict[str, UnresolvedAssetJobDefinition] = {}
     schedules: dict[str, ScheduleDefinition] = {}
@@ -451,12 +451,12 @@ def build_caching_repository_data_from_dict(
 
 
 def _process_and_validate_target_job(
-    instigator_def: Union[
-        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
-    ],
+    instigator_def: SensorDefinition
+    | ScheduleDefinition
+    | UnresolvedPartitionedAssetScheduleDefinition,
     unresolved_jobs: dict[str, UnresolvedAssetJobDefinition],
-    jobs: dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
-    job_def: Union[JobDefinition, UnresolvedAssetJobDefinition],
+    jobs: dict[str, JobDefinition | Callable[[], JobDefinition]],
+    job_def: JobDefinition | UnresolvedAssetJobDefinition,
 ):
     """This function modifies the state of unresolved_jobs, and jobs."""
     targeter = (
@@ -491,12 +491,12 @@ def _process_and_validate_target_job(
 
 
 def _process_and_validate_target_assets(
-    instigator_def: Union[
-        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
-    ],
+    instigator_def: SensorDefinition
+    | ScheduleDefinition
+    | UnresolvedPartitionedAssetScheduleDefinition,
     assets_defs_by_key: dict["AssetKey", AssetsDefinition],
     source_assets_by_key: dict["AssetKey", SourceAsset],
-    target_assets_defs: Sequence[Union[AssetsDefinition, SourceAsset]],
+    target_assets_defs: Sequence[AssetsDefinition | SourceAsset],
 ) -> None:
     for ad in target_assets_defs:
         keys = ad.keys if isinstance(ad, AssetsDefinition) else [ad.key]
@@ -556,9 +556,9 @@ def _validate_partitions_definition(partitions_def: PartitionsDefinition) -> Non
 
 
 def _get_instigator_str(
-    instigator_def: Union[
-        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
-    ],
+    instigator_def: SensorDefinition
+    | ScheduleDefinition
+    | UnresolvedPartitionedAssetScheduleDefinition,
 ) -> str:
     return (
         f"schedule '{instigator_def.name}'"

@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from time import sleep
-from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 from typing_extensions import TypedDict
 
@@ -84,7 +84,7 @@ class ExternalSystem:
             is_memoized = True
         return {"data_version": record.data_version, "is_memoized": is_memoized}
 
-    def observe(self, asset_spec: Union[AssetInfo, SourceAssetInfo]) -> ObserveResult:
+    def observe(self, asset_spec: AssetInfo | SourceAssetInfo) -> ObserveResult:
         """Observe an asset or source asset, returning its current data version.
 
         Args:

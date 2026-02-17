@@ -435,7 +435,7 @@ def get_partition_config(
     job_name: str,
     partition_key: str,
     instance_ref: Optional[InstanceRef] = None,
-) -> Union[PartitionConfigSnap, PartitionExecutionErrorSnap]:
+) -> PartitionConfigSnap | PartitionExecutionErrorSnap:
     try:
         job_def = repo_def.get_job(job_name)
 
@@ -456,7 +456,7 @@ def get_partition_config(
 
 def get_partition_names(
     repo_def: RepositoryDefinition, job_name: str
-) -> Union[PartitionNamesSnap, PartitionExecutionErrorSnap]:
+) -> PartitionNamesSnap | PartitionExecutionErrorSnap:
     try:
         job_def = repo_def.get_job(job_name)
 
@@ -481,7 +481,7 @@ def get_partition_tags(
     job_name: str,
     partition_name: str,
     instance_ref: Optional[InstanceRef] = None,
-) -> Union[PartitionTagsSnap, PartitionExecutionErrorSnap]:
+) -> PartitionTagsSnap | PartitionExecutionErrorSnap:
     try:
         job_def = repo_def.get_job(job_name)
 
@@ -531,7 +531,7 @@ def get_partition_set_execution_param_data(
     partition_set_name: str,
     partition_names: Sequence[str],
     instance_ref: Optional[InstanceRef] = None,
-) -> Union[PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap]:
+) -> PartitionSetExecutionParamSnap | PartitionExecutionErrorSnap:
     (
         job_def,
         _partitions_def,

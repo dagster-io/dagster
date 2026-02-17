@@ -1,7 +1,7 @@
 import re
 import sys
 from collections.abc import Iterable, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster_shared.check as check
 from dagster_shared.error import (
@@ -212,7 +212,7 @@ env_var_regex = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")
 env_var_regex_dot_notation = re.compile(r"\{\{\s*env\.([^'\"\s]+)\s*\}\}")
 
 
-def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], Any]) -> set[str]:
+def get_used_env_vars(data_structure: Mapping[str, Any] | Sequence[Any] | Any) -> set[str]:
     if isinstance(data_structure, Mapping):
         return set.union(set(), *(get_used_env_vars(value) for value in data_structure.values()))
     elif isinstance(data_structure, str):

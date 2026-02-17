@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster._check as check
 import requests.exceptions
@@ -142,7 +142,7 @@ class DagsterGraphQLClient:
         pipeline_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
+        run_config: Optional[RunConfig | Mapping[str, Any]] = None,
         mode: str = "default",
         preset: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
@@ -248,7 +248,7 @@ class DagsterGraphQLClient:
         job_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
+        run_config: Optional[RunConfig | Mapping[str, Any]] = None,
         tags: Optional[dict[str, Any]] = None,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[Sequence[CoercibleToAssetKey]] = None,

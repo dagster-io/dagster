@@ -23,7 +23,6 @@ from typing import (  # noqa: UP035
     NoReturn,
     Optional,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import Self
@@ -714,7 +713,7 @@ def ensure_dagster_tests_import() -> None:
 
 
 def create_test_asset_job(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[AssetsDefinition | SourceAsset],
     *,
     selection: Optional[CoercibleToAssetSelection] = None,
     name: str = "asset_job",
@@ -759,7 +758,7 @@ def get_freezable_log_manager():
 
 
 @contextmanager
-def freeze_time(new_now: Union[datetime.datetime, float]):
+def freeze_time(new_now: datetime.datetime | float):
     new_dt = (
         new_now
         if isinstance(new_now, datetime.datetime)

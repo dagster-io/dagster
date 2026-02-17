@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 
 import dagster as dg
 import pydantic
@@ -255,19 +255,17 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """
 
     workspace: Annotated[
-        Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+        AirbyteWorkspace | AirbyteCloudWorkspace,
         dg.Resolver(
             resolve_airbyte_workspace_type,
-            model_field_type=Union[AirbyteWorkspaceModel, AirbyteCloudWorkspaceModel],
+            model_field_type=AirbyteWorkspaceModel | AirbyteCloudWorkspaceModel,
         ),
     ]
     connection_selector: Annotated[
         Optional[Callable[[AirbyteConnection], bool]],
         dg.Resolver(
             resolve_connection_selector,
-            model_field_type=Union[
-                str, AirbyteConnectionSelectorByName, AirbyteConnectionSelectorById
-            ],
+            model_field_type=str | AirbyteConnectionSelectorByName | AirbyteConnectionSelectorById,
             description="Function used to select Airbyte connections to pull into Dagster.",
         ),
     ] = None
@@ -334,7 +332,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     @public
     def execute(
         self, context: dg.AssetExecutionContext, airbyte: BaseAirbyteWorkspace
-    ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+    ) -> Iterable[dg.AssetMaterialization | dg.MaterializeResult]:
         """Executes an Airbyte sync for the selected connection.
 
         This method can be overridden in a subclass to customize the sync execution behavior,

@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 from dagster import Resolvable, Resolver
 from dagster._annotations import public
@@ -206,7 +206,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         context: AssetExecutionContext,
         sling: SlingResource,
         replication_spec_model: SlingReplicationSpecModel,
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> Iterator[AssetMaterialization | MaterializeResult]:
         """Executes a Sling replication for the selected streams.
 
         This method can be overridden in a subclass to customize the replication execution

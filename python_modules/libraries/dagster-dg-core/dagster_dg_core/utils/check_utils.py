@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import click
 import typer
@@ -28,7 +28,7 @@ ADDITIONAL_PROPERTIES_ERROR_MESSAGE = (
 )
 
 
-def augment_error_path(error_details: "ValidationError") -> Sequence[Union[str, int]]:
+def augment_error_path(error_details: "ValidationError") -> Sequence[str | int]:
     """Augment the error location (e.g. key) for certain error messages.
 
     In particular, for extra properties, returns the location of the extra property instead

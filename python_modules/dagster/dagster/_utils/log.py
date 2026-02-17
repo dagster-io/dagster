@@ -5,7 +5,7 @@ import sys
 import traceback
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias
 
 import coloredlogs
 import dagster_shared.seven as seven
@@ -112,7 +112,7 @@ class StructuredLoggerHandler(logging.Handler):
 
 
 def construct_single_handler_logger(
-    name: str, level: Union[str, int], handler: logging.Handler
+    name: str, level: str | int, handler: logging.Handler
 ) -> LoggerDefinition:
     check.str_param(name, "name")
     check.inst_param(handler, "handler", logging.Handler)
@@ -173,7 +173,7 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
 
 
 def define_structured_logger(
-    name: str, callback: StructuredLoggerCallback, level: Union[str, int]
+    name: str, callback: StructuredLoggerCallback, level: str | int
 ) -> LoggerDefinition:
     check.str_param(name, "name")
     check.callable_param(callback, "callback")
@@ -182,7 +182,7 @@ def define_structured_logger(
     return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
 
-def define_json_file_logger(name: str, json_path: str, level: Union[str, int]) -> LoggerDefinition:
+def define_json_file_logger(name: str, json_path: str, level: str | int) -> LoggerDefinition:
     check.str_param(name, "name")
     check.str_param(json_path, "json_path")
     level = coerce_valid_log_level(level)
@@ -249,7 +249,7 @@ def get_structlog_json_formatter() -> "structlog.stdlib.ProcessorFormatter":
     emit_runtime_warning=False,
 )
 def configure_loggers(
-    handler: str = "default", formatter: str = "colored", log_level: Union[str, int] = "INFO"
+    handler: str = "default", formatter: str = "colored", log_level: str | int = "INFO"
 ) -> None:
     # Deferred for import perf
     import structlog
@@ -331,7 +331,7 @@ def configure_loggers(
     warnings.showwarning = custom_warning_handler
 
 
-def create_console_logger(name: str, level: Union[str, int]) -> logging.Logger:
+def create_console_logger(name: str, level: str | int) -> logging.Logger:
     klass = logging.getLoggerClass()
     logger = klass(name, level=level)
     coloredlogs.install(

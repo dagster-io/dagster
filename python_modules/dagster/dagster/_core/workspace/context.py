@@ -8,7 +8,16 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from functools import cached_property
 from itertools import count
-from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, TypeVar, Union  # noqa: UP035
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Generic,
+    Optional,
+    TypeAlias,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import Self
 
@@ -107,13 +116,9 @@ T = TypeVar("T")
 
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
-RemoteDefinition = Union[
-    RemoteAssetNode,
-    RemoteAssetCheckNode,
-    RemoteJob,
-    RemoteSchedule,
-    RemoteSensor,
-]
+RemoteDefinition: TypeAlias = (
+    RemoteAssetNode | RemoteAssetCheckNode | RemoteJob | RemoteSchedule | RemoteSensor
+)
 
 
 class BaseWorkspaceRequestContext(LoadingContext):
@@ -222,7 +227,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def has_permission_for_selector(
         self,
         permission: str,
-        selector: Union[AssetKey, AssetCheckKey, JobSelector, ScheduleSelector, SensorSelector],
+        selector: AssetKey | AssetCheckKey | JobSelector | ScheduleSelector | SensorSelector,
     ) -> bool:
         if self.has_permission(permission):
             return True
@@ -248,7 +253,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_owners_for_selector(
         self,
-        selector: Union[AssetKey, AssetCheckKey, JobSelector, ScheduleSelector, SensorSelector],
+        selector: AssetKey | AssetCheckKey | JobSelector | ScheduleSelector | SensorSelector,
     ) -> Sequence[str]:
         if isinstance(selector, AssetKey):
             remote_definition = self.asset_graph.get(selector)
@@ -378,7 +383,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> bool:
+    def has_job(self, selector: JobSubsetSelector | JobSelector) -> bool:
         check.inst_param(selector, "selector", (JobSubsetSelector, JobSelector))
         if not self.has_code_location(selector.location_name):
             return False
@@ -388,7 +393,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selector.repository_name
         ).has_job(selector.job_name)
 
-    def get_full_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> RemoteJob:
+    def get_full_job(self, selector: JobSubsetSelector | JobSelector) -> RemoteJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
@@ -593,16 +598,12 @@ class BaseWorkspaceRequestContext(LoadingContext):
     ) -> Optional["RemoteAssetGraph"]:
         return None
 
-    def get_repository(
-        self, selector: Union[RepositorySelector, RepositoryHandle]
-    ) -> RemoteRepository:
+    def get_repository(self, selector: RepositorySelector | RepositoryHandle) -> RemoteRepository:
         return self.get_code_location(selector.location_name).get_repository(
             selector.repository_name
         )
 
-    def get_sensor(
-        self, selector: Union[SensorSelector, InstigatorSelector]
-    ) -> Optional[RemoteSensor]:
+    def get_sensor(self, selector: SensorSelector | InstigatorSelector) -> Optional[RemoteSensor]:
         if not self.has_code_location(selector.location_name):
             return None
 
@@ -618,7 +619,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return repository.get_sensor(selector.instigator_name)
 
     def get_schedule(
-        self, selector: Union[ScheduleSelector, InstigatorSelector]
+        self, selector: ScheduleSelector | InstigatorSelector
     ) -> Optional[RemoteSchedule]:
         if not self.has_code_location(selector.location_name):
             return None
@@ -636,15 +637,15 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_node_def(
         self,
-        job_selector: Union[JobSubsetSelector, JobSelector],
+        job_selector: JobSubsetSelector | JobSelector,
         node_def_name: str,
-    ) -> Union[OpDefSnap, GraphDefSnap]:
+    ) -> OpDefSnap | GraphDefSnap:
         job = self.get_full_job(job_selector)
         return job.get_node_def_snap(node_def_name)
 
     def get_config_type(
         self,
-        job_selector: Union[JobSubsetSelector, JobSelector],
+        job_selector: JobSubsetSelector | JobSelector,
         type_key: str,
     ) -> ConfigTypeSnap:
         job = self.get_full_job(job_selector)
@@ -652,7 +653,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_dagster_type(
         self,
-        job_selector: Union[JobSubsetSelector, JobSelector],
+        job_selector: JobSubsetSelector | JobSelector,
         type_key: str,
     ) -> DagsterTypeSnap:
         job = self.get_full_job(job_selector)
@@ -660,7 +661,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_resources(
         self,
-        job_selector: Union[JobSubsetSelector, JobSelector],
+        job_selector: JobSubsetSelector | JobSelector,
     ) -> Sequence[ResourceDefSnap]:
         job = self.get_full_job(job_selector)
         if not job.mode_def_snaps:
@@ -672,7 +673,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_schedules_targeting_job(
         self,
-        selector: Union[JobSubsetSelector, JobSelector],
+        selector: JobSubsetSelector | JobSelector,
     ) -> Sequence[RemoteSchedule]:
         repository = self.get_code_location(selector.location_name).get_repository(
             selector.repository_name
@@ -681,7 +682,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_sensors_targeting_job(
         self,
-        selector: Union[JobSubsetSelector, JobSelector],
+        selector: JobSubsetSelector | JobSelector,
     ) -> Sequence[RemoteSensor]:
         repository = self.get_code_location(selector.location_name).get_repository(
             selector.repository_name
@@ -690,7 +691,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_asset_keys_in_job(
         self,
-        selector: Union[JobSubsetSelector, JobSelector],
+        selector: JobSubsetSelector | JobSelector,
     ) -> Sequence[AssetKey]:
         if not self.has_code_location(selector.location_name):
             return []
@@ -704,7 +705,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_assets_in_job(
         self,
-        selector: Union[JobSubsetSelector, JobSelector],
+        selector: JobSubsetSelector | JobSelector,
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
     ) -> Sequence[RemoteRepositoryAssetNode]:
         keys = self.get_asset_keys_in_job(selector)

@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal, Optional
 
 from dagster_shared.record import as_dict, record
 
@@ -53,8 +53,8 @@ class MetadataBoundsParams(Resolvable):
     type: Literal["metadata_bounds"]
     metadata_key: str
     severity: ResolvedAssetCheckSeverity = AssetCheckSeverity.WARN
-    min_value: Optional[Union[int, float]] = None
-    max_value: Optional[Union[int, float]] = None
+    min_value: Optional[int | float] = None
+    max_value: Optional[int | float] = None
     exclusive_min: bool = False
     exclusive_max: bool = False
 
@@ -66,7 +66,7 @@ class MetadataBoundsParams(Resolvable):
 
 def resolve_check_params(
     context: ResolutionContext, model
-) -> Union[ColumnSchemaChangeParams, MetadataBoundsParams]:
+) -> ColumnSchemaChangeParams | MetadataBoundsParams:
     if model.type == "column_schema_change":
         return ColumnSchemaChangeParams.resolve_from_model(context, model)
     elif model.type == "metadata_bounds":
@@ -77,10 +77,10 @@ def resolve_check_params(
 
 # Doesn't work for union right now
 ResolvedMetadataCheckParams = Annotated[
-    Union[ColumnSchemaChangeParams, MetadataBoundsParams],
+    ColumnSchemaChangeParams | MetadataBoundsParams,
     Resolver(
         resolve_check_params,
-        model_field_type=Union[ColumnSchemaChangeParams.model(), MetadataBoundsParams.model()],
+        model_field_type=ColumnSchemaChangeParams.model() | MetadataBoundsParams.model(),
     ),
 ]
 

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, TypeAlias, Union
+from typing import NamedTuple, Optional, TypeAlias
 
 from typing_extensions import Self
 
@@ -19,17 +19,13 @@ from dagster._core.definitions.unresolved_asset_job_definition import (
 )
 from dagster._utils.warnings import deprecation_warning
 
-ExecutableDefinition: TypeAlias = Union[
-    JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition
-]
+ExecutableDefinition: TypeAlias = JobDefinition | GraphDefinition | UnresolvedAssetJobDefinition
 
-CoercibleToAutomationTarget: TypeAlias = Union[
-    CoercibleToAssetSelection,
-    AssetsDefinition,
-    ExecutableDefinition,
-]
+CoercibleToAutomationTarget: TypeAlias = (
+    CoercibleToAssetSelection | AssetsDefinition | ExecutableDefinition
+)
 
-ResolvableToJob: TypeAlias = Union[JobDefinition, UnresolvedAssetJobDefinition, str]
+ResolvableToJob: TypeAlias = JobDefinition | UnresolvedAssetJobDefinition | str
 """
 A piece of data that is resolvable to a JobDefinition. One of:
 
@@ -50,7 +46,7 @@ class AutomationTarget(
         [
             ("resolvable_to_job", ResolvableToJob),
             ("op_selection", Optional[Sequence[str]]),
-            ("assets_defs", Sequence[Union[AssetsDefinition, SourceAsset]]),
+            ("assets_defs", Sequence[AssetsDefinition | SourceAsset]),
         ],
     )
 ):
@@ -64,9 +60,9 @@ class AutomationTarget(
 
     def __new__(
         cls,
-        resolvable_to_job: Union[JobDefinition, UnresolvedAssetJobDefinition, str],
+        resolvable_to_job: JobDefinition | UnresolvedAssetJobDefinition | str,
         op_selection: Optional[Sequence[str]] = None,
-        assets_defs: Optional[Sequence[Union[AssetsDefinition, SourceAsset]]] = None,
+        assets_defs: Optional[Sequence[AssetsDefinition | SourceAsset]] = None,
     ):
         return super().__new__(
             cls,
@@ -130,7 +126,7 @@ class AutomationTarget(
             return self.resolvable_to_job.name
 
     @property
-    def job_def(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
+    def job_def(self) -> JobDefinition | UnresolvedAssetJobDefinition:
         if isinstance(self.resolvable_to_job, str):
             check.failed(
                 "Cannot access job_def for a target with string job name for resolvable_to_job"

@@ -409,7 +409,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_logs_for_run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         run_id: str,
-        cursor: Optional[Union[str, int]] = None,
+        cursor: Optional[str | int] = None,
         of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
         ascending: bool = True,

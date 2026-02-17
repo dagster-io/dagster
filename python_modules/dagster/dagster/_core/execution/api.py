@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -457,7 +457,7 @@ def execute_job(
 
 @telemetry_wrapper
 def _logged_execute_job(
-    job_arg: Union[IJob, JobDefinition],
+    job_arg: IJob | JobDefinition,
     instance: DagsterInstance,
     run_config: Optional[Mapping[str, object]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -506,7 +506,7 @@ def _logged_execute_job(
 
 
 def _reexecute_job(
-    job_arg: Union[IJob, JobDefinition],
+    job_arg: IJob | JobDefinition,
     run_config: Optional[Mapping[str, object]],
     reexecution_options: ReexecutionOptions,
     tags: Optional[Mapping[str, str]],
@@ -675,7 +675,7 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    job: Union[IJob, JobDefinition],
+    job: IJob | JobDefinition,
     run_config: Optional[Mapping[str, object]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
@@ -886,7 +886,7 @@ class ExecuteRunWithPlanIterable:
 
 
 def _check_execute_job_args(
-    job_arg: Union[JobDefinition, IJob],
+    job_arg: JobDefinition | IJob,
     run_config: Optional[Mapping[str, object]],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]] = None,
@@ -948,8 +948,8 @@ def _resolve_reexecute_step_selection(
 
 
 def _job_with_repository_load_data(
-    job_arg: Union[JobDefinition, IJob],
-) -> tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
+    job_arg: JobDefinition | IJob,
+) -> tuple[JobDefinition | IJob, Optional[RepositoryLoadData]]:
     """For ReconstructableJob, generate and return any required RepositoryLoadData, alongside
     a ReconstructableJob with this repository load data baked in.
     """

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ class ConcurrencyPools(BaseModel, extra="forbid"):
 
 class TagConcurrencyLimit(BaseModel, extra="forbid"):
     key: str
-    value: Optional[Union[str, dict[str, Any]]] = None
+    value: Optional[str | dict[str, Any]] = None
     limit: int
 
 

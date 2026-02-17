@@ -17,7 +17,9 @@ from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
 
-DatabricksSdkTaskType = Union[
+# Union is required here because databricks SDK types use a metaclass that doesn't support the
+# `|` operator at runtime, causing TypeError during module import (e.g. in Sphinx doc builds).
+DatabricksSdkTaskType = Union[  # noqa: UP007
     jobs.NotebookTask,
     jobs.RunJobTask,
     jobs.PythonWheelTask,
@@ -116,7 +118,7 @@ class DatabricksTaskDependsOnConfig:
 class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     task_key: str
     task_config: Mapping[str, Any]
-    task_parameters: Union[Mapping[str, Any], list[str]]
+    task_parameters: Mapping[str, Any] | list[str]
     depends_on: list[DatabricksTaskDependsOnConfig]
     job_name: str
     libraries: list[Mapping[str, Any]]
@@ -473,7 +475,7 @@ class DatabricksConfig(IHaveNew):
 
     def __new__(
         cls,
-        databricks_config_path: Union[Path, str],
+        databricks_config_path: Path | str,
     ) -> "DatabricksConfig":
         databricks_config_path = Path(databricks_config_path)
         if not databricks_config_path.exists():

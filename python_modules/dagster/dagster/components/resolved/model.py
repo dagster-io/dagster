@@ -118,7 +118,7 @@ class Resolver:
 
     def __init__(
         self,
-        fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
+        fn: ParentFn | AttrWithContextFn | Callable[["ResolutionContext", Any], Any],
         *,
         model_field_name: Optional[str] = None,
         model_field_type: Optional[type | UnionType] = None,
@@ -171,7 +171,7 @@ class Resolver:
         field_types = tuple(r.model_field_type or t for t, r in arg_resolver_pairs)
         return Resolver(
             fn=functools.partial(resolve_union, [r for _, r in arg_resolver_pairs]),
-            model_field_type=Union[field_types],  # pyright: ignore[reportInvalidTypeArguments]
+            model_field_type=Union[field_types],  # pyright: ignore[reportInvalidTypeArguments]  # noqa: UP007
         )
 
     @staticmethod

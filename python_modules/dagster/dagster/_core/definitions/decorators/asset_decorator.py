@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import (
@@ -108,7 +108,7 @@ def asset(
 
 def _validate_hidden_non_argument_dep_param(
     non_argument_deps: Any,
-) -> Optional[Union[set[AssetKey], set[str]]]:
+) -> Optional[set[AssetKey] | set[str]]:
     if non_argument_deps is None:
         return non_argument_deps
 
@@ -183,7 +183,7 @@ def asset(
     kinds: Optional[AbstractSet[str]] = None,
     pool: Optional[str] = None,
     **kwargs: Any,
-) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+) -> AssetsDefinition | Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
@@ -766,7 +766,7 @@ def graph_asset(
     name: Optional[str] = None,
     description: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    config: Optional[ConfigMapping | Mapping[str, Any]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition[str]] = None,
@@ -803,7 +803,7 @@ def graph_asset(
     name: Optional[str] = None,
     description: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    config: Optional[ConfigMapping | Mapping[str, Any]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition[str]] = None,
@@ -819,7 +819,7 @@ def graph_asset(
     key: Optional[CoercibleToAssetKey] = None,
     kinds: Optional[AbstractSet[str]] = None,
     **kwargs: Any,
-) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+) -> AssetsDefinition | Callable[[Callable[..., Any]], AssetsDefinition]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
     This decorator is meant to decorate a function that composes a set of ops or graphs to define
@@ -949,7 +949,7 @@ def graph_asset_no_defaults(
     name: Optional[str],
     description: Optional[str],
     ins: Optional[Mapping[str, AssetIn]],
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]],
+    config: Optional[ConfigMapping | Mapping[str, Any]],
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
     group_name: Optional[str],
     partitions_def: Optional[PartitionsDefinition],
@@ -1046,7 +1046,7 @@ def graph_multi_asset(
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    config: Optional[ConfigMapping | Mapping[str, Any]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -1190,7 +1190,7 @@ def graph_multi_asset(
 
 def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
-    non_argument_deps: Optional[Union[set[AssetKey], set[str]]],
+    non_argument_deps: Optional[set[AssetKey] | set[str]],
 ) -> Optional[Iterable[AssetDep]]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.

@@ -1,7 +1,7 @@
 import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Annotated, Any, NamedTuple, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Annotated, Any, NamedTuple, Optional, TypeAlias
 
 from dagster_shared.record import ImportFrom
 from dagster_shared.utils.cached_method import get_cached_method_cache
@@ -58,13 +58,13 @@ if TYPE_CHECKING:
 
 
 TAssets: TypeAlias = Optional[
-    Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]
+    Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition]
 ]
 TSchedules: TypeAlias = Optional[
-    Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]
 ]
 TSensors: TypeAlias = Optional[Iterable[SensorDefinition]]
-TJob: TypeAlias = Union[JobDefinition, UnresolvedAssetJobDefinition]
+TJob: TypeAlias = JobDefinition | UnresolvedAssetJobDefinition
 TJobs: TypeAlias = Optional[Iterable[TJob]]
 TAssetChecks: TypeAlias = Optional[Iterable[AssetsDefinition]]
 
@@ -77,7 +77,7 @@ def create_repository_using_definitions_args(
     sensors: TSensors = None,
     jobs: TJobs = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
+    executor: Optional[ExecutorDefinition | Executor] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: TAssetChecks = None,
 ) -> RepositoryDefinition:
@@ -119,8 +119,8 @@ def create_repository_using_definitions_args(
 
 
 class _AttachedObjects(NamedTuple):
-    jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
-    schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    jobs: Iterable[JobDefinition | UnresolvedAssetJobDefinition]
+    schedules: Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]
     sensors: Iterable[SensorDefinition]
 
 
@@ -135,9 +135,9 @@ def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str
 
 
 def _attach_resources_to_jobs_and_instigator_jobs(
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    jobs: Optional[Iterable[JobDefinition | UnresolvedAssetJobDefinition]],
     schedules: Optional[
-        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+        Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]
     ],
     sensors: Optional[Iterable[SensorDefinition]],
     resource_defs: Mapping[str, Any],
@@ -247,7 +247,7 @@ def _create_repository_using_definitions_args(
     sensors: TSensors = None,
     jobs: TJobs = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
+    executor: Optional[ExecutorDefinition | Executor] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: TAssetChecks = None,
     metadata: Optional[RawMetadataMapping] = None,
@@ -296,8 +296,8 @@ def _create_repository_using_definitions_args(
 
 
 def _canonicalize_specs_to_assets_defs(
-    assets: Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]],
-) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    assets: Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition],
+) -> Iterable[AssetsDefinition | SourceAsset | CacheableAssetsDefinition]:
     asset_specs_by_partitions_def = defaultdict(list)
     for obj in assets:
         if isinstance(obj, AssetSpec):
@@ -414,7 +414,7 @@ class Definitions(IHaveNew):
     sensors: TSensors = None
     jobs: TJobs = None
     resources: Optional[Mapping[str, Any]] = None
-    executor: Optional[Union[ExecutorDefinition, Executor]] = None
+    executor: Optional[ExecutorDefinition | Executor] = None
     loggers: Optional[Mapping[str, LoggerDefinition]] = None
     # There's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
     # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
@@ -432,7 +432,7 @@ class Definitions(IHaveNew):
         sensors: TSensors = None,
         jobs: TJobs = None,
         resources: Optional[Mapping[str, Any]] = None,
-        executor: Optional[Union[ExecutorDefinition, Executor]] = None,
+        executor: Optional[ExecutorDefinition | Executor] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: TAssetChecks = None,
         metadata: Optional[RawMetadataMapping] = None,

@@ -4,16 +4,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar, cast  # noqa: UP035
 
 from dagster_shared.record import replace
 
@@ -1282,15 +1273,15 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         group_names_by_key: Mapping[AssetKey, str] = {},
         tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
         legacy_freshness_policy: Optional[
-            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
+            LegacyFreshnessPolicy | Mapping[AssetKey, LegacyFreshnessPolicy]
         ] = None,
         automation_condition: Optional[
-            Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
+            AutomationCondition | Mapping[AssetKey, AutomationCondition]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         metadata_by_key: Optional[
-            Mapping[Union[AssetKey, AssetCheckKey], ArbitraryMetadataMapping]
+            Mapping[AssetKey | AssetCheckKey, ArbitraryMetadataMapping]
         ] = None,
     ) -> "AssetsDefinition":
         conflicts_by_attr_name: dict[str, set[AssetKey]] = defaultdict(set)
@@ -1300,7 +1291,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             replace_dict = {}
 
             def update_replace_dict_and_conflicts(
-                new_value: Union[Mapping[AssetKey, object], object],
+                new_value: Mapping[AssetKey, object] | object,
                 attr_name: str,
                 default_value: object = None,
             ) -> None:

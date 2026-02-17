@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import pytest
 from dagster import AssetKey
@@ -60,7 +60,7 @@ def setup_powerbi_component(
 def test_basic_component_load(
     workspace_data_api_mocks,
     workspace_id: str,
-    enable_semantic_model_refresh: Union[bool, list[str]],
+    enable_semantic_model_refresh: bool | list[str],
     should_be_executable: bool,
 ) -> None:
     with (

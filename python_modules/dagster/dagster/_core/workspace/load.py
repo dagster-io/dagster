@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster_shared.yaml_utils import load_yaml_from_path
 
@@ -71,7 +71,7 @@ def location_origins_from_config(
 
 
 def _location_origin_from_module_config(
-    python_module_config: Union[str, Mapping[str, str]],
+    python_module_config: str | Mapping[str, str],
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
@@ -86,7 +86,7 @@ def _location_origin_from_module_config(
 
 
 def _get_module_config_data(
-    python_module_config: Union[str, Mapping[str, str]],
+    python_module_config: str | Mapping[str, str],
 ) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (python_module_config, None, None, None, None)
@@ -102,7 +102,7 @@ def _get_module_config_data(
 
 
 def _location_origin_from_autoload_config(
-    python_module_config: Union[str, Mapping[str, str]],
+    python_module_config: str | Mapping[str, str],
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
@@ -174,7 +174,7 @@ def location_origin_from_autoload_defs_module_name(
 
 
 def _location_origin_from_package_config(
-    python_package_config: Union[str, Mapping[str, str]],
+    python_package_config: str | Mapping[str, str],
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
@@ -189,7 +189,7 @@ def _location_origin_from_package_config(
 
 
 def _get_package_config_data(
-    python_package_config: Union[str, Mapping[str, str]],
+    python_package_config: str | Mapping[str, str],
 ) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (python_package_config, None, None, None, None)
@@ -231,7 +231,7 @@ def location_origin_from_package_name(
 
 
 def _location_origin_from_python_file_config(
-    python_file_config: Union[str, Mapping],
+    python_file_config: str | Mapping,
     yaml_path: str,
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.str_param(yaml_path, "yaml_path")
@@ -254,7 +254,7 @@ def _location_origin_from_python_file_config(
 
 
 def _get_python_file_config_data(
-    python_file_config: Union[str, Mapping], yaml_path: str
+    python_file_config: str | Mapping, yaml_path: str
 ) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (rebase_file(python_file_config, yaml_path), None, None, None, None)
@@ -369,19 +369,19 @@ def _location_origin_from_target_config(
     check.str_param(yaml_path, "yaml_path")
 
     if "python_file" in target_config:
-        python_file_config = cast("Union[str, dict]", target_config["python_file"])
+        python_file_config = cast("str | dict", target_config["python_file"])
         return _location_origin_from_python_file_config(python_file_config, yaml_path)
 
     elif "python_module" in target_config:
-        python_module_config = cast("Union[str, dict]", target_config["python_module"])
+        python_module_config = cast("str | dict", target_config["python_module"])
         return _location_origin_from_module_config(python_module_config)
 
     elif "python_package" in target_config:
-        python_package_config = cast("Union[str, dict]", target_config["python_package"])
+        python_package_config = cast("str | dict", target_config["python_package"])
         return _location_origin_from_package_config(python_package_config)
 
     elif "autoload_defs_module" in target_config:
-        autoload_cfg = cast("Union[str, dict]", target_config["autoload_defs_module"])
+        autoload_cfg = cast("str | dict", target_config["autoload_defs_module"])
         return _location_origin_from_autoload_config(autoload_cfg)
 
     else:

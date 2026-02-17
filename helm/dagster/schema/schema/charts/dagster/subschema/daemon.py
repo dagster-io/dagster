@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from pydantic import ConfigDict
 
@@ -19,7 +19,7 @@ class TagConcurrencyLimitConfig(BaseModel, extra="forbid"):
 
 class TagConcurrencyLimit(BaseModel, extra="forbid"):
     key: str
-    value: Optional[Union[str, TagConcurrencyLimitConfig]] = None
+    value: Optional[str | TagConcurrencyLimitConfig] = None
     limit: int
 
 
@@ -89,7 +89,7 @@ class Daemon(BaseModel, extra="forbid"):
     image: kubernetes.Image
     runCoordinator: RunCoordinator
     heartbeatTolerance: int
-    env: Union[dict[str, str], list[kubernetes.EnvVar]]
+    env: dict[str, str] | list[kubernetes.EnvVar]
     envConfigMaps: list[kubernetes.ConfigMapEnvSource]
     envSecrets: list[kubernetes.SecretEnvSource]
     deploymentLabels: dict[str, str]

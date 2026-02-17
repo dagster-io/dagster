@@ -88,9 +88,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         self,
         name: str,
         config_schema: Optional[UserConfigSchema] = None,
-        requirements: Union[
-            ExecutorRequirementsFunction, Optional[Sequence[ExecutorRequirement]]
-        ] = None,
+        requirements: ExecutorRequirementsFunction | Optional[Sequence[ExecutorRequirement]] = None,
         executor_creation_fn: Optional[ExecutorCreationFunction] = None,
         description: Optional[str] = None,
     ):
@@ -207,19 +205,15 @@ def executor(name: ExecutorCreationFunction) -> ExecutorDefinition: ...
 def executor(
     name: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    requirements: Optional[
-        Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
-    ] = ...,
+    requirements: Optional[ExecutorRequirementsFunction | Sequence[ExecutorRequirement]] = ...,
 ) -> "_ExecutorDecoratorCallable": ...
 
 
 @public
 def executor(
-    name: Union[ExecutorCreationFunction, Optional[str]] = None,
+    name: ExecutorCreationFunction | Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    requirements: Optional[
-        Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
-    ] = None,
+    requirements: Optional[ExecutorRequirementsFunction | Sequence[ExecutorRequirement]] = None,
 ) -> Union[ExecutorDefinition, "_ExecutorDecoratorCallable"]:
     """Define an executor.
 

@@ -8,7 +8,7 @@ import time
 from collections import namedtuple
 from enum import Enum
 from gzip import GzipFile
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional
 
 import dagster as dg
 import pytest
@@ -735,7 +735,7 @@ def test_legacy_event_log_load():
             [
                 ("error_info", Optional[SerializableErrorInfo]),
                 ("message", str),
-                ("level", Union[str, int]),
+                ("level", str | int),
                 ("user_message", str),
                 ("run_id", str),
                 ("timestamp", float),

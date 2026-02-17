@@ -3,7 +3,7 @@ import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional
 from urllib.parse import parse_qsl, urlparse
 
 import requests
@@ -1025,7 +1025,7 @@ def load_airbyte_cloud_asset_specs(
 
 @record
 class AirbyteWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace]
+    workspace: AirbyteWorkspace | AirbyteCloudWorkspace
     translator: DagsterAirbyteTranslator
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]]
 

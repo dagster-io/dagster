@@ -61,14 +61,12 @@ if TYPE_CHECKING:
         RepositorySelector,
     )
 
-RunStatusSensorEvaluationFunction: TypeAlias = Union[
-    Callable[..., SensorReturnTypesUnion],
-    Callable[..., SensorReturnTypesUnion],
-]
-RunFailureSensorEvaluationFn: TypeAlias = Union[
-    Callable[..., SensorReturnTypesUnion],
-    Callable[..., SensorReturnTypesUnion],
-]
+RunStatusSensorEvaluationFunction: TypeAlias = (
+    Callable[..., SensorReturnTypesUnion] | Callable[..., SensorReturnTypesUnion]
+)
+RunFailureSensorEvaluationFn: TypeAlias = (
+    Callable[..., SensorReturnTypesUnion] | Callable[..., SensorReturnTypesUnion]
+)
 
 
 def _get_run_status_sensor_fetch_limit(monitor_all_code_locations: bool) -> int:
@@ -455,7 +453,7 @@ def run_failure_sensor(
     additional_warn_text="Use `monitor_all_code_locations` instead.",
 )
 def run_failure_sensor(
-    name: Optional[Union[RunFailureSensorEvaluationFn, str]] = None,
+    name: Optional[RunFailureSensorEvaluationFn | str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
@@ -489,13 +487,7 @@ def run_failure_sensor(
     monitor_all_repositories: Optional[bool] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[RawMetadataMapping] = None,
-) -> Union[
-    SensorDefinition,
-    Callable[
-        [RunFailureSensorEvaluationFn],
-        SensorDefinition,
-    ],
-]:
+) -> SensorDefinition | Callable[[RunFailureSensorEvaluationFn], SensorDefinition]:
     """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
 
@@ -712,7 +704,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
 
         def _wrapped_fn(
             context: SensorEvaluationContext,
-        ) -> Iterator[Union[RunRequest, SkipReason, DagsterRunReaction, SensorResult]]:
+        ) -> Iterator[RunRequest | SkipReason | DagsterRunReaction | SensorResult]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -782,7 +774,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                 # avoid fetching events that we will filter out later on.
                 job_names = _job_names_for_monitored(
                     cast(
-                        "Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobSelector]]",
+                        "Sequence[JobDefinition | GraphDefinition | UnresolvedAssetJobDefinition | JobSelector]",
                         monitored_jobs,
                     )
                 )

@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from dagster_shared.record import replace
 from dagster_shared.serdes import whitelist_for_serdes
@@ -54,7 +54,7 @@ class SinceConditionData:
             reset_timestamp=_get_float("reset_timestamp"),
         )
 
-    def to_metadata(self) -> Mapping[str, Union[IntMetadataValue, FloatMetadataValue]]:
+    def to_metadata(self) -> Mapping[str, IntMetadataValue | FloatMetadataValue]:
         return dict(
             trigger_evaluation_id=IntMetadataValue(self.trigger_evaluation_id),
             trigger_timestamp=FloatMetadataValue(self.trigger_timestamp),
@@ -165,8 +165,8 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
 
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching

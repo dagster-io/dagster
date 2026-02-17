@@ -3,7 +3,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal, Optional
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -274,9 +274,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
         Resolver(
             _resolve_tableau_workspace,
             model_field_name="workspace",
-            model_field_type=Union[
-                TableauCloudWorkspaceArgs.model(), TableauServerWorkspaceArgs.model()
-            ],
+            model_field_type=TableauCloudWorkspaceArgs.model() | TableauServerWorkspaceArgs.model(),
             description="Configuration for connecting to the Tableau workspace. Use 'type: cloud' for Tableau Cloud or 'type: server' for Tableau Server.",
             examples=[
                 {
@@ -310,9 +308,9 @@ class TableauComponent(StateBackedComponent, Resolvable):
     ] = field(default_factory=ResolvedTableauSelector)
 
     # Takes a list of workbook names or ids to enable refresh for, or True to enable for all embedded datasources
-    enable_embedded_datasource_refresh: Union[bool, list[str]] = False
+    enable_embedded_datasource_refresh: bool | list[str] = False
     # Takes a list of published datasource names or id's to enable refresh for, or True to enable for all published datasources
-    enable_published_datasource_refresh: Union[bool, list[str]] = False
+    enable_published_datasource_refresh: bool | list[str] = False
 
     translation: Optional[ResolvedMultilayerTranslationFn] = None
     defs_state: ResolvedDefsStateConfig = field(

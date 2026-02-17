@@ -4,7 +4,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, TypedDict, Union, cast
+from typing import Optional, TypedDict, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -130,7 +130,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         description="Engine passed to write_deltalake.",
     )
 
-    storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
+    storage_options: AzureConfig | S3Config | LocalConfig | GcsConfig = Field(
         discriminator="provider",
         description="Configuration for accessing storage location.",
     )

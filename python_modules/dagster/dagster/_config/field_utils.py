@@ -1,7 +1,7 @@
 import hashlib
 import os
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeGuard, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -555,7 +555,7 @@ class EnvVar(str):
         return os.getenv(self.env_var_name, default=default)
 
 
-DagsterEnvVar = Union[EnvVar, IntEnvVar]
+DagsterEnvVar: TypeAlias = EnvVar | IntEnvVar
 
 
 def is_dagster_env_var(value: Any) -> TypeGuard[DagsterEnvVar]:

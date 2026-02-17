@@ -12,7 +12,6 @@ from typing import (  # noqa: UP035
     TypeAlias,
     TypeGuard,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_origin,
@@ -759,15 +758,13 @@ class PartialResource(
         )
 
 
-ResourceOrPartial: TypeAlias = Union[
-    ConfigurableResourceFactory[TResValue], PartialResource[TResValue]
-]
-ResourceOrPartialOrValue: TypeAlias = Union[
-    ConfigurableResourceFactory[TResValue],
-    PartialResource[TResValue],
-    ResourceDefinition,
-    TResValue,
-]
+ResourceOrPartial: TypeAlias = ConfigurableResourceFactory[TResValue] | PartialResource[TResValue]
+ResourceOrPartialOrValue: TypeAlias = (
+    ConfigurableResourceFactory[TResValue]
+    | PartialResource[TResValue]
+    | ResourceDefinition
+    | TResValue
+)
 
 
 V = TypeVar("V")
@@ -1002,9 +999,7 @@ def validate_resource_annotated_function(fn) -> None:
         )
 
 
-CoercibleToResource: TypeAlias = Union[
-    ResourceDefinition, ConfigurableResourceFactory, PartialResource
-]
+CoercibleToResource: TypeAlias = ResourceDefinition | ConfigurableResourceFactory | PartialResource
 
 
 def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:

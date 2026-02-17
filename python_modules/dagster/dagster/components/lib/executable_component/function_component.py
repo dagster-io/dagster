@@ -1,7 +1,7 @@
 import importlib
 from collections.abc import Callable, Iterable
 from functools import cached_property
-from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 from dagster_shared import check
 
@@ -44,7 +44,7 @@ class FunctionSpec(OpSpec):
     fn: ResolvableCallable
 
 
-def get_config_param_type(fn: Callable) -> Union[type[Config], None]:
+def get_config_param_type(fn: Callable) -> type[Config] | None:
     """Get the type annotation of the 'config' parameter if it exists.
 
     Args:
@@ -84,7 +84,7 @@ class ExecuteFnMetadata:
         return {arg.name for arg in get_function_params(self.execute_fn)}
 
     @cached_property
-    def config_cls(self) -> Union[type, None]:
+    def config_cls(self) -> type | None:
         return get_config_param_type(self.execute_fn)
 
     @cached_property
@@ -127,7 +127,7 @@ class FunctionComponent(ExecutableComponent):
     """
 
     ## Begin overloads
-    execution: Union[FunctionSpec, ResolvableCallable]
+    execution: FunctionSpec | ResolvableCallable
 
     @property
     def op_spec(self) -> OpSpec:
@@ -151,9 +151,9 @@ class FunctionComponent(ExecutableComponent):
 
     def invoke_execute_fn(
         self,
-        context: Union[AssetExecutionContext, AssetCheckExecutionContext],
+        context: AssetExecutionContext | AssetCheckExecutionContext,
         component_load_context: ComponentLoadContext,
-    ) -> Iterable[Union[MaterializeResult, AssetCheckResult]]:
+    ) -> Iterable[MaterializeResult | AssetCheckResult]:
         rd = context.resources.original_resource_dict
         expected_fn_kwargs = self.resource_keys | ({"config"} if self.config_cls else set())
 
@@ -168,7 +168,7 @@ class FunctionComponent(ExecutableComponent):
         return self.execute_fn_metadata.execute_fn(context, **fn_kwargs)
 
     def get_config_param_dict(
-        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]
+        self, context: AssetExecutionContext | AssetCheckExecutionContext
     ) -> dict[str, Any]:
         if not self.config_cls:
             return {}

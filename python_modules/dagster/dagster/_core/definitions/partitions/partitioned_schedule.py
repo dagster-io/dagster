@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 from dagster_shared.record import copy, record
 from typing_extensions import Self
@@ -77,7 +77,7 @@ class UnresolvedPartitionedAssetScheduleDefinition:
 
 
 def build_schedule_from_partitioned_job(
-    job: Union[JobDefinition, UnresolvedAssetJobDefinition],
+    job: JobDefinition | UnresolvedAssetJobDefinition,
     description: Optional[str] = None,
     name: Optional[str] = None,
     minute_of_hour: Optional[int] = None,
@@ -89,7 +89,7 @@ def build_schedule_from_partitioned_job(
     cron_schedule: Optional[str] = None,
     execution_timezone: Optional[str] = None,
     metadata: Optional[RawMetadataMapping] = None,
-) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
+) -> UnresolvedPartitionedAssetScheduleDefinition | ScheduleDefinition:
     """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
     multi-partitioned, as long as one of the partition dimensions is time-partitioned.
@@ -234,9 +234,9 @@ def build_schedule_from_partitioned_job(
 
 def _get_schedule_evaluation_fn(
     partitions_def: PartitionsDefinition,
-    job: Union[JobDefinition, UnresolvedAssetJobDefinition],
+    job: JobDefinition | UnresolvedAssetJobDefinition,
     tags: Optional[Mapping[str, str]] = None,
-) -> Callable[[ScheduleEvaluationContext], Union[SkipReason, RunRequest, RunRequestIterator]]:
+) -> Callable[[ScheduleEvaluationContext], SkipReason | RunRequest | RunRequestIterator]:
     def schedule_fn(context):
         # Run for the latest partition. Prior partitions will have been handled by prior ticks.
         with partition_loading_context(
@@ -275,11 +275,7 @@ def _get_schedule_evaluation_fn(
 
 def _check_valid_schedule_partitions_def(
     partitions_def: PartitionsDefinition,
-) -> Union[
-    TimeWindowPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-]:
+) -> TimeWindowPartitionsDefinition | MultiPartitionsDefinition | StaticPartitionsDefinition:
     if not has_one_dimension_time_window_partitioning(partitions_def) and not isinstance(
         partitions_def, StaticPartitionsDefinition
     ):
@@ -291,7 +287,7 @@ def _check_valid_schedule_partitions_def(
         )
 
     return cast(
-        "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition]",
+        "TimeWindowPartitionsDefinition | MultiPartitionsDefinition | StaticPartitionsDefinition",
         partitions_def,
     )
 

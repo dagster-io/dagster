@@ -3,7 +3,7 @@ import json
 import os
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from dagster_shared.serdes.objects.models import DefsStateInfo
 from pydantic import BaseModel, Extra, Field
@@ -51,7 +51,7 @@ class LocationState(BaseModel, extra=Extra.forbid):
     is_branch_deployment: bool
     selected: bool = True
     build: BuildMetadata
-    build_output: Optional[Union[DockerBuildOutput, PexBuildOutput]] = Field(
+    build_output: Optional[DockerBuildOutput | PexBuildOutput] = Field(
         None, discriminator="strategy"
     )
     defs_state_info: Optional[DefsStateInfo] = None

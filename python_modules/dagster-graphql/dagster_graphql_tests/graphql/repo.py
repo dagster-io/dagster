@@ -10,7 +10,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
-from typing import Literal, Optional, TypeVar, Union
+from typing import Literal, Optional, TypeVar
 
 from dagster import (
     Any,
@@ -2464,7 +2464,7 @@ test_repo = Definitions(
 test_repo._name = "test_repo"  # noqa: SLF001
 
 
-def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
+def _targets_asset_job(instigator: ScheduleDefinition | SensorDefinition) -> bool:
     if isinstance(instigator, SensorDefinition) and instigator.sensor_type in (
         # these rely on asset selections, which are invalid with the repos constructed
         # using the legacy dictionary pattern

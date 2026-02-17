@@ -300,7 +300,7 @@ def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) 
 async def validate_pipeline_config(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
-    run_config: Union[str, Mapping[str, object]],
+    run_config: str | Mapping[str, object],
 ) -> "GraphenePipelineConfigValidationValid":
     from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
 

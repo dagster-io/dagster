@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster._annotations import public
@@ -45,13 +45,13 @@ def wrap_time_window_run_config_fn(
 
 @public
 def hourly_partitioned_config(
-    start_date: Union[datetime, str],
+    start_date: datetime | str,
     minute_offset: int = 0,
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[HourlyPartitionsDefinition],
@@ -133,14 +133,14 @@ def hourly_partitioned_config(
 
 @public
 def daily_partitioned_config(
-    start_date: Union[datetime, str],
+    start_date: datetime | str,
     minute_offset: int = 0,
     hour_offset: int = 0,
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[DailyPartitionsDefinition],
@@ -225,7 +225,7 @@ def daily_partitioned_config(
 
 @public
 def weekly_partitioned_config(
-    start_date: Union[datetime, str],
+    start_date: datetime | str,
     minute_offset: int = 0,
     hour_offset: int = 0,
     day_offset: int = 0,
@@ -233,7 +233,7 @@ def weekly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[WeeklyPartitionsDefinition],
@@ -322,7 +322,7 @@ def weekly_partitioned_config(
 
 @public
 def monthly_partitioned_config(
-    start_date: Union[datetime, str],
+    start_date: datetime | str,
     minute_offset: int = 0,
     hour_offset: int = 0,
     day_offset: int = 1,
@@ -330,7 +330,7 @@ def monthly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[MonthlyPartitionsDefinition],

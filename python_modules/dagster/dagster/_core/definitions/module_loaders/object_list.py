@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, reduce
 from types import ModuleType
-from typing import Any, Optional, Union, cast, get_args
+from typing import Any, Optional, TypeAlias, cast, get_args
 
 from dagster._core.definitions.asset_checks.asset_checks_definition import (
     AssetChecksDefinition,
@@ -35,17 +35,17 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-LoadableDagsterDef = Union[
-    AssetsDefinition,
-    SourceAsset,
-    CacheableAssetsDefinition,
-    AssetSpec,
-    SensorDefinition,
-    ScheduleDefinition,
-    JobDefinition,
-    UnresolvedAssetJobDefinition,
-    UnresolvedPartitionedAssetScheduleDefinition,
-]
+LoadableDagsterDef: TypeAlias = (
+    AssetsDefinition
+    | SourceAsset
+    | CacheableAssetsDefinition
+    | AssetSpec
+    | SensorDefinition
+    | ScheduleDefinition
+    | JobDefinition
+    | UnresolvedAssetJobDefinition
+    | UnresolvedPartitionedAssetScheduleDefinition
+)
 ALL_LOADABLE_TYPES: tuple[type] = get_args(LoadableDagsterDef)
 
 
@@ -104,7 +104,7 @@ class ModuleScopedDagsterDefs:
     @cached_property
     def schedule_defs(
         self,
-    ) -> Sequence[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]:
+    ) -> Sequence[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]:
         return [
             schedule
             for schedule in self.deduped_objects
@@ -114,7 +114,7 @@ class ModuleScopedDagsterDefs:
         ]
 
     @cached_property
-    def job_objects(self) -> Sequence[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    def job_objects(self) -> Sequence[JobDefinition | UnresolvedAssetJobDefinition]:
         return [
             job
             for job in self.deduped_objects
@@ -136,7 +136,7 @@ class ModuleScopedDagsterDefs:
     @cached_property
     def asset_objects_by_key(
         self,
-    ) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetSpec, AssetsDefinition]]]:
+    ) -> Mapping[AssetKey, Sequence[SourceAsset | AssetSpec | AssetsDefinition]]:
         objects_by_key = defaultdict(list)
         for asset_object in self.flat_object_list:
             if not isinstance(asset_object, (SourceAsset, AssetSpec, AssetsDefinition)):
@@ -222,7 +222,7 @@ class DagsterObjectsList:
         self.loaded_defs = loaded_objects
 
     @cached_property
-    def assets_defs_and_specs(self) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    def assets_defs_and_specs(self) -> Sequence[AssetsDefinition | AssetSpec]:
         return [
             asset
             for asset in self.loaded_defs
@@ -244,11 +244,11 @@ class DagsterObjectsList:
     @cached_property
     def assets_defs_specs_and_checks_defs(
         self,
-    ) -> Sequence[Union[AssetsDefinition, AssetSpec, AssetChecksDefinition]]:
+    ) -> Sequence[AssetsDefinition | AssetSpec | AssetChecksDefinition]:
         return [*self.assets_defs_and_specs, *self.checks_defs]
 
     @cached_property
-    def source_assets(self) -> Sequence[Union[SourceAsset, AssetSpec]]:
+    def source_assets(self) -> Sequence[SourceAsset | AssetSpec]:
         return [
             dagster_def
             for dagster_def in self.loaded_defs
@@ -274,7 +274,7 @@ class DagsterObjectsList:
     @cached_property
     def schedules(
         self,
-    ) -> Sequence[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]:
+    ) -> Sequence[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]:
         return [
             dagster_def
             for dagster_def in self.loaded_defs
@@ -284,7 +284,7 @@ class DagsterObjectsList:
         ]
 
     @cached_property
-    def jobs(self) -> Sequence[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    def jobs(self) -> Sequence[JobDefinition | UnresolvedAssetJobDefinition]:
         return [
             dagster_def
             for dagster_def in self.loaded_defs
@@ -294,7 +294,7 @@ class DagsterObjectsList:
     @cached_property
     def assets(
         self,
-    ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+    ) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:
         return [
             *self.assets_defs_and_specs,
             *self.source_assets,

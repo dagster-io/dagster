@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import public
@@ -98,7 +98,7 @@ class InProcessPipesClient(dg.PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[dg.OpExecutionContext, dg.AssetExecutionContext],
+        context: dg.OpExecutionContext | dg.AssetExecutionContext,
         fn: Callable[[PipesContext], None],
         extras: Optional[PipesExtras] = None,
         metadata: Optional[RawMetadataMapping] = None,  # metadata to attach to all materializations

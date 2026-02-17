@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, Union, cast, get_args
+from typing import TYPE_CHECKING, Any, Optional, cast, get_args
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
@@ -47,7 +47,7 @@ def create_op_compute_wrapper(
     def compute(
         context: ExecutionContextTypes,
         input_defs: Mapping[str, InputDefinition],
-    ) -> Union[Iterator[Output], AsyncIterator[Output]]:
+    ) -> Iterator[Output] | AsyncIterator[Output]:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -244,7 +244,7 @@ def _get_annotation_for_output_position(
 
 
 def _check_output_object_name(
-    output: Union[DynamicOutput, Output], output_def: OutputDefinition, position: int
+    output: DynamicOutput | Output, output_def: OutputDefinition, position: int
 ) -> None:
     from dagster._core.definitions.events import DEFAULT_OUTPUT
 

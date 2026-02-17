@@ -1,10 +1,9 @@
 """Path converter functions for different project layouts."""
 
 from pathlib import Path
-from typing import Union
 
 
-def dagster_path_converter(file_path: Path, root_path: Path) -> Union[str, None]:
+def dagster_path_converter(file_path: Path, root_path: Path) -> str | None:
     """Convert Dagster project file paths to importable module paths.
 
     Handles the specific Dagster project structure:
@@ -43,7 +42,7 @@ def dagster_path_converter(file_path: Path, root_path: Path) -> Union[str, None]
         return None
 
 
-def generic_path_converter(file_path: Path, root_path: Path) -> Union[str, None]:
+def generic_path_converter(file_path: Path, root_path: Path) -> str | None:
     """Convert generic file paths to importable module paths.
 
     Simple conversion: path/to/module.py -> path.to.module
@@ -77,7 +76,7 @@ def simple_package_converter(package_name: str):
         package_name: The base package name to prepend
     """
 
-    def converter(file_path: Path, root_path: Path) -> Union[str, None]:
+    def converter(file_path: Path, root_path: Path) -> str | None:
         try:
             relative_path = file_path.relative_to(root_path)
             parts = list(relative_path.parts)

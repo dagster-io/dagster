@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _flatten(items: Iterable[Union[T, list[T]]]) -> Iterator[T]:
+def _flatten(items: Iterable[T | list[T]]) -> Iterator[T]:
     for x in items:
         if isinstance(x, list):
             # switch to `yield from _flatten(x)` to support multiple layers of nesting
@@ -80,10 +80,7 @@ class _Repository:
 
     def __call__(
         self,
-        fn: Union[
-            Callable[[], RepositoryListSpec],
-            Callable[[], RepositoryDictSpec],
-        ],
+        fn: Callable[[], RepositoryListSpec] | Callable[[], RepositoryDictSpec],
     ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -228,7 +225,7 @@ def _resolve_cacheable_asset_data(
 
 @overload
 def repository(
-    definitions_fn: Union[Callable[[], RepositoryListSpec], Callable[[], RepositoryDictSpec]],
+    definitions_fn: Callable[[], RepositoryListSpec] | Callable[[], RepositoryDictSpec],
 ) -> RepositoryDefinition: ...
 
 
@@ -247,10 +244,7 @@ def repository(
 
 def repository(
     definitions_fn: Optional[
-        Union[
-            Callable[[], RepositoryListSpec],
-            Callable[[], RepositoryDictSpec],
-        ]
+        Callable[[], RepositoryListSpec] | Callable[[], RepositoryDictSpec]
     ] = None,
     *,
     name: Optional[str] = None,
@@ -260,7 +254,7 @@ def repository(
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     _component_tree: Optional["ComponentTree"] = None,
-) -> Union[RepositoryDefinition, _Repository]:
+) -> RepositoryDefinition | _Repository:
     """Create a repository from the decorated function.
 
     In most cases, :py:class:`Definitions` should be used instead.

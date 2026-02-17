@@ -1,5 +1,3 @@
-from typing import Union
-
 import responses
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
@@ -23,7 +21,7 @@ from dagster_airbyte_tests.beta.conftest import (
 
 def test_airbyte_workspace_data_to_table_props(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     table_props_data = (
         resource.fetch_airbyte_workspace_data().to_airbyte_connection_table_props_data()
@@ -35,7 +33,7 @@ def test_airbyte_workspace_data_to_table_props(
 
 def test_translator_asset_spec(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     table_props_data = (
         resource.fetch_airbyte_workspace_data().to_airbyte_connection_table_props_data()
@@ -72,7 +70,7 @@ class MyCustomTranslator(DagsterAirbyteTranslator):
 
 def test_custom_translator(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     table_props_data = (
         resource.fetch_airbyte_workspace_data().to_airbyte_connection_table_props_data()

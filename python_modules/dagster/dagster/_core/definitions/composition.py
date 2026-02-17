@@ -126,7 +126,7 @@ InputSource: TypeAlias = Union[
     InputMappingNode,
     DynamicFanIn,
     "AssetsDefinition",
-    list[Union[InvokedNodeOutputHandle, InputMappingNode]],
+    list[InvokedNodeOutputHandle | InputMappingNode],
 ]
 
 
@@ -300,7 +300,7 @@ class CompleteCompositionContext(NamedTuple):
                 elif isinstance(node, AssetsDefinition):
                     node_input_assets[invocation.node_name][input_name] = node
                 elif isinstance(node, list):
-                    entries: list[Union[DependencyDefinition, type[MappedInputPlaceholder]]] = []
+                    entries: list[DependencyDefinition | type[MappedInputPlaceholder]] = []
                     for idx, fanned_in_node in enumerate(node):
                         if isinstance(fanned_in_node, InvokedNodeOutputHandle):
                             entries.append(
@@ -474,7 +474,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
         outputs = [output_def for output_def in self.node_def.output_defs]
         invoked_output_handles: dict[
-            str, Union[InvokedNodeDynamicOutputWrapper, InvokedNodeOutputHandle]
+            str, InvokedNodeDynamicOutputWrapper | InvokedNodeOutputHandle
         ] = {}
         for output_def in outputs:
             if output_def.is_dynamic:

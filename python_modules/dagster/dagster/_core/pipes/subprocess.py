@@ -2,7 +2,7 @@ import os
 import signal
 from collections.abc import Mapping, Sequence
 from subprocess import PIPE, Popen
-from typing import Optional, Union
+from typing import Optional
 
 from dagster_pipes import PipesExtras
 
@@ -90,9 +90,9 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
-        command: Union[str, Sequence[str]],
+        command: str | Sequence[str],
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> PipesClientCompletedInvocation:

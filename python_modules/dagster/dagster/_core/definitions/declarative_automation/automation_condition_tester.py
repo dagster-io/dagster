@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value, serialize_value
 
@@ -67,7 +67,7 @@ class EvaluateAutomationConditionsResult:
 
 
 def evaluate_automation_conditions(
-    defs: Union[Definitions, Sequence[AssetsDefinition]],
+    defs: Definitions | Sequence[AssetsDefinition],
     instance: DagsterInstance,
     asset_selection: Optional[AssetSelection] = None,
     evaluation_time: Optional[datetime.datetime] = None,

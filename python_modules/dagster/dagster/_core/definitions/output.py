@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, NamedTuple, Optional, TypeVar, Union
+from typing import Any, NamedTuple, Optional, TypeVar
 
 from dagster_shared.error import DagsterError
 
@@ -325,7 +325,7 @@ class Out(
     NamedTuple(
         "_Out",
         [
-            ("dagster_type", PublicAttr[Union[DagsterType, type[NoValueSentinel]]]),
+            ("dagster_type", PublicAttr[DagsterType | type[NoValueSentinel]]),
             ("description", PublicAttr[Optional[str]]),
             ("is_required", PublicAttr[bool]),
             ("io_manager_key", PublicAttr[str]),
@@ -362,7 +362,7 @@ class Out(
 
     def __new__(
         cls,
-        dagster_type: Optional[Union[type, DagsterType]] = NoValueSentinel,
+        dagster_type: Optional[type | DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,

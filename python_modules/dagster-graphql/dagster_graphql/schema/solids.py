@@ -756,7 +756,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
 
 def build_solid_definition(
     represented_pipeline: RepresentedJob, solid_def_name: str
-) -> Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]:
+) -> GrapheneSolidDefinition | GrapheneCompositeSolidDefinition:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.str_param(solid_def_name, "solid_def_name")
 

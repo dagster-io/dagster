@@ -22,8 +22,10 @@ from sqlalchemy.engine import Connection
 
 T = TypeVar("T")
 
-# Represents the output of mysql connection function
-MySQLConnectionUnion: TypeAlias = Union[
+# Represents the output of mysql connection function.
+# Union is required here because mysql connector types use a metaclass that doesn't support the
+# `|` operator at runtime, causing TypeError during module import (e.g. in Sphinx doc builds).
+MySQLConnectionUnion: TypeAlias = Union[  # noqa: UP007
     db.engine.Connection, mysql.MySQLConnection, PooledMySQLConnection
 ]
 
@@ -56,7 +58,7 @@ def mysql_url_from_config(config_value: MySqlStorageConfig) -> str:
 
 
 def get_conn_string(
-    username: str, password: str, hostname: str, db_name: str, port: Union[int, str] = "3306"
+    username: str, password: str, hostname: str, db_name: str, port: int | str = "3306"
 ) -> str:
     return f"mysql+mysqlconnector://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
@@ -153,7 +155,7 @@ def wait_for_connection(conn_string: str, retry_limit: int = 5, retry_wait: floa
     parsed = urlparse(conn_string)
     retry_mysql_connection_fn(
         lambda: cast(
-            "Union[mysql.MySQLConnection, PooledMySQLConnection]",
+            "mysql.MySQLConnection | PooledMySQLConnection",
             mysql.connect(
                 user=parsed.username,
                 passwd=parsed.password,

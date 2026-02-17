@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import kubernetes
 from dagster import (
@@ -96,7 +96,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
 
     def consume_pod_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
@@ -182,7 +182,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def async_consume_pod_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
@@ -442,10 +442,10 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
         image: Optional[str] = None,
-        command: Optional[Union[str, Sequence[str]]] = None,
+        command: Optional[str | Sequence[str]] = None,
         namespace: Optional[str] = None,
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
@@ -547,7 +547,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     @contextmanager
     def consume_pod_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         client: DagsterKubernetesClient,
         namespace: str,
         pod_name: str,
@@ -603,7 +603,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
 def build_pod_body(
     pod_name: str,
     image: Optional[str],
-    command: Optional[Union[str, Sequence[str]]],
+    command: Optional[str | Sequence[str]],
     env_vars: Mapping[str, str],
     base_pod_meta: Optional[Mapping[str, Any]],
     base_pod_spec: Optional[Mapping[str, Any]],

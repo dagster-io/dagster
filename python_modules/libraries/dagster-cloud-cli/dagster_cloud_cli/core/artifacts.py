@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import requests
 
@@ -26,7 +26,7 @@ def download_artifact(
     api_token: str,
     scope: DagsterCloudInstanceScope,
     key: str,
-    path: Union[Path, str],
+    path: Path | str,
     deployment: Optional[str] = None,
 ):
     response = _dagster_cloud_http_client().post(
@@ -55,7 +55,7 @@ def upload_artifact(
     api_token: str,
     scope: DagsterCloudInstanceScope,
     key: str,
-    path: Union[Path, str],
+    path: Path | str,
     deployment: Optional[str] = None,
 ):
     upload_file = Path(path).resolve(strict=True)
@@ -122,7 +122,7 @@ def _resolve_url(organization: str, deployment: Optional[str] = None) -> str:
 
 def upload_organization_artifact(
     key: str,
-    path: Union[str, Path],
+    path: str | Path,
     organization: Optional[str] = None,
     api_token: Optional[str] = None,
 ):
@@ -139,7 +139,7 @@ def upload_organization_artifact(
 
 def upload_deployment_artifact(
     key: str,
-    path: Union[str, Path],
+    path: str | Path,
     organization: Optional[str] = None,
     deployment: Optional[str] = None,
     api_token: Optional[str] = None,
@@ -158,7 +158,7 @@ def upload_deployment_artifact(
 
 def download_organization_artifact(
     key: str,
-    path: Union[str, Path],
+    path: str | Path,
     organization: Optional[str] = None,
     api_token: Optional[str] = None,
 ):
@@ -175,7 +175,7 @@ def download_organization_artifact(
 
 def download_deployment_artifact(
     key: str,
-    path: Union[str, Path],
+    path: str | Path,
     organization: Optional[str] = None,
     deployment: Optional[str] = None,
     api_token: Optional[str] = None,

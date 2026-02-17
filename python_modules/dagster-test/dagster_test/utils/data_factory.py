@@ -5,7 +5,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 from uuid import uuid4
 
 from dagster import (
@@ -38,7 +38,7 @@ from pydantic import UUID4
 
 def event_log(
     error_info: Optional[SerializableErrorInfo] = None,  # No error info by default
-    level: Union[str, int] = "INFO",  # Default to level `INFO`
+    level: str | int = "INFO",  # Default to level `INFO`
     user_message: str = "test rate limit",  # A default user message
     run_id: str = "missing",  # Default to `missing` if no run ID is provided
     timestamp: float = datetime.now().timestamp(),  # Default to the current timestamp
@@ -59,9 +59,9 @@ def event_log(
 
 
 def dagster_event(
-    event_type_value: Union[str, DagsterEventType] = DagsterEventType.ALERT_START.value,
+    event_type_value: str | DagsterEventType = DagsterEventType.ALERT_START.value,
     job_name: str = "default_job",
-    step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
+    step_handle: Optional[StepHandle | ResolvedFromDynamicStepHandle] = None,
     node_handle: Optional[NodeHandle] = None,
     step_kind_value: Optional[str] = None,
     logging_tags: Optional[Mapping[str, str]] = None,
@@ -88,7 +88,7 @@ def dagster_event(
 
 def dagster_run(
     job_name: str = "test-job",
-    run_id: Optional[Union[str, UUID4]] = None,
+    run_id: Optional[str | UUID4] = None,
     run_config: Optional[Mapping[str, object]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,

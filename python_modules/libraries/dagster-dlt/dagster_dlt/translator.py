@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public, superseded
@@ -67,7 +67,7 @@ class DagsterDltTranslator:
     def _resolve_back_compat_method(
         self,
         method_name: str,
-        default_fn: Union[Callable[[DltResource], Any], Callable[[DltResource, Destination], Any]],
+        default_fn: Callable[[DltResource], Any] | Callable[[DltResource, Destination], Any],
         resource: DltResource,
         destination: Optional[Destination] = None,
     ):

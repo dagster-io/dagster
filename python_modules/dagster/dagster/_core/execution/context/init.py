@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Mapping
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
@@ -152,7 +152,7 @@ class UnboundInitResourceContext(InitResourceContext):
     def __init__(
         self,
         resource_config: Any,
-        resources: Optional[Union[Resources, Mapping[str, Any]]],
+        resources: Optional[Resources | Mapping[str, Any]],
         instance: Optional[DagsterInstance],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing

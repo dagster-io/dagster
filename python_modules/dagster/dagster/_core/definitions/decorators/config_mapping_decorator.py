@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, Optional, cast, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -90,7 +90,7 @@ def config_mapping(
     *,
     config_schema: Optional[UserConfigSchema] = None,
     receive_processed_config_values: Optional[bool] = None,
-) -> Union[Callable[[ConfigMappingFn], ConfigMapping], ConfigMapping]:
+) -> Callable[[ConfigMappingFn], ConfigMapping] | ConfigMapping:
     """Create a config mapping with the specified parameters from the decorated function.
 
     The config schema will be inferred from the type signature of the decorated function if not explicitly provided.

@@ -54,7 +54,7 @@ from dagster.components.core.snapshot import get_package_entry_snap
 
 def list_plugins(
     entry_points: bool, extra_modules: Sequence[str]
-) -> Union[EnvRegistryManifest, SerializableErrorInfo]:
+) -> EnvRegistryManifest | SerializableErrorInfo:
     modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
     try:
         plugin_objects = _load_plugin_objects(entry_points, extra_modules)
@@ -88,7 +88,7 @@ def list_all_components_schema(
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
-    union_type = Union[tuple(model_cls_list)]  # type: ignore
+    union_type = Union[tuple(model_cls_list)]  # type: ignore  # noqa: UP007
     return TypeAdapter(union_type).json_schema()
 
 

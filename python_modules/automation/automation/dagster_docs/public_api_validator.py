@@ -3,7 +3,7 @@
 import ast
 import re
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from dagster_shared.record import record
 
@@ -175,7 +175,7 @@ class PublicApiValidator:
         return public_symbols
 
     def _has_public_decorator(
-        self, node: Union[ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef]
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
     ) -> bool:
         """Check if a node has @public decorator."""
         for decorator in node.decorator_list:

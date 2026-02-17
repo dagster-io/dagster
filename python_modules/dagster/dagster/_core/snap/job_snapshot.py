@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 from dagster_shared.serdes.serdes import RecordSerializer
 
@@ -193,7 +193,7 @@ class JobSnap(IHaveNew):
     def snapshot_id(self) -> str:
         return _create_job_snapshot_id(self)
 
-    def get_node_def_snap(self, node_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
+    def get_node_def_snap(self, node_def_name: str) -> OpDefSnap | GraphDefSnap:
         check.str_param(node_def_name, "node_def_name")
         for node_def_snap in self.node_defs_snapshot.op_def_snaps:
             if node_def_snap.name == node_def_name:
@@ -214,7 +214,7 @@ class JobSnap(IHaveNew):
 
     def get_config_type_from_node_def_snap(
         self,
-        node_def_snap: Union[OpDefSnap, GraphDefSnap],
+        node_def_snap: OpDefSnap | GraphDefSnap,
     ) -> Optional[ConfigType]:
         check.inst_param(node_def_snap, "node_def_snap", (OpDefSnap, GraphDefSnap))
         if node_def_snap.config_field_snap:

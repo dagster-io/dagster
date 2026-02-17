@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Iterable, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
@@ -47,7 +47,7 @@ from dagster._utils.schedules import (
 @superseded(additional_warn_text="Attach `FreshnessPolicy` objects to your assets instead.")
 def build_last_update_freshness_checks(
     *,
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
     lower_bound_delta: datetime.timedelta,
     deadline_cron: Optional[str] = None,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,

@@ -2,7 +2,7 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 from dagster_shared.serdes import serialize_value
 from dagster_shared.serdes.errors import SerializationError
@@ -165,7 +165,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         legacy_freshness_policy: Optional[
-            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
+            LegacyFreshnessPolicy | Mapping[AssetKey, LegacyFreshnessPolicy]
         ] = None,
     ) -> "CacheableAssetsDefinition":
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
@@ -259,10 +259,10 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         group_name_for_all_assets: Optional[str] = None,
         prefix_for_all_assets: Optional[list[str]] = None,
         legacy_freshness_policy: Optional[
-            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
+            LegacyFreshnessPolicy | Mapping[AssetKey, LegacyFreshnessPolicy]
         ] = None,
         auto_materialize_policy: Optional[
-            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
+            AutoMaterializePolicy | Mapping[AssetKey, AutoMaterializePolicy]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
     ):

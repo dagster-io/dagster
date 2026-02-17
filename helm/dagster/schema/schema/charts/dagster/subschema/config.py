@@ -1,4 +1,4 @@
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
 from pydantic import BaseModel
 
@@ -7,5 +7,5 @@ class Source(BaseModel, extra="forbid"):
     env: str
 
 
-StringSource: TypeAlias = Union[str, Source]
-IntSource: TypeAlias = Union[int, Source]
+StringSource: TypeAlias = str | Source
+IntSource: TypeAlias = int | Source

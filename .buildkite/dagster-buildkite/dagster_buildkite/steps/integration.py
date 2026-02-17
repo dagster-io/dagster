@@ -1,6 +1,6 @@
 import os
 from collections.abc import Callable
-from typing import Optional, Union
+from typing import Optional
 
 from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -243,7 +243,7 @@ def build_integration_suite_steps(
     queue=None,
     always_run_if: Optional[Callable[[], bool]] = None,
     unsupported_python_versions: Optional[
-        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
+        list[AvailablePythonVersion] | UnsupportedVersionsFunction
     ] = None,
 ) -> list[TopLevelStepConfiguration]:
     return PackageSpec(

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import Any, Generic, Optional, Union, cast
+from typing import Any, Generic, Optional, cast
 
 from typing_extensions import TypeVar
 
@@ -39,8 +39,8 @@ class ConfigurableIOManagerFactoryResourceDefinition(  # pyright: ignore[reportI
         description: Optional[str],
         nested_resources: Mapping[str, Any],
         nested_partial_resources: Mapping[str, Any],
-        input_config_schema: Optional[Union[CoercableToConfigSchema, type[Config]]] = None,
-        output_config_schema: Optional[Union[CoercableToConfigSchema, type[Config]]] = None,
+        input_config_schema: Optional[CoercableToConfigSchema | type[Config]] = None,
+        output_config_schema: Optional[CoercableToConfigSchema | type[Config]] = None,
         dagster_maintained: bool = False,
     ):
         input_config_schema_resolved: CoercableToConfigSchema = (
@@ -163,13 +163,13 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
     @classmethod
     def input_config_schema(
         cls,
-    ) -> Optional[Union[CoercableToConfigSchema, type[Config]]]:
+    ) -> Optional[CoercableToConfigSchema | type[Config]]:
         return None
 
     @classmethod
     def output_config_schema(
         cls,
-    ) -> Optional[Union[CoercableToConfigSchema, type[Config]]]:
+    ) -> Optional[CoercableToConfigSchema | type[Config]]:
         return None
 
 

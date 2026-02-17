@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import questionary
 import typer
@@ -52,7 +52,7 @@ def censor_token(token: str) -> str:
 def list_input(
     prompt: str,
     choices: list[Any],
-    default: Optional[Union[str, questionary.Choice, dict[str, Any]]] = None,
+    default: Optional[str | questionary.Choice | dict[str, Any]] = None,
 ) -> str:
     """Presents the user with a list of choices that can be navigated with
     the up and down arrows.

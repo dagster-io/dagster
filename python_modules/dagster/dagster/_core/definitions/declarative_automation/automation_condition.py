@@ -321,7 +321,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     def replace(
         self, old: Union["AutomationCondition", str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching

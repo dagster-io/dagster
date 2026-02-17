@@ -3,7 +3,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import Component, Resolvable
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -71,7 +71,7 @@ def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
 
 def get_job_from_defs(
     name: str, defs: Definitions
-) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+) -> Optional[JobDefinition | UnresolvedAssetJobDefinition]:
     """Get the job from the definitions by its name."""
     return next(
         iter(job for job in (defs.jobs or []) if job.name == name),

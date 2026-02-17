@@ -2,7 +2,7 @@ import sys
 import traceback
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel
@@ -47,14 +47,14 @@ class ResolutionContext:
     """
 
     scope: Mapping[str, Any]
-    path: list[Union[str, int]] = []
+    path: list[str | int] = []
     source_position_tree: Optional[SourcePositionTree] = None
     # dict where you can stash arbitrary objects. Used to store references to ComponentLoadContext
     # We are structuring this way to make it easier to use Resolved outside of the context of
     # the component system in the future
     stash: dict[str, Any] = {}
 
-    def at_path(self, path_part: Union[str, int]):
+    def at_path(self, path_part: str | int):
         return copy(self, path=[*self.path, path_part])
 
     @staticmethod

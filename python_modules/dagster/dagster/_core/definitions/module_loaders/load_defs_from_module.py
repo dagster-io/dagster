@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Iterable, Mapping
 from importlib import import_module
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster._annotations import preview
@@ -19,7 +19,7 @@ def load_definitions_from_modules(
     modules: Iterable[ModuleType],
     resources: Optional[Mapping[str, Any]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-    executor: Optional[Union[Executor, ExecutorDefinition]] = None,
+    executor: Optional[Executor | ExecutorDefinition] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the given modules. Automatically
     discovers all objects defined at module scope that can be passed into the :py:class:`dagster.Definitions`
@@ -53,7 +53,7 @@ def load_definitions_from_module(
     module: ModuleType,
     resources: Optional[Mapping[str, Any]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-    executor: Optional[Union[Executor, ExecutorDefinition]] = None,
+    executor: Optional[Executor | ExecutorDefinition] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the given module. Automatically
     discovers all objects defined at module scope that can be passed into the :py:class:`dagster.Definitions`
@@ -83,7 +83,7 @@ def load_definitions_from_module(
 def load_definitions_from_current_module(
     resources: Optional[Mapping[str, Any]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-    executor: Optional[Union[Executor, ExecutorDefinition]] = None,
+    executor: Optional[Executor | ExecutorDefinition] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the module where this function is called.
     Automatically discovers all objects defined at module scope that can be passed into the
@@ -118,7 +118,7 @@ def load_definitions_from_package_module(
     package_module: ModuleType,
     resources: Optional[Mapping[str, Any]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-    executor: Optional[Union[Executor, ExecutorDefinition]] = None,
+    executor: Optional[Executor | ExecutorDefinition] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the given package module. Automatically
     discovers all objects defined at module scope that can be passed into the
@@ -153,7 +153,7 @@ def load_definitions_from_package_name(
     package_name: str,
     resources: Optional[Mapping[str, Any]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-    executor: Optional[Union[Executor, ExecutorDefinition]] = None,
+    executor: Optional[Executor | ExecutorDefinition] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the package module for the given package name.
     Automatically discovers all objects defined at module scope that can be passed into the

@@ -1,5 +1,5 @@
 import time
-from typing import Optional, Union
+from typing import Optional
 
 import dagster._check as check
 from azure.ai.ml import MLClient
@@ -58,7 +58,7 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     def _poll_til_success(
-        self, context: Union[OpExecutionContext, AssetExecutionContext], job_name: str
+        self, context: OpExecutionContext | AssetExecutionContext, job_name: str
     ) -> None:
         # poll the Azure ML job until it completes successfully, raising otherwise
 
@@ -95,7 +95,7 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
         command: Command,
     ) -> PipesClientCompletedInvocation:

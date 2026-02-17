@@ -2,7 +2,7 @@
 
 import os
 import warnings
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster.components.resolved.errors import ResolutionException
 
@@ -13,7 +13,7 @@ class EnvScope:
     Available via `{{ env.* }}` in component YAML files.
     """
 
-    def __call__(self, key: str, default: Optional[Union[str, Any]] = ...) -> Optional[str]:
+    def __call__(self, key: str, default: Optional[str | Any] = ...) -> Optional[str]:
         value = os.environ.get(key, default=default)
         if value is ...:
             raise ResolutionException(

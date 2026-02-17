@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 from typing_extensions import Self
 
@@ -180,7 +180,7 @@ class ScheduleIterationTimes(NamedTuple):
     this value is also determined in _write_and_get_next_checkpoint_timestamp.).
     """
 
-    cron_schedule: Union[str, Sequence[str]]
+    cron_schedule: str | Sequence[str]
     next_iteration_timestamp: float
     last_iteration_timestamp: float
 
@@ -552,7 +552,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     in_memory_last_iteration_timestamp: Optional[float],
-) -> Generator[Union[None, SerializableErrorInfo, ScheduleIterationTimes], None, None]:
+) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
@@ -861,7 +861,7 @@ def _schedule_runs_at_time(
     tick_context: _ScheduleLaunchContext,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
-) -> Generator[Union[None, SerializableErrorInfo, ScheduleIterationTimes], None, None]:
+) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
     instance = workspace_process_context.instance
     repository_handle = remote_schedule.handle.repository_handle
 

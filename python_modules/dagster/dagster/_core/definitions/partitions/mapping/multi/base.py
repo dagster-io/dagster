@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -53,7 +53,7 @@ class BaseMultiPartitionMapping(ABC):
         a_partitions_subset: PartitionsSubset,
         b_partitions_def: PartitionsDefinition,
         a_upstream_of_b: bool,
-    ) -> Union[UpstreamPartitionsResult, PartitionsSubset]:
+    ) -> UpstreamPartitionsResult | PartitionsSubset:
         """Given two partitions definitions a_partitions_def and b_partitions_def that have a dependency
         relationship (a_upstream_of_b is True if a_partitions_def is upstream of b_partitions_def),
         and a_partition_keys, a list of partition keys in a_partitions_def, returns a list of

@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import _empty as EmptyAnnotation
-from typing import Optional, Union
+from typing import Optional, TypeAlias
 
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -11,7 +11,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 
-ExecutionContextTypes = Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext]
+ExecutionContextTypes: TypeAlias = (
+    OpExecutionContext | AssetExecutionContext | AssetCheckExecutionContext
+)
 
 
 @contextmanager
@@ -124,5 +126,5 @@ def enter_execution_context(
 
 
 current_execution_context: ContextVar[
-    Optional[Union[AssetExecutionContext, AssetCheckExecutionContext]]
+    Optional[AssetExecutionContext | AssetCheckExecutionContext]
 ] = ContextVar("current_execution_context", default=None)

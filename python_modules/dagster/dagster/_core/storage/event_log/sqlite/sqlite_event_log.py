@@ -10,7 +10,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, Any, ContextManager, Optional  # noqa: UP035
 
 import dagster_shared.seven as seven
 import sqlalchemy as db
@@ -400,7 +400,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def fetch_run_status_changes(
         self,
-        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        records_filter: DagsterEventType | RunStatusChangeRecordsFilter,
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,

@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Optional, Union
+from typing import Optional, TypeAlias
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import public
@@ -9,7 +9,7 @@ from dagster._core.execution.context.op_execution_context import OpExecutionCont
 from dlt import Pipeline
 from typing_extensions import TypeVar
 
-DltEventType = Union[AssetMaterialization, MaterializeResult]
+DltEventType: TypeAlias = AssetMaterialization | MaterializeResult
 T = TypeVar("T", bound=DltEventType)
 
 
@@ -31,7 +31,7 @@ def _fetch_row_count(
 
 def fetch_row_count_metadata(
     materialization: DltEventType,
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
     dlt_pipeline: Pipeline,
 ) -> TableMetadataSet:
     if not materialization.metadata:
@@ -66,7 +66,7 @@ class DltEventIterator(Iterator[T]):
     def __init__(
         self,
         events: Iterator[T],
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         dlt_pipeline: Pipeline,
     ) -> None:
         self._inner_iterator = events

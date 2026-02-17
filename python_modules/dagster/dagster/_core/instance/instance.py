@@ -708,7 +708,7 @@ class DagsterInstance(
     def root_directory(self) -> str:
         return self._local_artifact_storage.base_dir
 
-    def _info(self, component: object) -> Union[str, Mapping[Any, Any]]:
+    def _info(self, component: object) -> str | Mapping[Any, Any]:
         # ConfigurableClass may not have inst_data if it's a direct instantiation
         # which happens for ephemeral instances
         if isinstance(component, ConfigurableClass) and component.inst_data:

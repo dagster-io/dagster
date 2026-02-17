@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 from unittest import mock
 
 from dagster_shared import check
@@ -295,14 +295,14 @@ class ComponentTree(IHaveNew):
         self.state_tracker.mark_component_defs_state_key(component_path, defs_state_key)
 
     @overload
-    def load_component(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
+    def load_component(self, defs_path: Path | ComponentPath | str) -> Component: ...
     @overload
     def load_component(
-        self, defs_path: Union[Path, ComponentPath, str], expected_type: type[T]
+        self, defs_path: Path | ComponentPath | str, expected_type: type[T]
     ) -> T: ...
 
     def load_component(
-        self, defs_path: Union[Path, ComponentPath, str], expected_type: Optional[type[T]] = None
+        self, defs_path: Path | ComponentPath | str, expected_type: Optional[type[T]] = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -407,7 +407,7 @@ class ComponentTree(IHaveNew):
         resolved_path = ComponentPath.from_resolvable(self.defs_module_path, path)
         return self.state_tracker.get_cache_data(resolved_path).component is not None
 
-    def _has_built_defs_at_path(self, path: Union[Path, ComponentPath]) -> bool:
+    def _has_built_defs_at_path(self, path: Path | ComponentPath) -> bool:
         resolved_path = ComponentPath.from_resolvable(self.defs_module_path, path)
         return self.state_tracker.get_cache_data(resolved_path).defs is not None
 

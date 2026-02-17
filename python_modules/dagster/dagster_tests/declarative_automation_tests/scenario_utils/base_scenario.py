@@ -7,7 +7,7 @@ import os
 import random
 import sys
 from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
 from unittest import mock
 
 import dagster as dg
@@ -100,7 +100,7 @@ class AssetReconciliationScenario(
         "_AssetReconciliationScenario",
         [
             ("unevaluated_runs", Sequence[RunSpec]),
-            ("assets", Optional[Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]]),
+            ("assets", Optional[Sequence[dg.SourceAsset | dg.AssetsDefinition]]),
             ("asset_checks", Optional[Sequence[dg.AssetChecksDefinition]]),
             ("between_runs_delta", Optional[datetime.timedelta]),
             ("evaluation_delta", Optional[datetime.timedelta]),
@@ -109,16 +109,14 @@ class AssetReconciliationScenario(
             ("asset_selection", Optional[dg.AssetSelection]),
             (
                 "active_backfill_targets",
-                Optional[
-                    Sequence[Union[Mapping[dg.AssetKey, PartitionsSubset], Sequence[dg.AssetKey]]]
-                ],
+                Optional[Sequence[Mapping[dg.AssetKey, PartitionsSubset] | Sequence[dg.AssetKey]]],
             ),
             ("dagster_runs", Optional[Sequence[dg.DagsterRun]]),
             ("event_log_entries", Optional[Sequence[dg.EventLogEntry]]),
             ("expected_run_requests", Optional[Sequence[dg.RunRequest]]),
             (
                 "code_locations",
-                Optional[Mapping[str, Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]]],
+                Optional[Mapping[str, Sequence[dg.SourceAsset | dg.AssetsDefinition]]],
             ),
             ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
             ("requires_respect_materialization_data_versions", bool),
@@ -130,7 +128,7 @@ class AssetReconciliationScenario(
     def __new__(
         cls,
         unevaluated_runs: Sequence[RunSpec],
-        assets: Optional[Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]],
+        assets: Optional[Sequence[dg.SourceAsset | dg.AssetsDefinition]],
         asset_checks: Optional[Sequence[dg.AssetChecksDefinition]] = None,
         between_runs_delta: Optional[datetime.timedelta] = None,
         evaluation_delta: Optional[datetime.timedelta] = None,
@@ -138,13 +136,13 @@ class AssetReconciliationScenario(
         current_time: Optional[datetime.datetime] = None,
         asset_selection: Optional[dg.AssetSelection] = None,
         active_backfill_targets: Optional[
-            Sequence[Union[Mapping[dg.AssetKey, PartitionsSubset], Sequence[dg.AssetKey]]]
+            Sequence[Mapping[dg.AssetKey, PartitionsSubset] | Sequence[dg.AssetKey]]
         ] = None,
         dagster_runs: Optional[Sequence[dg.DagsterRun]] = None,
         event_log_entries: Optional[Sequence[dg.EventLogEntry]] = None,
         expected_run_requests: Optional[Sequence[dg.RunRequest]] = None,
         code_locations: Optional[
-            Mapping[str, Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]]
+            Mapping[str, Sequence[dg.SourceAsset | dg.AssetsDefinition]]
         ] = None,
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
@@ -496,12 +494,12 @@ class AssetReconciliationScenario(
 def do_run(
     asset_keys: Sequence[dg.AssetKey],
     partition_key: Optional[str],
-    all_assets: Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]],
+    all_assets: Sequence[dg.SourceAsset | dg.AssetsDefinition],
     instance: DagsterInstance,
     failed_asset_keys: Optional[Sequence[dg.AssetKey]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> None:
-    assets_in_run: list[Union[dg.SourceAsset, dg.AssetsDefinition]] = []
+    assets_in_run: list[dg.SourceAsset | dg.AssetsDefinition] = []
     asset_keys_set = set(asset_keys)
     for a in all_assets:
         if isinstance(a, dg.SourceAsset):
@@ -558,7 +556,7 @@ FAIL_TAG = "test/fail"
 
 
 def run_request(
-    asset_keys: Union[dg.AssetKey, Sequence[CoercibleToAssetKey]],
+    asset_keys: dg.AssetKey | Sequence[CoercibleToAssetKey],
     partition_key: Optional[str] = None,
     fail_keys: Optional[Sequence[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -577,7 +575,7 @@ def run_request(
 
 def asset_def(
     key: str,
-    deps: Optional[Union[list[str], Mapping[str, Optional[dg.PartitionMapping]]]] = None,
+    deps: Optional[list[str] | Mapping[str, Optional[dg.PartitionMapping]]] = None,
     partitions_def: Optional[dg.PartitionsDefinition] = None,
     legacy_freshness_policy: Optional[dg.LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[dg.AutoMaterializePolicy] = None,
@@ -620,7 +618,7 @@ def asset_def(
 
 def multi_asset_def(
     keys: list[str],
-    deps: Optional[Union[list[str], Mapping[str, set[str]]]] = None,
+    deps: Optional[list[str] | Mapping[str, set[str]]] = None,
     can_subset: bool = False,
     legacy_freshness_policies: Optional[Mapping[str, dg.LegacyFreshnessPolicy]] = None,
 ) -> dg.AssetsDefinition:
@@ -726,7 +724,7 @@ def get_implicit_auto_materialize_policy(
 
 
 def with_implicit_auto_materialize_policies(
-    assets_defs: Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]],
+    assets_defs: Sequence[dg.SourceAsset | dg.AssetsDefinition],
     asset_graph: BaseAssetGraph,
     targeted_assets: Optional[AbstractSet[dg.AssetKey]] = None,
 ) -> Sequence[dg.AssetsDefinition]:

@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster import (
     AssetSpec,
@@ -126,7 +126,7 @@ class LookerResource(ConfigurableResource):
 def load_looker_asset_specs(
     looker_resource: LookerResource,
     dagster_looker_translator: Optional[
-        Union[DagsterLookerApiTranslator, type[DagsterLookerApiTranslator]]
+        DagsterLookerApiTranslator | type[DagsterLookerApiTranslator]
     ] = None,
     looker_filter: Optional[LookerFilter] = None,
 ) -> Sequence[AssetSpec]:

@@ -1,6 +1,6 @@
 import enum
 from collections.abc import Mapping
-from typing import Any, Literal, Optional, TypeAlias, Union
+from typing import Any, Literal, Optional, TypeAlias
 
 import dagster as dg
 import pydantic
@@ -430,7 +430,7 @@ def test_discriminated_unions() -> None:
         scales: bool
 
     class OpConfigWithUnion(dg.Config):
-        pet: Union[Cat, Dog, Lizard] = pydantic.Field(..., discriminator="pet_type")
+        pet: Cat | Dog | Lizard = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     executed = {}
@@ -514,10 +514,10 @@ def test_nested_discriminated_unions() -> None:
     class Dog(dg.Config):
         pet_type: Literal["dog"]
         barks: float
-        breed: Union[Poodle, Dachshund] = pydantic.Field(..., discriminator="breed_type")
+        breed: Poodle | Dachshund = pydantic.Field(..., discriminator="breed_type")
 
     class OpConfigWithUnion(dg.Config):
-        pet: Union[Cat, Dog] = pydantic.Field(..., discriminator="pet_type")
+        pet: Cat | Dog = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     executed = {}
@@ -567,7 +567,7 @@ def test_discriminated_unions_direct_instantiation() -> None:
         scales: bool
 
     class OpConfigWithUnion(dg.Config):
-        pet: Union[Cat, Dog, Lizard] = pydantic.Field(..., discriminator="pet_type")
+        pet: Cat | Dog | Lizard = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     config = OpConfigWithUnion(pet=Cat(meows=3), n=5)
@@ -591,10 +591,10 @@ def test_nested_discriminated_config_instantiation() -> None:
     class Dog(dg.Config):
         pet_type: Literal["dog"] = "dog"
         barks: float
-        breed: Union[Poodle, Dachshund] = pydantic.Field(..., discriminator="breed_type")
+        breed: Poodle | Dachshund = pydantic.Field(..., discriminator="breed_type")
 
     class OpConfigWithUnion(dg.Config):
-        pet: Union[Cat, Dog] = pydantic.Field(..., discriminator="pet_type")
+        pet: Cat | Dog = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     config = OpConfigWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
@@ -622,10 +622,10 @@ def test_nested_discriminated_resource_instantiation() -> None:
     class Dog(dg.Config):
         pet_type: Literal["dog"] = "dog"
         barks: float
-        breed: Union[Poodle, Dachshund] = pydantic.Field(..., discriminator="breed_type")
+        breed: Poodle | Dachshund = pydantic.Field(..., discriminator="breed_type")
 
     class ResourceWithUnion(dg.ConfigurableResource):
-        pet: Union[Cat, Dog] = pydantic.Field(..., discriminator="pet_type")
+        pet: Cat | Dog = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     resource_with_union = ResourceWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)

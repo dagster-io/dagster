@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Optional, TypeVar, Union
+from typing import IO, Optional, TypeVar
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -723,7 +723,7 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 @public
 @contextmanager
 def open_pipes_session(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
     context_injector: PipesContextInjector,
     message_reader: PipesMessageReader,
     extras: Optional[PipesExtras] = None,

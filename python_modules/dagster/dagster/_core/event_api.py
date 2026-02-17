@@ -2,7 +2,7 @@ import base64
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Literal, NamedTuple, Optional, TypeAlias, Union
+from typing import Literal, NamedTuple, Optional, TypeAlias
 
 from dagster_shared.record import record
 from dagster_shared.seven import json
@@ -90,7 +90,7 @@ AssetEventType: TypeAlias = Literal[
     DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 ]
 
-EventCursor: TypeAlias = Union[int, RunShardedEventsCursor]
+EventCursor: TypeAlias = int | RunShardedEventsCursor
 
 
 @whitelist_for_serdes
@@ -138,7 +138,7 @@ class EventLogRecord(NamedTuple):
         return self.event_log_entry.asset_observation
 
     @property
-    def asset_event(self) -> Optional[Union[AssetMaterialization, AssetObservation]]:
+    def asset_event(self) -> Optional[AssetMaterialization | AssetObservation]:
         return self.asset_materialization or self.asset_observation
 
     @property
@@ -245,7 +245,7 @@ class EventRecordsFilter(
         return before_cursor, after_cursor
 
     @property
-    def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
+    def tags(self) -> Optional[Mapping[str, str | Sequence[str]]]:
         return None
 
 
@@ -339,7 +339,7 @@ class AssetRecordsFilter(
         )
 
     @property
-    def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
+    def tags(self) -> Optional[Mapping[str, str | Sequence[str]]]:
         return None
 
 

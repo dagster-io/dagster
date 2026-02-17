@@ -153,7 +153,7 @@ class ScheduleInstigatorData(
     NamedTuple(
         "_ScheduleInstigatorData",
         [
-            ("cron_schedule", Union[str, Sequence[str]]),
+            ("cron_schedule", str | Sequence[str]),
             ("start_timestamp", Optional[float]),
             ("last_iteration_timestamp", Optional[float]),
         ],
@@ -162,7 +162,7 @@ class ScheduleInstigatorData(
     # removed scheduler, 1/5/2022 (0.13.13)
     def __new__(
         cls,
-        cron_schedule: Union[str, Sequence[str]],
+        cron_schedule: str | Sequence[str],
         start_timestamp: Optional[float] = None,
         last_iteration_timestamp: Optional[float] = None,
     ):

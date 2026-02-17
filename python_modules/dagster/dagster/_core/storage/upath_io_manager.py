@@ -3,7 +3,7 @@ import inspect
 from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
     InputContext,
@@ -157,7 +157,7 @@ class UPathIOManager(IOManager):
     def _with_extension(self, path: "UPath") -> "UPath":
         return path.with_suffix(path.suffix + self.extension) if self.extension else path
 
-    def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> "UPath":
+    def _get_path_without_extension(self, context: InputContext | OutputContext) -> "UPath":
         if context.has_asset_key:
             context_path = self.get_asset_relative_path(context)
         else:
@@ -166,13 +166,13 @@ class UPathIOManager(IOManager):
 
         return self._base_path.joinpath(context_path)
 
-    def get_asset_relative_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
+    def get_asset_relative_path(self, context: InputContext | OutputContext) -> "UPath":
         from upath import UPath
 
         # we are not using context.get_asset_identifier() because it already includes the partition_key
         return UPath(*context.asset_key.path)
 
-    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
+    def get_op_output_relative_path(self, context: InputContext | OutputContext) -> "UPath":
         from upath import UPath
 
         return UPath(*context.get_identifier())
@@ -192,7 +192,7 @@ class UPathIOManager(IOManager):
             "because the input metadata includes allow_missing_partitions=True"
         )
 
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
+    def _get_path(self, context: InputContext | OutputContext) -> "UPath":
         """Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
         """
@@ -200,7 +200,7 @@ class UPathIOManager(IOManager):
         return self._with_extension(path)
 
     def get_path_for_partition(
-        self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
+        self, context: InputContext | OutputContext, path: "UPath", partition: str
     ) -> "UPath":
         """Override this method if you want to use a different partitioning scheme
         (for example, if the saving function handles partitioning instead).
@@ -217,7 +217,7 @@ class UPathIOManager(IOManager):
         return path / partition
 
     def _get_paths_for_partitions(
-        self, context: Union[InputContext, OutputContext]
+        self, context: InputContext | OutputContext
     ) -> dict[str, "UPath"]:
         """Returns a dict of partition_keys into I/O paths for a given context."""
         if not context.has_asset_partitions:
@@ -251,7 +251,7 @@ class UPathIOManager(IOManager):
         }
 
     def _get_multipartition_backcompat_paths(
-        self, context: Union[InputContext, OutputContext]
+        self, context: InputContext | OutputContext
     ) -> Mapping[str, "UPath"]:
         if not context.has_asset_partitions:
             raise TypeError(
@@ -399,7 +399,7 @@ class UPathIOManager(IOManager):
             # load_from_path returns a coroutine, so we need to await the results
             return self.load_partitions_async(context)
 
-    def load_input(self, context: InputContext) -> Union[Any, dict[str, Any]]:
+    def load_input(self, context: InputContext) -> Any | dict[str, Any]:
         # If no asset key, we are dealing with an op output which is always non-partitioned
         if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)

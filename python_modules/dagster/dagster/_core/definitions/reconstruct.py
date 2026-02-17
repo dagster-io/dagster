@@ -515,7 +515,7 @@ def build_reconstructable_job(
     _reconstructable_args: list[object] = list(
         check.opt_tuple_param(reconstructable_args, "reconstructable_args")
     )
-    _reconstructable_kwargs: list[list[Union[str, object]]] = list(
+    _reconstructable_kwargs: list[list[str | object]] = list(
         (
             [key, value]
             for key, value in check.opt_mapping_param(
@@ -555,7 +555,7 @@ LoadableDefinition: TypeAlias = Union[
     "JobDefinition",
     "RepositoryDefinition",
     "GraphDefinition",
-    "Sequence[Union[AssetsDefinition, SourceAsset]]",
+    "Sequence[AssetsDefinition | SourceAsset]",
 ]
 
 T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)

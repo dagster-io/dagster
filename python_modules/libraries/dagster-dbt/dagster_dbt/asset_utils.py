@@ -6,7 +6,7 @@ import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional  # noqa: UP035
 
 import yaml
 from dagster import (
@@ -468,7 +468,7 @@ class DbtCliInvocationPartialParams:
 
 
 def get_updated_cli_invocation_params_for_context(
-    context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+    context: Optional[OpExecutionContext | AssetExecutionContext],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
 ) -> DbtCliInvocationPartialParams:
@@ -686,7 +686,7 @@ def default_owners_from_dbt_resource_props(
     if owners_config:
         return owners_config
 
-    owner: Optional[Union[str, Sequence[str]]] = (
+    owner: Optional[str | Sequence[str]] = (
         (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
     )
 
@@ -1043,7 +1043,7 @@ def get_checks_on_sources_upstream_of_selected_assets(
 
 
 def get_subset_selection_for_context(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],

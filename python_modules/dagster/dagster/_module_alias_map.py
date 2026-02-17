@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec, PathFinder
 from types import ModuleType
-from typing import Optional, Union
+from typing import Optional
 
 
 # The AliasedModuleFinder should be inserted in front of the built-in PathFinder.
@@ -27,7 +27,7 @@ class AliasedModuleFinder(MetaPathFinder):
     def find_spec(
         self,
         fullname: str,
-        _path: Optional[Sequence[Union[bytes, str]]] = None,
+        _path: Optional[Sequence[bytes | str]] = None,
         _target: Optional[ModuleType] = None,
     ) -> Optional[ModuleSpec]:
         head = next((k for k in self.alias_map.keys() if fullname.startswith(k)), None)

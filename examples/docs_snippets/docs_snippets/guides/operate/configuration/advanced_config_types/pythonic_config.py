@@ -180,7 +180,6 @@ def union_schema_config() -> None:
 
     import dagster as dg
     from pydantic import Field
-    from typing import Union
     from typing import Literal
 
     class Cat(dg.Config):
@@ -192,7 +191,7 @@ def union_schema_config() -> None:
         barks: float
 
     class ConfigWithUnion(dg.Config):
-        pet: Union[Cat, Dog] = Field(discriminator="pet_type")
+        pet: Cat | Dog = Field(discriminator="pet_type")
 
     @dg.asset
     def pet_stats(config: ConfigWithUnion):

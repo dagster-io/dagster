@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Final, Optional, Union, overload
+from typing import Any, Final, Optional, overload
 
 from dagster import _check as check
 from dagster._core.decorator_utils import (
@@ -63,7 +63,7 @@ def preview(
     additional_warn_text: Optional[str] = None,
     subject: Optional[str] = None,
     emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark an object as preview. This appends some metadata to the object that causes it to be
     rendered with a "preview" tag and associated warning in the docs.
 
@@ -178,7 +178,7 @@ def beta(
     additional_warn_text: Optional[str] = None,
     subject: Optional[str] = None,
     emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark an object as beta. This appends some metadata to the object that causes it to be
     rendered with a "beta" tag and associated warning in the docs.
 
@@ -286,7 +286,7 @@ def beta_param(
     param: str,
     additional_warn_text: Optional[str] = None,
     emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark a parameter of a class initializer or function/method as beta. This appends some
     metadata to the decorated object that causes the specified argument to be rendered with a
     "beta" tag and associated warning in the docs.
@@ -396,7 +396,7 @@ def superseded(
     additional_warn_text: Optional[str] = None,
     subject: Optional[str] = None,
     emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     # TODO: add "superseded" warning to docs
     """Mark an object as superseded. This appends some metadata to the object that causes it to be
     rendered with a "superseded" tag and associated warning in the docs.
@@ -518,7 +518,7 @@ def deprecated(
     additional_warn_text: Optional[str] = None,
     subject: Optional[str] = None,
     emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark an object as deprecated. This appends some metadata to the object that causes it to be
     rendered with a "deprecated" tag and associated warning in the docs.
 

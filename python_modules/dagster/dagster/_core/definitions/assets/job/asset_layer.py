@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence  # noqa: UP035
 
 from dagster_shared.record import record
 
@@ -142,7 +142,7 @@ class AssetLayer:
     def has(self, asset_key: AssetKey) -> bool:
         return self.asset_graph.has(asset_key)
 
-    def _maybe_get_data(self, ptr: Union[NodeHandle, EntityKey]) -> Optional[AssetLayerData]:
+    def _maybe_get_data(self, ptr: NodeHandle | EntityKey) -> Optional[AssetLayerData]:
         if isinstance(ptr, NodeHandle):
             # we need to ensure that the node handle we use for the lookup is the **outer**
             # node handle when in the context of a graph asset.
@@ -152,7 +152,7 @@ class AssetLayer:
         else:
             return self._data_by_key.get(ptr)
 
-    def _get_data(self, ptr: Union[NodeHandle, EntityKey]) -> AssetLayerData:
+    def _get_data(self, ptr: NodeHandle | EntityKey) -> AssetLayerData:
         return check.not_none(self._maybe_get_data(ptr), f"Could not find AssetLayerData for {ptr}")
 
     def get_op_output_handle(self, key: EntityKey) -> NodeOutputHandle:

@@ -352,7 +352,7 @@ class EventMethods:
         self,
         dagster_event: "DagsterEvent",
         run_id: str,
-        log_level: Union[str, int] = logging.INFO,
+        log_level: str | int = logging.INFO,
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
         timestamp: Optional[float] = None,
     ) -> None:

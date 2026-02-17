@@ -258,7 +258,7 @@ def asset_sensor(
 
 @public
 def multi_asset_sensor(
-    monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+    monitored_assets: Sequence[AssetKey] | AssetSelection,
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_pipes import (
     DagsterPipesError,
@@ -36,7 +36,7 @@ class PipesClient(ABC):
     def run(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         extras: Optional[PipesExtras] = None,
         **kwargs,
     ) -> "PipesClientCompletedInvocation":

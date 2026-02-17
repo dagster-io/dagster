@@ -1,6 +1,6 @@
 import json
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -219,7 +219,7 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
     @require_permission_check(Permissions.DELETE_PIPELINE_RUN)
     def mutate(
         self, graphene_info: ResolveInfo, runId: str
-    ) -> Union[GrapheneRunNotFoundError, GrapheneDeletePipelineRunSuccess]:
+    ) -> GrapheneRunNotFoundError | GrapheneDeletePipelineRunSuccess:
         return delete_pipeline_run(graphene_info, runId)
 
 
@@ -330,7 +330,7 @@ class GrapheneLaunchRunMutation(graphene.Mutation):
     @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
     async def mutate(
         self, graphene_info: ResolveInfo, executionParams: GrapheneExecutionParams
-    ) -> Union[GrapheneLaunchRunSuccess, GrapheneError, GraphenePythonError]:
+    ) -> GrapheneLaunchRunSuccess | GrapheneError | GraphenePythonError:
         return await create_execution_params_and_launch_pipeline_exec(
             graphene_info, executionParams
         )
@@ -350,11 +350,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
     @capture_error
     async def mutate(
         self, graphene_info: ResolveInfo, executionParamsList: list[GrapheneExecutionParams]
-    ) -> Union[
-        GrapheneLaunchMultipleRunsResult,
-        GrapheneError,
-        GraphenePythonError,
-    ]:
+    ) -> GrapheneLaunchMultipleRunsResult | GrapheneError | GraphenePythonError:
         launch_multiple_runs_result = []
 
         for execution_params in executionParamsList:
@@ -687,11 +683,11 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
     @require_permission_check(Permissions.RELOAD_REPOSITORY_LOCATION)
     def mutate(
         self, graphene_info: ResolveInfo, repositoryLocationName: str
-    ) -> Union[
-        GrapheneWorkspaceLocationEntry,
-        GrapheneReloadNotSupported,
-        GrapheneRepositoryLocationNotFound,
-    ]:
+    ) -> (
+        GrapheneWorkspaceLocationEntry
+        | GrapheneReloadNotSupported
+        | GrapheneRepositoryLocationNotFound
+    ):
         assert_permission_for_location(
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
@@ -728,7 +724,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
     @require_permission_check(Permissions.RELOAD_REPOSITORY_LOCATION)
     def mutate(
         self, graphene_info: ResolveInfo, repositoryLocationName: str
-    ) -> Union[GrapheneRepositoryLocationNotFound, GrapheneShutdownRepositoryLocationSuccess]:
+    ) -> GrapheneRepositoryLocationNotFound | GrapheneShutdownRepositoryLocationSuccess:
         assert_permission_for_location(
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )

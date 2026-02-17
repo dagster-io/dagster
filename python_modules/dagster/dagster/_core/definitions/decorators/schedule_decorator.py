@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 @beta_param(param="owners")
 @public
 def schedule(
-    cron_schedule: Union[str, Sequence[str]],
+    cron_schedule: str | Sequence[str],
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,

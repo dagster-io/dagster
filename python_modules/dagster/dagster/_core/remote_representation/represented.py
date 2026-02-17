@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
@@ -106,7 +106,7 @@ class RepresentedJob(ABC):
         return self._job_index.dep_structure_index
 
     # Nodes
-    def get_node_def_snap(self, node_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
+    def get_node_def_snap(self, node_def_name: str) -> OpDefSnap | GraphDefSnap:
         check.str_param(node_def_name, "node_def_name")
         return self._job_index.get_node_def_snap(node_def_name)
 

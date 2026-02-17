@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Literal, Optional, Union, get_args
+from typing import Any, Literal, Optional, get_args
 
 from dagster_dg_cli.cli.scaffold.branch.models import (
     AIInteraction,
@@ -337,7 +337,7 @@ class ClaudeDiagnostics:
 
 def create_claude_diagnostics_service(
     level: DiagnosticsLevel = "off",
-    output_dir: Optional[Union[str, Path]] = None,
+    output_dir: Optional[str | Path] = None,
     correlation_id: Optional[str] = None,
 ) -> ClaudeDiagnostics:
     """Create a new Claude diagnostics service instance."""

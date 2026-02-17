@@ -13,7 +13,6 @@ from typing import (  # noqa: UP035
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -162,7 +161,7 @@ TContextType = TypeVar("TContextType", bound=IPlanContext)
 class ExecutionContextManager(Generic[TContextType], ABC):
     def __init__(
         self,
-        event_generator: Iterator[Union[DagsterEvent, TContextType]],
+        event_generator: Iterator[DagsterEvent | TContextType],
         raise_on_error: Optional[bool] = False,
     ):
         self._manager = EventGenerationManager[TContextType](
@@ -183,7 +182,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
     def shutdown_context(self) -> Iterable[DagsterEvent]:
         return self._manager.generate_teardown_events()
 
-    def get_generator(self) -> Generator[Union[DagsterEvent, IPlanContext], None, None]:
+    def get_generator(self) -> Generator[DagsterEvent | IPlanContext, None, None]:
         return self._manager.generator
 
 
@@ -200,7 +199,7 @@ def execution_context_event_generator(
     raise_on_error: Optional[bool] = False,
     output_capture: Optional[dict["StepOutputHandle", Any]] = None,
     step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
-) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
+) -> Generator[DagsterEvent | PlanExecutionContext, None, None]:
     scoped_resources_builder_cm = cast(
         "Callable[..., EventGenerationManager[ScopedResourcesBuilder]]",
         check.opt_callable_param(
@@ -283,7 +282,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         self,
         context_event_generator: Callable[
             ...,
-            Iterator[Union[DagsterEvent, PlanOrchestrationContext]],
+            Iterator[DagsterEvent | PlanOrchestrationContext],
         ],
         job: IJob,
         execution_plan: ExecutionPlan,
@@ -323,7 +322,7 @@ def orchestration_context_event_generator(
     executor_defs: Optional[Sequence[ExecutorDefinition]],
     output_capture: Optional[dict["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
-) -> Iterator[Union[DagsterEvent, PlanOrchestrationContext]]:
+) -> Iterator[DagsterEvent | PlanOrchestrationContext]:
     check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
         job,

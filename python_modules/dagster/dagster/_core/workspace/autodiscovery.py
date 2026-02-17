@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Callable, Sequence
 from types import ModuleType
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional
 
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
@@ -124,7 +124,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
 
 
 def _loadable_targets_of_type(
-    module: ModuleType, klass: Union[type, tuple[type, ...]]
+    module: ModuleType, klass: type | tuple[type, ...]
 ) -> Sequence[LoadableTarget]:
     loadable_targets = []
     for name, value in inspect.getmembers(module):

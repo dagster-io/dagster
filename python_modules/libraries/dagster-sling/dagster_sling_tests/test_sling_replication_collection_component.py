@@ -2,7 +2,7 @@ import shutil
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
 import yaml
@@ -176,7 +176,7 @@ def test_sling_subclass() -> None:
             context: AssetExecutionContext,
             sling: SlingResource,
             replication_spec_model: SlingReplicationSpecModel,
-        ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+        ) -> Iterator[AssetMaterialization | MaterializeResult]:
             return sling.replicate(context=context, debug=True)
 
     defs = build_component_defs_for_test(

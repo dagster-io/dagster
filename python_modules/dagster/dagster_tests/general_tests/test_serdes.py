@@ -5,7 +5,7 @@ import string
 from collections import namedtuple
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 import dagster as dg
 import dagster._check as check
@@ -1208,7 +1208,7 @@ def test_record_remap() -> None:
     class Record_T2(IHaveNew):
         foo_str: str
 
-        def __new__(cls, foo: Union[Complex, str]):
+        def __new__(cls, foo: Complex | str):
             if isinstance(foo, Complex):
                 foo = foo.s
 

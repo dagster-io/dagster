@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, Optional, TypeAlias
 
 import dateutil
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -64,7 +64,7 @@ class OmniTranslatorData:
         workspace_data (OmniWorkspaceData): Global workspace data.
     """
 
-    obj: Union[OmniDocument, OmniQuery]
+    obj: OmniDocument | OmniQuery
     workspace_data: OmniWorkspaceData
 
 
@@ -138,6 +138,6 @@ ResolvedOmniTranslationFn = Annotated[
     OmniTranslationFn,
     Resolver(
         _resolve_multilayer_translation,
-        model_field_type=Union[str, OmniTranslationArgs.model()],
+        model_field_type=str | OmniTranslationArgs.model(),
     ),
 ]

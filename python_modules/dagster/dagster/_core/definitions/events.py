@@ -9,8 +9,8 @@ from typing import (  # noqa: UP035
     Generic,
     NamedTuple,
     Optional,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -559,7 +559,7 @@ class AssetMaterialization(
     def file(
         path: str,
         description: Optional[str] = None,
-        asset_key: Optional[Union[str, Sequence[str], AssetKey]] = None,
+        asset_key: Optional[str | Sequence[str] | AssetKey] = None,
     ) -> "AssetMaterialization":
         """Static constructor for standard materializations corresponding to files on disk.
 
@@ -571,7 +571,7 @@ class AssetMaterialization(
             asset_key = path
 
         return AssetMaterialization(
-            asset_key=cast("Union[str, AssetKey, list[str]]", asset_key),
+            asset_key=cast("str | AssetKey | list[str]", asset_key),
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
@@ -750,7 +750,7 @@ class RetryRequested(Exception):
     """
 
     def __init__(
-        self, max_retries: Optional[int] = 1, seconds_to_wait: Optional[Union[float, int]] = None
+        self, max_retries: Optional[int] = 1, seconds_to_wait: Optional[float | int] = None
     ):
         super().__init__()
         self.max_retries = check.int_param(max_retries, "max_retries")
@@ -864,7 +864,7 @@ class HookExecutionResult(
         )
 
 
-UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]
+UserEvent: TypeAlias = AssetMaterialization | AssetObservation | ExpectationResult
 
 
 def validate_asset_event_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:

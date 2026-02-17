@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import docker
 import docker.errors
@@ -102,10 +102,10 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         image: str,
         extras: Optional[PipesExtras] = None,
-        command: Optional[Union[str, Sequence[str]]] = None,
+        command: Optional[str | Sequence[str]] = None,
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
@@ -187,7 +187,7 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
         self,
         client,
         image: str,
-        command: Optional[Union[str, Sequence[str]]],
+        command: Optional[str | Sequence[str]],
         env: Optional[Mapping[str, str]],
         container_kwargs: Optional[Mapping[str, Any]],
         open_pipes_session_env: Mapping[str, str],

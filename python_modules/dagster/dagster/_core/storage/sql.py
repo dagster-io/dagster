@@ -1,6 +1,6 @@
 import threading
 from functools import lru_cache
-from typing import Any, Optional, TypeAlias, Union
+from typing import Any, Optional, TypeAlias
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -24,7 +24,7 @@ SqlAlchemyQuery: TypeAlias = Any
 # Stand-in for a typed row object, which is only available in sqlalchemy 2+
 SqlAlchemyRow: TypeAlias = Any
 
-AlembicVersion: TypeAlias = tuple[Optional[str], Optional[Union[str, tuple[str, ...]]]]
+AlembicVersion: TypeAlias = tuple[Optional[str], Optional[str | tuple[str, ...]]]
 
 
 @lru_cache(maxsize=3)  # run, event, and schedule storages

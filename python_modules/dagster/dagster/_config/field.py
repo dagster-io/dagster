@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, Optional, cast, overload
 
 from dagster_shared.seven import is_subclass
 
@@ -38,16 +38,16 @@ VALID_CONFIG_DESC = """
 
 
 @overload
-def resolve_to_config_type(obj: Union[ConfigType, UserConfigSchema]) -> ConfigType:
+def resolve_to_config_type(obj: ConfigType | UserConfigSchema) -> ConfigType:
     pass
 
 
 @overload
-def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> ConfigType | bool:
     pass
 
 
-def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> ConfigType | bool:
     from dagster._config.field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type

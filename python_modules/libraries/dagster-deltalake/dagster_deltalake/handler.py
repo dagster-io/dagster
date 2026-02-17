@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, TypeVar, cast
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partitions.utils import TimeWindow
 
 T = TypeVar("T")
-ArrowTypes: TypeAlias = Union[pa.Table, pa.RecordBatchReader]
+ArrowTypes: TypeAlias = pa.Table | pa.RecordBatchReader
 
 
 class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):

@@ -6,7 +6,7 @@ for that.
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Optional
 
 from dagster_shared.record import ImportFrom
 from typing_extensions import Self
@@ -68,12 +68,8 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     cron_schedule: Optional[str] = None
     exclusions: Optional[
         Sequence[
-            Union[
-                str,
-                Annotated[
-                    "TimestampWithTimezone", ImportFrom("dagster._core.definitions.timestamp")
-                ],
-            ]
+            str
+            | Annotated["TimestampWithTimezone", ImportFrom("dagster._core.definitions.timestamp")]
         ]
     ] = None
     # superseded by cron_schedule, but kept around for backcompat

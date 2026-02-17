@@ -121,7 +121,7 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def assets(
-        *assets_defs: Union[AssetsDefinition, CoercibleToAssetKey],
+        *assets_defs: AssetsDefinition | CoercibleToAssetKey,
     ) -> "KeysAssetSelection":
         """Returns a selection that includes all of the provided assets and asset checks that target
         them.
@@ -311,7 +311,7 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def checks_for_assets(
-        *assets_defs: Union[AssetsDefinition, CoercibleToAssetKey],
+        *assets_defs: AssetsDefinition | CoercibleToAssetKey,
     ) -> "AssetChecksForAssetKeysSelection":
         """Returns a selection with the asset checks that target the provided assets.
 
@@ -326,7 +326,7 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def checks(
-        *assets_defs_or_check_keys: Union[AssetsDefinition, AssetCheckKey],
+        *assets_defs_or_check_keys: AssetsDefinition | AssetCheckKey,
     ) -> "AssetCheckKeysSelection":
         """Returns a selection that includes all of the provided asset checks or check keys."""
         assets_defs = [ad for ad in assets_defs_or_check_keys if isinstance(ad, AssetsDefinition)]
@@ -482,7 +482,7 @@ class AssetSelection(ABC):
 
     def resolve(
         self,
-        all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], BaseAssetGraph],
+        all_assets: Iterable[AssetsDefinition | SourceAsset] | BaseAssetGraph,
         allow_missing: bool = False,
     ) -> AbstractSet[AssetKey]:
         """Returns the set of asset keys in all_assets that match this selection.

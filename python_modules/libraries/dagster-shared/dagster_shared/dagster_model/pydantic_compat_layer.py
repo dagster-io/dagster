@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import (
     BaseModel,
@@ -97,6 +97,6 @@ def build_validation_error(
     )
 
 
-def json_schema_from_type(model_type: Union[type[BaseModel], type[Sequence[BaseModel]]]):
+def json_schema_from_type(model_type: type[BaseModel] | type[Sequence[BaseModel]]):
     """Pydantic version stable way to get the JSON schema for a Pydantic model."""
     return TypeAdapter(model_type).json_schema()

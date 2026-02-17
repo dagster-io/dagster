@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, TypeAlias, Union, cast
 
 import dagster._check as check
 import graphene
@@ -490,12 +490,12 @@ class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
         name = "AssetCheckNeedsUserCodeUpgrade"
 
 
-AssetChecksOrErrorUnion = Union[
-    GrapheneAssetCheckNeedsMigrationError,
-    GrapheneAssetCheckNeedsUserCodeUpgrade,
-    GrapheneAssetCheckNeedsAgentUpgradeError,
-    GrapheneAssetChecks,
-]
+AssetChecksOrErrorUnion: TypeAlias = (
+    GrapheneAssetCheckNeedsMigrationError
+    | GrapheneAssetCheckNeedsUserCodeUpgrade
+    | GrapheneAssetCheckNeedsAgentUpgradeError
+    | GrapheneAssetChecks
+)
 
 
 class GrapheneAssetChecksOrError(graphene.Union):

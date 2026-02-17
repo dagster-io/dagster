@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import TypedDict
 
@@ -80,7 +80,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[JobBucket | TagBucket] = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
@@ -155,7 +155,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         order_by: Optional[str] = None,
         ascending: bool = False,
         cursor: Optional[str] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[JobBucket | TagBucket] = None,
     ) -> Sequence[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -214,7 +214,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             bool
         """
 
-    def add_snapshot(self, snapshot: Union[JobSnap, ExecutionPlanSnapshot]) -> None:
+    def add_snapshot(self, snapshot: JobSnap | ExecutionPlanSnapshot) -> None:
         """Add a snapshot to the storage.
 
         Args:

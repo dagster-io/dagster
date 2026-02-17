@@ -49,7 +49,7 @@ class BlockingDataLoader(Generic[KeyT, ReturnT]):
     def __init__(
         self,
         batch_load_fn: Callable[[Iterable[KeyT]], Iterable[ReturnT]],
-        get_cache_key: Optional[Callable[[KeyT], Union[CacheKeyT, KeyT]]] = None,
+        get_cache_key: Optional[Callable[[KeyT], CacheKeyT | KeyT]] = None,
         max_batch_size: Optional[int] = None,
     ):
         self._cache = {}
@@ -100,8 +100,8 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
         batch: Optional[bool] = None,
         max_batch_size: Optional[int] = None,
         cache: Optional[bool] = None,
-        get_cache_key: Optional[Callable[[KeyT], Union[CacheKeyT, KeyT]]] = None,
-        cache_map: Optional[MutableMapping[Union[CacheKeyT, KeyT], "Future[ReturnT]"]] = None,
+        get_cache_key: Optional[Callable[[KeyT], CacheKeyT | KeyT]] = None,
+        cache_map: Optional[MutableMapping[CacheKeyT | KeyT, "Future[ReturnT]"]] = None,
         loop: Optional[AbstractEventLoop] = None,
     ):
         self._loop = loop

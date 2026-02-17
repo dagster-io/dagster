@@ -1,12 +1,12 @@
 from collections.abc import Mapping
 from functools import cache
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, TypeAlias, cast
 
 import dagster._check as check
 import yaml
 
-SlingReplicationParam = Union[Mapping[str, Any], str, Path]
+SlingReplicationParam: TypeAlias = Mapping[str, Any] | str | Path
 
 
 @cache

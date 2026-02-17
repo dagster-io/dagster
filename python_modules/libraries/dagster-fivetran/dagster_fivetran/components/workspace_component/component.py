@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 
 import dagster as dg
 import pydantic
@@ -113,9 +113,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         Optional[Callable[[FivetranConnector], bool]],
         dg.Resolver(
             resolve_connector_selector,
-            model_field_type=Union[
-                str, FivetranConnectorSelectorByName, FivetranConnectorSelectorById
-            ],
+            model_field_type=str | FivetranConnectorSelectorByName | FivetranConnectorSelectorById,
         ),
     ] = None
     translation: Optional[
@@ -185,7 +183,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     @public
     def execute(
         self, context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
-    ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+    ) -> Iterable[dg.AssetMaterialization | dg.MaterializeResult]:
         """Executes a Fivetran sync for the selected connector.
 
         This method can be overridden in a subclass to customize the sync execution behavior,

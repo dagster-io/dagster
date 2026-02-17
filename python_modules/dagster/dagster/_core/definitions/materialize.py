@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster._annotations import public
@@ -23,7 +23,7 @@ EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
 
 @public
 def materialize(
-    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
+    assets: Sequence[AssetsDefinition | AssetSpec | SourceAsset],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
@@ -117,7 +117,7 @@ def materialize(
 
 @public
 def materialize_to_memory(
-    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
+    assets: Sequence[AssetsDefinition | AssetSpec | SourceAsset],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
@@ -210,7 +210,7 @@ def materialize_to_memory(
 
 
 def _get_required_io_manager_keys(
-    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
+    assets: Sequence[AssetsDefinition | AssetSpec | SourceAsset],
 ) -> set[str]:
     io_manager_keys = set()
     for asset in assets:

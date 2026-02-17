@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import (
     ConfigurableIOManager,
@@ -59,7 +59,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def _config(self):
         return self.dict()
 
-    def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
+    def handle_output(self, context: OutputContext, obj: PandasDataFrame | SparkDataFrame):
         schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None

@@ -207,9 +207,7 @@ class GraphDefinition(NodeDefinition):
         *,
         description: Optional[str] = None,
         node_defs: Optional[Sequence[NodeDefinition]] = None,
-        dependencies: Optional[
-            Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]
-        ] = None,
+        dependencies: Optional[DependencyMapping[str] | DependencyMapping[NodeInvocation]] = None,
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
@@ -460,7 +458,7 @@ class GraphDefinition(NodeDefinition):
         check.failed(f"Could not find input mapping {input_name}")
 
     def input_mapping_for_pointer(
-        self, pointer: Union[InputPointer, FanInInputPointer]
+        self, pointer: InputPointer | FanInInputPointer
     ) -> Optional[InputMapping]:
         check.inst_param(pointer, "pointer", (InputPointer, FanInInputPointer))
 
@@ -1012,12 +1010,7 @@ class SubselectedGraphDefinition(GraphDefinition):
         self,
         parent_graph_def: GraphDefinition,
         node_defs: Optional[Sequence[NodeDefinition]],
-        dependencies: Optional[
-            Union[
-                DependencyMapping[str],
-                DependencyMapping[NodeInvocation],
-            ]
-        ],
+        dependencies: Optional[DependencyMapping[str] | DependencyMapping[NodeInvocation]],
         input_mappings: Optional[Sequence[InputMapping]],
         output_mappings: Optional[Sequence[OutputMapping]],
     ):

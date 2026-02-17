@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
+from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
 
 import dagster._check as check
 from dagster._check import CheckError
@@ -23,7 +23,7 @@ T = TypeVar("T")
 
 class TablePartitionDimension(NamedTuple):
     partition_expr: str
-    partitions: Union[TimeWindow, Sequence[str]]
+    partitions: TimeWindow | Sequence[str]
 
 
 class TableSlice(NamedTuple):
@@ -82,9 +82,7 @@ class DbClient(Generic[T]):
     @staticmethod
     @abstractmethod
     @contextmanager
-    def connect(
-        context: Union[OutputContext, InputContext], table_slice: TableSlice
-    ) -> Iterator[T]: ...
+    def connect(context: OutputContext | InputContext, table_slice: TableSlice) -> Iterator[T]: ...
 
 
 class DbIOManager(IOManager):
@@ -182,7 +180,7 @@ class DbIOManager(IOManager):
         )
 
     def _get_table_slice(
-        self, context: Union[OutputContext, InputContext], output_context: OutputContext
+        self, context: OutputContext | InputContext, output_context: OutputContext
     ) -> TableSlice:
         output_context_metadata = output_context.definition_metadata or {}
 

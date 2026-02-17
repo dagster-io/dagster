@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Optional, Union
+from typing import Optional
 
 from dagster_shared.record import IHaveNew, record, record_custom
 from dagster_shared.serdes import whitelist_for_serdes
@@ -17,7 +17,7 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 @whitelist_for_serdes
 @record(kw_only=False)
 class TableRecord:
-    data: PublicAttr[Mapping[str, Optional[Union[str, int, float, bool]]]]
+    data: PublicAttr[Mapping[str, Optional[str | int | float | bool]]]
 
     """Represents one record in a table. Field keys are arbitrary strings-- field values must be
     strings, integers, floats, or bools.

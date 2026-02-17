@@ -8,7 +8,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster_shared.seven as seven
 from dagster_shared.error import DagsterError
@@ -696,7 +696,7 @@ def mark_sensor_state_for_tick(
 class SubmitRunRequestResult(NamedTuple):
     run_key: Optional[str]
     error_info: Optional[SerializableErrorInfo]
-    run: Union[SkippedSensorRun, DagsterRun, BackfillSubmission]
+    run: SkippedSensorRun | DagsterRun | BackfillSubmission
 
 
 def _submit_run_request(
@@ -916,7 +916,7 @@ def _evaluate_sensor(
 
 def _handle_dynamic_partitions_requests(
     dynamic_partitions_requests: Sequence[
-        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
     ],
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -1341,7 +1341,7 @@ def _get_or_create_sensor_run(
     run_request: RunRequest,
     target_data: TargetSnap,
     existing_runs_by_key: dict[str, DagsterRun],
-) -> Union[DagsterRun, SkippedSensorRun]:
+) -> DagsterRun | SkippedSensorRun:
     run_key = run_request.run_key
     run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
 

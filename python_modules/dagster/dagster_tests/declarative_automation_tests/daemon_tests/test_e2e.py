@@ -4,7 +4,7 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster as dg
 import dagster._check as check
@@ -94,7 +94,7 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 @contextmanager
 def get_workspace_request_context(
-    filenames: Sequence[Union[str, tuple[str, str]]], overrides: Optional[dict[str, Any]] = None
+    filenames: Sequence[str | tuple[str, str]], overrides: Optional[dict[str, Any]] = None
 ):
     with dg.instance_for_test(
         overrides=overrides,

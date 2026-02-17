@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import ConfigurableResource
 from deltalake import DeltaTable
@@ -34,7 +34,7 @@ class DeltaTableResource(ConfigurableResource):
 
     url: str
 
-    storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
+    storage_options: AzureConfig | S3Config | LocalConfig | GcsConfig = Field(
         discriminator="provider"
     )
 

@@ -5,7 +5,7 @@ import re
 from collections.abc import Iterable, Iterator, Sequence
 from datetime import date, datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -102,13 +102,13 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     fmt: PublicAttr[str]
     end_offset: PublicAttr[int]
     cron_schedule: PublicAttr[str]
-    exclusions: PublicAttr[Optional[Sequence[Union[str, TimestampWithTimezone]]]]
+    exclusions: PublicAttr[Optional[Sequence[str | TimestampWithTimezone]]]
 
     def __new__(
         cls,
-        start: Union[datetime, str, TimestampWithTimezone],
+        start: datetime | str | TimestampWithTimezone,
         fmt: str,
-        end: Union[datetime, str, TimestampWithTimezone, None] = None,
+        end: datetime | str | TimestampWithTimezone | None = None,
         schedule_type: Optional[ScheduleType] = None,
         timezone: Optional[str] = None,
         end_offset: int = 0,
@@ -116,7 +116,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
-        exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
+        exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
     ):
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
@@ -160,7 +160,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 " TimeWindowPartitionsDefinition."
             )
 
-        cleaned_exclusions: Optional[Sequence[Union[str, TimestampWithTimezone]]] = None
+        cleaned_exclusions: Optional[Sequence[str | TimestampWithTimezone]] = None
         if exclusions:
             check.sequence_param(
                 exclusions,
@@ -1216,7 +1216,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             and self.exclusions == other.exclusions
         )
 
-    def get_partition_key(self, key: Union[str, date, datetime]) -> str:
+    def get_partition_key(self, key: str | date | datetime) -> str:
         if isinstance(key, date) or isinstance(key, datetime):
             key = key.strftime(self.fmt)
 

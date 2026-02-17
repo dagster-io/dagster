@@ -1,7 +1,7 @@
 """System-provided config objects and constructors."""
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.executor_definition import (
@@ -55,7 +55,7 @@ class OutputsConfig(NamedTuple):
     output_config_schema, and a list otherwise.
     """
 
-    config: Optional[Union[dict, list]]
+    config: Optional[dict | list]
 
     @property
     def output_names(self) -> AbstractSet[str]:

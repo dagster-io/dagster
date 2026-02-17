@@ -3,7 +3,7 @@ from asyncio import AbstractEventLoop
 from collections import deque
 from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
-from typing import AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, Optional, cast  # noqa: UP035
 
 from dagster_shared.utils.timing import format_duration
 
@@ -437,7 +437,7 @@ def get_required_resource_keys_for_step(
 
 
 def _wrapped_resource_iterator(
-    resource_or_gen: Union[Any, Generator[Any, None, None]],
+    resource_or_gen: Any | Generator[Any, None, None],
 ) -> Generator[Any, None, None]:
     """Returns an iterator which yields a single item, which is the resource.
 

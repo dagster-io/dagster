@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import cached_property
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, TypedDict, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     from dagster._core.pipes.client import PipesMessageReader
 
 
-PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
+PipesExecutionResult: TypeAlias = MaterializeResult | AssetCheckResult
 
 
 class PipesLaunchedData(TypedDict):
@@ -82,7 +82,7 @@ class PipesMessageHandler:
     # but it would also be awkward to have a monolith that users extend.
     def __init__(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         message_reader: "PipesMessageReader",
     ) -> None:
         self._context = context
@@ -278,7 +278,7 @@ class PipesSession:
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
-    context: Union[OpExecutionContext, AssetExecutionContext]
+    context: OpExecutionContext | AssetExecutionContext
     created_at: datetime = field(default_factory=datetime.now)
 
     @cached_property
@@ -416,7 +416,7 @@ class PipesSession:
 
 
 def build_external_execution_context_data(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
     extras: Optional[PipesExtras],
 ) -> "PipesContextData":
     asset_keys = (

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ class TickRetentionByType(BaseModel, extra="forbid"):
 
 
 class TickRetention(BaseModel):
-    purgeAfterDays: Union[int, TickRetentionByType]
+    purgeAfterDays: int | TickRetentionByType
 
 
 class Retention(BaseModel, extra="forbid"):

@@ -3,7 +3,7 @@ import os
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -91,7 +91,7 @@ class BulkActionsFilter:
     statuses: Optional[Sequence[BulkActionStatus]] = None
     created_before: Optional[datetime] = None
     created_after: Optional[datetime] = None
-    tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None
+    tags: Optional[Mapping[str, str | Sequence[str]]] = None
     job_name: Optional[str] = None
     backfill_ids: Optional[Sequence[str]] = None
 
@@ -274,7 +274,7 @@ class PartitionBackfill(
 
     def get_backfill_status_per_asset_key(
         self, workspace: BaseWorkspaceRequestContext
-    ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
+    ) -> Sequence[PartitionedAssetBackfillStatus | UnpartitionedAssetBackfillStatus]:
         """Returns a sequence of backfill statuses for each targeted asset key in the asset graph,
         in topological order.
         """

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel, create_model
 
@@ -22,7 +22,7 @@ class UserDeployment(BaseModel):
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns] = None
     deploymentNamespace: Optional[str] = None
     port: int
-    env: Optional[Union[dict[str, str], list[kubernetes.EnvVar]]] = None
+    env: Optional[dict[str, str] | list[kubernetes.EnvVar]] = None
     envConfigMaps: Optional[list[kubernetes.ConfigMapEnvSource]] = None
     envSecrets: Optional[list[kubernetes.SecretEnvSource]] = None
     annotations: Optional[kubernetes.Annotations] = None
@@ -40,7 +40,7 @@ class UserDeployment(BaseModel):
     volumes: Optional[list[kubernetes.Volume]] = None
     schedulerName: Optional[str] = None
     initContainers: Optional[
-        list[Union[kubernetes.Container, kubernetes.InitContainerWithStructuredImage]]
+        list[kubernetes.Container | kubernetes.InitContainerWithStructuredImage]
     ] = None
     sidecarContainers: Optional[list[kubernetes.Container]] = None
     deploymentStrategy: Optional[kubernetes.DeploymentStrategy] = None

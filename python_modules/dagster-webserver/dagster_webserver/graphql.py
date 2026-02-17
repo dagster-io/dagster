@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator, Collection, Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from enum import Enum
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, cast
 
 import dagster._check as check
 from dagster._serdes import pack_value
@@ -122,7 +122,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                 text = TEMPLATE.replace("{{ app_path_prefix }}", self._app_path_prefix)
                 return HTMLResponse(text)
 
-            data: Union[dict[str, str], QueryParams] = request.query_params
+            data: dict[str, str] | QueryParams = request.query_params
         elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
 
@@ -147,7 +147,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             )
 
         query = data.get("query")
-        variables: Union[Optional[str], dict[str, Any]] = data.get("variables")
+        variables: Optional[str] | dict[str, Any] = data.get("variables")
         operation_name = data.get("operationName")
 
         if query is None:

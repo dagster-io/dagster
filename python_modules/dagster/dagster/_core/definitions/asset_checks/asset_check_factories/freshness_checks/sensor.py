@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
@@ -93,7 +93,7 @@ def build_sensor_for_freshness_checks(
         default_status=default_status,
         description=FRESHNESS_SENSOR_DESCRIPTION,
     )
-    def the_sensor(context: SensorEvaluationContext) -> Optional[Union[RunRequest, SkipReason]]:
+    def the_sensor(context: SensorEvaluationContext) -> Optional[RunRequest | SkipReason]:
         left_off_asset_check_key = (
             AssetCheckKey.from_user_string(context.cursor) if context.cursor else None
         )

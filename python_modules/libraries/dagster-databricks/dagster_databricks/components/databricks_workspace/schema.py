@@ -1,13 +1,13 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Optional, TypeAlias
 
 from dagster.components import Resolver
 from pydantic import BaseModel
 
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
 
-DatabricksJobInfo = Union[dict[str, Any], DatabricksJob]
+DatabricksJobInfo: TypeAlias = dict[str, Any] | DatabricksJob
 
 
 @dataclass

@@ -47,10 +47,7 @@ if TYPE_CHECKING:
 
 ResourceFunctionWithContext: TypeAlias = Callable[["InitResourceContext"], Any]
 ResourceFunctionWithoutContext: TypeAlias = Callable[[], Any]
-ResourceFunction: TypeAlias = Union[
-    ResourceFunctionWithContext,
-    ResourceFunctionWithoutContext,
-]
+ResourceFunction: TypeAlias = ResourceFunctionWithContext | ResourceFunctionWithoutContext
 
 
 @public
@@ -375,7 +372,7 @@ def resource(
 @public
 @beta_param(param="version")
 def resource(
-    config_schema: Union[ResourceFunction, CoercableToConfigSchema] = None,
+    config_schema: ResourceFunction | CoercableToConfigSchema = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,

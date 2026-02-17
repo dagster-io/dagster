@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, ContextManager, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import Any, Callable, ContextManager, NamedTuple, Optional, cast  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -324,7 +324,7 @@ class SqlRunStorage(RunStorage):
         columns: Optional[Sequence[str]] = None,
         order_by: Optional[str] = None,
         ascending: bool = False,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[JobBucket | TagBucket] = None,
     ) -> SqlAlchemyQuery:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_str_param(cursor, "cursor")
@@ -344,7 +344,7 @@ class SqlRunStorage(RunStorage):
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
     def _apply_tags_table_filters(
-        self, table: db.Table, tags: Mapping[str, Union[str, Sequence[str]]]
+        self, table: db.Table, tags: Mapping[str, str | Sequence[str]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
         for i, (key, value) in enumerate(tags.items()):
@@ -368,7 +368,7 @@ class SqlRunStorage(RunStorage):
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[JobBucket | TagBucket] = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by, ascending=ascending)
@@ -408,7 +408,7 @@ class SqlRunStorage(RunStorage):
         order_by: Optional[str] = None,
         ascending: bool = False,
         cursor: Optional[str] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[JobBucket | TagBucket] = None,
     ) -> Sequence[RunRecord]:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_int_param(limit, "limit")
@@ -958,13 +958,13 @@ class SqlRunStorage(RunStorage):
         return query
 
     def _apply_backfill_tags_filter_to_results(
-        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, Union[str, Sequence[str]]]
+        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, str | Sequence[str]]
     ) -> Sequence[PartitionBackfill]:
         if not tags:
             return backfills
 
         def _matches_backfill(
-            backfill: PartitionBackfill, tags: Mapping[str, Union[str, Sequence[str]]]
+            backfill: PartitionBackfill, tags: Mapping[str, str | Sequence[str]]
         ) -> bool:
             for key, value in tags.items():
                 if isinstance(value, str):
@@ -1139,7 +1139,7 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 def defensively_unpack_execution_plan_snapshot_query(
     logger: logging.Logger, row: Sequence[Any]
-) -> Optional[Union[ExecutionPlanSnapshot, JobSnap]]:
+) -> Optional[ExecutionPlanSnapshot | JobSnap]:
     # minimal checking here because sqlalchemy returns a different type based on what version of
     # SqlAlchemy you are using
 

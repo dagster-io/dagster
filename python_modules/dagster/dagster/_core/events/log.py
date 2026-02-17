@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional
 
 from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
@@ -33,7 +33,7 @@ class EventLogEntry(
         "_EventLogEntry",
         [
             ("error_info", PublicAttr[Optional[SerializableErrorInfo]]),
-            ("level", PublicAttr[Union[str, int]]),
+            ("level", PublicAttr[str | int]),
             ("user_message", PublicAttr[str]),
             ("run_id", PublicAttr[str]),
             ("timestamp", PublicAttr[float]),

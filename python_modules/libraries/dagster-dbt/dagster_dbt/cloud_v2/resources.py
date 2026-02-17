@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from functools import cached_property
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional
 
 from dagster import (
     AssetCheckSpec,
@@ -280,7 +280,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         exclude: str,
         selector: str,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
+    ) -> Sequence[AssetSpec | AssetCheckSpec]:
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
         with self.process_config_and_initialize_cm() as initialized_workspace:

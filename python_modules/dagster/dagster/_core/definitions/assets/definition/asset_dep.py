@@ -119,7 +119,7 @@ def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
 
 def coerce_to_deps_and_check_duplicates(
     coercible_to_asset_deps: Optional[Iterable["CoercibleToAssetDep"]],
-    key: Optional[Union[AssetKey, AssetCheckKey]],
+    key: Optional[AssetKey | AssetCheckKey],
 ) -> Sequence[AssetDep]:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 

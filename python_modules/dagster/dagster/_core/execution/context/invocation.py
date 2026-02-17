@@ -2,7 +2,7 @@ from abc import abstractmethod
 from asyncio import AbstractEventLoop
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -165,8 +165,8 @@ class DirectExecutionProperties:
 
     def __init__(self):
         self.user_events: list[UserEvent] = []
-        self.seen_outputs: dict[str, Union[str, set[str]]] = {}
-        self.output_metadata: dict[str, dict[str, Union[Any, Mapping[str, Any]]]] = {}
+        self.seen_outputs: dict[str, str | set[str]] = {}
+        self.output_metadata: dict[str, dict[str, Any | Mapping[str, Any]]] = {}
         self.requires_typed_event_stream: bool = False
         self.typed_event_stream_error_message: Optional[str] = None
 
@@ -672,7 +672,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             )
 
         return cast(
-            "Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition]", partitions_def
+            "MultiPartitionsDefinition | TimeWindowPartitionsDefinition", partitions_def
         ).time_window_for_partition_key(self.partition_key)
 
     @property

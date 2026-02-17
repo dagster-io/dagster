@@ -111,7 +111,7 @@ class JobDefinition(IHasInternalInit):
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: dict[str, "RunConfigSchema"]
-    _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
+    _subset_selection_data: Optional[OpSelectionData | AssetSelectionData]
     input_values: Mapping[str, object]
     _owners: Optional[Sequence[str]]
 
@@ -133,7 +133,7 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
+        _subset_selection_data: Optional[OpSelectionData | AssetSelectionData] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _was_explicitly_provided_resources: Optional[bool] = None,
@@ -243,7 +243,7 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
-        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
+        _subset_selection_data: Optional[OpSelectionData | AssetSelectionData],
         asset_layer: Optional[AssetLayer],
         input_values: Optional[Mapping[str, object]],
         _was_explicitly_provided_resources: Optional[bool],

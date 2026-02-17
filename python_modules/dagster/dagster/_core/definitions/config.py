@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Any, NamedTuple, Optional, TypeAlias, Union, cast
+from typing import Any, NamedTuple, Optional, TypeAlias, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -20,7 +20,7 @@ from dagster._core.errors import DagsterInvalidConfigError
 ConfigMappingFn: TypeAlias = Callable[[Any], Any]
 
 
-def is_callable_valid_config_arg(config: Union[Callable[..., Any], Mapping[str, object]]) -> bool:
+def is_callable_valid_config_arg(config: Callable[..., Any] | Mapping[str, object]) -> bool:
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 

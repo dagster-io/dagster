@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, Optional, TypeAlias
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -121,6 +121,6 @@ ResolvedPolytomicTranslationFn = Annotated[
     PolytomicTranslationFn,
     Resolver(
         _resolve_multilayer_translation,
-        model_field_type=Union[str, PolytomicTranslationArgs.model()],
+        model_field_type=str | PolytomicTranslationArgs.model(),
     ),
 ]

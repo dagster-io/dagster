@@ -90,7 +90,8 @@ class MySQLResource(ConfigurableResource):
     @contextmanager
     def get_connection(
         self,
-    ) -> Generator[Union[PooledMySQLConnection, MySQLConnectionAbstract], None, None]:
+        # Union is required because mysql connector types' metaclass doesn't support `|` at runtime.
+    ) -> Generator[Union[PooledMySQLConnection, MySQLConnectionAbstract], None, None]:  # noqa: UP007
         connection = backoff(
             fn=mysql.connect,
             retry_on=(mysql.errors.DatabaseError,),

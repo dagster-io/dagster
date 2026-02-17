@@ -7,7 +7,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypeAlias,
     TypeGuard,
-    Union,
     cast,
     overload,
 )
@@ -26,10 +25,7 @@ from dagster._core.definitions.resource_definition import ResourceDefinition, Re
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
 
-InputLoadFn: TypeAlias = Union[
-    Callable[["InputContext"], object],
-    Callable[[], object],
-]
+InputLoadFn: TypeAlias = Callable[["InputContext"], object] | Callable[[], object]
 
 
 @public
@@ -126,12 +122,12 @@ def input_manager(
 
 @public
 def input_manager(
-    config_schema: Union[InputLoadFn, Optional[CoercableToConfigSchema]] = None,
+    config_schema: InputLoadFn | Optional[CoercableToConfigSchema] = None,
     description: Optional[str] = None,
     input_config_schema: Optional[CoercableToConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
-) -> Union[InputManagerDefinition, Callable[[InputLoadFn], InputManagerDefinition]]:
+) -> InputManagerDefinition | Callable[[InputLoadFn], InputManagerDefinition]:
     """Define an input manager.
 
     Input managers load op inputs, either from upstream outputs or by providing default values.
@@ -193,7 +189,7 @@ def input_manager(
     return _wrap
 
 
-def _is_input_load_fn(obj: Union[InputLoadFn, CoercableToConfigSchema]) -> TypeGuard[InputLoadFn]:
+def _is_input_load_fn(obj: InputLoadFn | CoercableToConfigSchema) -> TypeGuard[InputLoadFn]:
     return callable(obj) and not is_callable_valid_config_arg(obj)
 
 

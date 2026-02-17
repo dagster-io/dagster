@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import beta
@@ -30,11 +30,11 @@ if TYPE_CHECKING:
 @beta
 def build_metadata_bounds_checks(
     *,
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
     severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
     metadata_key: str,
-    min_value: Optional[Union[int, float]] = None,
-    max_value: Optional[Union[int, float]] = None,
+    min_value: Optional[int | float] = None,
+    max_value: Optional[int | float] = None,
     exclusive_min: bool = False,
     exclusive_max: bool = False,
 ) -> Sequence[AssetChecksDefinition]:

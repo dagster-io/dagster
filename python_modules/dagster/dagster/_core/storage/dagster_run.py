@@ -284,7 +284,7 @@ class DagsterRun(
     # Only support storing certain partitions subsets on the run for now, other
     # partitions subsets are too big.
     # NOTE: if you are expanding the valid set, be mindful of older versions not handling it.
-    partitions_subset: Optional[Union[TimeWindowPartitionsSubset, KeyRangesPartitionsSubset]]
+    partitions_subset: Optional[TimeWindowPartitionsSubset | KeyRangesPartitionsSubset]
 
     def __new__(
         cls,
@@ -634,7 +634,7 @@ class RunsFilter(IHaveNew):
     run_ids: Optional[Sequence[str]]
     job_name: Optional[str]
     statuses: Sequence[DagsterRunStatus]
-    tags: Mapping[str, Union[str, Sequence[str]]]
+    tags: Mapping[str, str | Sequence[str]]
     snapshot_id: Optional[str]
     updated_after: Optional[datetime]
     updated_before: Optional[datetime]
@@ -647,7 +647,7 @@ class RunsFilter(IHaveNew):
         run_ids: Optional[Sequence[str]] = None,
         job_name: Optional[str] = None,
         statuses: Optional[Sequence[DagsterRunStatus]] = None,
-        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
+        tags: Optional[Mapping[str, str | Sequence[str]]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,

@@ -4,7 +4,7 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional  # noqa: UP035
 
 from dagster_shared.error import DagsterError
 from dagster_shared.utils.hash import make_hashable
@@ -111,7 +111,7 @@ class RemoteRepository:
         self._auto_materialize_use_sensors = auto_materialize_use_sensors
 
         if repository_snap.job_datas is not None:
-            self._job_map: dict[str, Union[JobDataSnap, JobRefSnap]] = {
+            self._job_map: dict[str, JobDataSnap | JobRefSnap] = {
                 d.name: d for d in repository_snap.job_datas
             }
             self._deferred_snapshots: bool = False
@@ -285,7 +285,7 @@ class RemoteRepository:
     def get_all_jobs(self) -> Sequence["RemoteJob"]:
         return [self.get_full_job(pn) for pn in self._job_map]
 
-    def get_job_map_entry(self, job_name: str) -> Union[JobDataSnap, JobRefSnap]:
+    def get_job_map_entry(self, job_name: str) -> JobDataSnap | JobRefSnap:
         return self._job_map[job_name]
 
     @property
@@ -885,7 +885,7 @@ class RemoteSchedule:
         return self._schedule_snap.name
 
     @property
-    def cron_schedule(self) -> Union[str, Sequence[str]]:
+    def cron_schedule(self) -> str | Sequence[str]:
         return self._schedule_snap.cron_schedule
 
     @property

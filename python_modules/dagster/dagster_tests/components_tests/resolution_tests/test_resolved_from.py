@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal, Optional
 
 import dagster as dg
 import pytest
@@ -115,7 +115,7 @@ def test_union_resolvable():
 
     @dataclass
     class ResolveFromListComponent(dg.Component, dg.Resolvable):
-        thing: Union[FooModel, BarModel]
+        thing: FooModel | BarModel
 
         def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
             return dg.Definitions()
@@ -149,7 +149,7 @@ def test_union_resolvable_complex():
 
     @dataclass
     class ResolveFromListComponent(dg.Component, dg.Resolvable):
-        thing: Union[FooModel, Sequence[NumModel]]
+        thing: FooModel | Sequence[NumModel]
 
         def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
             return dg.Definitions()
@@ -189,7 +189,7 @@ def test_union_resolvable_discriminator():
 
     @dataclass
     class ResolveFromUnionComponent(dg.Component, dg.Resolvable):
-        thing: Union[FooModel, BarModel]
+        thing: FooModel | BarModel
 
         def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
             return dg.Definitions()
@@ -236,16 +236,16 @@ def test_union_nested_custom_resolver():
     # Under the hood, this will choose the resolver whose model_field_type matches the input model type
     @dataclass
     class ResolveUnionResolversComponent(dg.Component, dg.Resolvable):
-        thing: Union[
+        thing: (
             Annotated[
                 FooNonModel,
                 dg.Resolver(lambda _, v: FooNonModel(foo=v.foo), model_field_type=FooModel),
-            ],
-            Annotated[
+            ]
+            | Annotated[
                 BarNonModel,
                 dg.Resolver(lambda _, v: BarNonModel(bar=v.bar), model_field_type=BarModel),
-            ],
-        ]
+            ]
+        )
 
         def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
             return dg.Definitions()
@@ -290,16 +290,14 @@ def test_union_nested_custom_resolver_no_match():
 
     @dataclass
     class ResolveUnionResolversComponent(dg.Component, dg.Resolvable):
-        thing: Union[
+        thing: (
             Annotated[
-                FooNonModel,
-                dg.Resolver(lambda _, v: _raise_exc(), model_field_type=FooModel),
-            ],
-            Annotated[
-                BarNonModel,
-                dg.Resolver(lambda _, v: _raise_exc(), model_field_type=BarModel),
-            ],
-        ]
+                FooNonModel, dg.Resolver(lambda _, v: _raise_exc(), model_field_type=FooModel)
+            ]
+            | Annotated[
+                BarNonModel, dg.Resolver(lambda _, v: _raise_exc(), model_field_type=BarModel)
+            ]
+        )
 
         def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
             return dg.Definitions()

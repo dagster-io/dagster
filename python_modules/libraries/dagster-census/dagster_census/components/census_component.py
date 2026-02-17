@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 
 import dagster as dg
 import pydantic
@@ -37,7 +37,7 @@ class CensusSyncSelectorByName(dg.Resolvable, dg.Model):
 
 class CensusSyncSelectorById(dg.Resolvable, dg.Model):
     by_id: Annotated[
-        Sequence[Union[int, str]],  # Allow strings for use-cases like '{{ env.ENV_VAR }}'
+        Sequence[int | str],  # Allow strings for use-cases like '{{ env.ENV_VAR }}'
         pydantic.Field(..., description="A list of sync IDs to include in the collection."),
     ]
 
@@ -108,9 +108,9 @@ class CensusComponent(StateBackedComponent, dg.Resolvable):
         Optional[Callable[[CensusSync], bool]],
         dg.Resolver(
             resolve_sync_selector,
-            model_field_type=Union[
-                str, CensusSyncSelectorByName.model(), CensusSyncSelectorById.model()
-            ],
+            model_field_type=str
+            | CensusSyncSelectorByName.model()
+            | CensusSyncSelectorById.model(),
             description="Function used to select Census syncs to pull into Dagster.",
         ),
     ] = None
@@ -153,7 +153,7 @@ class CensusComponent(StateBackedComponent, dg.Resolvable):
     @public
     def execute(
         self, context: dg.AssetExecutionContext, census: CensusResource
-    ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+    ) -> Iterable[dg.AssetMaterialization | dg.MaterializeResult]:
         """Executes a Census sync for the selected sync.
 
         This method can be overridden in a subclass to customize the sync execution behavior,

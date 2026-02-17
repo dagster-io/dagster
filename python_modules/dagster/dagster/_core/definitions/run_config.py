@@ -7,7 +7,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -49,7 +48,7 @@ def define_resource_dictionary_cls(
     resource_defs: Mapping[str, ResourceDefinition],
     required_resources: AbstractSet[str],
     is_permissive: bool,
-) -> Union[Permissive, Shape]:
+) -> Permissive | Shape:
     fields = {}
     for resource_name, resource_def in resource_defs.items():
         if resource_def.config_schema:
@@ -481,7 +480,7 @@ def define_node_config(
     input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]],
     permissive: bool = False,
     parent_handle: Optional[NodeHandle] = None,
-) -> Union[Permissive, Shape]:
+) -> Permissive | Shape:
     """Examples of what this method is used to generate the schema for:
     1.
         inputs: ...
@@ -688,12 +687,12 @@ class RunConfig:
     __hash__ = None  # pyright: ignore[reportAssignmentType]
 
 
-CoercibleToRunConfig: TypeAlias = Union[dict[str, Any], RunConfig]
+CoercibleToRunConfig: TypeAlias = dict[str, Any] | RunConfig
 
 T = TypeVar("T")
 
 
-def convert_config_input(inp: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
+def convert_config_input(inp: CoercibleToRunConfig | T) -> T | Mapping[str, Any]:
     if isinstance(inp, RunConfig):
         return inp.to_config_dict()
     else:

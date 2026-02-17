@@ -1,7 +1,7 @@
 import operator
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Optional, TypeAlias
 
 from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
 from typing_extensions import Self
@@ -20,9 +20,9 @@ from dagster._core.definitions.partitions.subset import (
 )
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 
-EntitySubsetValue = Union[bool, PartitionsSubset]
+EntitySubsetValue: TypeAlias = bool | PartitionsSubset
 
-CoercibleToAssetEntitySubsetValue = Union[str, Sequence[str], PartitionsSubset, None]
+CoercibleToAssetEntitySubsetValue: TypeAlias = str | Sequence[str] | PartitionsSubset | None
 
 
 class EntitySubsetSerializer(DataclassSerializer):

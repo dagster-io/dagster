@@ -1,6 +1,6 @@
 """Translation utilities for Tableau components."""
 
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, Optional, TypeAlias
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import Resolvable, Resolver
@@ -87,7 +87,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_multilayer_translation,
-        model_field_type=Union[str, TableauAssetArgs.model()],
+        model_field_type=str | TableauAssetArgs.model(),
     ),
 ]
 

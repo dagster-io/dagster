@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class ScriptSpec(OpSpec):
     type: Literal["script"] = "script"
     path: str
-    args: Optional[Union[list[str], str]] = None
+    args: Optional[list[str] | str] = None
 
     @staticmethod
     def with_script_stem_as_default_name(

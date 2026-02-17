@@ -158,7 +158,7 @@ class ComponentPath:
     """
 
     file_path_posix: str
-    instance_key: Optional[Union[int, str]] = None
+    instance_key: Optional[int | str] = None
 
     @property
     def file_path(self) -> Path:
@@ -173,7 +173,7 @@ class ComponentPath:
         return ComponentPath.from_path(path=normalized_path, instance_key=None)
 
     @staticmethod
-    def from_path(path: Path, instance_key: Optional[Union[int, str]] = None) -> "ComponentPath":
+    def from_path(path: Path, instance_key: Optional[int | str] = None) -> "ComponentPath":
         check.param_invariant(path.is_absolute(), "Path must be absolute")
         return ComponentPath(file_path_posix=path.as_posix(), instance_key=instance_key)
 

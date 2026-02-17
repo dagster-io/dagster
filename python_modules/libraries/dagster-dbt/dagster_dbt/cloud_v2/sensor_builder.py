@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Sequence
 from datetime import timedelta
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import (
     AssetCheckEvaluation,
@@ -131,9 +131,9 @@ def materializations_from_batch_iter(
 
 
 def sorted_asset_events(
-    asset_events: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+    asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
     repository_def: RepositoryDefinition,
-) -> list[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]:
+) -> list[AssetMaterialization | AssetObservation | AssetCheckEvaluation]:
     """Sort asset events by end date and toposort order."""
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
     materializations_and_timestamps = [

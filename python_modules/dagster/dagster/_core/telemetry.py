@@ -17,7 +17,7 @@ import os
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, overload
 
 from dagster_shared.telemetry import (
     DAGSTER_HOME_FALLBACK,
@@ -97,7 +97,7 @@ def telemetry_wrapper(
 
 def telemetry_wrapper(
     target_fn: Optional[T_Callable] = None, *, metadata: Optional[Mapping[str, str]] = None
-) -> Union[T_Callable, Callable[[Callable[P, T]], Callable[P, T]]]:
+) -> T_Callable | Callable[[Callable[P, T]], Callable[P, T]]:
     """Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
 

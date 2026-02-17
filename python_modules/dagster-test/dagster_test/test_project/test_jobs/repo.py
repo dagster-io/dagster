@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import boto3
 from dagster import (
@@ -72,7 +72,7 @@ def define_job(
     extra_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     name: Optional[str] = None,
     **kwargs: Any,  # forwarded to graph_def.to_job
-) -> Union[JobDefinition, Callable[[], JobDefinition]]:
+) -> JobDefinition | Callable[[], JobDefinition]:
     if not name:
         base_name = graph_def.name.rsplit("_", 1)[0]  # remove "_graph" suffix
         suffix = f"_job_{platform}" if platform else "_job"

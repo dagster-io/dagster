@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, TypeAlias
 
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
@@ -350,11 +350,11 @@ class AssetHealthMaterializationDegradedNotPartitionedMeta:
     failed_run_id: Optional[str]
 
 
-AssetHealthMaterializationMetadata = Union[
-    AssetHealthMaterializationDegradedPartitionedMeta,
-    AssetHealthMaterializationHealthyPartitionedMeta,
-    AssetHealthMaterializationDegradedNotPartitionedMeta,
-]
+AssetHealthMaterializationMetadata: TypeAlias = (
+    AssetHealthMaterializationDegradedPartitionedMeta
+    | AssetHealthMaterializationHealthyPartitionedMeta
+    | AssetHealthMaterializationDegradedNotPartitionedMeta
+)
 
 
 async def get_materialization_status_and_metadata(

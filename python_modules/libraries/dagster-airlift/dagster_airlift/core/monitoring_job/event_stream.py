@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from itertools import chain
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import (
     AssetMaterialization,
@@ -273,7 +273,7 @@ def _process_completed_runs(
     airflow_instance: AirflowInstance,
     range_start: float,
     range_end: float,
-) -> Iterator[Union[DagRunStarted, DagRunCompleted]]:
+) -> Iterator[DagRunStarted | DagRunCompleted]:
     offset = 0
     dag_ids_to_query = airflow_data.dag_ids_with_mapped_asset_keys | {
         handle.dag_id for handle in airflow_data.airflow_mapped_jobs_by_dag_handle.keys()
@@ -389,7 +389,7 @@ def _report_materialization(
     context: OpExecutionContext,
     corresponding_run: Optional[DagsterRun],
     materialization: AssetMaterialization,
-    airflow_event: Union[TaskInstance, DagRun],
+    airflow_event: TaskInstance | DagRun,
 ) -> None:
     if corresponding_run:
         context.instance.report_dagster_event(

@@ -2,7 +2,7 @@ import datetime
 import logging
 import threading
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -378,7 +378,7 @@ class DagsterLogManager(logging.Logger):
 
     def log_dagster_event(
         self,
-        level: Union[str, int],
+        level: str | int,
         msg: str,
         dagster_event: "DagsterEvent",
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
@@ -404,7 +404,7 @@ class DagsterLogManager(logging.Logger):
 
     def log(
         self,
-        level: Union[str, int],
+        level: str | int,
         msg: object,
         *args: Any,
         **kwargs: Any,

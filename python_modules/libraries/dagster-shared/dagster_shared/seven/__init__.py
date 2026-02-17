@@ -30,7 +30,7 @@ IS_PYTHON_3_14 = (sys.version_info[0], sys.version_info[1]) == (3, 14)
 
 
 # https://stackoverflow.com/a/67692/324449
-def import_module_from_path(module_name: str, path_to_file: Union[str, Path]) -> ModuleType:
+def import_module_from_path(module_name: str, path_to_file: str | Path) -> ModuleType:
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(module_name, path_to_file)

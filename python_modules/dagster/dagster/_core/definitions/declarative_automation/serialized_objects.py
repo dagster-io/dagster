@@ -10,7 +10,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypeAlias,
     TypeVar,
-    Union,
 )
 
 from dagster_shared.serdes import whitelist_for_serdes
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
         AutomationContext,
     )
 
-StructuredCursor = Union[str, SerializableEntitySubset, Sequence[SerializableEntitySubset]]
+StructuredCursor: TypeAlias = str | SerializableEntitySubset | Sequence[SerializableEntitySubset]
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
 
@@ -74,7 +73,7 @@ def _get_maybe_compressed_dynamic_partitions_subset(
 
 def get_serializable_candidate_subset(
     candidate_subset: EntitySubset,
-) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
+) -> SerializableEntitySubset | HistoricalAllPartitionsSubsetSentinel:
     """Do not serialize the candidate subset directly if it is an AllPartitionsSubset, compress
     DefaultPartitionsSubset on a DynamicPartitionsDefinition to a KeyRangesPartitionsSubset.
     """
@@ -94,7 +93,7 @@ def get_serializable_true_subset(true_subset: EntitySubset) -> SerializableEntit
     return _get_maybe_compressed_dynamic_partitions_subset(true_subset)
 
 
-OperatorType: TypeAlias = Union[Literal["and"], Literal["or"], Literal["not"], Literal["identity"]]
+OperatorType: TypeAlias = Literal["and"] | Literal["or"] | Literal["not"] | Literal["identity"]
 
 
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
@@ -139,9 +138,7 @@ class AutomationConditionEvaluation(Generic[T_EntityKey]):
     end_timestamp: Optional[float]
 
     true_subset: SerializableEntitySubset[T_EntityKey]
-    candidate_subset: Union[
-        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
-    ]
+    candidate_subset: SerializableEntitySubset[T_EntityKey] | HistoricalAllPartitionsSubsetSentinel
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
@@ -194,9 +191,7 @@ class AutomationConditionEvaluationWithRunIds(Generic[T_EntityKey]):
 @dataclass
 class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     true_subset: SerializableEntitySubset[T_EntityKey]
-    candidate_subset: Union[
-        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
-    ]
+    candidate_subset: SerializableEntitySubset[T_EntityKey] | HistoricalAllPartitionsSubsetSentinel
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
     metadata: Optional[MetadataMapping] = None
@@ -316,7 +311,7 @@ class AutomationConditionEvaluationState:
 
 
 def get_expanded_label(
-    item: Union[AutomationConditionEvaluation, AutomationConditionSnapshot],
+    item: AutomationConditionEvaluation | AutomationConditionSnapshot,
     use_label=False,
 ) -> Sequence[str]:
     if isinstance(item, AutomationConditionSnapshot):

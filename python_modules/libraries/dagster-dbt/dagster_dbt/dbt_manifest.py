@@ -1,14 +1,14 @@
 from collections.abc import Mapping
 from functools import cache
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, TypeAlias, cast
 
 import dagster._check as check
 import orjson
 
 from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 
-DbtManifestParam = Union[Mapping[str, Any], str, Path]
+DbtManifestParam: TypeAlias = Mapping[str, Any] | str | Path
 
 
 @cache

@@ -527,7 +527,7 @@ def is_project_file_config(config: "DgFileConfig") -> TypeGuard[DgProjectFileCon
     return config["directory_type"] == "project"
 
 
-DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
+DgFileConfig: TypeAlias = DgWorkspaceFileConfig | DgProjectFileConfig
 
 
 @contextmanager

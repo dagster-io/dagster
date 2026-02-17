@@ -388,7 +388,7 @@ def create_asset_event(
     partition_key: Optional[str],
     description: Optional[str],
     tags: Optional[Mapping[str, str]],
-) -> Union[AssetMaterialization, AssetObservation]:
+) -> AssetMaterialization | AssetObservation:
     if event_type == DagsterEventType.ASSET_MATERIALIZATION:
         return AssetMaterialization(
             asset_key=asset_key, partition=partition_key, description=description, tags=tags

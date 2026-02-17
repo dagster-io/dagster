@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 
 import dagster._check as check
 from dagster._annotations import public
@@ -17,7 +17,7 @@ class _Graph:
     input_defs: Sequence[InputDefinition]
     output_defs: Optional[Sequence[OutputDefinition]]
     ins: Optional[Mapping[str, GraphIn]]
-    out: Optional[Union[GraphOut, Mapping[str, GraphOut]]]
+    out: Optional[GraphOut | Mapping[str, GraphOut]]
     tags: Optional[Mapping[str, str]]
     config_mapping: Optional[ConfigMapping]
 
@@ -28,7 +28,7 @@ class _Graph:
         input_defs: Optional[Sequence[InputDefinition]] = None,
         output_defs: Optional[Sequence[OutputDefinition]] = None,
         ins: Optional[Mapping[str, GraphIn]] = None,
-        out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = None,
+        out: Optional[GraphOut | Mapping[str, GraphOut]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         config_mapping: Optional[ConfigMapping] = None,
     ):
@@ -116,9 +116,9 @@ def graph(
     input_defs: Optional[Sequence[InputDefinition]] = ...,
     output_defs: Optional[Sequence[OutputDefinition]] = ...,
     ins: Optional[Mapping[str, GraphIn]] = ...,
-    out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = ...,
+    out: Optional[GraphOut | Mapping[str, GraphOut]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = ...,
+    config: Optional[ConfigMapping | Mapping[str, Any]] = ...,
 ) -> _Graph: ...
 
 
@@ -131,10 +131,10 @@ def graph(
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
     ins: Optional[Mapping[str, GraphIn]] = None,
-    out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = None,
+    out: Optional[GraphOut | Mapping[str, GraphOut]] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
-) -> Union[GraphDefinition, _Graph]:
+    config: Optional[ConfigMapping | Mapping[str, Any]] = None,
+) -> GraphDefinition | _Graph:
     """Create an op graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a

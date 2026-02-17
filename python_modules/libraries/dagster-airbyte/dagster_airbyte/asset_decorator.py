@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
@@ -13,7 +13,7 @@ from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTransla
 def airbyte_assets(
     *,
     connection_id: str,
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+    workspace: AirbyteWorkspace | AirbyteCloudWorkspace,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,

@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -82,7 +82,7 @@ def assert_api_call(
 
 def test_refresh_access_token(
     base_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     rest_api_url: str,
 ) -> None:
     """Tests the `AirbyteCloudClient._single_request` method and how the API access token is refreshed.
@@ -143,7 +143,7 @@ def test_refresh_access_token(
 
 def test_basic_resource_request(
     all_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     rest_api_url: str,
     config_api_url: str,
 ) -> None:
@@ -204,7 +204,7 @@ def test_airbyte_sync_and_poll_client_job_status(
     error_expected: bool,
     exception_message: str,
     base_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     rest_api_url: str,
     config_api_url: str,
 ) -> None:
@@ -273,7 +273,7 @@ def test_airbyte_sync_and_poll_client_poll_process(
     n_polls: int,
     error_expected: bool,
     base_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     rest_api_url: str,
     config_api_url: str,
 ):
@@ -349,7 +349,7 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
     cancel_on_termination: bool,
     last_call_method: str,
     base_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     rest_api_url: str,
     config_api_url: str,
 ) -> None:
@@ -450,7 +450,7 @@ def test_airbyte_sync_and_poll_poll_previous_running_sync(
     error_expected: bool,
     exception_message: str,
     base_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     rest_api_url: str,
     config_api_url: str,
 ) -> None:
@@ -555,7 +555,7 @@ def test_airbyte_sync_and_poll_poll_previous_running_sync(
 def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     airbyte_cloud_sync_and_poll: MagicMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
     capsys: pytest.CaptureFixture,
 ) -> None:
     cleaned_connection_id = clean_name(TEST_CONNECTION_ID)

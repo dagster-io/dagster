@@ -2,7 +2,7 @@ import collections.abc
 from collections import defaultdict
 from collections.abc import Collection, Mapping
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -30,7 +30,7 @@ class StaticPartitionMapping(
         [
             (
                 "downstream_partition_keys_by_upstream_partition_key",
-                PublicAttr[Mapping[str, Union[str, Collection[str]]]],
+                PublicAttr[Mapping[str, str | Collection[str]]],
             )
         ],
     ),
@@ -44,9 +44,7 @@ class StaticPartitionMapping(
 
     def __init__(
         self,
-        downstream_partition_keys_by_upstream_partition_key: Mapping[
-            str, Union[str, Collection[str]]
-        ],
+        downstream_partition_keys_by_upstream_partition_key: Mapping[str, str | Collection[str]],
     ):
         check.mapping_param(
             downstream_partition_keys_by_upstream_partition_key,

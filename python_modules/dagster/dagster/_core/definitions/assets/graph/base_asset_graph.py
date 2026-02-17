@@ -10,7 +10,6 @@ from typing import (  # noqa: UP035
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -202,7 +201,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
     @abstractmethod
     def execution_set_entity_keys(
         self,
-    ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]: ...
+    ) -> AbstractSet[AssetKey | AssetCheckKey]: ...
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
@@ -287,7 +286,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @overload
     def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
 
-    def get(self, key: EntityKey) -> Union[T_AssetNode, AssetCheckNode]:
+    def get(self, key: EntityKey) -> T_AssetNode | AssetCheckNode:
         if isinstance(key, AssetKey):
             return self._asset_nodes_by_key[key]
         else:

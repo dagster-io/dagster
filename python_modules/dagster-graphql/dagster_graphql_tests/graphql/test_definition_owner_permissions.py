@@ -3,7 +3,7 @@ import warnings
 from abc import ABC
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional, Union, cast
+from typing import Optional, cast
 from unittest import mock
 
 from dagster import AssetCheckKey, AssetKey, BetaWarning, materialize
@@ -87,7 +87,7 @@ BaseTestSuite = make_graphql_context_test_suite(
 
 
 class BaseDefinitionOwnerPermissionsTestSuite(ABC):
-    def get_owned_definitions(self) -> set[Union[str, AssetKey]]:
+    def get_owned_definitions(self) -> set[str | AssetKey]:
         return set(
             [
                 AssetKey(["owned_asset"]),
@@ -99,7 +99,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             ]
         )
 
-    def get_unowned_definitions(self) -> set[Union[str, AssetKey]]:
+    def get_unowned_definitions(self) -> set[str | AssetKey]:
         return set(
             [
                 AssetKey(["unowned_asset"]),
@@ -112,8 +112,8 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
 
     def _get_selector(
-        self, context, def_type: type[RemoteDefinition], def_handle: Union[str, AssetKey]
-    ) -> Union[AssetKey, JobSelector, ScheduleSelector, SensorSelector]:
+        self, context, def_type: type[RemoteDefinition], def_handle: str | AssetKey
+    ) -> AssetKey | JobSelector | ScheduleSelector | SensorSelector:
         if isinstance(def_handle, AssetKey):
             return def_handle
 
@@ -537,7 +537,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         context.instance.add_backfill(backfill)
         return backfill_id
 
-    def _get_type_for_handle(self, def_handle: Union[str, AssetKey]) -> type[RemoteDefinition]:
+    def _get_type_for_handle(self, def_handle: str | AssetKey) -> type[RemoteDefinition]:
         if isinstance(def_handle, AssetKey):
             return RemoteAssetNode
         if def_handle.endswith("_job"):
@@ -920,7 +920,7 @@ class TestDefinitionOwnerPermissions(
 
         def _mock_selector_ownership(
             permission: str,
-            selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey, AssetCheckKey],
+            selector: JobSelector | ScheduleSelector | SensorSelector | AssetKey | AssetCheckKey,
         ) -> bool:
             owned_defs = self.get_owned_definitions()
             _did_check[permission] = True

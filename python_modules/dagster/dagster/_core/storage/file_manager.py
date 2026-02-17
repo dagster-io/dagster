@@ -5,7 +5,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import BinaryIO, ContextManager, Optional, TextIO, TypeAlias, Union  # noqa: UP035
+from typing import BinaryIO, ContextManager, Optional, TextIO, TypeAlias  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -16,7 +16,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.temp_file_manager import TempfileManager
 from dagster._utils import mkdir_p
 
-IOStream: TypeAlias = Union[TextIO, BinaryIO]
+IOStream: TypeAlias = TextIO | BinaryIO
 
 
 @public

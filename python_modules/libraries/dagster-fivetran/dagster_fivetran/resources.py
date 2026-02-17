@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -1231,7 +1231,7 @@ class FivetranWorkspace(ConfigurableResource):
         self,
         context: AssetExecutionContext,
         config: Optional[FivetranSyncConfig] = None,
-    ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> FivetranEventIterator[AssetMaterialization | MaterializeResult]:
         """Executes a sync and poll process to materialize Fivetran assets.
             This method can only be used in the context of an asset execution.
 

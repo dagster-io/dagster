@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
@@ -197,7 +197,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     @staticmethod
     def normalize_assets(
-        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        assets: Iterable[AssetsDefinition | SourceAsset],
     ) -> Sequence[AssetsDefinition]:
         """Normalize a mixed list of AssetsDefinition and SourceAsset to a list of AssetsDefinition.
 
@@ -228,7 +228,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     @classmethod
     def key_mappings_from_assets(
         cls,
-        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        assets: Iterable[AssetsDefinition | SourceAsset],
     ) -> tuple[Mapping[AssetKey, AssetNode], Mapping[AssetCheckKey, AssetsDefinition]]:
         assets_defs = cls.normalize_assets(assets)
 
@@ -260,7 +260,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     @classmethod
     def from_assets(
         cls,
-        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        assets: Iterable[AssetsDefinition | SourceAsset],
     ) -> "AssetGraph":
         asset_nodes_by_key, assets_defs_by_check_key = cls.key_mappings_from_assets(assets)
         return AssetGraph(

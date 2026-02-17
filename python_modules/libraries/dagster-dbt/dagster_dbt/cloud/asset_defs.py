@@ -3,7 +3,7 @@ import shlex
 from argparse import ArgumentParser, Namespace
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster import (
@@ -47,7 +47,7 @@ DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        dbt_cloud_resource_def: Union[DbtCloudClientResource, ResourceDefinition],
+        dbt_cloud_resource_def: DbtCloudClientResource | ResourceDefinition,
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
@@ -539,7 +539,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 @beta_param(param="partitions_def")
 @beta_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
-    dbt_cloud: Union[DbtCloudClientResource, ResourceDefinition],
+    dbt_cloud: DbtCloudClientResource | ResourceDefinition,
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[

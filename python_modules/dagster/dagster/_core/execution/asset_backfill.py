@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -347,7 +347,7 @@ class AssetBackfillData(NamedTuple):
 
     def get_backfill_status_per_asset_key(
         self, asset_graph: BaseAssetGraph
-    ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
+    ) -> Sequence[PartitionedAssetBackfillStatus | UnpartitionedAssetBackfillStatus]:
         """Returns a list containing each targeted asset key's backfill status.
         This list orders assets topologically and only contains statuses for assets that are
         currently existent in the asset graph.
@@ -355,7 +355,7 @@ class AssetBackfillData(NamedTuple):
 
         def _get_status_for_asset_key(
             asset_key: AssetKey,
-        ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
+        ) -> PartitionedAssetBackfillStatus | UnpartitionedAssetBackfillStatus:
             target_subset = check.not_none(self.target_subset.get_asset_subset(asset_key))
 
             if target_subset.is_partitioned:

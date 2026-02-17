@@ -1,6 +1,6 @@
 import os
 from collections.abc import Callable, Mapping
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
@@ -52,11 +52,9 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     ],
 )
 def test_component_asset_spec(
-    compute_config: Union[
-        ResolvedDatabricksNewClusterConfig,
-        ResolvedDatabricksExistingClusterConfig,
-        ResolvedDatabricksServerlessConfig,
-    ],
+    compute_config: ResolvedDatabricksNewClusterConfig
+    | ResolvedDatabricksExistingClusterConfig
+    | ResolvedDatabricksServerlessConfig,
 ):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
@@ -140,11 +138,9 @@ def test_component_asset_spec(
 )
 def test_load_component(
     compute_config: Mapping[str, Any],
-    expected_resolved_compute_config: Union[
-        ResolvedDatabricksNewClusterConfig,
-        ResolvedDatabricksExistingClusterConfig,
-        ResolvedDatabricksServerlessConfig,
-    ],
+    expected_resolved_compute_config: ResolvedDatabricksNewClusterConfig
+    | ResolvedDatabricksExistingClusterConfig
+    | ResolvedDatabricksServerlessConfig,
     custom_op_name: Optional[str],
     custom_asset_specs: Optional[dict[str, list[dict[str, Any]]]],
     expected_asset_spec_keys: set[AssetKey],

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 import boto3
 import dagster._check as check
@@ -31,7 +31,7 @@ def construct_s3_client(
     use_unsigned_session: bool = False,
     profile_name: Optional[str] = None,
     use_ssl: bool = True,
-    verify: Optional[Union[str, bool]] = None,
+    verify: Optional[str | bool] = None,
     aws_access_key_id: Optional[str] = None,
     aws_secret_access_key: Optional[str] = None,
     aws_session_token: Optional[str] = None,

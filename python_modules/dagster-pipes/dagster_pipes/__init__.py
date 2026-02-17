@@ -32,9 +32,9 @@ from typing import (  # noqa: UP035
     Set,  # noqa: F401
     TextIO,
     Type,  # noqa: F401
+    TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
     cast,
     final,
     get_args,
@@ -142,7 +142,9 @@ class PipesDataProvenance(TypedDict):
 
 PipesAssetCheckSeverity = Literal["WARN", "ERROR"]
 
-PipesMetadataRawValue = Union[int, float, str, Mapping[str, Any], Sequence[Any], bool, None]
+PipesMetadataRawValue: TypeAlias = (
+    int | float | str | Mapping[str, Any] | Sequence[Any] | bool | None
+)
 
 
 class PipesMetadataValue(TypedDict):
@@ -390,10 +392,10 @@ _METADATA_TYPES = frozenset(get_args(PipesMetadataType))
 
 
 def _normalize_param_metadata(
-    metadata: Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]],
+    metadata: Mapping[str, PipesMetadataRawValue | PipesMetadataValue],
     method: str,
     param: str,
-) -> Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]:
+) -> Mapping[str, PipesMetadataRawValue | PipesMetadataValue]:
     _assert_param_type(metadata, dict, method, param)
     new_metadata: dict[str, PipesMetadataValue] = {}
     for key, value in metadata.items():
@@ -1819,7 +1821,7 @@ class PipesContext:
 
     def report_asset_materialization(
         self,
-        metadata: Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]] = None,
+        metadata: Optional[Mapping[str, PipesMetadataRawValue | PipesMetadataValue]] = None,
         data_version: Optional[str] = None,
         asset_key: Optional[str] = None,
     ) -> None:
@@ -1863,7 +1865,7 @@ class PipesContext:
         check_name: str,
         passed: bool,
         severity: PipesAssetCheckSeverity = "ERROR",
-        metadata: Optional[Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]] = None,
+        metadata: Optional[Mapping[str, PipesMetadataRawValue | PipesMetadataValue]] = None,
         asset_key: Optional[str] = None,
     ) -> None:
         """Report to Dagster that an asset check has been performed. Streams a payload containing

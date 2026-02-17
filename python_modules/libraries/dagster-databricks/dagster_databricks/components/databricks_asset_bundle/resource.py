@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
 
@@ -109,7 +109,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
     def submit_and_poll(
         self, component: "DatabricksAssetBundleComponent", context: AssetExecutionContext
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> Iterator[AssetMaterialization | MaterializeResult]:
         # Get selected asset keys that are being materialized
         assets_def = context.assets_def
         selected_asset_keys = context.selected_asset_keys

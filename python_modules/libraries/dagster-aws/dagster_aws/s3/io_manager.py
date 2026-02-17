@@ -1,6 +1,6 @@
 import io
 import pickle
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster import (
     ConfigurableIOManager,
@@ -72,7 +72,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         path = self._get_path(context)
         return {"uri": MetadataValue.path(self._uri_for_path(path))}
 
-    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def get_op_output_relative_path(self, context: InputContext | OutputContext) -> UPath:
         return UPath("storage", super().get_op_output_relative_path(context))
 
     def _uri_for_path(self, path: UPath) -> str:

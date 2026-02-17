@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from functools import cache, cached_property
 from pathlib import Path
 from subprocess import check_output
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import yaml
 from dagster import (
@@ -193,13 +193,13 @@ class DbtCliResource(ConfigurableResource):
 
     def __init__(
         self,
-        project_dir: Union[str, Path, DbtProject],
+        project_dir: str | Path | DbtProject,
         global_config_flags: Optional[list[str]] = None,
-        profiles_dir: Optional[Union[str, Path]] = None,
+        profiles_dir: Optional[str | Path] = None,
         profile: Optional[str] = None,
         target: Optional[str] = None,
-        dbt_executable: Union[str, Path] = DBT_EXECUTABLE,
-        state_path: Optional[Union[str, Path]] = None,
+        dbt_executable: str | Path = DBT_EXECUTABLE,
+        state_path: Optional[str | Path] = None,
         **kwargs,  # allow custom subclasses to add fields
     ):
         if isinstance(project_dir, DbtProject):
@@ -238,7 +238,7 @@ class DbtCliResource(ConfigurableResource):
         )
 
     @classmethod
-    def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
+    def _validate_absolute_path_exists(cls, path: str | Path) -> Path:
         absolute_path = Path(path).absolute()
         try:
             resolved_path = absolute_path.resolve(strict=True)
@@ -334,7 +334,7 @@ class DbtCliResource(ConfigurableResource):
         return os.fspath(Path(state_path).absolute().resolve())
 
     def _get_unique_target_path(
-        self, *, context: Optional[Union[OpExecutionContext, AssetExecutionContext]]
+        self, *, context: Optional[OpExecutionContext | AssetExecutionContext]
     ) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
@@ -489,7 +489,7 @@ class DbtCliResource(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
+        context: Optional[OpExecutionContext | AssetExecutionContext] = None,
         target_path: Optional[Path] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.

@@ -58,7 +58,7 @@ if t.TYPE_CHECKING:
         TypeCheckContext,
     )
 
-TypeCheckFn = t.Callable[["TypeCheckContext", AnyStr], t.Union[TypeCheck, bool]]
+TypeCheckFn = t.Callable[["TypeCheckContext", AnyStr], TypeCheck | bool]
 
 
 @whitelist_for_serdes
@@ -509,7 +509,7 @@ class _Nothing(DagsterType):
 
 
 def isinstance_type_check_fn(
-    expected_python_type: t.Union[t.Type, t.Tuple[t.Type, ...]],
+    expected_python_type: t.Type | t.Tuple[t.Type, ...],
     dagster_type_name: str,
     expected_python_type_str: str,
 ) -> TypeCheckFn:
@@ -569,7 +569,7 @@ class PythonObjectDagsterType(DagsterType):
 
     def __init__(
         self,
-        python_type: t.Union[t.Type, t.Tuple[t.Type, ...]],
+        python_type: t.Type | t.Tuple[t.Type, ...],
         key: t.Optional[str] = None,
         name: t.Optional[str] = None,
         **kwargs,
@@ -581,7 +581,7 @@ class PythonObjectDagsterType(DagsterType):
             self.type_str = "Union[{}]".format(
                 ", ".join(python_type.__name__ for python_type in python_type)
             )
-            typing_type = t.Union[python_type]  # pyright: ignore[reportInvalidTypeArguments]
+            typing_type = t.Union[python_type]  # pyright: ignore[reportInvalidTypeArguments]  # noqa: UP007
 
         else:
             self.python_type = check.class_param(python_type, "python_type")
@@ -1070,7 +1070,7 @@ def construct_dagster_type_dictionary(
 
 
 class DagsterOptionalApi:
-    def __getitem__(self, inner_type: t.Union[t.Type, DagsterType]) -> OptionalType:
+    def __getitem__(self, inner_type: t.Type | DagsterType) -> OptionalType:
         inner_type = resolve_dagster_type(
             check.not_none_param(inner_type, "inner_type")
         )

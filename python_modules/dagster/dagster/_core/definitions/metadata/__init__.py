@@ -84,20 +84,20 @@ from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
-RawMetadataValue: TypeAlias = Union[
-    MetadataValue,
-    TableSchema,
-    TableColumnLineage,
-    AssetKey,
-    os.PathLike,
-    dict[Any, Any],
-    float,
-    int,
-    list[Any],
-    str,
-    datetime,
-    None,
-]
+RawMetadataValue: TypeAlias = (
+    MetadataValue
+    | TableSchema
+    | TableColumnLineage
+    | AssetKey
+    | os.PathLike
+    | dict[Any, Any]
+    | float
+    | int
+    | list[Any]
+    | str
+    | datetime
+    | None
+)
 
 MetadataMapping: TypeAlias = Mapping[str, MetadataValue]
 RawMetadataMapping: TypeAlias = Mapping[str, RawMetadataValue]

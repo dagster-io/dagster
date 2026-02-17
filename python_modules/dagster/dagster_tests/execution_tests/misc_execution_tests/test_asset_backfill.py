@@ -1,7 +1,7 @@
 import datetime
 import logging
 from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, NamedTuple, Optional, cast  # noqa: UP035
 from unittest.mock import MagicMock, patch
 
 import dagster as dg
@@ -94,7 +94,7 @@ class AssetBackfillScenario(NamedTuple):
 
 
 def scenario(
-    assets: Union[Mapping[str, Sequence[dg.AssetsDefinition]], Sequence[dg.AssetsDefinition]],
+    assets: Mapping[str, Sequence[dg.AssetsDefinition]] | Sequence[dg.AssetsDefinition],
     evaluation_time: Optional[datetime.datetime] = None,
     target_root_partition_keys: Optional[Sequence[str]] = None,
     last_storage_id_cursor_offset: Optional[int] = None,

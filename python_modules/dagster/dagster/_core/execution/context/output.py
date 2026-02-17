@@ -83,7 +83,7 @@ class OutputContext:
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
     _events: list["DagsterEvent"]
-    _user_events: list[Union[AssetMaterialization, AssetObservation]]
+    _user_events: list[AssetMaterialization | AssetObservation]
 
     def __init__(
         self,
@@ -623,7 +623,7 @@ class OutputContext:
         return self.get_asset_identifier()
 
     @public
-    def log_event(self, event: Union[AssetObservation, AssetMaterialization]) -> None:
+    def log_event(self, event: AssetObservation | AssetMaterialization) -> None:
         """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
         Events logged with this method will appear in the event log.
@@ -664,7 +664,7 @@ class OutputContext:
 
     def get_logged_events(
         self,
-    ) -> Sequence[Union[AssetMaterialization, AssetObservation]]:
+    ) -> Sequence[AssetMaterialization | AssetObservation]:
         """Retrieve the list of user-generated events that were logged via the context.
 
 

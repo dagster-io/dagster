@@ -1,7 +1,7 @@
 import logging
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Optional, Union
+from typing import Optional
 
 from dagster_shared.error import DagsterError
 
@@ -76,7 +76,7 @@ def host_mode_execution_context_event_generator(
     executor_defs: Sequence[ExecutorDefinition],
     output_capture: None,
     resume_from_failure: bool = False,
-) -> Iterator[Union[PlanOrchestrationContext, DagsterEvent]]:
+) -> Iterator[PlanOrchestrationContext | DagsterEvent]:
     from dagster._core.log_manager import DagsterLogManager
 
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)

@@ -1,6 +1,6 @@
 import json
 from collections.abc import Mapping
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import boto3
 from dagster import PipesClient
@@ -53,7 +53,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         *,
         function_name: str,
         event: Mapping[str, Any],
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
     ) -> PipesClientCompletedInvocation:
         """Synchronously invoke a lambda function, enriched with the pipes protocol.
 

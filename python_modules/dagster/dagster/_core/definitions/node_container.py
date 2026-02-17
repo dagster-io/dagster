@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 import dagster._check as check
 from dagster._core.definitions.dependency import (
@@ -23,7 +23,7 @@ T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 
 
 def normalize_dependency_dict(
-    dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]],
+    dependencies: Optional[DependencyMapping[str] | DependencyMapping[NodeInvocation]],
 ) -> DependencyMapping[NodeInvocation]:
     prelude = (
         'The expected type for "dependencies" is Union[Mapping[str, Mapping[str, '

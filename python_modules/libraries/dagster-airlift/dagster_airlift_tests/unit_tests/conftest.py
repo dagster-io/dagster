@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Generator, Mapping, Sequence
 from datetime import datetime, timedelta
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import pytest
 from dagster import (
@@ -190,7 +190,7 @@ def build_and_invoke_sensor(
 
 
 def assert_expected_key_order(
-    mats: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+    mats: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
     expected_key_order: Sequence[str],
 ) -> None:
     assert all(isinstance(mat, AssetMaterialization) for mat in mats)

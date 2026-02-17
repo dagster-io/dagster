@@ -3,7 +3,7 @@ import pickle
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar
 
 import pytest
 from dagster_shared.check.builder import INJECTED_DEFAULT_VALS_LOCAL_VAR
@@ -485,7 +485,7 @@ class Complex:
 class Remapped(IHaveNew):
     foo_str: str
 
-    def __new__(cls, foo: Union[str, Complex]):
+    def __new__(cls, foo: str | Complex):
         if isinstance(foo, Complex):
             foo = foo.s
 

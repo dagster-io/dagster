@@ -2,7 +2,7 @@ import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import yaml
 from dagster._annotations import public
@@ -256,14 +256,14 @@ class DbtProject(IHaveNew):
 
     def __new__(
         cls,
-        project_dir: Union[Path, str],
+        project_dir: Path | str,
         *,
-        target_path: Union[Path, str] = Path("target"),
-        profiles_dir: Optional[Union[Path, str]] = None,
+        target_path: Path | str = Path("target"),
+        profiles_dir: Optional[Path | str] = None,
         profile: Optional[str] = None,
         target: Optional[str] = None,
-        packaged_project_dir: Optional[Union[Path, str]] = None,
-        state_path: Optional[Union[Path, str]] = None,
+        packaged_project_dir: Optional[Path | str] = None,
+        state_path: Optional[Path | str] = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():

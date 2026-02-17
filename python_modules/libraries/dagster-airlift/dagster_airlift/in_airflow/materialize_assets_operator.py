@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Union
+from typing import Any
 
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
@@ -19,7 +19,7 @@ class BaseMaterializeAssetsOperator(BaseDagsterAssetsOperator):
             see the docs on asset keys: https://docs.dagster.io/guides/build/assets#multi-part-asset-keys
     """
 
-    def __init__(self, asset_key_paths: Sequence[Union[str, Sequence[str]]], *args, **kwargs):
+    def __init__(self, asset_key_paths: Sequence[str | Sequence[str]], *args, **kwargs):
         self.asset_key_paths = [
             _get_path_from_str(path) if isinstance(path, str) else tuple(path)
             for path in asset_key_paths
