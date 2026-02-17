@@ -1,0 +1,6 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    repo_url: https://github.com/dagster-io/jaffle-platform.git
+    repo_relative_path: jdbt
