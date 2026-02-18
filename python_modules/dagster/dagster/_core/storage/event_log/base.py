@@ -19,7 +19,6 @@ from dagster._core.event_api import (
     EventLogRecord,
     EventRecordsFilter,
     EventRecordsResult,
-    PartitionKeyFilter,
     RunStatusChangeRecordsFilter,
 )
 from dagster._core.events import DagsterEventType
@@ -36,7 +35,6 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
-    AssetCheckPartitionInfo,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -50,7 +48,6 @@ from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.storage.asset_check_state import AssetCheckState
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -536,6 +533,23 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Delete a partition for the specified dynamic partitions definition."""
         raise NotImplementedError()
 
+    def delete_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        """Delete partitions for the specified dynamic partitions definition."""
+        for partition_key in partition_keys:
+            self.delete_dynamic_partition(partitions_def_name, partition_key)
+
+    def get_dynamic_partitions_by_keys(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> Sequence[str]:
+        """Return the subset of partition keys that exist for the dynamic partitions definition."""
+        return [
+            partition_key
+            for partition_key in partition_keys
+            if self.has_dynamic_partition(partitions_def_name, partition_key)
+        ]
+
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
@@ -636,51 +650,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[Set[AssetCheckExecutionRecordStatus]] = None,
-        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass
 
     @abstractmethod
     def get_latest_asset_check_execution_by_key(
-        self,
-        check_keys: Sequence[AssetCheckKey],
-        partition_filter: Optional[PartitionKeyFilter] = None,
+        self, check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Get the latest executions for a list of asset checks."""
         pass
-
-    @abstractmethod
-    def get_asset_check_partition_info(
-        self,
-        keys: Sequence[AssetCheckKey],
-        after_storage_id: Optional[int] = None,
-        partition_keys: Optional[Sequence[str]] = None,
-    ) -> Sequence[AssetCheckPartitionInfo]:
-        """Get asset check partition records with execution status and planned run info."""
-        pass
-
-    def get_checkpointed_asset_check_state(
-        self, keys: Sequence[AssetCheckKey]
-    ) -> Mapping[AssetCheckKey, "AssetCheckState"]:
-        """Get the current stored asset check state for a list of asset checks and their
-        associated partitions definitions. This method is not guaranteed to return a
-        state object that is up to date with the latest events.
-        """
-        from dagster._core.storage.asset_check_state import AssetCheckState
-
-        return {key: AssetCheckState.empty() for key in keys}
-
-    def get_asset_check_state(
-        self, keys: Sequence[tuple[AssetCheckKey, Optional[PartitionsDefinition]]]
-    ) -> Mapping[AssetCheckKey, "AssetCheckState"]:
-        from dagster._core.storage.asset_check_state import bulk_update_asset_check_state
-
-        return bulk_update_asset_check_state(
-            self._instance,
-            keys,
-            initial_states=self.get_checkpointed_asset_check_state([key for key, _ in keys]),
-        )
 
     @abstractmethod
     def fetch_materializations(
@@ -778,23 +757,3 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         # Base implementation of fetching pool config.  To be overriden for remote storage
         # implementations where the local instance might not match the remote instance.
         return self._instance.get_concurrency_config().pool_config
-
-    def _get_latest_unpartitioned_materialization_storage_ids(
-        self, keys: Sequence[AssetKey]
-    ) -> Mapping[AssetKey, int]:
-        # Returns a mapping of asset key to the latest recorded materialization storage id for the asset,
-        # ignoring partitioned assets. Used purely for the `get_asset_check_partition_info` method across
-        # different storage implementations.
-        asset_records = self.get_asset_records(keys)
-        latest_unpartitioned_materialization_storage_ids = {}
-        for asset_record in asset_records:
-            if (
-                asset_record.asset_entry.last_materialization_record is not None
-                and asset_record.asset_entry.last_materialization_record.event_log_entry.get_dagster_event().partition
-                is None
-            ):
-                latest_unpartitioned_materialization_storage_ids[
-                    asset_record.asset_entry.asset_key
-                ] = asset_record.asset_entry.last_materialization_storage_id
-
-        return latest_unpartitioned_materialization_storage_ids

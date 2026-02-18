@@ -9,6 +9,8 @@ parse_spark_configs.py \
 
 from dagster import Bool, Field, Float, IntSource, Permissive, StringSource
 
+from dagster_spark.types import SparkMemory, SparkTime
+
 
 def spark_config():
     return Field(
@@ -37,17 +39,17 @@ def spark_config():
                                             is_required=False,
                                         ),
                                         "maxResultSize": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Application Properties: Limit of total size of serialized results of all partitions for each Spark action (e.g. collect) in bytes. Should be at least 1M, or 0 for unlimited. Jobs will be aborted if the total size is above this limit. Having a high limit may cause out-of-memory errors in driver (depends on spark.driver.memory and memory overhead of objects in JVM). Setting a proper limit can protect the driver from out-of-memory errors.""",
                                             is_required=False,
                                         ),
                                         "memory": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Application Properties: Amount of memory to use for the driver process, i.e. where SparkContext is initialized, in the same format as JVM memory strings with a size unit suffix ("k", "m", "g" or "t") (e.g. 512m, 2g). Note: In client mode, this config must not be set through the SparkConf directly in your application, because the driver JVM has already started at that point. Instead, please set this through the --driver-memory command line option or in your default properties file.""",
                                             is_required=False,
                                         ),
                                         "memoryOverhead": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Application Properties: Amount of non-heap memory to be allocated per driver process in cluster mode, in MiB unless otherwise specified. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the container size (typically 6-10%). This option is currently supported on YARN, Mesos and Kubernetes. Note: Non-heap memory includes off-heap memory (when spark.memory.offHeap.enabled=true) and memory used by other driver processes (e.g. python process that goes with a PySpark driver) and memory used by other non-driver processes running in the same container. The maximum memory size of container to running driver is determined by the sum of spark.driver.memoryOverhead and spark.driver.memory.""",
                                             is_required=False,
                                         ),
@@ -189,7 +191,7 @@ def spark_config():
                                 Permissive(
                                     fields={
                                         "memory": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Application Properties: Amount of memory to use per executor process, in the same format as JVM memory strings with a size unit suffix ("k", "m", "g" or "t") (e.g. 512m, 2g).""",
                                             is_required=False,
                                         ),
@@ -197,7 +199,7 @@ def spark_config():
                                             Permissive(
                                                 fields={
                                                     "memory": Field(
-                                                        StringSource,
+                                                        SparkMemory,
                                                         description="""Application Properties: The amount of memory to be allocated to PySpark in each executor, in MiB unless otherwise specified. If set, PySpark memory for an executor will be limited to this amount. If not set, Spark will not limit Python's memory use and it is up to the application to avoid exceeding the overhead memory space shared with other non-JVM processes. When PySpark is run in YARN or Kubernetes, this memory is added to executor resource requests. Note: This feature is dependent on Python's `resource` module; therefore, the behaviors and limitations are inherited. For instance, Windows does not support resource limiting and actual resource is not limited on MacOS.""",
                                                         is_required=False,
                                                     ),
@@ -205,7 +207,7 @@ def spark_config():
                                             )
                                         ),
                                         "memoryOverhead": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Application Properties: Amount of additional memory to be allocated per executor process, in MiB unless otherwise specified. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the executor size (typically 6-10%). This option is currently supported on YARN and Kubernetes. Note: Additional memory includes PySpark executor memory (when spark.executor.pyspark.memory is not configured) and memory used by other non-executor processes running in the same container. The maximum memory size of container to running executor is determined by the sum of spark.executor.memoryOverhead, spark.executor.memory, spark.memory.offHeap.size and spark.executor.pyspark.memory.""",
                                             is_required=False,
                                         ),
@@ -346,7 +348,7 @@ def spark_config():
                                             is_required=False,
                                         ),
                                         "heartbeatInterval": Field(
-                                            StringSource,
+                                            SparkTime,
                                             description="""Execution Behavior: Interval between each executor's heartbeats to the driver. Heartbeats let the driver know that the executor is still alive and update it with metrics for in-progress tasks. spark.executor.heartbeatInterval should be significantly less than spark.network.timeout""",
                                             is_required=False,
                                         ),
@@ -494,7 +496,7 @@ def spark_config():
                                             Permissive(
                                                 fields={
                                                     "memory": Field(
-                                                        StringSource,
+                                                        SparkMemory,
                                                         description="""Runtime Environment: Amount of memory to use per python worker process during aggregation, in the same format as JVM memory strings with a size unit suffix ("k", "m", "g" or "t") (e.g. 512m, 2g). If the memory used during aggregation goes above this amount, it will spill the data into disks.""",
                                                         is_required=False,
                                                     ),
@@ -534,7 +536,7 @@ def spark_config():
                                             )
                                         ),
                                         "fetchTimeout": Field(
-                                            StringSource,
+                                            SparkTime,
                                             description="""Execution Behavior: Communication timeout to use when fetching files added through SparkContext.addFile() from the driver.""",
                                             is_required=False,
                                         ),
@@ -638,7 +640,7 @@ def spark_config():
                                 Permissive(
                                     fields={
                                         "maxSizeInFlight": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Shuffle Behavior: Maximum size of map outputs to fetch simultaneously from each reduce task, in MiB unless otherwise specified. Since each output requires us to create a buffer to receive it, this represents a fixed memory overhead per reduce task, so keep it small unless you have a large amount of memory.""",
                                             is_required=False,
                                         ),
@@ -667,7 +669,7 @@ def spark_config():
                                             Permissive(
                                                 fields={
                                                     "buffer": Field(
-                                                        StringSource,
+                                                        SparkMemory,
                                                         description="""Shuffle Behavior: Size of the in-memory buffer for each shuffle file output stream, in KiB unless otherwise specified. These buffers reduce the number of disk seeks and system calls made in creating intermediate shuffle files.""",
                                                         is_required=False,
                                                     ),
@@ -732,7 +734,7 @@ def spark_config():
                                                         is_required=False,
                                                     ),
                                                     "retryWait": Field(
-                                                        StringSource,
+                                                        SparkTime,
                                                         description="""Shuffle Behavior: (Netty only) How long to wait between retries of fetches. The maximum delay caused by retrying is 15 seconds by default, calculated as maxRetries * retryWait.""",
                                                         is_required=False,
                                                     ),
@@ -779,7 +781,7 @@ def spark_config():
                                                                     Permissive(
                                                                         fields={
                                                                             "size": Field(
-                                                                                StringSource,
+                                                                                SparkMemory,
                                                                                 description="""Shuffle Behavior: Cache entries limited to the specified memory footprint, in bytes unless otherwise specified.""",
                                                                                 is_required=False,
                                                                             ),
@@ -1423,7 +1425,7 @@ def spark_config():
                                             is_required=False,
                                         ),
                                         "blockSize": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Execution Behavior: Size of each piece of a block for TorrentBroadcastFactory, in KiB unless otherwise specified. Too large a value decreases parallelism during broadcast (makes it slower); however, if it is too small, BlockManager might take a performance hit.""",
                                             is_required=False,
                                         ),
@@ -1660,7 +1662,7 @@ def spark_config():
                                             )
                                         ),
                                         "memoryMapThreshold": Field(
-                                            StringSource,
+                                            SparkMemory,
                                             description="""Execution Behavior: Size of a block above which Spark memory maps when reading a block from disk. Default unit is bytes, unless specified otherwise. This prevents Spark from memory mapping very small blocks. In general, memory mapping has high overhead for blocks close to or below the page size of the operating system.""",
                                             is_required=False,
                                         ),
@@ -1733,7 +1735,7 @@ def spark_config():
                                             Permissive(
                                                 fields={
                                                     "interval": Field(
-                                                        StringSource,
+                                                        SparkTime,
                                                         description="""Memory Management: Controls how often to trigger a garbage collection. This context cleaner triggers cleanups only when weak references are garbage collected. In long-running applications with large driver JVMs, where there is little memory pressure on the driver, this may happen very occasionally or not at all. Not cleaning at all may lead to executors running out of disk space after a while.""",
                                                         is_required=False,
                                                     ),

@@ -24,8 +24,8 @@ class ConfigType(Enum):
     INT = "IntSource"
     FLOAT = "Float"
     BOOL = "Bool"
-    MEMORY = "StringSource"  # TODO: We should handle memory field types
-    TIME = "StringSource"  # TODO: We should handle time field types
+    MEMORY = "SparkMemory"
+    TIME = "SparkTime"
 
 
 CONFIG_TYPES = {
@@ -260,6 +260,7 @@ def serialize(result: SparkConfigNode) -> bytes:
     with IndentingBufferPrinter() as printer:
         printer.write_header()
         printer.line("from dagster import Bool, Field, Float, IntSource, Permissive, StringSource")
+        printer.line("from dagster_spark.types import SparkMemory, SparkTime")
         printer.blank_line()
         printer.blank_line()
         printer.line("def spark_config():")

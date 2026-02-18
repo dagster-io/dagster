@@ -50,43 +50,27 @@ You can use Helm to do rolling upgrades of your Dagster+ agent. The version of t
 
 :::tip
 
-We recommend upgrading your Dagster+ agent every six months. The version of your agent is visible on the **Deployments** > **Agents** tab at `https://<YOUR-ORG>.dagster.plus/deployment/health`.
-
-Agent version numbering follows [Dagster release](https://github.com/dagster-io/dagster/releases) version numbering.
+We recommend upgrading your Dagster+ agent every 6 months. The version of your agent is visible on the "Deployments", "Agents" tab https://your-org.dagster.plus/deployment/health. The current version of the agent matches the most [recent Dagster release](https://github.com/dagster-io/dagster/releases).
 
 :::
 
-<Tabs>
-<TabItem value="latest-version" label="Upgrading to the latest agent version">
-
-To upgrade to the latest version of the Dagster agent, run the following `helm upgrade` command:
+```yaml
+# values.yaml
+dagsterCloudAgent:
+  image:
+    tag: latest
+```
 
 ```shell
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
 ```
-
-</TabItem>
-<TabItem value="specific-version" label="Upgrading to a specific agent version">
-
-To upgrade to a specific version of the Dagster agent, run the `helm upgrade` command with the `--version` flag:
-
-```shell
-helm --namespace dagster-cloud upgrade agent \
-    dagster-cloud/dagster-cloud-agent \
-    --values ./values.yaml
-    --version <version-number>
-```
-
-</TabItem>
-</Tabs>
 
 ## Troubleshooting tips
 
-You can see basic health information about your agent in the Dagster+ UI:
-
 [comment]: <> (TODO: Screenshot of Dagster+ Deployments agents tab)
+You can see basic health information about your agent in the Dagster+ UI.
 
 ### View logs
 
@@ -114,36 +98,12 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) are lightweight staging environments created for each code change. While you can use your existing production agent for branch deployments on Dagster+ Hybrid, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
-
-<Tabs>
-<TabItem value="dedicated-agent" label="Dedicated branch deployment agent setup (recommended)">
-
-If you have a dedicated branch deployment agent, you do not need to specify your full deployment in the branch deployment agent configuration:
+[Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml
 dagsterCloud:
-  branchDeployments: true
-```
-
-```shell
-helm --namespace dagster-cloud upgrade agent \
-    dagster-cloud/dagster-cloud-agent \
-    --values ./values.yaml
-```
-
-:::
-
-</TabItem>
-<TabItem value="single-agent" label="Single agent setup">
-
-If you have a single agent that serves both your [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) and branch deployments, you will need to specify the full deployment in the agent configuration:
-
-```yaml
-# values.yaml
-dagsterCloud:
-  deployments:
+  deployments: # can omit full deployments to serve only branch deployments in a new agent
     - prod
   branchDeployments: true
 ```
@@ -153,9 +113,6 @@ helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
 ```
-
-</TabItem>
-</Tabs>
 
 ### Deploy a high availability architecture
 

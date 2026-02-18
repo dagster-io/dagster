@@ -37,7 +37,6 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import (
     EventRecordsResult,
-    PartitionKeyFilter,
     RunShardedEventsCursor,
     RunStatusChangeRecordsFilter,
 )
@@ -58,7 +57,6 @@ from dagster._core.storage.asset_check_execution_record import (
     COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES,
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
-    AssetCheckPartitionInfo,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.event_log.base import (
@@ -2132,6 +2130,24 @@ class SqlEventLogStorage(EventLogStorage):
 
         return len(results) > 0
 
+    def get_dynamic_partitions_by_keys(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> Sequence[str]:
+        self._check_partitions_table()
+        if not partition_keys:
+            return []
+
+        query = db_select([DynamicPartitionsTable.c.partition]).where(
+            db.and_(
+                DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                DynamicPartitionsTable.c.partition.in_(partition_keys),
+            )
+        )
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        return [cast("str", row[0]) for row in results]
+
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
@@ -2169,6 +2185,22 @@ class SqlEventLogStorage(EventLogStorage):
                     db.and_(
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                         DynamicPartitionsTable.c.partition == partition_key,
+                    )
+                )
+            )
+
+    def delete_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        self._check_partitions_table()
+        if not partition_keys:
+            return
+        with self.index_connection() as conn:
+            conn.execute(
+                DynamicPartitionsTable.delete().where(
+                    db.and_(
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                        DynamicPartitionsTable.c.partition.in_(partition_keys),
                     )
                 )
             )
@@ -2993,25 +3025,15 @@ class SqlEventLogStorage(EventLogStorage):
         planned = cast(
             "AssetCheckEvaluationPlanned", check.not_none(event.dagster_event).event_specific_data
         )
-        partition_keys = (
-            planned.partitions_subset.get_partition_keys() if planned.partitions_subset else [None]
-        )
         with self.index_connection() as conn:
             conn.execute(
                 AssetCheckExecutionsTable.insert().values(
-                    [
-                        dict(
-                            asset_key=planned.asset_key.to_string(),
-                            check_name=planned.check_name,
-                            partition=partition_key,
-                            run_id=event.run_id,
-                            execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
-                            evaluation_event=serialize_value(event),
-                            evaluation_event_timestamp=self._event_insert_timestamp(event),
-                            evaluation_event_storage_id=event_id,
-                        )
-                        for partition_key in partition_keys
-                    ]
+                    asset_key=planned.asset_key.to_string(),
+                    check_name=planned.check_name,
+                    run_id=event.run_id,
+                    execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                 )
             )
 
@@ -3044,7 +3066,6 @@ class SqlEventLogStorage(EventLogStorage):
                         if evaluation.target_materialization_data
                         else None
                     ),
-                    partition=evaluation.partition,
                 )
             )
 
@@ -3061,9 +3082,6 @@ class SqlEventLogStorage(EventLogStorage):
                         AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
                         AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
                         AssetCheckExecutionsTable.c.run_id == event.run_id,
-                        self._get_asset_check_partition_filter_clause(
-                            PartitionKeyFilter(key=evaluation.partition)
-                        ),
                     )
                 )
                 .values(
@@ -3080,7 +3098,6 @@ class SqlEventLogStorage(EventLogStorage):
                         if evaluation.target_materialization_data
                         else None
                     ),
-                    partition=evaluation.partition,
                 )
             ).rowcount
 
@@ -3105,7 +3122,6 @@ class SqlEventLogStorage(EventLogStorage):
                             if evaluation.target_materialization_data
                             else None
                         ),
-                        partition=evaluation.partition,
                     )
                 ).rowcount
 
@@ -3117,23 +3133,12 @@ class SqlEventLogStorage(EventLogStorage):
                 "as a result of duplicate AssetCheckPlanned events."
             )
 
-    def _get_asset_check_partition_filter_clause(
-        self, partition_filter: Optional[PartitionKeyFilter]
-    ):
-        if partition_filter is None:
-            return True
-        elif partition_filter.key is None:
-            return AssetCheckExecutionsTable.c.partition.is_(None)
-        else:
-            return AssetCheckExecutionsTable.c.partition == partition_filter.key
-
     def get_asset_check_execution_history(
         self,
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
-        partition_filter: Optional[PartitionKeyFilter] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -3147,14 +3152,12 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetCheckExecutionsTable.c.execution_status,
                     AssetCheckExecutionsTable.c.evaluation_event,
                     AssetCheckExecutionsTable.c.create_timestamp,
-                    AssetCheckExecutionsTable.c.partition,
                 ]
             )
             .where(
                 db.and_(
                     AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
                     AssetCheckExecutionsTable.c.check_name == check_key.name,
-                    self._get_asset_check_partition_filter_clause(partition_filter),
                 )
             )
             .order_by(AssetCheckExecutionsTable.c.id.desc())
@@ -3174,13 +3177,8 @@ class SqlEventLogStorage(EventLogStorage):
         return [AssetCheckExecutionRecord.from_db_row(row, key=check_key) for row in rows]
 
     def get_latest_asset_check_execution_by_key(
-        self,
-        check_keys: Sequence[AssetCheckKey],
-        partition_filter: Optional[PartitionKeyFilter] = None,
+        self, check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
-        """Returns the latest AssetCheckExecutionRecord for each check key. By default, returns the latest
-        record regardless of partitioning.
-        """
         if not check_keys:
             return {}
 
@@ -3196,7 +3194,6 @@ class SqlEventLogStorage(EventLogStorage):
                         [key.asset_key.to_string() for key in check_keys]
                     ),
                     AssetCheckExecutionsTable.c.check_name.in_([key.name for key in check_keys]),
-                    self._get_asset_check_partition_filter_clause(partition_filter),
                 )
             )
             .group_by(
@@ -3214,7 +3211,6 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetCheckExecutionsTable.c.execution_status,
                 AssetCheckExecutionsTable.c.evaluation_event,
                 AssetCheckExecutionsTable.c.create_timestamp,
-                AssetCheckExecutionsTable.c.partition,
             ]
         ).select_from(
             AssetCheckExecutionsTable.join(
@@ -3236,135 +3232,6 @@ class SqlEventLogStorage(EventLogStorage):
             )
             results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
         return results
-
-    def _get_asset_check_partition_info_for_key(
-        self,
-        check_key: AssetCheckKey,
-        after_storage_id: Optional[int],
-        partition_keys: Optional[Sequence[str]],
-        latest_unpartitioned_materialization_storage_ids: Mapping[AssetKey, int],
-    ) -> Sequence[AssetCheckPartitionInfo]:
-        # Build the base filter conditions
-        filter_conditions = [
-            AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
-            AssetCheckExecutionsTable.c.check_name == check_key.name,
-            # Historical records may have NULL in the evaluation_event_storage_id column for
-            # PLANNED events
-            AssetCheckExecutionsTable.c.evaluation_event_storage_id.isnot(None),
-        ]
-        if partition_keys is not None:
-            filter_conditions.append(AssetCheckExecutionsTable.c.partition.in_(partition_keys))
-
-        # Subquery to find the max id for each partition
-        latest_check_ids_subquery = db_subquery(
-            db_select(
-                [
-                    db.func.max(AssetCheckExecutionsTable.c.id).label("id"),
-                    AssetCheckExecutionsTable.c.partition.label("partition"),
-                ]
-            )
-            .where(db.and_(*filter_conditions))
-            .group_by(AssetCheckExecutionsTable.c.partition),
-            "latest_check_ids_subquery",
-        )
-
-        # Subquery to find the latest materialization storage id for each partition of the
-        # target asset. Note: we don't filter by after_storage_id here because we always want
-        # to return the latest materialization storage id, even if it's older than after_storage_id.
-        latest_materialization_ids_subquery = self._latest_event_ids_by_partition_subquery(
-            check_key.asset_key,
-            [DagsterEventType.ASSET_MATERIALIZATION],
-            asset_partitions=partition_keys,
-        )
-
-        # Main query to get all columns for the latest records, joined with latest
-        # materialization storage ids
-        query = db_select(
-            [
-                AssetCheckExecutionsTable.c.id,
-                AssetCheckExecutionsTable.c.partition,
-                AssetCheckExecutionsTable.c.execution_status,
-                AssetCheckExecutionsTable.c.evaluation_event_storage_id,
-                AssetCheckExecutionsTable.c.materialization_event_storage_id,
-                AssetCheckExecutionsTable.c.run_id,
-                latest_materialization_ids_subquery.c.id.label("latest_materialization_storage_id"),
-            ]
-        ).select_from(
-            AssetCheckExecutionsTable.join(
-                latest_check_ids_subquery,
-                AssetCheckExecutionsTable.c.id == latest_check_ids_subquery.c.id,
-            ).join(
-                latest_materialization_ids_subquery,
-                AssetCheckExecutionsTable.c.partition
-                == latest_materialization_ids_subquery.c.partition,
-                isouter=True,
-            )
-        )
-
-        # these filters are applied to the main query rather than the individual subqueries to ensure
-        # we don't miss records that only have a new materialization or a new check execution but not both
-        if after_storage_id is not None:
-            query = query.where(
-                db.or_(
-                    AssetCheckExecutionsTable.c.evaluation_event_storage_id > after_storage_id,
-                    latest_materialization_ids_subquery.c.id > after_storage_id,
-                )
-            )
-
-        with self.index_connection() as conn:
-            rows = db_fetch_mappings(conn, query)
-
-        return [
-            AssetCheckPartitionInfo(
-                check_key=check_key,
-                partition_key=row["partition"],
-                latest_execution_status=AssetCheckExecutionRecordStatus(row["execution_status"]),
-                latest_target_materialization_storage_id=row["materialization_event_storage_id"],
-                latest_planned_run_id=row["run_id"],
-                latest_check_event_storage_id=row["evaluation_event_storage_id"],
-                latest_materialization_storage_id=max(
-                    filter(
-                        None,
-                        [
-                            row["latest_materialization_storage_id"],
-                            latest_unpartitioned_materialization_storage_ids.get(
-                                check_key.asset_key
-                            ),
-                        ],
-                    ),
-                    default=None,
-                ),
-            )
-            for row in rows
-        ]
-
-    def get_asset_check_partition_info(
-        self,
-        keys: Sequence[AssetCheckKey],
-        after_storage_id: Optional[int] = None,
-        partition_keys: Optional[Sequence[str]] = None,
-    ) -> Sequence[AssetCheckPartitionInfo]:
-        check.list_param(keys, "keys", of_type=AssetCheckKey)
-        check.opt_int_param(after_storage_id, "after_storage_id")
-
-        infos = []
-        latest_unpartitioned_materialization_storage_ids = (
-            self._get_latest_unpartitioned_materialization_storage_ids(
-                list(set(key.asset_key for key in keys))
-            )
-        )
-        # the inner query is not feasible to join in a single query because the latest materialization ids subquery,
-        # so for now we fetch the info for each key separately
-        for key in keys:
-            infos.extend(
-                self._get_asset_check_partition_info_for_key(
-                    key,
-                    after_storage_id,
-                    partition_keys,
-                    latest_unpartitioned_materialization_storage_ids,
-                )
-            )
-        return infos
 
     @property
     def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]

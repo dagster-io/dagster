@@ -80,6 +80,40 @@ MATERIALIZATION_CHUNK_SIZE = int(
 )
 
 
+def _get_first_partition_keys_in_subset(
+    asset_graph_view: AssetGraphView,
+    partitions_def: PartitionsDefinition,
+    subset: PartitionsSubset,
+    limit: int,
+) -> Sequence[str]:
+    if limit <= 0:
+        return []
+
+    result: list[str] = []
+    cursor = None
+    page_limit = max(limit, 100)
+    with partition_loading_context(new_ctx=asset_graph_view.partition_loading_context):
+        while len(result) < limit:
+            page = partitions_def.get_paginated_partition_keys(
+                context=asset_graph_view.partition_loading_context,
+                limit=page_limit,
+                ascending=True,
+                cursor=cursor,
+            )
+            if not page.results:
+                break
+            for partition_key in page.results:
+                if partition_key in subset:
+                    result.append(partition_key)
+                    if len(result) >= limit:
+                        break
+            if not page.has_more:
+                break
+            cursor = page.cursor
+
+    return result
+
+
 class AssetBackfillStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     MATERIALIZED = "MATERIALIZED"
@@ -1843,16 +1877,17 @@ def _should_backfill_atomic_asset_subset_unit(
                     num_allowed_partitions = (
                         self_dependent_node.backfill_policy.max_partitions_per_run
                     )
-                    # TODO add a method for paginating through the keys in order
-                    # and returning the first N instead of listing all of them
-                    # (can't use expensively_compute_asset_partitions because it returns
-                    # an unordered set)
                     internal_value = entity_subset_to_filter.get_internal_value()
                     partition_keys_to_include = (
-                        list(internal_value.get_partition_keys())
+                        _get_first_partition_keys_in_subset(
+                            asset_graph_view,
+                            check.not_none(self_dependent_node.partitions_def),
+                            internal_value,
+                            num_allowed_partitions,
+                        )
                         if isinstance(internal_value, PartitionsSubset)
                         else [None]
-                    )[:num_allowed_partitions]
+                    )
                     partition_subset_to_include = AssetGraphSubset.from_asset_partition_set(
                         {
                             AssetKeyPartitionKey(self_dependent_node.key, partition_key)

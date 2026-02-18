@@ -12,7 +12,6 @@ import type {PropSidebarItemCategory, PropSidebarItemLink} from '@docusaurus/plu
 
 import styles from './styles.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-
 // TODO - text for folders
 // TODO - indicator for "community supported" integration
 

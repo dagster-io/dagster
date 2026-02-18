@@ -1,10 +1,13 @@
 """Facilities for running arbitrary commands in child processes."""
 
+import io
 import os
 import queue
 import sys
+import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
@@ -35,11 +38,24 @@ class ChildProcessDoneEvent(NamedTuple("ChildProcessDoneEvent", [("pid", int)]),
 
 class ChildProcessSystemErrorEvent(
     NamedTuple(
-        "ChildProcessSystemErrorEvent", [("pid", int), ("error_info", SerializableErrorInfo)]
+        "ChildProcessSystemErrorEvent",
+        [
+            ("pid", int),
+            ("error_info", SerializableErrorInfo),
+            ("stdout", Optional[str]),
+            ("stderr", Optional[str]),
+        ],
     ),
     ChildProcessEvent,
 ):
-    pass
+    def __new__(
+        cls,
+        pid: int,
+        error_info: SerializableErrorInfo,
+        stdout: Optional[str] = None,
+        stderr: Optional[str] = None,
+    ):
+        return super().__new__(cls, pid, error_info, stdout, stderr)
 
 
 class ChildProcessCommand(ABC):
@@ -59,13 +75,125 @@ class ChildProcessCommand(ABC):
 class ChildProcessCrashException(Exception):
     """Thrown when the child process crashes."""
 
-    def __init__(self, pid, exit_code=None):
+    def __init__(
+        self,
+        pid: int,
+        exit_code: Optional[int] = None,
+        stdout: Optional[str] = None,
+        stderr: Optional[str] = None,
+    ):
         self.pid = pid
         self.exit_code = exit_code
-        super().__init__()
+        self.stdout = stdout
+        self.stderr = stderr
+        super().__init__(self._build_message())
+
+    def _build_message(self) -> str:
+        base_message = f"Child process {self.pid} crashed with exit code {self.exit_code}."
+        output = _format_captured_output(self.stdout, self.stderr)
+        if output:
+            return f"{base_message}\n\n{output}"
+        return base_message
+
+    def __str__(self) -> str:
+        return self._build_message()
 
 
-def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessCommand):
+CAPTURED_CHILD_PROCESS_LOG_BYTES = int(
+    os.getenv("DAGSTER_CHILD_PROCESS_LOG_CAPTURE_BYTES", "65536")
+)
+
+
+class _TeeStream(io.TextIOBase):
+    def __init__(self, *streams: io.TextIOBase):
+        self._streams = streams
+
+    def write(self, s: str) -> int:
+        for stream in self._streams:
+            stream.write(s)
+            stream.flush()
+        return len(s)
+
+    def flush(self) -> None:
+        for stream in self._streams:
+            stream.flush()
+
+
+def _format_captured_output(stdout: Optional[str], stderr: Optional[str]) -> str:
+    sections = []
+    if stdout:
+        sections.append(f"Captured stdout:\n{stdout}")
+    if stderr:
+        sections.append(f"Captured stderr:\n{stderr}")
+    return "\n\n".join(sections)
+
+
+def _read_log_tail(path: Optional[str]) -> Optional[str]:
+    if not path:
+        return None
+    try:
+        with open(path, "rb") as log_file:
+            log_file.seek(0, os.SEEK_END)
+            size = log_file.tell()
+            if size > CAPTURED_CHILD_PROCESS_LOG_BYTES:
+                log_file.seek(-CAPTURED_CHILD_PROCESS_LOG_BYTES, os.SEEK_END)
+            else:
+                log_file.seek(0)
+            data = log_file.read()
+        return data.decode("utf-8", errors="replace")
+    except OSError:
+        return None
+
+
+def _with_output_snippet(
+    error_info: SerializableErrorInfo, stdout: Optional[str], stderr: Optional[str]
+) -> SerializableErrorInfo:
+    output = _format_captured_output(stdout, stderr)
+    if not output:
+        return error_info
+    return SerializableErrorInfo(
+        message=f"{error_info.message.rstrip()}\n\n{output}",
+        stack=error_info.stack,
+        cls_name=error_info.cls_name,
+        cause=error_info.cause,
+        context=error_info.context,
+    )
+
+
+def _make_temp_log_file(prefix: str) -> str:
+    fd, path = tempfile.mkstemp(prefix=prefix, suffix=".log")
+    os.close(fd)
+    return path
+
+
+@contextmanager
+def _redirect_output(stdout_path: Optional[str], stderr_path: Optional[str]):
+    if not stdout_path and not stderr_path:
+        yield
+        return
+
+    stdout_file = open(stdout_path, "w", encoding="utf-8") if stdout_path else None
+    stderr_file = open(stderr_path, "w", encoding="utf-8") if stderr_path else None
+    try:
+        stdout_stream = _TeeStream(sys.stdout, stdout_file) if stdout_file else sys.stdout
+        stderr_stream = _TeeStream(sys.stderr, stderr_file) if stderr_file else sys.stderr
+        with redirect_stdout(stdout_stream), redirect_stderr(stderr_stream):
+            yield
+    finally:
+        if stdout_file:
+            stdout_file.flush()
+            stdout_file.close()
+        if stderr_file:
+            stderr_file.flush()
+            stderr_file.close()
+
+
+def _execute_command_in_child_process(
+    event_queue: Queue,
+    command: ChildProcessCommand,
+    stdout_path: Optional[str],
+    stderr_path: Optional[str],
+):
     """Wraps the execution of a ChildProcessCommand.
 
     Handles errors and communicates across a queue with the parent process.
@@ -76,18 +204,24 @@ def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessC
         pid = os.getpid()
         event_queue.put(ChildProcessStartEvent(pid=pid))
         try:
-            for step_event in command.execute():
-                event_queue.put(step_event)
-            event_queue.put(ChildProcessDoneEvent(pid=pid))
+            with _redirect_output(stdout_path, stderr_path):
+                for step_event in command.execute():
+                    event_queue.put(step_event)
+                event_queue.put(ChildProcessDoneEvent(pid=pid))
 
         except (
             Exception,
             KeyboardInterrupt,
             DagsterExecutionInterruptedError,
         ):
+            stdout = _read_log_tail(stdout_path)
+            stderr = _read_log_tail(stderr_path)
+            error_info = _with_output_snippet(
+                serializable_error_info_from_exc_info(sys.exc_info()), stdout, stderr
+            )
             event_queue.put(
                 ChildProcessSystemErrorEvent(
-                    pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())
+                    pid=pid, error_info=error_info, stdout=stdout, stderr=stderr
                 )
             )
 
@@ -147,9 +281,12 @@ def execute_child_process_command(
     check.inst_param(command, "command", ChildProcessCommand)
 
     event_queue = multiprocessing_ctx.Queue()
+    stdout_path = _make_temp_log_file("dagster-child-stdout-")
+    stderr_path = _make_temp_log_file("dagster-child-stderr-")
     try:
         process = multiprocessing_ctx.Process(  # type: ignore
-            target=_execute_command_in_child_process, args=(event_queue, command)
+            target=_execute_command_in_child_process,
+            args=(event_queue, command, stdout_path, stderr_path),
         )
         process.start()
         yield process
@@ -168,9 +305,19 @@ def execute_child_process_command(
                 completed_properly = True
 
         if not completed_properly:
-            # TODO Figure out what to do about stderr/stdout
-            raise ChildProcessCrashException(pid=process.pid, exit_code=process.exitcode)
+            process.join()
+            stdout = _read_log_tail(stdout_path)
+            stderr = _read_log_tail(stderr_path)
+            raise ChildProcessCrashException(
+                pid=process.pid, exit_code=process.exitcode, stdout=stdout, stderr=stderr
+            )
 
         process.join()
     finally:
         event_queue.close()
+        for path in (stdout_path, stderr_path):
+            if path:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass

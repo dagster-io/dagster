@@ -386,6 +386,25 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor or 0
         )
 
+    @cached_method
+    def get_materialized_or_observed_partition_keys(
+        self, *, asset_key: AssetKey
+    ) -> AbstractSet[str]:
+        if not self.asset_graph.get(asset_key).is_partitioned:
+            return set()
+
+        partition_keys: set[str] = set()
+        for event_type in (
+            DagsterEventType.ASSET_MATERIALIZATION,
+            DagsterEventType.ASSET_OBSERVATION,
+        ):
+            partition_keys.update(
+                self.instance.get_latest_storage_id_by_partition(
+                    asset_key, event_type=event_type
+                ).keys()
+            )
+        return partition_keys
+
     def get_latest_materialization_or_observation_record(
         self,
         asset_partition: AssetKeyPartitionKey,

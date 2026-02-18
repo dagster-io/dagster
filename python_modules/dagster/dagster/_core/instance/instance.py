@@ -611,6 +611,20 @@ class DagsterInstance(
 
     @public
     @traced
+    def delete_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        """Delete partitions for the specified :py:class:`DynamicPartitionsDefinition`.
+        If a partition does not exist, it is ignored.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_keys (Sequence[str]): Partition keys to delete.
+        """
+        return self._event_storage.delete_dynamic_partitions(partitions_def_name, partition_keys)
+
+    @public
+    @traced
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
         """Delete a partition for the specified :py:class:`DynamicPartitionsDefinition`.
         If the partition does not exist, exits silently.
@@ -630,6 +644,22 @@ class DagsterInstance(
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
         """
         return self._event_storage.get_dynamic_partitions(partitions_def_name)
+
+    @public
+    @traced
+    def get_dynamic_partitions_by_keys(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> Sequence[str]:
+        """Return the subset of provided partition keys that exist for the specified
+        :py:class:`DynamicPartitionsDefinition`.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_keys (Sequence[str]): Partition keys to check.
+        """
+        return self._event_storage.get_dynamic_partitions_by_keys(
+            partitions_def_name, partition_keys
+        )
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
         from dagster._core.definitions.partitions.context import partition_loading_context

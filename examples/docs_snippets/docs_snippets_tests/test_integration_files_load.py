@@ -17,7 +17,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/salesforce.py",
     f"{snippets_folder}/sftp.py",
     f"{snippets_folder}/sharepoint.py",
-    # FIXME: need to enable the following once we have a way to run their init/compile script in CI
+    # NOTE: Enable these once we have a way to run their init/compile script in CI.
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
     f"{snippets_folder}/airbyte.py",
@@ -45,9 +45,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/airbyte_cloud/create_airbyte_cloud_all_assets_job.py",
     f"{snippets_folder}/airbyte_cloud/create_airbyte_cloud_selection_job.py",
     f"{snippets_folder}/airbyte_cloud/schedule_airbyte_cloud_jobs.py",
-    # FIXME: this breaks on py3.8 and seems related to the non-dagster dependencies
+    # NOTE: This breaks on py3.8 and seems related to the non-dagster dependencies.
     f"{snippets_folder}/pandera.py",
-    # FIXME: include tests
+    # NOTE: Include tests when the optional deps are available in CI.
     f"{snippets_folder}/anthropic.py",
     f"{snippets_folder}/chroma.py",
     f"{snippets_folder}/gemini.py",
@@ -134,7 +134,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tableau/refresh-and-materialize-tableau-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-cloud-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-server-assets.py",
-    # FIXME: serverless pipes files require Databricks environment/credentials
+    # NOTE: Serverless pipes files require Databricks environment/credentials.
     f"{snippets_folder}/databricks/dagster_code_serverless.py",
     f"{snippets_folder}/databricks/databricks_code_serverless.py",
     f"{snippets_folder}/iceberg/io_manager_daft.py",

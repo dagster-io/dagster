@@ -34,7 +34,7 @@ Then we can execute this job and pull the attributes we need to build the `conte
 />
 
 {/* TODO the methods and statuses below do not exist in API docs */}
-{/* We have provided convenience functions <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" method="get_job_success_event" /> and <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" method="get_job_failure_event" /> for retrieving `DagsterRunStatus.SUCCESS` and `DagsterRunStatus.FAILURE` events, respectively. If you have a run status sensor triggered on another status, you can retrieve all events from `result` and filter based on your event type. */}
+To inspect the resulting status in tests, use the <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" /> returned by `execute_in_process`. Its `dagster_run` and `all_events` properties let you filter for the status or event type you care about.
 
 We can use the same pattern to build the context for <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" />. If we wanted to test this run failure sensor:
 
