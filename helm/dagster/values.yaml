@@ -1204,21 +1204,26 @@ dagsterDaemon:
     # Uncomment to use a threadpool to submit runs from a single schedule tick in parallel. Can be
     # used to decrease latency when a schedule emits multiple run requests within a single tick.
     # numSubmitWorkers: 4
+    # Timeout in seconds for a single schedule tick evaluation. If a schedule tick takes longer
+    # than this timeout (e.g., due to a hung run launcher or network issues), it will be cancelled
+    # and a new evaluation will be allowed to start. Set to -1 to disable timeout (not recommended).
+    # Default: 600 seconds (10 minutes).
+    scheduleTickTimeoutSeconds: 600
 
-    # Uncomment to configure the backfill daemon.
-    # Warning: Code deployments with version before 1.9.7 don't support this configuration and might fail.
-    # More details: https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760
-    # backfills:
-    #   Whether to submit backfills using an asynchronous thread pool, allowing backfill runs
-    #   to be enqueued in parallel
-    #   useThreads: true
-    #   The max number of worker threads to use when submitting backfills. Can be tuned
-    #   to allow more backfills to run in parallel, but may require allocating more resources to the
-    #   daemon.
-    #   numWorkers: 4
-    #   Uncomment to use a threadpool to submit runs from backfills in parallel. Can be
-    #   used to decrease latency when a backfill enqueues many run requests.
-    #   numSubmitWorkers: 4
+  # Uncomment to configure the backfill daemon.
+  # Warning: Code deployments with version before 1.9.7 don't support this configuration and might fail.
+  # More details: https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760
+  # backfills:
+  #   Whether to submit backfills using an asynchronous thread pool, allowing backfill runs
+  #   to be enqueued in parallel
+  #   useThreads: true
+  #   The max number of worker threads to use when submitting backfills. Can be tuned
+  #   to allow more backfills to run in parallel, but may require allocating more resources to the
+  #   daemon.
+  #   numWorkers: 4
+  #   Uncomment to use a threadpool to submit runs from backfills in parallel. Can be
+  #   used to decrease latency when a backfill enqueues many run requests.
+  #   numSubmitWorkers: 4
 
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See

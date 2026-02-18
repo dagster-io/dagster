@@ -58,6 +58,25 @@ def default_scheduler_delay_instrumentation(
     pass
 
 
+# Default timeout for schedule tick evaluation futures (10 minutes)
+# After this timeout, stuck futures will be cleaned up and the tick marked as failed
+DEFAULT_SCHEDULE_TICK_TIMEOUT_SECONDS = int(
+    os.getenv("DAGSTER_SCHEDULE_TICK_TIMEOUT_SECONDS", "600")
+)
+
+
+class ScheduleFutureInfo(NamedTuple):
+    """Information about a schedule evaluation future, including when it started.
+
+    Used to detect and clean up stuck futures that have been running longer than
+    the configured timeout.
+    """
+
+    future: Future
+    start_timestamp: float
+    schedule_name: str
+
+
 # how often do we update the job row in the database with the last iteration timestamp.  This
 # creates a checkpoint so that if the cron schedule changes, we don't try to backfill schedule ticks
 # from the start of the schedule, just since the last recorded iteration interval.
@@ -201,7 +220,7 @@ def execute_scheduler_iteration_loop(
 ) -> "DaemonIterator":
     from dagster._daemon.daemon import SpanMarker
 
-    scheduler_run_futures: dict[str, Future] = {}
+    scheduler_run_futures: dict[str, ScheduleFutureInfo] = {}
     iteration_times: dict[str, ScheduleIterationTimes] = {}
 
     threadpool_executor = None
@@ -273,7 +292,7 @@ def launch_scheduled_runs(
     iteration_times: dict[str, ScheduleIterationTimes],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    scheduler_run_futures: Optional[dict[str, Future]] = None,
+    scheduler_run_futures: Optional[dict[str, ScheduleFutureInfo]] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
@@ -395,10 +414,19 @@ def launch_scheduled_runs(
                         "scheduler_run_futures dict must be passed with threadpool_executor"
                     )
 
+                assert scheduler_run_futures is not None  # for type narrowing after check.failed()
+
+                # Get timeout setting from instance config
+                settings = workspace_process_context.instance.get_scheduler_settings()
+                tick_timeout_seconds = settings.get(
+                    "schedule_tick_timeout_seconds", DEFAULT_SCHEDULE_TICK_TIMEOUT_SECONDS
+                )
+
                 if schedule.selector_id in scheduler_run_futures:
-                    if scheduler_run_futures[schedule.selector_id].done():
+                    future_info = scheduler_run_futures[schedule.selector_id]
+                    if future_info.future.done():
                         try:
-                            result = scheduler_run_futures[schedule.selector_id].result()
+                            result = future_info.future.result()
                             iteration_times[schedule.selector_id] = result
                         except Exception:
                             # Log exception and continue on rather than erroring the whole scheduler loop
@@ -410,8 +438,20 @@ def launch_scheduled_runs(
                             )
                         del scheduler_run_futures[schedule.selector_id]
                     else:
-                        # only allow one tick per schedule to be in flight
-                        continue
+                        elapsed_seconds = now_timestamp - future_info.start_timestamp
+                        if tick_timeout_seconds > 0 and elapsed_seconds > tick_timeout_seconds:
+                            logger.warning(
+                                f"Schedule tick for '{future_info.schedule_name}' has been running "
+                                f"for {elapsed_seconds:.0f} seconds (timeout: {tick_timeout_seconds}s). "
+                                f"Cancelling stuck evaluation. This may indicate a hung run launcher "
+                                f"or network issues."
+                            )
+                            future_info.future.cancel()
+                            del scheduler_run_futures[schedule.selector_id]
+                            # Continue to allow a new evaluation to start
+                        else:
+                            # only allow one tick per schedule to be in flight
+                            continue
 
                 previous_iteration_times = iteration_times.get(schedule.selector_id)
                 if (
@@ -448,7 +488,11 @@ def launch_scheduled_runs(
                         else None
                     ),
                 )
-                scheduler_run_futures[schedule.selector_id] = future
+                scheduler_run_futures[schedule.selector_id] = ScheduleFutureInfo(
+                    future=future,
+                    start_timestamp=now_timestamp,
+                    schedule_name=schedule.name,
+                )
                 yield
 
             else:
