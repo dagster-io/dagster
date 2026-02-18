@@ -1,7 +1,10 @@
+import {useState} from 'react';
+
 import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Icon, IconNames as _iconNames} from '../Icon';
+import {Icon, IconName, IconNames as _iconNames} from '../Icon';
+import {TextInput} from '../TextInput';
 import {Tooltip} from '../Tooltip';
 
 const IconNames = _iconNames.slice().sort();
@@ -12,28 +15,45 @@ export default {
   component: Icon,
 };
 
-export const Size16 = () => {
+const IconGallery = ({
+  renderIcon,
+}: {
+  renderIcon: (name: IconName, index: number) => React.ReactNode;
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchLower = searchQuery.toLowerCase();
+  const filtered = IconNames.filter((name) => name.toLowerCase().includes(searchLower));
+
   return (
-    <Box flex={{gap: 6, wrap: 'wrap'}}>
-      {IconNames.map((name) => (
-        <Tooltip content={name} key={name}>
-          <Icon name={name} />
-        </Tooltip>
-      ))}
+    <Box flex={{direction: 'column', gap: 12}}>
+      <Box flex={{direction: 'column', gap: 8}} style={{maxWidth: 300}}>
+        <TextInput
+          icon="search"
+          placeholder="Search icons…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <span style={{fontSize: 12, color: Colors.textLight()}}>
+          {filtered.length} of {IconNames.length} icons
+        </span>
+      </Box>
+      <Box flex={{gap: 6, wrap: 'wrap'}}>
+        {filtered.map((name, idx) => (
+          <Tooltip content={name} key={name}>
+            {renderIcon(name, idx)}
+          </Tooltip>
+        ))}
+      </Box>
     </Box>
   );
 };
 
+export const Size16 = () => {
+  return <IconGallery renderIcon={(name) => <Icon name={name} />} />;
+};
+
 export const Size24 = () => {
-  return (
-    <Box flex={{gap: 6, wrap: 'wrap'}}>
-      {IconNames.map((name) => (
-        <Tooltip content={name} key={name}>
-          <Icon name={name} size={24} />
-        </Tooltip>
-      ))}
-    </Box>
-  );
+  return <IconGallery renderIcon={(name) => <Icon name={name} size={24} />} />;
 };
 
 export const IconColors = () => {
@@ -51,12 +71,8 @@ export const IconColors = () => {
   };
 
   return (
-    <Box flex={{gap: 6, wrap: 'wrap'}}>
-      {IconNames.map((name, idx) => (
-        <Tooltip content={name} key={name}>
-          <Icon name={name} color={colorAtIndex(idx)} size={24} />
-        </Tooltip>
-      ))}
-    </Box>
+    <IconGallery
+      renderIcon={(name, idx) => <Icon name={name} color={colorAtIndex(idx)} size={24} />}
+    />
   );
 };
