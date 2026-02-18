@@ -154,7 +154,7 @@ dev = [
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*,*.pdf,*.svg,*.css,*.min.*,*.umd.js,*.inv,*.csv,*.sql,*.lock,package-lock.json,.yarn,*.ipynb,.cache,.npm,*/_vendored/*,__snapshots__,pyright/,*manifest.json,*/fonts/Global*'
+skip = '.git*,*.pdf,*.svg,*.css,*.min.*,*.umd.js,*.inv,*.csv,*.sql,*.lock,*.types.ts,package-lock.json,.yarn,*.ipynb,.cache,.npm,*/_vendored/*,__snapshots__,__generated__,compat_tests,pyright/,*manifest.json,*/fonts/Global*'
 check-hidden = true
 # Ignore camelCase/PascalCase identifiers and embedded base64 images in notebooks
 ignore-regex = '^\s*"image/\S+": ".*|\b[a-z]+[A-Z]\w*\b|\b[A-Z][a-z]+[A-Z]\w*\b'
