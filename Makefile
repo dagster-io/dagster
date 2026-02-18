@@ -1,5 +1,7 @@
 .PHONY: pyright
 
+export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
+
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
 # - Multi-command rules (like `ruff` below) by default terminate as soon as a command has a non-0
@@ -80,6 +82,7 @@ sanity_check:
 	@! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
+	corepack enable
 	yarn install
 	yarn workspace @dagster-io/app-oss build
 	yarn workspace @dagster-io/app-oss replace-asset-prefix
