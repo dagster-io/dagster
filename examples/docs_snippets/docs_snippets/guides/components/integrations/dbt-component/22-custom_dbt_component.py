@@ -1,7 +1,7 @@
 import json
 from collections.abc import Iterator, Mapping
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 from dagster_dbt import DbtCliResource, DbtProject, DbtProjectComponent
 

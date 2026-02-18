@@ -13,8 +13,6 @@ def rose_dataset():
 
 # start_example
 
-from typing import Optional
-
 import pandas as pd
 from dagster_duckdb import DuckDBIOManager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler

@@ -13,8 +13,6 @@ def rose_dataset():
 
 # start_example
 
-from typing import Optional
-
 import pandas as pd
 from dagster_snowflake import SnowflakeIOManager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler

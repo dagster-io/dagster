@@ -23,8 +23,6 @@ class PandasParquetIOManager(UPathIOManager):
 
 
 # start_def_marker
-from typing import Optional
-
 from dagster import ConfigurableIOManagerFactory, EnvVar
 
 

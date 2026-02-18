@@ -3,7 +3,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -108,7 +108,7 @@ class TableauWorkbookSelector(dg.Model, dg.Resolvable):
     """Selector for filtering Tableau workbooks by ID."""
 
     ids: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Field(default=None, description="A list of workbook IDs to include in the collection."),
     ] = None
 
@@ -121,11 +121,11 @@ class TableauProjectsSelector(dg.Model, dg.Resolvable):
     """
 
     ids: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Field(default=None, description="A list of project IDs to include workbooks from."),
     ] = None
     names: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Field(default=None, description="A list of project names to include workbooks from."),
     ] = None
 
@@ -134,11 +134,11 @@ class TableauSelector(dg.Model, dg.Resolvable):
     """Unified selector for filtering Tableau content by workbooks and/or projects."""
 
     workbooks: Annotated[
-        Optional[TableauWorkbookSelector],
+        TableauWorkbookSelector | None,
         Field(default=None, description="Workbook selector configuration."),
     ] = None
     projects: Annotated[
-        Optional[TableauProjectsSelector],
+        TableauProjectsSelector | None,
         Field(default=None, description="Project selector configuration."),
     ] = None
 
@@ -147,8 +147,8 @@ class TableauSelector(dg.Model, dg.Resolvable):
 class ResolvedTableauSelector:
     """Resolved Tableau selector containing the filter functions."""
 
-    workbook_filter_fn: Optional[Callable[[TableauWorkbookMetadata], bool]] = None
-    project_filter_fn: Optional[Callable[[TableauWorkbookMetadata], bool]] = None
+    workbook_filter_fn: Callable[[TableauWorkbookMetadata], bool] | None = None
+    project_filter_fn: Callable[[TableauWorkbookMetadata], bool] | None = None
 
 
 def _resolve_tableau_selector(

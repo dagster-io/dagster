@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from dagster import (
     AssetExecutionContext,
@@ -177,8 +177,9 @@ class DagsterDltResource(ConfigurableResource):
     def run(
         self,
         context: OpExecutionContext | AssetExecutionContext,
-        dlt_source: DltSource | None = None,
-        dlt_pipeline: Pipeline | None = None,
+        # Use Optional because the Dlt metaclass doesn't support __or__ (|operator)
+        dlt_source: Optional[DltSource] = None,  # noqa: UP045
+        dlt_pipeline: Optional[Pipeline] = None,  # noqa: UP045
         dagster_dlt_translator: DagsterDltTranslator | None = None,
         **kwargs,
     ) -> DltEventIterator[DltEventType]:

@@ -4,7 +4,7 @@ import sys
 import time
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, TypeVar
+from typing import Any, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
@@ -482,7 +482,7 @@ class DagsterKubernetesClient:
         job_name: str,
         namespace: str,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
-    ) -> V1JobStatus | None:
+    ) -> Optional[V1JobStatus]:  # noqa: UP045
         def _get_job_status():
             try:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
@@ -950,7 +950,7 @@ class DagsterKubernetesClient:
         self,
         pod_name,
         namespace,
-        pod: kubernetes.client.V1Pod | None = None,  # the already fetched pod
+        pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod  # noqa: UP045
         include_container_logs: bool | None = True,
     ) -> str:
         if pod is None:

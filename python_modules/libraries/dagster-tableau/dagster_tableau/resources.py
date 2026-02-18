@@ -6,7 +6,6 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Optional
 
 import jwt
 import requests
@@ -601,8 +600,8 @@ class BaseTableauWorkspace(ConfigurableResource):
     @cached_method
     def fetch_tableau_workspace_data(
         self,
-        workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
-        project_selector_fn: Optional[WorkbookSelectorFn] = None,
+        workbook_selector_fn: WorkbookSelectorFn | None = None,
+        project_selector_fn: WorkbookSelectorFn | None = None,
     ) -> TableauWorkspaceData:
         """Retrieves all Tableau content from the workspace and returns it as a TableauWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Tableau API.

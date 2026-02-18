@@ -146,10 +146,10 @@ class OptType(SchemaType):
         self.inner = inner
 
     def __str__(self):
-        return f"Optional[{self.inner}]"
+        return f"{self.inner} | None"
 
     def annotation(self, scope: str | None = None, quote: bool = False, hide_default: bool = False):
-        return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
+        return f"{self.inner.annotation(scope, quote, hide_default)} | None{' = None' if not hide_default else ''}"
 
     def get_check(self, name: str, scope: str | None = None):
         inner_check = self.inner.get_check(name, scope)
@@ -500,7 +500,7 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
             click.secho(f"\n\nGenerating Airbyte {title} Classes...\n\n\n", fg="green")
 
             out = f"""# ruff: noqa: F401, A002
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 from dagster_airbyte.managed.types import {imp}
 

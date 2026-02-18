@@ -10,7 +10,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Literal, Optional, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import pexpect
 

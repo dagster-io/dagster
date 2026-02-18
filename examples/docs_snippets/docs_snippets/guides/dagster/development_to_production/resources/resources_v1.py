@@ -1,6 +1,6 @@
 # start_resource
 # resources.py
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
