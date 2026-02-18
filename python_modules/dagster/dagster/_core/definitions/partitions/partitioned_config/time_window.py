@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._annotations import public
@@ -18,7 +18,7 @@ from dagster._core.definitions.timestamp import TimestampWithTimezone
 
 
 def wrap_time_window_tags_fn(
-    tags_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]],
+    tags_fn: Callable[[datetime, datetime], Mapping[str, str]] | None,
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> Callable[[str], Mapping[str, str]]:
     def _tag_wrapper(key: str) -> Mapping[str, str]:
@@ -31,7 +31,7 @@ def wrap_time_window_tags_fn(
 
 
 def wrap_time_window_run_config_fn(
-    run_config_fn: Optional[Callable[[datetime, datetime], Mapping[str, Any]]],
+    run_config_fn: Callable[[datetime, datetime], Mapping[str, Any]] | None,
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> Callable[[str], Mapping[str, Any]]:
     def _run_config_wrapper(key: str) -> Mapping[str, Any]:
@@ -47,11 +47,11 @@ def wrap_time_window_run_config_fn(
 def hourly_partitioned_config(
     start_date: datetime | str,
     minute_offset: int = 0,
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
+    timezone: str | None = None,
+    fmt: str | None = None,
     end_offset: int = 0,
-    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+    tags_for_partition_fn: Callable[[datetime, datetime], Mapping[str, str]] | None = None,
+    exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[HourlyPartitionsDefinition],
@@ -136,11 +136,11 @@ def daily_partitioned_config(
     start_date: datetime | str,
     minute_offset: int = 0,
     hour_offset: int = 0,
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
+    timezone: str | None = None,
+    fmt: str | None = None,
     end_offset: int = 0,
-    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+    tags_for_partition_fn: Callable[[datetime, datetime], Mapping[str, str]] | None = None,
+    exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[DailyPartitionsDefinition],
@@ -229,11 +229,11 @@ def weekly_partitioned_config(
     minute_offset: int = 0,
     hour_offset: int = 0,
     day_offset: int = 0,
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
+    timezone: str | None = None,
+    fmt: str | None = None,
     end_offset: int = 0,
-    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+    tags_for_partition_fn: Callable[[datetime, datetime], Mapping[str, str]] | None = None,
+    exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[WeeklyPartitionsDefinition],
@@ -326,11 +326,11 @@ def monthly_partitioned_config(
     minute_offset: int = 0,
     hour_offset: int = 0,
     day_offset: int = 1,
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
+    timezone: str | None = None,
+    fmt: str | None = None,
     end_offset: int = 0,
-    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+    tags_for_partition_fn: Callable[[datetime, datetime], Mapping[str, str]] | None = None,
+    exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[MonthlyPartitionsDefinition],

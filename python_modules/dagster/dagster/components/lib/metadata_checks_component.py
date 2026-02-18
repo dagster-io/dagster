@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 from dagster_shared.record import as_dict, record
 
@@ -53,8 +53,8 @@ class MetadataBoundsParams(Resolvable):
     type: Literal["metadata_bounds"]
     metadata_key: str
     severity: ResolvedAssetCheckSeverity = AssetCheckSeverity.WARN
-    min_value: Optional[int | float] = None
-    max_value: Optional[int | float] = None
+    min_value: int | float | None = None
+    max_value: int | float | None = None
     exclusive_min: bool = False
     exclusive_max: bool = False
 

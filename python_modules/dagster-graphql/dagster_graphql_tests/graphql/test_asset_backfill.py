@@ -1,4 +1,3 @@
-from typing import Optional
 from unittest import mock
 
 from dagster import AssetKey, AssetOut, Definitions, asset, multi_asset
@@ -1374,7 +1373,7 @@ def _get_backfill_data(
     return backfill_id, backfill.asset_backfill_data
 
 
-def _get_error_message(launch_backfill_result: GqlResult) -> Optional[str]:
+def _get_error_message(launch_backfill_result: GqlResult) -> str | None:
     return (
         (
             "".join(launch_backfill_result.data["launchPartitionBackfill"]["stack"])

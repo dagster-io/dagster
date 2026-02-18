@@ -1,5 +1,4 @@
 import sys
-from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -331,8 +330,8 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
     def __init__(
         self,
         selector: ScheduleSelector | SensorSelector,
-        timestamp: Optional[float],
-        cursor: Optional[str] = None,
+        timestamp: float | None,
+        cursor: str | None = None,
     ):
         self._selector = check.inst_param(selector, "selector", (ScheduleSelector, SensorSelector))
         self._cursor = cursor
@@ -683,7 +682,7 @@ class GrapheneInstigationState(graphene.ObjectType):
 
         return None
 
-    def resolve_runs(self, graphene_info: ResolveInfo, limit: Optional[int] = None):
+    def resolve_runs(self, graphene_info: ResolveInfo, limit: int | None = None):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         repository_label = self._instigator_state.origin.repository_origin.get_label()

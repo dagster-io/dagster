@@ -1,6 +1,6 @@
 from enum import Enum
 from random import random
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -37,10 +37,10 @@ class RetryPolicy(
         "_RetryPolicy",
         [
             ("max_retries", PublicAttr[int]),
-            ("delay", PublicAttr[Optional[check.Numeric]]),
+            ("delay", PublicAttr[check.Numeric | None]),
             # declarative time modulation to allow calc witout running user function
-            ("backoff", PublicAttr[Optional[Backoff]]),
-            ("jitter", PublicAttr[Optional[Jitter]]),
+            ("backoff", PublicAttr[Backoff | None]),
+            ("jitter", PublicAttr[Jitter | None]),
         ],
     ),
 ):
@@ -62,9 +62,9 @@ class RetryPolicy(
     def __new__(
         cls,
         max_retries: int = 1,
-        delay: Optional[check.Numeric] = None,
-        backoff: Optional[Backoff] = None,
-        jitter: Optional[Jitter] = None,
+        delay: check.Numeric | None = None,
+        backoff: Backoff | None = None,
+        jitter: Jitter | None = None,
     ):
         if backoff is not None and delay is None:
             raise DagsterInvalidDefinitionError(
@@ -94,7 +94,7 @@ class RetryPolicy(
 
 
 def calculate_delay(
-    attempt_num: int, backoff: Optional[Backoff], jitter: Optional[Jitter], base_delay: float
+    attempt_num: int, backoff: Backoff | None, jitter: Jitter | None, base_delay: float
 ) -> float:
     if backoff is Backoff.EXPONENTIAL:
         calc_delay = ((2**attempt_num) - 1) * base_delay

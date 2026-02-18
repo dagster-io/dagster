@@ -66,7 +66,7 @@ class AutoMaterializePolicy(
         "_AutoMaterializePolicy",
         [
             ("rules", frozenset["AutoMaterializeRule"]),
-            ("max_materializations_per_minute", Optional[int]),
+            ("max_materializations_per_minute", int | None),
             ("asset_condition", Optional["AutomationCondition"]),
         ],
     )
@@ -129,7 +129,7 @@ class AutoMaterializePolicy(
     def __new__(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
-        max_materializations_per_minute: Optional[int] = 1,
+        max_materializations_per_minute: int | None = 1,
         asset_condition: Optional["AutomationCondition"] = None,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
@@ -201,7 +201,7 @@ class AutoMaterializePolicy(
         breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.eager()` instead.",
     )
-    def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
+    def eager(max_materializations_per_minute: int | None = 1) -> "AutoMaterializePolicy":
         """Constructs an eager AutoMaterializePolicy.
 
         Args:
@@ -233,7 +233,7 @@ class AutoMaterializePolicy(
         breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.any_downstream_conditions()` instead.",
     )
-    def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
+    def lazy(max_materializations_per_minute: int | None = 1) -> "AutoMaterializePolicy":
         """(Deprecated) Constructs a lazy AutoMaterializePolicy.
 
         Args:

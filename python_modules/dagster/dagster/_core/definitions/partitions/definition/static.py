@@ -57,7 +57,7 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
     @public
     def get_partition_keys(
         self,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[str]:
         """Returns a list of strings representing the partition keys of the PartitionsDefinition.
@@ -80,7 +80,7 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         context: PartitionLoadingContext,
         limit: int,
         ascending: bool,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         with partition_loading_context(new_ctx=context):
             partition_keys = self.get_partition_keys()

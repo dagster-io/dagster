@@ -33,7 +33,7 @@ class UPathIOManager(IOManager):
 
     """
 
-    extension: Optional[str] = None  # override in child class
+    extension: str | None = None  # override in child class
 
     def __init__(
         self,

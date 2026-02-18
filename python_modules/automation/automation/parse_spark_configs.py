@@ -7,7 +7,7 @@ and codegens a file that contains dagster configurations for these parameters.
 import re
 import sys
 from enum import Enum
-from typing import Any, NamedTuple, Optional, cast
+from typing import Any, NamedTuple, cast
 
 import click
 import requests
@@ -182,10 +182,10 @@ class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), (
 
 
 class SparkConfigNode:
-    value: Optional[SparkConfig]
+    value: SparkConfig | None
     children: dict[str, Any]
 
-    def __init__(self, value: Optional[SparkConfig] = None):
+    def __init__(self, value: SparkConfig | None = None):
         self.value = value
         self.children = {}
 

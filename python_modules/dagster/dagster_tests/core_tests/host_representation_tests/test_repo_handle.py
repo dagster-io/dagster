@@ -1,7 +1,6 @@
 import os
 import sys
 from collections.abc import Mapping
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -14,7 +13,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 class InProcesssCodeLocationWithoutCodePointers(InProcessCodeLocation):
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer | None]:
         return {}
 
 

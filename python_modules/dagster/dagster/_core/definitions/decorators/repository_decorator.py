@@ -50,13 +50,13 @@ def _flatten(items: Iterable[T | list[T]]) -> Iterator[T]:
 class _Repository:
     def __init__(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        default_executor_def: Optional[ExecutorDefinition] = None,
-        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-        resource_key_mapping: Optional[Mapping[int, str]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
+        default_executor_def: ExecutorDefinition | None = None,
+        default_logger_defs: Mapping[str, LoggerDefinition] | None = None,
+        top_level_resources: Mapping[str, ResourceDefinition] | None = None,
+        resource_key_mapping: Mapping[int, str] | None = None,
         component_tree: Optional["ComponentTree"] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -232,27 +232,27 @@ def repository(
 @overload
 def repository(
     *,
-    name: Optional[str] = ...,
-    description: Optional[str] = ...,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
-    default_executor_def: Optional[ExecutorDefinition] = ...,
-    default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
-    _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
+    name: str | None = ...,
+    description: str | None = ...,
+    metadata: Mapping[str, RawMetadataValue] | None = ...,
+    default_executor_def: ExecutorDefinition | None = ...,
+    default_logger_defs: Mapping[str, LoggerDefinition] | None = ...,
+    _top_level_resources: Mapping[str, ResourceDefinition] | None = ...,
     _component_tree: Optional["ComponentTree"] = ...,
 ) -> _Repository: ...
 
 
 def repository(
-    definitions_fn: Optional[
-        Callable[[], RepositoryListSpec] | Callable[[], RepositoryDictSpec]
-    ] = None,
+    definitions_fn: Callable[[], RepositoryListSpec]
+    | Callable[[], RepositoryDictSpec]
+    | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    default_executor_def: Optional[ExecutorDefinition] = None,
-    default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-    _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    metadata: Mapping[str, RawMetadataValue] | None = None,
+    default_executor_def: ExecutorDefinition | None = None,
+    default_logger_defs: Mapping[str, LoggerDefinition] | None = None,
+    _top_level_resources: Mapping[str, ResourceDefinition] | None = None,
     _component_tree: Optional["ComponentTree"] = None,
 ) -> RepositoryDefinition | _Repository:
     """Create a repository from the decorated function.

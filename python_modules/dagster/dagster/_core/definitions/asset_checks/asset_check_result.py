@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -31,11 +31,11 @@ class AssetCheckResult(
         "_AssetCheckResult",
         [
             ("passed", PublicAttr[bool]),
-            ("asset_key", PublicAttr[Optional[AssetKey]]),
-            ("check_name", PublicAttr[Optional[str]]),
+            ("asset_key", PublicAttr[AssetKey | None]),
+            ("check_name", PublicAttr[str | None]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("severity", PublicAttr[AssetCheckSeverity]),
-            ("description", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[str | None]),
         ],
     ),
     EventWithMetadata,
@@ -63,11 +63,11 @@ class AssetCheckResult(
         cls,
         *,
         passed: bool,
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        check_name: Optional[str] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        asset_key: CoercibleToAssetKey | None = None,
+        check_name: str | None = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
-        description: Optional[str] = None,
+        description: str | None = None,
     ):
         normalized_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -83,7 +83,7 @@ class AssetCheckResult(
         )
 
     def resolve_target_check_key(
-        self, check_names_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[str]]]
+        self, check_names_by_asset_key: Mapping[AssetKey, AbstractSet[str]] | None
     ) -> AssetCheckKey:
         if not check_names_by_asset_key:
             raise DagsterInvariantViolationError(

@@ -3,7 +3,6 @@ import json
 import os
 import time
 from collections.abc import Sequence
-from typing import Optional
 
 import pytest
 from dagster import (
@@ -1017,9 +1016,9 @@ def _create_run(
     graphql_context: WorkspaceRequestContext,
     pipeline_name: str,
     mode: str = "default",
-    step_keys: Optional[Sequence[str]] = None,
-    asset_selection: Optional[Sequence[GqlAssetKey]] = None,
-    tags: Optional[Sequence[GqlTag]] = None,
+    step_keys: Sequence[str] | None = None,
+    asset_selection: Sequence[GqlAssetKey] | None = None,
+    tags: Sequence[GqlTag] | None = None,
 ) -> str:
     if asset_selection:
         selector = infer_job_selector(
@@ -1054,8 +1053,8 @@ def _create_partitioned_run(
     graphql_context: WorkspaceRequestContext,
     job_name: str,
     partition_key: str,
-    asset_selection: Optional[list[AssetKey]] = None,
-    tags: Optional[dict[str, str]] = None,
+    asset_selection: list[AssetKey] | None = None,
+    tags: dict[str, str] | None = None,
 ) -> str:
     base_partition_tags: Sequence[GqlTag] = [
         {"key": "dagster/partition", "value": partition_key},
@@ -1336,8 +1335,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         graphql_context: WorkspaceRequestContext,
         event_type: DagsterEventType,
         asset_key: AssetKey,
-        partitions: Optional[Sequence[str]],
-        description: Optional[str],
+        partitions: Sequence[str] | None,
+        description: str | None,
     ):
         assert graphql_context.instance.all_asset_keys() == []
 
@@ -3459,7 +3458,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 )
             )
 
-        expected_order: dict[AssetKey, Optional[str]] = {}
+        expected_order: dict[AssetKey, str | None] = {}
 
         for asset_key, event_type in asset_keys_to_event_type.items():
             event_records = storage.get_event_records(

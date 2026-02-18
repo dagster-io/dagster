@@ -1,7 +1,6 @@
 import datetime
 import logging
 from collections.abc import Iterator
-from typing import Optional
 
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -15,8 +14,8 @@ RUN_BATCH_SIZE = 1000
 def execute_concurrency_slots_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    _debug_crash_flags: Optional[DebugCrashFlags] = None,
-) -> Iterator[Optional[SerializableErrorInfo]]:
+    _debug_crash_flags: DebugCrashFlags | None = None,
+) -> Iterator[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
     timeout_seconds = instance.run_monitoring_settings.get("free_slots_after_run_end_seconds")
     if not timeout_seconds:

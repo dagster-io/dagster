@@ -3,7 +3,7 @@ import sys
 from collections.abc import AsyncIterable, AsyncIterator, Iterator, Sequence
 from contextlib import asynccontextmanager, contextmanager
 from threading import Event
-from typing import Any, NoReturn, Optional, cast
+from typing import Any, NoReturn, cast
 
 import dagster_shared.seven as seven
 import google.protobuf.message
@@ -65,11 +65,11 @@ def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) 
 class DagsterGrpcClient:
     def __init__(
         self,
-        port: Optional[int] = None,
-        socket: Optional[str] = None,
+        port: int | None = None,
+        socket: str | None = None,
         host: str = "localhost",
         use_ssl: bool = False,
-        metadata: Optional[Sequence[tuple[str, str]]] = None,
+        metadata: Sequence[tuple[str, str]] | None = None,
     ):
         self.port = check.opt_int_param(port, "port")
 
@@ -176,7 +176,7 @@ class DagsterGrpcClient:
         self,
         e: Exception,
         timeout: int,
-        custom_timeout_message: Optional[str] = None,
+        custom_timeout_message: str | None = None,
     ) -> NoReturn:
         if isinstance(e, grpc.RpcError):
             if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore  # (bad stubs)
@@ -196,7 +196,7 @@ class DagsterGrpcClient:
         method: str,
         request_type: type[google.protobuf.message.Message],
         timeout: int = DEFAULT_GRPC_TIMEOUT,
-        custom_timeout_message: Optional[str] = None,
+        custom_timeout_message: str | None = None,
         **kwargs,
     ):
         try:
@@ -211,7 +211,7 @@ class DagsterGrpcClient:
         method: str,
         request_type: type[google.protobuf.message.Message],
         timeout: int = DEFAULT_GRPC_TIMEOUT,
-        custom_timeout_message: Optional[str] = None,
+        custom_timeout_message: str | None = None,
         **kwargs,
     ):
         try:
@@ -718,10 +718,10 @@ class DagsterGrpcClient:
 
 @contextmanager
 def ephemeral_grpc_api_client(
-    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+    loadable_target_origin: LoadableTargetOrigin | None = None,
     force_port: bool = False,
     max_retries: int = 10,
-    max_workers: Optional[int] = None,
+    max_workers: int | None = None,
 ) -> Iterator[DagsterGrpcClient]:
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.bool_param(force_port, "force_port")

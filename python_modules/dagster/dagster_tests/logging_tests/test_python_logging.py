@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Optional
 from unittest import mock
 
 import dagster as dg
@@ -25,9 +24,9 @@ def reset_logging():
 
 def get_log_records(
     job_def: dg.JobDefinition | ReconstructableJob,
-    managed_loggers: Optional[Sequence[str]] = None,
-    python_logging_level: Optional[str] = None,
-    run_config: Optional[Mapping[str, object]] = None,
+    managed_loggers: Sequence[str] | None = None,
+    python_logging_level: str | None = None,
+    run_config: Mapping[str, object] | None = None,
 ):
     python_logs_overrides = {}
     if managed_loggers is not None:

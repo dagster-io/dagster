@@ -110,7 +110,7 @@ def get_or_create_schedule_context(
             " positional arguments, only as keyword arguments."
         )
 
-    context: Optional[ScheduleEvaluationContext] = None
+    context: ScheduleEvaluationContext | None = None
 
     if len(args) > 0:
         context = check.opt_inst(args[0], ScheduleEvaluationContext)
@@ -181,12 +181,12 @@ class ScheduleEvaluationContext:
 
     def __init__(
         self,
-        instance_ref: Optional[InstanceRef],
-        scheduled_execution_time: Optional[datetime],
-        log_key: Optional[Sequence[str]] = None,
-        repository_name: Optional[str] = None,
-        schedule_name: Optional[str] = None,
-        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        instance_ref: InstanceRef | None,
+        scheduled_execution_time: datetime | None,
+        log_key: Sequence[str] | None = None,
+        repository_name: str | None = None,
+        schedule_name: str | None = None,
+        resources: Mapping[str, "ResourceDefinition"] | None = None,
         repository_def: Optional["RepositoryDefinition"] = None,
     ):
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -231,7 +231,7 @@ class ScheduleEvaluationContext:
         self._logger = None
 
     @property
-    def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
+    def resource_defs(self) -> Mapping[str, "ResourceDefinition"] | None:
         return self._resource_defs
 
     @public
@@ -312,7 +312,7 @@ class ScheduleEvaluationContext:
         return cast("DagsterInstance", self._instance)
 
     @property
-    def instance_ref(self) -> Optional[InstanceRef]:
+    def instance_ref(self) -> InstanceRef | None:
         """The serialized instance configured to run the schedule."""
         return self._instance_ref
 
@@ -357,7 +357,7 @@ class ScheduleEvaluationContext:
         return self._logger and self._logger.has_captured_logs()
 
     @property
-    def log_key(self) -> Optional[Sequence[str]]:
+    def log_key(self) -> Sequence[str] | None:
         return self._log_key
 
     @property
@@ -381,9 +381,9 @@ class DecoratedScheduleFunction(NamedTuple):
 
 @public
 def build_schedule_context(
-    instance: Optional[DagsterInstance] = None,
-    scheduled_execution_time: Optional[datetime] = None,
-    resources: Optional[Mapping[str, object]] = None,
+    instance: DagsterInstance | None = None,
+    scheduled_execution_time: datetime | None = None,
+    resources: Mapping[str, object] | None = None,
     repository_def: Optional["RepositoryDefinition"] = None,
     instance_ref: Optional["InstanceRef"] = None,
 ) -> ScheduleEvaluationContext:
@@ -431,17 +431,17 @@ class ScheduleExecutionData(
     NamedTuple(
         "_ScheduleExecutionData",
         [
-            ("run_requests", Optional[Sequence[RunRequest]]),
-            ("skip_message", Optional[str]),
-            ("log_key", Optional[Sequence[str]]),
+            ("run_requests", Sequence[RunRequest] | None),
+            ("skip_message", str | None),
+            ("log_key", Sequence[str] | None),
         ],
     )
 ):
     def __new__(
         cls,
-        run_requests: Optional[Sequence[RunRequest]] = None,
-        skip_message: Optional[str] = None,
-        log_key: Optional[Sequence[str]] = None,
+        run_requests: Sequence[RunRequest] | None = None,
+        skip_message: str | None = None,
+        log_key: Sequence[str] | None = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -545,8 +545,8 @@ class ScheduleDefinition(IHasInternalInit):
     def with_attributes(
         self,
         *,
-        job: Optional[ExecutableDefinition] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        job: ExecutableDefinition | None = None,
+        metadata: RawMetadataMapping | None = None,
     ) -> "ScheduleDefinition":
         """Returns a copy of this schedule with attributes replaced."""
         if job:
@@ -587,32 +587,31 @@ class ScheduleDefinition(IHasInternalInit):
 
     def __init__(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         *,
-        cron_schedule: Optional[str | Sequence[str]] = None,
-        job_name: Optional[str] = None,
-        run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        tags_fn: Optional[ScheduleTagsFunction] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        should_execute: Optional[ScheduleShouldExecuteFunction] = None,
-        environment_vars: Optional[Mapping[str, str]] = None,
-        execution_timezone: Optional[str] = None,
-        execution_fn: Optional[ScheduleExecutionFunction] = None,
-        description: Optional[str] = None,
-        job: Optional[ExecutableDefinition] = None,
+        cron_schedule: str | Sequence[str] | None = None,
+        job_name: str | None = None,
+        run_config: Union["RunConfig", Mapping[str, Any]] | None = None,
+        run_config_fn: ScheduleRunConfigFunction | None = None,
+        tags: Mapping[str, str] | None = None,
+        tags_fn: ScheduleTagsFunction | None = None,
+        metadata: RawMetadataMapping | None = None,
+        should_execute: ScheduleShouldExecuteFunction | None = None,
+        environment_vars: Mapping[str, str] | None = None,
+        execution_timezone: str | None = None,
+        execution_fn: ScheduleExecutionFunction | None = None,
+        description: str | None = None,
+        job: ExecutableDefinition | None = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-        required_resource_keys: Optional[set[str]] = None,
-        target: Optional[
-            Union[
-                "CoercibleToAssetSelection",
-                "AssetsDefinition",
-                "JobDefinition",
-                "UnresolvedAssetJobDefinition",
-            ]
-        ] = None,
-        owners: Optional[Sequence[str]] = None,
+        required_resource_keys: set[str] | None = None,
+        target: Union[
+            "CoercibleToAssetSelection",
+            "AssetsDefinition",
+            "JobDefinition",
+            "UnresolvedAssetJobDefinition",
+        ]
+        | None = None,
+        owners: Sequence[str] | None = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -686,7 +685,7 @@ class ScheduleDefinition(IHasInternalInit):
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[Callable[..., Any] | DecoratedScheduleFunction] = None
+            self._execution_fn: Callable[..., Any] | DecoratedScheduleFunction | None = None
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:
@@ -819,31 +818,30 @@ class ScheduleDefinition(IHasInternalInit):
     @staticmethod
     def dagster_internal_init(
         *,
-        name: Optional[str],
-        cron_schedule: Optional[str | Sequence[str]],
-        job_name: Optional[str],
-        run_config: Optional[Any],
-        run_config_fn: Optional[ScheduleRunConfigFunction],
-        tags: Optional[Mapping[str, str]],
-        tags_fn: Optional[ScheduleTagsFunction],
-        metadata: Optional[RawMetadataMapping],
-        should_execute: Optional[ScheduleShouldExecuteFunction],
-        environment_vars: Optional[Mapping[str, str]],
-        execution_timezone: Optional[str],
-        execution_fn: Optional[ScheduleExecutionFunction],
-        description: Optional[str],
-        job: Optional[ExecutableDefinition],
+        name: str | None,
+        cron_schedule: str | Sequence[str] | None,
+        job_name: str | None,
+        run_config: Any | None,
+        run_config_fn: ScheduleRunConfigFunction | None,
+        tags: Mapping[str, str] | None,
+        tags_fn: ScheduleTagsFunction | None,
+        metadata: RawMetadataMapping | None,
+        should_execute: ScheduleShouldExecuteFunction | None,
+        environment_vars: Mapping[str, str] | None,
+        execution_timezone: str | None,
+        execution_fn: ScheduleExecutionFunction | None,
+        description: str | None,
+        job: ExecutableDefinition | None,
         default_status: DefaultScheduleStatus,
-        required_resource_keys: Optional[set[str]],
-        target: Optional[
-            Union[
-                "CoercibleToAssetSelection",
-                "AssetsDefinition",
-                "JobDefinition",
-                "UnresolvedAssetJobDefinition",
-            ]
-        ],
-        owners: Optional[Sequence[str]],
+        required_resource_keys: set[str] | None,
+        target: Union[
+            "CoercibleToAssetSelection",
+            "AssetsDefinition",
+            "JobDefinition",
+            "UnresolvedAssetJobDefinition",
+        ]
+        | None,
+        owners: Sequence[str] | None,
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -906,7 +904,7 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Optional[str]: A description for this schedule."""
         return self._description
 
@@ -922,7 +920,7 @@ class ScheduleDefinition(IHasInternalInit):
         additional_warn_text="Setting this property no longer has any effect.",
     )
     @property
-    def environment_vars(self) -> Optional[Mapping[str, str]]:
+    def environment_vars(self) -> Mapping[str, str] | None:
         """Mapping[str, str]: Environment variables to export to the cron schedule."""
         return self._environment_vars
 
@@ -934,7 +932,7 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def execution_timezone(self) -> Optional[str]:
+    def execution_timezone(self) -> str | None:
         """Optional[str]: The timezone in which this schedule will be evaluated."""
         return self._execution_timezone
 
@@ -951,7 +949,7 @@ class ScheduleDefinition(IHasInternalInit):
         return self._metadata
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         return self._owners
 
     @property
@@ -992,7 +990,7 @@ class ScheduleDefinition(IHasInternalInit):
 
         result = list(ensure_gen(execution_fn(context)))
 
-        skip_message: Optional[str] = None
+        skip_message: str | None = None
 
         run_requests: list[RunRequest] = []
         if not result or result == [None]:

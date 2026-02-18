@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Any, NamedTuple, Optional, TypeAlias, cast
+from typing import Any, NamedTuple, TypeAlias, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -31,7 +31,7 @@ class ConfigMapping(
         [
             ("config_fn", Callable[[Any], Any]),
             ("config_schema", IDefinitionConfigSchema),
-            ("receive_processed_config_values", Optional[bool]),
+            ("receive_processed_config_values", bool | None),
         ],
     )
 ):
@@ -58,8 +58,8 @@ class ConfigMapping(
     def __new__(
         cls,
         config_fn: ConfigMappingFn,
-        config_schema: Optional[Any] = None,
-        receive_processed_config_values: Optional[bool] = None,
+        config_schema: Any | None = None,
+        receive_processed_config_values: bool | None = None,
     ):
         return super().__new__(
             cls,

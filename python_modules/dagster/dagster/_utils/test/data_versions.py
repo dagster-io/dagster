@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal, Optional, cast, overload
+from typing import Any, Literal, cast, overload
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
@@ -126,9 +126,9 @@ def materialize_asset(
     instance: DagsterInstance,
     *,
     is_multi: Literal[True],
-    partition_key: Optional[str] = ...,
-    run_config: Optional[RunConfig | Mapping[str, Any]] = ...,
-    tags: Optional[Mapping[str, str]] = ...,
+    partition_key: str | None = ...,
+    run_config: RunConfig | Mapping[str, Any] | None = ...,
+    tags: Mapping[str, str] | None = ...,
 ) -> MaterializationTable: ...
 
 
@@ -139,9 +139,9 @@ def materialize_asset(
     instance: DagsterInstance,
     *,
     is_multi: Literal[False] = ...,
-    partition_key: Optional[str] = ...,
-    run_config: Optional[RunConfig | Mapping[str, Any]] = ...,
-    tags: Optional[Mapping[str, str]] = ...,
+    partition_key: str | None = ...,
+    run_config: RunConfig | Mapping[str, Any] | None = ...,
+    tags: Mapping[str, str] | None = ...,
 ) -> AssetMaterialization: ...
 
 
@@ -152,9 +152,9 @@ def materialize_asset(
     instance: DagsterInstance,
     *,
     is_multi: bool = False,
-    partition_key: Optional[str] = None,
-    run_config: Optional[RunConfig | Mapping[str, Any]] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    partition_key: str | None = None,
+    run_config: RunConfig | Mapping[str, Any] | None = None,
+    tags: Mapping[str, str] | None = None,
 ) -> AssetMaterialization | MaterializationTable:
     assets: list[AssetsDefinition | SourceAsset] = []
     for asset_def in all_assets:
@@ -185,10 +185,10 @@ def materialize_asset(
 def materialize_assets(
     assets: Sequence[AssetsDefinition],
     instance: DagsterInstance,
-    partition_key: Optional[str] = None,
-    run_config: Optional[Mapping[str, Any]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    selection: Optional[CoercibleToAssetSelection] = None,
+    partition_key: str | None = None,
+    run_config: Mapping[str, Any] | None = None,
+    tags: Mapping[str, str] | None = None,
+    selection: CoercibleToAssetSelection | None = None,
 ) -> MaterializationTable:
     result = materialize(
         assets,

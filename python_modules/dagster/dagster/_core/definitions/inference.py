@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from inspect import Parameter, Signature, isgeneratorfunction, signature
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared.record import record
 from docstring_parser import parse
@@ -15,7 +15,7 @@ class InferredInputProps:
 
     name: str
     annotation: Any
-    description: Optional[str]
+    description: str | None
     default_value: Any = NoValueSentinel
 
 
@@ -24,10 +24,10 @@ class InferredOutputProps:
     """The information about an input that can be inferred from the function signature."""
 
     annotation: Any
-    description: Optional[str]
+    description: str | None
 
 
-def _infer_input_description_from_docstring(fn: Callable[..., Any]) -> Mapping[str, Optional[str]]:
+def _infer_input_description_from_docstring(fn: Callable[..., Any]) -> Mapping[str, str | None]:
     doc_str = fn.__doc__
     if doc_str is None:
         return {}
@@ -39,7 +39,7 @@ def _infer_input_description_from_docstring(fn: Callable[..., Any]) -> Mapping[s
         return {}
 
 
-def _infer_output_description_from_docstring(fn: Callable[..., Any]) -> Optional[str]:
+def _infer_output_description_from_docstring(fn: Callable[..., Any]) -> str | None:
     doc_str = fn.__doc__
     if doc_str is None:
         return None
@@ -76,9 +76,9 @@ def has_explicit_return_type(fn: Callable[..., Any]) -> bool:
 def _infer_inputs_from_params(
     params: Sequence[Parameter],
     type_hints: Mapping[str, object],
-    descriptions: Optional[Mapping[str, Optional[str]]] = None,
+    descriptions: Mapping[str, str | None] | None = None,
 ) -> Sequence[InferredInputProps]:
-    _descriptions: Mapping[str, Optional[str]] = descriptions or {}
+    _descriptions: Mapping[str, str | None] = descriptions or {}
     input_defs = []
     for param in params:
         if param.default is not Parameter.empty:

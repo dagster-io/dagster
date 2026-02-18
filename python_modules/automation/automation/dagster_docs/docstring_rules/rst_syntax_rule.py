@@ -2,7 +2,6 @@
 
 import io
 import warnings
-from typing import Optional
 
 import docutils.core
 
@@ -72,7 +71,7 @@ def create_rst_syntax_validator(enabled: bool = True) -> ValidationFunction:
     return validator
 
 
-def _extract_line_number(warning_line: str) -> Optional[int]:
+def _extract_line_number(warning_line: str) -> int | None:
     """Extract line number from a docutils warning message."""
     if "(line" in warning_line:
         try:

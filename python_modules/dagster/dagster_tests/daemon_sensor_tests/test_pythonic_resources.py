@@ -2,7 +2,6 @@ import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -308,7 +307,7 @@ the_repo = dg.Definitions(
 )
 
 
-def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY_NAME):
+def create_workspace_load_target(attribute: str | None = SINGLETON_REPOSITORY_NAME):
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_pythonic_resources",
         attribute=None,

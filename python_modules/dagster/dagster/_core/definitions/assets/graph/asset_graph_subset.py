@@ -1,7 +1,7 @@
 import operator
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple  # noqa: UP035
 
 from dagster_shared.serdes import (
     NamedTupleSerializer,
@@ -67,7 +67,7 @@ class AssetGraphSubset(NamedTuple):
     def is_empty(self) -> bool:
         return len(self.asset_keys) == 0
 
-    def get_asset_subset(self, asset_key: AssetKey) -> Optional[SerializableEntitySubset[AssetKey]]:
+    def get_asset_subset(self, asset_key: AssetKey) -> SerializableEntitySubset[AssetKey] | None:
         if asset_key in self.non_partitioned_asset_keys:
             return SerializableEntitySubset(key=asset_key, value=True)
         elif asset_key in self.partitions_subsets_by_asset_key:

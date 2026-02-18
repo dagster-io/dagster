@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from dagster import _check as check
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
@@ -31,11 +31,11 @@ if TYPE_CHECKING:
 
 def merge_run_tags(
     job_def: JobDefinition,
-    partition_key: Optional[str],
-    tags: Optional[Mapping[str, str]],
-    asset_selection: Optional[Sequence[AssetKey]],
-    instance: Optional[DagsterInstance],
-    run_config: Optional[Mapping[str, object]],
+    partition_key: str | None,
+    tags: Mapping[str, str] | None,
+    asset_selection: Sequence[AssetKey] | None,
+    instance: DagsterInstance | None,
+    run_config: Mapping[str, object] | None,
 ) -> Mapping[str, str]:
     merged_run_tags = merge_dicts(job_def.run_tags, tags or {})
     if partition_key:
@@ -65,18 +65,18 @@ def merge_run_tags(
 
 
 def type_check_and_normalize_args(
-    run_config: Optional[Union[Mapping[str, Any], "RunConfig"]] = None,
-    partition_key: Optional[str] = None,
-    op_selection: Optional[Sequence[str]] = None,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
-    input_values: Optional[Mapping[str, object]] = None,
-    resources: Optional[Mapping[str, object]] = None,
+    run_config: Union[Mapping[str, Any], "RunConfig"] | None = None,
+    partition_key: str | None = None,
+    op_selection: Sequence[str] | None = None,
+    asset_selection: Sequence[AssetKey] | None = None,
+    input_values: Mapping[str, object] | None = None,
+    resources: Mapping[str, object] | None = None,
 ) -> tuple[
     Mapping[str, object],
     Sequence[str],
     Sequence[AssetKey],
     Mapping[str, "ResourceDefinition"],
-    Optional[str],
+    str | None,
     Mapping[str, object],
 ]:
     from dagster._core.definitions.run_config import convert_config_input
@@ -109,12 +109,12 @@ def type_check_and_normalize_args(
 def core_execute_in_process(
     run_config: Mapping[str, object],
     job: IJob,
-    instance: Optional[DagsterInstance],
+    instance: DagsterInstance | None,
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    run_tags: Optional[Mapping[str, str]] = None,
-    run_id: Optional[str] = None,
-    asset_selection: Optional[frozenset[AssetKey]] = None,
+    run_tags: Mapping[str, str] | None = None,
+    run_id: str | None = None,
+    asset_selection: frozenset[AssetKey] | None = None,
 ) -> ExecuteInProcessResult:
     job_def = job.get_definition()
 
@@ -186,7 +186,7 @@ def _check_top_level_inputs_for_node(
     top_level_input_provided: bool,
     input_name: str,
     job_name: str,
-    parent_handle: Optional[NodeHandle],
+    parent_handle: NodeHandle | None,
 ) -> None:
     if isinstance(node.definition, GraphDefinition):
         graph_def = cast("GraphDefinition", node.definition)

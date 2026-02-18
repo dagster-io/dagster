@@ -60,8 +60,8 @@ class DynamicPartitionsRequestResult(
         "_DynamicPartitionsRequestResult",
         [
             ("partitions_def_name", str),
-            ("added_partitions", Optional[Sequence[str]]),
-            ("deleted_partitions", Optional[Sequence[str]]),
+            ("added_partitions", Sequence[str] | None),
+            ("deleted_partitions", Sequence[str] | None),
             ("skipped_partitions", Sequence[str]),
         ],
     )
@@ -69,8 +69,8 @@ class DynamicPartitionsRequestResult(
     def __new__(
         cls,
         partitions_def_name: str,
-        added_partitions: Optional[Sequence[str]],
-        deleted_partitions: Optional[Sequence[str]],
+        added_partitions: Sequence[str] | None,
+        deleted_partitions: Sequence[str] | None,
         skipped_partitions: Sequence[str],
     ):
         check.opt_sequence_param(added_partitions, "added_partitions")
@@ -95,32 +95,32 @@ class SensorInstigatorData(
         "_SensorInstigatorData",
         [
             # the last completed tick timestamp, exposed to the context as a deprecated field
-            ("last_tick_timestamp", Optional[float]),
-            ("last_run_key", Optional[str]),
-            ("min_interval", Optional[int]),
-            ("cursor", Optional[str]),
+            ("last_tick_timestamp", float | None),
+            ("last_run_key", str | None),
+            ("min_interval", int | None),
+            ("cursor", str | None),
             # the last time a tick was initiated, used to prevent issuing multiple threads from
             # evaluating ticks within the minimum interval
-            ("last_tick_start_timestamp", Optional[float]),
+            ("last_tick_start_timestamp", float | None),
             # the last time the sensor was started
-            ("last_sensor_start_timestamp", Optional[float]),
-            ("sensor_type", Optional[SensorType]),
+            ("last_sensor_start_timestamp", float | None),
+            ("sensor_type", SensorType | None),
             # the last time the tick completed evaluation, used to detect cases where ticks are
             # interrupted part way through
-            ("last_tick_success_timestamp", Optional[float]),
+            ("last_tick_success_timestamp", float | None),
         ],
     )
 ):
     def __new__(
         cls,
-        last_tick_timestamp: Optional[float] = None,
-        last_run_key: Optional[str] = None,
-        min_interval: Optional[int] = None,
-        cursor: Optional[str] = None,
-        last_tick_start_timestamp: Optional[float] = None,
-        last_sensor_start_timestamp: Optional[float] = None,
-        sensor_type: Optional[SensorType] = None,
-        last_tick_success_timestamp: Optional[float] = None,
+        last_tick_timestamp: float | None = None,
+        last_run_key: str | None = None,
+        min_interval: int | None = None,
+        cursor: str | None = None,
+        last_tick_start_timestamp: float | None = None,
+        last_sensor_start_timestamp: float | None = None,
+        sensor_type: SensorType | None = None,
+        last_tick_success_timestamp: float | None = None,
     ):
         return super().__new__(
             cls,
@@ -154,8 +154,8 @@ class ScheduleInstigatorData(
         "_ScheduleInstigatorData",
         [
             ("cron_schedule", str | Sequence[str]),
-            ("start_timestamp", Optional[float]),
-            ("last_iteration_timestamp", Optional[float]),
+            ("start_timestamp", float | None),
+            ("last_iteration_timestamp", float | None),
         ],
     )
 ):
@@ -163,8 +163,8 @@ class ScheduleInstigatorData(
     def __new__(
         cls,
         cron_schedule: str | Sequence[str],
-        start_timestamp: Optional[float] = None,
-        last_iteration_timestamp: Optional[float] = None,
+        start_timestamp: float | None = None,
+        last_iteration_timestamp: float | None = None,
     ):
         cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, list))
         if not isinstance(cron_schedule, str):
@@ -185,8 +185,8 @@ class ScheduleInstigatorData(
 
 def check_instigator_data(
     instigator_type: InstigatorType,
-    instigator_data: Optional[InstigatorData],
-) -> Optional[InstigatorData]:
+    instigator_data: InstigatorData | None,
+) -> InstigatorData | None:
     if instigator_type == InstigatorType.SCHEDULE:
         check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
     elif instigator_type == InstigatorType.SENSOR:
@@ -214,7 +214,7 @@ class InstigatorState(
             ("origin", RemoteInstigatorOrigin),
             ("instigator_type", InstigatorType),
             ("status", InstigatorStatus),
-            ("instigator_data", Optional[InstigatorData]),
+            ("instigator_data", InstigatorData | None),
         ],
     )
 ):
@@ -223,7 +223,7 @@ class InstigatorState(
         origin: RemoteInstigatorOrigin,
         instigator_type: InstigatorType,
         status: InstigatorStatus,
-        instigator_data: Optional[InstigatorData] = None,
+        instigator_data: InstigatorData | None = None,
     ):
         return super().__new__(
             cls,
@@ -335,10 +335,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         check.opt_str_param(skip_reason, "skip_reason")
         return self._replace(tick_data=self.tick_data.with_reason(skip_reason))
 
-    def with_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None):
+    def with_run_info(self, run_id: str | None = None, run_key: str | None = None):
         return self._replace(tick_data=self.tick_data.with_run_info(run_id, run_key))
 
-    def with_cursor(self, cursor: Optional[str]) -> "InstigatorTick":
+    def with_cursor(self, cursor: str | None) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_cursor(cursor))
 
     def with_origin_run(self, origin_run_id: str) -> "InstigatorTick":
@@ -367,7 +367,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.instigator_origin_id
 
     @property
-    def selector_id(self) -> Optional[str]:
+    def selector_id(self) -> str | None:
         return self.tick_data.selector_id
 
     @property
@@ -383,7 +383,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.timestamp
 
     @property
-    def end_timestamp(self) -> Optional[float]:
+    def end_timestamp(self) -> float | None:
         return self.tick_data.end_timestamp
 
     @property
@@ -399,19 +399,19 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.run_keys
 
     @property
-    def error(self) -> Optional[SerializableErrorInfo]:
+    def error(self) -> SerializableErrorInfo | None:
         return self.tick_data.error
 
     @property
-    def skip_reason(self) -> Optional[str]:
+    def skip_reason(self) -> str | None:
         return self.tick_data.skip_reason
 
     @property
-    def cursor(self) -> Optional[str]:
+    def cursor(self) -> str | None:
         return self.tick_data.cursor
 
     @property
-    def origin_run_ids(self) -> Optional[Sequence[str]]:
+    def origin_run_ids(self) -> Sequence[str] | None:
         return self.tick_data.origin_run_ids
 
     @property
@@ -419,7 +419,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.failure_count
 
     @property
-    def log_key(self) -> Optional[list[str]]:
+    def log_key(self) -> list[str] | None:
         return self.tick_data.log_key
 
     @property
@@ -515,7 +515,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return set(self.requested_assets_and_partitions.keys())
 
     @property
-    def run_requests(self) -> Optional[Sequence[RunRequest]]:
+    def run_requests(self) -> Sequence[RunRequest] | None:
         return self.tick_data.run_requests
 
     @property
@@ -564,21 +564,21 @@ class TickData(
             ("timestamp", float),  # Time the tick started
             ("run_ids", Sequence[str]),
             ("run_keys", Sequence[str]),
-            ("error", Optional[SerializableErrorInfo]),
-            ("skip_reason", Optional[str]),
-            ("cursor", Optional[str]),
+            ("error", SerializableErrorInfo | None),
+            ("skip_reason", str | None),
+            ("cursor", str | None),
             ("origin_run_ids", Sequence[str]),
             ("failure_count", int),
-            ("selector_id", Optional[str]),
-            ("log_key", Optional[list[str]]),
+            ("selector_id", str | None),
+            ("log_key", list[str] | None),
             (
                 "dynamic_partitions_request_results",
                 Sequence[DynamicPartitionsRequestResult],
             ),
-            ("end_timestamp", Optional[float]),  # Time the tick finished
-            ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
-            ("auto_materialize_evaluation_id", Optional[int]),
-            ("reserved_run_ids", Optional[Sequence[str]]),
+            ("end_timestamp", float | None),  # Time the tick finished
+            ("run_requests", Sequence[RunRequest] | None),  # run requests created by the tick
+            ("auto_materialize_evaluation_id", int | None),
+            ("reserved_run_ids", Sequence[str] | None),
             ("consecutive_failure_count", int),
             (
                 "user_interrupted",
@@ -635,23 +635,21 @@ class TickData(
         instigator_type: InstigatorType,
         status: TickStatus,
         timestamp: float,
-        run_ids: Optional[Sequence[str]] = None,
-        run_keys: Optional[Sequence[str]] = None,
-        error: Optional[SerializableErrorInfo] = None,
-        skip_reason: Optional[str] = None,
-        cursor: Optional[str] = None,
-        origin_run_ids: Optional[Sequence[str]] = None,
-        failure_count: Optional[int] = None,
-        selector_id: Optional[str] = None,
-        log_key: Optional[list[str]] = None,
-        dynamic_partitions_request_results: Optional[
-            Sequence[DynamicPartitionsRequestResult]
-        ] = None,
-        end_timestamp: Optional[float] = None,
-        run_requests: Optional[Sequence[RunRequest]] = None,
-        auto_materialize_evaluation_id: Optional[int] = None,
-        reserved_run_ids: Optional[Sequence[str]] = None,
-        consecutive_failure_count: Optional[int] = None,
+        run_ids: Sequence[str] | None = None,
+        run_keys: Sequence[str] | None = None,
+        error: SerializableErrorInfo | None = None,
+        skip_reason: str | None = None,
+        cursor: str | None = None,
+        origin_run_ids: Sequence[str] | None = None,
+        failure_count: int | None = None,
+        selector_id: str | None = None,
+        log_key: list[str] | None = None,
+        dynamic_partitions_request_results: Sequence[DynamicPartitionsRequestResult] | None = None,
+        end_timestamp: float | None = None,
+        run_requests: Sequence[RunRequest] | None = None,
+        auto_materialize_evaluation_id: int | None = None,
+        reserved_run_ids: Sequence[str] | None = None,
+        consecutive_failure_count: int | None = None,
         user_interrupted: bool = False,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
@@ -702,9 +700,7 @@ class TickData(
             )
         )
 
-    def with_run_info(
-        self, run_id: Optional[str] = None, run_key: Optional[str] = None
-    ) -> "TickData":
+    def with_run_info(self, run_id: str | None = None, run_key: str | None = None) -> "TickData":
         check.opt_str_param(run_id, "run_id")
         check.opt_str_param(run_key, "run_key")
         return TickData(
@@ -728,8 +724,8 @@ class TickData(
     def with_run_requests(
         self,
         run_requests: Sequence[RunRequest],
-        reserved_run_ids: Optional[Sequence[str]] = None,
-        cursor: Optional[str] = None,
+        reserved_run_ids: Sequence[str] | None = None,
+        cursor: str | None = None,
     ) -> "TickData":
         return TickData(
             **merge_dicts(
@@ -742,14 +738,14 @@ class TickData(
             )
         )
 
-    def with_reason(self, skip_reason: Optional[str]) -> "TickData":
+    def with_reason(self, skip_reason: str | None) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(), {"skip_reason": check.opt_str_param(skip_reason, "skip_reason")}
             )
         )
 
-    def with_cursor(self, cursor: Optional[str]) -> "TickData":
+    def with_cursor(self, cursor: str | None) -> "TickData":
         return TickData(
             **merge_dicts(self._asdict(), {"cursor": check.opt_str_param(cursor, "cursor")})
         )
@@ -798,9 +794,9 @@ class TickData(
 def _validate_tick_args(
     instigator_type: InstigatorType,
     status: TickStatus,
-    run_ids: Optional[Sequence[str]] = None,
-    error: Optional[SerializableErrorInfo] = None,
-    skip_reason: Optional[str] = None,
+    run_ids: Sequence[str] | None = None,
+    error: SerializableErrorInfo | None = None,
+    skip_reason: str | None = None,
 ) -> None:
     check.inst_param(instigator_type, "instigator_type", InstigatorType)
     check.inst_param(status, "status", TickStatus)

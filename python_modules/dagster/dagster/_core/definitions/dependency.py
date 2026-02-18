@@ -51,10 +51,10 @@ class NodeInvocation(
         "Node",
         [
             ("name", PublicAttr[str]),
-            ("alias", PublicAttr[Optional[str]]),
+            ("alias", PublicAttr[str | None]),
             ("tags", PublicAttr[Mapping[str, Any]]),
             ("hook_defs", PublicAttr[AbstractSet[HookDefinition]]),
-            ("retry_policy", PublicAttr[Optional[RetryPolicy]]),
+            ("retry_policy", PublicAttr[RetryPolicy | None]),
         ],
     )
 ):
@@ -88,10 +88,10 @@ class NodeInvocation(
     def __new__(
         cls,
         name: str,
-        alias: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        retry_policy: Optional[RetryPolicy] = None,
+        alias: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        retry_policy: RetryPolicy | None = None,
     ):
         return super().__new__(
             cls,
@@ -117,7 +117,7 @@ class Node(ABC):
     graph_definition: "GraphDefinition"
     _additional_tags: Mapping[str, str]
     _hook_defs: AbstractSet[HookDefinition]
-    _retry_policy: Optional[RetryPolicy]
+    _retry_policy: RetryPolicy | None
     _inputs: Mapping[str, "NodeInput"]
     _outputs: Mapping[str, "NodeOutput"]
 
@@ -126,9 +126,9 @@ class Node(ABC):
         name: str,
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
-        tags: Optional[Mapping[str, str]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        retry_policy: Optional[RetryPolicy] = None,
+        tags: Mapping[str, str] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        retry_policy: RetryPolicy | None = None,
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
         from dagster._core.definitions.node_definition import NodeDefinition
@@ -232,7 +232,7 @@ class Node(ABC):
         return self._hook_defs
 
     @property
-    def retry_policy(self) -> Optional[RetryPolicy]:
+    def retry_policy(self) -> RetryPolicy | None:
         return self._retry_policy
 
     @abstractmethod
@@ -255,9 +255,9 @@ class GraphNode(Node):
         name: str,
         definition: "GraphDefinition",
         graph_definition: "GraphDefinition",
-        tags: Optional[Mapping[str, str]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        retry_policy: Optional[RetryPolicy] = None,
+        tags: Mapping[str, str] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        retry_policy: RetryPolicy | None = None,
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
 
@@ -291,9 +291,9 @@ class OpNode(Node):
         name: str,
         definition: "OpDefinition",
         graph_definition: "GraphDefinition",
-        tags: Optional[Mapping[str, str]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        retry_policy: Optional[RetryPolicy] = None,
+        tags: Mapping[str, str] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        retry_policy: RetryPolicy | None = None,
     ):
         from dagster._core.definitions.op_definition import OpDefinition
 
@@ -451,7 +451,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
     def from_path(path: Sequence[str]) -> "NodeHandle":
         check.sequence_param(path, "path", of_type=str)
 
-        cur: Optional[NodeHandle] = None
+        cur: NodeHandle | None = None
         _path = list(path)
         while len(_path) > 0:
             cur = NodeHandle(name=_path.pop(0), parent=cur)
@@ -500,7 +500,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 #     node_handle = NodeHandle("foo", parent=None)
 #     node_output_handle = NodeOutputHandle(node_handle=node_handle, output_name="bar")
 #     node_output_handle.node_handle.path  # type checker knows node_output_handle.node_handle is not None
-T_OptionalNodeHandle = TypeVar("T_OptionalNodeHandle", bound=Optional[NodeHandle])
+T_OptionalNodeHandle = TypeVar("T_OptionalNodeHandle", bound=NodeHandle | None)
 
 
 @record(checked=False)
@@ -627,7 +627,7 @@ class IDependencyDefinition(ABC):
 @public
 class DependencyDefinition(
     NamedTuple(
-        "_DependencyDefinition", [("node", str), ("output", str), ("description", Optional[str])]
+        "_DependencyDefinition", [("node", str), ("output", str), ("description", str | None)]
     ),
     IDependencyDefinition,
 ):
@@ -677,7 +677,7 @@ class DependencyDefinition(
         cls,
         node: str,
         output: str = DEFAULT_OUTPUT,
-        description: Optional[str] = None,
+        description: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -802,7 +802,7 @@ class BlockingAssetChecksDependencyDefinition(
                 "asset_check_dependencies",
                 Sequence[DependencyDefinition],
             ),
-            ("other_dependency", Optional[DependencyDefinition]),
+            ("other_dependency", DependencyDefinition | None),
         ],
     ),
 ):
@@ -1097,7 +1097,7 @@ class DependencyStructure:
         )
         return cast("NodeOutput", dep)
 
-    def get_dependency_definition(self, node_input: NodeInput) -> Optional[IDependencyDefinition]:
+    def get_dependency_definition(self, node_input: NodeInput) -> IDependencyDefinition | None:
         return self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
 
     def has_fan_in_deps(self, node_input: NodeInput) -> bool:
@@ -1154,10 +1154,10 @@ class DependencyStructure:
     def inputs(self) -> Sequence[NodeInput]:
         return list(self._input_to_output_map.keys())
 
-    def get_upstream_dynamic_output_for_node(self, node_name: str) -> Optional[NodeOutput]:
+    def get_upstream_dynamic_output_for_node(self, node_name: str) -> NodeOutput | None:
         return self._dynamic_fan_out_index.get(node_name)
 
-    def get_dependency_type(self, node_input: NodeInput) -> Optional[DependencyType]:
+    def get_dependency_type(self, node_input: NodeInput) -> DependencyType | None:
         result = self._input_to_output_map.get(node_input)
         if result is None:
             return None

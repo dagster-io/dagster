@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import _empty as EmptyAnnotation
-from typing import Optional, TypeAlias
+from typing import TypeAlias
 
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -125,6 +125,6 @@ def enter_execution_context(
         current_execution_context.reset(asset_token)
 
 
-current_execution_context: ContextVar[
-    Optional[AssetExecutionContext | AssetCheckExecutionContext]
-] = ContextVar("current_execution_context", default=None)
+current_execution_context: ContextVar[AssetExecutionContext | AssetCheckExecutionContext | None] = (
+    ContextVar("current_execution_context", default=None)
+)

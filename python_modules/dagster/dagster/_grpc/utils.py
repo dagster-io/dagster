@@ -1,6 +1,6 @@
 import os
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import (
@@ -18,12 +18,12 @@ _DEFAULT_REPOSITORY_TIMEOUT_IF_NO_ENV_VAR_SET = 180
 
 def get_loadable_targets(
     *,
-    python_file: Optional[str],
-    module_name: Optional[str],
-    package_name: Optional[str],
-    autoload_defs_module_name: Optional[str],
-    working_directory: Optional[str],
-    attribute: Optional[str],
+    python_file: str | None,
+    module_name: str | None,
+    package_name: str | None,
+    autoload_defs_module_name: str | None,
+    working_directory: str | None,
+    attribute: str | None,
     resolve_lazy_defs: bool,
 ) -> Sequence["LoadableTarget"]:
     from dagster._core.workspace.autodiscovery import (

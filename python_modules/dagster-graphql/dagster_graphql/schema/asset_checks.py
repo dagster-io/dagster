@@ -305,7 +305,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_name(self, _) -> str:
         return self._asset_check.name
 
-    def resolve_description(self, _) -> Optional[str]:
+    def resolve_description(self, _) -> str | None:
         return self._asset_check.description
 
     def resolve_jobNames(self, _) -> Sequence[str]:
@@ -313,7 +313,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     async def resolve_executionForLatestMaterialization(
         self, graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAssetCheckExecution]:
+    ) -> GrapheneAssetCheckExecution | None:
         record = await AssetCheckExecutionRecord.gen(graphene_info.context, self._asset_check.key)
         return (
             GrapheneAssetCheckExecution(record)
@@ -341,7 +341,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAutoMaterializePolicy]:
+    ) -> GrapheneAutoMaterializePolicy | None:
         automation_condition = (
             self._asset_check.automation_condition_snapshot
             or self._asset_check.automation_condition
@@ -368,8 +368,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_partitionKeysByDimension(
         self,
         graphene_info: ResolveInfo,
-        startIdx: Optional[int] = None,
-        endIdx: Optional[int] = None,
+        startIdx: int | None = None,
+        endIdx: int | None = None,
     ) -> Sequence["GrapheneDimensionPartitionKeys"]:
         from dagster_graphql.schema.partition_sets import (
             GrapheneDimensionPartitionKeys,
@@ -422,13 +422,14 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     async def resolve_partitionStatuses(
         self, graphene_info: ResolveInfo
-    ) -> Optional[
+    ) -> (
         Union[
             "GrapheneAssetCheckTimePartitionStatuses",
             "GrapheneAssetCheckDefaultPartitionStatuses",
             "GrapheneAssetCheckMultiPartitionStatuses",
         ]
-    ]:
+        | None
+    ):
         """Resolve partition statuses using union type with efficient representation."""
         from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
         from dagster._core.storage.asset_check_state import AssetCheckState

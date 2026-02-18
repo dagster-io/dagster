@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Final, Optional, overload
+from typing import Any, Final, overload
 
 from dagster import _check as check
 from dagster._core.decorator_utils import (
@@ -33,16 +33,16 @@ _PREVIEW_ATTR_NAME: Final[str] = "_preview"
 
 @dataclass
 class PreviewInfo:
-    additional_warn_text: Optional[str] = None
-    subject: Optional[str] = None
+    additional_warn_text: str | None = None
+    subject: str | None = None
 
 
 @overload
 def preview(
     __obj: T_Annotatable,
     *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -51,17 +51,17 @@ def preview(
 def preview(
     __obj: None = ...,
     *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def preview(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
-    additional_warn_text: Optional[str] = None,
-    subject: Optional[str] = None,
+    additional_warn_text: str | None = None,
+    subject: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark an object as preview. This appends some metadata to the object that causes it to be
@@ -148,16 +148,16 @@ _BETA_ATTR_NAME: Final[str] = "_beta"
 
 @dataclass
 class BetaInfo:
-    additional_warn_text: Optional[str] = None
-    subject: Optional[str] = None
+    additional_warn_text: str | None = None
+    subject: str | None = None
 
 
 @overload
 def beta(
     __obj: T_Annotatable,
     *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -166,17 +166,17 @@ def beta(
 def beta(
     __obj: None = ...,
     *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def beta(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
-    additional_warn_text: Optional[str] = None,
-    subject: Optional[str] = None,
+    additional_warn_text: str | None = None,
+    subject: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark an object as beta. This appends some metadata to the object that causes it to be
@@ -265,7 +265,7 @@ def beta_param(
     __obj: T_Annotatable,
     *,
     param: str,
-    additional_warn_text: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -275,16 +275,16 @@ def beta_param(
     __obj: None = ...,
     *,
     param: str,
-    additional_warn_text: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def beta_param(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
     param: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark a parameter of a class initializer or function/method as beta. This appends some
@@ -366,16 +366,16 @@ _SUPERSEDED_ATTR_NAME: Final[str] = "_superseded"
 
 @dataclass
 class SupersededInfo:
-    additional_warn_text: Optional[str] = None
-    subject: Optional[str] = None
+    additional_warn_text: str | None = None
+    subject: str | None = None
 
 
 @overload
 def superseded(
     __obj: T_Annotatable,
     *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -384,17 +384,17 @@ def superseded(
 def superseded(
     __obj: None = ...,
     *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def superseded(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
-    additional_warn_text: Optional[str] = None,
-    subject: Optional[str] = None,
+    additional_warn_text: str | None = None,
+    subject: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     # TODO: add "superseded" warning to docs
@@ -485,8 +485,8 @@ _DEPRECATED_ATTR_NAME: Final[str] = "_deprecated"
 class DeprecatedInfo:
     breaking_version: str
     hidden: bool
-    additional_warn_text: Optional[str]
-    subject: Optional[str]
+    additional_warn_text: str | None
+    subject: str | None
 
 
 @overload
@@ -494,8 +494,8 @@ def deprecated(
     __obj: T_Annotatable,
     *,
     breaking_version: str,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -505,18 +505,18 @@ def deprecated(
     __obj: None = ...,
     *,
     breaking_version: str,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
+    subject: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
     breaking_version: str,
-    additional_warn_text: Optional[str] = None,
-    subject: Optional[str] = None,
+    additional_warn_text: str | None = None,
+    subject: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable | Callable[[T_Annotatable], T_Annotatable]:
     """Mark an object as deprecated. This appends some metadata to the object that causes it to be
@@ -615,7 +615,7 @@ def deprecated_param(
     *,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -626,17 +626,17 @@ def deprecated_param(
     *,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated_param(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable:
     """Mark a parameter of a class initializer or function/method as deprecated. This appends some
@@ -690,7 +690,7 @@ def attach_deprecation_info_and_wrap(
     obj: T_Annotatable,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     emit_runtime_warning: bool = True,
     hidden: bool = False,
 ) -> T_Annotatable:
@@ -732,7 +732,7 @@ def hidden_param(
     *,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> T_Annotatable: ...
 
@@ -743,17 +743,17 @@ def hidden_param(
     *,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = ...,
+    additional_warn_text: str | None = ...,
     emit_runtime_warning: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def hidden_param(
-    __obj: Optional[T_Annotatable] = None,
+    __obj: T_Annotatable | None = None,
     *,
     param: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     emit_runtime_warning: bool = True,
 ) -> T_Annotatable:
     """Hidden parameters are only passed via kwargs and are hidden from the

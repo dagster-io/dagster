@@ -12,7 +12,6 @@ from typing import (  # noqa: UP035
     Any,
     ContextManager,
     NamedTuple,
-    Optional,
     TypeAlias,
     cast,
 )
@@ -154,7 +153,7 @@ class SqlEventLogStorage(EventLogStorage):
     """
 
     @abstractmethod
-    def run_connection(self, run_id: Optional[str]) -> ContextManager[Connection]:
+    def run_connection(self, run_id: str | None) -> ContextManager[Connection]:
         """Context manager yielding a connection to access the event logs for a specific run.
 
         Args:
@@ -404,9 +403,9 @@ class SqlEventLogStorage(EventLogStorage):
     def get_records_for_run(
         self,
         run_id,
-        cursor: Optional[str] = None,
-        of_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+        limit: int | None = None,
         ascending: bool = True,
     ) -> EventLogConnection:
         """Get all of the logs corresponding to a run.
@@ -560,7 +559,7 @@ class SqlEventLogStorage(EventLogStorage):
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
     def get_step_stats_for_run(
-        self, run_id: str, step_keys: Optional[Sequence[str]] = None
+        self, run_id: str, step_keys: Sequence[str] | None = None
     ) -> Sequence[RunStepKeyStatsSnapshot]:
         check.str_param(run_id, "run_id")
         check.opt_list_param(step_keys, "step_keys", of_type=str)
@@ -615,12 +614,12 @@ class SqlEventLogStorage(EventLogStorage):
         if print_fn:
             print_fn(f"Finished data migration: {migration_name}")
 
-    def reindex_events(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
+    def reindex_events(self, print_fn: PrintFn | None = None, force: bool = False) -> None:
         """Call this method to run any data migrations across the event_log table."""
         for migration_name, migration_fn in EVENT_LOG_DATA_MIGRATIONS.items():
             self._apply_migration(migration_name, migration_fn, print_fn, force)
 
-    def reindex_assets(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
+    def reindex_assets(self, print_fn: PrintFn | None = None, force: bool = False) -> None:
         """Call this method to run any data migrations across the asset_keys table."""
         for migration_name, migration_fn in ASSET_DATA_MIGRATIONS.items():
             self._apply_migration(migration_name, migration_fn, print_fn, force)
@@ -738,7 +737,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
-    def get_event_log_table_data(self, run_id: str, record_id: int) -> Optional[SqlAlchemyRow]:
+    def get_event_log_table_data(self, run_id: str, record_id: int) -> SqlAlchemyRow | None:
         """Utility method to test representation of the record in the SQL table.  Returns all of
         the columns stored in the event log storage (as opposed to the deserialized `EventLogEntry`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
@@ -789,7 +788,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         query: SqlAlchemyQuery,
         event_records_filter: EventRecordsFilter,
-        asset_details: Optional[AssetDetails] = None,
+        asset_details: AssetDetails | None = None,
         apply_cursor_filters: bool = True,
     ) -> SqlAlchemyQuery:
         query = query.where(
@@ -859,7 +858,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         table: db.Table,
         tags: Mapping[str, str | Sequence[str]],
-        asset_key: Optional[AssetKey],
+        asset_key: AssetKey | None,
     ) -> db.Table:
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
         i = 0
@@ -886,7 +885,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_event_records(
         self,
         event_records_filter: EventRecordsFilter,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         return self._get_event_records(
@@ -896,7 +895,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _get_event_records(
         self,
         event_records_filter: EventRecordsFilter,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
@@ -951,7 +950,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         event_records_filter: EventRecordsFilter,
         limit: int,
-        cursor: Optional[str],
+        cursor: str | None,
         ascending: bool,
     ):
         records = self._get_event_records(
@@ -972,7 +971,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         enforce_max_records_limit(limit)
@@ -998,7 +997,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         return EventRecordsResult(records=[], cursor=cursor or "", has_more=False)
@@ -1007,7 +1006,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         records_filter: AssetKey | AssetRecordsFilter,
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         enforce_max_records_limit(limit)
@@ -1033,7 +1032,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         records_filter: DagsterEventType | RunStatusChangeRecordsFilter,
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         enforce_max_records_limit(limit)
@@ -1066,8 +1065,8 @@ class SqlEventLogStorage(EventLogStorage):
     def get_logs_for_all_runs_by_log_id(
         self,
         after_cursor: int = -1,
-        dagster_event_type: Optional[DagsterEventType | set[DagsterEventType]] = None,
-        limit: Optional[int] = None,
+        dagster_event_type: DagsterEventType | set[DagsterEventType] | None = None,
+        limit: int | None = None,
     ) -> Mapping[int, EventLogEntry]:
         check.int_param(after_cursor, "after_cursor")
         check.invariant(
@@ -1122,7 +1121,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return events
 
-    def get_maximum_record_id(self) -> Optional[int]:
+    def get_maximum_record_id(self) -> int | None:
         with self.index_connection() as conn:
             result = conn.execute(db_select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
             return result[0]  # type: ignore
@@ -1130,7 +1129,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _construct_asset_record_from_row(
         self,
         row,
-        last_materialization_record: Optional[EventLogRecord],
+        last_materialization_record: EventLogRecord | None,
         can_read_asset_status_cache: bool,
     ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -1157,12 +1156,12 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _get_latest_materialization_records(
         self, raw_asset_rows
-    ) -> Mapping[AssetKey, Optional[EventLogRecord]]:
+    ) -> Mapping[AssetKey, EventLogRecord | None]:
         # Given a list of raw asset rows, returns a mapping of asset key to latest asset materialization
         # event log entry. Fetches backcompat EventLogEntry records when the last_materialization
         # in the raw asset row is an AssetMaterialization.
         to_backcompat_fetch = set()
-        results: dict[AssetKey, Optional[EventLogRecord]] = {}
+        results: dict[AssetKey, EventLogRecord | None] = {}
         for row in raw_asset_rows:
             asset_key = AssetKey.from_db_string(row["asset_key"])
             if not asset_key:
@@ -1215,7 +1214,7 @@ class SqlEventLogStorage(EventLogStorage):
             event_rows = db_fetch_mappings(conn, backcompat_query)
 
         for row in event_rows:
-            asset_key = AssetKey.from_db_string(cast("Optional[str]", row["asset_key"]))
+            asset_key = AssetKey.from_db_string(cast("str | None", row["asset_key"]))
             if asset_key:
                 results[asset_key] = EventLogRecord(
                     storage_id=cast("int", row["id"]),
@@ -1242,7 +1241,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
     def get_asset_records(
-        self, asset_keys: Optional[Sequence[AssetKey]] = None
+        self, asset_keys: Sequence[AssetKey] | None = None
     ) -> Sequence[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
@@ -1346,9 +1345,9 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_asset_keys(
         self,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        prefix: Sequence[str] | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> Sequence[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
         asset_keys = [
@@ -1359,7 +1358,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_latest_materialization_events(
         self, asset_keys: Iterable[AssetKey]
-    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+    ) -> Mapping[AssetKey, EventLogEntry | None]:
         check.iterable_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         return {
@@ -1372,9 +1371,9 @@ class SqlEventLogStorage(EventLogStorage):
     def _fetch_asset_rows(
         self,
         asset_keys=None,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        prefix: Sequence[str] | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> Sequence[SqlAlchemyRow]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.
@@ -1409,11 +1408,11 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _fetch_raw_asset_rows(
         self,
-        asset_keys: Optional[Sequence[AssetKey]] = None,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        asset_keys: Sequence[AssetKey] | None = None,
+        prefix: Sequence[str] | None = None,
+        limit: int | None = None,
         cursor=None,
-    ) -> tuple[Iterable[SqlAlchemyRow], bool, Optional[str]]:
+    ) -> tuple[Iterable[SqlAlchemyRow], bool, str | None]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.  Does not guarantee that the number of
         # rows returned will match the limit specified.  This helper function is used to fetch a
@@ -1566,10 +1565,10 @@ class SqlEventLogStorage(EventLogStorage):
     def _apply_asset_filter_to_query(
         self,
         query: SqlAlchemyQuery,
-        asset_keys: Optional[Sequence[AssetKey]] = None,
+        asset_keys: Sequence[AssetKey] | None = None,
         prefix=None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> SqlAlchemyQuery:
         if asset_keys is not None:
             query = query.where(
@@ -1587,9 +1586,7 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
         return query
 
-    def _get_assets_details(
-        self, asset_keys: Sequence[AssetKey]
-    ) -> Sequence[Optional[AssetDetails]]:
+    def _get_assets_details(self, asset_keys: Sequence[AssetKey]) -> Sequence[AssetDetails | None]:
         check.sequence_param(asset_keys, "asset_key", AssetKey)
         rows = None
         with self.index_connection() as conn:
@@ -1619,7 +1616,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _add_assets_wipe_filter_to_query(
         self,
         query: SqlAlchemyQuery,
-        assets_details: Sequence[Optional[AssetDetails]],
+        assets_details: Sequence[AssetDetails | None],
         asset_keys: Sequence[AssetKey],
     ) -> SqlAlchemyQuery:
         check.invariant(
@@ -1650,8 +1647,8 @@ class SqlEventLogStorage(EventLogStorage):
     def get_event_tags_for_asset(
         self,
         asset_key: AssetKey,
-        filter_tags: Optional[Mapping[str, str]] = None,
-        filter_event_id: Optional[int] = None,
+        filter_tags: Mapping[str, str] | None = None,
+        filter_event_id: int | None = None,
     ) -> Sequence[Mapping[str, str]]:
         """Fetches asset event tags for the given asset key.
 
@@ -1724,9 +1721,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return list(tags_by_event_id.values())
 
-    def _asset_materialization_from_json_column(
-        self, json_str: str
-    ) -> Optional[AssetMaterialization]:
+    def _asset_materialization_from_json_column(self, json_str: str) -> AssetMaterialization | None:
         if not json_str:
             return None
 
@@ -1799,8 +1794,8 @@ class SqlEventLogStorage(EventLogStorage):
     def get_materialized_partitions(
         self,
         asset_key: AssetKey,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ) -> set[str]:
         query = (
             db_select(
@@ -1837,9 +1832,9 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         event_types: Sequence[DagsterEventType],
-        asset_partitions: Optional[Sequence[str]] = None,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        asset_partitions: Sequence[str] | None = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ):
         """Subquery for locating the latest event ids by partition for a given asset key and set
         of event types.
@@ -1882,7 +1877,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         event_type: DagsterEventType,
-        partitions: Optional[set[str]] = None,
+        partitions: set[str] | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
@@ -1915,9 +1910,9 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         tag_keys: Sequence[str],
-        asset_partitions: Optional[Sequence[str]] = None,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        asset_partitions: Sequence[str] | None = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, Mapping[str, str]]:
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.inst_param(event_type, "event_type", DagsterEventType)
@@ -1967,7 +1962,7 @@ class SqlEventLogStorage(EventLogStorage):
         return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
+        self, asset_key: AssetKey, after_storage_id: int | None = None
     ) -> Mapping[str, tuple[str, int]]:
         """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
@@ -2075,7 +2070,7 @@ class SqlEventLogStorage(EventLogStorage):
         return [cast("str", row[1]) for row in rows]
 
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
     ) -> PaginatedResults[str]:
         self._check_partitions_table()
         order_by = (
@@ -2611,7 +2606,7 @@ class SqlEventLogStorage(EventLogStorage):
         concurrency_key: str,
         run_id: str,
         step_key: str,
-        priority: Optional[int] = None,
+        priority: int | None = None,
         should_assign: bool = False,
     ):
         with self.index_connection() as conn:
@@ -2633,7 +2628,7 @@ class SqlEventLogStorage(EventLogStorage):
                 # do nothing
                 pass
 
-    def _remove_pending_steps(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
+    def _remove_pending_steps(self, run_id: str, step_key: str | None = None) -> Sequence[str]:
         # fetch the assigned steps to delete, while grabbing the concurrency keys so that we can
         # assign the next set of queued steps, if necessary
         select_query = (
@@ -2668,7 +2663,7 @@ class SqlEventLogStorage(EventLogStorage):
         return to_assign
 
     def claim_concurrency_slot(
-        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+        self, concurrency_key: str, run_id: str, step_key: str, priority: int | None = None
     ) -> ConcurrencyClaimStatus:
         """Claim concurrency slot for step.
 
@@ -2920,7 +2915,7 @@ class SqlEventLogStorage(EventLogStorage):
             # assign any pending steps that can now claim a slot
             self.assign_pending_steps(removed_assigned_concurrency_keys)
 
-    def _free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
+    def _free_concurrency_slots(self, run_id: str, step_key: str | None = None) -> Sequence[str]:
         """Frees concurrency slots for a given run/step.
 
         Args:
@@ -2970,7 +2965,7 @@ class SqlEventLogStorage(EventLogStorage):
             # return the concurrency keys for the freed slots
             return [cast("str", row[1]) for row in rows]
 
-    def store_asset_check_event(self, event: EventLogEntry, event_id: Optional[int]) -> None:
+    def store_asset_check_event(self, event: EventLogEntry, event_id: int | None) -> None:
         check.inst_param(event, "event", EventLogEntry)
         check.opt_int_param(event_id, "event_id")
 
@@ -2988,7 +2983,7 @@ class SqlEventLogStorage(EventLogStorage):
                 self._update_asset_check_evaluation(event, event_id)
 
     def _store_asset_check_evaluation_planned(
-        self, event: EventLogEntry, event_id: Optional[int]
+        self, event: EventLogEntry, event_id: int | None
     ) -> None:
         planned = cast(
             "AssetCheckEvaluationPlanned", check.not_none(event.dagster_event).event_specific_data
@@ -3020,7 +3015,7 @@ class SqlEventLogStorage(EventLogStorage):
         return datetime.fromtimestamp(event.timestamp, timezone.utc).replace(tzinfo=None)
 
     def _store_runless_asset_check_evaluation(
-        self, event: EventLogEntry, event_id: Optional[int]
+        self, event: EventLogEntry, event_id: int | None
     ) -> None:
         evaluation = cast(
             "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
@@ -3048,7 +3043,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
-    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: Optional[int]) -> None:
+    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: int | None) -> None:
         evaluation = cast(
             "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
         )
@@ -3117,9 +3112,7 @@ class SqlEventLogStorage(EventLogStorage):
                 "as a result of duplicate AssetCheckPlanned events."
             )
 
-    def _get_asset_check_partition_filter_clause(
-        self, partition_filter: Optional[PartitionKeyFilter]
-    ):
+    def _get_asset_check_partition_filter_clause(self, partition_filter: PartitionKeyFilter | None):
         if partition_filter is None:
             return True
         elif partition_filter.key is None:
@@ -3131,9 +3124,9 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         check_key: AssetCheckKey,
         limit: int,
-        cursor: Optional[int] = None,
-        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
-        partition_filter: Optional[PartitionKeyFilter] = None,
+        cursor: int | None = None,
+        status: AbstractSet[AssetCheckExecutionRecordStatus] | None = None,
+        partition_filter: PartitionKeyFilter | None = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -3176,7 +3169,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence[AssetCheckKey],
-        partition_filter: Optional[PartitionKeyFilter] = None,
+        partition_filter: PartitionKeyFilter | None = None,
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Returns the latest AssetCheckExecutionRecord for each check key. By default, returns the latest
         record regardless of partitioning.
@@ -3240,8 +3233,8 @@ class SqlEventLogStorage(EventLogStorage):
     def _get_asset_check_partition_info_for_key(
         self,
         check_key: AssetCheckKey,
-        after_storage_id: Optional[int],
-        partition_keys: Optional[Sequence[str]],
+        after_storage_id: int | None,
+        partition_keys: Sequence[str] | None,
         latest_unpartitioned_materialization_storage_ids: Mapping[AssetKey, int],
     ) -> Sequence[AssetCheckPartitionInfo]:
         # Build the base filter conditions
@@ -3341,8 +3334,8 @@ class SqlEventLogStorage(EventLogStorage):
     def get_asset_check_partition_info(
         self,
         keys: Sequence[AssetCheckKey],
-        after_storage_id: Optional[int] = None,
-        partition_keys: Optional[Sequence[str]] = None,
+        after_storage_id: int | None = None,
+        partition_keys: Sequence[str] | None = None,
     ) -> Sequence[AssetCheckPartitionInfo]:
         check.list_param(keys, "keys", of_type=AssetCheckKey)
         check.opt_int_param(after_storage_id, "after_storage_id")
@@ -3373,8 +3366,8 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_planned_materialization_info(
         self,
         asset_key: AssetKey,
-        partition: Optional[str] = None,
-    ) -> Optional[PlannedMaterializationInfo]:
+        partition: str | None = None,
+    ) -> PlannedMaterializationInfo | None:
         records = self._get_event_records(
             event_records_filter=EventRecordsFilter(
                 DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -3396,8 +3389,8 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         partitions: Sequence[str],
-        before_storage_id: Optional[int] = None,
-        after_storage_id: Optional[int] = None,
+        before_storage_id: int | None = None,
+        after_storage_id: int | None = None,
     ) -> dict[str, str]:
         partition_subquery = db_select(
             [SqlEventLogStorageTable.c.partition, SqlEventLogStorageTable.c.id]

@@ -109,7 +109,7 @@ def test_forward_compat_serdes_new_field_with_default() -> None:
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", Optional[str])])):
+    class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", str | None)])):
         def __new__(cls, foo, bar, baz=None):
             return super().__new__(cls, foo, bar, baz=baz)
 
@@ -1043,7 +1043,7 @@ def test_record() -> None:
     class LegacyModel(IHaveNew):
         nums: list[int]
 
-        def __new__(cls, nums: Optional[list[int]] = None, old_nums: Optional[list[int]] = None):
+        def __new__(cls, nums: list[int] | None = None, old_nums: list[int] | None = None):
             return super().__new__(
                 cls,
                 nums=nums or old_nums,

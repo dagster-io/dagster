@@ -2,7 +2,7 @@ import enum
 import json
 from datetime import datetime
 from itertools import count
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 import pytest
@@ -1209,7 +1209,7 @@ def test_all_dagster_types():
         return x
 
     @dg.graph
-    def my_graph(x: Optional[Bar]):
+    def my_graph(x: Bar | None):
         y = x or Foo()
         my_op_2(my_op(y))
 

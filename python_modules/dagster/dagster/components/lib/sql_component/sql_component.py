@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from dagster_shared import check
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,7 +34,7 @@ class SqlComponent(ExecutableComponent, ABC):
         ],
         Field(description="The SQL connection to use for executing the SQL content."),
     ]
-    execution: Annotated[Optional[OpSpec], Field(default=None)] = None
+    execution: Annotated[OpSpec | None, Field(default=None)] = None
 
     @abstractmethod
     def get_sql_content(
@@ -92,7 +92,7 @@ class TemplatedSqlComponent(SqlComponent):
     ]
 
     sql_template_vars: Annotated[
-        Optional[Mapping[str, Any]],
+        Mapping[str, Any] | None,
         Field(default=None, description="Template variables to pass to the SQL template."),
     ] = None
 

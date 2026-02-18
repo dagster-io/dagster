@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, cast, get_args
+from typing import TYPE_CHECKING, Any, cast, get_args
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
@@ -96,8 +96,8 @@ def invoke_compute_fn(
     context: ExecutionContextTypes,
     kwargs: Mapping[str, Any],
     context_arg_provided: bool,
-    config_arg_cls: Optional[type[Config]],
-    resource_args: Optional[dict[str, str]] = None,
+    config_arg_cls: type[Config] | None,
+    resource_args: dict[str, str] | None = None,
 ) -> Any:
     args_to_pass = {**kwargs}
     if config_arg_cls:

@@ -1,7 +1,6 @@
 """Utilities for discovering public Dagster Python packages."""
 
 from pathlib import Path
-from typing import Optional
 
 from dagster_shared.record import record
 
@@ -16,7 +15,7 @@ class PublicPackage:
     path: Path  # Full path to package directory
 
 
-def get_public_dagster_packages(dagster_root: Optional[Path] = None) -> list[PublicPackage]:
+def get_public_dagster_packages(dagster_root: Path | None = None) -> list[PublicPackage]:
     """Get all public Dagster Python packages.
 
     This function returns all packages that are part of the public Dagster API,
