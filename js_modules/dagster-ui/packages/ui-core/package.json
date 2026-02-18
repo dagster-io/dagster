@@ -137,7 +137,7 @@
     "@types/lru-cache": "^5.1.0",
     "@types/mdx-js__react": "^1",
     "@types/node": "^22.18.6",
-    "@types/qs": "^6.9.18",
+    "@types/qs": "^6.14.0",
     "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
     "@types/react-router": "^5.1.17",
