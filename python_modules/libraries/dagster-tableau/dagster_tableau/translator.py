@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, Optional, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -81,8 +81,8 @@ class TableauWorkbookMetadata:
     """Represents the metadata of a Tableau workbook, based on data as returned from the API."""
 
     id: str
-    project_name: Optional[str]
-    project_id: Optional[str]
+    project_name: str | None
+    project_id: str | None
 
     @classmethod
     def from_workbook_properties(

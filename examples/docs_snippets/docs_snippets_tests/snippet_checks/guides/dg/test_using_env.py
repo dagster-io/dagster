@@ -5,7 +5,7 @@ from collections.abc import Callable
 from contextlib import ExitStack
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses

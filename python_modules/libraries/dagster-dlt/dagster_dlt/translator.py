@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public, superseded
@@ -11,13 +11,14 @@ from dlt.extract.resource import DltResource
 from dlt.pipeline.pipeline import Pipeline
 
 
+# Use Optional because the Dlt metaclass doesn't support __or__ (|operator)
 @record
 class DltResourceTranslatorData:
     resource: DltResource
-    pipeline: Pipeline | None
+    pipeline: Optional[Pipeline]  # noqa: UP045
 
     @property
-    def destination(self) -> Destination | None:
+    def destination(self) -> Optional[Destination]:  # noqa: UP045
         return self.pipeline.destination if self.pipeline else None
 
 
@@ -69,7 +70,7 @@ class DagsterDltTranslator:
         method_name: str,
         default_fn: Callable[[DltResource], Any] | Callable[[DltResource, Destination], Any],
         resource: DltResource,
-        destination: Destination | None = None,
+        destination: Optional[Destination] = None,  # noqa: UP045
     ):
         method = getattr(type(self), method_name)
         base_method = getattr(DagsterDltTranslator, method_name)
@@ -384,7 +385,11 @@ class DagsterDltTranslator:
         """
         return self._default_kinds_fn(resource, destination)
 
-    def _default_kinds_fn(self, resource: DltResource, destination: Destination | None) -> set[str]:
+    def _default_kinds_fn(
+        self,
+        resource: DltResource,
+        destination: Optional[Destination],  # noqa: UP045
+    ) -> set[str]:
         """A method that takes in a dlt resource and returns the kinds which should be
         attached. Defaults to the destination type and "dlt".
 

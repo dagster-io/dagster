@@ -3,7 +3,7 @@
 # `python generate_alerts_config_code_snippets.py` and the corresponding YAML files will be created or updated.
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import yaml
 

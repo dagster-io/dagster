@@ -14,7 +14,6 @@ def rose_data():
 # start_example
 
 from collections.abc import Sequence
-from typing import Optional
 
 import pandas as pd
 from dagster_gcp import BigQueryIOManager

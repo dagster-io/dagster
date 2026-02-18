@@ -3,7 +3,7 @@ import textwrap
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dagster_dg_core.utils import activate_venv
 

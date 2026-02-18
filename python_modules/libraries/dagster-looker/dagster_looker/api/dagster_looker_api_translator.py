@@ -107,7 +107,7 @@ class LookmlView:
 class LookerStructureData:
     structure_type: LookerStructureType
     data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]  # noqa: UP007
-    base_url: Optional[str] = None
+    base_url: Optional[str] = None  # noqa: UP045
 
 
 @record

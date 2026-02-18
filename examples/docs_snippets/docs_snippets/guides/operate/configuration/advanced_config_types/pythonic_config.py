@@ -27,7 +27,6 @@ def permissive_schema_config() -> None:
     # start_permissive_schema_config
 
     import dagster as dg
-    from typing import Optional
     import requests
 
     class FilterConfig(dg.PermissiveConfig):
@@ -231,7 +230,6 @@ def metadata_config() -> None:
 def optional_config() -> None:
     # start_optional_config
 
-    from typing import Optional
     import dagster as dg
     from pydantic import Field
 
@@ -387,7 +385,6 @@ def validated_schema_config() -> None:
 
 def required_config() -> None:
     # start_required_config
-    from typing import Optional
     from collections.abc import Callable
     import dagster as dg
     from pydantic import Field

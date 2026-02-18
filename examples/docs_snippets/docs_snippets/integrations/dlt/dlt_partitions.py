@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dlt
 from dagster_dlt import DagsterDltResource, dlt_assets
 
