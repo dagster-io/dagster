@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -31,11 +32,23 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit updated yarn.lock
+      - name: Create PR with updated yarn.lock
         if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "Dagster Devtools"
           git config user.email "devtools@dagsterlabs.com"
+          branch="update-dagster-ui-yarn-lock"
+          git checkout -b "$branch"
           git add js_modules/dagster-ui/yarn.lock
           git commit -m "Update dagster-ui yarn.lock"
-          git push
+          git push --force origin "$branch"
+          if ! gh pr list --head "$branch" --state open --json number --jq '.[0].number' | grep -q .; then
+            gh pr create \
+              --title "Update dagster-ui yarn.lock" \
+              --body "Automated PR to update \`js_modules/dagster-ui/yarn.lock\` after a \`package.json\` change." \
+              --base master \
+              --head "$branch" \
+              --reviewer "dagster-io/frontend"
+          fi
