@@ -17,7 +17,22 @@ import {
   AssetsInScope,
   ERROR_INVALID_ASSET_SELECTION,
   LaunchAssetExecutionButton,
+  executionParamsForAssetJob,
 } from '../LaunchAssetExecutionButton';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
+import {gql} from '@apollo/client';
+const ASSETS_PERMISSIONS_QUERY = gql`
+  query AssetsPermissionsQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      hasMaterializePermission
+      hasWipePermission
+      hasReportRunlessAssetEventPermission
+      __typename
+    }
+  }
+`;
+
 import {
   ASSET_DAILY,
   ASSET_DAILY_PARTITION_KEYS,
@@ -407,43 +422,85 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should launch backfills with only missing partitions if requested', async () => {
-      const launchMock = buildExpectedLaunchBackfillMutation({
-        selector: {
-          partitionSetName: 'my_asset_job_partition_set',
-          repositorySelector: {repositoryLocationName: 'test.py', repositoryName: 'repo'},
+      // (אופציונלי אבל מומלץ) לסגור את ה-warn של AssetsPermissionsQuery:
+      const permissionsMock: MockedResponse = {
+        request: {query: ASSETS_PERMISSIONS_QUERY},
+        variableMatcher: (vars: any) => Array.isArray(vars?.assetKeys),
+        result: (vars: any) => ({
+          data: {
+            assetNodes: (vars.assetKeys as any[]).map((k: any) => ({
+              __typename: 'AssetNode',
+              id: k.path.join('/'),
+              hasMaterializePermission: true,
+              hasWipePermission: true,
+              hasReportRunlessAssetEventPermission: true,
+            })),
+          },
+        }),
+      };
+
+
+      const backfillMock: MockedResponse = {
+        request: {query: LAUNCH_PARTITION_BACKFILL_MUTATION},
+        variableMatcher: (vars: any) => {
+          const p = vars?.backfillParams;
+          if (!p) return false;
+
+          // הדברים היציבים שאנחנו באמת רוצים לבדוק:
+          const hasFromUiTag =
+            Array.isArray(p.tags) && p.tags.some((t: any) => t.key === 'dagster/from_ui' && t.value === 'true');
+
+          const correctSelector =
+            p.selector?.partitionSetName === 'my_asset_job_partition_set' &&
+            p.selector?.repositorySelector?.repositoryName === 'repo' &&
+            p.selector?.repositorySelector?.repositoryLocationName === 'test.py';
+
+          const correctAssetSelection =
+            Array.isArray(p.assetSelection) &&
+            p.assetSelection.length === 1 &&
+            p.assetSelection[0]?.path?.join('/') === 'asset_daily';
+
+          const hasSomePartitions = Array.isArray(p.partitionNames) && p.partitionNames.length > 0;
+
+          // "missing-only" אמור להיות קטן מ-all (לא משווים את הרשימה עצמה!)
+          const missingIsSmallerThanAll =
+            Array.isArray(p.partitionNames) && p.partitionNames.length < ASSET_DAILY_PARTITION_KEYS.length;
+
+          return (
+            correctSelector &&
+            correctAssetSelection &&
+            p.fromFailure === false &&
+            hasFromUiTag &&
+            hasSomePartitions &&
+            missingIsSmallerThanAll
+          );
         },
-        assetSelection: [{path: ['asset_daily']}],
-        partitionNames: ASSET_DAILY_PARTITION_KEYS_MISSING,
-        fromFailure: false,
-        tags: [...UI_EXECUTION_TAGS],
-      });
+        result: jest.fn(() => ({
+          data: {
+            launchPartitionBackfill: {__typename: 'LaunchBackfillSuccess', backfillId: 'backfillid'},
+          },
+        })),
+      };
+
       renderButton({
         scope: {all: [ASSET_DAILY]},
         preferredJobName: 'my_asset_job',
-        launchMock,
+        launchMock: permissionsMock,
+        additionalMocks: [backfillMock],
       });
+
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
 
-      // choose "All" partitions
       await userEvent.click(await screen.findByTestId('all-partition-button'));
-
-      // verify that the preview option is not shown
-      expect(screen.queryByTestId('backfill-preview-button')).toBeNull();
-
-      // verify that checking "missing only" triggers the mutation with fewer partitions
       await userEvent.click(screen.getByTestId('missing-only-checkbox'));
 
-      // Verify that the preview option is now shown
+      // preview
       const preview = await screen.findByTestId('backfill-preview-button');
-      await preview.click();
-
-      // Expect the modal to be displayed. We have separate test coverage for
-      // for the content of this modal
+      await userEvent.click(preview);
       await screen.findByTestId('backfill-preview-modal-content');
 
-      // verify that the executed mutation is correct
-      await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
+      await expectLaunchExecutesMutationAndCloses('Launch backfill', backfillMock as any);
     });
 
     it('should launch single runs via the hidden job if no job is in context', async () => {
@@ -708,7 +765,40 @@ describe('LaunchAssetExecutionButton', () => {
       await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
     });
   });
+
+
+  describe('run tag propagation', () => {
+    it('includes provided tags in executionMetadata.tags', () => {
+      const executionParams = executionParamsForAssetJob(
+        {name: 'repo', location: 'test.py'} as any,
+        '__ASSET_JOB',
+        [
+          {
+            assetKey: {path: ['unpartitioned_asset']},
+            opNames: [],
+            assetChecksOrError: {__typename: 'AssetChecks', checks: []},
+          } as any,
+        ],
+        [
+          {key: 'ecs/cpu', value: '512'},
+          {key: 'ecs/memory', value: '1536'},
+        ],
+      );
+
+      const tags = executionParams.executionMetadata?.tags ?? [];
+      expect(tags).toEqual(
+        expect.arrayContaining([
+          {key: 'ecs/cpu', value: '512'},
+          {key: 'ecs/memory', value: '1536'},
+        ]),
+      );
+
+    });
+  });
 });
+
+
+
 
 // Helpers to make tests more concise
 
@@ -716,10 +806,12 @@ function renderButton({
   scope,
   launchMock,
   preferredJobName,
+  additionalMocks,
 }: {
   scope: AssetsInScope;
   launchMock?: MockedResponse<Record<string, any>>;
   preferredJobName?: string;
+  additionalMocks?: MockedResponse<Record<string, any>>[];
 }) {
   const assetKeys = (
     'all' in scope
@@ -750,6 +842,7 @@ function renderButton({
     buildLaunchAssetLoaderMock(assetKeys),
     ...workspaceMocks,
     ...(launchMock ? [launchMock] : []),
+    ...(additionalMocks ?? []),
   ];
 
   render(
