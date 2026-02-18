@@ -259,6 +259,9 @@ SNIPPET_ENV = {
     "HOME": "/tmp",
     "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
     "UV_PYTHON": "3.11",
+    # HOME is set to /tmp for isolation, but uv resolves its Python install dir
+    # relative to HOME. Point it at the real install location.
+    "UV_PYTHON_INSTALL_DIR": str(Path.home() / ".local" / "share" / "uv" / "python"),
 }
 
 
