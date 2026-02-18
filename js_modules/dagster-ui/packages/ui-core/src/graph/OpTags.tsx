@@ -30,6 +30,7 @@ import azure from './kindtag-images/tool-azure-color.svg';
 import azureml from './kindtag-images/tool-azureml-color.svg';
 import bigquery from './kindtag-images/tool-bigquery-color.svg';
 import botorch from './kindtag-images/tool-botorch-color.svg';
+import braze from './kindtag-images/tool-braze.svg';
 import cassandra from './kindtag-images/tool-cassandra-color.svg';
 import catboost from './kindtag-images/tool-catboost-color.svg';
 import celery from './kindtag-images/tool-celery-color.svg';
@@ -163,6 +164,7 @@ import redis from './kindtag-images/tool-redis-color.svg';
 import redpanda from './kindtag-images/tool-redpanda-color.svg';
 import redshift from './kindtag-images/tool-redshift-color.svg';
 import rockset from './kindtag-images/tool-rockset-color.svg';
+import runpod from './kindtag-images/tool-runpod.svg';
 import rust from './kindtag-images/tool-rust-color.svg';
 import s3 from './kindtag-images/tool-s3-color.svg';
 import sagemaker from './kindtag-images/tool-sagemaker-color.svg';
@@ -254,6 +256,7 @@ export type KnownTagType =
   | 'azureml'
   | 'bigquery'
   | 'botorch'
+  | 'braze'
   | 'bronze'
   | 'cassandra'
   | 'catboost'
@@ -410,6 +413,7 @@ export type KnownTagType =
   | 'redshift'
   | 'report'
   | 'rockset'
+  | 'runpod'
   | 'rust'
   | 's3'
   | 'sagemaker'
@@ -1451,6 +1455,14 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   langfuse: {
     icon: langfuse,
     content: 'Langfuse',
+  },
+  braze: {
+    icon: braze,
+    content: 'Braze',
+  },
+  runpod: {
+    icon: runpod,
+    content: 'Runpod',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
