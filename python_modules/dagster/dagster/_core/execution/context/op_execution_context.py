@@ -1322,4 +1322,5 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             asset_key,
             python_type=python_type,
             partition_key=partition_key,
+            step_context=self._step_execution_context,
         )
