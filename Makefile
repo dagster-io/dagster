@@ -80,7 +80,10 @@ sanity_check:
 	@! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
-	cd js_modules/dagster-ui/; yarn install && yarn build
+	yarn install
+	yarn workspace @dagster-io/app-oss build
+	yarn workspace @dagster-io/app-oss replace-asset-prefix
+	cd python_modules/dagster-webserver/dagster_webserver && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagster-ui/packages/app-oss/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphiql ./webapp/build/vendor && cp ../../../js_modules/dagster-ui/packages/app-oss/csp-header.txt ./webapp/build
 
 rebuild_ui_with_profiling: sanity_check
 	cd js_modules/dagster-ui/; yarn install && yarn build-with-profiling
