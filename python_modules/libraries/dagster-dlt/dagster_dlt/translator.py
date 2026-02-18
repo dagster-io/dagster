@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public, superseded
@@ -14,10 +14,10 @@ from dlt.pipeline.pipeline import Pipeline
 @record
 class DltResourceTranslatorData:
     resource: DltResource
-    pipeline: Optional[Pipeline]
+    pipeline: Pipeline | None
 
     @property
-    def destination(self) -> Optional[Destination]:
+    def destination(self) -> Destination | None:
         return self.pipeline.destination if self.pipeline else None
 
 
@@ -69,7 +69,7 @@ class DagsterDltTranslator:
         method_name: str,
         default_fn: Callable[[DltResource], Any] | Callable[[DltResource, Destination], Any],
         resource: DltResource,
-        destination: Optional[Destination] = None,
+        destination: Destination | None = None,
     ):
         method = getattr(type(self), method_name)
         base_method = getattr(DagsterDltTranslator, method_name)
@@ -122,7 +122,7 @@ class DagsterDltTranslator:
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).auto_materialize_policy` instead.",
     )
     @public
-    def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
+    def get_auto_materialize_policy(self, resource: DltResource) -> AutoMaterializePolicy | None:
         """Defines resource specific auto materialize policy.
 
         This method can be overridden to provide custom auto materialize policy for a dlt resource.
@@ -138,7 +138,7 @@ class DagsterDltTranslator:
 
     def _default_auto_materialize_policy_fn(
         self, resource: DltResource
-    ) -> Optional[AutoMaterializePolicy]:
+    ) -> AutoMaterializePolicy | None:
         """Defines resource specific auto materialize policy.
 
         Args:
@@ -154,7 +154,7 @@ class DagsterDltTranslator:
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).automation_condition` instead.",
     )
     @public
-    def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
+    def get_automation_condition(self, resource: DltResource) -> AutomationCondition | None:
         """Defines resource specific automation condition.
 
         This method can be overridden to provide custom automation condition for a dlt resource.
@@ -168,9 +168,7 @@ class DagsterDltTranslator:
         """
         return self._default_automation_condition_fn(resource)
 
-    def _default_automation_condition_fn(
-        self, resource: DltResource
-    ) -> Optional[AutomationCondition]:
+    def _default_automation_condition_fn(self, resource: DltResource) -> AutomationCondition | None:
         """Defines resource specific automation condition.
 
         Args:
@@ -226,7 +224,7 @@ class DagsterDltTranslator:
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).description` instead.",
     )
     @public
-    def get_description(self, resource: DltResource) -> Optional[str]:
+    def get_description(self, resource: DltResource) -> str | None:
         """A method that takes in a dlt resource returns the Dagster description of the resource.
 
         This method can be overridden to provide a custom description for a dlt resource.
@@ -239,7 +237,7 @@ class DagsterDltTranslator:
         """
         return self._default_description_fn(resource)
 
-    def _default_description_fn(self, resource: DltResource) -> Optional[str]:
+    def _default_description_fn(self, resource: DltResource) -> str | None:
         """A method that takes in a dlt resource returns the Dagster description of the resource.
 
         Args:
@@ -259,7 +257,7 @@ class DagsterDltTranslator:
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).group_name` instead.",
     )
     @public
-    def get_group_name(self, resource: DltResource) -> Optional[str]:
+    def get_group_name(self, resource: DltResource) -> str | None:
         """A method that takes in a dlt resource and returns the Dagster group name of the resource.
 
         This method can be overridden to provide a custom group name for a dlt resource.
@@ -272,7 +270,7 @@ class DagsterDltTranslator:
         """
         return self._default_group_name_fn(resource)
 
-    def _default_group_name_fn(self, resource: DltResource) -> Optional[str]:
+    def _default_group_name_fn(self, resource: DltResource) -> str | None:
         """A method that takes in a dlt resource and returns the Dagster group name of the resource.
 
         Args:
@@ -313,7 +311,7 @@ class DagsterDltTranslator:
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).owners` instead.",
     )
     @public
-    def get_owners(self, resource: DltResource) -> Optional[Sequence[str]]:
+    def get_owners(self, resource: DltResource) -> Sequence[str] | None:
         """A method that takes in a dlt resource and returns the Dagster owners of the resource.
 
         This method can be overridden to provide custom owners for a dlt resource.
@@ -326,7 +324,7 @@ class DagsterDltTranslator:
         """
         return self._default_owners_fn(resource)
 
-    def _default_owners_fn(self, resource: DltResource) -> Optional[Sequence[str]]:
+    def _default_owners_fn(self, resource: DltResource) -> Sequence[str] | None:
         """A method that takes in a dlt resource and returns the Dagster owners of the resource.
 
         Args:
@@ -386,9 +384,7 @@ class DagsterDltTranslator:
         """
         return self._default_kinds_fn(resource, destination)
 
-    def _default_kinds_fn(
-        self, resource: DltResource, destination: Optional[Destination]
-    ) -> set[str]:
+    def _default_kinds_fn(self, resource: DltResource, destination: Destination | None) -> set[str]:
         """A method that takes in a dlt resource and returns the kinds which should be
         attached. Defaults to the destination type and "dlt".
 

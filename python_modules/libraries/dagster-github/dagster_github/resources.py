@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import jwt
 import requests
@@ -130,8 +130,8 @@ class GithubClient:
         client: requests.Session,
         app_id: int,
         app_private_rsa_key: str,
-        default_installation_id: Optional[int],
-        hostname: Optional[str] = None,
+        default_installation_id: int | None,
+        hostname: str | None = None,
     ) -> None:
         self.client = client
         self.app_private_rsa_key = app_private_rsa_key
@@ -171,7 +171,7 @@ class GithubClient:
             self.__set_app_token()
 
     @public
-    def get_installations(self, headers: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    def get_installations(self, headers: dict[str, Any] | None = None) -> dict[str, Any]:
         """Retrieve the list of installations for the authenticated GitHub App.
 
         This method makes a GET request to the GitHub API to fetch the installations
@@ -204,7 +204,7 @@ class GithubClient:
         return request.json()
 
     def __set_installation_token(
-        self, installation_id: int, headers: Optional[dict[str, Any]] = None
+        self, installation_id: int, headers: dict[str, Any] | None = None
     ) -> None:
         if headers is None:
             headers = {}
@@ -236,9 +236,9 @@ class GithubClient:
     def execute(
         self,
         query: str,
-        variables: Optional[dict[str, Any]] = None,
-        headers: Optional[dict[str, Any]] = None,
-        installation_id: Optional[int] = None,
+        variables: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        installation_id: int | None = None,
     ) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API.
 
@@ -295,7 +295,7 @@ class GithubClient:
         repo_owner: str,
         title: str,
         body: str,
-        installation_id: Optional[int] = None,
+        installation_id: int | None = None,
     ) -> dict[str, Any]:
         """Create a new issue in the specified GitHub repository.
 
@@ -390,10 +390,10 @@ class GithubClient:
         head_repo_owner: str,
         head_ref_name: str,
         title: str,
-        body: Optional[str] = None,
-        maintainer_can_modify: Optional[bool] = None,
-        draft: Optional[bool] = None,
-        installation_id: Optional[int] = None,
+        body: str | None = None,
+        maintainer_can_modify: bool | None = None,
+        draft: bool | None = None,
+        installation_id: int | None = None,
     ) -> dict[str, Any]:
         """Create a new pull request in the specified GitHub repository.
 
@@ -480,14 +480,14 @@ class GithubResource(ConfigurableResource):
             " https://developer.github.com/apps/"
         ),
     )
-    github_installation_id: Optional[int] = Field(
+    github_installation_id: int | None = Field(
         default=None,
         description=(
             "Github Application Installation ID, for more info see"
             " https://developer.github.com/apps/"
         ),
     )
-    github_hostname: Optional[str] = Field(
+    github_hostname: str | None = Field(
         default=None,
         description=(
             "Github hostname. Defaults to `api.github.com`, for more info see"

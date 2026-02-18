@@ -312,7 +312,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
     # Takes a list of published datasource names or id's to enable refresh for, or True to enable for all published datasources
     enable_published_datasource_refresh: bool | list[str] = False
 
-    translation: Optional[ResolvedMultilayerTranslationFn] = None
+    translation: ResolvedMultilayerTranslationFn | None = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -559,7 +559,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
         return True
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         """Builds Dagster definitions from the cached Tableau workspace state."""
         if state_path is None:

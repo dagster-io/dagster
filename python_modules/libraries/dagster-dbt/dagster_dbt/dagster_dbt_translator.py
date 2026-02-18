@@ -83,7 +83,7 @@ class DagsterDbtTranslator:
     is derived.
     """
 
-    def __init__(self, settings: Optional[DagsterDbtTranslatorSettings] = None):
+    def __init__(self, settings: DagsterDbtTranslatorSettings | None = None):
         """Initialize the translator.
 
         Args:
@@ -244,7 +244,7 @@ class DagsterDbtTranslator:
         manifest: Mapping[str, Any],
         unique_id: str,
         project: Optional["DbtProject"],
-    ) -> Optional[AssetCheckSpec]:
+    ) -> AssetCheckSpec | None:
         return default_asset_check_fn(
             manifest=manifest,
             dagster_dbt_translator=self,
@@ -313,7 +313,7 @@ class DagsterDbtTranslator:
         self,
         dbt_resource_props: Mapping[str, Any],
         dbt_parent_resource_props: Mapping[str, Any],
-    ) -> Optional[PartitionMapping]:
+    ) -> PartitionMapping | None:
         """A function that takes two dictionaries: the first, representing properties of a dbt
         resource; and the second, representing the properties of a parent dependency to the first
         dbt resource. The function returns the Dagster partition mapping for the dbt dependency.
@@ -443,7 +443,7 @@ class DagsterDbtTranslator:
         return {tag: "" for tag in tags if is_valid_tag_key(tag)}
 
     @public
-    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster group name for that resource.
 
@@ -475,7 +475,7 @@ class DagsterDbtTranslator:
         return default_group_from_dbt_resource_props(dbt_resource_props)
 
     @public
-    def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster code version for that resource.
 
@@ -507,7 +507,7 @@ class DagsterDbtTranslator:
         return default_code_version_fn(dbt_resource_props)
 
     @public
-    def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Optional[Sequence[str]]:
+    def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Sequence[str] | None:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster owners for that resource.
 
@@ -542,7 +542,7 @@ class DagsterDbtTranslator:
     @beta(emit_runtime_warning=False)
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[AutoMaterializePolicy]:
+    ) -> AutoMaterializePolicy | None:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.AutoMaterializePolicy` for that resource.
 
@@ -597,7 +597,7 @@ class DagsterDbtTranslator:
     @beta(emit_runtime_warning=False)
     def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[AutomationCondition]:
+    ) -> AutomationCondition | None:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.AutoMaterializePolicy` for that resource.
 
@@ -653,7 +653,7 @@ class DagsterDbtTranslator:
 
     def get_partitions_def(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[PartitionsDefinition]:
+    ) -> PartitionsDefinition | None:
         """[INTERNAL] A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.PartitionsDefinition` for that resource.
 
@@ -706,8 +706,8 @@ def validate_translator(dagster_dbt_translator: DagsterDbtTranslator) -> Dagster
 
 
 def validate_opt_translator(
-    dagster_dbt_translator: Optional[DagsterDbtTranslator],
-) -> Optional[DagsterDbtTranslator]:
+    dagster_dbt_translator: DagsterDbtTranslator | None,
+) -> DagsterDbtTranslator | None:
     return check.opt_inst_param(
         dagster_dbt_translator,
         "dagster_dbt_translator",

@@ -53,11 +53,11 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         client: Optional["EMRContainersClient"] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
         pipes_params_bootstrap_method: Literal["args", "env"] = "env",
-        waiter_config: Optional[WaiterConfig] = None,
+        waiter_config: WaiterConfig | None = None,
     ):
         self._client = client or boto3.client("emr-containers")
         self._context_injector = context_injector or PipesEnvContextInjector()
@@ -88,7 +88,7 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
         *,
         context: OpExecutionContext | AssetExecutionContext,
         start_job_run_params: "StartJobRunRequestTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Containers, enriched with the pipes protocol.
 

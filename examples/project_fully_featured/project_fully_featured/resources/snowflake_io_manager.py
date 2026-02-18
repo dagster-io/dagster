@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     ConfigurableIOManager,
@@ -153,7 +153,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
         }
 
     def _get_cleanup_statement(
-        self, table: str, schema: str, time_window: Optional[tuple[datetime, datetime]]
+        self, table: str, schema: str, time_window: tuple[datetime, datetime] | None
     ) -> str:
         """Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
@@ -183,8 +183,8 @@ class SnowflakeIOManager(ConfigurableIOManager):
         self,
         table: str,
         schema: str,
-        columns: Optional[Sequence[str]],
-        time_window: Optional[tuple[datetime, datetime]],
+        columns: Sequence[str] | None,
+        time_window: tuple[datetime, datetime] | None,
     ):
         col_str = ", ".join(columns) if columns else "*"
         if time_window:

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 import polars as pl
 import pyarrow as pa
@@ -69,5 +69,5 @@ class DeltaLakePolarsIOManager(DeltaLakeIOManager):
         return [DeltaLakePolarsTypeHandler(), DeltaLakePyArrowTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return pl.DataFrame

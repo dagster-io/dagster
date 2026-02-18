@@ -7,7 +7,7 @@ import subprocess
 import textwrap
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import pytest
@@ -65,9 +65,7 @@ def get_databricks_python_file_path() -> str:
     return os.environ["DATABRICKS_PYTHON_FILE_PATH"]
 
 
-def get_script_source(
-    script_fn: Optional[Callable[[], Any]] = None, script_file: Optional[str] = None
-):
+def get_script_source(script_fn: Callable[[], Any] | None = None, script_file: str | None = None):
     if script_fn is None and script_file is None:
         raise ValueError("Must provide either script_fn or script_file")
     elif script_fn is not None and script_file is not None:
@@ -86,9 +84,9 @@ def get_script_source(
 def temp_dbfs_script(
     client: WorkspaceClient,
     *,
-    script_fn: Optional[Callable[[], Any]] = None,
-    script_file: Optional[str] = None,
-    dbfs_path: Optional[str] = None,
+    script_fn: Callable[[], Any] | None = None,
+    script_file: str | None = None,
+    dbfs_path: str | None = None,
 ) -> Iterator[str]:
     contents = get_script_source(script_fn=script_fn, script_file=script_file)
     dbfs_client = files.DbfsAPI(client.api_client)
@@ -110,8 +108,8 @@ def temp_workspace_notebook(
     client: WorkspaceClient,
     *,
     workspace_path: str,
-    script_fn: Optional[Callable[[], Any]] = None,
-    script_file: Optional[str] = None,
+    script_fn: Callable[[], Any] | None = None,
+    script_file: str | None = None,
 ) -> Iterator[str]:
     contents = get_script_source(script_fn=script_fn, script_file=script_file)
     dirname = "".join(random.choices(string.ascii_letters, k=30))

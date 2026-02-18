@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared import check
 from typing_extensions import Self
@@ -51,7 +51,7 @@ class ProjectEnvVars:
     project root.
     """
 
-    def __init__(self, ctx: DgContext, values: Mapping[str, Optional[str]]):
+    def __init__(self, ctx: DgContext, values: Mapping[str, str | None]):
         self.ctx = ctx
         self._values = values
 
@@ -71,13 +71,13 @@ class ProjectEnvVars:
         return cls(ctx, values=env)
 
     @property
-    def values(self) -> Mapping[str, Optional[str]]:
+    def values(self) -> Mapping[str, str | None]:
         return self._values
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         return self.values.get(key)
 
-    def with_values(self, values: Mapping[str, Optional[str]]) -> "ProjectEnvVars":
+    def with_values(self, values: Mapping[str, str | None]) -> "ProjectEnvVars":
         return ProjectEnvVars(self.ctx, {**self.values, **values})
 
     def without_values(self, keys: set[str]) -> "ProjectEnvVars":

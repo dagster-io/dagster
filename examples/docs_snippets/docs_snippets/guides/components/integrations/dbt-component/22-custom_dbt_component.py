@@ -19,7 +19,7 @@ class CustomDbtProjectComponent(DbtProjectComponent):
         return CustomDbtConfig
 
     def get_asset_spec(
-        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
     ) -> dg.AssetSpec:
         base_spec = super().get_asset_spec(manifest, unique_id, project)
         dbt_props = self.get_resource_props(manifest, unique_id)

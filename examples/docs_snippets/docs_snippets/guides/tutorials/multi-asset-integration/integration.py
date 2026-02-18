@@ -61,9 +61,9 @@ class ReplicationTranslator:
 def custom_replication_assets(
     *,
     replication_project: ReplicationProject,
-    name: Optional[str] = None,
-    group_name: Optional[str] = None,
-    translator: Optional[ReplicationTranslator] = None,
+    name: str | None = None,
+    group_name: str | None = None,
+    translator: ReplicationTranslator | None = None,
 ) -> Callable[[Callable[..., Any]], dg.AssetsDefinition]:
     project = replication_project.load()
 

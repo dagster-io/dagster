@@ -29,7 +29,6 @@ from typing import (  # noqa: UP035
     Final,
     Generic,
     NamedTuple,
-    Optional,
     TypeAlias,
     Union,
     cast,
@@ -156,14 +155,14 @@ class WhitelistMap(NamedTuple):
         name: str,
         object_class: type,
         serializer_class: type["ObjectSerializer"],
-        storage_name: Optional[str] = None,
-        old_storage_names: Optional[AbstractSet[str]] = None,
-        storage_field_names: Optional[Mapping[str, str]] = None,
-        old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
-        skip_when_empty_fields: Optional[AbstractSet[str]] = None,
-        skip_when_none_fields: Optional[AbstractSet[str]] = None,
-        field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
-        kwargs_fields: Optional[AbstractSet[str]] = None,
+        storage_name: str | None = None,
+        old_storage_names: AbstractSet[str] | None = None,
+        storage_field_names: Mapping[str, str] | None = None,
+        old_fields: Mapping[str, JsonSerializableValue] | None = None,
+        skip_when_empty_fields: AbstractSet[str] | None = None,
+        skip_when_none_fields: AbstractSet[str] | None = None,
+        field_serializers: Mapping[str, type["FieldSerializer"]] | None = None,
+        kwargs_fields: AbstractSet[str] | None = None,
     ):
         """Register a model class in the whitelist map.
 
@@ -204,9 +203,9 @@ class WhitelistMap(NamedTuple):
         self,
         name: str,
         enum_class: type[Enum],
-        serializer_class: Optional[type["EnumSerializer"]] = None,
-        storage_name: Optional[str] = None,
-        old_storage_names: Optional[AbstractSet[str]] = None,
+        serializer_class: type["EnumSerializer"] | None = None,
+        storage_name: str | None = None,
+        old_storage_names: AbstractSet[str] | None = None,
     ) -> None:
         serializer_class = serializer_class or EnumSerializer
         serializer = serializer_class(
@@ -246,30 +245,30 @@ def whitelist_for_serdes(__cls: T_Type) -> T_Type: ...
 def whitelist_for_serdes(
     __cls: None = None,
     *,
-    serializer: Optional[type["Serializer"]] = ...,
-    storage_name: Optional[str] = ...,
-    old_storage_names: Optional[AbstractSet[str]] = None,
-    storage_field_names: Optional[Mapping[str, str]] = ...,
-    old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
-    skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
-    skip_when_none_fields: Optional[AbstractSet[str]] = ...,
-    field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
-    kwargs_fields: Optional[AbstractSet[str]] = None,
+    serializer: type["Serializer"] | None = ...,
+    storage_name: str | None = ...,
+    old_storage_names: AbstractSet[str] | None = None,
+    storage_field_names: Mapping[str, str] | None = ...,
+    old_fields: Mapping[str, JsonSerializableValue] | None = ...,
+    skip_when_empty_fields: AbstractSet[str] | None = ...,
+    skip_when_none_fields: AbstractSet[str] | None = ...,
+    field_serializers: Mapping[str, type["FieldSerializer"]] | None = None,
+    kwargs_fields: AbstractSet[str] | None = None,
 ) -> Callable[[T_Type], T_Type]: ...
 
 
 def whitelist_for_serdes(
-    __cls: Optional[T_Type] = None,
+    __cls: T_Type | None = None,
     *,
-    serializer: Optional[type["Serializer"]] = None,
-    storage_name: Optional[str] = None,
-    old_storage_names: Optional[AbstractSet[str]] = None,
-    storage_field_names: Optional[Mapping[str, str]] = None,
-    old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
-    skip_when_empty_fields: Optional[AbstractSet[str]] = None,
-    skip_when_none_fields: Optional[AbstractSet[str]] = None,
-    field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
-    kwargs_fields: Optional[AbstractSet[str]] = None,
+    serializer: type["Serializer"] | None = None,
+    storage_name: str | None = None,
+    old_storage_names: AbstractSet[str] | None = None,
+    storage_field_names: Mapping[str, str] | None = None,
+    old_fields: Mapping[str, JsonSerializableValue] | None = None,
+    skip_when_empty_fields: AbstractSet[str] | None = None,
+    skip_when_none_fields: AbstractSet[str] | None = None,
+    field_serializers: Mapping[str, type["FieldSerializer"]] | None = None,
+    kwargs_fields: AbstractSet[str] | None = None,
 ) -> T_Type | Callable[[T_Type], T_Type]:
     """Decorator to whitelist an object (NamedTuple / dataclass / pydantic model) or
     Enum subclass to be serializable. Various arguments can be passed to alter
@@ -356,15 +355,15 @@ def whitelist_for_serdes(
 
 def _whitelist_for_serdes(
     whitelist_map: WhitelistMap,
-    serializer: Optional[type["Serializer"]] = None,
-    storage_name: Optional[str] = None,
-    old_storage_names: Optional[AbstractSet[str]] = None,
-    storage_field_names: Optional[Mapping[str, str]] = None,
-    old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
-    skip_when_empty_fields: Optional[AbstractSet[str]] = None,
-    skip_when_none_fields: Optional[AbstractSet[str]] = None,
-    field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
-    kwargs_fields: Optional[AbstractSet[str]] = None,
+    serializer: type["Serializer"] | None = None,
+    storage_name: str | None = None,
+    old_storage_names: AbstractSet[str] | None = None,
+    storage_field_names: Mapping[str, str] | None = None,
+    old_fields: Mapping[str, JsonSerializableValue] | None = None,
+    skip_when_empty_fields: AbstractSet[str] | None = None,
+    skip_when_none_fields: AbstractSet[str] | None = None,
+    field_serializers: Mapping[str, type["FieldSerializer"]] | None = None,
+    kwargs_fields: AbstractSet[str] | None = None,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
@@ -523,7 +522,7 @@ T_Enum = TypeVar("T_Enum", bound=Enum, default=Enum)
 
 
 class EnumSerializer(Serializer, Generic[T_Enum]):
-    def __init__(self, *, klass: type[T_Enum], storage_name: Optional[str] = None):
+    def __init__(self, *, klass: type[T_Enum], storage_name: str | None = None):
         self.klass = klass
         self.storage_name = storage_name
 
@@ -556,13 +555,13 @@ class ObjectSerializer(Serializer, Generic[T]):
         self,
         *,
         klass: type[T],
-        storage_name: Optional[str] = None,
-        storage_field_names: Optional[Mapping[str, str]] = None,
-        old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
-        skip_when_empty_fields: Optional[AbstractSet[str]] = None,
-        skip_when_none_fields: Optional[AbstractSet[str]] = None,
-        field_serializers: Optional[Mapping[str, "FieldSerializer"]] = None,
-        kwargs_fields: Optional[AbstractSet[str]] = None,
+        storage_name: str | None = None,
+        storage_field_names: Mapping[str, str] | None = None,
+        old_fields: Mapping[str, JsonSerializableValue] | None = None,
+        skip_when_empty_fields: AbstractSet[str] | None = None,
+        skip_when_none_fields: AbstractSet[str] | None = None,
+        field_serializers: Mapping[str, "FieldSerializer"] | None = None,
+        kwargs_fields: AbstractSet[str] | None = None,
     ):
         self.klass = klass
         self.storage_name = storage_name
@@ -803,16 +802,16 @@ class FieldSerializer(Serializer):
 
 class SetToSequenceFieldSerializer(FieldSerializer):
     def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, sequence_value: Optional[Sequence[Any]], **_kwargs
-    ) -> Optional[AbstractSet[Any]]:
+        self, sequence_value: Sequence[Any] | None, **_kwargs
+    ) -> AbstractSet[Any] | None:
         return set(sequence_value) if sequence_value is not None else None
 
     def pack(
         self,
-        set_value: Optional[AbstractSet[Any]],
+        set_value: AbstractSet[Any] | None,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> Optional[Sequence[Any]]:
+    ) -> Sequence[Any] | None:
         return (
             sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
             if set_value is not None
@@ -847,7 +846,7 @@ def serialize_value(
 def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
-    descent_path: Optional[str] = ...,
+    descent_path: str | None = ...,
 ) -> T_Scalar: ...
 
 
@@ -863,7 +862,7 @@ def pack_value(
         Enum,
     ],
     whitelist_map: WhitelistMap = ...,
-    descent_path: Optional[str] = ...,
+    descent_path: str | None = ...,
 ) -> Mapping[str, JsonSerializableValue]: ...
 
 
@@ -871,7 +870,7 @@ def pack_value(
 def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
-    descent_path: Optional[str] = ...,
+    descent_path: str | None = ...,
 ) -> Sequence[JsonSerializableValue]: ...
 
 
@@ -879,14 +878,14 @@ def pack_value(
 def pack_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = ...,
-    descent_path: Optional[str] = ...,
+    descent_path: str | None = ...,
 ) -> JsonSerializableValue: ...
 
 
 def pack_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    descent_path: Optional[str] = None,
+    descent_path: str | None = None,
 ) -> JsonSerializableValue:
     """Convert an object into a json serializable complex of dicts, lists, and scalars.
 
@@ -1128,9 +1127,9 @@ def deserialize_value(
 
 def deserialize_value(
     val: str,
-    as_type: Optional[
-        type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]
-    ] = None,
+    as_type: type[T_PackableValue]
+    | tuple[type[T_PackableValue], type[U_PackableValue]]
+    | None = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> PackableValue | T_PackableValue | T_PackableValue | U_PackableValue:
     """Deserialize a json encoded string to a Python object.
@@ -1164,16 +1163,16 @@ def deserialize_values(
 @overload
 def deserialize_values(
     vals: Iterable[str],
-    as_type: Optional[type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]],
+    as_type: type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]] | None,
     whitelist_map: WhitelistMap = ...,
 ) -> Sequence[PackableValue | T_PackableValue | T_PackableValue | U_PackableValue]: ...
 
 
 def deserialize_values(
     vals: Iterable[str],
-    as_type: Optional[
-        type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]
-    ] = None,
+    as_type: type[T_PackableValue]
+    | tuple[type[T_PackableValue], type[U_PackableValue]]
+    | None = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> Sequence[PackableValue | T_PackableValue | T_PackableValue | U_PackableValue]:
     """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
@@ -1283,9 +1282,9 @@ def unpack_value(
 
 def unpack_value(
     val: JsonSerializableValue,
-    as_type: Optional[
-        type[T_PackableValue] | tuple[type[T_PackableValue], type[U_PackableValue]]
-    ] = None,
+    as_type: type[T_PackableValue]
+    | tuple[type[T_PackableValue], type[U_PackableValue]]
+    | None = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> PackableValue | T_PackableValue | T_PackableValue | U_PackableValue:
     """Convert a JSON-serializable complex of dicts, lists, and scalars into domain objects.
@@ -1337,7 +1336,7 @@ def inner_unpack_value(
 
 def _check_serdes_tuple_class_invariants(
     klass: type[NamedTuple],
-    kwargs_fields: Optional[AbstractSet[str]],
+    kwargs_fields: AbstractSet[str] | None,
 ) -> None:
     # can skip validation on @record generated new
     if has_generated_new(klass):

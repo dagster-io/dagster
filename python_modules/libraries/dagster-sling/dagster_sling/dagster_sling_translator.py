@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, MetadataValue
 from dagster._annotations import public, superseded
@@ -289,7 +289,7 @@ class DagsterSlingTranslator:
         additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).description` instead.",
     )
     @public
-    def get_description(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
+    def get_description(self, stream_definition: Mapping[str, Any]) -> str | None:
         """Retrieves the description for a given stream definition.
 
         This method checks the provided stream definition for a description. It first looks
@@ -305,7 +305,7 @@ class DagsterSlingTranslator:
         """
         return self._default_description_fn(stream_definition)
 
-    def _default_description_fn(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
+    def _default_description_fn(self, stream_definition: Mapping[str, Any]) -> str | None:
         """Retrieves the description for a given stream definition.
 
         This method checks the provided stream definition for a description. It first looks
@@ -430,7 +430,7 @@ class DagsterSlingTranslator:
         additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).group_name` instead.",
     )
     @public
-    def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
+    def get_group_name(self, stream_definition: Mapping[str, Any]) -> str | None:
         """Retrieves the group name for a given stream definition.
 
         This method checks the provided stream definition for a group name in the metadata
@@ -445,7 +445,7 @@ class DagsterSlingTranslator:
         """
         return self._default_group_name_fn(stream_definition)
 
-    def _default_group_name_fn(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
+    def _default_group_name_fn(self, stream_definition: Mapping[str, Any]) -> str | None:
         """Retrieves the group name for a given stream definition.
 
         This method checks the provided stream definition for a group name in the metadata
@@ -468,7 +468,7 @@ class DagsterSlingTranslator:
     @public
     def get_auto_materialize_policy(
         self, stream_definition: Mapping[str, Any]
-    ) -> Optional[AutoMaterializePolicy]:
+    ) -> AutoMaterializePolicy | None:
         """Defines the auto-materialize policy for a given stream definition.
 
         This method checks the provided stream definition for a specific configuration
@@ -487,7 +487,7 @@ class DagsterSlingTranslator:
 
     def _default_auto_materialize_policy_fn(
         self, stream_definition: Mapping[str, Any]
-    ) -> Optional[AutoMaterializePolicy]:
+    ) -> AutoMaterializePolicy | None:
         """Defines the auto-materialize policy for a given stream definition.
 
         This method checks the provided stream definition for a specific configuration

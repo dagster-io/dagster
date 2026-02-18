@@ -72,7 +72,7 @@ def mock_graphql_server(httpserver: HTTPServer) -> str:
 def mock_gql_mutation(
     mutation: str,
     json_data: dict[str, Any],
-    expected_variables: Optional[dict[str, Any]] = None,
+    expected_variables: dict[str, Any] | None = None,
 ) -> None:
     def match(request: Request) -> bool:
         json_body = request.json or {}

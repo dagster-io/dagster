@@ -140,7 +140,7 @@ class TableauWorkspaceData:
     # Cache workspace data selection for a specific workbook_selector_fn
     @cached_method
     def to_workspace_data_selection(
-        self, workbook_selector_fn: Optional[WorkbookSelectorFn]
+        self, workbook_selector_fn: WorkbookSelectorFn | None
     ) -> "TableauWorkspaceData":
         if not workbook_selector_fn:
             return self
@@ -187,7 +187,7 @@ class TableauWorkspaceData:
 
 
 class TableauTagSet(NamespacedTagSet):
-    asset_type: Optional[Literal["dashboard", "data_source", "sheet"]] = None
+    asset_type: Literal["dashboard", "data_source", "sheet"] | None = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -195,7 +195,7 @@ class TableauTagSet(NamespacedTagSet):
 
 
 class TableauMetadataSet(NamespacedMetadataSet):
-    id: Optional[str] = None
+    id: str | None = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -211,7 +211,7 @@ class TableauViewMetadataSet(TableauMetadataSet):
 class TableauDataSourceMetadataSet(TableauMetadataSet):
     has_extracts: bool = False
     is_published: bool
-    workbook_id: Optional[str] = None
+    workbook_id: str | None = None
 
 
 class DagsterTableauTranslator:

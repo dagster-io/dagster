@@ -2,7 +2,7 @@ import os
 import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, nullcontext
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -150,7 +150,7 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
 )
 def test_translation(
     attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
+    assertion: Callable[[AssetSpec], bool] | None,
     should_error: bool,
     sigma_sample_data: Any,
     sigma_auth_token: str,

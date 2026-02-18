@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import click
 import typer
@@ -41,7 +41,7 @@ def augment_error_path(error_details: "ValidationError") -> Sequence[str | int]:
 
 
 def error_dict_to_formatted_error(
-    key: Optional[EnvRegistryKey],
+    key: EnvRegistryKey | None,
     error_details: "ValidationError",
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),

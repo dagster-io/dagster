@@ -7,7 +7,7 @@ from abc import abstractmethod
 from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import requests
 from dagster import (
@@ -38,7 +38,7 @@ AIRBYTE_REFRESH_TIMEDELTA_SECONDS = 150
 
 class AirbyteResourceState:
     def __init__(self) -> None:
-        self.request_cache: dict[str, Optional[Mapping[str, object]]] = {}
+        self.request_cache: dict[str, Mapping[str, object] | None] = {}
         # Int in case we nest contexts
         self.cache_enabled = 0
 
@@ -95,10 +95,10 @@ class BaseAirbyteResource(ConfigurableResource):
     def make_request(
         self,
         endpoint: str,
-        data: Optional[Mapping[str, object]] = None,
+        data: Mapping[str, object] | None = None,
         method: str = "POST",
         include_additional_request_params: bool = True,
-    ) -> Optional[Mapping[str, object]]:
+    ) -> Mapping[str, object] | None:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
 
         Args:
@@ -169,8 +169,8 @@ class BaseAirbyteResource(ConfigurableResource):
     def sync_and_poll(
         self,
         connection_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
 
@@ -293,8 +293,8 @@ class AirbyteResource(BaseAirbyteResource):
 
     host: str = Field(description="The Airbyte server address.")
     port: str = Field(description="Port used for the Airbyte server.")
-    username: Optional[str] = Field(default=None, description="Username if using basic auth.")
-    password: Optional[str] = Field(default=None, description="Password if using basic auth.")
+    username: str | None = Field(default=None, description="Username if using basic auth.")
+    password: str | None = Field(default=None, description="Password if using basic auth.")
     use_https: bool = Field(
         default=False, description="Whether to use HTTPS to connect to the Airbyte server."
     )
@@ -350,7 +350,7 @@ class AirbyteResource(BaseAirbyteResource):
     def clear_request_cache(self) -> None:
         self._state.request_cache = {}
 
-    def make_request_cached(self, endpoint: str, data: Optional[Mapping[str, object]]):
+    def make_request_cached(self, endpoint: str, data: Mapping[str, object] | None):
         if not self._state.cache_enabled > 0:
             return self.make_request(endpoint, data)
         data_json = json.dumps(data, sort_keys=True)
@@ -371,8 +371,8 @@ class AirbyteResource(BaseAirbyteResource):
         return {**auth_param, **self.request_additional_params}
 
     def make_request(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, endpoint: str, data: Optional[Mapping[str, object]]
-    ) -> Optional[Mapping[str, object]]:
+        self, endpoint: str, data: Mapping[str, object] | None
+    ) -> Mapping[str, object] | None:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
 
         Args:
@@ -430,7 +430,7 @@ class AirbyteResource(BaseAirbyteResource):
         )
         return workspaces[0]["workspaceId"]
 
-    def get_source_definition_by_name(self, name: str) -> Optional[str]:
+    def get_source_definition_by_name(self, name: str) -> str | None:
         name_lower = name.lower()
         definitions = check.not_none(
             self.make_request_cached(endpoint="/source_definitions/list", data={})
@@ -552,8 +552,8 @@ class AirbyteResource(BaseAirbyteResource):
     def sync_and_poll(
         self,
         connection_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
 
@@ -674,8 +674,8 @@ class AirbyteCloudResource(BaseAirbyteResource):
     client_id: str = Field(..., description="The Airbyte Cloud client ID.")
     client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
 
-    _access_token_value: Optional[str] = PrivateAttr(default=None)
-    _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
+    _access_token_value: str | None = PrivateAttr(default=None)
+    _access_token_timestamp: float | None = PrivateAttr(default=None)
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         # Refresh access token when the resource is initialized
@@ -700,10 +700,10 @@ class AirbyteCloudResource(BaseAirbyteResource):
     def make_request(
         self,
         endpoint: str,
-        data: Optional[Mapping[str, object]] = None,
+        data: Mapping[str, object] | None = None,
         method: str = "POST",
         include_additional_request_params: bool = True,
-    ) -> Optional[Mapping[str, object]]:
+    ) -> Mapping[str, object] | None:
         # Make sure the access token is refreshed before using it when calling the API.
         if include_additional_request_params and self._needs_refreshed_access_token():
             self._refresh_access_token()

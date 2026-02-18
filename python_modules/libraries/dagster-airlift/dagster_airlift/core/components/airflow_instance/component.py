@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from dagster import ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
@@ -59,12 +59,12 @@ class ResolvedAirflowBasicAuthBackend(Resolvable):
 class ResolvedAirflowMwaaAuthBackend(Resolvable):
     type: Literal["mwaa"]
     env_name: str
-    region_name: Optional[str] = None
-    profile_name: Optional[str] = None
-    aws_account_id: Optional[str] = None
-    aws_access_key_id: Optional[str] = None
-    aws_secret_access_key: Optional[str] = None
-    aws_session_token: Optional[str] = None
+    region_name: str | None = None
+    profile_name: str | None = None
+    aws_account_id: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_session_token: str | None = None
 
 
 @dataclass
@@ -97,10 +97,10 @@ ResolvedMappedAsset: TypeAlias = Annotated[
 
 @dataclass
 class AirflowFilterParams(Resolvable):
-    dag_id_ilike: Optional[str] = None
-    airflow_tags: Optional[Sequence[str]] = None
+    dag_id_ilike: str | None = None
+    airflow_tags: Sequence[str] | None = None
     retrieve_datasets: bool = True
-    dataset_uri_ilike: Optional[str] = None
+    dataset_uri_ilike: str | None = None
 
 
 def resolve_airflow_filter(context: ResolutionContext, model) -> AirflowFilter:
@@ -125,8 +125,8 @@ class AirflowTaskMapping(Resolvable):
 @dataclass
 class AirflowDagMapping(Resolvable):
     dag_id: str
-    assets: Optional[Sequence[ResolvedMappedAsset]] = None
-    task_mappings: Optional[Sequence[AirflowTaskMapping]] = None
+    assets: Sequence[ResolvedMappedAsset] | None = None
+    task_mappings: Sequence[AirflowTaskMapping] | None = None
 
 
 class AirflowInstanceScaffolderParams(BaseModel):
@@ -233,9 +233,9 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
 
     auth: ResolvedAirflowAuthBackend
     name: str
-    filter: Optional[ResolvedAirflowFilter] = None
-    mappings: Optional[Sequence[AirflowDagMapping]] = None
-    source_code_retrieval_enabled: Optional[bool] = None
+    filter: ResolvedAirflowFilter | None = None
+    mappings: Sequence[AirflowDagMapping] | None = None
+    source_code_retrieval_enabled: bool | None = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -264,7 +264,7 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
         state_path.write_text(serialize_value(state))
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> Definitions:
         if state_path is None:
             return Definitions()
@@ -311,7 +311,7 @@ def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
 
 
 def handle_iterator(
-    mappings: Optional[Sequence[AirflowDagMapping]],
+    mappings: Sequence[AirflowDagMapping] | None,
 ) -> Iterator[tuple[TaskHandle | DagHandle, Sequence[ResolvedMappedAsset]]]:
     if mappings is None:
         return

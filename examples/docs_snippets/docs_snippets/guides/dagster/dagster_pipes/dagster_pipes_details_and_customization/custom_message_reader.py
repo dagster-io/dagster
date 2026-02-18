@@ -18,7 +18,7 @@ class MyCustomCloudServiceMessageReader(PipesBlobStoreMessageReader):
         key_prefix = "".join(random.choices(string.ascii_letters, k=30))  # pyright: ignore[reportFunctionMemberAccess]
         yield {"key_prefix": key_prefix}
 
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         message_path = os.path.join(params["path"], f"{index}.json")
         raw_message = cloud_service.read(message_path)
         return raw_message

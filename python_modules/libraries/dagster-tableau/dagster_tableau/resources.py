@@ -166,7 +166,7 @@ class BaseTableauClient:
 
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
-        self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
+        self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Sequence[str] | None
     ) -> Iterator[AssetObservation | Output]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
         refreshed_workbook_ids = set()
@@ -184,9 +184,9 @@ class BaseTableauClient:
     def refresh_and_poll_workbook(
         self,
         workbook_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[str]:
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
+    ) -> str | None:
         job = self.refresh_workbook(workbook_id)
         self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
 
@@ -195,7 +195,7 @@ class BaseTableauClient:
 
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
-        self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
+        self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Sequence[str] | None
     ) -> Iterator[AssetObservation | Output]:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
@@ -245,9 +245,9 @@ class BaseTableauClient:
     def refresh_and_poll_data_source(
         self,
         data_source_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[str]:
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
+    ) -> str | None:
         job = self.refresh_data_source(data_source_id)
         self._log.info(f"Job {job.id} initialized for data_source_id={data_source_id}.")
 
@@ -257,8 +257,8 @@ class BaseTableauClient:
     def refresh_and_poll_data_sources(
         self,
         data_source_ids: Sequence[str],
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> Iterator[str]:
         """Refreshes multiple data sources and yields their IDs as they complete.
 
@@ -287,8 +287,8 @@ class BaseTableauClient:
     def poll_jobs(
         self,
         job_ids: Sequence[str],
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> Iterator[TSC.JobItem]:
         """Polls multiple jobs and yields them as they complete.
 
@@ -354,8 +354,8 @@ class BaseTableauClient:
     def poll_job(
         self,
         job_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> TSC.JobItem:
         """Polls a single job until it completes.
 
@@ -375,10 +375,10 @@ class BaseTableauClient:
     def add_data_quality_warning_to_data_source(
         self,
         data_source_id: str,
-        warning_type: Optional[TSC.DQWItem.WarningType] = None,
-        message: Optional[str] = None,
-        active: Optional[bool] = None,
-        severe: Optional[bool] = None,
+        warning_type: TSC.DQWItem.WarningType | None = None,
+        message: str | None = None,
+        active: bool | None = None,
+        severe: bool | None = None,
     ) -> Sequence[TSC.DQWItem]:
         """Add a data quality warning to a data source.
 
@@ -578,7 +578,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
 
-    _client: Optional[TableauCloudClient | TableauServerClient] = PrivateAttr(default=None)
+    _client: TableauCloudClient | TableauServerClient | None = PrivateAttr(default=None)
 
     @property
     @cached_method
@@ -818,8 +818,8 @@ class BaseTableauWorkspace(ConfigurableResource):
     @cached_method
     def load_asset_specs(
         self,
-        dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
-        workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+        dagster_tableau_translator: DagsterTableauTranslator | None = None,
+        workbook_selector_fn: WorkbookSelectorFn | None = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -918,8 +918,8 @@ class BaseTableauWorkspace(ConfigurableResource):
 @beta_param(param="workbook_selector_fn")
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
-    workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+    dagster_tableau_translator: DagsterTableauTranslator | None = None,
+    workbook_selector_fn: WorkbookSelectorFn | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -983,7 +983,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[TableauWorkspaceData]):
     workspace: BaseTableauWorkspace
     translator: DagsterTableauTranslator
-    workbook_selector_fn: Optional[WorkbookSelectorFn] = None
+    workbook_selector_fn: WorkbookSelectorFn | None = None
 
     @property
     def defs_key(self) -> str:

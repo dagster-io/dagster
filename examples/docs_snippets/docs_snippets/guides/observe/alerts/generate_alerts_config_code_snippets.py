@@ -19,7 +19,7 @@ class AlertType(NamedTuple):
     condition_description: str
     alert_name: str
     event_types: Sequence[str]
-    config_snippet: Optional[Mapping[str, Any]]
+    config_snippet: Mapping[str, Any] | None
 
 
 NOTIFICATION_SERVICES = sorted(

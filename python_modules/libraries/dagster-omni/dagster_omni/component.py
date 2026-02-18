@@ -1,7 +1,6 @@
 import itertools
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -44,7 +43,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     workspace: OmniWorkspace = Field(
         description="Defines configuration for interacting with an Omni instance.",
     )
-    translation: Optional[ResolvedOmniTranslationFn] = Field(
+    translation: ResolvedOmniTranslationFn | None = Field(
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
@@ -65,7 +64,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
     def _get_default_omni_spec(
         self, context: dg.ComponentLoadContext, data: OmniTranslatorData, workspace: OmniWorkspace
-    ) -> Optional[dg.AssetSpec]:
+    ) -> dg.AssetSpec | None:
         """Core function for converting an Omni document into an AssetSpec object."""
         if isinstance(data.obj, OmniDocument):
             doc = data.obj
@@ -99,7 +98,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     @public
     def get_asset_spec(
         self, context: dg.ComponentLoadContext, data: OmniTranslatorData
-    ) -> Optional[dg.AssetSpec]:
+    ) -> dg.AssetSpec | None:
         """Generates an AssetSpec for a given Omni document.
 
         This method can be overridden in a subclass to customize how Omni documents
@@ -177,7 +176,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return dg.Definitions(assets=self._build_asset_specs(context, workspace_data))
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

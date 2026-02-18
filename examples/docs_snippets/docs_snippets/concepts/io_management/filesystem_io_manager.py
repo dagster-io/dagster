@@ -29,7 +29,7 @@ from dagster import ConfigurableIOManagerFactory, EnvVar
 
 
 class LocalPandasParquetIOManager(ConfigurableIOManagerFactory):
-    base_path: Optional[str] = None
+    base_path: str | None = None
 
     def create_io_manager(self, context) -> PandasParquetIOManager:
         base_path = UPath(self.base_path or context.instance.storage_directory())

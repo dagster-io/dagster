@@ -144,7 +144,6 @@ exclude = ["*.ipynb"]
 # (pyupgrade) Phased rollout of UP045 (non-pep604-annotation). Remove entries as each
 # group is migrated. See: https://github.com/dagster-io/internal/issues/20346
 "python_modules/libraries/**" = ["UP045"]
-"{.buildkite,docs,examples,helm,integration_tests,scripts}/**" = ["UP045"]
 
 [tool.ruff.format]
 exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]

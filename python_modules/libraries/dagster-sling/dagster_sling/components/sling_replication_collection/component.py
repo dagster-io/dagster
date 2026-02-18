@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from dagster import Resolvable, Resolver
 from dagster._annotations import public
@@ -42,15 +42,16 @@ SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 @dataclass
 class SlingReplicationSpecModel(Resolvable):
     path: str
-    op: Optional[OpSpec] = None
-    translation: Optional[
+    op: OpSpec | None = None
+    translation: (
         Annotated[
             TranslationFn[Mapping[str, Any]],
             TranslationFnResolver(
                 template_vars_for_translation_fn=lambda data: {"stream_definition": data}
             ),
         ]
-    ] = None
+        | None
+    ) = None
     include_metadata: Annotated[
         list[SlingMetadataAddons],
         Resolver.default(
@@ -72,7 +73,7 @@ class SlingConnectionResourcePropertiesModel(Resolvable, BaseModel):
     type: str = Field(
         description="Type of the source connection, must match the Sling connection types. Use 'file' for local storage."
     )
-    connection_string: Optional[str] = Field(
+    connection_string: str | None = Field(
         description="The optional connection string for the source database, if not using keyword arguments.",
         default=None,
     )
@@ -104,7 +105,7 @@ ResolvedSlingConnections: TypeAlias = Annotated[
 def resolve_resource(
     context: ResolutionContext,
     sling,
-) -> Optional[SlingResource]:
+) -> SlingResource | None:
     if sling:
         deprecation_warning(
             "The `sling` field is deprecated, use `connections` instead. This field will be removed in a future release.",
@@ -130,7 +131,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     connections: ResolvedSlingConnections = field(default_factory=list)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
     resource: Annotated[
-        Optional[SlingResource],
+        SlingResource | None,
         Resolver(resolve_resource, model_field_name="sling"),
     ] = None
 

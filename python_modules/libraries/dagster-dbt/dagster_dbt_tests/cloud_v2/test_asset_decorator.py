@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -64,7 +64,7 @@ class MyCustomTranslatorWithGroupName(DagsterDbtTranslator):
         self,
         manifest: Mapping[str, Any],
         unique_id: str,
-        project: Optional[DbtProject],
+        project: DbtProject | None,
     ) -> AssetSpec:
         default_spec = super().get_asset_spec(
             manifest=manifest, unique_id=unique_id, project=project
@@ -250,9 +250,9 @@ def test_selections(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     context_type: type[AssetExecutionContext] | type[OpExecutionContext],
-    select: Optional[str],
-    exclude: Optional[str],
-    selector: Optional[str],
+    select: str | None,
+    exclude: str | None,
+    selector: str | None,
     expected_dbt_resource_names: set[str],
 ) -> None:
     select = select or "fqn:*"

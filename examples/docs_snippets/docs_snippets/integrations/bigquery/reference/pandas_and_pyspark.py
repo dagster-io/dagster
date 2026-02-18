@@ -36,7 +36,7 @@ class MyBigQueryIOManager(BigQueryIOManager):
         return [BigQueryPandasTypeHandler(), BigQueryPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         """If an asset is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
 

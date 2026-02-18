@@ -7,7 +7,7 @@ import time
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import click
 from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
@@ -62,7 +62,7 @@ def utils_group():
     """Assorted utility commands."""
 
 
-def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path] = None) -> Path:
+def _generate_component_schema(dg_context: DgContext, output_path: Path | None = None) -> Path:
     schema_path = output_path
     if not schema_path:
         schema_folder = dg_context.root_path / DEFAULT_SCHEMA_FOLDER_NAME
@@ -79,7 +79,7 @@ def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path
 @cli_telemetry_wrapper
 @click.option("--output-path", type=click.Path(exists=False, file_okay=True, dir_okay=False))
 def generate_component_schema(
-    output_path: Optional[str],
+    output_path: str | None,
     **global_options: object,
 ) -> None:
     """Generates a JSON schema for the component types installed in the current project."""
@@ -337,7 +337,7 @@ def create_temp_workspace_file(
 
 
 def _dagster_cloud_entry_for_project(
-    dg_context: DgContext, workspace_context: Optional[DgContext]
+    dg_context: DgContext, workspace_context: DgContext | None
 ) -> dict[str, Any]:
     merged_build_config: DgRawBuildConfig = merge_build_configs(
         workspace_context.build_config if workspace_context else None,
@@ -444,7 +444,7 @@ async def _refresh_defs_state_with_live_display(
     project_path: Path,
     instance: "DagsterInstance",
     management_types: set["DefsStateManagementType"],
-    defs_state_keys: Optional[set[str]] = None,
+    defs_state_keys: set[str] | None = None,
 ) -> None:
     defs_state_storage = check.not_none(instance.defs_state_storage)
     refresh_task, statuses = get_updated_defs_state_info_task_and_statuses(
@@ -507,7 +507,7 @@ def refresh_defs_state(
     target_path: Path,
     defs_state_key: tuple[str, ...],
     management_type: tuple[str, ...],
-    instance_ref: Optional[str],
+    instance_ref: str | None,
     **other_opts: object,
 ) -> None:
     """Refresh the defs state for the current project."""

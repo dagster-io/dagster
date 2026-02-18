@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import yaml
@@ -26,17 +26,17 @@ def git_repo_root():
 class HelmTemplate:
     helm_dir_path: str
     subchart_paths: list[str]
-    output: Optional[str] = None
-    model: Optional[Any] = None
+    output: str | None = None
+    model: Any | None = None
     release_name: str = "release-name"
     api_client: ApiClient = ApiClient()  # noqa: RUF009
     namespace: str = "default"
 
     def render(
         self,
-        values: Optional[DagsterHelmValues | DagsterUserDeploymentsHelmValues] = None,
-        values_dict: Optional[dict[str, Any]] = None,
-        chart_version: Optional[str] = None,
+        values: DagsterHelmValues | DagsterUserDeploymentsHelmValues | None = None,
+        values_dict: dict[str, Any] | None = None,
+        chart_version: str | None = None,
     ) -> list[Any]:
         check.invariant(
             (values is None) != (values_dict is None), "Must provide either values or values_dict"
@@ -97,7 +97,7 @@ class HelmTemplate:
             return k8s_objects
 
     @contextmanager
-    def _with_chart_yaml(self, helm_dir_path: str, chart_version: Optional[str]):
+    def _with_chart_yaml(self, helm_dir_path: str, chart_version: str | None):
         if not chart_version:
             yield
         else:

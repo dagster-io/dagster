@@ -4,7 +4,7 @@ import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import click
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
@@ -51,7 +51,7 @@ def _get_snapshot_base_deployment_conditions():
     return SnapshotBaseDeploymentCondition
 
 
-def _get_organization(input_organization: Optional[str], plus_config: DagsterPlusCliConfig) -> str:
+def _get_organization(input_organization: str | None, plus_config: DagsterPlusCliConfig) -> str:
     organization = input_organization or plus_config.organization
     if not organization:
         raise click.UsageError(
@@ -61,7 +61,7 @@ def _get_organization(input_organization: Optional[str], plus_config: DagsterPlu
     return organization
 
 
-def _get_deployment(input_deployment: Optional[str], plus_config: DagsterPlusCliConfig) -> str:
+def _get_deployment(input_deployment: str | None, plus_config: DagsterPlusCliConfig) -> str:
     deployment = input_deployment or plus_config.default_deployment
     if not deployment:
         raise click.UsageError(
@@ -194,21 +194,21 @@ pex_build_method_option_group = make_option_group(
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_group(
-    organization: Optional[str],
-    deployment: Optional[str],
+    organization: str | None,
+    deployment: str | None,
     build_strategy: str,
     pex_build_method: str,
-    python_version: Optional[str],
+    python_version: str | None,
     agent_type_str: str,
-    deployment_type_str: Optional[str],
-    git_url: Optional[str],
-    commit_hash: Optional[str],
-    use_editable_dagster: Optional[str],
+    deployment_type_str: str | None,
+    git_url: str | None,
+    commit_hash: str | None,
+    use_editable_dagster: str | None,
     skip_confirmation_prompt: bool,
     location_names: tuple[str],
     target_path: Path,
-    status_url: Optional[str],
-    snapshot_base_condition_str: Optional[str],
+    status_url: str | None,
+    snapshot_base_condition_str: str | None,
     skip_validation: bool,
     **global_options: object,
 ) -> None:
@@ -356,16 +356,16 @@ def _validate_location_names(
 @dg_global_options
 @cli_telemetry_wrapper
 def start_deploy_session_command(
-    organization: Optional[str],
-    deployment: Optional[str],
-    deployment_type_str: Optional[str],
+    organization: str | None,
+    deployment: str | None,
+    deployment_type_str: str | None,
     skip_confirmation_prompt: bool,
-    git_url: Optional[str],
-    commit_hash: Optional[str],
+    git_url: str | None,
+    commit_hash: str | None,
     location_names: tuple[str],
     target_path: Path,
-    status_url: Optional[str],
-    snapshot_base_condition_str: Optional[str],
+    status_url: str | None,
+    snapshot_base_condition_str: str | None,
     skip_validation: bool,
     **global_options: object,
 ) -> None:
@@ -445,8 +445,8 @@ def build_and_push_command(
     agent_type_str: str,
     build_strategy: str,
     pex_build_method: str,
-    python_version: Optional[str],
-    use_editable_dagster: Optional[str],
+    python_version: str | None,
+    use_editable_dagster: str | None,
     location_names: tuple[str],
     target_path: Path,
     **global_options: object,

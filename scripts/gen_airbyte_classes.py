@@ -9,7 +9,7 @@ import textwrap
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import click
 import dagster._check as check
@@ -58,15 +58,15 @@ class SchemaType(ABC):
     the Python code to annotate that type or check it at runtime.
     """
 
-    description: Optional[str] = None
+    description: str | None = None
 
     @abstractmethod
-    def get_check(self, name: str, scope: Optional[str] = None) -> str:
+    def get_check(self, name: str, scope: str | None = None) -> str:
         """Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')."""
 
     @abstractmethod
     def annotation(
-        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
+        self, scope: str | None = None, quote: bool = False, hide_default: bool = False
     ) -> str:
         """Returns the Python type annotation for this type, e.g. str or Union[str, int]."""
 
@@ -80,7 +80,7 @@ class SchemaType(ABC):
             return
         self.description = description.replace("\n", " ")
 
-    def get_doc_desc(self, name: str, scope: Optional[str] = None) -> Optional[str]:
+    def get_doc_desc(self, name: str, scope: str | None = None) -> str | None:
         if not self.description:
             return None
         formatted_desc = (
@@ -97,7 +97,7 @@ class SchemaType(ABC):
 
 
 class RawType(SchemaType):
-    def __init__(self, schema_type_str: str, const_value: Optional[Any] = None):
+    def __init__(self, schema_type_str: str, const_value: Any | None = None):
         if schema_type_str in TYPE_MAPPING:
             self.type_str = TYPE_MAPPING[schema_type_str]
         else:
@@ -111,9 +111,7 @@ class RawType(SchemaType):
     def const_value(self):
         return self._const_value
 
-    def annotation(
-        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
+    def annotation(self, scope: str | None = None, quote: bool = False, hide_default: bool = False):
         if self.type_str in CHECK_MAPPING:
             return self.type_str
         scope = f"{scope}." if scope else ""
@@ -122,7 +120,7 @@ class RawType(SchemaType):
             return f'"{scope}{self.type_str}"'
         return f"{scope}{self.type_str}"
 
-    def get_check(self, name: str, scope: Optional[str] = None):
+    def get_check(self, name: str, scope: str | None = None):
         if self.type_str in CHECK_MAPPING:
             return CHECK_MAPPING[self.type_str].format(name, name)
         scope = f"{scope}." if scope else ""
@@ -136,12 +134,10 @@ class ListType(SchemaType):
     def __str__(self):
         return f"List[{self.inner}]"
 
-    def annotation(
-        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
+    def annotation(self, scope: str | None = None, quote: bool = False, hide_default: bool = False):
         return f"List[{self.inner.annotation(scope, quote, hide_default)}]"
 
-    def get_check(self, name: str, scope: Optional[str] = None):
+    def get_check(self, name: str, scope: str | None = None):
         return f"check.list_param({name}, '{name}', {self.inner.annotation(scope)})"
 
 
@@ -152,12 +148,10 @@ class OptType(SchemaType):
     def __str__(self):
         return f"Optional[{self.inner}]"
 
-    def annotation(
-        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
+    def annotation(self, scope: str | None = None, quote: bool = False, hide_default: bool = False):
         return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
 
-    def get_check(self, name: str, scope: Optional[str] = None):
+    def get_check(self, name: str, scope: str | None = None):
         inner_check = self.inner.get_check(name, scope)
 
         # For ListType, we want to make sure that the value does not default to an empty list
@@ -175,12 +169,10 @@ class UnionType(SchemaType):
     def __str__(self):
         return f"Union[{', '.join([str(x) for x in self.inner])}]"
 
-    def annotation(
-        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
+    def annotation(self, scope: str | None = None, quote: bool = False, hide_default: bool = False):
         return f"Union[{', '.join([x.annotation(scope, quote, hide_default) for x in self.inner])}]"
 
-    def get_check(self, name: str, scope: Optional[str] = None):
+    def get_check(self, name: str, scope: str | None = None):
         scoped_names = [x.annotation(scope) for x in self.inner]
         return "check.inst_param({}, '{}', {})".format(
             name, name, "({})".format(", ".join(scoped_names))
@@ -351,7 +343,7 @@ def create_connector_class_definition(
     connector_name_human_readable: str,
     cls_name: str,
     cls_def: dict[str, SchemaType],
-    nested: Optional[list[str]],
+    nested: list[str] | None,
     is_source: bool,
     docs_url: str,
 ):
@@ -457,7 +449,7 @@ AIRBYTE_REPO_URL = "https://github.com/airbytehq/airbyte.git"
 
 
 @contextmanager
-def airbyte_repo_path(airbyte_repo_root: Optional[str], tag: str):
+def airbyte_repo_path(airbyte_repo_root: str | None, tag: str):
     if airbyte_repo_root:
         os.chdir(airbyte_repo_root)
         subprocess.call(["git", "checkout", f"origin/{tag}"])

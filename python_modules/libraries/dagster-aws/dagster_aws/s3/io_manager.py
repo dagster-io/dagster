@@ -1,6 +1,6 @@
 import io
 import pickle
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     ConfigurableIOManager,
@@ -27,7 +27,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         self,
         s3_bucket: str,
         s3_session: Any,
-        s3_prefix: Optional[str] = None,
+        s3_prefix: str | None = None,
     ):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
         check.opt_str_param(s3_prefix, "s3_prefix")

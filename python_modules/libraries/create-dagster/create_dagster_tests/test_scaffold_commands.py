@@ -3,7 +3,7 @@ import subprocess
 import sys
 import uuid
 from pathlib import Path
-from typing import Literal, Optional, TypeAlias, get_args
+from typing import Literal, TypeAlias, get_args
 
 import create_dagster.version_check
 import dagster_shared.check as check
@@ -51,7 +51,7 @@ from dagster_test.dg_utils.utils import (
     ],
 )
 def test_scaffold_workspace_command_success(
-    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str]
+    monkeypatch, cli_args: tuple[str, ...], input_str: str | None
 ) -> None:
     monkeypatch.setattr("create_dagster.cli.scaffold.is_uv_installed", lambda: True)
 
@@ -136,7 +136,7 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
 def test_scaffold_project_success(
     monkeypatch,
     cli_args: tuple[str, ...],
-    input_str: Optional[str],
+    input_str: str | None,
     opts: dict[str, object],
 ) -> None:
     use_preexisting_venv = check.opt_bool_elem(opts, "use_preexisting_venv") or False

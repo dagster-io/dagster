@@ -1,7 +1,6 @@
 import importlib
 import os
 import tempfile
-from typing import Optional
 
 import airflow
 from airflow.models.connection import Connection
@@ -30,7 +29,7 @@ class AirflowEphemeralDatabase(AirflowDatabase):
     """A ephemeral Airflow database Dagster resource."""
 
     def __init__(
-        self, airflow_home_path: str, dagster_run: DagsterRun, dag_run_config: Optional[dict] = None
+        self, airflow_home_path: str, dagster_run: DagsterRun, dag_run_config: dict | None = None
     ):
         self.airflow_home_path = airflow_home_path
         super().__init__(dagster_run=dagster_run, dag_run_config=dag_run_config)
@@ -76,7 +75,7 @@ class AirflowEphemeralDatabase(AirflowDatabase):
     )
 )
 def make_ephemeral_airflow_db_resource(
-    connections: list[Connection] = [], dag_run_config: Optional[dict] = None
+    connections: list[Connection] = [], dag_run_config: dict | None = None
 ) -> ResourceDefinition:
     """Creates a Dagster resource that provides an ephemeral Airflow database.
 

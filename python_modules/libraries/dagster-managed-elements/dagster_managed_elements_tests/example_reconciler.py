@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster_managed_elements import (
     ManagedElementCheckResult,
     ManagedElementDiff,
@@ -8,7 +6,7 @@ from dagster_managed_elements import (
 
 
 class MyManagedElementReconciler(ManagedElementReconciler):
-    def __init__(self, diff: ManagedElementDiff, apply_diff: Optional[ManagedElementDiff] = None):
+    def __init__(self, diff: ManagedElementDiff, apply_diff: ManagedElementDiff | None = None):
         self._diff = diff
         self._apply_diff = apply_diff or diff
 

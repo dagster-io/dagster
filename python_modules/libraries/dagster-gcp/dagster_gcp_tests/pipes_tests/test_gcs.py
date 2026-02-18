@@ -1,6 +1,5 @@
 import json
 import uuid
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -45,7 +44,7 @@ def test_message_writer(gcs_bucket: str, gcs_client: GCSClient):
     [None, "gcs"],
 )
 def test_complete(
-    gcs_bucket: str, gcs_client: GCSClient, external_script: str, context_loader: Optional[str]
+    gcs_bucket: str, gcs_client: GCSClient, external_script: str, context_loader: str | None
 ):
     @dg.asset
     def my_asset(context: dg.AssetExecutionContext, pipes_client: dg.PipesSubprocessClient):

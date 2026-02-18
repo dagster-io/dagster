@@ -3,7 +3,6 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 def get_commit(rev):
@@ -30,7 +29,7 @@ def _strip_oss_prefix(path: Path) -> Path:
 @dataclass
 class GitInfo:
     directory: Path
-    base_branch: Optional[str] = "master"
+    base_branch: str | None = "master"
 
 
 INTERNAL_OSS_PREFIX = Path("dagster-oss")

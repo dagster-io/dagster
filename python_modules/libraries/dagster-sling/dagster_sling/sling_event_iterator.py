@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 from dagster import (
     AssetMaterialization,
@@ -56,7 +56,7 @@ def _strip_quotes_target_table_name(target_table_name: str) -> str:
 INSERT_REGEX = re.compile(r".*inserted (\d+) rows into (.*) in.*")
 
 
-def _get_target_table_name(stream_name: str, sling_cli: "SlingResource") -> Optional[str]:
+def _get_target_table_name(stream_name: str, sling_cli: "SlingResource") -> str | None:
     """Extracts the target table name from the logs for a specific stream."""
     corresponding_logs = _get_logs_for_stream(stream_name, sling_cli)
     insert_log = next((log for log in corresponding_logs if re.match(INSERT_REGEX, log)), None)

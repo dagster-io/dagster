@@ -3,7 +3,7 @@ import pickle
 import uuid
 from asyncio import AbstractEventLoop
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, cast  # noqa: UP035
 
 from dagster import (
     AssetMaterialization,
@@ -70,9 +70,9 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
 class Manager:
     def __init__(self):
         self.job = None
-        self.op_def: Optional[NodeDefinition] = None
+        self.op_def: NodeDefinition | None = None
         self.in_job: bool = False
-        self.marshal_dir: Optional[str] = None
+        self.marshal_dir: str | None = None
         self.context = None
         self.resource_manager = None
 
@@ -81,12 +81,12 @@ class Manager:
         resource_defs: Mapping[str, ResourceDefinition],
         resource_configs: Mapping[str, ResourceConfig],
         log_manager: DagsterLogManager,
-        execution_plan: Optional[ExecutionPlan],
-        dagster_run: Optional[DagsterRun],
-        resource_keys_to_init: Optional[AbstractSet[str]],
-        instance: Optional[DagsterInstance],
-        emit_persistent_events: Optional[bool],
-        event_loop: Optional[AbstractEventLoop],
+        execution_plan: ExecutionPlan | None,
+        dagster_run: DagsterRun | None,
+        resource_keys_to_init: AbstractSet[str] | None,
+        instance: DagsterInstance | None,
+        emit_persistent_events: bool | None,
+        event_loop: AbstractEventLoop | None,
     ):
         """Drop-in replacement for
         `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
@@ -115,9 +115,9 @@ class Manager:
         node_handle_kwargs: Mapping[str, Any],
         instance_ref_dict: Mapping[str, Any],
         step_key: str,
-        output_log_path: Optional[str] = None,
-        marshal_dir: Optional[str] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
+        output_log_path: str | None = None,
+        marshal_dir: str | None = None,
+        run_config: Mapping[str, Any] | None = None,
     ):
         """Reconstitutes a context for dagstermill-managed execution.
 
@@ -209,9 +209,9 @@ class Manager:
     def get_context(
         self,
         op_config: Any = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        run_config: Optional[dict] = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        logger_defs: Mapping[str, LoggerDefinition] | None = None,
+        run_config: dict | None = None,
     ) -> DagstermillExecutionContext:
         """Get a dagstermill execution context for interactive exploration and development.
 

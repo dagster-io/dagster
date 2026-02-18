@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 import dagster._check as check
 from azure.ai.ml import MLClient
@@ -96,7 +95,7 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
-        extras: Optional[PipesExtras] = None,
+        extras: PipesExtras | None = None,
         command: Command,
     ) -> PipesClientCompletedInvocation:
         """Synchronously execute an Azure ML job with the pipes protocol.

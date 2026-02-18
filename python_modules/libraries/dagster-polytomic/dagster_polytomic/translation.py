@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, TypeAlias
+from typing import Annotated, TypeAlias
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -21,13 +21,13 @@ class PolytomicSchemaMetadataSet(NamespacedMetadataSet):
 
     id: str
     bulk_sync_id: str
-    output_name: Optional[str] = None
-    partition_key: Optional[str] = None
-    tracking_field: Optional[str] = None
-    source_connection_id: Optional[str] = None
-    source_connection_name: Optional[str] = None
-    destination_connection_id: Optional[str] = None
-    destination_connection_name: Optional[str] = None
+    output_name: str | None = None
+    partition_key: str | None = None
+    tracking_field: str | None = None
+    source_connection_id: str | None = None
+    source_connection_name: str | None = None
+    destination_connection_id: str | None = None
+    destination_connection_name: str | None = None
 
     @classmethod
     def from_enriched_schema(cls, enriched_schema: PolytomicBulkSyncEnrichedSchema) -> Self:
@@ -114,7 +114,7 @@ ResolvedTargetedPolytomicTranslationFn = Annotated[
 class PolytomicTranslationArgs(AssetSpecUpdateKwargs, Resolvable):
     """Model used to allow per-object-type translation of a Polytomic object."""
 
-    for_schema: Optional[ResolvedTargetedPolytomicTranslationFn] = None
+    for_schema: ResolvedTargetedPolytomicTranslationFn | None = None
 
 
 ResolvedPolytomicTranslationFn = Annotated[

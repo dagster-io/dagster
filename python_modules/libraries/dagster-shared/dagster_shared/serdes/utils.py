@@ -1,6 +1,6 @@
 import datetime
 import hashlib
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster_shared.serdes.serdes import (
     PackableValue,
@@ -10,9 +10,7 @@ from dagster_shared.serdes.serdes import (
 )
 
 
-def create_snapshot_id(
-    snapshot: PackableValue, whitelist_map: Optional[WhitelistMap] = None
-) -> str:
+def create_snapshot_id(snapshot: PackableValue, whitelist_map: WhitelistMap | None = None) -> str:
     kwargs = dict(whitelist_map=whitelist_map) if whitelist_map else {}
     json_rep = serialize_value(snapshot, **kwargs)
     return hash_str(json_rep)

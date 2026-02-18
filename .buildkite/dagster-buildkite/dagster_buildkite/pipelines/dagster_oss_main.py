@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from typing import Optional
 
 from buildkite_shared.environment import safe_getenv
 from buildkite_shared.packages import run_all_tests
@@ -169,7 +168,7 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
     )
 
 
-def _get_setting(name: str) -> Optional[str]:
+def _get_setting(name: str) -> str | None:
     """Load a setting defined either as an environment variable or in a `[<key>=<value>]`
     string in the commit message.
     """

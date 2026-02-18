@@ -1,7 +1,7 @@
 import json
 import os
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import boto3
 from dagster import (
@@ -153,11 +153,11 @@ class EcsStepHandler(StepHandler):
     def __init__(
         self,
         run_launcher: EcsRunLauncher,
-        run_task_kwargs: Optional[Mapping[str, Any]],
-        cpu: Optional[int],
-        memory: Optional[int],
-        ephemeral_storage: Optional[int],
-        task_overrides: Optional[Mapping[str, Any]],
+        run_task_kwargs: Mapping[str, Any] | None,
+        cpu: int | None,
+        memory: int | None,
+        ephemeral_storage: int | None,
+        task_overrides: Mapping[str, Any] | None,
     ):
         super().__init__()
 

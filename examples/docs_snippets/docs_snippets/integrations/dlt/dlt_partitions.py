@@ -9,7 +9,7 @@ color_partitions = StaticPartitionsDefinition(["red", "green", "blue"])
 
 
 @dlt.source
-def example_dlt_source(color: Optional[str] = None):
+def example_dlt_source(color: str | None = None):
     def load_colors():
         if color:
             # partition-specific processing

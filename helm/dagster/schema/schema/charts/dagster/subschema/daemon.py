@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict
 
@@ -19,7 +19,7 @@ class TagConcurrencyLimitConfig(BaseModel, extra="forbid"):
 
 class TagConcurrencyLimit(BaseModel, extra="forbid"):
     key: str
-    value: Optional[str | TagConcurrencyLimitConfig] = None
+    value: str | TagConcurrencyLimitConfig | None = None
     limit: int
 
 
@@ -29,17 +29,17 @@ class BlockOpConcurrencyLimitedRuns(BaseModel):
 
 
 class QueuedRunCoordinatorConfig(BaseModel, extra="forbid"):
-    maxConcurrentRuns: Optional[IntSource] = None
-    tagConcurrencyLimits: Optional[list[TagConcurrencyLimit]] = None
-    dequeueIntervalSeconds: Optional[IntSource] = None
-    dequeueNumWorkers: Optional[IntSource] = None
-    dequeueUseThreads: Optional[bool] = None
-    blockOpConcurrencyLimitedRuns: Optional[BlockOpConcurrencyLimitedRuns] = None
+    maxConcurrentRuns: IntSource | None = None
+    tagConcurrencyLimits: list[TagConcurrencyLimit] | None = None
+    dequeueIntervalSeconds: IntSource | None = None
+    dequeueNumWorkers: IntSource | None = None
+    dequeueUseThreads: bool | None = None
+    blockOpConcurrencyLimitedRuns: BlockOpConcurrencyLimitedRuns | None = None
 
 
 class RunCoordinatorConfig(BaseModel):
-    queuedRunCoordinator: Optional[QueuedRunCoordinatorConfig] = None
-    customRunCoordinator: Optional[ConfigurableClass] = None
+    queuedRunCoordinator: QueuedRunCoordinatorConfig | None = None
+    customRunCoordinator: ConfigurableClass | None = None
 
 
 class RunCoordinator(BaseModel):
@@ -62,26 +62,26 @@ class RunCoordinator(BaseModel):
 
 class Sensors(BaseModel):
     useThreads: bool
-    numWorkers: Optional[int] = None
-    numSubmitWorkers: Optional[int] = None
+    numWorkers: int | None = None
+    numSubmitWorkers: int | None = None
 
 
 class Schedules(BaseModel):
     useThreads: bool
-    numWorkers: Optional[int] = None
-    numSubmitWorkers: Optional[int] = None
+    numWorkers: int | None = None
+    numSubmitWorkers: int | None = None
 
 
 class Backfills(BaseModel):
     useThreads: bool
-    numWorkers: Optional[int] = None
-    numSubmitWorkers: Optional[int] = None
+    numWorkers: int | None = None
+    numSubmitWorkers: int | None = None
 
 
 class RunRetries(BaseModel):
     enabled: bool
-    maxRetries: Optional[int] = None
-    retryOnAssetOrOpFailure: Optional[bool] = None
+    maxRetries: int | None = None
+    retryOnAssetOrOpFailure: bool | None = None
 
 
 class Daemon(BaseModel, extra="forbid"):
@@ -100,7 +100,7 @@ class Daemon(BaseModel, extra="forbid"):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
-    checkDbReadyInitContainer: Optional[bool] = None
+    checkDbReadyInitContainer: bool | None = None
     livenessProbe: kubernetes.LivenessProbe
     readinessProbe: kubernetes.ReadinessProbe
     startupProbe: kubernetes.StartupProbe
@@ -109,11 +109,11 @@ class Daemon(BaseModel, extra="forbid"):
     runRetries: RunRetries
     sensors: Sensors
     schedules: Schedules
-    backfills: Optional[Backfills] = None
-    schedulerName: Optional[str] = None
-    logFormat: Optional[str] = None
-    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
-    volumes: Optional[list[kubernetes.Volume]] = None
-    initContainerResources: Optional[kubernetes.Resources] = None
-    extraContainers: Optional[list[kubernetes.Container]] = None
-    extraPrependedInitContainers: Optional[list[kubernetes.InitContainer]] = None
+    backfills: Backfills | None = None
+    schedulerName: str | None = None
+    logFormat: str | None = None
+    volumeMounts: list[kubernetes.VolumeMount] | None = None
+    volumes: list[kubernetes.Volume] | None = None
+    initContainerResources: kubernetes.Resources | None = None
+    extraContainers: list[kubernetes.Container] | None = None
+    extraPrependedInitContainers: list[kubernetes.InitContainer] | None = None

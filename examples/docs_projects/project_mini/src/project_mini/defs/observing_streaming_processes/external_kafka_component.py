@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 
 
@@ -8,9 +6,9 @@ class ExternalKafkaAsset(dg.Component, dg.Model, dg.Resolvable):
 
     asset_key: str
     topic: str
-    broker: Optional[str] = None
-    event_hub_namespace: Optional[str] = None
-    description: Optional[str] = None
+    broker: str | None = None
+    event_hub_namespace: str | None = None
+    description: str | None = None
     group_name: str = "default"
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
