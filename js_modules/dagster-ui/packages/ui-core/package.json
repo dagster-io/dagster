@@ -14,6 +14,7 @@
     "ts": "tsc -p .",
     "tsgo": "tsgo -p .",
     "ts:workers": "tsc -p ./tsconfig.workers.json",
+    "tsgo:workers": "tsgo -p ./tsconfig.workers.json",
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
     "generate-asset-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAssetSelection.ts",
@@ -28,7 +29,7 @@
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"
   },
   "peerDependencies": {
-    "@apollo/client": "3.9.11",
+    "@apollo/client": "^3.14.0",
     "@blueprintjs/core": "^5",
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
@@ -42,7 +43,7 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
-    "@koale/useworker": "^4.0.2",
+    "@koale/useworker": "^4.1.2",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",
@@ -66,6 +67,7 @@
     "fuse.js": "^6.4.2",
     "graphql": "^16.8.1",
     "graphql-codegen-persisted-query-ids": "^0.2.0",
+    "graphql.macro": "^1.4.2",
     "highlight.js": "11.6.0",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
@@ -85,10 +87,10 @@
     "strip-markdown": "^6.0.0",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
-    "yaml": "2.4.0"
+    "yaml": "^2.4.2"
   },
   "devDependencies": {
-    "@apollo/client": "3.9.11",
+    "@apollo/client": "^3.14.0",
     "@babel/cli": "^7.13.15",
     "@babel/core": "^7.13.15",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
@@ -118,7 +120,7 @@
     "@storybook/addon-docs": "^10.1.11",
     "@storybook/addon-links": "^10.1.11",
     "@storybook/addon-themes": "^10.1.11",
-    "@storybook/nextjs-vite": "10.1.11",
+    "@storybook/nextjs-vite": "^10.2.7",
     "@storybook/react": "^10.1.11",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.4.2",
@@ -174,7 +176,7 @@
     "react-router-dom": "^5.3.4",
     "react-router-dom-v5-compat": "^6.30.3",
     "resize-observer-polyfill": "^1.5.1",
-    "storybook": "^10.1.11",
+    "storybook": "^10.2.7",
     "styled-components": "^5.3.3",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
