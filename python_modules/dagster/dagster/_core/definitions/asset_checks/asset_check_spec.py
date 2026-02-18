@@ -53,15 +53,6 @@ LazyAssetDep: TypeAlias = Annotated[
 @public
 @record_custom
 class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
-    name: PublicAttr[str]
-    asset_key: PublicAttr[AssetKey]
-    description: PublicAttr[Optional[str]]
-    additional_deps: PublicAttr[Iterable[LazyAssetDep]]
-    blocking: PublicAttr[bool]
-    metadata: PublicAttr[Mapping[str, Any]]
-    automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
-    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
-
     """Defines information about an asset check, except how to execute it.
 
     AssetCheckSpec is often used as an argument to decorators that decorator a function that can
@@ -87,6 +78,15 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         partitions_def (Optional[PartitionsDefinition]): The PartitionsDefinition for this asset check. Must be either None
             or the same as the PartitionsDefinition of the asset specified by `asset`.
     """
+
+    name: PublicAttr[str]
+    asset_key: PublicAttr[AssetKey]
+    description: PublicAttr[Optional[str]]
+    additional_deps: PublicAttr[Iterable[LazyAssetDep]]
+    blocking: PublicAttr[bool]
+    metadata: PublicAttr[Mapping[str, Any]]
+    automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
+    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
 
     def __new__(
         cls,
