@@ -1459,10 +1459,12 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   braze: {
     icon: braze,
     content: 'Braze',
+    blackAndWhite: true,
   },
   runpod: {
     icon: runpod,
-    content: 'Runpod',
+    content: 'RunPod',
+    blackAndWhite: true,
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
