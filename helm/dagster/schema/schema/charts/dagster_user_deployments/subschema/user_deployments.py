@@ -44,6 +44,9 @@ class UserDeployment(BaseModel):
     ] = None
     sidecarContainers: Optional[list[kubernetes.Container]] = None
     deploymentStrategy: Optional[kubernetes.DeploymentStrategy] = None
+    minReadySeconds: Optional[int] = None
+    terminationGracePeriodSeconds: Optional[int] = None
+    lifecycle: Optional[kubernetes.Lifecycle] = None
 
 
 class UserDeployments(BaseModel):

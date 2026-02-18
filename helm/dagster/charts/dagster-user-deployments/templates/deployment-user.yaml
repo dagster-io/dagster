@@ -18,6 +18,9 @@ spec:
   strategy:
     {{- toYaml $deployment.deploymentStrategy | nindent 4 }}
   {{- end }}
+  {{- if $deployment.minReadySeconds }}
+  minReadySeconds: {{ $deployment.minReadySeconds }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}
@@ -44,6 +47,9 @@ spec:
       serviceAccountName: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
       automountServiceAccountToken: true
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
+      {{- if $deployment.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $deployment.terminationGracePeriodSeconds }}
+      {{- end }}
       {{- if $deployment.initContainers }}
       initContainers:
         {{- range $container := $deployment.initContainers }}
@@ -101,6 +107,9 @@ spec:
                 optional: true
             {{- end }}
           resources: {{ $deployment.resources | toYaml | nindent 12 }}
+          {{- if $deployment.lifecycle }}
+          lifecycle: {{ $deployment.lifecycle | toYaml | nindent 12 }}
+          {{- end }}
           volumeMounts:
         {{- if $.Values.includeInstance }}
             - name: dagster-instance

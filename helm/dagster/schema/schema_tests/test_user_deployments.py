@@ -1679,6 +1679,29 @@ def test_deployment_strategy(
     assert dagster_user_deployment[0].to_dict()["spec"]["strategy"] == expected
 
 
+def test_graceful_shutdown_fields(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.minReadySeconds = 10
+    deployment.terminationGracePeriodSeconds = 45
+    deployment.lifecycle = kubernetes.Lifecycle.construct(
+        preStop={"exec": {"command": ["sleep", "15"]}}
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert dagster_user_deployment.spec.min_ready_seconds == 10
+    assert dagster_user_deployment.spec.template.spec.termination_grace_period_seconds == 45
+
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+    assert container.lifecycle is not None
+    assert container.lifecycle.pre_stop._exec.command == ["sleep", "15"]  # noqa: SLF001
+
+
 @pytest.mark.parametrize("include_instance", [False, True])
 def test_include_instance(subchart_template: HelmTemplate, include_instance: bool):
     deployment_values = DagsterUserDeploymentsHelmValues.construct(

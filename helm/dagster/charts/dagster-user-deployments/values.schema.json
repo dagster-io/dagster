@@ -35,6 +35,13 @@
             "title": "DeploymentStrategy",
             "type": "object"
         },
+        "Lifecycle": {
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.19.0/_definitions.json#/definitions/io.k8s.api.core.v1.Lifecycle",
+            "additionalProperties": true,
+            "properties": {},
+            "title": "Lifecycle",
+            "type": "object"
+        },
         "EnvVar": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.19.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar",
             "additionalProperties": true,
@@ -631,6 +638,41 @@
                     "anyOf": [
                         {
                             "$ref": "#/$defs/DeploymentStrategy"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "minReadySeconds": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Minreadyseconds"
+                },
+                "terminationGracePeriodSeconds": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Terminationgraceperiodseconds"
+                },
+                "lifecycle": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Lifecycle"
                         },
                         {
                             "type": "null"
