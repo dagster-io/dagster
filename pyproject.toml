@@ -141,6 +141,18 @@ exclude = ["*.ipynb"]
 # There is an __init__.py.tmpl
 "python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
 
+# (pyupgrade) Phased rollout of UP007/UP045 (non-pep604-annotation). Remove entries as each
+# group is migrated. See: https://github.com/dagster-io/internal/issues/20346
+"python_modules/dagster/**" = ["UP045"]
+"python_modules/dagster-graphql/**" = ["UP045"]
+"python_modules/dagster-webserver/**" = ["UP045"]
+"python_modules/dagster-pipes/**" = ["UP045"]
+"python_modules/dagster-test/**" = ["UP045"]
+"python_modules/dagit/**" = ["UP045"]
+"python_modules/automation/**" = ["UP045"]
+"python_modules/libraries/**" = ["UP045"]
+"{.buildkite,docs,examples,helm,integration_tests,scripts}/**" = ["UP045"]
+
 [tool.ruff.format]
 exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
