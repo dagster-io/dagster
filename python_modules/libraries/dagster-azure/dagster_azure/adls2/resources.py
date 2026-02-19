@@ -25,7 +25,7 @@ from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
 
 class ADLS2SASToken(dg.Resolvable, Config):
     credential_type: Literal["sas"] = "sas"
-    token: str
+    token: Optional[str] = None  # noqa: UP045
 
 
 class ADLS2Key(dg.Resolvable, Config):

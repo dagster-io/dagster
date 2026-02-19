@@ -14,7 +14,7 @@ class AzureBlobStorageSASTokenCredential(dg.Resolvable, Config):
 
     credential_type: Literal["sas"] = "sas"
 
-    token: str
+    token: Optional[str] = None  # noqa: UP045
     "an azure SAS token"
 
 
