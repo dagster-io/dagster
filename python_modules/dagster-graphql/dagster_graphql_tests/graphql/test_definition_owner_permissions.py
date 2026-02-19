@@ -587,6 +587,76 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 Permissions.LAUNCH_PIPELINE_EXECUTION, selector
             )
 
+    def test_get_owners_for_nonexistent_definitions(self, graphql_context: WorkspaceRequestContext):
+        """get_owners_for_selector should return [] for selectors referencing
+        definitions that don't exist in the workspace, rather than erroring.
+        """
+        # Get a valid location/repo name from the context
+        code_location = graphql_context.code_locations[0]
+        repository = next(iter(code_location.get_repositories().values()))
+        location_name = code_location.name
+        repository_name = repository.name
+
+        # Non-existent asset key
+        assert graphql_context.get_owners_for_selector(AssetKey(["does_not_exist"])) == []
+
+        # Non-existent asset check key (asset doesn't exist)
+        assert (
+            graphql_context.get_owners_for_selector(
+                AssetCheckKey(AssetKey(["does_not_exist"]), "some_check")
+            )
+            == []
+        )
+
+        # Non-existent job
+        assert (
+            graphql_context.get_owners_for_selector(
+                JobSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    job_name="nonexistent_job",
+                )
+            )
+            == []
+        )
+
+        # Implicit asset job name (should return [] even if it exists, since ownership
+        # is determined by the assets, not the implicit job)
+        assert (
+            graphql_context.get_owners_for_selector(
+                JobSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    job_name=IMPLICIT_ASSET_JOB_NAME,
+                )
+            )
+            == []
+        )
+
+        # Non-existent schedule
+        assert (
+            graphql_context.get_owners_for_selector(
+                ScheduleSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    schedule_name="nonexistent_schedule",
+                )
+            )
+            == []
+        )
+
+        # Non-existent sensor
+        assert (
+            graphql_context.get_owners_for_selector(
+                SensorSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    sensor_name="nonexistent_sensor",
+                )
+            )
+            == []
+        )
+
     def test_asset_backfill_launch_permissions(self, graphql_context: WorkspaceRequestContext):
         typename, _ = self.graphql_launch_asset_backfill(
             graphql_context, [AssetKey(["owned_partitioned_asset"])]

@@ -256,14 +256,26 @@ class BaseWorkspaceRequestContext(LoadingContext):
         selector: AssetKey | AssetCheckKey | JobSelector | ScheduleSelector | SensorSelector,
     ) -> Sequence[str]:
         if isinstance(selector, AssetKey):
-            remote_definition = self.asset_graph.get(selector)
+            remote_definition = (
+                self.asset_graph.get(selector) if self.asset_graph.has(selector) else None
+            )
         elif isinstance(selector, AssetCheckKey):
             # make asset checks permissioned to the same owners as the underlying asset
-            remote_definition = self.asset_graph.get(selector.asset_key)
+            remote_definition = (
+                self.asset_graph.get(selector.asset_key)
+                if self.asset_graph.has(selector.asset_key)
+                else None
+            )
         elif isinstance(selector, JobSelector):
-            remote_definition = self.get_full_job(selector)
+            remote_definition = (
+                self.get_full_job(selector)
+                if self.has_job(selector) and not is_implicit_asset_job_name(selector.job_name)
+                else None
+            )
         elif isinstance(selector, ScheduleSelector):
-            remote_definition = self.get_schedule(selector)
+            remote_definition = self.get_schedule(
+                selector
+            )  # unlike the rest, returns None rather than error if not set
         elif isinstance(selector, SensorSelector):
             remote_definition = self.get_sensor(selector)
 
