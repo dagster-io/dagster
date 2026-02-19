@@ -32,7 +32,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-pandas{pin}",
-        "pandas",
+        "pandas<3.0.0",
         "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
     extras_require={

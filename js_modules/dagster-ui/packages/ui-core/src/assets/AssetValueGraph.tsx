@@ -150,7 +150,7 @@ export const AssetValueGraph = (props: {
             return points.map(({parsed}) => {
               if (props.data.xAxis === 'time') {
                 return timestampToString({
-                  timestamp: {ms: parsed.x},
+                  timestamp: {ms: parsed.x ?? 0},
                   locale,
                   timezone: userTimezone,
                   timeFormat: {},

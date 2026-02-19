@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_health.asset_materialization_health import 
     MinimalAssetMaterializationHealthState,
 )
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.definitions.partitions.utils import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.event_api import EventLogCursor
@@ -128,7 +129,7 @@ COMPLETED_STATUSES = {
 }
 
 
-def parse_timestamp(timestamp: Optional[str] = None) -> Optional[float]:
+def parse_timestamp(timestamp: str | None = None) -> float | None:
     try:
         return int(timestamp) / 1000.0 if timestamp else None
     except ValueError:
@@ -318,10 +319,10 @@ class GrapheneAsset(graphene.ObjectType):
     async def resolve_assetMaterializations(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[Sequence[str]] = None,
-        beforeTimestampMillis: Optional[str] = None,
-        afterTimestampMillis: Optional[str] = None,
-        limit: Optional[int] = None,
+        partitions: Sequence[str] | None = None,
+        beforeTimestampMillis: str | None = None,
+        afterTimestampMillis: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
         from dagster_graphql.implementation.fetch_assets import get_asset_materializations
 
@@ -353,11 +354,11 @@ class GrapheneAsset(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         eventTypeSelectors: Sequence[GrapheneAssetEventHistoryEventTypeSelector],
-        limit: Optional[int],
-        partitions: Optional[Sequence[str]] = None,
-        beforeTimestampMillis: Optional[str] = None,
-        afterTimestampMillis: Optional[str] = None,
-        cursor: Optional[str] = None,
+        limit: int | None,
+        partitions: Sequence[str] | None = None,
+        beforeTimestampMillis: str | None = None,
+        afterTimestampMillis: str | None = None,
+        cursor: str | None = None,
     ) -> GrapheneAssetResultEventHistoryConnection:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_event_records,
@@ -432,10 +433,10 @@ class GrapheneAsset(graphene.ObjectType):
     def resolve_assetObservations(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[Sequence[str]] = None,
-        beforeTimestampMillis: Optional[str] = None,
-        afterTimestampMillis: Optional[str] = None,
-        limit: Optional[int] = None,
+        partitions: Sequence[str] | None = None,
+        beforeTimestampMillis: str | None = None,
+        afterTimestampMillis: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[GrapheneObservationEvent]:
         from dagster_graphql.implementation.fetch_assets import get_asset_observations
 
@@ -460,7 +461,7 @@ class GrapheneAsset(graphene.ObjectType):
             return asset_record.asset_entry.last_event_storage_id
         return None
 
-    def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
+    def resolve_assetHealth(self, graphene_info: ResolveInfo) -> GrapheneAssetHealth | None:
         if not graphene_info.context.instance.dagster_asset_health_queries_supported():
             return None
         return GrapheneAssetHealth(
@@ -476,7 +477,7 @@ class GrapheneAsset(graphene.ObjectType):
 
     async def resolve_latestMaterializationTimestamp(
         self, graphene_info: ResolveInfo
-    ) -> Optional[float]:
+    ) -> float | None:
         min_materialization_state = await MinimalAssetMaterializationHealthState.gen(
             graphene_info.context, self._asset_key
         )
@@ -498,7 +499,7 @@ class GrapheneAsset(graphene.ObjectType):
 
     async def resolve_latestFailedToMaterializeTimestamp(
         self, graphene_info: ResolveInfo
-    ) -> Optional[float]:
+    ) -> float | None:
         materialization_state = await MinimalAssetMaterializationHealthState.gen(
             graphene_info.context, self._asset_key
         )
@@ -519,16 +520,17 @@ class GrapheneAsset(graphene.ObjectType):
 
     async def resolve_freshnessStatusChangedTimestamp(
         self, graphene_info: ResolveInfo
-    ) -> Optional[float]:
+    ) -> float | None:
         freshness_state = await AssetFreshnessHealthState.gen(
             graphene_info.context, self._asset_key
         )
         if freshness_state is not None:
             ts = freshness_state.updated_timestamp
         else:
-            freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
-                [self._asset_key]
-            ).get(self._asset_key)
+            freshness_state_record = await FreshnessStateRecord.gen(
+                graphene_info.context, self._asset_key
+            )
+
             ts = freshness_state_record.updated_at.timestamp() if freshness_state_record else None
 
         return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
@@ -656,7 +658,7 @@ class GrapheneRun(graphene.ObjectType):
         )
         self.dagster_run = dagster_run
         self._run_record = record
-        self._run_stats: Optional[DagsterRunStatsSnapshot] = None
+        self._run_stats: DagsterRunStatsSnapshot | None = None
 
     @property
     def creation_timestamp(self) -> float:
@@ -1020,11 +1022,11 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
-    ) -> Optional[GrapheneSolidHandle]:
+    ) -> GrapheneSolidHandle | None:
         return build_solid_handles(self.get_represented_job()).get(handleID)
 
     def resolve_solid_handles(
-        self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
+        self, _graphene_info: ResolveInfo, parentHandleID: str | None = None
     ) -> Sequence[GrapheneSolidHandle]:
         handles = build_solid_handles(self.get_represented_job())
 
@@ -1069,7 +1071,7 @@ class GrapheneIPipelineSnapshotMixin:
         return self.get_represented_job().op_selection
 
     def resolve_runs(
-        self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
+        self, graphene_info: ResolveInfo, cursor: str | None = None, limit: int | None = None
     ) -> Sequence[GrapheneRun]:
         pipeline = self.get_represented_job()
         if isinstance(pipeline, RemoteJob):
@@ -1220,7 +1222,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         name = "Pipeline"
 
     def __init__(
-        self, remote_job: RemoteJob, batch_loader: Optional[RepositoryScopedBatchLoader] = None
+        self, remote_job: RemoteJob, batch_loader: RepositoryScopedBatchLoader | None = None
     ):
         super().__init__()
         self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
@@ -1267,10 +1269,10 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def resolve_partitionKeysOrError(
         self,
         graphene_info: ResolveInfo,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        reverse: Optional[bool] = None,
-        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        reverse: bool | None = None,
+        selected_asset_keys: list[GrapheneAssetKeyInput] | None = None,
     ) -> GraphenePartitionKeys:
         result = graphene_info.context.get_partition_names(
             repository_selector=self._remote_job.repository_handle.to_selector(),
@@ -1294,7 +1296,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         partition_name: str,
-        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
+        selected_asset_keys: list[GrapheneAssetKeyInput] | None = None,
     ) -> "GrapheneJobSelectionPartition":
         from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
@@ -1321,9 +1323,14 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
     # doesn't inherit from base class
-    def __init__(self, remote_job):
+    def __init__(
+        self, remote_job: RemoteJob, batch_loader: RepositoryScopedBatchLoader | None = None
+    ):
         super().__init__()  # pyright: ignore[reportCallIssue]
         self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
+        )
 
 
 class GrapheneGraph(graphene.ObjectType):
@@ -1361,11 +1368,11 @@ class GrapheneGraph(graphene.ObjectType):
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
-    ) -> Optional[GrapheneSolidHandle]:
+    ) -> GrapheneSolidHandle | None:
         return build_solid_handles(self._remote_job).get(handleID)
 
     def resolve_solid_handles(
-        self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
+        self, _graphene_info: ResolveInfo, parentHandleID: str | None = None
     ) -> Sequence[GrapheneSolidHandle]:
         handles = build_solid_handles(self._remote_job)
 
@@ -1393,8 +1400,8 @@ class GrapheneRunOrError(graphene.Union):
 
 
 def _asset_key_input_list_to_asset_key_set(
-    asset_keys: Optional[list[GrapheneAssetKeyInput]],
-) -> Optional[AbstractSet[AssetKey]]:
+    asset_keys: list[GrapheneAssetKeyInput] | None,
+) -> AbstractSet[AssetKey] | None:
     return (
         {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None
     )

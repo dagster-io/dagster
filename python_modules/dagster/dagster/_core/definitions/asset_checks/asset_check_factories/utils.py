@@ -1,6 +1,5 @@
 import datetime
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
@@ -47,7 +46,7 @@ TIMEZONE_PARAM_KEY = "timezone"
 
 
 def ensure_no_duplicate_assets(
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
 ) -> None:
     """Finds duplicate assets in the provided list of assets, and errors if any are present.
 
@@ -66,7 +65,7 @@ def ensure_no_duplicate_assets(
 
 
 def asset_to_keys_iterable(
-    asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
+    asset: CoercibleToAssetKey | AssetsDefinition | SourceAsset,
 ) -> Iterator[AssetKey]:
     if isinstance(asset, AssetsDefinition):
         yield from asset.keys
@@ -77,7 +76,7 @@ def asset_to_keys_iterable(
 
 
 def assets_to_keys(
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
 ) -> Sequence[AssetKey]:
     """Converts the provided assets to a sequence of their contained AssetKeys."""
     return [asset_key for asset in assets for asset_key in asset_to_keys_iterable(asset)]
@@ -105,8 +104,8 @@ def ensure_no_duplicate_asset_checks(
 def retrieve_last_update_record(
     instance: DagsterInstance,
     asset_key: AssetKey,
-    partition_key: Optional[str],
-) -> Optional[EventLogRecord]:
+    partition_key: str | None,
+) -> EventLogRecord | None:
     """Retrieve the latest materialization or observation record for the given asset.
 
     If the asset is partitioned, the latest record for the latest partition will be returned.
@@ -157,7 +156,7 @@ def retrieve_last_update_record(
         )
 
 
-def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> Optional[float]:
+def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float | None:
     """Retrieve the timestamp from the given materialization or observation record."""
     check.inst_param(asset_record, "asset_record", EventLogRecord)
     default_value = None if asset_record.asset_observation else asset_record.timestamp
@@ -169,7 +168,7 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> Optional[flo
     )
 
 
-def get_timestamp_out_of_metadata_if_set(metadata: Mapping, key: str) -> Optional[float]:
+def get_timestamp_out_of_metadata_if_set(metadata: Mapping, key: str) -> float | None:
     if key not in metadata:
         return None
     value = check.inst(
@@ -182,12 +181,12 @@ def get_timestamp_out_of_metadata_if_set(metadata: Mapping, key: str) -> Optiona
 
 def get_description_for_freshness_check_result(
     passed: bool,
-    update_timestamp: Optional[float],
+    update_timestamp: float | None,
     last_update_time_lower_bound: datetime.datetime,
     current_timestamp: float,
-    expected_partition_key: Optional[str],
-    record_arrival_timestamp: Optional[float],
-    event_type: Optional[DagsterEventType],
+    expected_partition_key: str | None,
+    record_arrival_timestamp: float | None,
+    event_type: DagsterEventType | None,
 ) -> str:
     check.invariant(
         (passed and update_timestamp is not None) or not passed,

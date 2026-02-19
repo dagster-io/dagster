@@ -1,11 +1,13 @@
 from collections.abc import Sequence
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -128,12 +130,49 @@ class AssetCheckExecutionContext:
 
     @property
     @_copy_docs_from_op_execution_context
-    def step_launcher(self) -> Optional[StepLauncher]:
+    def step_launcher(self) -> StepLauncher | None:
         return self.op_execution_context.step_launcher
 
     @_copy_docs_from_op_execution_context
     def get_step_execution_context(self) -> StepExecutionContext:
         return self.op_execution_context.get_step_execution_context()
+
+    #### partition related
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_partition_key(self) -> bool:
+        return self.op_execution_context.has_partition_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_key(self) -> str:
+        return self.op_execution_context.partition_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_keys(self) -> Sequence[str]:
+        return self.op_execution_context.partition_keys
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_partition_key_range(self) -> bool:
+        return self.op_execution_context.has_partition_key_range
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self.op_execution_context.partition_key_range
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_time_window(self) -> TimeWindow:
+        return self.op_execution_context.partition_time_window
 
     # misc
 

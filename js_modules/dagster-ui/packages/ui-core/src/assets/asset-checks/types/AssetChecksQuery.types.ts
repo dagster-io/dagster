@@ -8,6 +8,19 @@ export type AssetCheckKeyFragment = {
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
+export type AssetCheckPartitionFragment = {
+  __typename: 'AssetCheck';
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
+};
+
 export type AssetChecksQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
@@ -45,11 +58,13 @@ export type AssetChecksQuery = {
                   status: Types.AssetCheckExecutionResolvedStatus;
                   stepKey: string | null;
                   timestamp: number;
+                  run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
                   evaluation: {
                     __typename: 'AssetCheckEvaluation';
                     severity: Types.AssetCheckSeverity;
                     timestamp: number;
                     description: string | null;
+                    partition: string | null;
                     targetMaterialization: {
                       __typename: 'AssetCheckEvaluationTargetMaterializationData';
                       timestamp: number;
@@ -244,6 +259,62 @@ export type AssetChecksQuery = {
                     >;
                   } | null;
                 } | null;
+                partitionDefinition: {
+                  __typename: 'PartitionDefinition';
+                  name: string | null;
+                  description: string;
+                  dimensionTypes: Array<{
+                    __typename: 'DimensionDefinitionType';
+                    type: Types.PartitionDefinitionType;
+                    dynamicPartitionsDefinitionName: string | null;
+                  }>;
+                } | null;
+                partitionStatuses:
+                  | {
+                      __typename: 'AssetCheckDefaultPartitionStatuses';
+                      succeededPartitions: Array<string>;
+                      failedPartitions: Array<string>;
+                      inProgressPartitions: Array<string>;
+                      skippedPartitions: Array<string>;
+                      executionFailedPartitions: Array<string>;
+                    }
+                  | {
+                      __typename: 'AssetCheckMultiPartitionStatuses';
+                      primaryDimensionName: string;
+                      ranges: Array<{
+                        __typename: 'AssetCheckMultiPartitionRangeStatuses';
+                        primaryDimStartKey: string;
+                        primaryDimEndKey: string;
+                        secondaryDim:
+                          | {
+                              __typename: 'AssetCheckDefaultPartitionStatuses';
+                              succeededPartitions: Array<string>;
+                              failedPartitions: Array<string>;
+                              inProgressPartitions: Array<string>;
+                              skippedPartitions: Array<string>;
+                              executionFailedPartitions: Array<string>;
+                            }
+                          | {
+                              __typename: 'AssetCheckTimePartitionStatuses';
+                              ranges: Array<{
+                                __typename: 'AssetCheckTimePartitionRangeStatus';
+                                startKey: string;
+                                endKey: string;
+                                status: Types.AssetCheckPartitionRangeStatus;
+                              }>;
+                            };
+                      }>;
+                    }
+                  | {
+                      __typename: 'AssetCheckTimePartitionStatuses';
+                      ranges: Array<{
+                        __typename: 'AssetCheckTimePartitionRangeStatus';
+                        startKey: string;
+                        endKey: string;
+                        status: Types.AssetCheckPartitionRangeStatus;
+                      }>;
+                    }
+                  | null;
               }>;
             };
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -257,4 +328,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = 'df2f0eba0bb9816ab3ffabe630b837f47a61ae541a1b543bd7abf365b0754094';
+export const AssetChecksQueryVersion = '520c219b41a4c3a3ae2c001a6ac46f4236818c9ac992dc25dd15e14b05fa53ed';

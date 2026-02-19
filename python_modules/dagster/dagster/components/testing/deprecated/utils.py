@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import yaml
 from dagster_shared import check
@@ -31,7 +31,7 @@ class DefsPathSandbox:
     component_format: ScaffoldFormatOptions
 
     @contextmanager
-    def swap_defs_file(self, defs_path: Path, component_body: Optional[dict[str, Any]]):
+    def swap_defs_file(self, defs_path: Path, component_body: dict[str, Any] | None):
         check.invariant(
             defs_path.suffix == ".yaml",
             "Attributes are only supported for yaml components",
@@ -61,7 +61,7 @@ class DefsPathSandbox:
 
     @contextmanager
     def load(
-        self, component_body: Optional[dict[str, Any]] = None
+        self, component_body: dict[str, Any] | None = None
     ) -> Iterator[tuple["Component", "Definitions"]]:
         defs_path = self.defs_folder_path / "defs.yaml"
 
@@ -70,9 +70,7 @@ class DefsPathSandbox:
                 yield component, defs
 
     @contextmanager
-    def load_instance(
-        self, instance_key: Union[int, str]
-    ) -> Iterator[tuple[Component, Definitions]]:
+    def load_instance(self, instance_key: int | str) -> Iterator[tuple[Component, Definitions]]:
         assert isinstance(instance_key, int)  # only int for now
         with self.load_all() as components:
             yield components[instance_key][0], components[instance_key][1]
@@ -103,10 +101,10 @@ class DefsPathSandbox:
 def scaffold_defs_sandbox(
     *,
     component_cls: type,
-    component_path: Optional[Union[Path, str]] = None,
-    scaffold_params: Optional[dict[str, Any]] = None,
+    component_path: Path | str | None = None,
+    scaffold_params: dict[str, Any] | None = None,
     scaffold_format: ScaffoldFormatOptions = "yaml",
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
 ) -> Iterator[DefsPathSandbox]:
     """Create a lightweight sandbox to scaffold and instantiate a component. Useful
     for those authoring component types.
@@ -205,7 +203,7 @@ def get_module_path(defs_module_name: str, component_path: Path):
     return f"{defs_module_name}.{component_module_path}"
 
 
-def flatten_components(parent_component: Optional[Component]) -> list[Component]:
+def flatten_components(parent_component: Component | None) -> list[Component]:
     if isinstance(parent_component, CompositeYamlComponent):
         return list(parent_component.components)
     elif isinstance(parent_component, Component):
@@ -220,8 +218,8 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
 )
 def get_component_defs_within_project(
     *,
-    project_root: Union[str, Path],
-    component_path: Union[str, Path],
+    project_root: str | Path,
+    component_path: str | Path,
     instance_key: int = 0,
 ) -> tuple[Component, Definitions]:
     """Get the component defs for a component within a project. This only works if dagster_dg_core is installed.
@@ -245,8 +243,8 @@ def get_component_defs_within_project(
 )
 def get_all_components_defs_within_project(
     *,
-    project_root: Union[str, Path],
-    component_path: Union[str, Path],
+    project_root: str | Path,
+    component_path: str | Path,
 ) -> list[tuple[Component, Definitions]]:
     """Get all the component defs for a component within a project. This only works if dagster_dg_core is installed.
 
@@ -286,7 +284,7 @@ def get_all_components_defs_within_project(
 def get_all_components_defs_from_defs_path(
     *,
     module_path: str,
-    project_root: Union[str, Path],
+    project_root: str | Path,
 ) -> list[tuple[Component, Definitions]]:
     module = importlib.import_module(module_path)
     context = ComponentTree(
@@ -302,7 +300,7 @@ def get_all_components_defs_from_defs_path(
     additional_warn_text="Use dagster.ComponentTree.for_project instead.",
 )
 def get_component_defs_from_defs_path(
-    *, module_path: str, project_root: Union[str, Path]
+    *, module_path: str, project_root: str | Path
 ) -> tuple[Component, Definitions]:
     components = get_all_components_defs_from_defs_path(
         project_root=project_root,

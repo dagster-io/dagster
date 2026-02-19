@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import dagster._check as check
@@ -54,8 +54,8 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         client: Optional["EMRServerlessClient"] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
@@ -87,9 +87,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         start_job_run_params: "StartJobRunRequestTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
 
@@ -129,7 +129,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _enrich_start_params(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         params: "StartJobRunRequestTypeDef",
     ) -> "StartJobRunRequestTypeDef":
@@ -161,7 +161,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _start(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         params: "StartJobRunRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
@@ -175,7 +175,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _wait_for_completion(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         start_response: "StartJobRunResponseTypeDef",
     ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
         job_run_id = start_response["jobRunId"]
@@ -230,7 +230,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _read_messages(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         response: "GetJobRunResponseTypeDef",
     ):
@@ -358,7 +358,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _terminate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         start_response: "StartJobRunResponseTypeDef",
     ):
         job_run_id = start_response["jobRunId"]

@@ -12,10 +12,6 @@ canonicalUrl: '/integrations/libraries/airlift'
 slug: '/integrations/libraries/airlift'
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
-
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />

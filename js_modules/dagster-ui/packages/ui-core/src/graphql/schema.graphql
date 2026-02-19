@@ -181,7 +181,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent & ErrorEve
   solidHandleID: String
   eventType: DagsterEventType
   error: PythonError
-  secondsToWait: Int
+  secondsToWait: Float
 }
 
 type ExpectationResult implements DisplayableEvent {
@@ -753,6 +753,7 @@ type AssetNode {
   hasWipePermission: Boolean!
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
+  assetCheckOrError(checkName: String!): AssetCheckOrError!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
@@ -1040,15 +1041,12 @@ enum StaleCauseCategory {
   DEPENDENCIES
 }
 
-union AssetChecksOrError =
-  | AssetChecks
+union AssetCheckOrError =
+  | AssetCheck
+  | AssetCheckNotFoundError
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetCheckNeedsAgentUpgradeError
-
-type AssetChecks {
-  checks: [AssetCheck!]!
-}
 
 type AssetCheck {
   name: String!
@@ -1060,6 +1058,9 @@ type AssetCheck {
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
   automationCondition: AutomationCondition
+  partitionDefinition: PartitionDefinition
+  partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  partitionStatuses: AssetCheckPartitionStatuses
 }
 
 type AssetCheckExecution {
@@ -1068,7 +1069,9 @@ type AssetCheckExecution {
   status: AssetCheckExecutionResolvedStatus!
   evaluation: AssetCheckEvaluation
   timestamp: Float!
+  partition: String
   stepKey: String
+  run: Run
 }
 
 enum AssetCheckExecutionResolvedStatus {
@@ -1087,6 +1090,7 @@ type AssetCheckEvaluation {
   metadataEntries: [MetadataEntry!]!
   severity: AssetCheckSeverity!
   description: String
+  partition: String
   success: Boolean!
 }
 
@@ -1107,6 +1111,60 @@ enum AssetCheckCanExecuteIndividually {
   NEEDS_USER_CODE_UPGRADE
 }
 
+union AssetCheckPartitionStatuses =
+  | AssetCheckDefaultPartitionStatuses
+  | AssetCheckMultiPartitionStatuses
+  | AssetCheckTimePartitionStatuses
+
+type AssetCheckDefaultPartitionStatuses {
+  succeededPartitions: [String!]!
+  failedPartitions: [String!]!
+  inProgressPartitions: [String!]!
+  skippedPartitions: [String!]!
+  executionFailedPartitions: [String!]!
+}
+
+type AssetCheckMultiPartitionStatuses {
+  ranges: [AssetCheckMultiPartitionRangeStatuses!]!
+  primaryDimensionName: String!
+}
+
+type AssetCheckMultiPartitionRangeStatuses {
+  primaryDimStartKey: String!
+  primaryDimEndKey: String!
+  primaryDimStartTime: Float
+  primaryDimEndTime: Float
+  secondaryDim: AssetCheckPartitionStatus1D!
+}
+
+union AssetCheckPartitionStatus1D =
+  | AssetCheckTimePartitionStatuses
+  | AssetCheckDefaultPartitionStatuses
+
+type AssetCheckTimePartitionStatuses {
+  ranges: [AssetCheckTimePartitionRangeStatus!]!
+}
+
+type AssetCheckTimePartitionRangeStatus {
+  startTime: Float!
+  endTime: Float!
+  startKey: String!
+  endKey: String!
+  status: AssetCheckPartitionRangeStatus!
+}
+
+enum AssetCheckPartitionRangeStatus {
+  SUCCEEDED
+  FAILED
+  IN_PROGRESS
+  SKIPPED
+  EXECUTION_FAILED
+}
+
+type AssetCheckNotFoundError implements Error {
+  message: String!
+}
+
 type AssetCheckNeedsMigrationError implements Error {
   message: String!
 }
@@ -1117,6 +1175,16 @@ type AssetCheckNeedsUserCodeUpgrade implements Error {
 
 type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
+}
+
+union AssetChecksOrError =
+  | AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
 }
 
 union Instigator = Schedule | Sensor
@@ -3736,6 +3804,7 @@ type Query {
   assetCheckExecutions(
     assetKey: AssetKeyInput!
     checkName: String!
+    partition: String
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
@@ -3978,7 +4047,7 @@ type PartitionedAssetConditionEvaluationNode {
   entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
-  numTrue: Int!
+  numTrue: Int
   numCandidates: Int
   childUniqueIds: [String!]!
 }
@@ -4007,7 +4076,7 @@ type AssetConditionEvaluationRecord {
   timestamp: Float!
   assetKey: AssetKey
   entityKey: EntityKey!
-  numRequested: Int!
+  numRequested: Int
   startTimestamp: Float
   endTimestamp: Float
   isLegacy: Boolean!
@@ -4023,7 +4092,7 @@ type AutomationConditionEvaluationNode {
   entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
-  numTrue: Int!
+  numTrue: Int
   numCandidates: Int
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
@@ -4087,6 +4156,9 @@ type Mutation {
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
+  reportAssetCheckEvaluation(
+    eventParams: ReportAssetCheckEvaluationParams!
+  ): ReportAssetCheckEvaluationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
@@ -4166,6 +4238,24 @@ union ReportRunlessAssetEventsResult =
 
 type ReportRunlessAssetEventsSuccess {
   assetKey: AssetKey!
+}
+
+union ReportAssetCheckEvaluationResult =
+  | UnauthorizedError
+  | PythonError
+  | ReportAssetCheckEvaluationSuccess
+
+type ReportAssetCheckEvaluationSuccess {
+  assetKey: AssetKey!
+}
+
+input ReportAssetCheckEvaluationParams {
+  assetKey: AssetKeyInput!
+  checkName: String!
+  passed: Boolean!
+  severity: AssetCheckSeverity = null
+  serializedMetadata: String = null
+  partition: String = null
 }
 
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError

@@ -40,7 +40,7 @@ class ADLS2DefaultAzureCredential(dg.Resolvable, Config):
 
 class ADLS2BaseResource(ConfigurableResource):
     storage_account: str = Field(description="The storage account name.")
-    credential: Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential] = Field(
+    credential: ADLS2SASToken | ADLS2Key | ADLS2DefaultAzureCredential = Field(
         discriminator="credential_type", description="The credentials with which to authenticate."
     )
 

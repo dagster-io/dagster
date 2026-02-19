@@ -1,7 +1,7 @@
 import functools
 import glob
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import yaml
 
@@ -259,7 +259,7 @@ def try_parse_yaml_with_source_position(
     src: str,
     filename: str = "<string>",
     implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
-) -> Optional[ValueAndSourcePositionTree]:
+) -> ValueAndSourcePositionTree | None:
     yamls = parse_yamls_with_source_position(
         src,
         filename=filename,

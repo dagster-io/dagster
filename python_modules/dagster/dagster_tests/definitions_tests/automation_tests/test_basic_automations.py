@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import dagster as dg
 from dagster._core.definitions.asset_key import AssetKey
@@ -13,11 +13,11 @@ if TYPE_CHECKING:
 
 
 def make_automations_aware_definitions(
-    schedules: Optional[Sequence[dg.ScheduleDefinition]] = None,
-    sensors: Optional[Sequence[dg.SensorDefinition]] = None,
+    schedules: Sequence[dg.ScheduleDefinition] | None = None,
+    sensors: Sequence[dg.SensorDefinition] | None = None,
 ):
-    job_defs: list[Union[dg.JobDefinition, UnresolvedAssetJobDefinition]] = []
-    assets_defs: list[Union[dg.AssetsDefinition, dg.SourceAsset]] = []
+    job_defs: list[dg.JobDefinition | UnresolvedAssetJobDefinition] = []
+    assets_defs: list[dg.AssetsDefinition | dg.SourceAsset] = []
     for schedule_def in schedules or []:
         job_defs.append(schedule_def.target.job_def)
         assets_defs.extend(schedule_def.target.assets_defs)

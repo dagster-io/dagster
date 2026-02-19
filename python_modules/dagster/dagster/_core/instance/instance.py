@@ -144,10 +144,10 @@ class DagsterInstance(
         run_launcher: Optional["RunLauncher"],
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
-        settings: Optional[Mapping[str, Any]] = None,
+        settings: Mapping[str, Any] | None = None,
         secrets_loader: Optional["SecretsLoader"] = None,
         defs_state_storage: Optional["DefsStateStorage"] = None,
-        ref: Optional[InstanceRef] = None,
+        ref: InstanceRef | None = None,
         **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
         from dagster._core.launcher import RunLauncher
@@ -201,7 +201,7 @@ class DagsterInstance(
             self._run_coordinator = None
 
         if run_launcher:
-            self._run_launcher: Optional[RunLauncher] = check.inst_param(
+            self._run_launcher: RunLauncher | None = check.inst_param(
                 run_launcher, "run_launcher", RunLauncher
             )
             run_launcher.register_instance(self)
@@ -241,9 +241,9 @@ class DagsterInstance(
     @public
     @staticmethod
     def ephemeral(
-        tempdir: Optional[str] = None,
-        preload: Optional[Sequence["DebugRunPayload"]] = None,
-        settings: Optional[dict] = None,
+        tempdir: str | None = None,
+        preload: Sequence["DebugRunPayload"] | None = None,
+        settings: dict | None = None,
     ) -> "DagsterInstance":
         """Create a `DagsterInstance` suitable for ephemeral execution, useful in test contexts. An
         ephemeral instance uses mostly in-memory components. Use `local_temp` to create a test
@@ -277,8 +277,8 @@ class DagsterInstance(
     @public
     @staticmethod
     def local_temp(
-        tempdir: Optional[str] = None,
-        overrides: Optional[DagsterInstanceOverrides] = None,
+        tempdir: str | None = None,
+        overrides: DagsterInstanceOverrides | None = None,
     ) -> "DagsterInstance":
         """Create a DagsterInstance that uses a temporary directory for local storage. This is a
         regular, fully persistent instance. Use `ephemeral` to get an ephemeral instance with
@@ -304,7 +304,7 @@ class DagsterInstance(
         self,
         records_filter: Union["AssetKey", "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
         """Return a list of materialization records stored in the event log storage.
@@ -328,7 +328,7 @@ class DagsterInstance(
         self,
         records_filter: Union["AssetKey", "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
         """Return a list of observation records stored in the event log storage.
@@ -350,9 +350,9 @@ class DagsterInstance(
     @traced
     def get_asset_keys(
         self,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        prefix: Sequence[str] | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> Sequence["AssetKey"]:
         """Return a filtered subset of asset keys managed by this instance.
 
@@ -369,7 +369,7 @@ class DagsterInstance(
     @public
     @traced
     def get_asset_records(
-        self, asset_keys: Optional[Sequence["AssetKey"]] = None
+        self, asset_keys: Sequence["AssetKey"] | None = None
     ) -> Sequence["AssetRecord"]:
         """Return an `AssetRecord` for each of the given asset keys.
 
@@ -384,7 +384,7 @@ class DagsterInstance(
     @public
     def get_latest_materialization_code_versions(
         self, asset_keys: Iterable["AssetKey"]
-    ) -> Mapping["AssetKey", Optional[str]]:
+    ) -> Mapping["AssetKey", str | None]:
         """Returns the code version used for the latest materialization of each of the provided
         assets.
 
@@ -421,7 +421,7 @@ class DagsterInstance(
         asset_key: "AssetKey",
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
+    ) -> Mapping[str, "AssetPartitionStatus"] | None:
         """Get the current status of provided partition_keys for the provided asset.
 
         Args:
@@ -485,7 +485,7 @@ class DagsterInstance(
         self._event_storage.delete_events(run_id)
 
     @public
-    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+    def get_run_by_id(self, run_id: str) -> DagsterRun | None:
         """Get a :py:class:`DagsterRun` matching the provided `run_id`.
 
         Args:
@@ -524,11 +524,11 @@ class DagsterInstance(
     def get_run_records(
         self,
         filters: Optional["RunsFilter"] = None,
-        limit: Optional[int] = None,
-        order_by: Optional[str] = None,
+        limit: int | None = None,
+        order_by: str | None = None,
         ascending: bool = False,
-        cursor: Optional[str] = None,
-        bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+        cursor: str | None = None,
+        bucket_by: Union["JobBucket", "TagBucket"] | None = None,
     ) -> Sequence["RunRecord"]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -555,7 +555,7 @@ class DagsterInstance(
         self,
         records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
         """Return a list of run_status_event records stored in the event log storage.
@@ -579,9 +579,9 @@ class DagsterInstance(
     def get_records_for_run(
         self,
         run_id: str,
-        cursor: Optional[str] = None,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+        limit: int | None = None,
         ascending: bool = True,
     ) -> "EventLogConnection":
         """Get event records for run.
@@ -708,7 +708,7 @@ class DagsterInstance(
     def root_directory(self) -> str:
         return self._local_artifact_storage.base_dir
 
-    def _info(self, component: object) -> Union[str, Mapping[Any, Any]]:
+    def _info(self, component: object) -> str | Mapping[Any, Any]:
         # ConfigurableClass may not have inst_data if it's a direct instantiation
         # which happens for ephemeral instances
         if isinstance(component, ConfigurableClass) and component.inst_data:
@@ -752,7 +752,7 @@ class DagsterInstance(
     def schema_str(self) -> str:
         def _schema_dict(
             alembic_version: Optional["AlembicVersion"],
-        ) -> Optional[Mapping[str, object]]:
+        ) -> Mapping[str, object] | None:
             if not alembic_version:
                 return None
             db_revision, head_revision = alembic_version
@@ -845,7 +845,7 @@ class DagsterInstance(
             return self._settings.get(settings_key)
         return {}
 
-    def upgrade(self, print_fn: Optional[PrintFn] = None) -> None:
+    def upgrade(self, print_fn: PrintFn | None = None) -> None:
         from dagster._core.storage.migration.utils import upgrading_instance
 
         with upgrading_instance(self):
@@ -937,9 +937,9 @@ class DagsterInstance(
 
     def __exit__(
         self,
-        _exception_type: Optional[type[BaseException]],
-        _exception_value: Optional[BaseException],
-        _traceback: Optional[TracebackType],
+        _exception_type: type[BaseException] | None,
+        _exception_value: BaseException | None,
+        _traceback: TracebackType | None,
     ) -> None:
         self.dispose()
         self._exit_stack.close()
@@ -951,7 +951,7 @@ class DagsterInstance(
         """Gate on a feature to start a thread that monitors for if the run should be canceled."""
         return False
 
-    def inject_env_vars(self, location_name: Optional[str]) -> None:
+    def inject_env_vars(self, location_name: str | None) -> None:
         if not self._secrets_loader:
             return
 

@@ -49,7 +49,7 @@ setup(
             "snowflake-sqlalchemy",
         ],
         "pandas": [
-            "pandas",
+            "pandas<3.0.0",
             "snowflake-connector-python[pandas]>=3.4.0",
         ],
     },

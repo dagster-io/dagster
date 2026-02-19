@@ -6,7 +6,7 @@ import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final  # noqa: UP035
 
 import yaml
 from dagster import (
@@ -66,7 +66,7 @@ _SELECTION_ARGS_THRESHOLD: Final[int] = 200
 
 def _parse_selection_args(
     selection_args: list[str],
-) -> tuple[Optional[list[str]], Optional[list[str]]]:
+) -> tuple[list[str] | None, list[str] | None]:
     """Parse selection args into separate select and exclude resource lists.
 
     This function is designed for dagster-dbt's internal argument format, where select/exclude
@@ -82,8 +82,8 @@ def _parse_selection_args(
         Tuple of (select_resources, exclude_resources) where each is a list of resource names
         or None if not present.
     """
-    select_resources: Optional[list[str]] = None
-    exclude_resources: Optional[list[str]] = None
+    select_resources: list[str] | None = None
+    exclude_resources: list[str] | None = None
 
     i = 0
     while i < len(selection_args):
@@ -260,8 +260,8 @@ def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name
 def build_dbt_asset_selection(
     dbt_assets: Sequence[AssetsDefinition],
     dbt_select: str = DBT_DEFAULT_SELECT,
-    dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
-    dbt_selector: Optional[str] = DBT_DEFAULT_SELECTOR,
+    dbt_exclude: str | None = DBT_DEFAULT_EXCLUDE,
+    dbt_selector: str | None = DBT_DEFAULT_SELECTOR,
 ) -> AssetSelection:
     """Build an asset selection for a dbt selection string.
 
@@ -352,12 +352,12 @@ def build_schedule_from_dbt_selection(
     job_name: str,
     cron_schedule: str,
     dbt_select: str = DBT_DEFAULT_SELECT,
-    dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    dbt_exclude: str | None = DBT_DEFAULT_EXCLUDE,
     dbt_selector: str = DBT_DEFAULT_SELECTOR,
-    schedule_name: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    config: Optional[RunConfig] = None,
-    execution_timezone: Optional[str] = None,
+    schedule_name: str | None = None,
+    tags: Mapping[str, str] | None = None,
+    config: RunConfig | None = None,
+    execution_timezone: str | None = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
 ) -> ScheduleDefinition:
     """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
@@ -419,13 +419,13 @@ def build_schedule_from_dbt_selection(
 
 def get_manifest_and_translator_from_dbt_assets(
     dbt_assets: Sequence[AssetsDefinition],
-) -> tuple[Mapping[str, Any], "DagsterDbtTranslator", Optional[DbtProject]]:
+) -> tuple[Mapping[str, Any], "DagsterDbtTranslator", DbtProject | None]:
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
     first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
-    manifest_wrapper: Optional[DbtManifestWrapper] = first_metadata.get(
+    manifest_wrapper: DbtManifestWrapper | None = first_metadata.get(
         DAGSTER_DBT_MANIFEST_METADATA_KEY
     )
     project = first_metadata.get(DAGSTER_DBT_PROJECT_METADATA_KEY)
@@ -463,12 +463,12 @@ class DbtCliInvocationPartialParams:
         "DagsterDbtTranslator", ImportFrom("dagster_dbt.dagster_dbt_translator")
     ]
     selection_args: Sequence[str]
-    indirect_selection: Optional[str]
-    dbt_project: Optional[DbtProject]
+    indirect_selection: str | None
+    dbt_project: DbtProject | None
 
 
 def get_updated_cli_invocation_params_for_context(
-    context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+    context: OpExecutionContext | AssetExecutionContext | None,
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
 ) -> DbtCliInvocationPartialParams:
@@ -634,7 +634,7 @@ def default_metadata_from_dbt_resource_props(
     }
 
 
-def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> str | None:
     """Get the group name for a dbt node.
 
     If a Dagster group is configured in the metadata for the node, use that.
@@ -656,7 +656,7 @@ def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any])
 
 def group_from_dbt_resource_props_fallback_to_directory(
     dbt_resource_props: Mapping[str, Any],
-) -> Optional[str]:
+) -> str | None:
     """Get the group name for a dbt node.
 
     Has the same behavior as the default_group_from_dbt_resource_props, except for that, if no group can be determined
@@ -679,14 +679,14 @@ def group_from_dbt_resource_props_fallback_to_directory(
 
 def default_owners_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
-) -> Optional[Sequence[str]]:
+) -> Sequence[str] | None:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     owners_config = dagster_metadata.get("owners")
 
     if owners_config:
         return owners_config
 
-    owner: Optional[Union[str, Sequence[str]]] = (
+    owner: str | Sequence[str] | None = (
         (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
     )
 
@@ -698,7 +698,7 @@ def default_owners_from_dbt_resource_props(
 
 def default_auto_materialize_policy_fn(
     dbt_resource_props: Mapping[str, Any],
-) -> Optional[AutoMaterializePolicy]:
+) -> AutoMaterializePolicy | None:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
 
@@ -727,8 +727,8 @@ def default_asset_check_fn(
     dagster_dbt_translator: "DagsterDbtTranslator",
     asset_key: AssetKey,
     test_unique_id: str,
-    project: Optional[DbtProject],
-) -> Optional[AssetCheckSpec]:
+    project: DbtProject | None,
+) -> AssetCheckSpec | None:
     if not dagster_dbt_translator.settings.enable_asset_checks:
         return None
 
@@ -764,8 +764,8 @@ def default_asset_check_fn(
     )
 
 
-def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-    code: Optional[str] = dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code")
+def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str | None:
+    code: str | None = dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code")
     if code:
         return hashlib.sha1(code.encode("utf-8")).hexdigest()
 
@@ -850,8 +850,8 @@ def build_dbt_specs(
     select: str,
     exclude: str,
     selector: str,
-    io_manager_key: Optional[str],
-    project: Optional[DbtProject],
+    io_manager_key: str | None,
+    project: DbtProject | None,
 ) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
     selected_unique_ids = select_unique_ids(
         select=select, exclude=exclude, selector=selector, project=project, manifest_json=manifest
@@ -974,8 +974,8 @@ def get_asset_check_key_for_test(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
     test_unique_id: str,
-    project: Optional[DbtProject],
-) -> Optional[AssetCheckKey]:
+    project: DbtProject | None,
+) -> AssetCheckKey | None:
     if not test_unique_id.startswith("test"):
         return None
 
@@ -1043,14 +1043,14 @@ def get_checks_on_sources_upstream_of_selected_assets(
 
 
 def get_subset_selection_for_context(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
     manifest: Mapping[str, Any],
-    select: Optional[str],
-    exclude: Optional[str],
-    selector: Optional[str],
+    select: str | None,
+    exclude: str | None,
+    selector: str | None,
     dagster_dbt_translator: "DagsterDbtTranslator",
-    current_dbt_indirect_selection_env: Optional[str],
-) -> tuple[list[str], Optional[str]]:
+    current_dbt_indirect_selection_env: str | None,
+) -> tuple[list[str], str | None]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
 

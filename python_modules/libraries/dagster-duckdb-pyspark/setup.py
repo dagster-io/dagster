@@ -35,7 +35,7 @@ setup(
         f"dagster-duckdb{pin}",
         "pyspark>=4.1; python_version>='3.14'",
         "pyspark>=3.5,<4; python_version<'3.14'",
-        "pandas",
+        "pandas<3.0.0",
         "pyarrow",
     ],
     zip_safe=False,

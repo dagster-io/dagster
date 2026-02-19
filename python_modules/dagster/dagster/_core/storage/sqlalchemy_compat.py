@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as db
 
@@ -14,7 +14,7 @@ def db_select(items: Iterable):
     return db.select(items)
 
 
-def db_case(items: Iterable, else_: Optional[Any] = None):
+def db_case(items: Iterable, else_: Any | None = None):
     """Utility class that allows compatability between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
     if not IS_SQLALCHEMY_VERSION_1:
         return db.case(*items, else_=else_)

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -16,6 +16,6 @@ class PythonLogLevel(str, Enum):
 
 
 class PythonLogs(BaseModel, extra="forbid"):
-    pythonLogLevel: Optional[PythonLogLevel] = None
-    managedPythonLoggers: Optional[list[str]] = None
-    dagsterHandlerConfig: Optional[dict[str, Any]] = None
+    pythonLogLevel: PythonLogLevel | None = None
+    managedPythonLoggers: list[str] | None = None
+    dagsterHandlerConfig: dict[str, Any] | None = None

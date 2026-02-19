@@ -233,7 +233,7 @@ def test_check_yaml_with_watch() -> None:
             # Signal the watcher to exit
             interrupt_ipc_subprocess(check_process)
 
-            stdout, stderr = check_process.communicate()
+            stdout, _stderr = check_process.communicate()
 
             assert "All component YAML validated successfully" in stdout.decode("utf-8")
             assert BASIC_INVALID_VALUE.check_error_msg

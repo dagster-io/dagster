@@ -1,7 +1,7 @@
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 import dagster._check as check
 
@@ -23,10 +23,10 @@ BACKOFF_MAX_RETRIES = 4
 def backoff(
     fn: Callable[..., T],
     retry_on: tuple[type[BaseException], ...],
-    args: Optional[Sequence[object]] = None,
-    kwargs: Optional[Mapping[str, object]] = None,
+    args: Sequence[object] | None = None,
+    kwargs: Mapping[str, object] | None = None,
     max_retries: int = BACKOFF_MAX_RETRIES,
-    delay_generator: Optional[Iterator[float]] = None,
+    delay_generator: Iterator[float] | None = None,
 ) -> T:
     """Straightforward backoff implementation.
 
@@ -77,10 +77,10 @@ def backoff(
 async def async_backoff(
     fn: Callable[..., Awaitable[T]],
     retry_on: Callable[[BaseException], bool],
-    args: Optional[Sequence[object]] = None,
-    kwargs: Optional[Mapping[str, object]] = None,
+    args: Sequence[object] | None = None,
+    kwargs: Mapping[str, object] | None = None,
     max_retries: int = BACKOFF_MAX_RETRIES,
-    delay_generator: Optional[Iterator[float]] = None,
+    delay_generator: Iterator[float] | None = None,
 ) -> T:
     """Async backoff implementation with configurable retry predicate.
 

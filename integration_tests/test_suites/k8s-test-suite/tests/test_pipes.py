@@ -293,6 +293,74 @@ def test_pipes_error(namespace, cluster_provider):
 
 
 @pytest.mark.default
+def test_pipes_client_ignore_init_container(namespace, cluster_provider):
+    """Test that PipesK8sClient works with an init container listed in ignore_containers.
+
+    This test is expected to fail due to a logic bug in wait_for_pod where ignored
+    init containers can cause a StopIteration when the init container status is present
+    but the regular container statuses have not yet been populated.
+    """
+    docker_image = get_test_project_docker_image()
+
+    @asset
+    def number_y(
+        context: AssetExecutionContext,
+        pipes_client: PipesK8sClient,
+    ):
+        return pipes_client.run(
+            context=context,
+            namespace=namespace,
+            extras={
+                "storage_root": "/tmp/",
+            },
+            base_pod_spec={
+                "init_containers": [
+                    {
+                        "name": "init-setup",
+                        "image": "busybox",
+                        "command": ["sh", "-c", "echo 'init done'"],
+                    }
+                ],
+                "containers": [
+                    {
+                        "name": "dagster-pipes",
+                        "image": docker_image,
+                        "command": [
+                            "python",
+                            "-m",
+                            "numbers_example.number_y",
+                        ],
+                        "env": [
+                            {
+                                "name": "PYTHONPATH",
+                                "value": "/dagster_test/toys/external_execution/",
+                            },
+                            {"name": "NUMBER_Y", "value": "2"},
+                        ],
+                    }
+                ],
+            },
+            ignore_containers={"init-setup"},
+        ).get_results()
+
+    result = materialize(
+        [number_y],
+        resources={
+            "pipes_client": PipesK8sClient(
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+                poll_interval=POLL_INTERVAL,
+            )
+        },
+        raise_on_error=False,
+    )
+    assert result.success
+    mats = result.asset_materializations_for_node(number_y.op.name)
+    assert "is_even" in mats[0].metadata
+    assert mats[0].metadata["is_even"].value is True
+
+
+@pytest.mark.default
 def test_pipes_client_read_timeout(namespace, cluster_provider):
     # despite a strict request timeout causing frequent interruptions,
     # the pipes client can still complete.

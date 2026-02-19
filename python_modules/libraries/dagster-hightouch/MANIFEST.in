@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+include dagster_hightouch/py.typed
+exclude Makefile
+prune dagster_hightouch_tests

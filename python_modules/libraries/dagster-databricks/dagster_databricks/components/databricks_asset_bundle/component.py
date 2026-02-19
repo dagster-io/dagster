@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated
 
 from dagster import (
     AssetExecutionContext,
@@ -89,17 +89,13 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ),
     ]
     compute_config: Annotated[
-        Union[
-            ResolvedDatabricksNewClusterConfig,
-            ResolvedDatabricksExistingClusterConfig,
-            ResolvedDatabricksServerlessConfig,
-        ],
+        ResolvedDatabricksNewClusterConfig
+        | ResolvedDatabricksExistingClusterConfig
+        | ResolvedDatabricksServerlessConfig,
         Resolver.default(
-            model_field_type=Union[
-                ResolvedDatabricksNewClusterConfig,
-                ResolvedDatabricksExistingClusterConfig,
-                ResolvedDatabricksServerlessConfig,
-            ],
+            model_field_type=ResolvedDatabricksNewClusterConfig
+            | ResolvedDatabricksExistingClusterConfig
+            | ResolvedDatabricksServerlessConfig,
             description=(
                 "A mapping defining a Databricks compute config. "
                 "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
@@ -122,7 +118,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ),
     ] = field(default_factory=ResolvedDatabricksServerlessConfig)
     op: Annotated[
-        Optional[OpSpec],
+        OpSpec | None,
         Resolver.default(
             description="Op related arguments to set on the generated @multi_asset",
             examples=[
@@ -136,7 +132,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ] = None
-    assets_by_task_key: Optional[dict[str, list[ResolvedAssetSpec]]] = None
+    assets_by_task_key: dict[str, list[ResolvedAssetSpec]] | None = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
@@ -246,11 +242,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         databricks_assets = []
         for task_key, asset_specs in self.asset_specs_by_task_key.items():
+            op_prefix = self.op.name if self.op and self.op.name else "databricks"
 
             @multi_asset(
-                name=self.op.name
-                if self.op and self.op.name
-                else f"databricks_{task_key}_multi_asset_{component_defs_path_as_python_str}",
+                name=f"{op_prefix}_{task_key}_multi_asset_{component_defs_path_as_python_str}",
                 specs=asset_specs,
                 can_subset=False,
                 op_tags=self.op.tags if self.op else None,

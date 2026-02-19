@@ -169,7 +169,7 @@ def test_dagster_materializes(
     for asset in materializable_assets:
         for spec in asset.specs:
             assert instance.get_latest_materialization_event(asset_key=spec.key)
-    dagster_dev_module, af_instance_fn = stage_and_fn
+    _dagster_dev_module, af_instance_fn = stage_and_fn
     af_instances = af_instance_fn()
     dags_per_instance = {
         OTHER_TEAM_FEDERATED_INSTANCE_NAME: ["upload_source_data", "run_scrapers_daily"],

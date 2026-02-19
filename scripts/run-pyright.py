@@ -13,7 +13,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import reduce
 from itertools import groupby
-from typing import Final, Literal, Optional, cast
+from typing import Final, Literal, cast
 
 import tomli
 from typing_extensions import NotRequired, TypedDict
@@ -193,7 +193,7 @@ def get_pyspark_constraints_path():
     )
 
 
-def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
+def get_env_path(env: str, rel_path: str | None = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
     return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
 
@@ -314,15 +314,18 @@ def normalize_env(
             f"--reinstall-package {pkg}" for pkg in get_all_editable_packages(env)
         ]
 
+        # Use --no-config in uv pip install to avoid discovery of constraints in uv config further
+        # up the file tree.
         build_venv_cmd = " && ".join(
             [
                 f"uv venv --python={venv_python} --seed {venv_path}",
-                f"uv pip install --python {python_path} -U pip setuptools wheel",
+                f"uv pip install --no-config --python {python_path} -U pip setuptools wheel",
                 " ".join(
                     [
                         "uv",
                         "pip",
                         "install",
+                        "--no-config",
                         "-b",
                         get_pyspark_constraints_path(),
                         "--python",
@@ -417,7 +420,7 @@ def update_pinned_requirements(env: str) -> None:
 
 def run_pyright(
     env: str,
-    paths: Optional[Sequence[str]],
+    paths: Sequence[str] | None,
     rebuild: bool,
     pinned_deps: bool,
     venv_python: str,
@@ -497,12 +500,33 @@ def print_output(result: RunResult, output_json: bool) -> None:
 
 
 def get_dagster_pyright_version() -> str:
+    dagster_pyproject = os.path.abspath(
+        os.path.join(__file__, "../../python_modules/dagster/pyproject.toml")
+    )
+
+    # Try pyproject.toml first (preferred after migration from setup.py)
+    if os.path.exists(dagster_pyproject):
+        with open(dagster_pyproject, "rb") as f:
+            pyproject = tomli.load(f)
+        pyright_deps = (
+            pyproject.get("project", {}).get("optional-dependencies", {}).get("pyright", [])
+        )
+        for dep in pyright_deps:
+            if dep.startswith("pyright=="):
+                return dep.split("==")[1]
+
+    # Fall back to setup.py for transition period
     dagster_setup = os.path.abspath(os.path.join(__file__, "../../python_modules/dagster/setup.py"))
-    with open(dagster_setup, encoding="utf-8") as f:
-        content = f.read()
-    m = re.search('"pyright==([^"]+)"', content)
-    assert m is not None, "Could not find pyright version in python_modules/dagster/setup.py"
-    return m.group(1)
+    if os.path.exists(dagster_setup):
+        with open(dagster_setup, encoding="utf-8") as f:
+            content = f.read()
+        m = re.search('"pyright==([^"]+)"', content)
+        if m:
+            return m.group(1)
+
+    raise RuntimeError(
+        "Could not find pyright version in python_modules/dagster/pyproject.toml or setup.py"
+    )
 
 
 def get_hints(output: PyrightOutput) -> Sequence[str]:
@@ -572,7 +596,8 @@ def print_report(result: RunResult) -> None:
 
 
 if __name__ == "__main__":
-    assert os.path.exists(".git"), "Must be run from the root of the repository"
+    # Verify we're in a git repo and at the OSS repo root (has pyright/ directory)
+    assert os.path.exists("pyright"), "Must be run from the root of the dagster repository"
     args = parser.parse_args()
     params = get_params(args)
     if params["mode"] == "path":

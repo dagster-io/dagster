@@ -4,7 +4,7 @@ import os
 import time
 from collections.abc import Mapping
 from logging import Logger
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster as dg
 import dagster._check as check
@@ -35,7 +35,7 @@ from typing_extensions import Self
 
 
 class TestRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         self.should_fail_termination = False
         self.should_except_termination = False
@@ -519,3 +519,46 @@ def test_long_running_termination_failure(
             event.message == "This job is being forcibly marked as failed. The "
             "computational resources created by the run may not have been fully cleaned up."
         )
+
+
+def test_invalid_max_runtime_tag_value(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    logger: Logger,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that invalid (non-float) max_runtime tag values are handled gracefully."""
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
+        initial = create_datetime(2021, 1, 1)
+        with freeze_time(initial):
+            invalid_tag_run = create_run_for_test(
+                instance,
+                job_name="foo",
+                status=DagsterRunStatus.STARTING,
+                tags={dg.MAX_RUNTIME_SECONDS_TAG: "invalid"},
+            )
+        started_time = initial + datetime.timedelta(seconds=1)
+        with freeze_time(started_time):
+            report_started_event(instance, invalid_tag_run, started_time.timestamp())
+
+        invalid_tag_record = instance.get_run_record_by_id(invalid_tag_run.run_id)
+        assert invalid_tag_record is not None
+        assert invalid_tag_record.dagster_run.status == DagsterRunStatus.STARTED
+
+        workspace = workspace_context.create_request_context()
+        run_launcher = cast("TestRunLauncher", instance.run_launcher)
+
+        # Advance time well past what would be a typical timeout
+        eval_time = started_time + datetime.timedelta(seconds=10000)
+        with freeze_time(eval_time):
+            with caplog.at_level(logging.WARNING):
+                monitor_started_run(instance, workspace, invalid_tag_record, logger)
+
+            # Run should NOT be terminated - invalid tag value is ignored
+            run = instance.get_run_by_id(invalid_tag_record.dagster_run.run_id)
+            assert run
+            assert run.status == DagsterRunStatus.STARTED
+            assert not run_launcher.termination_calls
+
+            # Verify warning was logged
+            assert "Invalid max runtime value: invalid" in caplog.text

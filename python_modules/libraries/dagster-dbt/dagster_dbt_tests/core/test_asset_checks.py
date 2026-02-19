@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import pytest
 from dagster import (
@@ -25,6 +25,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dagster_shared.record import replace
 
 from dagster_dbt_tests.dbt_projects import test_asset_checks_path, test_dbt_alias_path
 
@@ -325,10 +326,10 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 def _materialize_dbt_assets(
     manifest: dict[str, Any],
     dbt_commands: list[list[str]],
-    selection: Optional[AssetSelection],
-    expected_dbt_selection: Optional[set[str]] = None,
+    selection: AssetSelection | None,
+    expected_dbt_selection: set[str] | None = None,
     dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    additional_assets: Optional[list[AssetsDefinition]] = None,
+    additional_assets: list[AssetsDefinition] | None = None,
 ) -> ExecuteInProcessResult:
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -748,12 +749,13 @@ def test_asset_checks_evaluations(
             if isinstance(event, AssetCheckEvaluation):
                 check_events_without_non_deterministic_metadata[
                     event.asset_key, event.check_name
-                ] = event._replace(
+                ] = replace(
+                    event,
                     metadata={
                         k: v
                         for k, v in event.metadata.items()
                         if k not in non_deterministic_metadata_keys
-                    }
+                    },
                 )
 
         for expected_asset_check_evaluation in expected_results:
@@ -918,7 +920,7 @@ def test_dbt_source_tests(
 )
 def test_dbt_source_tests_checks_enabled(
     test_asset_checks_manifest: dict[str, Any],
-    selection: Optional[str],
+    selection: str | None,
     expected_num_source_test_execs: int,
     success: bool,
 ) -> None:

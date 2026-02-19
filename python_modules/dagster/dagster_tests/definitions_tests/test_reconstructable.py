@@ -88,7 +88,7 @@ def test_manual_instance():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Reconstructable target was not a function returning a job definition, or a job"
+            r"Reconstructable target was not a function returning a job definition, or a job"
             " definition produced by a decorated function."
         ),
     ):

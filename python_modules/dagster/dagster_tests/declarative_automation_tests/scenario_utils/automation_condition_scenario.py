@@ -2,7 +2,6 @@ import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Optional
 
 import dagster as dg
 import dagster._check as check
@@ -29,7 +28,7 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
 class FalseAutomationCondition(dg.AutomationCondition):
     """Always returns the empty subset."""
 
-    label: Optional[str] = None
+    label: str | None = None
 
     @property
     def description(self) -> str:
@@ -41,9 +40,9 @@ class FalseAutomationCondition(dg.AutomationCondition):
 
 @dataclass(frozen=True)
 class AutomationConditionScenarioState(ScenarioState):
-    automation_condition: Optional[dg.AutomationCondition] = None
-    condition_cursor: Optional[AutomationConditionCursor] = None
-    requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
+    automation_condition: dg.AutomationCondition | None = None
+    condition_cursor: AutomationConditionCursor | None = None
+    requested_asset_partitions: Sequence[AssetKeyPartitionKey] | None = None
     ensure_empty_result: bool = True
     request_backfills: bool = False
 

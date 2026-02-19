@@ -4,7 +4,6 @@ import json
 import random
 import shutil
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -31,7 +30,7 @@ from dagster_shared.serdes.objects.models.defs_state_info import (
 
 
 class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
-    defs_state_key: Optional[str] = None
+    defs_state_key: str | None = None
     defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
 
     @property
@@ -42,7 +41,7 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             value = "initial"
@@ -99,7 +98,7 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     ],
 )
 def test_simple_state_backed_component(
-    storage_location: DefsStateManagementType, key: Optional[str]
+    storage_location: DefsStateManagementType, key: str | None
 ) -> None:
     expected_key = key or "MyStateBackedComponent"
     with instance_for_test() as instance, create_defs_folder_sandbox() as sandbox:

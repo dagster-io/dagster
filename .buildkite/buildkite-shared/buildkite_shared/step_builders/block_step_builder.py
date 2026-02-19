@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict, Union
+from typing import TypedDict
 
 
 class InputSelectOption(TypedDict):
@@ -10,30 +10,30 @@ class InputSelectField(TypedDict):
     select: str
     key: str
     options: list[InputSelectOption]
-    hint: Optional[str]
-    default: Optional[str]
-    required: Optional[bool]
-    multiple: Optional[bool]
+    hint: str | None
+    default: str | None
+    required: bool | None
+    multiple: bool | None
 
 
 class InputTextField(TypedDict):
     text: str
     key: str
-    hint: Optional[str]
-    default: Optional[str]
-    required: Optional[bool]
+    hint: str | None
+    default: str | None
+    required: bool | None
 
 
 BlockStepConfiguration = TypedDict(
     "BlockStepConfiguration",
     {
         "block": str,
-        "key": Optional[str],
-        "prompt": Optional[str],
-        "fields": list[Union[InputSelectField, InputTextField]],
-        "depends_on": Optional[list[str]],
-        "if": Optional[str],
-        "skip": Optional[str],
+        "key": str | None,
+        "prompt": str | None,
+        "fields": list[InputSelectField | InputTextField],
+        "depends_on": list[str] | None,
+        "if": str | None,
+        "skip": str | None,
     },
     total=False,
 )
@@ -54,7 +54,7 @@ class BlockStepBuilder:
             self._step["fields"] = fields
         return self
 
-    def skip_if(self, skip_reason: Optional[str] = None):
+    def skip_if(self, skip_reason: str | None = None):
         if skip_reason:
             self._step["skip"] = skip_reason
         return self

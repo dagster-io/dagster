@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Final, Optional
+from typing import IO, Final
 
 from dagster_shared.seven import json
 from watchdog.events import PatternMatchingEventHandler
@@ -49,8 +49,8 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def __init__(
         self,
         base_dir: str,
-        polling_timeout: Optional[float] = None,
-        inst_data: Optional[ConfigurableClassData] = None,
+        polling_timeout: float | None = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._base_dir = base_dir
         self._polling_timeout = check.opt_float_param(
@@ -60,7 +60,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @property
@@ -76,7 +76,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value
+        cls, inst_data: ConfigurableClassData | None, config_value
     ) -> "LocalComputeLogManager":
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
@@ -93,7 +93,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Iterator[Optional[IO]]:
+    ) -> Iterator[IO | None]:
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         ensure_file(path)
         with open(path, "+a", encoding="utf-8") as f:
@@ -103,7 +103,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         return os.path.exists(self.complete_artifact_path(log_key))
 
     def get_log_data(
-        self, log_key: Sequence[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
+        self, log_key: Sequence[str], cursor: str | None = None, max_bytes: int | None = None
     ) -> CapturedLogData:
         stdout_cursor, stderr_cursor = self.parse_cursor(cursor)
         stdout, stdout_offset = self.get_log_data_for_type(
@@ -132,7 +132,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         )
 
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self, log_key: Sequence[str] | None = None, prefix: Sequence[str] | None = None
     ):
         if log_key:
             paths = [
@@ -161,8 +161,8 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self,
         log_key: Sequence[str],
         io_type: ComputeIOType,
-        offset: Optional[int] = 0,
-        max_bytes: Optional[int] = None,
+        offset: int | None = 0,
+        max_bytes: int | None = None,
     ):
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         return self.read_path(path, offset or 0, max_bytes)
@@ -174,7 +174,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self,
         path: str,
         offset: int = 0,
-        max_bytes: Optional[int] = None,
+        max_bytes: int | None = None,
     ):
         if not os.path.exists(path) or not os.path.isfile(path):
             return None, offset
@@ -210,7 +210,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         return str(log_path)
 
     def subscribe(
-        self, log_key: Sequence[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: str | None = None
     ) -> CapturedLogSubscription:
         subscription = CapturedLogSubscription(self, log_key, cursor)
         self._subscription_manager.add_subscription(subscription)

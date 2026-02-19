@@ -21,6 +21,7 @@ def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):
             if run.status in [
                 DagsterRunStatus.CANCELING,
                 DagsterRunStatus.CANCELED,
+                DagsterRunStatus.FAILURE,
             ]:
                 print(  # noqa: T201
                     f"Detected run status {run.status}, sending interrupt to main thread"

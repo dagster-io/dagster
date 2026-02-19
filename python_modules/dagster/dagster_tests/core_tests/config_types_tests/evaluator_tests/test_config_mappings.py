@@ -170,7 +170,7 @@ def test_config_mapper_throws():
     with pytest.raises(
         dg.DagsterConfigMappingFunctionError,
         match=(
-            "The config mapping function on graph 'do_stuff' "
+            r"The config mapping function on graph 'do_stuff' "
             "in job 'wrap_job' has thrown an unexpected error during its "
             'execution. The definition is instantiated at stack "do_stuff"'
         ),
@@ -188,7 +188,7 @@ def test_config_mapper_throws():
     with pytest.raises(
         dg.DagsterConfigMappingFunctionError,
         match=(
-            "The config mapping function on graph 'bad_wrap' "
+            r"The config mapping function on graph 'bad_wrap' "
             "in job 'wrap_invocations' has thrown an unexpected error during its "
             'execution. The definition is instantiated at stack "bad_wrap"'
         ),

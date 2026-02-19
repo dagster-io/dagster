@@ -2,7 +2,6 @@ import os
 import re
 import shlex
 from dataclasses import dataclass
-from typing import Optional
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
@@ -37,19 +36,19 @@ _COMMAND_TYPE_TO_EMOJI_MAP = {
 def build_tox_step(
     root_dir: str,
     tox_env: str,
-    base_label: Optional[str] = None,
+    base_label: str | None = None,
     command_type: str = "miscellaneous",
-    python_version: Optional[AvailablePythonVersion] = None,
-    tox_file: Optional[str] = None,
-    extra_commands_pre: Optional[list[str]] = None,
-    extra_commands_post: Optional[list[str]] = None,
-    env_vars: Optional[list[str]] = None,
-    dependencies: Optional[list[str]] = None,
-    retries: Optional[int] = None,
-    timeout_in_minutes: Optional[int] = None,
-    queue: Optional[BuildkiteQueue] = None,
-    skip_reason: Optional[str] = None,
-    pytest_args: Optional[list[str]] = None,
+    python_version: AvailablePythonVersion | None = None,
+    tox_file: str | None = None,
+    extra_commands_pre: list[str] | None = None,
+    extra_commands_post: list[str] | None = None,
+    env_vars: list[str] | None = None,
+    dependencies: list[str] | None = None,
+    retries: int | None = None,
+    timeout_in_minutes: int | None = None,
+    queue: BuildkiteQueue | None = None,
+    skip_reason: str | None = None,
+    pytest_args: list[str] | None = None,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]

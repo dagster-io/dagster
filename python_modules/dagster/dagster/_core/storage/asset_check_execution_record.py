@@ -2,6 +2,7 @@ import enum
 from collections.abc import Iterable
 from typing import NamedTuple, Optional, cast
 
+from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
@@ -58,8 +59,9 @@ class AssetCheckExecutionRecord(
             # Either an AssetCheckEvaluationPlanned or AssetCheckEvaluation event.
             # Optional for backwards compatibility, before we started storing planned events.
             # Old records won't have an event if the status is PLANNED.
-            ("event", Optional[EventLogEntry]),
+            ("event", EventLogEntry | None),
             ("create_timestamp", float),
+            ("partition", str | None),
         ],
     ),
     LoadableBy[AssetCheckKey],
@@ -70,8 +72,9 @@ class AssetCheckExecutionRecord(
         id: int,
         run_id: str,
         status: AssetCheckExecutionRecordStatus,
-        event: Optional[EventLogEntry],
+        event: EventLogEntry | None,
         create_timestamp: float,
+        partition: str | None,
     ):
         check.inst_param(key, "key", AssetCheckKey)
         check.int_param(id, "id")
@@ -79,6 +82,7 @@ class AssetCheckExecutionRecord(
         check.inst_param(status, "status", AssetCheckExecutionRecordStatus)
         check.opt_inst_param(event, "event", EventLogEntry)
         check.float_param(create_timestamp, "create_timestamp")
+        check.opt_str_param(partition, "partition")
 
         event_type = event.dagster_event_type if event else None
         if status == AssetCheckExecutionRecordStatus.PLANNED:
@@ -105,10 +109,11 @@ class AssetCheckExecutionRecord(
             status=status,
             event=event,
             create_timestamp=create_timestamp,
+            partition=partition,
         )
 
     @property
-    def evaluation(self) -> Optional[AssetCheckEvaluation]:
+    def evaluation(self) -> AssetCheckEvaluation | None:
         if self.event and self.event.dagster_event:
             return cast(
                 "AssetCheckEvaluation",
@@ -129,6 +134,7 @@ class AssetCheckExecutionRecord(
                 else None
             ),
             create_timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
+            partition=row["partition"],
         )
 
     @classmethod
@@ -168,17 +174,28 @@ class AssetCheckExecutionRecord(
             check.failed(f"Unexpected status {self.status}")
 
     async def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
-        from dagster._core.storage.event_log.base import AssetRecord
+        from dagster._core.storage.event_log.base import AssetRecord, AssetRecordsFilter
 
         resolved_status = await self.resolve_status(loading_context)
         if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
             # all in-progress checks execute against the latest version
             return True
 
-        asset_record = await AssetRecord.gen(loading_context, self.key.asset_key)
-        latest_materialization = (
-            asset_record.asset_entry.last_materialization_record if asset_record else None
-        )
+        if self.partition is None:
+            asset_record = await AssetRecord.gen(loading_context, self.key.asset_key)
+            latest_materialization = (
+                asset_record.asset_entry.last_materialization_record if asset_record else None
+            )
+        else:
+            records = loading_context.instance.fetch_materializations(
+                AssetRecordsFilter(
+                    asset_key=self.key.asset_key,
+                    asset_partitions=[self.partition],
+                ),
+                limit=1,
+            )
+            latest_materialization = records.records[0] if records.records else None
+
         if not latest_materialization:
             # no previous materialization, so it's executing against the lastest version
             return True
@@ -222,3 +239,30 @@ class AssetCheckExecutionRecord(
             )
         else:
             check.failed(f"Unexpected check status {resolved_status}")
+
+
+@record
+class AssetCheckPartitionInfo:
+    check_key: AssetCheckKey
+    partition_key: str | None
+    # the status of the last execution of the check
+    latest_execution_status: AssetCheckExecutionRecordStatus
+    # the run id of the last planned event for the check
+    latest_planned_run_id: str
+    # the storage id of the last event (planned or evaluation) for the check
+    latest_check_event_storage_id: int
+    # the storage id of the last materialization for the asset / partition that this check targets
+    # this is the latest overall materialization, independent of if there has been a check event
+    # that targets it
+    latest_materialization_storage_id: int | None
+    # the storage id of the materialization that the last execution of the check targeted
+    latest_target_materialization_storage_id: int | None
+
+    @property
+    def is_current(self) -> bool:
+        """Returns True if the latest check execution targets the latest materialization event."""
+        return (
+            self.latest_materialization_storage_id is None
+            or self.latest_materialization_storage_id
+            == self.latest_target_materialization_storage_id
+        )

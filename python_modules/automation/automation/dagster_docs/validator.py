@@ -5,7 +5,7 @@ import importlib
 import inspect
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dagster._annotations import is_public
 from dagster_shared.record import record
@@ -65,10 +65,10 @@ class SymbolInfo:
     symbol: Any
     dotted_path: str
     name: str
-    module: Optional[str]
-    docstring: Optional[str]
-    file_path: Optional[str]
-    line_number: Optional[int]
+    module: str | None
+    docstring: str | None
+    file_path: str | None
+    line_number: int | None
 
     @staticmethod
     def create(symbol: Any, dotted_path: str) -> "SymbolInfo":
@@ -244,7 +244,7 @@ def _import_symbol(dotted_path: str, reload_module: bool = False) -> Any:
     raise ImportError(f"Could not import symbol '{dotted_path}'")
 
 
-def _read_docstring_from_file(dotted_path: str) -> Optional[str]:
+def _read_docstring_from_file(dotted_path: str) -> str | None:
     """Read docstring directly from source file."""
     try:
         # First resolve the symbol to get its source location

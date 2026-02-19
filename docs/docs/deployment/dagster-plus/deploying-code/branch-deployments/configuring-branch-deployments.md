@@ -38,12 +38,15 @@ To follow the steps in this section, you'll need:
 
 Follow the [CI/CD configuration guide](/deployment/dagster-plus/deploying-code/configuring-ci-cd) to set up CI/CD for Dagster+ Hybrid with your preferred Git provider.
 
-### Step 2: Create a branch deployment agent \{#step-2}
+### Step 2: Create a branch deployment agent or update your production agent config \{#step-2}
 
-While you can use your existing production agent for branch deployments on Dagster+ Hybrid, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
+While you can use your existing production agent for branch deployments on Dagster+ Hybrid, we **strongly recommend** creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
 
 <Tabs>
 <TabItem value="ecs" label="Amazon ECS">
+
+<Tabs>
+<TabItem value="branch-deployment-agent" label="Dedicated branch deployment agent (recommended)">
 
 1. **Deploy an ECS agent to serve your branch deployments.**
 
@@ -66,30 +69,73 @@ While you can use your existing production agent for branch deployments on Dagst
 ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
 </TabItem>
+<TabItem value="existing-agent" label="Existing production agent">
+
+To update an existing production ECS agent, sign in to the AWS Management Console and [modify the Dagster+ CloudFormation stack template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-get-template.html) with a text editor or AWS Infrastructure Composer. You will need to set `EnableBranchDeployments` to `true`:
+
+```yaml
+EnableBranchDeployments: true
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
 <TabItem value="docker" label="Docker">
+
+<Tabs>
+<TabItem value="branch-deployment-agent" label="Dedicated branch deployment agent (recommended)">
 
 1. Set up a new Docker agent. For instructions, see the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker).
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
-
    - Set the `dagster_cloud_api.branch_deployments` field to `true`
    - Remove any `deployment` field(s)
 
-   For example:
+For example:
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
   language="yaml"
   title="dagster.yaml"
 />
+</TabItem>
+<TabItem value="existing-agent" label="Existing production agent">
+
+Modify your production agent's `dagster.yaml` file to set the `dagster_cloud_api.branch_deployments` field to `true`. For example:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster-single-agent.yaml"
+  language="yaml"
+  title="dagster.yaml"
+/>
+
+</TabItem>
+</Tabs>
 
 </TabItem>
 <TabItem value="k8s" label="Kubernetes" default>
+
+<Tabs>
+<TabItem value="branch-deployment-agent" label="Dedicated branch deployment agent (recommended)">
 
 1. Set up a new Kubernetes agent. For instructions, see the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes).
 
 2. After the agent is set up, modify your Helm values file to include the following:
 
 <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
+
+</TabItem>
+<TabItem value="existing-agent" label="Existing production agent">
+
+Modify your production agent's Helm values file to enable branch deployments:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm-single-agent.yaml"
+  language="yaml"
+/>
+
+</TabItem>
+</Tabs>
 
 </TabItem>
 </Tabs>
@@ -209,7 +255,7 @@ The base deployment has two main purposes:
 - It sets which [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) is used to propagate Dagster+ managed environment variables that are scoped for branch deployments.
 - It is used in the UI to [track changes](/deployment/dagster-plus/deploying-code/branch-deployments/change-tracking) to the branch deployment from its parent full deployment.
 
-The default base for branch deployments is `prod`. To configure a different full deployment as the base, create a branch deployment using the `dagster-cloud` CLI (see steps above) and specify the deployment with the optional `--base-deployment-name` parameter.
+The default base for branch deployments is `prod`. To configure a different full deployment as the base, follow the steps in [Configuring branch deployments with the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments-cli) to create a branch deployment using the `dagster-cloud` CLI, and specify the deployment with the optional `--base-deployment-name` parameter.
 
 ## Best practices
 

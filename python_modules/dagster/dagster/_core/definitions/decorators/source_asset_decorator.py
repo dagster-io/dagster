@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa: UP035
+from typing import AbstractSet, Any, Callable, Union, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import beta, beta_param, hidden_param, public
@@ -35,22 +35,22 @@ def observable_source_asset(observe_fn: SourceAssetObserveFunction) -> SourceAss
 @overload
 def observable_source_asset(
     *,
-    key: Optional[CoercibleToAssetKey] = None,
-    name: Optional[str] = ...,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    metadata: Optional[RawMetadataMapping] = None,
-    io_manager_key: Optional[str] = None,
-    io_manager_def: Optional[object] = None,
-    description: Optional[str] = None,
-    group_name: Optional[str] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    auto_observe_interval_minutes: Optional[float] = None,
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
-    automation_condition: Optional[AutomationCondition] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    key: CoercibleToAssetKey | None = None,
+    name: str | None = ...,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    metadata: RawMetadataMapping | None = None,
+    io_manager_key: str | None = None,
+    io_manager_def: object | None = None,
+    description: str | None = None,
+    group_name: str | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    auto_observe_interval_minutes: float | None = None,
+    legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
+    automation_condition: AutomationCondition | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    tags: Mapping[str, str] | None = None,
 ) -> "_ObservableSourceAsset": ...
 
 
@@ -69,22 +69,22 @@ def observable_source_asset(
 @public
 @beta
 def observable_source_asset(
-    observe_fn: Optional[SourceAssetObserveFunction] = None,
+    observe_fn: SourceAssetObserveFunction | None = None,
     *,
-    key: Optional[CoercibleToAssetKey] = None,
-    name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    metadata: Optional[RawMetadataMapping] = None,
-    io_manager_key: Optional[str] = None,
-    io_manager_def: Optional[object] = None,
-    description: Optional[str] = None,
-    group_name: Optional[str] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    automation_condition: Optional[AutomationCondition] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    key: CoercibleToAssetKey | None = None,
+    name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    metadata: RawMetadataMapping | None = None,
+    io_manager_key: str | None = None,
+    io_manager_def: object | None = None,
+    description: str | None = None,
+    group_name: str | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    automation_condition: AutomationCondition | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    tags: Mapping[str, str] | None = None,
     **kwargs,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
@@ -152,22 +152,22 @@ def observable_source_asset(
 class _ObservableSourceAsset:
     def __init__(
         self,
-        key: Optional[CoercibleToAssetKey] = None,
-        name: Optional[str] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[object] = None,
-        description: Optional[str] = None,
-        group_name: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        auto_observe_interval_minutes: Optional[float] = None,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
-        automation_condition: Optional[AutomationCondition] = None,
-        op_tags: Optional[Mapping[str, Any]] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        key: CoercibleToAssetKey | None = None,
+        name: str | None = None,
+        key_prefix: CoercibleToAssetKeyPrefix | None = None,
+        metadata: RawMetadataMapping | None = None,
+        io_manager_key: str | None = None,
+        io_manager_def: object | None = None,
+        description: str | None = None,
+        group_name: str | None = None,
+        required_resource_keys: AbstractSet[str] | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        auto_observe_interval_minutes: float | None = None,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
+        automation_condition: AutomationCondition | None = None,
+        op_tags: Mapping[str, Any] | None = None,
+        tags: Mapping[str, str] | None = None,
     ):
         self.key = key
         self.name = name
@@ -191,7 +191,7 @@ class _ObservableSourceAsset:
         self.tags = tags
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
-        source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
+        source_asset_key, _source_asset_name = resolve_asset_key_and_name_for_decorator(
             key=self.key,
             key_prefix=self.key_prefix,
             name=self.name,
@@ -234,14 +234,14 @@ class _ObservableSourceAsset:
 def multi_observable_source_asset(
     *,
     specs: Sequence[AssetSpec],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    name: str | None = None,
+    description: str | None = None,
+    partitions_def: PartitionsDefinition | None = None,
     can_subset: bool = False,
-    required_resource_keys: Optional[set[str]] = None,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    group_name: Optional[str] = None,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    required_resource_keys: set[str] | None = None,
+    resource_defs: Mapping[str, object] | None = None,
+    group_name: str | None = None,
+    check_specs: Sequence[AssetCheckSpec] | None = None,
 ):
     """Defines a set of assets that can be observed together with the same function.
 

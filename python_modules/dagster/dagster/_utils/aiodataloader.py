@@ -1,6 +1,5 @@
 # Copied from https://github.com/syrusakbary/aiodataloader
 
-import sys
 from asyncio import (
     AbstractEventLoop,
     Future,
@@ -13,12 +12,7 @@ from asyncio import (
 from collections import namedtuple
 from collections.abc import Callable, Coroutine, Iterable, Iterator, MutableMapping
 from functools import partial
-from typing import Any, Generic, Optional, TypeVar, Union
-
-if sys.version_info >= (3, 10):
-    from typing import TypeGuard
-else:
-    from typing import TypeGuard
+from typing import Any, Generic, TypeGuard, TypeVar, Union
 
 __version__ = "0.4.0"
 
@@ -42,7 +36,7 @@ class _BaseDataLoader(Generic[KeyT, ReturnT]):
     def __init__(
         self,
         batch_load_fn: Callable[[Iterable[KeyT]], Coroutine[Any, Any, Iterable[ReturnT]]],
-        max_batch_size: Optional[int] = None,
+        max_batch_size: int | None = None,
     ):
         self.max_batch_size = max_batch_size
 
@@ -55,8 +49,8 @@ class BlockingDataLoader(Generic[KeyT, ReturnT]):
     def __init__(
         self,
         batch_load_fn: Callable[[Iterable[KeyT]], Iterable[ReturnT]],
-        get_cache_key: Optional[Callable[[KeyT], Union[CacheKeyT, KeyT]]] = None,
-        max_batch_size: Optional[int] = None,
+        get_cache_key: Callable[[KeyT], CacheKeyT | KeyT] | None = None,
+        max_batch_size: int | None = None,
     ):
         self._cache = {}
         self._to_query = {}
@@ -97,18 +91,18 @@ class BlockingDataLoader(Generic[KeyT, ReturnT]):
 
 class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
     batch: bool = True
-    max_batch_size: Optional[int] = None
-    cache: Optional[bool] = True
+    max_batch_size: int | None = None
+    cache: bool | None = True
 
     def __init__(
         self,
         batch_load_fn: Callable[[Iterable[KeyT]], Coroutine[Any, Any, Iterable[ReturnT]]],
-        batch: Optional[bool] = None,
-        max_batch_size: Optional[int] = None,
-        cache: Optional[bool] = None,
-        get_cache_key: Optional[Callable[[KeyT], Union[CacheKeyT, KeyT]]] = None,
-        cache_map: Optional[MutableMapping[Union[CacheKeyT, KeyT], "Future[ReturnT]"]] = None,
-        loop: Optional[AbstractEventLoop] = None,
+        batch: bool | None = None,
+        max_batch_size: int | None = None,
+        cache: bool | None = None,
+        get_cache_key: Callable[[KeyT], CacheKeyT | KeyT] | None = None,
+        cache_map: MutableMapping[CacheKeyT | KeyT, "Future[ReturnT]"] | None = None,
+        loop: AbstractEventLoop | None = None,
     ):
         self._loop = loop
 

@@ -439,7 +439,7 @@ def test_non_reconstructable_job():
     def non_reconstructable():
         foo_op()
 
-    with pytest.raises(DagstermillError, match="job that is not reconstructable."):
+    with pytest.raises(DagstermillError, match=r"job that is not reconstructable."):
         non_reconstructable.execute_in_process()
 
 

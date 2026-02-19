@@ -4,7 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from subprocess import PIPE, Popen
-from typing import Literal, Optional
+from typing import Literal
 
 import boto3
 
@@ -25,7 +25,7 @@ class LocalGlueMockClient:
         s3_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
         glue_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
         pipes_messages_backend: Literal["s3", "cloudwatch"],
-        cloudwatch_client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
+        cloudwatch_client: "boto3.client | None" = None,  # pyright: ignore (reportGeneralTypeIssues)
     ):
         """This class wraps moto3 clients for S3 and Glue, and provides a way to "run" Glue jobs locally.
         This is necessary because moto3 does not actually run anything when you start a Glue job, so we won't be able
@@ -80,7 +80,7 @@ class LocalGlueMockClient:
 
         return response
 
-    def start_job_run(self, JobName: str, Arguments: Optional[dict[str, str]], **kwargs):
+    def start_job_run(self, JobName: str, Arguments: dict[str, str] | None, **kwargs):
         params = {
             "JobName": JobName,
         }

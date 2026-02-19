@@ -18,7 +18,7 @@ def skip_if_no_dagster_ui_components_changes():
     # If anything changes in the ui-components directory
     if any(
         Path("js_modules/dagster-ui/packages/ui-components") in path.parents
-        for path in ChangedFiles.all
+        for path in ChangedFiles.all_oss
     ):
         return None
 
@@ -46,7 +46,7 @@ def skip_if_no_dagster_ui_core_changes():
         return None
 
     # If anything changes in the js_modules directory
-    if any(Path("js_modules") in path.parents for path in ChangedFiles.all):
+    if any(Path("js_modules") in path.parents for path in ChangedFiles.all_oss):
         return None
 
     # If anything changes in python packages that our front end depend on

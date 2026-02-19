@@ -1,7 +1,7 @@
 import inspect
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from typing_extensions import TypedDict
 
@@ -97,9 +97,6 @@ def _process_user_event(
         asset_key = _resolve_asset_result_asset_key(user_event, assets_def)
         output_name = assets_def.get_output_name_for_asset_key(asset_key)
 
-        for check_result in user_event.check_results or []:
-            yield from _process_user_event(step_context, check_result)
-
         with disable_dagster_warnings():
             if isinstance(user_event, MaterializeResult):
                 value = user_event.value
@@ -112,6 +109,10 @@ def _process_user_event(
                 data_version=user_event.data_version,
                 tags=user_event.tags,
             )
+
+        for check_result in user_event.check_results or []:
+            yield from _process_user_event(step_context, check_result)
+
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
         assets_def = _get_assets_def_for_step(step_context, user_event)
@@ -549,7 +550,7 @@ def core_dagster_event_sequence_for_step(
 
 
 def _type_check_and_store_output(
-    step_context: StepExecutionContext, output: Union[DynamicOutput, Output]
+    step_context: StepExecutionContext, output: DynamicOutput | Output
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
@@ -580,12 +581,12 @@ def _type_check_and_store_output(
 def _get_output_asset_events(
     asset_key: AssetKey,
     asset_partitions: Iterable[str],
-    output: Union[Output, DynamicOutput],
+    output: Output | DynamicOutput,
     output_def: OutputDefinition,
     io_manager_metadata: Mapping[str, MetadataValue],
     step_context: StepExecutionContext,
     execution_type: AssetExecutionType,
-) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
+) -> Iterator[AssetMaterialization | AssetObservation]:
     # Metadata scoped to all events for this asset.
     key_scoped_metadata = {**output.metadata, **io_manager_metadata}
 
@@ -693,7 +694,7 @@ def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -
 
 class _InputProvenanceData(TypedDict):
     data_version: DataVersion
-    storage_id: Optional[int]
+    storage_id: int | None
 
 
 def _get_input_provenance_data(
@@ -753,7 +754,7 @@ def _build_data_version_observation_tags(data_version: DataVersion) -> dict[str,
 def _store_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
-    output: Union[Output, DynamicOutput],
+    output: Output | DynamicOutput,
 ) -> Iterator[DagsterEvent]:
     output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
@@ -812,7 +813,9 @@ def _store_output(
         for elt in iterate_with_context(
             lambda: op_execution_error_boundary(
                 DagsterExecutionHandleOutputError,
-                msg_fn=lambda: f'Error occurred while handling output "{output_context.name}" of step "{step_context.step.key}":',
+                msg_fn=lambda: (
+                    f'Error occurred while handling output "{output_context.name}" of step "{step_context.step.key}":'
+                ),
                 step_context=step_context,
                 step_key=step_context.step.key,
                 output_name=output_context.name,
@@ -884,7 +887,7 @@ def _store_output(
 def _log_materialization_or_observation_events_for_asset(
     step_context: StepExecutionContext,
     output_context: OutputContext,
-    output: Union[Output, DynamicOutput],
+    output: Output | DynamicOutput,
     output_def: OutputDefinition,
     manager_metadata: Mapping[str, MetadataValue],
 ) -> Iterable[DagsterEvent]:
@@ -944,8 +947,8 @@ def _log_materialization_or_observation_events_for_asset(
 
 def _dagster_event_for_asset_event(
     step_context: StepExecutionContext,
-    asset_event: Union[AssetMaterialization, AssetObservation],
-    batch_metadata: Optional[DagsterEventBatchMetadata],
+    asset_event: AssetMaterialization | AssetObservation,
+    batch_metadata: DagsterEventBatchMetadata | None,
 ) -> DagsterEvent:
     if isinstance(asset_event, AssetMaterialization):
         return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)

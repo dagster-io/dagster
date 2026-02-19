@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Mapping
 from copy import deepcopy
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     AssetsDefinition,
@@ -55,12 +55,12 @@ def streams_with_default_dagster_meta(
 def sling_assets(
     *,
     replication_config: SlingReplicationParam,
-    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
-    name: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    pool: Optional[str] = None,
+    dagster_sling_translator: DagsterSlingTranslator | None = None,
+    name: str | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    pool: str | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to materialize a set of Sling replication streams as Dagster assets, as
     described by a Sling replication config. This will create on Asset for every Sling target stream.
@@ -117,8 +117,8 @@ def sling_assets(
 
 def get_sling_asset_specs(
     replication_config: SlingReplicationParam,
-    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    dagster_sling_translator: DagsterSlingTranslator | None = None,
+    partitions_def: PartitionsDefinition | None = None,
 ) -> list[AssetSpec]:
     replication_config = validate_replication(replication_config)
 

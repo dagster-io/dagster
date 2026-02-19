@@ -11,7 +11,6 @@ from typing import (
     Generic,
     Literal,
     NamedTuple,
-    Optional,
     TypeVar,
     Union,
     get_args,
@@ -54,7 +53,7 @@ class EvalContext(NamedTuple):
     def capture_from_frame(
         depth: int,
         *,
-        add_to_local_ns: Optional[Mapping[str, Any]] = None,
+        add_to_local_ns: Mapping[str, Any] | None = None,
     ) -> "EvalContext":
         """Capture the global and local namespaces via the stack frame.
 
@@ -108,18 +107,13 @@ class EvalContext(NamedTuple):
             **self.local_ns,
         }
 
-    def eval_forward_ref(self, ref: ForwardRef) -> Optional[type]:
+    def eval_forward_ref(self, ref: ForwardRef) -> type | None:
         if ref.__forward_arg__ in self.lazy_imports:
             # if we are going to add a lazy import for the type,
             # return a placeholder to grab the name from
             return type(ref.__forward_arg__, (_LazyImportPlaceholder,), {})
         try:
-            if sys.version_info <= (3, 9):
-                return ref._evaluate(  # noqa # type: ignore
-                    globalns=self.get_merged_ns(),
-                    localns={},
-                )
-            elif sys.version_info < (3, 12, 4):
+            if sys.version_info < (3, 12, 4):
                 return ref._evaluate(  # noqa
                     globalns=self.get_merged_ns(),
                     localns={},
@@ -165,9 +159,9 @@ _SampleGeneric = _GenClass[str]
 
 
 def _coerce_type(
-    ttype: Optional[TypeOrTupleOfTypes],
+    ttype: TypeOrTupleOfTypes | None,
     eval_ctx: EvalContext,
-) -> Optional[TypeOrTupleOfTypes]:
+) -> TypeOrTupleOfTypes | None:
     # coerce input type in to the type we want to pass to the check call
 
     # Any type translates to passing None for the of_type argument
@@ -215,7 +209,7 @@ def _coerce_type(
 
 def _container_pair_args(
     args: tuple[type, ...], eval_ctx
-) -> tuple[Optional[TypeOrTupleOfTypes], Optional[TypeOrTupleOfTypes]]:
+) -> tuple[TypeOrTupleOfTypes | None, TypeOrTupleOfTypes | None]:
     # process tuple of types as if its two arguments to a container type
 
     if len(args) == 2:
@@ -226,7 +220,7 @@ def _container_pair_args(
 
 def _container_single_arg(
     args: tuple[type, ...], eval_ctx: EvalContext
-) -> Optional[TypeOrTupleOfTypes]:
+) -> TypeOrTupleOfTypes | None:
     # process tuple of types as if its the single argument to a container type
 
     if len(args) == 1:
@@ -235,7 +229,7 @@ def _container_single_arg(
     return None
 
 
-def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
+def _name(target: TypeOrTupleOfTypes | None) -> str:
     # turn a type or tuple of types in to its string representation for printing
 
     if target is None:

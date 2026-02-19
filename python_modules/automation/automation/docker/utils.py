@@ -2,16 +2,15 @@
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import Optional
 
 import dagster._check as check
 
 
 def execute_docker_build(
     image: str,
-    docker_args: Optional[dict[str, str]] = None,
-    cwd: Optional[str] = None,
-    platform: Optional[str] = None,
+    docker_args: dict[str, str] | None = None,
+    cwd: str | None = None,
+    platform: str | None = None,
 ):
     check.str_param(image, "image")
     docker_args = check.opt_dict_param(docker_args, "docker_args", key_type=str, value_type=str)

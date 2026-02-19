@@ -1,6 +1,6 @@
 # Temporary pins for example projects that install from PyPI.
 
-# Dagster aims to take a minimalist approach to pinning. Occassionally,
+# Dagster aims to take a minimalist approach to pinning. Occasionally,
 # dependencies will release breaking changes. When this happens, we
 # typically don't patch previously released versions of Dagster to
 # introduce a pin. Instead, we aim to introduce a pin or a backward

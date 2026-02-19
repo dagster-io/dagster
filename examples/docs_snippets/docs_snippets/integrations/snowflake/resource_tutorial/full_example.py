@@ -39,7 +39,7 @@ def iris_dataset(snowflake: SnowflakeResource):
         table_name = "iris_dataset"
         database = "flowers"
         schema = "iris"
-        success, number_chunks, rows_inserted, output = write_pandas(
+        _success, _number_chunks, rows_inserted, _output = write_pandas(
             conn,
             iris_df,
             table_name=table_name,

@@ -80,6 +80,10 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     status
     stepKey
     timestamp
+    run {
+      id
+      status
+    }
     evaluation {
       severity
       timestamp
@@ -90,6 +94,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
       metadataEntries {
         ...MetadataEntryFragment
       }
+      partition
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

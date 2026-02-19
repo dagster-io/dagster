@@ -1,5 +1,61 @@
 # Changelog
 
+## 1.12.14 (core) / 0.28.14 (libraries)
+
+### New
+
+- `@asset_check` and `AssetCheckSpec` now support a `partitions_def` parameter, allowing checks to execute against specific partitions of their upstream asset rather than the entire contents. If set, the partition definition must match the definition of the targeted asset.
+- [ui] The "Select all" checkbox has been restored to the Automations list.
+
+### Bugfixes
+
+- Fixed performance issue where the partition selector would freeze for 30+ seconds when selecting "All" on assets with large (100k+) partition sets. (Thanks, [@ljodea](https://github.com/ljodea)!)
+- Fixed an issue with cron schedules using step patterns (like `*/10` or `*/30`) in the day-of-month field where invalid days weren't properly skipped.
+- [ui] Fixed an issue that could cause incorrect partition statuses to be displayed in the UI.
+- [ui] Partition percentages now round in a more intuitive way.
+- [ui] Row count metadata is now displayed even when set to zero.
+- [dagster-databricks] Fixed an issue where op name generation would occasionally lead to collisions.
+- [dagster-sigma] When building assets for Sigma workbooks that depend on tables unknown to Dagster, an error is logged instead of throwing an exception.
+- [dagster-k8s] Fixed an issue where `PipesK8sClient` would sometimes fail when containers in the `ignored_containers` list failed.
+- [dagster-github] Ensured compatibility with `pyjwt>=2.11.0`,which introduced breaking changes.
+
+### Documentation
+
+- Added an example of censoring PII in run logs.
+- Updated branch deployment docs to include single-agent setup.
+
+## 1.12.13 (core) / 0.28.13 (libraries)
+
+### New
+
+- [dagster-polytomic] `PolytomicComponent` has been added and can be used to represent your Polytomic bulk sync schemas as external assets in Dagster
+- [dagster-fivetran] Added warning log when no Fivetran groups are found to help users troubleshoot permission issues.
+
+## 1.12.12 (core) / 0.28.12 (libraries)
+
+### New
+
+- `dg plus deploy start` now validates deployment akin to `dagster-cloud ci check`.
+- [dagster-aws] Added a suite of new components that map to all existing resources in the library.
+- [dagster-k8s] Increased the maximum version of kubernetes to 35.x.x.
+- [ui] You can now unpin asset groups that no longer contain any assets.
+
+### Bugfixes
+
+- Fixed type errors reported by Pyright's strict mode when using `@asset`, `@multi_asset`, and `@graph_asset` decorators.
+- Running `dg launch --partition-range` for an asset without an explicitly defined single-run-backfill policy now provides a clean error message.
+- Fixed issue where the celery_executor `config_source` values were ignored. (Thanks, [@danielbitzer](https://github.com/danielbitzer)!)
+- Fixed issue with `dg plus deploy refresh-defs-state` URL construction for EU regions.
+- Fixed helm chart validation error when enabling `concurrency` config with default `queuedRunCoordinator` values.
+- `dg list defs` now correctly shows labels for automation conditions.
+- [dagster-dbt] Fixed issue with the `dagster-dbt project prepare-and-package` command where user files named `dbt.py` could shadow the `dbt` module. (Thanks, [@alexaustin007](https://github.com/alexaustin007)!)
+- [dagster-dbt] Fix errors raised when [dbt functions](https://docs.getdbt.com/docs/build/udfs) are present in dbt manifest. (Thanks, [@eso-xyme](https://github.com/eso-xyme)!)
+- [ui] Fixes a bug where creating an alert policy from your Favorites would crash the app.
+
+### Dagster Plus
+
+- Fixed an issue while using the 'isolated_agents' configuration parameter in Dagster+ where runs that were terminated due to exceeding a maximum runtime would sometimes fail to terminate the run worker process after the run was marked as failed.
+
 ## 1.12.11 (core) / 0.28.11 (libraries)
 
 ### New

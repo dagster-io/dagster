@@ -9,11 +9,10 @@ import {ErrorBoundary} from './ErrorBoundary';
 import {Icon, IconName} from './Icon';
 import {UnstyledButton} from './UnstyledButton';
 
-interface Props
-  extends Omit<
-    React.ComponentProps<typeof BlueprintDialog>,
-    'title' | 'icon' | 'backdropClassName'
-  > {
+interface Props extends Omit<
+  React.ComponentProps<typeof BlueprintDialog>,
+  'title' | 'icon' | 'backdropClassName'
+> {
   children: React.ReactNode;
   title?: React.ReactNode;
   icon?: IconName;

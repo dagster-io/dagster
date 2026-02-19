@@ -1,6 +1,6 @@
 import asyncio
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 import dagster as dg
@@ -55,8 +55,8 @@ class OmniWorkspace(dg.Resolvable, dg.Model):
     async def make_request(
         self,
         endpoint: str,
-        params: Optional[dict[str, Any]] = None,
-        headers: Optional[dict[str, str]] = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Make a GET request to the API with retry logic."""
         url = self._build_url(endpoint)

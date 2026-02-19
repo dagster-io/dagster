@@ -82,12 +82,12 @@ class AzureBlobStorageResource(ConfigurableResource):
         ),
     )
 
-    credential: Union[
-        AzureBlobStorageKeyCredential,
-        AzureBlobStorageSASTokenCredential,
-        AzureBlobStorageDefaultCredential,
-        AzureBlobStorageAnonymousCredential,
-    ] = Field(
+    credential: (
+        AzureBlobStorageKeyCredential
+        | AzureBlobStorageSASTokenCredential
+        | AzureBlobStorageDefaultCredential
+        | AzureBlobStorageAnonymousCredential
+    ) = Field(
         discriminator="credential_type",
         description=(
             "The credential used to authenticate to the storage account. One of:"

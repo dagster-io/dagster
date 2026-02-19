@@ -2,7 +2,6 @@ import base64
 from typing import (
     Any,
     Generic,
-    Optional,
     Sequence,
 )
 from dagster._record import record
@@ -30,7 +29,7 @@ class PaginatedResults(Generic[T]):
 
     @classmethod
     def create_from_sequence(
-        cls, seq: Sequence[T], limit: int, ascending: bool, cursor: Optional[str] = None
+        cls, seq: Sequence[T], limit: int, ascending: bool, cursor: str | None = None
     ) -> "PaginatedResults[T]":
         """
         Create a PaginatedResults from a sequence of objects.

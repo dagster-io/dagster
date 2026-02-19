@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster as dg
 from dagster import AssetSelection, DagsterInstance, TableSchema
@@ -18,8 +17,8 @@ def execute_checks(asset_checks, instance=None) -> dg.ExecuteInProcessResult:
 
 
 def assert_expected_schema_change(
-    old_schema: Optional[dg.TableSchema],
-    new_schema: Optional[dg.TableSchema],
+    old_schema: dg.TableSchema | None,
+    new_schema: dg.TableSchema | None,
     description_substrs: Sequence[str],
     passed: bool,
 ):
@@ -137,10 +136,10 @@ def test_not_enough_materializations():
 
 
 def assert_expected_schema_change_two_assets(
-    old_schema_1: Optional[dg.TableSchema],
-    new_schema_1: Optional[dg.TableSchema],
-    old_schema_2: Optional[dg.TableSchema],
-    new_schema_2: Optional[dg.TableSchema],
+    old_schema_1: dg.TableSchema | None,
+    new_schema_1: dg.TableSchema | None,
+    old_schema_2: dg.TableSchema | None,
+    new_schema_2: dg.TableSchema | None,
     description_1_substrs: Sequence[str],
     passed_1: bool,
     description_2_substrs: Sequence[str],

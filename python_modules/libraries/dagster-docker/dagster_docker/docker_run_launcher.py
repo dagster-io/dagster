@@ -1,6 +1,6 @@
 import json
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import docker
@@ -30,7 +30,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         image=None,
         registry=None,
         env_vars=None,

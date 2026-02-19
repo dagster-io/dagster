@@ -68,12 +68,12 @@ describe('calculateGraphDistances', () => {
   it('traverses correctly', () => {
     const fromA = calculateGraphDistances(TEST_GRAPH, {path: ['A']});
     expect(fromA.upstream).toEqual(0);
-    expect(fromA.downstream).toEqual(4);
+    expect(fromA.downstream).toEqual(3);
     const fromD = calculateGraphDistances(TEST_GRAPH, {path: ['D']});
     expect(fromD.upstream).toEqual(1);
-    expect(fromD.downstream).toEqual(3);
+    expect(fromD.downstream).toEqual(2);
     const fromH = calculateGraphDistances(TEST_GRAPH, {path: ['H']});
-    expect(fromH.upstream).toEqual(4);
+    expect(fromH.upstream).toEqual(3);
     expect(fromH.downstream).toEqual(0);
   });
 
