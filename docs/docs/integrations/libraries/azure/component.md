@@ -59,7 +59,7 @@ attributes:
 type: dagster_azure.ADLS2ResourceComponent
 attributes:
   storage_account: mystorageaccount
-    credential:
+  credential:
     credential_type: key
     key: '{{ env.AZURE_STORAGE_KEY }}'
   resource_key: adls2
