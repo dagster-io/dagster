@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-embedded-elt"
-version = "0.28.15rc0"
+version = "0.28.15rc1"
 description = "Package for performing ETL/ELT tasks with Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,9 +22,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc0",
-    "dagster-sling==0.28.15rc0",
-    "dagster-dlt==0.28.15rc0",
+    "dagster==1.12.15rc1",
+    "dagster-sling==0.28.15rc1",
+    "dagster-dlt==0.28.15rc1",
 ]
 
 [project.urls]

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dg-core"
-version = "1.12.15rc0"
+version = "1.12.15rc1"
 description = ""
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -37,8 +37,8 @@ dependencies = [
     "packaging",
     "python-dotenv",
     "typer>=0.15.1,<1.0",
-    "dagster-shared==1.12.15rc0",
-    "dagster-cloud-cli==1.12.15rc0",
+    "dagster-shared==1.12.15rc1",
+    "dagster-cloud-cli==1.12.15rc1",
 ]
 
 [project.urls]

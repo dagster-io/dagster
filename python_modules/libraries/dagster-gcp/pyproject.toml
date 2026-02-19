@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-gcp"
-version = "0.28.15rc0"
+version = "0.28.15rc1"
 description = "Package for GCP-specific Dagster framework op and resource components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc0",
+    "dagster==1.12.15rc1",
     "dagster_pandas==1!0+dev",
     "db-dtypes",
     "google-api-python-client",

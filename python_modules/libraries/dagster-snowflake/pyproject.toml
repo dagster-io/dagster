@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-snowflake"
-version = "0.28.15rc0"
+version = "0.28.15rc1"
 description = "Package for Snowflake Dagster framework components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc0",
+    "dagster==1.12.15rc1",
     "snowflake-snowpark-python>=1.24.0",
     "snowflake-core>=1.8.0",
     "snowflake-connector-python>=3.4.0",

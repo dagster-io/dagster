@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-duckdb-pandas"
-version = "0.28.15rc0"
+version = "0.28.15rc1"
 description = "Package for storing Pandas DataFrames in DuckDB."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,8 +19,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc0",
-    "dagster-duckdb==0.28.15rc0",
+    "dagster==1.12.15rc1",
+    "dagster-duckdb==0.28.15rc1",
     "pandas<3.0.0",
 ]
 
