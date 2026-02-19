@@ -1,6 +1,5 @@
 
-import pytest
-from dagster import AssetKey, asset, repository, file_relative_path
+from dagster import asset, repository, file_relative_path
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
