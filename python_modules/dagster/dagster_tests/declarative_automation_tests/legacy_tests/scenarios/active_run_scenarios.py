@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 import dagster as dg
 from dagster._core.definitions.events import AssetKey
@@ -39,7 +38,7 @@ freshness_with_observable_source_assets = [
 
 
 def create_materialization_event_log_entry(
-    asset_key: AssetKey, partition: Optional[str] = None, run_id: str = "1"
+    asset_key: AssetKey, partition: str | None = None, run_id: str = "1"
 ) -> dg.EventLogEntry:
     return dg.EventLogEntry(
         job_name=DEFAULT_JOB_NAME,

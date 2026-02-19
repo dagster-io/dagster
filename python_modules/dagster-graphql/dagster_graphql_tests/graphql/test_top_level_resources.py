@@ -84,7 +84,7 @@ def test_fetch_top_level_resources(definitions_graphql_context, snapshot):
     assert result.data["allTopLevelResourceDetailsOrError"]
     assert result.data["allTopLevelResourceDetailsOrError"]["results"]
 
-    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 5
+    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 6
 
     snapshot.assert_match(result.data)
 
@@ -207,3 +207,27 @@ def test_fetch_top_level_resource_uses(definitions_graphql_context, snapshot) ->
     assert ["my_observable_source_asset"] in paths
 
     snapshot.assert_match(result.data)
+
+
+def test_fetch_top_level_resource_with_secrets(definitions_graphql_context):
+    """Test that secret fields are masked with SECRET type."""
+    selector = infer_resource_selector(definitions_graphql_context, name="my_resource_with_secrets")
+    result = execute_dagster_graphql(
+        definitions_graphql_context,
+        TOP_LEVEL_RESOURCE_QUERY,
+        {"selector": selector},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data["topLevelResourceDetailsOrError"]
+    database_resource = result.data["topLevelResourceDetailsOrError"]
+
+    assert database_resource["name"] == "my_resource_with_secrets"
+
+    # Check configured values - secrets should be masked
+    configured_values = {cv["key"]: cv for cv in database_resource["configuredValues"]}
+    assert configured_values["username"]["type"] == "VALUE"
+    assert configured_values["username"]["value"] == '"admin"'
+    assert configured_values["password"]["type"] == "SECRET"
+    assert configured_values["password"]["value"] == "********"

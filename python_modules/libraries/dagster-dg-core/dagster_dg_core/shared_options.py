@@ -2,14 +2,14 @@ import os
 import textwrap
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import click
 
 from dagster_dg_core.config import DgCliConfig
 from dagster_dg_core.utils import not_none, set_option_help_output_group
 
-T_Command = TypeVar("T_Command", bound=Union[Callable[..., Any], click.Command])
+T_Command = TypeVar("T_Command", bound=Callable[..., Any] | click.Command)
 
 # ########################
 # ##### HELPERS
@@ -18,10 +18,10 @@ T_Command = TypeVar("T_Command", bound=Union[Callable[..., Any], click.Command])
 
 def make_option_group(
     options_dict: dict[str, click.Option],
-) -> Callable[..., Union[T_Command, Callable[[T_Command], T_Command]]]:
+) -> Callable[..., T_Command | Callable[[T_Command], T_Command]]:
     def option_group(
-        fn: Optional[T_Command] = None, *, names: Optional[Sequence[str]] = None
-    ) -> Union[T_Command, Callable[[T_Command], T_Command]]:
+        fn: T_Command | None = None, *, names: Sequence[str] | None = None
+    ) -> T_Command | Callable[[T_Command], T_Command]:
         if fn:
             options = [options_dict[name] for name in names or list(options_dict.keys())]
             if isinstance(fn, click.Command):
@@ -125,7 +125,7 @@ PATH_OPTIONS = {
                 path_type=Path,
             ),
             help="Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.",
-            default=lambda: Path.cwd(),  # defer for tests
+            default=Path.cwd,  # defer for tests
         ),
     ]
 }

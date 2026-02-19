@@ -1023,10 +1023,11 @@ def test_graph_asset_kinds() -> None:
     assert my_graph_asset.tags_by_key[dg.AssetKey("my_graph_asset")] == build_kind_tag("python")
 
     with pytest.raises(
-        dg.DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+        dg.DagsterInvalidDefinitionError, match=r"Assets can have at most ten kinds currently."
     ):
+        kinds = {f"kind_{i}" for i in range(11)}
 
-        @dg.graph_asset(kinds={"python", "snowflake", "bigquery", "airflow"})
+        @dg.graph_asset(kinds=kinds)
         def assets2(): ...
 
 

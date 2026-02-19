@@ -11,7 +11,7 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
@@ -132,7 +132,7 @@ const GroupNodeAssetStatusCounts = ({
 }: {
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
 }) => {
-  if (observeEnabled()) {
+  if (assetHealthEnabled()) {
     return <GroupNodeAssetStatusCountsAssetHealth group={group} />;
   }
   return <GroupNodeAssetStatusCountsNonAssetHealth group={group} />;

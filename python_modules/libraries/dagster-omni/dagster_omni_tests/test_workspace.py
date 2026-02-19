@@ -350,11 +350,13 @@ def test_429_rate_limit_max_retries_exhausted():
         # Verify it was a 429 error
         assert exc_info.value.status == 429
 
-        # With concurrent requests for documents and users, and retries on both:
-        # Each endpoint will be tried: initial + max_retries = 1 + 2 = 3 times
-        # So total calls = 3 (documents) + 3 (users) = 6
-        expected_calls = 2 * (1 + workspace.max_retries)  # 2 endpoints, each retried
-        assert call_count == expected_calls
+        # With concurrent requests if one endpoint fails, the other is cancelled, this means:
+        # - At least one endpoint must complete all retries (that's what triggers the exception)
+        # - The other endpoint may be cancelled partway through (0 to max_retries attempts)
+        # Therefore a `call_count` can be between (1 endpoint x 3 calls) = 3 to (2 endpoints x 3 calls) = 6
+        min_expected = 1 + workspace.max_retries
+        max_expected = 2 * (1 + workspace.max_retries)
+        assert min_expected <= call_count <= max_expected
 
 
 @pytest.mark.asyncio

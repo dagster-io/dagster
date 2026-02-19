@@ -1,6 +1,6 @@
 import os
 from collections.abc import Iterator
-from typing import Optional, cast
+from typing import cast
 
 import kubernetes.config
 from dagster import (
@@ -176,7 +176,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         load_incluster_config = run_launcher.load_incluster_config if run_launcher else True
 
     if "kubeconfig_file" in exc_cfg:
-        kubeconfig_file = cast("Optional[str]", exc_cfg["kubeconfig_file"])
+        kubeconfig_file = cast("str | None", exc_cfg["kubeconfig_file"])
     else:
         kubeconfig_file = run_launcher.kubeconfig_file if run_launcher else None
 
@@ -208,10 +208,10 @@ class K8sStepHandler(StepHandler):
 
     def __init__(
         self,
-        image: Optional[str],
+        image: str | None,
         container_context: K8sContainerContext,
         load_incluster_config: bool,
-        kubeconfig_file: Optional[str],
+        kubeconfig_file: str | None,
         k8s_client_batch_api=None,
         k8s_client_core_api=None,
         per_step_k8s_config=None,
@@ -294,7 +294,7 @@ class K8sStepHandler(StepHandler):
     @cached_method
     def _detect_current_name_and_uid(
         self,
-    ) -> Optional[tuple[str, str]]:
+    ) -> tuple[str, str] | None:
         """Get the current pod's pod name and uid, if available."""
         from dagster_k8s.utils import detect_current_namespace
 

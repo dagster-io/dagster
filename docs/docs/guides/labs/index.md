@@ -2,7 +2,6 @@
 description: Dagster Labs features are in preview and under active development.
 sidebar_class_name: hidden
 title: Labs
-sidebar_position: 10
 canonicalUrl: '/guides/labs'
 slug: '/guides/labs'
 ---

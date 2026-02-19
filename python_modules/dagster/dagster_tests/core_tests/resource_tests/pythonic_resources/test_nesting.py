@@ -3,7 +3,7 @@ import enum
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 import pytest
@@ -409,7 +409,7 @@ def test_nested_function_resource_runtime_config() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Any partially configured, nested resources must be provided as a top level resource.",
+        match=r"Any partially configured, nested resources must be provided as a top level resource.",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions
@@ -796,7 +796,7 @@ def test_multiple_nested_optional_resources() -> None:
         inner: InnerResource
 
     class MainResource(dg.ConfigurableResource):
-        outer: Optional[OuterResource]
+        outer: OuterResource | None
 
     executed = {}
 
@@ -838,13 +838,13 @@ def test_multiple_nested_optional_resources_complex() -> None:
         a_string: str = "foo"
 
     class InnerResource(dg.ConfigurableResource):
-        innermost: Optional[InnermostResource]
+        innermost: InnermostResource | None
 
     class OuterResource(dg.ConfigurableResource):
-        inner: Optional[InnerResource]
+        inner: InnerResource | None
 
     class MainResource(dg.ConfigurableResource):
-        outer: Optional[OuterResource]
+        outer: OuterResource | None
 
     executed = {}
 
@@ -1043,3 +1043,72 @@ def test_nested_resources_direct_config_fully_populated() -> None:
     assert result.a == "a"
     assert isinstance(result.inner, Inner)
     assert result.inner.b == "b"
+
+
+def test_nested_resources_with_default_set_in_configure_at_launch() -> None:
+    class SmallResource(dg.ConfigurableResource):
+        small_field: str
+
+    class MediumResource(dg.ConfigurableResource):
+        medium_field: str
+        nested_resource: dg.ResourceDependency[SmallResource]
+
+    class LargeResource(dg.ConfigurableResource):
+        large_field: str
+        nested_resource: dg.ResourceDependency[MediumResource]
+
+    completed = {}
+
+    @dg.asset()
+    def the_asset(large_resource: LargeResource) -> None:
+        assert large_resource.large_field == "large_field"
+        assert large_resource.nested_resource.medium_field == "medium_field"
+        assert large_resource.nested_resource.nested_resource.small_field == "set_at_runtime"
+        completed["yes"] = True
+
+    small_resource = SmallResource.configure_at_launch(small_field="small_field")
+    medium_resource = MediumResource.configure_at_launch(
+        medium_field="medium_field", nested_resource=small_resource
+    )
+    large_resource = LargeResource.configure_at_launch(
+        large_field="large_field", nested_resource=medium_resource
+    )
+    defs = dg.Definitions(
+        assets=[the_asset],
+        resources={
+            "small_resource": small_resource,
+            "medium_resource": medium_resource,
+            "large_resource": large_resource,
+        },
+    )
+    job_def = defs.resolve_implicit_global_asset_job_def()
+    config_schema_type = job_def.run_config_schema.run_config_schema_type
+    assert isinstance(config_schema_type, dg.Shape)
+    config_schema_defaults = config_schema_type.fields["resources"].default_value
+    assert config_schema_defaults.get("small_resource") == {
+        "config": {
+            "small_field": "small_field",
+        }
+    }
+    assert config_schema_defaults.get("medium_resource") == {
+        "config": {
+            "medium_field": "medium_field",
+        }
+    }
+    assert config_schema_defaults.get("large_resource") == {
+        "config": {
+            "large_field": "large_field",
+        }
+    }
+    assert job_def.execute_in_process(
+        {
+            "resources": {
+                "small_resource": {
+                    "config": {
+                        "small_field": "set_at_runtime",
+                    }
+                },
+            }
+        }
+    ).success
+    assert completed["yes"]

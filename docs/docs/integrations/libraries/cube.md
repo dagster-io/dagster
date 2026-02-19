@@ -1,6 +1,7 @@
 ---
 title: Dagster & Cube
 sidebar_label: Cube
+sidebar_position: 1
 description: With the Cube integration you can setup Cube and Dagster to work together so that Dagster can push changes from upstream data sources to Cube using its integration API.
 tags: [community-supported]
 source:

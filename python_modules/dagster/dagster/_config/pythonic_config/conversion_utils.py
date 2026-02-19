@@ -1,7 +1,7 @@
 import inspect
-import sys
 from collections.abc import Mapping
 from enum import Enum
+from types import UnionType
 from typing import Annotated, Any, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 from dagster_shared.dagster_model.pydantic_compat_layer import (
@@ -35,14 +35,7 @@ from dagster._core.errors import (
 )
 from dagster._utils.typing_api import is_closed_python_optional_type
 
-if sys.version_info >= (3, 10):
-    # Support models being built with the `Foo | Bar` syntax,
-    # not just `Union[Foo, Bar]`
-    from types import UnionType
-
-    _UNION_TYPES = [Union, UnionType]
-else:
-    _UNION_TYPES = [Union]
+_UNION_TYPES = [Union, UnionType]
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
@@ -98,8 +91,8 @@ TResValue = TypeVar("TResValue")
 
 def _convert_pydantic_field(
     pydantic_field: ModelFieldCompat,
-    model_cls: Optional[type] = None,
-    default: Optional[Mapping[str, Any]] = None,
+    model_cls: type | None = None,
+    default: Mapping[str, Any] | None = None,
 ) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
@@ -128,7 +121,7 @@ def _convert_pydantic_field(
         return inferred_field
     else:
         if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
-            field_type = Optional[field_type]
+            field_type = Optional[field_type]  # noqa: UP045
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
@@ -144,12 +137,18 @@ def _convert_pydantic_field(
         if isinstance(default_to_pass, Enum):
             default_to_pass = default_to_pass.name
 
+        # Extract is_secret from json_schema_extra
+        extras = pydantic_field.json_schema_extra or {}
+        is_secret = bool(extras.get("dagster__is_secret", False))
+
         return Field(
             config=config_type,
             description=pydantic_field.description,
             is_required=pydantic_field.is_required()
-            and not is_closed_python_optional_type(field_type),
+            and not is_closed_python_optional_type(field_type)
+            and default_to_pass == FIELD_NO_DEFAULT_PROVIDED,
             default_value=default_to_pass,
+            is_secret=is_secret,
         )
 
 

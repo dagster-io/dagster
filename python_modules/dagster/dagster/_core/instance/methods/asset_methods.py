@@ -113,7 +113,7 @@ class AssetMethods:
         self,
         records_filter: Union["AssetKey", "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
         """Return a list of AssetFailedToMaterialization records stored in the event log storage.
@@ -164,8 +164,8 @@ class AssetMethods:
     def get_event_tags_for_asset(
         self,
         asset_key: "AssetKey",
-        filter_tags: Optional[Mapping[str, str]] = None,
-        filter_event_id: Optional[int] = None,
+        filter_tags: Mapping[str, str] | None = None,
+        filter_event_id: int | None = None,
     ) -> Sequence[Mapping[str, str]]:
         """Fetches asset event tags for the given asset key.
         Moved from AssetDomain.get_event_tags_for_asset().
@@ -188,7 +188,7 @@ class AssetMethods:
     def get_latest_planned_materialization_info(
         self,
         asset_key: "AssetKey",
-        partition: Optional[str] = None,
+        partition: str | None = None,
     ) -> Optional["PlannedMaterializationInfo"]:
         """Get latest planned materialization info.
         Moved from AssetDomain.get_latest_planned_materialization_info().
@@ -201,8 +201,8 @@ class AssetMethods:
     def get_materialized_partitions(
         self,
         asset_key: "AssetKey",
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ) -> set[str]:
         """Get materialized partitions for an asset - moved from AssetDomain.get_materialized_partitions()."""
         return self._event_storage_impl.get_materialized_partitions(
@@ -214,7 +214,7 @@ class AssetMethods:
         self,
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
-        partitions: Optional[set[str]] = None,
+        partitions: set[str] | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialization storage id for each partition for a given asset key.
         Moved from AssetDomain.get_latest_storage_id_by_partition().
@@ -230,7 +230,7 @@ class AssetMethods:
         self,
         records_filter: Union["AssetKey", "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
         """Return a list of planned materialization records stored in the event log storage.
@@ -361,10 +361,10 @@ class AssetMethods:
     def get_latest_data_version_record(
         self,
         key: AssetKey,
-        is_source: Optional[bool] = None,
-        partition_key: Optional[str] = None,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        is_source: bool | None = None,
+        partition_key: str | None = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ) -> Optional["EventLogRecord"]:
         """Get the latest data version record for an asset.
         Moved from AssetDomain.get_latest_data_version_record().
@@ -470,7 +470,7 @@ class AssetMethods:
         self,
         records_filter: Union["AssetKey", "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
         """Return a list of materialization records stored in the event log storage.
@@ -493,9 +493,9 @@ class AssetMethods:
 
     def get_asset_keys(
         self,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        prefix: Sequence[str] | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> Sequence["AssetKey"]:
         """Return a filtered subset of asset keys managed by this instance.
         Moved from AssetDomain.get_asset_keys().
@@ -511,7 +511,7 @@ class AssetMethods:
         return self._event_storage_impl.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
 
     def get_asset_records(
-        self, asset_keys: Optional[Sequence["AssetKey"]] = None
+        self, asset_keys: Sequence["AssetKey"] | None = None
     ) -> Sequence["AssetRecord"]:
         """Return an `AssetRecord` for each of the given asset keys.
         Moved from AssetDomain.get_asset_records().
@@ -526,7 +526,7 @@ class AssetMethods:
 
     def get_latest_materialization_code_versions(
         self, asset_keys: Iterable["AssetKey"]
-    ) -> Mapping["AssetKey", Optional[str]]:
+    ) -> Mapping["AssetKey", str | None]:
         """Returns the code version used for the latest materialization of each of the provided
         assets. Moved from AssetDomain.get_latest_materialization_code_versions().
 
@@ -542,7 +542,7 @@ class AssetMethods:
         """
         from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 
-        result: dict[AssetKey, Optional[str]] = {}
+        result: dict[AssetKey, str | None] = {}
         latest_materialization_events = self.get_latest_materialization_events(asset_keys)
         for asset_key in asset_keys:
             event_log_entry = latest_materialization_events.get(asset_key)
@@ -574,7 +574,7 @@ class AssetMethods:
         asset_key: AssetKey,
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
+    ) -> Mapping[str, "AssetPartitionStatus"] | None:
         """Get the current status of provided partition_keys for the provided asset.
         Moved from AssetDomain.get_status_by_partition().
 

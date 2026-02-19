@@ -88,3 +88,8 @@ def test_config_from_pkg_resources():
             match="Encountered error attempting to parse yaml",
         ):
             dg.config_from_pkg_resources([bad_def])
+
+
+def test_bk_runs():
+    # hi there
+    assert True

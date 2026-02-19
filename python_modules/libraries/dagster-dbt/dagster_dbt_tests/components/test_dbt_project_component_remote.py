@@ -2,7 +2,6 @@ import shutil
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Optional
 from unittest.mock import ANY, MagicMock, patch
 
 import dagster as dg
@@ -260,7 +259,7 @@ def test_remote_dbt_project_with_token(dbt_project_dir: Path) -> None:
 
 @pytest.mark.parametrize("project_path", [None, "."])
 def test_scaffold_component_with_git_url_params(
-    dbt_project_dir: Path, project_path: Optional[str]
+    dbt_project_dir: Path, project_path: str | None
 ) -> None:
     """Test that the scaffolder creates a loadable component when invoked with git_url params."""
     repo_url = "https://github.com/fake/repo_scaffold.git"
@@ -283,7 +282,7 @@ def test_scaffold_component_with_git_url_params(
         # Verify the component can be loaded without error
         with (
             scoped_definitions_load_context(),
-            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
         ):
             assert isinstance(component, DbtProjectComponent)
             assert isinstance(component.project, RemoteGitDbtProjectManager)

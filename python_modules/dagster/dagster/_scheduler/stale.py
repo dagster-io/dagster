@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Union
 
 import dagster._check as check
 from dagster._core.definitions.data_version import CachingStaleStatusResolver, StaleStatus
@@ -12,7 +11,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 def resolve_stale_or_missing_assets(
     context: WorkspaceProcessContext,
     run_request: RunRequest,
-    instigator: Union[RemoteSensor, RemoteSchedule],
+    instigator: RemoteSensor | RemoteSchedule,
 ) -> Sequence[AssetKey]:
     request_context = context.create_request_context()
     asset_graph = request_context.asset_graph

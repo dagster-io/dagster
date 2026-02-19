@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence, Set
-from functools import cached_property
-from typing import Optional, Union
+from functools import cached_property, partial
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -36,15 +35,15 @@ from dagster._utils.warnings import suppress_dagster_warnings
 class InputDefSnap(IHaveNew):
     name: str
     dagster_type_key: str
-    description: Optional[str]
+    description: str | None
     metadata: Mapping[str, MetadataValue]
 
     def __new__(
         cls,
         name: str,
         dagster_type_key: str,
-        description: Optional[str],
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        description: str | None,
+        metadata: Mapping[str, MetadataValue] | None = None,
     ):
         return super().__new__(
             cls,
@@ -66,7 +65,7 @@ class InputDefSnap(IHaveNew):
 class OutputDefSnap(IHaveNew):
     name: str
     dagster_type_key: str
-    description: Optional[str]
+    description: str | None
     is_required: bool
     metadata: Mapping[str, MetadataValue]
     is_dynamic: bool
@@ -75,9 +74,9 @@ class OutputDefSnap(IHaveNew):
         cls,
         name: str,
         dagster_type_key: str,
-        description: Optional[str],
+        description: str | None,
         is_required: bool,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Mapping[str, MetadataValue] | None = None,
         is_dynamic: bool = False,
     ):
         return super().__new__(
@@ -135,14 +134,21 @@ def build_input_def_snap(input_def: InputDefinition) -> InputDefSnap:
     )
 
 
-def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
+def build_output_def_snap(output_def: OutputDefinition, job_def: JobDefinition) -> OutputDefSnap:
     check.inst_param(output_def, "output_def", OutputDefinition)
+    check.inst_param(job_def, "job_def", JobDefinition)
+
+    # Don't include verbose user-defined metadata(description/metadata fields) on the output
+    # definition snapshots for asset jobs, since they can be quite verbose/large and they
+    # map directly to information that is already available on the asset graph
+    include_verbose_metadata = not job_def.is_asset_job
+
     return OutputDefSnap(
         name=output_def.name,
         dagster_type_key=output_def.dagster_type.key,
-        description=output_def.description,
+        description=output_def.description if include_verbose_metadata else None,
         is_required=output_def.is_required,
-        metadata=output_def.metadata,
+        metadata=output_def.metadata if include_verbose_metadata else {},
         is_dynamic=output_def.is_dynamic,
     )
 
@@ -153,9 +159,9 @@ class GraphDefSnap:
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]
-    description: Optional[str]
+    description: str | None
     tags: Mapping[str, str]
-    config_field_snap: Optional[ConfigFieldSnap]
+    config_field_snap: ConfigFieldSnap | None
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
@@ -182,11 +188,11 @@ class OpDefSnap:
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]
-    description: Optional[str]
+    description: str | None
     tags: Mapping[str, str]
     required_resource_keys: Sequence[str]
-    config_field_snap: Optional[ConfigFieldSnap]
-    pool: Optional[str] = None
+    config_field_snap: ConfigFieldSnap | None
+    pool: str | None = None
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -223,9 +229,9 @@ def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
     graph_def_snaps = []
     for node_def in job_def.all_node_defs:
         if isinstance(node_def, OpDefinition):
-            op_def_snaps.append(build_op_def_snap(node_def))
+            op_def_snaps.append(build_op_def_snap(node_def, job_def))
         elif isinstance(node_def, GraphDefinition):
-            graph_def_snaps.append(build_graph_def_snap(node_def))
+            graph_def_snaps.append(build_graph_def_snap(node_def, job_def))
         else:
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
@@ -242,20 +248,20 @@ def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
 
 
 def _by_name(
-    snap: Union[
-        InputDefSnap,
-        OutputDefSnap,
-    ],
+    snap: InputDefSnap | OutputDefSnap,
 ) -> str:
     return snap.name
 
 
-def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
+def build_graph_def_snap(graph_def: GraphDefinition, job_def: JobDefinition) -> GraphDefSnap:
     check.inst_param(graph_def, "graph_def", GraphDefinition)
     return GraphDefSnap(
         name=graph_def.name,
         input_def_snaps=sorted(map(build_input_def_snap, graph_def.input_defs), key=_by_name),
-        output_def_snaps=sorted(map(build_output_def_snap, graph_def.output_defs), key=_by_name),
+        output_def_snaps=sorted(
+            map(partial(build_output_def_snap, job_def=job_def), graph_def.output_defs),
+            key=_by_name,
+        ),
         description=graph_def.description,
         tags=graph_def.tags,
         config_field_snap=(
@@ -278,12 +284,14 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
     )
 
 
-def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
+def build_op_def_snap(op_def: OpDefinition, job_def: JobDefinition) -> OpDefSnap:
     check.inst_param(op_def, "op_def", OpDefinition)
     return OpDefSnap(
         name=op_def.name,
         input_def_snaps=sorted(map(build_input_def_snap, op_def.input_defs), key=_by_name),
-        output_def_snaps=sorted(map(build_output_def_snap, op_def.output_defs), key=_by_name),
+        output_def_snaps=sorted(
+            map(partial(build_output_def_snap, job_def=job_def), op_def.output_defs), key=_by_name
+        ),
         description=op_def.description,
         tags=op_def.tags,
         required_resource_keys=sorted(op_def.required_resource_keys),
@@ -297,7 +305,7 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
 
 
 # shared impl for GraphDefSnap and OpDefSnap
-def _get_input_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> InputDefSnap:
+def _get_input_snap(node_def: GraphDefSnap | OpDefSnap, name: str) -> InputDefSnap:
     check.str_param(name, "name")
     inp = node_def.input_def_map.get(name)
     if inp:
@@ -307,7 +315,7 @@ def _get_input_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> Inpu
 
 
 # shared impl for GraphDefSnap and OpDefSnap
-def _get_output_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> OutputDefSnap:
+def _get_output_snap(node_def: GraphDefSnap | OpDefSnap, name: str) -> OutputDefSnap:
     check.str_param(name, "name")
     inp = node_def.output_def_map.get(name)
     if inp:

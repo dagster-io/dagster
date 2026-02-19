@@ -1,7 +1,8 @@
 import contextlib
 import os
 from collections.abc import Callable, Iterator
-from typing import Any, NamedTuple, Optional
+from pathlib import Path
+from typing import Any, NamedTuple
 
 import dagster._check as check
 import yaml
@@ -13,7 +14,7 @@ from automation.docker.utils import (
     execute_docker_tag,
     python_version_image_tag,
 )
-from automation.git import git_repo_root
+from automation.utils import discover_oss_root
 
 # Default repository prefix used for local images
 DEFAULT_LOCAL_PREFIX = "dagster"
@@ -29,7 +30,9 @@ def do_nothing(_cwd: str) -> Iterator[None]:
 
 def default_images_path():
     return os.path.join(
-        git_repo_root(),
+        # We need to use cwd here instead of __file__ because this file is not always
+        # part of the greater OSS codebase or even a git repo when it is run.
+        discover_oss_root(Path.cwd()),
         "python_modules",
         "automation",
         "automation",
@@ -60,7 +63,7 @@ class DagsterDockerImage(
     def __new__(
         cls,
         image: str,
-        images_path: Optional[str] = None,
+        images_path: str | None = None,
         build_cm: Callable[..., Any] = do_nothing,
     ):
         return super().__new__(
@@ -120,9 +123,7 @@ class DagsterDockerImage(
         tag = python_version_image_tag(python_version, last_updated)
         return f"{DEFAULT_LOCAL_PREFIX}/{self.image}:{tag}"
 
-    def aws_image(
-        self, python_version: Optional[str] = None, custom_tag: Optional[str] = None
-    ) -> str:
+    def aws_image(self, python_version: str | None = None, custom_tag: str | None = None) -> str:
         """Generates the AWS ECR image name, like:
         "1234567890.dkr.ecr.us-west-1.amazonaws.com/foo:some-tag".
         """
@@ -130,7 +131,7 @@ class DagsterDockerImage(
         check.opt_str_param(python_version, "python_version")
         check.opt_str_param(custom_tag, "custom_tag")
 
-        tag: Optional[str]
+        tag: str | None
         if python_version:
             last_updated = self._get_last_updated_for_python_version(python_version)
             tag = python_version_image_tag(python_version, last_updated)
@@ -180,7 +181,7 @@ class DagsterDockerImage(
         return docker_args
 
     def build(
-        self, timestamp, dagster_version: str, python_version: str, platform: Optional[str] = None
+        self, timestamp, dagster_version: str, python_version: str, platform: str | None = None
     ) -> None:
         check.str_param(timestamp, "timestamp")
         check.str_param(python_version, "python_version")
@@ -195,7 +196,7 @@ class DagsterDockerImage(
                 platform=platform,
             )
 
-    def push(self, python_version: str, custom_tag: Optional[str] = None) -> None:
+    def push(self, python_version: str, custom_tag: str | None = None) -> None:
         """Push this image to ECR."""
         if custom_tag:
             execute_docker_tag(

@@ -41,6 +41,9 @@ from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
+    from dagster._core.definitions.partitions.definition.partitions_definition import (
+        PartitionsDefinition,
+    )
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
@@ -128,10 +131,10 @@ class DagsterRunStatsSnapshot(IHaveNew):
     steps_failed: int
     materializations: int
     expectations: int
-    enqueued_time: Optional[float]
-    launch_time: Optional[float]
-    start_time: Optional[float]
-    end_time: Optional[float]
+    enqueued_time: float | None
+    launch_time: float | None
+    start_time: float | None
+    end_time: float | None
 
 
 @whitelist_for_serdes
@@ -143,7 +146,7 @@ class RunOpConcurrency(IHaveNew):
 
     root_key_counts: Mapping[str, int]
     has_unconstrained_root_nodes: bool
-    all_pools: Optional[Set[str]] = None
+    all_pools: Set[str] | None = None
 
 
 class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
@@ -262,48 +265,48 @@ class DagsterRun(
     job_name: PublicAttr[str]
     run_id: PublicAttr[str]
     run_config: PublicAttr[Mapping[str, object]]
-    asset_selection: Optional[AbstractSet[AssetKey]]
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
-    op_selection: Optional[Sequence[str]]
-    resolved_op_selection: Optional[AbstractSet[str]]
-    step_keys_to_execute: Optional[Sequence[str]]
+    asset_selection: AbstractSet[AssetKey] | None
+    asset_check_selection: AbstractSet[AssetCheckKey] | None
+    op_selection: Sequence[str] | None
+    resolved_op_selection: AbstractSet[str] | None
+    step_keys_to_execute: Sequence[str] | None
     status: PublicAttr[DagsterRunStatus]
     tags: PublicAttr[Mapping[str, str]]
-    root_run_id: Optional[str]
-    parent_run_id: Optional[str]
-    job_snapshot_id: Optional[str]
-    execution_plan_snapshot_id: Optional[str]
-    remote_job_origin: Optional[RemoteJobOrigin]
-    job_code_origin: Optional[JobPythonOrigin]
+    root_run_id: str | None
+    parent_run_id: str | None
+    job_snapshot_id: str | None
+    execution_plan_snapshot_id: str | None
+    remote_job_origin: RemoteJobOrigin | None
+    job_code_origin: JobPythonOrigin | None
     has_repository_load_data: bool
-    run_op_concurrency: Optional[RunOpConcurrency]
+    run_op_concurrency: RunOpConcurrency | None
 
     # Only support storing certain partitions subsets on the run for now, other
     # partitions subsets are too big.
     # NOTE: if you are expanding the valid set, be mindful of older versions not handling it.
-    partitions_subset: Optional[Union[TimeWindowPartitionsSubset, KeyRangesPartitionsSubset]]
+    partitions_subset: TimeWindowPartitionsSubset | KeyRangesPartitionsSubset | None
 
     def __new__(
         cls,
         job_name: str,
-        run_id: Optional[str] = None,
-        run_config: Optional[Mapping[str, object]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        resolved_op_selection: Optional[AbstractSet[str]] = None,
-        step_keys_to_execute: Optional[Sequence[str]] = None,
-        status: Optional[DagsterRunStatus] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        root_run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        job_snapshot_id: Optional[str] = None,
-        execution_plan_snapshot_id: Optional[str] = None,
-        remote_job_origin: Optional[RemoteJobOrigin] = None,
-        job_code_origin: Optional[JobPythonOrigin] = None,
-        has_repository_load_data: Optional[bool] = None,
-        run_op_concurrency: Optional[RunOpConcurrency] = None,
-        partitions_subset: Optional[PartitionsSubset] = None,
+        run_id: str | None = None,
+        run_config: Mapping[str, object] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
+        op_selection: Sequence[str] | None = None,
+        resolved_op_selection: AbstractSet[str] | None = None,
+        step_keys_to_execute: Sequence[str] | None = None,
+        status: DagsterRunStatus | None = None,
+        tags: Mapping[str, str] | None = None,
+        root_run_id: str | None = None,
+        parent_run_id: str | None = None,
+        job_snapshot_id: str | None = None,
+        execution_plan_snapshot_id: str | None = None,
+        remote_job_origin: RemoteJobOrigin | None = None,
+        job_code_origin: JobPythonOrigin | None = None,
+        has_repository_load_data: bool | None = None,
+        run_op_concurrency: RunOpConcurrency | None = None,
+        partitions_subset: PartitionsSubset | None = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -366,11 +369,85 @@ class DagsterRun(
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return copy(self, tags=tags)
 
-    def get_root_run_id(self) -> Optional[str]:
+    def get_root_run_id(self) -> str | None:
         return self.tags.get(ROOT_RUN_ID_TAG)
 
-    def get_parent_run_id(self) -> Optional[str]:
+    def get_parent_run_id(self) -> str | None:
         return self.tags.get(PARENT_RUN_ID_TAG)
+
+    @property
+    def is_partitioned(self) -> bool:
+        from dagster._core.storage.tags import (
+            ASSET_PARTITION_RANGE_END_TAG,
+            ASSET_PARTITION_RANGE_START_TAG,
+            PARTITION_NAME_TAG,
+        )
+
+        has_partition_tags = any(
+            self.tags.get(tag) is not None
+            for tag in [
+                PARTITION_NAME_TAG,
+                ASSET_PARTITION_RANGE_START_TAG,
+                ASSET_PARTITION_RANGE_END_TAG,
+            ]
+        )
+        return has_partition_tags or self.partitions_subset is not None
+
+    def get_resolved_partitions_subset_for_events(
+        self, partitions_def: Optional["PartitionsDefinition"]
+    ) -> PartitionsSubset | None:
+        """Get the partitions subset targeted by a run based on its partition tags. Does not always use the
+        partition_subset that is directly stored on the run as this can contain a KeyRangesPartitionSubset
+        which can not be deserialized without additional information.
+        """
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
+        from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+        from dagster._core.errors import DagsterInvariantViolationError
+        from dagster._core.storage.tags import (
+            ASSET_PARTITION_RANGE_END_TAG,
+            ASSET_PARTITION_RANGE_START_TAG,
+            PARTITION_NAME_TAG,
+        )
+
+        # KeyRangesPartitionsSubset cannot be deserialized without access to the instance, so ignore it for now.
+        if self.partitions_subset is not None and not isinstance(
+            self.partitions_subset, KeyRangesPartitionsSubset
+        ):
+            return self.partitions_subset
+
+        # fetch information from the tags
+        partition_tag = self.tags.get(PARTITION_NAME_TAG)
+        partition_range_start = self.tags.get(ASSET_PARTITION_RANGE_START_TAG)
+        partition_range_end = self.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+
+        if partition_range_start or partition_range_end:
+            if not partition_range_start or not partition_range_end:
+                raise DagsterInvariantViolationError(
+                    f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                    f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
+                )
+
+            if (
+                isinstance(partitions_def, DynamicPartitionsDefinition)
+                and partitions_def.name is None
+            ):
+                raise DagsterInvariantViolationError(
+                    "Creating a run targeting a partition range is not supported for assets "
+                    "partitioned with function-based dynamic partitions"
+                )
+
+            if partitions_def is not None:
+                return partitions_def.subset_with_partition_keys(
+                    partitions_def.get_partition_keys_in_range(
+                        PartitionKeyRange(partition_range_start, partition_range_end),
+                    )
+                ).to_serializable_subset()
+        elif partition_tag and partitions_def is not None:
+            return partitions_def.subset_with_partition_keys(
+                [partition_tag]
+            ).to_serializable_subset()
+
+        return None
 
     @cached_property
     def dagster_execution_info(self) -> Mapping[str, str]:
@@ -494,12 +571,12 @@ class DagsterRun(
         return False
 
     @property
-    def previous_run_id(self) -> Optional[str]:
+    def previous_run_id(self) -> str | None:
         # Compat
         return self.parent_run_id
 
     @property
-    def entity_selection(self) -> Optional[AbstractSet["EntityKey"]]:
+    def entity_selection(self) -> AbstractSet["EntityKey"] | None:
         if self.asset_selection is None and self.asset_check_selection is None:
             return None
 
@@ -554,29 +631,29 @@ class RunsFilter(IHaveNew):
         exclude_subruns (Optional[bool]): If true, runs that were launched to backfill historical data will be excluded from results.
     """
 
-    run_ids: Optional[Sequence[str]]
-    job_name: Optional[str]
+    run_ids: Sequence[str] | None
+    job_name: str | None
     statuses: Sequence[DagsterRunStatus]
-    tags: Mapping[str, Union[str, Sequence[str]]]
-    snapshot_id: Optional[str]
-    updated_after: Optional[datetime]
-    updated_before: Optional[datetime]
-    created_after: Optional[datetime]
-    created_before: Optional[datetime]
-    exclude_subruns: Optional[bool]
+    tags: Mapping[str, str | Sequence[str]]
+    snapshot_id: str | None
+    updated_after: datetime | None
+    updated_before: datetime | None
+    created_after: datetime | None
+    created_before: datetime | None
+    exclude_subruns: bool | None
 
     def __new__(
         cls,
-        run_ids: Optional[Sequence[str]] = None,
-        job_name: Optional[str] = None,
-        statuses: Optional[Sequence[DagsterRunStatus]] = None,
-        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
-        snapshot_id: Optional[str] = None,
-        updated_after: Optional[datetime] = None,
-        updated_before: Optional[datetime] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        exclude_subruns: Optional[bool] = None,
+        run_ids: Sequence[str] | None = None,
+        job_name: str | None = None,
+        statuses: Sequence[DagsterRunStatus] | None = None,
+        tags: Mapping[str, str | Sequence[str]] | None = None,
+        snapshot_id: str | None = None,
+        updated_after: datetime | None = None,
+        updated_before: datetime | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        exclude_subruns: bool | None = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -613,13 +690,13 @@ class RunsFilter(IHaveNew):
 
 class JobBucket(NamedTuple):
     job_names: list[str]
-    bucket_limit: Optional[int]
+    bucket_limit: int | None
 
 
 class TagBucket(NamedTuple):
     tag_key: str
     tag_values: list[str]
-    bucket_limit: Optional[int]
+    bucket_limit: int | None
 
 
 @public
@@ -640,14 +717,14 @@ class RunRecord(
     create_timestamp: datetime
     update_timestamp: datetime
     # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
-    start_time: Optional[float] = None
-    end_time: Optional[float] = None
+    start_time: float | None = None
+    end_time: float | None = None
 
     @classmethod
     def _blocking_batch_load(
         cls, keys: Iterable[str], context: LoadingContext
     ) -> Iterable[Optional["RunRecord"]]:
-        result_map: dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
+        result_map: dict[str, RunRecord | None] = {run_id: None for run_id in keys}
 
         run_ids = list(result_map.keys())
 
@@ -670,8 +747,8 @@ class RunPartitionData:
     run_id: str
     partition: str
     status: DagsterRunStatus
-    start_time: Optional[float]
-    end_time: Optional[float]
+    start_time: float | None
+    end_time: float | None
 
 
 ###################################################################################################
@@ -696,7 +773,7 @@ class ExecutionSelector:
     """Kept here to maintain loading of PipelineRuns from when it was still alive."""
 
     name: str
-    solid_subset: Optional[Sequence[str]] = None
+    solid_subset: Sequence[str] | None = None
 
 
 def assets_are_externally_managed(run: DagsterRun) -> bool:

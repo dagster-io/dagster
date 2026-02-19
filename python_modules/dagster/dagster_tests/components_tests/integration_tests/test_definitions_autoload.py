@@ -1,7 +1,6 @@
 import importlib
 import textwrap
 from pathlib import Path
-from typing import Union
 
 import dagster as dg
 import pytest
@@ -23,7 +22,7 @@ from dagster_tests.components_tests.utils import create_project_from_components
 
 
 def assert_tree_node_structure_matches(
-    tree: ComponentTree, structure: dict[Union[str, ComponentPath], type[ComponentDecl]]
+    tree: ComponentTree, structure: dict[str | ComponentPath, type[ComponentDecl]]
 ):
     nodes_by_path = dict(tree.find_root_decl().iterate_path_component_decl_pairs())
     unrepresented_paths = set(nodes_by_path.keys())

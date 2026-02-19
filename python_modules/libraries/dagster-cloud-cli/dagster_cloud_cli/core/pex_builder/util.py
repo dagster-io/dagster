@@ -4,17 +4,16 @@ import os
 import subprocess
 import sys
 from subprocess import CompletedProcess
-from typing import Optional
 from zipfile import ZipFile
 
 import click
 from packaging import version
 
 from dagster_cloud_cli.core.pex_builder.platforms import COMPLETE_PLATFORMS
-from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
+from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION, SUPPORTED_PYTHON_VERSIONS
 
 TARGET_PYTHON_VERSIONS = [
-    version.Version(python_version) for python_version in ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    version.Version(python_version) for python_version in SUPPORTED_PYTHON_VERSIONS
 ]
 
 
@@ -78,7 +77,7 @@ def build_pex(
     requirements_filepaths: list[str],
     pex_flags: list[str],
     output_pex_path: str,
-    pex_root: Optional[str] = None,
+    pex_root: str | None = None,
 ) -> CompletedProcess:
     """Invoke pex with common build flags and pass parameters through to specific pex flags.
 
@@ -142,7 +141,7 @@ def python_version_option():
     """Reusable click.option."""
     return click.option(
         "--python-version",
-        type=click.Choice([str(v) for v in TARGET_PYTHON_VERSIONS]),
+        type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
         default=DEFAULT_PYTHON_VERSION,
         show_default=True,
         help="Target Python version.",
@@ -153,7 +152,7 @@ def parse_python_version(python_version: str) -> version.Version:
     return version.Version(python_version)
 
 
-def parse_kv(ctx, param: str, value: Optional[str]):
+def parse_kv(ctx, param: str, value: str | None):
     if not value:
         return {}
     try:

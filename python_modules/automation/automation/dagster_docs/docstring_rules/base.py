@@ -1,7 +1,6 @@
 """Base classes and functional interface for validation rules."""
 
 from collections.abc import Callable
-from typing import Optional
 
 from dagster_shared.record import record
 
@@ -15,7 +14,7 @@ class ValidationContext:
 
     docstring: str
     symbol_path: str
-    processed_rst: Optional[str] = None
+    processed_rst: str | None = None
 
     def with_processed_rst(self, rst: str) -> "ValidationContext":
         """Return a new context with processed RST content."""
@@ -45,7 +44,7 @@ class ValidationResult:
             parsing_successful=True,
         )
 
-    def with_error(self, message: str, line_number: Optional[int] = None) -> "ValidationResult":
+    def with_error(self, message: str, line_number: int | None = None) -> "ValidationResult":
         """Return a new ValidationResult with an additional error message."""
         location = f" (line {line_number})" if line_number else ""
         full_message = f"{message}{location}"
@@ -59,7 +58,7 @@ class ValidationResult:
             )
         return self
 
-    def with_warning(self, message: str, line_number: Optional[int] = None) -> "ValidationResult":
+    def with_warning(self, message: str, line_number: int | None = None) -> "ValidationResult":
         """Return a new ValidationResult with an additional warning message."""
         location = f" (line {line_number})" if line_number else ""
         full_message = f"{message}{location}"

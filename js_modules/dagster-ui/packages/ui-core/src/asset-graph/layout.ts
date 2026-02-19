@@ -1,9 +1,8 @@
 import * as dagre from 'dagre';
 
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
-import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
+import {GraphData, GraphId, groupIdForNode, isGroupId} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
-import {ChangeReason} from '../graphql/types';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
 
@@ -37,7 +36,6 @@ export type AssetGraphLayout = {
 const MARGIN = 100;
 
 export type LayoutAssetGraphConfig = dagre.GraphLabel & {
-  direction: AssetLayoutDirection;
   /** Pass `auto` to use getAssetNodeDimensions, or a value to give nodes a fixed height */
   nodeHeight: number | 'auto';
   /** Our asset groups have "title bars" - use these numbers to adjust the bounding boxes.
@@ -59,13 +57,13 @@ export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
   flagAssetGraphGroupsPerCodeLocation: boolean;
   overrides?: Partial<LayoutAssetGraphConfig>;
-  facets?: AssetNodeFacet[] | false;
+  facets: AssetNodeFacet[];
+  forceLargeGraph?: boolean;
 };
 
 export const Config = {
   horizontal: {
     ranker: 'tight-tree',
-    direction: 'horizontal',
     marginx: MARGIN,
     marginy: MARGIN,
     ranksep: 60,
@@ -75,12 +73,11 @@ export const Config = {
     nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 65,
     groupPaddingBottom: -4,
-    groupRendering: 'if-varied',
+    groupRendering: 'if-varied' as 'if-varied' | 'always',
     clusterpaddingtop: 100,
   },
   vertical: {
     ranker: 'tight-tree',
-    direction: 'horizontal',
     marginx: MARGIN,
     marginy: MARGIN,
     ranksep: 20,
@@ -90,7 +87,7 @@ export const Config = {
     nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 55,
     groupPaddingBottom: -4,
-    groupRendering: 'if-varied',
+    groupRendering: 'if-varied' as 'if-varied' | 'always',
   },
 };
 
@@ -118,16 +115,14 @@ export const layoutAssetGraphImpl = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
+  const facets = new Set<AssetNodeFacet>(opts.facets);
   const g = new dagre.graphlib.Graph({compound: true});
   const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
-  const facets = opts.facets ? new Set<AssetNodeFacet>(opts.facets) : false;
 
   g.setGraph(config);
   g.setDefaultEdgeLabel(() => ({}));
 
-  // const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
-  const shouldRender = (node?: GraphNode) => node;
-  const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
+  const renderedNodes = Object.values(graphData.nodes);
   const expandedGroups = graphData.expandedGroups || [];
   const expandedGroupsSet = new Set(expandedGroups);
 
@@ -147,7 +142,9 @@ export const layoutAssetGraphImpl = (
     }
   }
 
-  // Add all the group boxes to the graph
+  // Add all the group boxes to the graph. We only render groups when there's
+  // more than one (to avoid a redundant wrapper around a single group), unless
+  // the caller specifies `groupRendering: 'always'`.
   const groupsPresent =
     config.groupRendering === 'if-varied' ? Object.keys(groups).length > 1 : true;
 
@@ -168,9 +165,7 @@ export const layoutAssetGraphImpl = (
     if (!groupsPresent || expandedGroupsSet.has(groupIdForNode(node))) {
       const label =
         config.nodeHeight === 'auto'
-          ? facets !== false
-            ? getAssetNodeDimensions2025(facets)
-            : getAssetNodeDimensions(node.definition)
+          ? getAssetNodeDimensions(facets)
           : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
 
       g.setNode(node.id, label);
@@ -181,30 +176,36 @@ export const layoutAssetGraphImpl = (
   });
 
   const linksToAssetsOutsideGraphedSet: {[id: string]: true} = {};
-  const groupIdForAssetId = Object.fromEntries(
-    Object.entries(graphData.nodes).map(([id, node]) => [id, groupIdForNode(node)]),
-  );
+
+  // Build a map from asset ID to group ID, but only when we have multiple groups
+  // and only for nodes that actually have a groupName. This map is used to collapse
+  // edges to point to group nodes when the group is collapsed.
+  const groupIdForAssetId: {[id: string]: string} = {};
+  if (groupsPresent) {
+    for (const [id, node] of Object.entries(graphData.nodes)) {
+      if (node.definition.groupName) {
+        groupIdForAssetId[id] = groupIdForNode(node);
+      }
+    }
+  }
 
   // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
   // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
   Object.entries(graphData.downstream).forEach(([upstreamId, graphDataDownstream]) => {
     const downstreamIds = Object.keys(graphDataDownstream);
     downstreamIds.forEach((downstreamId) => {
-      if (
-        !shouldRender(graphData.nodes[downstreamId]) &&
-        !shouldRender(graphData.nodes[upstreamId])
-      ) {
+      if (!graphData.nodes[downstreamId] && !graphData.nodes[upstreamId]) {
         return;
       }
       let v = upstreamId;
       let w = downstreamId;
 
       const wGroup = groupIdForAssetId[downstreamId];
-      if (groupsPresent && wGroup && !expandedGroupsSet.has(wGroup)) {
+      if (wGroup && !expandedGroupsSet.has(wGroup)) {
         w = wGroup;
       }
       const vGroup = groupIdForAssetId[upstreamId];
-      if (groupsPresent && vGroup && !expandedGroupsSet.has(vGroup)) {
+      if (vGroup && !expandedGroupsSet.has(vGroup)) {
         v = vGroup;
       }
       if (v === w) {
@@ -213,9 +214,9 @@ export const layoutAssetGraphImpl = (
 
       g.setEdge({v, w}, {weight: 1});
 
-      if (!shouldRender(graphData.nodes[downstreamId])) {
+      if (!graphData.nodes[downstreamId]) {
         linksToAssetsOutsideGraphedSet[downstreamId] = true;
-      } else if (!shouldRender(graphData.nodes[upstreamId])) {
+      } else if (!graphData.nodes[upstreamId]) {
         linksToAssetsOutsideGraphedSet[upstreamId] = true;
       }
     });
@@ -352,35 +353,7 @@ export const ASSET_NODE_STATUS_ROW_HEIGHT = 25;
 
 export const ASSET_NODE_NAME_MAX_LENGTH = 31;
 
-export const getAssetNodeDimensions = (def: {
-  assetKey: {path: string[]};
-  opNames: string[];
-  isMaterializable: boolean;
-  isObservable: boolean;
-  isPartitioned: boolean;
-  graphName: string | null;
-  description?: string | null;
-  computeKind: string | null;
-  changedReasons?: ChangeReason[];
-}) => {
-  let height = 0;
-
-  height += ASSET_NODE_TAGS_HEIGHT; // top tags
-
-  height += 76; // box padding + border + name + description
-
-  if (def.isPartitioned && def.isMaterializable) {
-    height += ASSET_NODE_STATUS_ROW_HEIGHT;
-  }
-
-  height += ASSET_NODE_STATUS_ROW_HEIGHT; // status row
-  height += ASSET_NODE_STATUS_ROW_HEIGHT; // checks row
-  height += ASSET_NODE_TAGS_HEIGHT; // bottom tags
-
-  return {width: ASSET_NODE_WIDTH, height};
-};
-
-export const getAssetNodeDimensions2025 = (facets: Set<AssetNodeFacet>) => {
+export const getAssetNodeDimensions = (facets: Set<AssetNodeFacet>) => {
   let height = 0;
 
   if (facets.size === 0) {

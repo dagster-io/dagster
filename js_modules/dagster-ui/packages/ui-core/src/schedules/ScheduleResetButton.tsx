@@ -1,5 +1,4 @@
 import {Button, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {RESET_SCHEDULE_MUTATION, displayScheduleMutationErrors} from './ScheduleMutations';
 import {useMutation} from '../apollo-client';

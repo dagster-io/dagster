@@ -136,6 +136,18 @@ export const AssetCheckOverview = ({
                 </Link>
               </Box>
             ) : null}
+            {lastExecution ? (
+              <Box flex={{direction: 'column', gap: 8}}>
+                <Subtitle2>Partition</Subtitle2>
+                {lastExecution.evaluation?.partition ? (
+                  <div style={{fontFamily: FontFamily.monospace, fontSize: 12}}>
+                    {lastExecution.evaluation.partition}
+                  </div>
+                ) : (
+                  <>&mdash;</>
+                )}
+              </Box>
+            ) : null}
           </Box>
           {lastExecution?.evaluation?.metadataEntries.length ? (
             <Box flex={{direction: 'column', gap: 8}}>

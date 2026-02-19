@@ -86,7 +86,7 @@ import compute_kind from '../icon-svgs/compute_kind.svg';
 import concept_book from '../icon-svgs/concept_book.svg';
 import concurrency from '../icon-svgs/concurrency.svg';
 import config from '../icon-svgs/config.svg';
-import console from '../icon-svgs/console.svg';
+import consoleIcon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import control_flow from '../icon-svgs/control_flow.svg';
 import controller from '../icon-svgs/controller.svg';
@@ -380,6 +380,8 @@ import target from '../icon-svgs/target.svg';
 import team from '../icon-svgs/team.svg';
 import terminate from '../icon-svgs/terminate.svg';
 import test from '../icon-svgs/test.svg';
+import thumb_down from '../icon-svgs/thumb_down.svg';
+import thumb_up from '../icon-svgs/thumb_up.svg';
 import timeline from '../icon-svgs/timeline.svg';
 import timer from '../icon-svgs/timer.svg';
 import timestamp from '../icon-svgs/timestamp.svg';
@@ -513,7 +515,7 @@ export const Icons = {
   concept_book,
   concurrency,
   config,
-  console,
+  console: consoleIcon,
   content_copy,
   control_flow,
   controller,
@@ -803,6 +805,8 @@ export const Icons = {
   team,
   terminate,
   test,
+  thumb_down,
+  thumb_up,
   timeline,
   timer,
   timestamp,

@@ -3,7 +3,6 @@
 import ast
 import re
 from pathlib import Path
-from typing import Optional, Union
 
 from dagster_shared.record import record
 
@@ -47,8 +46,8 @@ class PublicApiValidator:
     def __init__(self, dagster_root: Path):
         self.dagster_root = dagster_root
         self.python_modules_dir = dagster_root / "python_modules"
-        self.rst_docs_dir = dagster_root / "docs" / "sphinx" / "sections" / "api" / "apidocs"
-        self._package_paths_cache: Optional[dict[str, Path]] = None
+        self.rst_docs_dir = dagster_root / "docs" / "sphinx" / "sections"
+        self._package_paths_cache: dict[str, Path] | None = None
 
     def _discover_packages(self) -> dict[str, Path]:
         """Discover all available packages and their filesystem paths.
@@ -63,7 +62,7 @@ class PublicApiValidator:
         self._package_paths_cache = {pkg.module_name: pkg.path for pkg in packages}
         return self._package_paths_cache
 
-    def find_public_symbols(self, exclude_modules: Optional[set[str]] = None) -> list[PublicSymbol]:
+    def find_public_symbols(self, exclude_modules: set[str] | None = None) -> list[PublicSymbol]:
         """Find all symbols marked with @public decorator in dagster modules.
 
         Args:
@@ -175,7 +174,7 @@ class PublicApiValidator:
         return public_symbols
 
     def _has_public_decorator(
-        self, node: Union[ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef]
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
     ) -> bool:
         """Check if a node has @public decorator."""
         for decorator in node.decorator_list:
@@ -260,9 +259,7 @@ class PublicApiValidator:
             # Don't fall back to regex - fail the test to surface import issues
             return False
 
-    def find_rst_documented_symbols(
-        self, exclude_files: Optional[set[str]] = None
-    ) -> list[RstSymbol]:
+    def find_rst_documented_symbols(self, exclude_files: set[str] | None = None) -> list[RstSymbol]:
         """Find all symbols documented in RST files.
 
         Args:
@@ -338,13 +335,13 @@ class PublicApiValidator:
         """
         relative_path = rst_file.relative_to(self.rst_docs_dir)
 
-        if relative_path.parts[0] == "dagster":
+        if relative_path.parts[1] == "dagster":
             return "dagster"
-        elif relative_path.parts[0] == "libraries":
+        elif relative_path.parts[1] == "libraries" or relative_path.parts[1] == "graphql":
             if len(relative_path.parts) > 1:
                 # For library RST files like libraries/dagster-airlift.rst,
                 # assume symbols are exported at library top-level: dagster_airlift
-                lib_file = relative_path.parts[1]
+                lib_file = relative_path.parts[3]
                 if lib_file.endswith(".rst"):
                     lib_name = lib_file[:-4].replace("-", "_")  # Remove .rst and convert dashes
                     return lib_name
@@ -358,7 +355,7 @@ class PublicApiValidator:
         self,
         public_symbols: list[PublicSymbol],
         rst_symbols: list[RstSymbol],
-        exclude_symbols: Optional[set[str]] = None,
+        exclude_symbols: set[str] | None = None,
     ) -> list[ValidationIssue]:
         """Validate that @public symbols are documented in RST files.
 
@@ -410,7 +407,7 @@ class PublicApiValidator:
         self,
         rst_symbols: list[RstSymbol],
         public_symbols: list[PublicSymbol],
-        exclude_symbols: Optional[set[str]] = None,
+        exclude_symbols: set[str] | None = None,
     ) -> list[ValidationIssue]:
         """Validate that RST documented symbols have @public decorators.
 

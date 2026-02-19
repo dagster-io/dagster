@@ -6,15 +6,15 @@ subcommands for serverless and hybrid deployments.
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
+from dagster_cloud_cli.utils import SUPPORTED_PYTHON_VERSIONS
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import DAGSTER_CLOUD_BASE_URL, DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
@@ -22,27 +22,25 @@ from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
 )
 from dagster_dg_cli.cli.plus.deploy.configure.configure_ci import configure_ci_impl
 from dagster_dg_cli.cli.plus.deploy.configure.utils import (
-    DeploymentScaffoldConfig,
+    DgPlusDeployConfigureOptions,
     GitProvider,
+    detect_agent_type_and_platform,
     search_for_git_root,
 )
-from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def resolve_agent_type_and_platform(
-    agent_type: Optional[DgPlusAgentType],
-    agent_platform: Optional[DgPlusAgentPlatform],
-    plus_config: Optional[DagsterPlusCliConfig],
-) -> tuple[DgPlusAgentType, Optional[DgPlusAgentPlatform]]:
+    agent_type: DgPlusAgentType | None,
+    agent_platform: DgPlusAgentPlatform | None,
+    plus_config: DagsterPlusCliConfig | None,
+) -> tuple[DgPlusAgentType, DgPlusAgentPlatform | None]:
     """Resolve agent type and platform from config or prompts (for deployment-config commands)."""
     resolved_type = agent_type
     resolved_platform = agent_platform
 
     # Try to detect from Plus config via GraphQL
     if resolved_type is None and plus_config:
-        gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
-        detected_type, detected_platform = get_agent_type_and_platform_from_graphql(gql_client)
+        detected_type, detected_platform = detect_agent_type_and_platform(plus_config)
         resolved_type = detected_type
         if resolved_platform is None:
             resolved_platform = detected_platform
@@ -69,11 +67,11 @@ def resolve_agent_type_and_platform(
 
 
 def resolve_organization(
-    organization: Optional[str],
-    plus_config: Optional[DagsterPlusCliConfig],
+    organization: str | None,
+    plus_config: DagsterPlusCliConfig | None,
     *,
     show_detected_message: bool = True,
-) -> Optional[str]:
+) -> str:
     """Resolve organization name from config or prompt."""
     if organization is not None:
         return organization
@@ -88,9 +86,28 @@ def resolve_organization(
     return click.prompt("Dagster Plus organization name") or ""
 
 
+def resolve_url(
+    url: str | None,
+    plus_config: DagsterPlusCliConfig | None,
+    resolved_organization: str,
+    *,
+    show_detected_message: bool = True,
+) -> str:
+    """Resolve Dagster Cloud URL from config or use default."""
+    if url is not None:
+        return url
+
+    if plus_config and plus_config.url:
+        if show_detected_message:
+            click.echo(f"Using Dagster Cloud URL {plus_config.url} from Dagster Plus config.")
+        return plus_config.url
+
+    return f"{DAGSTER_CLOUD_BASE_URL}/{resolved_organization}"
+
+
 def resolve_deployment(
-    deployment: Optional[str],
-    plus_config: Optional[DagsterPlusCliConfig],
+    deployment: str | None,
+    plus_config: DagsterPlusCliConfig | None,
     *,
     show_detected_message: bool = True,
 ) -> str:
@@ -109,9 +126,9 @@ def resolve_deployment(
 
 
 def resolve_git_provider(
-    git_provider: Optional[GitProvider],
-    git_root: Optional[Path],
-) -> Optional[GitProvider]:
+    git_provider: GitProvider | None,
+    git_root: Path | None,
+) -> GitProvider | None:
     """Resolve git provider for CI/CD scaffolding (for deployment-config commands)."""
     if git_provider is not None:
         return git_provider
@@ -124,7 +141,7 @@ def resolve_git_provider(
         if should_scaffold_ci:
             provider_choice = click.prompt(
                 "Git provider",
-                type=click.Choice(["github"]),  # Will add gitlab later
+                type=click.Choice(["github", "gitlab"]),
                 default="github",
             )
             return GitProvider(provider_choice)
@@ -133,9 +150,9 @@ def resolve_git_provider(
 
 
 def resolve_git_root(
-    git_root: Optional[Path],
-    git_provider: Optional[GitProvider],
-) -> Optional[Path]:
+    git_root: Path | None,
+    git_provider: GitProvider | None,
+) -> Path | None:
     """Resolve git root path."""
     if git_provider is None:
         return None
@@ -153,24 +170,27 @@ def resolve_git_root(
     return resolved_git_root
 
 
-def resolve_python_version(python_version: Optional[str]) -> str:
+def resolve_python_version(python_version: str | None) -> str:
     """Resolve Python version."""
     return python_version or f"3.{sys.version_info.minor}"
 
 
 def _resolve_config_with_prompts(
-    agent_type: DgPlusAgentType,
-    agent_platform: Optional[DgPlusAgentPlatform],
-    organization: Optional[str],
-    deployment: Optional[str],
-    git_root: Optional[Path],
-    python_version: Optional[str],
+    agent_type: DgPlusAgentType | None,
+    agent_platform: DgPlusAgentPlatform | None,
+    organization: str | None,
+    url: str | None,
+    deployment: str | None,
+    git_root: Path | None,
+    python_version: str | None,
     skip_confirmation_prompt: bool,
     use_editable_dagster: bool,
-    git_provider: Optional[GitProvider],
+    git_provider: GitProvider | None,
     dg_context: DgContext,
     cli_config,
-) -> DeploymentScaffoldConfig:
+    pex_deploy: bool | None = None,
+    registry_url: str | None = None,
+) -> DgPlusDeployConfigureOptions:
     """Resolve all configuration for deployment-config commands, prompting for missing values.
 
     This is used by the primary deployment-config commands (serverless/hybrid).
@@ -191,32 +211,48 @@ def _resolve_config_with_prompts(
         git_root,
     )
 
-    # Resolve organization and deployment (only needed if scaffolding CI/CD)
+    # Resolve organization, URL, and deployment (only needed if scaffolding CI/CD)
     resolved_organization = None
+    resolved_url = None
     resolved_deployment = deployment or "prod"
     if resolved_git_provider is not None:
         resolved_organization = resolve_organization(organization, plus_config)
+        resolved_url = resolve_url(url, plus_config, resolved_organization)
         resolved_deployment = resolve_deployment(deployment, plus_config)
 
     # Resolve git root
     resolved_git_root = resolve_git_root(git_root, resolved_git_provider)
 
-    # Resolve Python version
+    # Resolve Python version (required for both serverless and hybrid Dockerfile creation)
     resolved_python_version = resolve_python_version(python_version)
 
-    return DeploymentScaffoldConfig(
+    # Resolve pex_deploy for serverless (prompt if not provided)
+    resolved_pex_deploy = None
+    if resolved_agent_type == DgPlusAgentType.SERVERLESS:
+        if pex_deploy is None:
+            resolved_pex_deploy = click.confirm(
+                "Enable PEX-based fast deploys?",
+                default=True,
+            )
+        else:
+            resolved_pex_deploy = pex_deploy
+
+    return DgPlusDeployConfigureOptions(
         dg_context=dg_context,
         cli_config=cli_config,
         plus_config=plus_config,
         agent_type=resolved_agent_type,
         agent_platform=resolved_agent_platform,
         organization_name=resolved_organization,
+        cloud_url=resolved_url,
         deployment_name=resolved_deployment,
         git_root=resolved_git_root,
         python_version=resolved_python_version,
         skip_confirmation_prompt=skip_confirmation_prompt,
         git_provider=resolved_git_provider,
         use_editable_dagster=use_editable_dagster,
+        pex_deploy=resolved_pex_deploy,
+        registry_url=registry_url,
     )
 
 
@@ -225,25 +261,75 @@ def _resolve_config_with_prompts(
 # ########################
 
 
-@click.group(name="configure", cls=DgClickGroup)
-def deploy_configure_group():
-    """Scaffold deployment configuration files for Dagster Plus."""
+@click.group(name="configure", cls=DgClickGroup, invoke_without_command=True)
+@click.option(
+    "--git-provider",
+    type=click.Choice(["github", "gitlab"]),
+    help="Git provider for CI/CD scaffolding",
+)
+@dg_global_options
+@cli_telemetry_wrapper
+@click.pass_context
+def deploy_configure_group(
+    ctx: click.Context,
+    git_provider: str | None,
+    **global_options: object,
+) -> None:
+    """Scaffold deployment configuration files for Dagster Plus.
+
+    If no subcommand is specified, will attempt to auto-detect the agent type from your
+    Dagster Plus deployment. If detection fails, you will be prompted to choose between
+    serverless or hybrid.
+
+    If run in a `workspace <https://docs.dagster.io/guides/build/projects/workspaces/creating-workspaces>`__,
+    will scaffold configuration files for the workspace and all projects contained in it.
+    """
+    # If a subcommand was invoked, let Click handle it
+    if ctx.invoked_subcommand is not None:
+        return
+
+    cli_config = normalize_cli_config(global_options, ctx)
+    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+
+    # Resolve all configuration via prompts and auto-detection
+    config = _resolve_config_with_prompts(
+        agent_type=None,
+        agent_platform=None,
+        organization=None,
+        url=None,
+        deployment=None,
+        git_root=None,
+        python_version=None,
+        skip_confirmation_prompt=False,
+        use_editable_dagster=False,
+        git_provider=GitProvider(git_provider) if git_provider else None,
+        dg_context=dg_context,
+        cli_config=cli_config,
+        pex_deploy=None,
+    )
+
+    configure_build_artifacts_impl(config)
+    configure_ci_impl(config)
 
 
 @click.command(name="serverless", cls=DgClickCommand)
 @click.option(
     "--git-provider",
-    type=click.Choice(["github"]),
-    help="Git provider for CI/CD scaffolding (only github is supported currently)",
+    type=click.Choice(["github", "gitlab"]),
+    help="Git provider for CI/CD scaffolding",
 )
 @click.option(
     "--python-version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
+    type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
     help="Python version used to deploy the project",
 )
 @click.option(
     "--organization",
     help="Dagster Plus organization name",
+)
+@click.option(
+    "--url",
+    help="Dagster Plus URL for the organization",
 )
 @click.option(
     "--deployment",
@@ -256,6 +342,11 @@ def deploy_configure_group():
     help="Path to the git repository root",
 )
 @click.option(
+    "--pex-deploy/--no-pex-deploy",
+    default=True,
+    help="Enable PEX-based fast deploys (default: True). If disabled, Docker builds will be used.",
+)
+@click.option(
     "-y",
     "--yes",
     "skip_confirmation_prompt",
@@ -266,28 +357,31 @@ def deploy_configure_group():
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_configure_serverless(
-    git_provider: Optional[str],
-    python_version: Optional[str],
-    organization: Optional[str],
-    deployment: Optional[str],
-    git_root: Optional[Path],
+    git_provider: str | None,
+    python_version: str | None,
+    organization: str | None,
+    url: str | None,
+    deployment: str | None,
+    git_root: Path | None,
+    pex_deploy: bool,
     skip_confirmation_prompt: bool,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: str | None,
     **global_options: object,
 ) -> None:
     """Scaffold deployment configuration for Dagster Plus Serverless.
 
     This creates:
-    - Dockerfile and build.yaml for containerization
-    - GitHub Actions workflow (if --git-provider github is specified)
+    - Required files for CI/CD based on your Git provider (GitHub Actions or GitLab CI)
+    - Dockerfile and build.yaml for containerization (if --no-pex-deploy is used)
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
     config = _resolve_config_with_prompts(
         agent_type=DgPlusAgentType.SERVERLESS,
-        agent_platform=None,  # Not needed for serverless
+        agent_platform=None,
         organization=organization,
+        url=url,
         deployment=deployment,
         git_root=git_root,
         python_version=python_version,
@@ -296,6 +390,7 @@ def deploy_configure_serverless(
         git_provider=GitProvider(git_provider) if git_provider else None,
         dg_context=dg_context,
         cli_config=cli_config,
+        pex_deploy=pex_deploy,
     )
 
     configure_build_artifacts_impl(config)
@@ -305,8 +400,8 @@ def deploy_configure_serverless(
 @click.command(name="hybrid", cls=DgClickCommand)
 @click.option(
     "--git-provider",
-    type=click.Choice(["github"]),
-    help="Git provider for CI/CD scaffolding (only github is supported currently)",
+    type=click.Choice(["github", "gitlab"]),
+    help="Git provider for CI/CD scaffolding",
 )
 @click.option(
     "--agent-platform",
@@ -314,13 +409,21 @@ def deploy_configure_serverless(
     help="Agent platform (k8s, ecs, or docker)",
 )
 @click.option(
+    "--registry-url",
+    help="Container registry URL for Docker images (e.g., 123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo)",
+)
+@click.option(
     "--python-version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
+    type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
     help="Python version used to deploy the project",
 )
 @click.option(
     "--organization",
     help="Dagster Plus organization name",
+)
+@click.option(
+    "--url",
+    help="Dagster Cloud URL (defaults to https://dagster.cloud)",
 )
 @click.option(
     "--deployment",
@@ -343,14 +446,16 @@ def deploy_configure_serverless(
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_configure_hybrid(
-    git_provider: Optional[str],
-    agent_platform: Optional[str],
-    python_version: Optional[str],
-    organization: Optional[str],
-    deployment: Optional[str],
-    git_root: Optional[Path],
+    git_provider: str | None,
+    agent_platform: str | None,
+    registry_url: str | None,
+    python_version: str | None,
+    organization: str | None,
+    url: str | None,
+    deployment: str | None,
+    git_root: Path | None,
     skip_confirmation_prompt: bool,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: str | None,
     **global_options: object,
 ) -> None:
     """Scaffold deployment configuration for Dagster Plus Hybrid.
@@ -358,7 +463,7 @@ def deploy_configure_hybrid(
     This creates:
     - Dockerfile and build.yaml for containerization
     - container_context.yaml with platform-specific config (k8s/ecs/docker)
-    - GitHub Actions workflow with Docker build steps (if --git-provider github is specified)
+    - Required files for CI/CD based on your Git provider (GitHub Actions or GitLab CI)
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
@@ -370,6 +475,7 @@ def deploy_configure_hybrid(
         agent_type=DgPlusAgentType.HYBRID,
         agent_platform=resolved_platform,
         organization=organization,
+        url=url,
         deployment=deployment,
         git_root=git_root,
         python_version=python_version,
@@ -378,6 +484,7 @@ def deploy_configure_hybrid(
         git_provider=resolved_git_provider,
         dg_context=dg_context,
         cli_config=cli_config,
+        registry_url=registry_url,
     )
 
     configure_build_artifacts_impl(config)

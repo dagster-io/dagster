@@ -6,7 +6,6 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Optional, Union
 
 import jwt
 import requests
@@ -44,6 +43,7 @@ from dagster_tableau.translator import (
     TableauTagSet,
     TableauTranslatorData,
     TableauViewMetadataSet,
+    TableauWorkbookMetadata,
     TableauWorkspaceData,
     WorkbookSelectorFn,
 )
@@ -165,8 +165,8 @@ class BaseTableauClient:
 
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
-        self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[AssetObservation, Output]]:
+        self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Sequence[str] | None
+    ) -> Iterator[AssetObservation | Output]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
         refreshed_workbook_ids = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
@@ -183,9 +183,9 @@ class BaseTableauClient:
     def refresh_and_poll_workbook(
         self,
         workbook_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[str]:
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
+    ) -> str | None:
         job = self.refresh_workbook(workbook_id)
         self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
 
@@ -194,8 +194,8 @@ class BaseTableauClient:
 
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
-        self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[AssetObservation, Output]]:
+        self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Sequence[str] | None
+    ) -> Iterator[AssetObservation | Output]:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
         """
@@ -244,9 +244,9 @@ class BaseTableauClient:
     def refresh_and_poll_data_source(
         self,
         data_source_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[str]:
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
+    ) -> str | None:
         job = self.refresh_data_source(data_source_id)
         self._log.info(f"Job {job.id} initialized for data_source_id={data_source_id}.")
 
@@ -256,8 +256,8 @@ class BaseTableauClient:
     def refresh_and_poll_data_sources(
         self,
         data_source_ids: Sequence[str],
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> Iterator[str]:
         """Refreshes multiple data sources and yields their IDs as they complete.
 
@@ -286,8 +286,8 @@ class BaseTableauClient:
     def poll_jobs(
         self,
         job_ids: Sequence[str],
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> Iterator[TSC.JobItem]:
         """Polls multiple jobs and yields them as they complete.
 
@@ -353,8 +353,8 @@ class BaseTableauClient:
     def poll_job(
         self,
         job_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> TSC.JobItem:
         """Polls a single job until it completes.
 
@@ -374,10 +374,10 @@ class BaseTableauClient:
     def add_data_quality_warning_to_data_source(
         self,
         data_source_id: str,
-        warning_type: Optional[TSC.DQWItem.WarningType] = None,
-        message: Optional[str] = None,
-        active: Optional[bool] = None,
-        severe: Optional[bool] = None,
+        warning_type: TSC.DQWItem.WarningType | None = None,
+        message: str | None = None,
+        active: bool | None = None,
+        severe: bool | None = None,
     ) -> Sequence[TSC.DQWItem]:
         """Add a data quality warning to a data source.
 
@@ -572,18 +572,24 @@ class BaseTableauWorkspace(ConfigurableResource):
     connected_app_secret_value: str = Field(
         ...,
         description="The secret value of the connected app used to connect to Tableau Workspace.",
+        json_schema_extra={"dagster__is_secret": True},
     )
     username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
 
-    _client: Optional[Union[TableauCloudClient, TableauServerClient]] = PrivateAttr(default=None)
+    _client: TableauCloudClient | TableauServerClient | None = PrivateAttr(default=None)
+
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
 
     @abstractmethod
     def build_client(self) -> None:
         raise NotImplementedError()
 
     @contextmanager
-    def get_client(self) -> Iterator[Union[TableauCloudClient, TableauServerClient]]:
+    def get_client(self) -> Iterator[TableauCloudClient | TableauServerClient]:
         if not self._client:
             self.build_client()
 
@@ -594,31 +600,61 @@ class BaseTableauWorkspace(ConfigurableResource):
     @cached_method
     def fetch_tableau_workspace_data(
         self,
+        workbook_selector_fn: WorkbookSelectorFn | None = None,
+        project_selector_fn: WorkbookSelectorFn | None = None,
     ) -> TableauWorkspaceData:
         """Retrieves all Tableau content from the workspace and returns it as a TableauWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Tableau API.
+
+        Args:
+            workbook_selector_fn: Optional function to filter workbooks by their ID.
+            project_selector_fn: Optional function to filter workbooks by their project.
 
         Returns:
             TableauWorkspaceData: A snapshot of the Tableau workspace's content.
         """
         with self.get_client() as client:
-            workbook_ids = [workbook.id for workbook in client.get_workbooks()]
+            all_workbooks = list(client.get_workbooks())
+
+            # Apply filters if provided (workbooks matching either selector are included)
+            if workbook_selector_fn or project_selector_fn:
+                filtered_workbooks = []
+                for wb in all_workbooks:
+                    # Create TableauWorkbookMetadata from the workbook list item
+                    workbook_metadata = TableauWorkbookMetadata(
+                        id=check.not_none(wb.id),
+                        project_name=wb.project_name,
+                        project_id=wb.project_id,
+                    )
+                    # Include workbook if it matches either selector (OR logic)
+                    matches_workbook = (
+                        workbook_selector_fn(workbook_metadata) if workbook_selector_fn else False
+                    )
+                    matches_project = (
+                        project_selector_fn(workbook_metadata) if project_selector_fn else False
+                    )
+                    if matches_workbook or matches_project:
+                        filtered_workbooks.append(wb)
+                all_workbooks = filtered_workbooks
 
             workbooks: list[TableauContentData] = []
             sheets: list[TableauContentData] = []
             dashboards: list[TableauContentData] = []
             data_sources: list[TableauContentData] = []
             data_source_ids: set[str] = set()
-            for workbook_id in workbook_ids:
+            for wb in all_workbooks:
+                workbook_id = wb.id
+                workbook_name = wb.name
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
                     workbook["data"]["workbooks"],  # pyright: ignore[reportIndexIssue]
                     additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
                 )
                 if not workbook_data_list:
-                    raise Exception(
-                        f"Could not retrieve data for Tableau workbook for id {workbook_id}."
+                    self._log.warning(
+                        f"No data retrieved for Tableau workbook {workbook_name} with id {workbook_id}. Skipping."
                     )
+                    continue
                 workbook_data = workbook_data_list[0]
                 workbooks.append(
                     TableauContentData(
@@ -632,7 +668,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                 for sheet_data in workbook_data["sheets"]:
                     sheet_id = sheet_data["luid"]
                     sheet_metadata_id = sheet_data["id"]
-                    if sheet_id:
+                    if sheet_id or sheet_metadata_id:
                         augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
                         sheets.append(
                             TableauContentData(
@@ -722,11 +758,27 @@ class BaseTableauWorkspace(ConfigurableResource):
 
             """
             We add to the data all the published-data-sources, that weren't already added from a workbook.
+            If a project selector is active, only include data sources from matching projects.
             """
             for published_data_source in client.get_data_sources():
                 # if we already processed this data_source, skip it
                 if published_data_source.id in data_source_ids:
                     continue
+
+                # If project selector is provided, check if data source's project matches
+                if project_selector_fn:
+                    # Data sources have project_id and project_name,
+                    # create a temporary metadata object to check against project selector
+                    # We use a dummy ID since we're only checking project attributes
+                    data_source_metadata = TableauWorkbookMetadata(
+                        id="",  # Not used for project filtering
+                        project_id=published_data_source.project_id,
+                        project_name=published_data_source.project_name,
+                    )
+
+                    # Skip data source if it doesn't match the project selector
+                    if not project_selector_fn(data_source_metadata):
+                        continue
 
                 data_sources.append(
                     TableauContentData(
@@ -765,8 +817,8 @@ class BaseTableauWorkspace(ConfigurableResource):
     @cached_method
     def load_asset_specs(
         self,
-        dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
-        workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+        dagster_tableau_translator: DagsterTableauTranslator | None = None,
+        workbook_selector_fn: WorkbookSelectorFn | None = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -795,7 +847,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def refresh_and_poll(
         self, context: AssetExecutionContext
-    ) -> Iterator[Union[Output, ObserveResult, AssetObservation]]:
+    ) -> Iterator[Output | ObserveResult | AssetObservation]:
         """Executes a refresh and poll process to materialize Tableau assets,
         including data sources with extracts, views and workbooks.
         This method can only be used in the context of an asset execution.
@@ -865,8 +917,8 @@ class BaseTableauWorkspace(ConfigurableResource):
 @beta_param(param="workbook_selector_fn")
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
-    workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+    dagster_tableau_translator: DagsterTableauTranslator | None = None,
+    workbook_selector_fn: WorkbookSelectorFn | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -930,7 +982,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[TableauWorkspaceData]):
     workspace: BaseTableauWorkspace
     translator: DagsterTableauTranslator
-    workbook_selector_fn: Optional[WorkbookSelectorFn] = None
+    workbook_selector_fn: WorkbookSelectorFn | None = None
 
     @property
     def defs_key(self) -> str:
@@ -944,9 +996,18 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[TableauWorkspaceDa
             workbook_selector_fn=self.workbook_selector_fn
         )
 
+        # Filter hidden sheets:
+        # 1. They typically lack a path.
+        # 2. They are required in workspace data to maintain data source lineage.
+        visible_sheets = [
+            sheet
+            for sheet in selected_state.sheets_by_id.values()
+            if sheet.properties.get("path") != ""
+        ]
+
         all_external_data = [
             *selected_state.data_sources_by_id.values(),
-            *selected_state.sheets_by_id.values(),
+            *visible_sheets,
             *selected_state.dashboards_by_id.values(),
         ]
 

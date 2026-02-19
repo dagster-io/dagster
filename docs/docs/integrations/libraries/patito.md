@@ -1,6 +1,7 @@
 ---
 title: Dagster & Patito
 sidebar_label: Patito
+sidebar_position: 1
 description: Patito is a data validation framework for Polars, based on Pydantic.
 tags: [community-supported, metadata]
 source:

@@ -1,6 +1,5 @@
 import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import invariant from 'invariant';
 import * as React from 'react';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
@@ -11,6 +10,7 @@ import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
+import {invariant} from '../../util/invariant';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
@@ -39,8 +39,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
-    expandedGroups: string[];
-    setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
     viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;
@@ -191,25 +189,21 @@ export const AssetGraphExplorerSidebar = React.memo(
         renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
     ]);
 
-    const indexOfLastSelectedNode = React.useMemo(
-      () => {
-        if (!selectedNode) {
-          return -1;
+    const indexOfLastSelectedNode = React.useMemo(() => {
+      if (!selectedNode) {
+        return -1;
+      }
+      return renderedNodes.findIndex((node) => {
+        // If you select a node via the search dropdown or from the graph directly then
+        // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+        // will always have a path so we need to explicitly check if the id's match
+        if (!('path' in selectedNode)) {
+          return node.id === selectedNode.id;
+        } else {
+          return nodePathKey(node) === nodePathKey(selectedNode);
         }
-        return renderedNodes.findIndex((node) => {
-          // If you select a node via the search dropdown or from the graph directly then
-          // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
-          // will always have a path so we need to explicitly check if the id's match
-          if (!('path' in selectedNode)) {
-            return node.id === selectedNode.id;
-          } else {
-            return nodePathKey(node) === nodePathKey(selectedNode);
-          }
-        });
-      },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode],
-    );
+      });
+    }, [renderedNodes, selectedNode]);
     const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 

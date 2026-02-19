@@ -6,7 +6,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_shared.utils.timing import format_duration
 
@@ -60,8 +60,8 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         term_event: Any,
         recon_pipeline: ReconstructableJob,
         retry_mode: RetryMode,
-        known_state: Optional[KnownExecutionState],
-        repository_load_data: Optional[RepositoryLoadData],
+        known_state: KnownExecutionState | None,
+        repository_load_data: RepositoryLoadData | None,
     ):
         self.run_config = run_config
         self.dagster_run = dagster_run
@@ -115,10 +115,10 @@ class MultiprocessExecutor(Executor):
     def __init__(
         self,
         retries: RetryMode,
-        max_concurrent: Optional[int],
-        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
-        start_method: Optional[str] = None,
-        explicit_forkserver_preload: Optional[Sequence[str]] = None,
+        max_concurrent: int | None,
+        tag_concurrency_limits: list[dict[str, Any]] | None = None,
+        start_method: str | None = None,
+        explicit_forkserver_preload: Sequence[str] | None = None,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
@@ -199,7 +199,7 @@ class MultiprocessExecutor(Executor):
             ),
         )
 
-        timer_result: Optional[TimerResult] = None
+        timer_result: TimerResult | None = None
         with ExitStack() as stack:
             timer_result = stack.enter_context(time_execution_scope())
 
@@ -216,7 +216,7 @@ class MultiprocessExecutor(Executor):
                     step_dependency_config=self._step_dependency_config,
                 )
             )
-            active_iters: dict[str, Iterator[Optional[DagsterEvent]]] = {}
+            active_iters: dict[str, Iterator[DagsterEvent | None]] = {}
             errors: dict[int, SerializableErrorInfo] = {}
             processes: dict[str, BaseProcess] = {}
             term_events: dict[str, Any] = {}
@@ -285,7 +285,7 @@ class MultiprocessExecutor(Executor):
                                 )
 
                                 failure_or_retry_event = (
-                                    self.get_failure_or_retry_event_after_error(
+                                    self.log_failure_or_retry_event_after_error(
                                         step_context,
                                         event_or_none.engine_event_data.error,
                                         active_execution.get_known_state(),
@@ -309,7 +309,7 @@ class MultiprocessExecutor(Executor):
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )
-                            failure_or_retry_event = self.get_failure_or_retry_event_after_error(
+                            failure_or_retry_event = self.log_failure_or_retry_event_after_error(
                                 step_context, serializable_error, active_execution.get_known_state()
                             )
 
@@ -403,8 +403,8 @@ def execute_step_out_of_process(
     term_events: dict[str, Any],
     retries: RetryMode,
     known_state: KnownExecutionState,
-    repository_load_data: Optional[RepositoryLoadData],
-) -> Iterator[Optional[DagsterEvent]]:
+    repository_load_data: RepositoryLoadData | None,
+) -> Iterator[DagsterEvent | None]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         dagster_run=step_context.dagster_run,

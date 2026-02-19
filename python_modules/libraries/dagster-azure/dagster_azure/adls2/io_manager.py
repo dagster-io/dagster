@@ -1,7 +1,7 @@
 import pickle
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Union
+from typing import Any
 
 from dagster import (
     InputContext,
@@ -35,7 +35,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         file_system: str,
         adls2_client: DataLakeServiceClient,
         blob_client: BlobServiceClient,
-        lease_client_constructor: Union[type[DataLakeLeaseClient], type[BlobLeaseClient]],
+        lease_client_constructor: type[DataLakeLeaseClient] | type[BlobLeaseClient],
         prefix: str = "dagster",
         lease_duration: int = 60,
     ):
@@ -54,7 +54,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         self.file_system_client.get_file_system_properties()
         super().__init__(base_path=UPath(self.prefix))
 
-    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def get_op_output_relative_path(self, context: InputContext | OutputContext) -> UPath:
         parts = context.get_identifier()
         run_id = parts[0]
         output_parts = parts[1:]
@@ -105,10 +105,6 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return pickle.loads(stream.readall())
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        if self.path_exists(path):
-            context.log.warning(f"Removing existing ADLS2 key: {path}")
-            self.unlink(path)
-
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         file = self.file_system_client.create_file(path.as_posix())
         with self._acquire_lease(file) as lease:

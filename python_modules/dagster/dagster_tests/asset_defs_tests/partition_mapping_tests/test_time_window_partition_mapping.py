@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Optional
 from unittest.mock import MagicMock
 
 import dagster as dg
@@ -11,6 +10,7 @@ from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.instance.types import DynamicPartitionsStore
 from dagster._time import create_datetime
 
 
@@ -537,7 +537,7 @@ def test_get_downstream_with_current_time(
     downstream_partitions_def: TimeWindowPartitionsDefinition,
     upstream_keys: Sequence[str],
     expected_downstream_keys: Sequence[str],
-    current_time: Optional[datetime],
+    current_time: datetime | None,
 ):
     mapping = dg.TimeWindowPartitionMapping()
     assert (
@@ -646,7 +646,7 @@ def test_get_upstream_with_current_time(
     downstream_partitions_def: TimeWindowPartitionsDefinition,
     expected_upstream_keys: Sequence[str],
     downstream_keys: Sequence[str],
-    current_time: Optional[datetime],
+    current_time: datetime | None,
     invalid_time_windows: Sequence[dg.TimeWindow],
 ):
     mapping = dg.TimeWindowPartitionMapping()
@@ -971,7 +971,7 @@ def test_get_upstream_partitions_for_all_partitions_subset() -> None:
     upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-05")
     downstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-10")
     current_time = datetime(2021, 5, 31, hour=1)
-    with partition_loading_context(current_time, MagicMock()) as ctx:
+    with partition_loading_context(current_time, MagicMock(spec=DynamicPartitionsStore)) as ctx:
         downstream_subset = AllPartitionsSubset(
             partitions_def=downstream_partitions_def,
             context=ctx,
@@ -995,7 +995,7 @@ def test_get_downstream_partitions_for_all_partitions_subset() -> None:
     upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-10")
     downstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-05")
     current_time = datetime(2021, 5, 31, hour=1)
-    with partition_loading_context(current_time, MagicMock()) as ctx:
+    with partition_loading_context(current_time, MagicMock(spec=DynamicPartitionsStore)) as ctx:
         upstream_subset = AllPartitionsSubset(
             partitions_def=upstream_partitions_def,
             context=ctx,

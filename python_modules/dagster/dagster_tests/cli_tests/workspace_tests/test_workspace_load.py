@@ -16,7 +16,7 @@ def test_bad_workspace_yaml_load():
             with pytest.raises(
                 CheckError,
                 match=(
-                    "Invariant failed. Description: Could not parse a workspace config from the "
+                    r"Invariant failed. Description: Could not parse a workspace config from the "
                     "yaml file at"
                 ),
             ):

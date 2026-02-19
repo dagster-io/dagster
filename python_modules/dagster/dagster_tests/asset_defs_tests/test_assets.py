@@ -562,7 +562,7 @@ def test_asset_both_io_manager_args_provided():
     with pytest.raises(
         CheckError,
         match=(
-            "Both io_manager_key and io_manager_def were provided to `@asset` "
+            r"Both io_manager_key and io_manager_def were provided to `@asset` "
             "decorator. Please provide one or the other."
         ),
     ):
@@ -610,7 +610,7 @@ def test_asset_invocation_resource_overrides():
 
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="resource 'foo' provided on both the definition and invocation context.",
+        match=r"resource 'foo' provided on both the definition and invocation context.",
     ):
         asset_resource_overrides(dg.build_asset_context(resources={"foo": "override_foo"}))
 
@@ -635,7 +635,7 @@ def test_asset_invocation_resource_errors():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'foo' required by op 'required_key_not_provided' was not provided."
+            r"resource with key 'foo' required by op 'required_key_not_provided' was not provided."
         ),
     ):
         required_key_not_provided(dg.build_asset_context())
@@ -882,7 +882,7 @@ def test_group_name_requirements():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Empty asset group name was provided, which is not permitted. "
+            r"Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         ),
     ):
@@ -1082,7 +1082,7 @@ def test_multi_asset_output_unselected_asset():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match='Core compute for op "assets" returned an output "two" that is not selected.',
+        match=r'Core compute for op "assets" returned an output "two" that is not selected.',
     ):
         dg.materialize([assets], selection=[dg.AssetKey("one")])
 
@@ -1099,7 +1099,7 @@ def test_graph_asset_output_unselected_asset():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match='Core compute for op "graph_asset.foo" returned an output "b" that is not selected.',
+        match=r'Core compute for op "graph_asset.foo" returned an output "b" that is not selected.',
     ):
         dg.materialize(
             [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
@@ -2075,7 +2075,7 @@ def test_multi_asset_asset_key_on_context():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+        match=r"Cannot call `context.asset_key` in a multi_asset with more than one asset",
     ):
         dg.materialize([two_assets_key_context])
 
@@ -2098,7 +2098,7 @@ def test_multi_asset_asset_key_on_context():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+        match=r"Cannot call `context.asset_key` in a multi_asset with more than one asset",
     ):
         dg.materialize([asset_key_context_with_two_specs])
 
@@ -2317,15 +2317,16 @@ def test_asset_decorator_with_kinds() -> None:
     assert asset1.specs_by_key[dg.AssetKey("asset1")].kinds == {"python"}
 
     with pytest.raises(
-        dg.DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+        dg.DagsterInvalidDefinitionError, match=r"Assets can have at most ten kinds currently."
     ):
+        kinds = {f"kind_{i}" for i in range(11)}
 
-        @dg.asset(kinds={"python", "snowflake", "bigquery", "airflow"})
+        @dg.asset(kinds=kinds)
         def asset2(): ...
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Cannot specify compute_kind and kinds on the @asset decorator.",
+        match=r"Cannot specify compute_kind and kinds on the @asset decorator.",
     ):
 
         @dg.asset(compute_kind="my_compute_kind", kinds={"python"})
@@ -2339,17 +2340,16 @@ def test_asset_spec_with_kinds() -> None:
     assert assets.specs_by_key[dg.AssetKey("asset1")].kinds == {"python"}
 
     with pytest.raises(
-        dg.DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+        dg.DagsterInvalidDefinitionError, match=r"Assets can have at most ten kinds currently."
     ):
+        kinds = {f"kind_{i}" for i in range(11)}
 
-        @dg.multi_asset(
-            specs=[dg.AssetSpec("asset1", kinds={"python", "snowflake", "bigquery", "airflow"})]
-        )
+        @dg.multi_asset(specs=[dg.AssetSpec("asset1", kinds=kinds)])
         def assets2(): ...
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Can not specify compute_kind on both the @multi_asset and kinds on AssetSpecs.",
+        match=r"Can not specify compute_kind on both the @multi_asset and kinds on AssetSpecs.",
     ):
 
         @dg.multi_asset(
@@ -2433,7 +2433,7 @@ def test_multiple_keys_per_output_name():
     def op1():
         pass
 
-    with pytest.raises(CheckError, match="Each asset key should correspond to a single output."):
+    with pytest.raises(CheckError, match=r"Each asset key should correspond to a single output."):
         dg.AssetsDefinition(
             node_def=op1, keys_by_output_name={"out1": dg.AssetKey("a"), "out2": dg.AssetKey("a")}
         )

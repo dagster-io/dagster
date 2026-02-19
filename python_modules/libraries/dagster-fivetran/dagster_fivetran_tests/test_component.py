@@ -2,7 +2,7 @@ import asyncio
 import copy
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -76,7 +76,7 @@ def test_basic_component_load(
         setup_fivetran_component(
             defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -175,7 +175,7 @@ def test_basic_component_filter(
                 {"attributes": {"connector_selector": connector_selector}},
             ),
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -220,7 +220,7 @@ class TestFivetranTranslation(TestTranslation):
         fetch_workspace_data_multiple_connectors_mocks,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
     ) -> None:
         body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
         body["attributes"]["translation"] = attributes
@@ -235,7 +235,7 @@ class TestFivetranTranslation(TestTranslation):
             setup_fivetran_component(
                 defs_yaml_contents=body,
             ) as (
-                component,
+                _component,
                 defs,
             ),
         ):

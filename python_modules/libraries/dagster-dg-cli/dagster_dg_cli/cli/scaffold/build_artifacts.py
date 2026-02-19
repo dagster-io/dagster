@@ -5,33 +5,33 @@ Consider using `dg plus deploy configure [serverless|hybrid]` instead.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import click
+from dagster_cloud_cli.utils import SUPPORTED_PYTHON_VERSIONS
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import DAGSTER_CLOUD_BASE_URL, DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import resolve_python_version
 from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
     configure_build_artifacts_impl,
 )
-from dagster_dg_cli.cli.plus.deploy.configure.utils import DeploymentScaffoldConfig
+from dagster_dg_cli.cli.plus.deploy.configure.utils import DgPlusDeployConfigureOptions
 from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def _resolve_config_for_build_artifacts(
-    python_version: Optional[str],
+    python_version: str | None,
     skip_confirmation_prompt: bool,
     use_editable_dagster: bool,
     dg_context: DgContext,
     cli_config,
-) -> DeploymentScaffoldConfig:
+) -> DgPlusDeployConfigureOptions:
     """Resolve config for legacy build-artifacts command.
 
     This command only scaffolds build artifacts (no CI/CD), and tries to detect
@@ -56,13 +56,14 @@ def _resolve_config_for_build_artifacts(
 
     resolved_python_version = resolve_python_version(python_version)
 
-    return DeploymentScaffoldConfig(
+    return DgPlusDeployConfigureOptions(
         dg_context=dg_context,
         cli_config=cli_config,
         plus_config=plus_config,
         agent_type=agent_type,
         agent_platform=agent_platform,
         organization_name=None,
+        cloud_url=plus_config.url if plus_config and plus_config.url else DAGSTER_CLOUD_BASE_URL,
         deployment_name="prod",
         git_root=None,
         python_version=resolved_python_version,
@@ -76,7 +77,7 @@ def _resolve_config_for_build_artifacts(
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
+    type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),
@@ -92,8 +93,8 @@ def _resolve_config_for_build_artifacts(
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_build_artifacts_command(
-    python_version: Optional[str],
-    use_editable_dagster: Optional[str],
+    python_version: str | None,
+    use_editable_dagster: str | None,
     skip_confirmation_prompt: bool,
     **global_options: object,
 ) -> None:

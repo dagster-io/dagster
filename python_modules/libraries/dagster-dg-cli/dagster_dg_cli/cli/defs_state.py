@@ -23,11 +23,11 @@ class ComponentStateRefreshStatus:
         "DefsStateManagementType",
         ImportFrom("dagster_shared.serdes.objects.models.defs_state_info"),
     ]
-    error: Optional[Exception] = None
+    error: Exception | None = None
     # For updating: start_time tracks when it began
     # For completed: duration tracks final elapsed time
     start_time: float = 0.0
-    duration: Optional[float] = None
+    duration: float | None = None
 
 
 def raise_component_state_refresh_errors(statuses: dict[str, ComponentStateRefreshStatus]) -> None:
@@ -50,7 +50,7 @@ def raise_component_state_refresh_errors(statuses: dict[str, ComponentStateRefre
 
 def _get_components_to_refresh(
     component_tree: "ComponentTree",
-    defs_state_keys: Optional[set[str]],
+    defs_state_keys: set[str] | None,
     management_types: set["DefsStateManagementType"],
 ) -> list["StateBackedComponent"]:
     from dagster.components.component.state_backed_component import StateBackedComponent
@@ -129,7 +129,7 @@ def get_updated_defs_state_info_task_and_statuses(
     project_path: Path,
     defs_state_storage: "DefsStateStorage",
     management_types: set["DefsStateManagementType"],
-    defs_state_keys: Optional[set[str]] = None,
+    defs_state_keys: set[str] | None = None,
 ) -> tuple[asyncio.Task[Optional["DefsStateInfo"]], dict[str, ComponentStateRefreshStatus]]:
     """Creates an asyncio.Task that will refresh the defs state for all selected components within the specified project path.
 
@@ -168,19 +168,3 @@ def get_updated_defs_state_info_task_and_statuses(
         )
     )
     return refresh_task, statuses
-
-
-async def get_updated_defs_state_info_and_statuses(
-    project_path: Path,
-    defs_state_storage: "DefsStateStorage",
-    management_types: set["DefsStateManagementType"],
-    defs_state_keys: Optional[set[str]] = None,
-) -> tuple[Optional["DefsStateInfo"], dict[str, ComponentStateRefreshStatus]]:
-    """Refreshes the defs state for all selected components within the specified project path,
-    and returns the updated defs state info and statuses.
-    """
-    task, statuses = get_updated_defs_state_info_task_and_statuses(
-        project_path, defs_state_storage, management_types, defs_state_keys
-    )
-    await task
-    return task.result(), statuses

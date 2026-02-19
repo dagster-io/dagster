@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {getAllByText, getByText, getByTitle, render, screen, waitFor} from '@testing-library/react';
+import {getAllByText, getByText, getByTitle, render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
@@ -125,7 +125,7 @@ describe('BackfillPage', () => {
       }),
     ];
 
-    const {getByText} = render(
+    const {findByText} = render(
       <RecoilRoot>
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
           <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
@@ -139,7 +139,7 @@ describe('BackfillPage', () => {
       </RecoilRoot>,
     );
 
-    await waitFor(() => expect(getByText('An error occurred')).toBeVisible());
+    expect(await findByText('An error occurred')).toBeVisible();
   });
 
   it('renders the loaded state', async () => {

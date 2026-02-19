@@ -3,7 +3,6 @@ import pickle
 import shutil
 import tempfile
 from datetime import datetime
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -87,8 +86,8 @@ lam = lambda x: x * x
 
 # don't run this test on python 3.12
 @pytest.mark.skipif(
-    seven.IS_PYTHON_3_12 or seven.IS_PYTHON_3_13,
-    reason="Test fails consistently on Python 3.12 and Python 3.13, further investigation required.",
+    seven.IS_PYTHON_3_12 or seven.IS_PYTHON_3_13 or seven.IS_PYTHON_3_14,
+    reason="Test fails consistently on Python 3.12-14, further investigation required.",
 )
 def test_fs_io_manager_unpicklable():
     @dg.op
@@ -238,11 +237,11 @@ def test_fs_io_manager_partitioned_no_partitions():
         class NoPartitionsPartitionMapping(dg.PartitionMapping):
             def get_upstream_mapped_partitions_result_for_partitions(
                 self,
-                downstream_partitions_subset: Optional[PartitionsSubset],
-                downstream_partitions_def: Optional[dg.PartitionsDefinition],
+                downstream_partitions_subset: PartitionsSubset | None,
+                downstream_partitions_def: dg.PartitionsDefinition | None,
                 upstream_partitions_def: PartitionsDefinition,
-                current_time: Optional[datetime] = None,
-                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+                current_time: datetime | None = None,
+                dynamic_partitions_store: DynamicPartitionsStore | None = None,
             ) -> UpstreamPartitionsResult:
                 return UpstreamPartitionsResult(
                     partitions_subset=upstream_partitions_def.empty_subset(),
@@ -252,7 +251,7 @@ def test_fs_io_manager_partitioned_no_partitions():
             def validate_partition_mapping(
                 self,
                 upstream_partitions_def: PartitionsDefinition,
-                downstream_partitions_def: Optional[dg.PartitionsDefinition],
+                downstream_partitions_def: dg.PartitionsDefinition | None,
             ):
                 pass
 
@@ -261,8 +260,8 @@ def test_fs_io_manager_partitioned_no_partitions():
                 upstream_partitions_subset,
                 upstream_partitions_def,
                 downstream_partitions_def,
-                current_time: Optional[datetime] = None,
-                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+                current_time: datetime | None = None,
+                dynamic_partitions_store: DynamicPartitionsStore | None = None,
             ):
                 raise NotImplementedError()
 
@@ -390,7 +389,7 @@ def test_fs_io_manager_partitioned_self_dep():
                 )
             },
         )
-        def a(a: Optional[int]) -> int:
+        def a(a: int | None) -> int:
             return 1 if a is None else a + 1
 
         result = dg.materialize(

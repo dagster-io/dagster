@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -36,4 +36,5 @@ class DagsterHelmValues(BaseModel, extra="allow"):
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")
     retention: subschema.Retention
-    additionalInstanceConfig: Optional[Mapping[str, Any]] = None
+    concurrency: subschema.Concurrency = subschema.Concurrency()
+    additionalInstanceConfig: Mapping[str, Any] | None = None

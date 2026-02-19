@@ -1,5 +1,4 @@
-import {MockedProvider} from '@apollo/client/testing';
-import {StoryFn} from '@storybook/nextjs';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
@@ -22,7 +21,7 @@ export default {
   component: RunsFeedBackfillPage,
 };
 
-const Template: StoryFn = ({mocks}) => (
+const Template = ({mocks}: {mocks: MockedResponse[]}) => (
   <RecoilRoot>
     <AnalyticsContext.Provider value={{page: () => {}} as any}>
       <MemoryRouter initialEntries={['/runs/b/1']}>

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 import pytest
 from dagster_shared.check import CheckError
@@ -36,13 +36,13 @@ def test_many():
         nick_names: list[str],
         age: int,
         cool: bool,
-        thing: Optional[Thing],
+        thing: Thing | None,
         other_thing: Thing,
         percent: float,
-        o_s: Optional[str],
-        o_n: Optional[int],
-        o_f: Optional[float],
-        o_b: Optional[bool],
+        o_s: str | None,
+        o_n: int | None,
+        o_f: float | None,
+        o_b: bool | None,
         foos: list[Annotated["TestType", ImportFrom("dagster_shared.utils.test")]],
     ):
         return True

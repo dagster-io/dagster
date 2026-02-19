@@ -2,7 +2,6 @@ import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 import yaml
 from dagster._annotations import public
@@ -50,7 +49,7 @@ class DbtProjectPreparer:
 class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
-        generate_cli_args: Optional[Sequence[str]] = None,
+        generate_cli_args: Sequence[str] | None = None,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
@@ -132,6 +131,42 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             .wait()
         )
 
+        # Remove seed entries from partial_parse to force re-parsing at runtime.
+        # This ensures seeds get correct root_path based on current project location.
+        self._invalidate_seeds_in_partial_parse(project)
+
+    def _invalidate_seeds_in_partial_parse(self, project: "DbtProject") -> None:
+        """Remove seed entries from partial_parse.msgpack to force re-parsing.
+
+        Seeds contain root_path which is an absolute path from build time. When state
+        is generated in one environment (e.g., CI/CD) and used in another (e.g., deployed
+        container), the root_path points to the wrong location and seed loading fails.
+
+        By removing seed entries from the cache, dbt will re-parse them at runtime with
+        the correct current project path. Models keep their cached data for fast loading.
+        """
+        import msgpack
+
+        partial_parse_path = project.project_dir / project.target_path / "partial_parse.msgpack"
+        if not partial_parse_path.exists():
+            return
+
+        with open(partial_parse_path, "rb") as f:
+            data = msgpack.unpack(f, raw=False, strict_map_key=False)
+
+        # Remove seed nodes
+        seed_node_ids = [k for k in data.get("nodes", {}).keys() if k.startswith("seed.")]
+        for seed_id in seed_node_ids:
+            del data["nodes"][seed_id]
+
+        # Remove seed file entries (CSVs)
+        seed_file_ids = [k for k in data.get("files", {}).keys() if k.lower().endswith(".csv")]
+        for file_id in seed_file_ids:
+            del data["files"][file_id]
+
+        with open(partial_parse_path, "wb") as f:
+            msgpack.pack(data, f)
+
 
 @record_custom
 class DbtProject(IHaveNew):
@@ -210,28 +245,30 @@ class DbtProject(IHaveNew):
     project_dir: Path
     target_path: Path
     profiles_dir: Path
-    profile: Optional[str]
-    target: Optional[str]
+    profile: str | None
+    target: str | None
     manifest_path: Path
-    packaged_project_dir: Optional[Path]
-    state_path: Optional[Path]
+    packaged_project_dir: Path | None
+    state_path: Path | None
     has_uninstalled_deps: bool
     preparer: DbtProjectPreparer
 
     def __new__(
         cls,
-        project_dir: Union[Path, str],
+        project_dir: Path | str,
         *,
-        target_path: Union[Path, str] = Path("target"),
-        profiles_dir: Optional[Union[Path, str]] = None,
-        profile: Optional[str] = None,
-        target: Optional[str] = None,
-        packaged_project_dir: Optional[Union[Path, str]] = None,
-        state_path: Optional[Union[Path, str]] = None,
+        target_path: Path | str = Path("target"),
+        profiles_dir: Path | str | None = None,
+        profile: str | None = None,
+        target: str | None = None,
+        packaged_project_dir: Path | str | None = None,
+        state_path: Path | str | None = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
+
+        target_path = Path(target_path)
 
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():

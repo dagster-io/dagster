@@ -1,7 +1,7 @@
 import base64
 from collections.abc import Iterator, Mapping
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -342,9 +342,7 @@ def all_api_mocks_fixture(
 
 
 @pytest.fixture
-def resource(
-    rest_api_url: str, config_api_url: str
-) -> Union[AirbyteWorkspace, AirbyteCloudWorkspace]:
+def resource(rest_api_url: str, config_api_url: str) -> AirbyteWorkspace | AirbyteCloudWorkspace:
     """Returns the appropriate workspace type based on the API environment."""
     if (
         rest_api_url == AIRBYTE_CLOUD_REST_API_BASE_URL
@@ -374,7 +372,7 @@ def resource(
 @pytest.fixture
 def another_resource(
     rest_api_url: str, config_api_url: str
-) -> Union[AirbyteWorkspace, AirbyteCloudWorkspace]:
+) -> AirbyteWorkspace | AirbyteCloudWorkspace:
     """Returns the appropriate workspace type based on the API environment."""
     if (
         rest_api_url == AIRBYTE_CLOUD_REST_API_BASE_URL

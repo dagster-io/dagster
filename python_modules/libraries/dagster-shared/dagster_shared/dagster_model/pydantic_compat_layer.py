@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -33,15 +33,15 @@ class ModelFieldCompat:
         return getattr(self.field, "metadata", [])
 
     @property
-    def alias(self) -> Optional[str]:
+    def alias(self) -> str | None:
         return self.field.alias
 
     @property
-    def serialization_alias(self) -> Optional[str]:
+    def serialization_alias(self) -> str | None:
         return getattr(self.field, "serialization_alias", None)
 
     @property
-    def validation_alias(self) -> Optional[str]:
+    def validation_alias(self) -> str | None:
         return getattr(self.field, "validation_alias", None)
 
     @property
@@ -49,16 +49,20 @@ class ModelFieldCompat:
         return self.field.default
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return getattr(self.field, "description", None)
 
     def is_required(self) -> bool:
         return self.field.is_required()
 
     @property
-    def discriminator(self) -> Optional[str]:
+    def discriminator(self) -> str | None:
         if hasattr(self.field, "discriminator"):
             return self.field.discriminator if hasattr(self.field, "discriminator") else None
+
+    @property
+    def json_schema_extra(self) -> dict[str, Any] | None:
+        return getattr(self.field, "json_schema_extra", None)
 
 
 def model_fields(model: type[BaseModel]) -> dict[str, ModelFieldCompat]:
@@ -93,6 +97,6 @@ def build_validation_error(
     )
 
 
-def json_schema_from_type(model_type: Union[type[BaseModel], type[Sequence[BaseModel]]]):
+def json_schema_from_type(model_type: type[BaseModel] | type[Sequence[BaseModel]]):
     """Pydantic version stable way to get the JSON schema for a Pydantic model."""
     return TypeAdapter(model_type).json_schema()

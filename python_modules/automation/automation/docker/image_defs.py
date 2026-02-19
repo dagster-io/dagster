@@ -3,9 +3,10 @@ import contextlib
 import os
 import shutil
 from collections.abc import Callable, Iterator
-from typing import Optional
+from pathlib import Path
 
 import dagster._check as check
+from dagster._utils import discover_oss_root
 
 from automation.docker.dagster_docker import DagsterDockerImage, default_images_path
 from automation.git import git_repo_root
@@ -27,7 +28,7 @@ def copy_directories(
 
         paths_to_copy = []
         for path in paths:
-            src_path = os.path.join(git_repo_root(cwd), path)
+            src_path = os.path.join(discover_oss_root(Path(cwd)), path)
             check.invariant(
                 os.path.exists(src_path), "Path for copying to image build does not exist"
             )
@@ -204,7 +205,7 @@ CUSTOM_BUILD_CONTEXTMANAGERS: dict[str, Callable] = {
 }
 
 
-def list_images(images_path: Optional[str] = None) -> list[DagsterDockerImage]:
+def list_images(images_path: str | None = None) -> list[DagsterDockerImage]:
     """List all images that we manage.
 
     Returns:
@@ -222,7 +223,7 @@ def list_images(images_path: Optional[str] = None) -> list[DagsterDockerImage]:
     return images
 
 
-def get_image(name: str, images_path: Optional[str] = None) -> DagsterDockerImage:
+def get_image(name: str, images_path: str | None = None) -> DagsterDockerImage:
     """Retrieve the image information from the list defined above."""
     image = next((img for img in list_images(images_path=images_path) if img.image == name), None)
     return check.not_none(image, f"could not find image {name}")

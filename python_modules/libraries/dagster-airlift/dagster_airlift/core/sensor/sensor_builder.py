@@ -1,6 +1,5 @@
 from collections.abc import Iterable, Iterator, Sequence
 from datetime import timedelta
-from typing import Optional
 
 from dagster import (
     AssetCheckKey,
@@ -63,9 +62,9 @@ START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setti
 class AirflowPollingSensorCursor:
     """A cursor that stores the last effective timestamp and the last polled dag id."""
 
-    end_date_gte: Optional[float] = None
-    end_date_lte: Optional[float] = None
-    dag_query_offset: Optional[int] = None
+    end_date_gte: float | None = None
+    end_date_lte: float | None = None
+    dag_query_offset: int | None = None
 
 
 class AirliftSensorEventTransformerError(DagsterUserCodeExecutionError):
@@ -88,7 +87,7 @@ def build_airflow_polling_sensor(
     airflow_instance: AirflowInstance,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    default_sensor_status: Optional[DefaultSensorStatus] = None,
+    default_sensor_status: DefaultSensorStatus | None = None,
 ) -> SensorDefinition:
     """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
 
@@ -216,7 +215,7 @@ def sorted_asset_events(
 
 
 def _get_transformer_result(
-    event_transformer_fn: Optional[DagsterEventTransformerFn],
+    event_transformer_fn: DagsterEventTransformerFn | None,
     context: SensorEvaluationContext,
     airflow_data: AirflowDefinitionsData,
     all_asset_events: Sequence[AssetMaterialization],
@@ -226,7 +225,9 @@ def _get_transformer_result(
 
     with user_code_error_boundary(
         AirliftSensorEventTransformerError,
-        lambda: f"Error occurred during event transformation for {airflow_data.airflow_instance.name}",
+        lambda: (
+            f"Error occurred during event transformation for {airflow_data.airflow_instance.name}"
+        ),
     ):
         updated_asset_events = list(event_transformer_fn(context, airflow_data, all_asset_events))
 
@@ -257,7 +258,7 @@ def batch_iter(
     end_date_lte: float,
     offset: int,
     airflow_data: AirflowDefinitionsData,
-) -> Iterator[Optional[BatchResult]]:
+) -> Iterator[BatchResult | None]:
     total_processed_runs = 0
     total_entries = 0
     while True:

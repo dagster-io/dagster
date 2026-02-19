@@ -23,8 +23,8 @@ Before working with state-backed components, you should be familiar with the bas
 
 Some integrations require doing non-trivial work to turn their configuration into actual definition objects. For example:
 
-- The <PyObject section="libraries" module="dagster_fivetran" object="FivetranAccountComponent" /> needs to fetch information about connectors and connection tables from the Fivetran API.
-- The <PyObject section="libraries" module="dagster_dbt" object="DbtProjectComponent" /> needs to compile a `manifest.json` file before definitions can be built.
+- The <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranAccountComponent" /> needs to fetch information about connectors and connection tables from the Fivetran API.
+- The <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DbtProjectComponent" /> needs to compile a `manifest.json` file before definitions can be built.
 
 In these cases, the "state" is the information that is collected and used to build the definitions for the component.
 
@@ -138,7 +138,7 @@ For example:
 
 The discriminator usually comes from the component's configuration (like a site name, account ID, or project name) to ensure that different instances of the same component type don't share state.
 
-In some cases, it is desirable for multiple components to share the same key (and therefore the same state). For example, you may have multiple instances of the <PyObject section="libraries" module="dagster_dbt" object="DbtProjectComponent" /> for the same project that cover different selections of models. In these cases, the system will allow these components to share the same state object.
+In some cases, it is desirable for multiple components to share the same key (and therefore the same state). For example, you may have multiple instances of the <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DbtProjectComponent" /> for the same project that cover different selections of models. In these cases, the system will allow these components to share the same state object.
 
 You can view all defs state keys for a code location by navigating to the code location overview page in the Dagster UI, which contains:
 - All registered state keys for that location
@@ -149,13 +149,13 @@ You can view all defs state keys for a code location by navigating to the code l
 
 The following Dagster integrations are implemented as state-backed components:
 
-- <PyObject section="libraries" module="dagster_tableau" object="TableauComponent" /> - Syncs Tableau workspaces, dashboards, and data sources
-- <PyObject section="libraries" module="dagster_looker" object="LookerComponent" /> - Syncs Looker explores and dashboards
-- <PyObject section="libraries" module="dagster_sigma" object="SigmaComponent" /> - Syncs Sigma workbooks and datasets
-- <PyObject section="libraries" module="dagster_powerbi" object="PowerBIWorkspaceComponent" /> - Syncs Power BI dashboards and reports
-- <PyObject section="libraries" module="dagster_fivetran" object="FivetranAccountComponent" /> - Syncs Fivetran connectors and connection tables
-- <PyObject section="libraries" module="dagster_airbyte" object="AirbyteWorkspaceComponent" /> - Syncs Airbyte connections and tables
-- <PyObject section="libraries" module="dagster_dbt" object="DbtProjectComponent" /> - Uses dbt manifest files for project metadata
+- <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="TableauComponent" /> - Syncs Tableau workspaces, dashboards, and data sources
+- <PyObject section="libraries" integration="looker" module="dagster_looker" object="LookerComponent" /> - Syncs Looker explores and dashboards
+- <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="SigmaComponent" /> - Syncs Sigma workbooks and datasets
+- <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="PowerBIWorkspaceComponent" /> - Syncs Power BI dashboards and reports
+- <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranAccountComponent" /> - Syncs Fivetran connectors and connection tables
+- <PyObject section="libraries" integration="airbyte" module="dagster_airbyte" object="AirbyteWorkspaceComponent" /> - Syncs Airbyte connections and tables
+- <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DbtProjectComponent" /> - Uses dbt manifest files for project metadata
 
 Each of these components handles the complexity of interacting with external APIs and managing state.
 

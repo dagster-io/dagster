@@ -64,7 +64,7 @@ Dagster includes Python APIs for execution that are useful when writing tests or
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMainBlock={false} />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMain={false} />
 
 You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test).
 
@@ -143,7 +143,7 @@ For example, the following job will execute at most two ops at once with the `da
 
 :::note
 
-These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject section="libraries" module="dagster_celery" object="celery_executor" /> or <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
+These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject section="libraries" integration="celery" module="dagster_celery" object="celery_executor" /> or <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
 
 Refer to the [Managing concurrency in data pipelines guide](/guides/operate/managing-concurrency) for more info about op concurrency, and how to limit run concurrency.
 

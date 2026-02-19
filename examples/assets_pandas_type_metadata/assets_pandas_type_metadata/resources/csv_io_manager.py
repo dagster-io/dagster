@@ -1,6 +1,5 @@
 import os
 import textwrap
-from typing import Optional
 
 import pandas as pd
 from dagster import AssetKey, ConfigurableIOManager, TableSchemaMetadataValue
@@ -12,7 +11,7 @@ from pydantic import Field
 class LocalCsvIOManager(ConfigurableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
-    base_dir: Optional[str] = Field(default=None)
+    base_dir: str | None = Field(default=None)
 
     @property
     @cached_method

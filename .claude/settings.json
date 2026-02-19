@@ -62,7 +62,8 @@
       "Bash(git cat-file:*)",
       "Bash(git ls-remote:*)",
       "Bash(pytest:*)",
-      "Bash(dagster-dev:*)"
+      "Bash(dagster-dev:*)",
+      "Bash(erk:*)"
     ],
     "deny": [
       "Read(./.git/**)",
@@ -150,6 +151,30 @@
       "Read(./.user.yml)",
       "Read(./exponent.txt)",
       "Read(./.cloudstorage/**)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+          }
+        ]
+      }
     ]
   }
 }

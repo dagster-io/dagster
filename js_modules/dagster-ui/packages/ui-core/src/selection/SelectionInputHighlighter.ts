@@ -1,6 +1,5 @@
-import {Colors, FontFamily, TextInputStyles} from '@dagster-io/ui-components';
-import {ParserRuleContext} from 'antlr4ts';
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {AbstractParseTreeVisitor, ParserRuleContext} from 'antlr4ng';
 import CodeMirror from 'codemirror';
 import {css} from 'styled-components';
 
@@ -44,8 +43,9 @@ export class SyntaxHighlightingVisitor
   protected defaultResult() {}
 
   private addClass(ctx: ParserRuleContext, klass: string) {
-    const from = this.cm.posFromIndex(this.startOffset + ctx.start.startIndex);
-    const to = this.cm.posFromIndex(from.ch + ctx.text.length);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const from = this.cm.posFromIndex(this.startOffset + ctx.start!.start);
+    const to = this.cm.posFromIndex(from.ch + ctx.getText().length);
     this.cm.markText(from, to, {className: klass});
   }
 
@@ -56,14 +56,18 @@ export class SyntaxHighlightingVisitor
   }
 
   private addActiveClass(ctx: ParserRuleContext, klass: string = 'active') {
-    if (ctx.start.startIndex < this.cursorIndex && (ctx.stop?.stopIndex ?? 0) < this.cursorIndex) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (ctx.start!.start < this.cursorIndex && (ctx.stop?.stop ?? 0) < this.cursorIndex) {
       this.addClass(ctx, klass);
     }
   }
 
   // Visit methods
   visitStart(ctx: StartContext) {
-    this.visit(ctx.expr());
+    const exprCtx = ctx.expr();
+    if (exprCtx) {
+      this.visit(exprCtx);
+    }
   }
 
   visitIncompleteAttributeExpressionMissingValue(
@@ -75,29 +79,35 @@ export class SyntaxHighlightingVisitor
   visitIncompleteAttributeExpressionMissingKey(
     ctx: IncompleteAttributeExpressionMissingKeyContext,
   ) {
-    const start = ctx.start.startIndex;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    let end = ctx.stop!.stopIndex;
-    if (ctx.postExpressionWhitespace()) {
-      end = ctx.postExpressionWhitespace().start.startIndex;
+    const start = ctx.start!.start;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let end = ctx.stop!.stop;
+    const wsCtx = ctx.postExpressionWhitespace();
+    if (wsCtx) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      end = wsCtx.start!.start;
     }
     this.addClassPos(start, end, 'expression attribute-expression');
     this.visitChildren(ctx);
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    const start = ctx.start.startIndex;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    let end = ctx.stop!.stopIndex;
-    if (ctx.postAttributeValueWhitespace()) {
-      end = ctx.postAttributeValueWhitespace().start.startIndex;
+    const start = ctx.start!.start;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let end = ctx.stop!.stop;
+    const wsCtx = ctx.postAttributeValueWhitespace();
+    if (wsCtx) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      end = wsCtx.start!.start;
     }
     this.addClassPos(start, end, 'expression attribute-expression');
     this.visitChildren(ctx);
   }
 
   visitAttributeName(ctx: AttributeNameContext) {
-    this.addClass(ctx, `attribute-name attribute-${ctx.text}`);
+    this.addClass(ctx, `attribute-name attribute-${ctx.getText()}`);
     this.visitChildren(ctx);
   }
 
@@ -107,7 +117,7 @@ export class SyntaxHighlightingVisitor
   }
 
   visitFunctionName(ctx: FunctionNameContext) {
-    this.addClass(ctx, `function-name function-${ctx.text}`);
+    this.addClass(ctx, `function-name function-${ctx.getText()}`);
     this.visitChildren(ctx);
   }
 
@@ -215,10 +225,10 @@ export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor, errors: Syn
   const {parseTrees} = parseInput(value);
   let start = 0;
 
-  for (const {tree} of parseTrees) {
+  for (const {tree, line} of parseTrees) {
     const visitor = new SyntaxHighlightingVisitor(cm, start, cursorIndex - start);
     visitor.visit(tree);
-    start += tree.text.length;
+    start += line.length;
   }
   cm.markText(cm.posFromIndex(0), cm.posFromIndex(value.length), {className: 'selection'});
 
@@ -240,7 +250,43 @@ export const SelectionAutoCompleteInputCSS = css`
     padding: 0;
   }
   width: 100%;
-  ${TextInputStyles}
+
+  /* Inline TextInputStyles */
+  background-color: ${Colors.backgroundDefault()};
+  border: none;
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: ${Colors.textDefault()};
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+
+  ::placeholder {
+    color: ${Colors.textLighter()};
+  }
+
+  :disabled {
+    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDisabled()};
+  }
+
+  :disabled::placeholder {
+    color: ${Colors.textDisabled()};
+  }
+
+  :focus {
+    box-shadow:
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.keylineDefault()} inset 2px 2px 1.5px,
+      ${Colors.focusRing()} 0 0 0 2px;
+    outline: none;
+  }
+
   flex-shrink: 1;
   overflow: auto;
 

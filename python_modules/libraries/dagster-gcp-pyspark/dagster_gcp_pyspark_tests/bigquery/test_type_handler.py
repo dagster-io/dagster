@@ -84,7 +84,7 @@ def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
 
 @pytest.mark.integration
 def test_handle_output(spark):
-    with patch("pyspark.sql.DataFrame.write") as mock_write:
+    with patch("pyspark.sql.readwriter.DataFrameWriter.save") as mock_save:
         handler = BigQueryPySparkTypeHandler()
 
         columns = ["col1", "col2"]
@@ -112,12 +112,12 @@ def test_handle_output(spark):
             ),
         }
 
-        assert len(mock_write.method_calls) == 1
+        assert mock_save.call_count == 1
 
 
 @pytest.mark.integration
 def test_load_input(spark):
-    with patch("pyspark.sql.DataFrameReader.load") as mock_read:
+    with patch("pyspark.sql.readwriter.DataFrameReader.load") as mock_read:
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)

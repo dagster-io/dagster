@@ -130,7 +130,7 @@ def test_resource_cyclic_dependencies():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match='Resource key "(foo_resource|bar_resource)" transitively depends on itself.',
+        match=r'Resource key "(foo_resource|bar_resource)" transitively depends on itself.',
     ):
         dg.GraphDefinition(
             name="with_dep_resource",
@@ -595,7 +595,7 @@ def test_incorrect_resource_init_error():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "expects only a single positional required argument. Got required extra params _b, _c"
+            r"expects only a single positional required argument. Got required extra params _b, _c"
         ),
     ):
 
@@ -967,7 +967,7 @@ def test_configured_decorator_with_fn_and_user_code_error():
     with pytest.raises(
         dg.DagsterConfigMappingFunctionError,
         match=(
-            "The config mapping function on a `configured` ResourceDefinition has thrown an "
+            r"The config mapping function on a `configured` ResourceDefinition has thrown an "
             "unexpected error during its execution."
         ),
     ) as user_code_exc:
@@ -1033,7 +1033,7 @@ def test_resource_needs_resource():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Resource with key 'bar_resource' required by resource with key 'foo_resource', but not"
+            r"Resource with key 'bar_resource' required by resource with key 'foo_resource', but not"
             " provided."
         ),
     ):
@@ -1177,7 +1177,7 @@ def test_context_manager_resource():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "At least one provided resource is a generator, but attempting to access resources "
+            r"At least one provided resource is a generator, but attempting to access resources "
             "outside of context manager scope."
         ),
     ):

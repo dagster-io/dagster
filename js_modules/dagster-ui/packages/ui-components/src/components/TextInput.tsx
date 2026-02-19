@@ -1,9 +1,9 @@
+import clsx from 'clsx';
 import * as React from 'react';
-import styled, {css} from 'styled-components';
 
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
-import {FontFamily} from './styles';
+import styles from './css/TextInput.module.css';
 
 interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'onChange'> {
   fill?: boolean;
@@ -11,6 +11,7 @@ interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'onChange'> {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   strokeColor?: string;
   rightElement?: JSX.Element;
+  allowPasswordManagers?: boolean;
 }
 
 export const TextInput = React.forwardRef(
@@ -19,167 +20,51 @@ export const TextInput = React.forwardRef(
       fill,
       icon,
       disabled,
-      strokeColor = Colors.borderDefault(),
+      strokeColor,
       rightElement,
       type = 'text',
+      allowPasswordManagers = false,
       ...rest
     } = props;
 
+    const containerStyle = fill ? {width: '100%', flex: 1} : undefined;
+
+    const inputStyle = strokeColor
+      ? ({
+          '--text-input-stroke-color': strokeColor,
+          '--text-input-stroke-color-hover': strokeColor,
+        } as React.CSSProperties)
+      : {};
+
+    const passwordManagerProps = allowPasswordManagers
+      ? {}
+      : {
+          'data-lpignore': 'true',
+          'data-1p-ignore': 'true',
+        };
+
     return (
-      <TextInputContainer $disabled={!!disabled} style={fill ? {width: '100%', flex: 1} : {}}>
+      <div className={clsx(styles.container, disabled && styles.disabled)} style={containerStyle}>
         {icon ? (
           <Icon name={icon} color={disabled ? Colors.accentGray() : Colors.accentPrimary()} />
         ) : null}
-        <StyledInput
-          data-lpignore="true"
+        <input
+          {...passwordManagerProps}
           {...rest}
-          $strokeColor={strokeColor}
+          className={clsx(
+            styles.input,
+            icon && styles.hasIcon,
+            rightElement && styles.hasRightElement,
+          )}
           disabled={disabled}
           ref={ref}
-          $hasIcon={!!icon}
-          $hasRightElement={!!rightElement}
           type={type}
+          style={inputStyle}
         />
-        {rightElement ? <RightContainer>{rightElement}</RightContainer> : null}
-      </TextInputContainer>
+        {rightElement ? <div className={styles.rightContainer}>{rightElement}</div> : null}
+      </div>
     );
   },
 );
 
 TextInput.displayName = 'TextInput';
-
-export const TextInputContainerStyles = css`
-  align-items: center;
-  color: ${Colors.textLight()};
-  display: inline-flex;
-  flex-direction: row;
-  flex: 1;
-  flex-grow: 0;
-  font-family: ${FontFamily.default};
-  font-size: 14px;
-  font-weight: 400;
-  position: relative;
-`;
-
-export const TextInputContainer = styled.div<{$disabled?: boolean}>`
-  ${TextInputContainerStyles}
-
-  > .iconGlobal:first-child {
-    position: absolute;
-    left: 8px;
-    top: 8px;
-    ${({$disabled}) =>
-      $disabled
-        ? css`
-            background-color: ${Colors.backgroundDisabled()};
-          `
-        : null};
-  }
-`;
-
-const RightContainer = styled.div`
-  position: absolute;
-  bottom: 0;
-  top: 0;
-  right: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`;
-
-export const TextInputStyles = css`
-  background-color: ${Colors.backgroundDefault()};
-  border: none;
-  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
-  outline: none;
-  border-radius: 8px;
-  color: ${Colors.textDefault()};
-  flex-grow: 1;
-  font-size: 14px;
-  line-height: 20px;
-  padding: 6px 6px 6px 12px;
-  margin: 0;
-  transition: box-shadow 150ms;
-
-  ::placeholder {
-    color: ${Colors.textLighter()};
-  }
-
-  :disabled {
-    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
-    background-color: ${Colors.backgroundLight()};
-    color: ${Colors.textDisabled()};
-  }
-
-  :disabled::placeholder {
-    color: ${Colors.textDisabled()};
-  }
-
-  :focus {
-    box-shadow:
-      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
-      ${Colors.keylineDefault()} inset 2px 2px 1.5px,
-      ${Colors.focusRing()} 0 0 0 2px;
-    outline: none;
-  }
-`;
-
-interface StyledInputProps {
-  $hasIcon: boolean;
-  $strokeColor: string;
-  $hasRightElement: boolean;
-}
-
-const StyledInput = styled.input<StyledInputProps>`
-  ${TextInputStyles}
-
-  ${({$hasRightElement}) =>
-    $hasRightElement
-      ? css`
-          & {
-            padding-right: 28px;
-          }
-        `
-      : null}
-
-  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
-  padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
-
-  :hover:not(:disabled) {
-    box-shadow: ${({$strokeColor}) =>
-        $strokeColor === Colors.borderDefault() ? Colors.borderHover() : $strokeColor}
-      inset 0px 0px 0px 1px;
-  }
-
-  :focus,
-  :hover:focus:not(:disabled) {
-    box-shadow:
-      ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
-      ${Colors.focusRing()} 0 0 0 2px;
-    background-color: ${Colors.backgroundDefaultHover()};
-  }
-`;
-
-interface TextAreaProps {
-  $resize: React.CSSProperties['resize'];
-  $strokeColor?: string;
-}
-
-export const TextArea = styled.textarea<TextAreaProps>`
-  ${TextInputStyles}
-
-  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
-
-  :hover {
-    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
-  }
-
-  :focus {
-    box-shadow:
-      ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
-      ${Colors.focusRing()} 0px 0px 0px 2px;
-    background-color: ${Colors.backgroundDefaultHover()};
-  }
-
-  ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}
-`;

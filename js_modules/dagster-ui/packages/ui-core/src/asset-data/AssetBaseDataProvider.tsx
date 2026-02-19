@@ -184,6 +184,49 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         severity
       }
     }
+    partitionDefinition {
+      name
+      description
+    }
+    partitionStatuses {
+      ... on AssetCheckDefaultPartitionStatuses {
+        succeededPartitions
+        failedPartitions
+        inProgressPartitions
+        skippedPartitions
+        executionFailedPartitions
+      }
+      ... on AssetCheckTimePartitionStatuses {
+        ranges {
+          startKey
+          endKey
+          status
+        }
+      }
+      ... on AssetCheckMultiPartitionStatuses {
+        primaryDimensionName
+        ranges {
+          primaryDimStartKey
+          primaryDimEndKey
+          secondaryDim {
+            ... on AssetCheckDefaultPartitionStatuses {
+              succeededPartitions
+              failedPartitions
+              inProgressPartitions
+              skippedPartitions
+              executionFailedPartitions
+            }
+            ... on AssetCheckTimePartitionStatuses {
+              ranges {
+                startKey
+                endKey
+                status
+              }
+            }
+          }
+        }
+      }
+    }
   }
 `;
 

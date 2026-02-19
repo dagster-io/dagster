@@ -1,3 +1,22 @@
+# 1.4.1 (February 15, 2026)
+
+- Fix CSS modules not being processed in Rollup build, causing class name mappings to be lost
+
+# 1.4.0 (December 23, 2025)
+
+- Upgrade to Eslint 9
+- Upgrade Storybook to 9.1.17
+- Add new icons: Compass, upvote/downvote for AI feedback, smart toy
+- Split `DateRangeDialog` into a separate component
+- Fix icon display in list items
+- Clean up disabled `TextInput` styles
+- Clean up CSS for CodeMirror hints
+- Improve `Button` and `Alert` CSS
+- Convert `Spinner` and `Icon` to CSS modules
+- Refactor `ButtonLink` and `Box` to use CSS modules
+- Add CSS variables for fonts
+- Remove some Blueprint imports
+
 # 1.3.0 (October 27, 2025)
 
 - Migrate back to styled-components v5

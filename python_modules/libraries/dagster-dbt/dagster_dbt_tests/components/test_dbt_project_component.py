@@ -5,13 +5,16 @@ import tempfile
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
@@ -33,6 +36,7 @@ from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
 from dagster_shared import check
 
@@ -114,7 +118,7 @@ class TestDbtOpCustomization(TestOpCustomization):
 @pytest.mark.parametrize(
     "backfill_policy", [None, "single_run", "multi_run", "multi_run_with_max_partitions"]
 )
-def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
+def test_python_params(dbt_path: Path, backfill_policy: str | None) -> None:
     backfill_policy_arg = {}
     if backfill_policy == "single_run":
         backfill_policy_arg["backfill_policy"] = {"type": "single_run"}
@@ -217,13 +221,27 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
+def test_target_path_from_component_string(dbt_path: Path) -> None:
+    component = load_component_for_test(
+        DbtProjectComponent,
+        {
+            "project": {
+                "project_dir": str(dbt_path),
+                "target_path": "tmp_dbt_target",
+            }
+        },
+    )
+    assert isinstance(component.dbt_project.target_path, Path)
+    assert component.dbt_project.target_path == Path("tmp_dbt_target")
+
+
 class TestDbtTranslation(TestTranslation):
     def test_translation(
         self,
         dbt_path: Path,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
     ) -> None:
         defs = build_component_defs_for_test(
             DbtProjectComponent,
@@ -399,7 +417,7 @@ def test_state_path(
         ),
     ],
 )
-def test_cli_args(dbt_path: Path, cli_args: Optional[list[str]], expected_args: list[str]) -> None:
+def test_cli_args(dbt_path: Path, cli_args: list[str] | None, expected_args: list[str]) -> None:
     args = {"cli_args": cli_args} if cli_args else {}
 
     comp = load_component_for_test(
@@ -470,7 +488,7 @@ def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
     @dataclass
     class CustomDbtProjectComponent(DbtProjectComponent):
         def get_asset_spec(
-            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
         ) -> dg.AssetSpec:
             # Get the base asset spec from the parent implementation
             base_spec = super().get_asset_spec(manifest, unique_id, project)
@@ -674,7 +692,7 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
             return AdvancedConfig
 
         def get_asset_spec(
-            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
         ) -> dg.AssetSpec:
             base_spec = super().get_asset_spec(manifest, unique_id, project)
             dbt_props = self.get_resource_props(manifest, unique_id)
@@ -726,3 +744,57 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
             },
         )
         assert result.success
+
+
+def test_upstream_source_metadata_flows_to_stub_asset() -> None:
+    """Test that source metadata is included on stub assets when enable_source_metadata is True."""
+    # Prepare the manifest for test_metadata_path
+    project = DbtProject(test_metadata_path)
+    project.preparer.prepare(project)
+
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "project": str(test_metadata_path),
+            "select": "stg_customers",  # This model depends on source 'jaffle_shop.raw_customers'
+            "translation_settings": {
+                "enable_source_metadata": True,
+            },
+        },
+    )
+
+    # Get all asset specs from the definitions
+    all_specs = list(defs.get_all_asset_specs())
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The source has a custom asset key configured via meta.dagster.asset_key: ["raw_source_customers"]
+    source_key = AssetKey("raw_source_customers")
+    assert source_key in specs_by_key, f"Source key {source_key} not found in {specs_by_key.keys()}"
+
+    source_spec = specs_by_key[source_key]
+
+    # Should be marked as auto-created stub asset
+    assert source_spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
+
+    # Should have the table_name metadata from the source definition that enables remapping
+    table_name = "master_jaffle_shop.main.raw_customers"
+    assert source_spec.metadata["dagster/table_name"] == table_name
+
+    # Now build defs with something matching that table name and verify key is remapped
+    upstream_spec = dg.AssetSpec(
+        key=AssetKey("foo_upstream_defined"), metadata={"dagster/table_name": table_name}
+    )
+    defs_combined = dg.Definitions.merge(defs, dg.Definitions(assets=[upstream_spec]))
+
+    all_specs_combined = list(defs_combined.get_all_asset_specs())
+    specs_by_key_combined = {spec.key: spec for spec in all_specs_combined}
+
+    # should have been remapped, so shouldn't show up here
+    assert AssetKey("raw_source_customers") not in specs_by_key_combined
+    stg_customers_spec = specs_by_key_combined[AssetKey("stg_customers")]
+
+    # dependency of stg_customers should have been remapped
+    deps = list(stg_customers_spec.deps)
+    assert len(deps) == 1
+    assert deps[0].asset_key == AssetKey("foo_upstream_defined")
+    assert deps[0].metadata["dagster/table_name"] == table_name

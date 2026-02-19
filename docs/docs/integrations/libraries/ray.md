@@ -1,6 +1,7 @@
 ---
 title: Dagster & Ray
 sidebar_label: Ray
+sidebar_position: 1
 description: The community-supported Ray package allows orchestrating distributed Ray compute from Dagster pipelines.
 tags: [community-supported, compute]
 source: https://github.com/danielgafni/dagster-ray

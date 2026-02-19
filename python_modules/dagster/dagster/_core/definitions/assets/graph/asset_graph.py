@@ -1,14 +1,10 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import AbstractSet  # noqa: UP035
 
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.assets.definition.asset_spec import (
-    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
@@ -27,7 +23,10 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
+from dagster._core.definitions.resolved_asset_deps import (
+    resolve_assets_def_deps,
+    resolve_stub_assets_defs,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
@@ -51,7 +50,7 @@ class AssetNode(BaseAssetNode):
         self._spec = assets_def.specs_by_key[key]
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._spec.description
 
     @property
@@ -87,7 +86,7 @@ class AssetNode(BaseAssetNode):
         return self._spec.kinds or set()
 
     @property
-    def pools(self) -> Optional[set[str]]:
+    def pools(self) -> set[str] | None:
         if not self.assets_def.computation:
             return None
         return set(
@@ -105,7 +104,7 @@ class AssetNode(BaseAssetNode):
         return self.partitions_def is not None
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         return self.assets_def.specs_by_key[self.key].partitions_def
 
     @property
@@ -113,31 +112,31 @@ class AssetNode(BaseAssetNode):
         return self._spec.partition_mappings
 
     @property
-    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
+    def legacy_freshness_policy(self) -> LegacyFreshnessPolicy | None:
         return self._spec.legacy_freshness_policy
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def freshness_policy(self) -> FreshnessPolicy | None:
         return self._spec.freshness_policy
 
     @property
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+    def auto_materialize_policy(self) -> AutoMaterializePolicy | None:
         return self._spec.auto_materialize_policy
 
     @property
-    def automation_condition(self) -> Optional[AutomationCondition]:
+    def automation_condition(self) -> AutomationCondition | None:
         return self._spec.automation_condition
 
     @property
-    def auto_observe_interval_minutes(self) -> Optional[float]:
+    def auto_observe_interval_minutes(self) -> float | None:
         return self.assets_def.auto_observe_interval_minutes
 
     @property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
+    def backfill_policy(self) -> BackfillPolicy | None:
         return self.assets_def.backfill_policy
 
     @property
-    def code_version(self) -> Optional[str]:
+    def code_version(self) -> str | None:
         return self._spec.code_version
 
     @property
@@ -190,6 +189,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 v.get_spec_for_check_key(k).description,
                 v.get_spec_for_check_key(k).automation_condition,
                 v.get_spec_for_check_key(k).metadata,
+                v.get_spec_for_check_key(k).partitions_def,
             )
             for k, v in assets_defs_by_check_key.items()
         }
@@ -197,7 +197,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     @staticmethod
     def normalize_assets(
-        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        assets: Iterable[AssetsDefinition | SourceAsset],
     ) -> Sequence[AssetsDefinition]:
         """Normalize a mixed list of AssetsDefinition and SourceAsset to a list of AssetsDefinition.
 
@@ -216,60 +216,19 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
             for a in assets
         ]
-        all_keys = {k for asset_def in assets_defs for k in asset_def.keys}
-
-        # Resolve all asset dependencies. An asset dependency is resolved when its key is an
-        # AssetKey not subject to any further manipulation.
-        resolved_deps = ResolvedAssetDependencies(assets_defs, [])
-
-        asset_key_replacements = [
-            {
-                raw_key: normalized_key
-                for input_name, raw_key in ad.keys_by_input_name.items()
-                if (
-                    normalized_key := resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
-                )
-                != raw_key
-            }
-            for ad in assets_defs
-        ]
-
-        # Only update the assets defs if we're actually replacing input asset keys
-        assets_defs = [
-            ad.with_attributes(asset_key_replacements=reps) if reps else ad
-            for ad, reps in zip(assets_defs, asset_key_replacements)
-        ]
-
-        # Create unexecutable external assets definitions for any referenced keys for which no
-        # definition was provided.
-        all_referenced_asset_keys = {
-            key for assets_def in assets_defs for key in assets_def.dependency_keys
-        }.union(
-            {
-                check_spec.key.asset_key
-                for assets_def in assets_defs
-                for check_spec in assets_def.node_check_specs_by_output_name.values()
-            }
-        )
 
         with disable_dagster_warnings():
-            for key in all_referenced_asset_keys.difference(all_keys):
-                assets_defs.append(
-                    AssetsDefinition(
-                        specs=[
-                            AssetSpec(
-                                key=key,
-                                metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
-                            )
-                        ]
-                    )
-                )
-        return assets_defs
+            # Resolve all asset dependency keys to their final values
+            assets_defs = resolve_assets_def_deps(assets_defs)
+            # Create stub assets for any referenced keys for which no definition was provided.
+            stub_assets_defs = resolve_stub_assets_defs(assets_defs)
+
+        return assets_defs + stub_assets_defs
 
     @classmethod
     def key_mappings_from_assets(
         cls,
-        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        assets: Iterable[AssetsDefinition | SourceAsset],
     ) -> tuple[Mapping[AssetKey, AssetNode], Mapping[AssetCheckKey, AssetsDefinition]]:
         assets_defs = cls.normalize_assets(assets)
 
@@ -301,7 +260,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     @classmethod
     def from_assets(
         cls,
-        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        assets: Iterable[AssetsDefinition | SourceAsset],
     ) -> "AssetGraph":
         asset_nodes_by_key, assets_defs_by_check_key = cls.key_mappings_from_assets(assets)
         return AssetGraph(
@@ -318,7 +277,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             assets_def = self._assets_defs_by_check_key[entity_key]
             return {entity_key} if assets_def.can_subset else assets_def.asset_and_check_keys
 
-    def get_execution_set_identifier(self, entity_key: EntityKey) -> Optional[str]:
+    def get_execution_set_identifier(self, entity_key: EntityKey) -> str | None:
         """All assets and asset checks with the same execution_set_identifier must be executed
         together - i.e. you can't execute just a subset of them.
 

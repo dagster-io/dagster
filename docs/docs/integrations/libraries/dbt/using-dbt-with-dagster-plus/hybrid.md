@@ -26,11 +26,11 @@ If you are using an Amazon Elastic Container Service (ECS), Kubernetes, or Docke
 
 Before including the dbt project in the Docker image, you'll need to make sure it contains an up-to-date [manifest file](https://docs.getdbt.com/reference/artifacts/manifest-json) and [project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies).
 
-This can be done by running the [`dagster-dbt project prepare-and-package`](/api/libraries/dagster-dbt#prepare-and-package) command. In the workflow building and pushing your Docker image, make sure this command runs before building your Docker image to ensure all required dbt files are included. Note that this command runs `dbt deps` and `dbt parse` to create your manifest file.
+This can be done by running the [`dagster-dbt project prepare-and-package`](/integrations/libraries/dbt/dagster-dbt#prepare-and-package) command. In the workflow building and pushing your Docker image, make sure this command runs before building your Docker image to ensure all required dbt files are included. Note that this command runs `dbt deps` and `dbt parse` to create your manifest file.
 
 ### Using a CI/CD file
 
-If you are using a [CI/CD file](/deployment/dagster-plus/deploying-code/ci-cd) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
+If you are using a [CI/CD file](/deployment/dagster-plus/deploying-code/configuring-ci-cd) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
 
 Our example updates the CI/CD file of a project from a GitHub repository, but this could be achieved in other platform like GitLab.
 
@@ -66,4 +66,4 @@ Once the new step is pushed to the remote, your workflow will be updated to prep
 
 When using a local agent for your Hybrid deployments in Dagster+, your Dagster code and dbt project must be in a Python environment that can be accessed on the same machine as your agent.
 
-When updating the dbt project, it is important to refresh the [manifest file](https://docs.getdbt.com/reference/artifacts/manifest-json) and [project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies) to ensure that they are up-to-date when used with your Dagster code. This can be done by running the [`dagster-dbt project prepare-and-package`](/api/libraries/dagster-dbt#prepare-and-package) command. Note that this command runs `dbt deps` and `dbt parse` to refresh your manifest file.
+When updating the dbt project, it is important to refresh the [manifest file](https://docs.getdbt.com/reference/artifacts/manifest-json) and [project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies) to ensure that they are up-to-date when used with your Dagster code. This can be done by running the [`dagster-dbt project prepare-and-package`](/integrations/libraries/dbt/dagster-dbt#prepare-and-package) command. Note that this command runs `dbt deps` and `dbt parse` to refresh your manifest file.

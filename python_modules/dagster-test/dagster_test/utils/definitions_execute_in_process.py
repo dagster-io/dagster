@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster._core.definitions.job_definition import JobDefinition
@@ -19,7 +19,7 @@ from dagster._core.definitions.definitions_class import Definitions
 
 def get_job_from_defs(
     name: str, defs: Definitions
-) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+) -> JobDefinition | UnresolvedAssetJobDefinition | None:
     """Get the job from the definitions by its name."""
     return next(
         iter(job for job in (defs.jobs or []) if job.name == name),
@@ -36,8 +36,8 @@ def definitions_execute_job_in_process(
     defs: Definitions,
     job_name: str,
     instance: Optional["DagsterInstance"] = None,
-    run_config: Optional[Union[Mapping[str, Any], RunConfig]] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    run_config: Mapping[str, Any] | RunConfig | None = None,
+    tags: Mapping[str, str] | None = None,
 ) -> "ExecuteInProcessResult":
     """This was originally on Definitions as execute_job_in_process but was only used in 4 tests, so we
     moved it here on 2025-05-27 in order to reduce the surface area of the Definitions class.

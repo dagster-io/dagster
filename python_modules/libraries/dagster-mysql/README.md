@@ -1,4 +1,4 @@
 # dagster-mysql
 
 The docs for `dagster-mysql` can be found
-[here](https://docs.dagster.io/api/python-api/libraries/dagster-mysql).
+[here](https://docs.dagster.io/integrations/libraries/mysql/dagster-mysql).

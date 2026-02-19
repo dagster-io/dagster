@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster as dg
 from dagster._core.definitions.events import AssetMaterialization
@@ -45,9 +45,7 @@ def test_basic_bound_runner_usage():
         assert isinstance(runner.load_asset_value("now_time"), int)
 
 
-def get_env_entry(
-    event_log_entry: EventLogEntry, metadata_key="io_manager_branch"
-) -> Optional[str]:
+def get_env_entry(event_log_entry: EventLogEntry, metadata_key="io_manager_branch") -> str | None:
     asset_mat = event_log_entry.asset_materialization
     return (
         get_branch_name_from_materialization(asset_mat, metadata_key=metadata_key)
@@ -58,7 +56,7 @@ def get_env_entry(
 
 def get_branch_name_from_materialization(
     asset_materialization: AssetMaterialization, metadata_key="io_manager_branch"
-) -> Optional[str]:
+) -> str | None:
     entry = asset_materialization.metadata.get(metadata_key)
     if isinstance(entry, dg.TextMetadataValue):
         return entry.value

@@ -29,14 +29,14 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_deltalake_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         "deltalake>=1.0.0",
         "pyarrow",
         f"dagster{pin}",
     ],
     extras_require={
-        "pandas": ["pandas"],
+        "pandas": ["pandas<3.0.0"],
     },
     zip_safe=False,
 )

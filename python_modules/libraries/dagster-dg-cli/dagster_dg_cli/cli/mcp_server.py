@@ -2,9 +2,7 @@ import json
 import os
 import re
 import subprocess
-import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -23,12 +21,6 @@ def mcp_group():
 @mcp_group.command(name="serve", cls=DgClickCommand)
 @cli_telemetry_wrapper
 def serve_command():
-    if sys.version_info[:2] < (3, 10):
-        exit_with_error(
-            "The MCP server is only supported on Python 3.10 and above. "
-            "Please upgrade your Python version and reinstall `dagster-dg-cli`.",
-        )
-
     from dagster_dg_cli.mcp.server import mcp
 
     mcp.run(transport="stdio")
@@ -48,7 +40,7 @@ def _inject_into_mcp_config_json(path: Path) -> None:
     path.write_text(json.dumps(contents, indent=2))
 
 
-def _find_claude() -> Optional[str]:
+def _find_claude() -> str | None:
     try:
         subprocess.run(["claude", "--version"], check=False)
         return "claude"

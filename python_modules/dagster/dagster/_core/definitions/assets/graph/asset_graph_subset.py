@@ -1,7 +1,7 @@
 import operator
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple  # noqa: UP035
 
 from dagster_shared.serdes import (
     NamedTupleSerializer,
@@ -67,9 +67,7 @@ class AssetGraphSubset(NamedTuple):
     def is_empty(self) -> bool:
         return len(self.asset_keys) == 0
 
-    def _get_serializable_entity_subset(
-        self, asset_key: AssetKey
-    ) -> SerializableEntitySubset[AssetKey]:
+    def get_asset_subset(self, asset_key: AssetKey) -> SerializableEntitySubset[AssetKey] | None:
         if asset_key in self.non_partitioned_asset_keys:
             return SerializableEntitySubset(key=asset_key, value=True)
         elif asset_key in self.partitions_subsets_by_asset_key:
@@ -77,39 +75,10 @@ class AssetGraphSubset(NamedTuple):
                 key=asset_key, value=self.partitions_subsets_by_asset_key[asset_key]
             )
         else:
-            check.failed(f"Asset {asset_key} must be part of the AssetGraphSubset")
+            return None
 
-    def get_asset_subset(
-        self, asset_key: AssetKey, asset_graph: BaseAssetGraph
-    ) -> SerializableEntitySubset[AssetKey]:
-        """Returns an AssetSubset representing the subset of a specific asset that this
-        AssetGraphSubset contains.
-        """
-        if (
-            asset_key in self.non_partitioned_asset_keys
-            or asset_key in self.partitions_subsets_by_asset_key
-        ):
-            return self._get_serializable_entity_subset(asset_key)
-        else:
-            partitions_def = asset_graph.get(asset_key).partitions_def
-            return SerializableEntitySubset(
-                key=asset_key,
-                value=partitions_def.empty_subset() if partitions_def else False,
-            )
-
-    def get_partitions_subset(
-        self, asset_key: AssetKey, asset_graph: Optional[BaseAssetGraph] = None
-    ) -> PartitionsSubset:
-        if asset_graph:
-            partitions_def = asset_graph.get(asset_key).partitions_def
-            if partitions_def is None:
-                check.failed("Can only call get_partitions_subset on a partitioned asset")
-
-            return self.partitions_subsets_by_asset_key.get(
-                asset_key, partitions_def.empty_subset()
-            )
-        else:
-            return self.partitions_subsets_by_asset_key[asset_key]
+    def get_partitions_subset(self, asset_key: AssetKey) -> PartitionsSubset:
+        return self.partitions_subsets_by_asset_key[asset_key]
 
     def iterate_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
         for (
@@ -127,9 +96,9 @@ class AssetGraphSubset(NamedTuple):
         AssetGraphSubset contains.
         """
         for asset_key in self.asset_keys:
-            yield self._get_serializable_entity_subset(asset_key)
+            yield check.not_none(self.get_asset_subset(asset_key))
 
-    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __contains__(self, asset: AssetKey | AssetKeyPartitionKey) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
         subset. If asset is an AssetKey, check if any of partitions of the given AssetKey are in
         the subset.
@@ -180,7 +149,10 @@ class AssetGraphSubset(NamedTuple):
 
         for asset_key in other.asset_keys:
             if asset_key in other.non_partitioned_asset_keys:
-                check.invariant(asset_key not in self.partitions_subsets_by_asset_key)
+                check.invariant(
+                    asset_key not in self.partitions_subsets_by_asset_key,
+                    f"Asset {asset_key} is partitioned in one subset and non-partitioned in the other",
+                )
                 result_non_partitioned_asset_keys = oper(
                     result_non_partitioned_asset_keys, {asset_key}
                 )
@@ -237,6 +209,8 @@ class AssetGraphSubset(NamedTuple):
 
     def __ne__(self, other) -> bool:
         return not self.__eq__(other)
+
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
     def __repr__(self) -> str:
         return (

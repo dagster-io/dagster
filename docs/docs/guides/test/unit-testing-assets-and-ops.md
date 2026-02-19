@@ -1,6 +1,6 @@
 ---
 description: Unit testing data pipelines with Dagster allows direct invocation of computations, using specified inputs and mocked resources to verify data transformations.
-sidebar_position: 400
+sidebar_position: 300
 title: Unit testing assets and ops
 ---
 
@@ -136,6 +136,26 @@ If an asset has multiple parameters, we recommended using keyword arguments for 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  language="python"
+  startAfter="start_test"
+  endBefore="end_test"
+  title="tests/test_assets.py"
+/>
+
+### Multi-assets with upstream assets \{#multi-assets-upstream}
+
+When testing [multi-assets](/guides/build/assets/defining-assets#multi-asset) with upstream dependencies, you cannot use `input_values`, as it's not designed to work with assets. Instead, define standalone source assets and use a mock IO manager to provide test data for the upstream assets. The mock IO manager should return the appropriate test data based on the asset key being loaded.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-multi-upstream.py"
+  language="python"
+  startAfter="start_file"
+  endBefore="end_file"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-multi-upstream.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"

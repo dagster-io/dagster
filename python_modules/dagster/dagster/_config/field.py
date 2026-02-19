@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, cast, overload
 
 from dagster_shared.seven import is_subclass
 
@@ -38,16 +38,16 @@ VALID_CONFIG_DESC = """
 
 
 @overload
-def resolve_to_config_type(obj: Union[ConfigType, UserConfigSchema]) -> ConfigType:
+def resolve_to_config_type(obj: ConfigType | UserConfigSchema) -> ConfigType:
     pass
 
 
 @overload
-def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> ConfigType | bool:
     pass
 
 
-def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> ConfigType | bool:
     from dagster._config.field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type
@@ -237,6 +237,9 @@ class Field:
         description (str):
             A human-readable description of this config field.
 
+        is_secret (bool):
+            Whether this field contains sensitive data that should be masked in UIs. Defaults to False.
+
     Examples:
         .. code-block:: python
 
@@ -266,8 +269,9 @@ class Field:
         self,
         config: Any,
         default_value: Any = FIELD_NO_DEFAULT_PROVIDED,
-        is_required: Optional[bool] = None,
-        description: Optional[str] = None,
+        is_required: bool | None = None,
+        description: str | None = None,
+        is_secret: bool = False,
     ):
         from dagster._config.post_process import resolve_defaults
         from dagster._config.validate import validate_config
@@ -275,6 +279,7 @@ class Field:
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
         self._description = check.opt_str_param(description, "description")
+        self._is_secret = check.bool_param(is_secret, "is_secret")
 
         check.opt_bool_param(is_required, "is_required")
 
@@ -363,9 +368,15 @@ class Field:
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """A human-readable description of this config field, if provided."""
         return self._description
+
+    @public
+    @property
+    def is_secret(self) -> bool:
+        """Whether this field contains sensitive data that should be masked in UIs."""
+        return self._is_secret
 
     @property
     def default_value_as_json_str(self) -> str:
@@ -382,5 +393,5 @@ class Field:
         )
 
 
-def check_opt_field_param(obj: object, param_name: str) -> Optional[Field]:
-    return check.opt_inst_param(cast("Optional[Field]", obj), param_name, Field)
+def check_opt_field_param(obj: object, param_name: str) -> Field | None:
+    return check.opt_inst_param(cast("Field | None", obj), param_name, Field)

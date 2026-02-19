@@ -1,5 +1,5 @@
 import {Box, Button, ButtonGroup, Colors, Icon} from '@dagster-io/ui-components';
-import React, {useContext, useMemo} from 'react';
+import {useContext, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {AssetFeatureContext} from './AssetFeatureContext';

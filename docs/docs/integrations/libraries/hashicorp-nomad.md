@@ -1,6 +1,7 @@
 ---
 title: Dagster & HashiCorp
 sidebar_label: HashiCorp Nomad
+sidebar_position: 1
 description: The community-supported Nomad package provides an integration with HashiCorp Nomad.
 tags: [community-supported, compute]
 source: https://github.com/PayLead/dagster-nomad

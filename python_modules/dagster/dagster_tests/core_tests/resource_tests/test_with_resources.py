@@ -82,7 +82,7 @@ def test_assets_direct_resource_conflicts():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Conflicting versions of resource with key 'foo' were provided to different assets."
+            r"Conflicting versions of resource with key 'foo' were provided to different assets."
             " When constructing a job, all resource definitions provided to assets must match by"
             " reference equality for a given key."
         ),
@@ -198,7 +198,7 @@ def test_asset_def_partial_application():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'bar' required by op 'the_asset' was not provided.",
+        match=r"resource with key 'bar' required by op 'the_asset' was not provided.",
     ):
         dg.with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("foo")})
 
@@ -264,7 +264,7 @@ def test_asset_io_manager_transitive_dependencies():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'the_resource' required by resource with key 'the_asset__io_manager'"
+            r"resource with key 'the_resource' required by resource with key 'the_asset__io_manager'"
             " was not provided."
         ),
     ):
@@ -277,7 +277,7 @@ def test_asset_io_manager_transitive_dependencies():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'foo' required by resource with key 'the_resource' was not provided."
+            r"resource with key 'foo' required by resource with key 'the_resource' was not provided."
         ),
     ):
         dg.with_resources([the_asset], resource_defs={"the_resource": the_resource})
@@ -322,7 +322,7 @@ def test_source_asset_partial_resources():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Resource with key 'bar' required by resource with key 'foo', but not provided.",
+        match=r"Resource with key 'bar' required by resource with key 'foo', but not provided.",
     ):
         dg.with_resources([my_source_asset], resource_defs={"foo": foo_resource})
 
@@ -355,7 +355,7 @@ def test_asset_circular_resource_dependency():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match='Resource key "bar" transitively depends on itself.',
+        match=r'Resource key "bar" transitively depends on itself.',
     ):
         dg.with_resources([the_asset], resource_defs={"foo": foo, "bar": bar})
 

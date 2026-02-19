@@ -3,7 +3,7 @@ import pickle
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar
 
 import pytest
 from dagster_shared.check.builder import INJECTED_DEFAULT_VALS_LOCAL_VAR
@@ -238,13 +238,13 @@ def test_didnt_override_new():
 
         @record_custom()
         class Failed:
-            local: Optional[str]
+            local: str | None
 
     with pytest.raises(check.CheckError):
 
         @record_custom
         class FailedAgain:
-            local: Optional[str]
+            local: str | None
 
 
 def test_empty():
@@ -257,16 +257,16 @@ def test_empty():
 def test_optional_arg() -> None:
     @record
     class Opt:
-        maybe: Optional[str] = None
-        always: Optional[str]
+        maybe: str | None = None
+        always: str | None
 
     assert Opt(always="set")
     assert Opt(always="set", maybe="x").maybe == "x"
 
     @record(checked=False)
     class Other:
-        maybe: Optional[str] = None
-        always: Optional[str]
+        maybe: str | None = None
+        always: str | None
 
     assert Other(always="set")
     assert Other(always="set", maybe="x").maybe == "x"
@@ -289,14 +289,14 @@ def test_sentinel():
 
     @record
     class Sample:
-        val: Optional[Any] = _unset
+        val: Any | None = _unset
 
     assert Sample().val is _unset
     assert Sample(val=None).val is None
 
     @record(checked=False)
     class OtherSample:
-        val: Optional[Any] = _unset
+        val: Any | None = _unset
 
     assert OtherSample().val is _unset
     assert OtherSample(val=None).val is None
@@ -464,7 +464,7 @@ def test_lazy_import():
     assert AnnotatedModel(foos=[])
 
     with pytest.raises(
-        check.CheckError, match="Expected <class 'dagster_shared.utils.test.TestType'>"
+        check.CheckError, match=r"Expected <class 'dagster_shared.utils.test.TestType'>"
     ):
         AnnotatedModel(foos=[1, 2, 3])  # pyright: ignore[reportArgumentType]
 
@@ -485,7 +485,7 @@ class Complex:
 class Remapped(IHaveNew):
     foo_str: str
 
-    def __new__(cls, foo: Union[str, Complex]):
+    def __new__(cls, foo: str | Complex):
         if isinstance(foo, Complex):
             foo = foo.s
 
@@ -575,11 +575,11 @@ def test_generic_nested() -> None:
 
     @record
     class HolderOfMaybeStrings:
-        strings: Things[Optional[str]]
+        strings: Things[str | None]
 
     @record
     class MaybeHolderOfThings(Generic[T]):
-        things: Optional[Things[T]]
+        things: Things[T] | None
 
     HolderOfInts = HolderOfThings[int]
 
@@ -658,7 +658,7 @@ def test_generic_with_propagate() -> None:
 
     @record
     class RecordBase(Base[T]):
-        label: Optional[str] = None
+        label: str | None = None
 
     @record
     class SubAdditionalArg(RecordBase):
@@ -806,6 +806,9 @@ def test_replace() -> None:
     assert obj._replace(name="good") == obj
     assert obj._replace(name="foo").__class__ is obj.__class__
 
+    with pytest.raises(CheckError):
+        obj._replace(name=4)
+
     @record
     class Parent:
         one: int
@@ -822,6 +825,28 @@ def test_replace() -> None:
     assert replaced == obj
     replaced.boop()
     assert replaced.__class__ is obj.__class__
+
+    with pytest.raises(CheckError):
+        replace(obj, two="two")
+
+    p = Parent(one=1)
+    with pytest.raises(CheckError):
+        replace(p, one="one")
+
+    @record(checked=False)
+    class Unchecked:
+        name: str
+
+    u = Unchecked(name=2)  # pyright: ignore[reportArgumentType]
+    replace(u, name="unchecked")
+
+    @record(checked=False)
+    class UncheckedDefaults:
+        name: str = "unchecked"
+        age: int
+
+    ud = UncheckedDefaults(age=2)
+    replace(ud, name="steve")
 
 
 def test_defensive_checks_running():
@@ -909,7 +934,7 @@ def test_pydantic() -> None:
         custom_list: Sequence[Custom]
         custom_mapping: Mapping[str, Custom]
         custom_list_mapping: Mapping[str, Sequence[Custom]]
-        optional_custom_list_mapping: Optional[Mapping[str, Sequence[Custom]]]
+        optional_custom_list_mapping: Mapping[str, Sequence[Custom]] | None
 
     c = Custom("a", "b", 1)
     holder = CustomHolder(
@@ -924,10 +949,10 @@ def test_pydantic() -> None:
 
 def test_runtime_typecheck_pydantic_field() -> None:
     with pytest.raises(
-        CheckError, match="pydantic.Field is not supported as a default value for @record fields.*"
+        CheckError, match=r"pydantic.Field is not supported as a default value for @record fields.*"
     ):
 
         @record
         class MyClass:
             foo: str = Field(default="foo")
-            bar: Optional[int] = Field(default=None)
+            bar: int | None = Field(default=None)

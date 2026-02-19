@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import click
 from dagster_shared.serdes.objects import EnvRegistryKey
@@ -58,7 +58,7 @@ def _scaffold_value_and_source_position_tree(
 
 
 class ErrorInput(NamedTuple):
-    object_key: Optional[EnvRegistryKey]
+    object_key: EnvRegistryKey | None
     error: "ValidationError"
     source_position_tree: ValueAndSourcePositionTree
 

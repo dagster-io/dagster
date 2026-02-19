@@ -41,12 +41,12 @@ import {
   LaunchAssetExecutionAssetNodeFragment,
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
+import {useAssetPermissions} from './useAssetPermissions';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 import {gql, useApolloClient, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
 import {
   __ASSET_JOB_PREFIX,
   displayNameForAssetKey,
@@ -144,10 +144,10 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 }: LaunchAssetChoosePartitionsDialogProps) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {
-    permissions: {canLaunchPipelineExecution, canLaunchPartitionBackfill},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
+  const assetKeyInputs = useMemo(() => assets.map((a) => asAssetKeyInput(a.assetKey)), [assets]);
+  const {hasMaterializePermission} = useAssetPermissions(assetKeyInputs, repoAddress.location);
+
+  const canLaunch = hasMaterializePermission;
   const [launching, setLaunching] = useState(false);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -275,7 +275,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return;
     }
 
-    if (!canLaunchPipelineExecution) {
+    if (!canLaunch) {
       // Should never happen, this is essentially an assertion failure
       showCustomAlert({
         title: 'Unable to launch as single run',
@@ -295,7 +295,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return;
     }
 
-    const runConfigData = config.yaml || '';
+    const runConfigData = savedConfig?.runConfigYaml || config.yaml || '';
     let allTags = [...config.tags, ...tags];
 
     if (launchWithRangesAsTags) {
@@ -383,18 +383,10 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   };
 
   const launchButton = () => {
-    if (launchAsBackfill && !canLaunchPartitionBackfill) {
+    if (!canLaunch) {
       return (
-        <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
-          <Button disabled>Launch backfill</Button>
-        </Tooltip>
-      );
-    }
-
-    if (!launchAsBackfill && !canLaunchPipelineExecution) {
-      return (
-        <Tooltip content={disabledReasons.canLaunchPipelineExecution}>
-          <Button disabled>Launch 1 run</Button>
+        <Tooltip content="You do not have permission to launch runs for these assets">
+          <Button disabled>{launchAsBackfill ? 'Launch backfill' : 'Launch 1 run'}</Button>
         </Tooltip>
       );
     }
@@ -599,8 +591,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                       <span>Single run</span>
                       <Tooltip
-                        targetTagName="div"
-                        position="top-left"
+                        placement="top-start"
                         content={
                           <div style={{maxWidth: 300}}>
                             This option requires that your assets are written to operate on a

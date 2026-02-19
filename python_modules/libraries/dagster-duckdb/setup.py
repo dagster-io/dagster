@@ -29,16 +29,19 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_duckdb_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         "duckdb",
         f"dagster{pin}",
     ],
     extras_require={
         "pandas": [
-            "pandas",
+            "pandas<3.0.0",
         ],
-        "pyspark": ["pyspark>=3,<4"],
+        "pyspark": [
+            "pyspark>=4.1; python_version>='3.14'",
+            "pyspark>=3.5,<4; python_version<'3.14'",
+        ],
     },
     zip_safe=False,
 )

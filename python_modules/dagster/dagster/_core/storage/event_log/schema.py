@@ -66,7 +66,7 @@ AssetKeyTable = db.Table(
     ),  # guarded by secondary index check
     db.Column("tags", db.TEXT),  # guarded by secondary index check
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
-    db.Column("cached_status_data", db.TEXT),
+    db.Column("cached_status_data", MySQLCompatabilityTypes.LongText),
 )
 
 AssetEventTagsTable = db.Table(

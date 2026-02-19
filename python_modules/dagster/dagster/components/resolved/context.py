@@ -2,7 +2,7 @@ import sys
 import traceback
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import Any, TypeVar, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel
@@ -13,7 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._record import copy, record
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.resolved.scopes import DeprecatedScope, DgScope, EnvScope
+from dagster.components.resolved.scopes import DatetimeScope, DeprecatedScope, DgScope, EnvScope
 
 T = TypeVar("T")
 
@@ -47,18 +47,18 @@ class ResolutionContext:
     """
 
     scope: Mapping[str, Any]
-    path: list[Union[str, int]] = []
-    source_position_tree: Optional[SourcePositionTree] = None
+    path: list[str | int] = []
+    source_position_tree: SourcePositionTree | None = None
     # dict where you can stash arbitrary objects. Used to store references to ComponentLoadContext
     # We are structuring this way to make it easier to use Resolved outside of the context of
     # the component system in the future
     stash: dict[str, Any] = {}
 
-    def at_path(self, path_part: Union[str, int]):
+    def at_path(self, path_part: str | int):
         return copy(self, path=[*self.path, path_part])
 
     @staticmethod
-    def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
+    def default(source_position_tree: SourcePositionTree | None = None) -> "ResolutionContext":
         # Create the automation_condition object for backward compatibility
         automation_condition_obj = {
             "eager": AutomationCondition.eager,
@@ -69,6 +69,7 @@ class ResolutionContext:
             scope={
                 "env": EnvScope(),
                 "dg": DgScope(),
+                "datetime": DatetimeScope(),
                 # Backward compatibility - deprecated, will be removed in 1.13.0
                 "automation_condition": DeprecatedScope(
                     "automation_condition.*", "dg.AutomationCondition.*", automation_condition_obj
@@ -185,7 +186,7 @@ class ResolutionContext:
     def resolve_value(self, val: Sequence) -> Sequence: ...
 
     @public
-    def resolve_value(self, val: Any, as_type: Optional[type] = None) -> Any:
+    def resolve_value(self, val: Any, as_type: type | None = None) -> Any:
         """Recursively resolves templated values in a nested object. This is typically
         invoked inside a :py:class:`~dagster.Resolver`'s `resolve_fn` to resolve all
         nested template values in the input object.

@@ -2,7 +2,7 @@ import os
 import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any, Final, Literal, Optional, TypeAlias
+from typing import Any, Final, Literal, TypeAlias
 
 
 def is_windows() -> bool:
@@ -65,7 +65,7 @@ def load_toml_as_dict(path: Path) -> dict[str, Any]:
 
 
 def has_dg_file_config(
-    path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
+    path: Path, predicate: Callable[[Mapping[str, Any]], bool] | None = None
 ) -> bool:
     toml = load_toml_as_dict(path)
     # `dg.toml` is a special case where settings are defined at the top level
@@ -81,8 +81,8 @@ def has_dg_file_config(
 # NOTE: The presence of dg.toml will cause pyproject.toml to be ignored for purposes of dg config.
 def discover_config_file(
     path: Path,
-    predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
-) -> Optional[Path]:
+    predicate: Callable[[Mapping[str, Any]], bool] | None = None,
+) -> Path | None:
     current_path = path.absolute()
     while True:
         config_file = locate_dg_config_in_folder(current_path, predicate)
@@ -95,8 +95,8 @@ def discover_config_file(
 
 def locate_dg_config_in_folder(
     path: Path,
-    predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
-) -> Optional[Path]:
+    predicate: Callable[[Mapping[str, Any]], bool] | None = None,
+) -> Path | None:
     current_path = path.absolute()
     dg_toml_path = current_path / "dg.toml"
     pyproject_toml_path = current_path / "pyproject.toml"
@@ -107,5 +107,5 @@ def locate_dg_config_in_folder(
     return None
 
 
-def get_canonical_defs_module_name(defs_module_name: Optional[str], root_module_name: str) -> str:
+def get_canonical_defs_module_name(defs_module_name: str | None, root_module_name: str) -> str:
     return defs_module_name or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"

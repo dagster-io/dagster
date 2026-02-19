@@ -3,6 +3,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 
 export const RESOURCE_ENTRY_FRAGMENT = gql`
   fragment ResourceEntryFragment on ResourceDetails {
+    id
     name
     description
     resourceType

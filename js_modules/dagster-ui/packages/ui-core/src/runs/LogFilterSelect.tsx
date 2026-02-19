@@ -5,7 +5,7 @@ import {
   Colors,
   Icon,
   Menu,
-  MenuItem,
+  MenuItemForInteractiveContent,
   Popover,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -51,34 +51,26 @@ export const LogFilterSelect = ({options, onSetFilter}: Props) => {
             const optionForLevel = options[level as keyof typeof options];
             const {label, count, enabled} = optionForLevel;
             return (
-              <MenuItem
-                key={level}
-                tagName="div"
-                shouldDismissPopover={false}
-                text={
-                  <Box flex={{direction: 'row', alignItems: 'center'}} padding={{horizontal: 2}}>
-                    <MenuCheckbox
-                      id={`menu-check-${level}`}
-                      checked={enabled}
-                      size="small"
-                      onChange={onChange(level)}
-                      label={
-                        <Box
-                          flex={{
-                            direction: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                          style={{flex: 1}}
-                        >
-                          <div>{label}</div>
-                          <div style={{color: Colors.textLight()}}>{compactNumber(count)}</div>
-                        </Box>
-                      }
-                    />
-                  </Box>
-                }
-              />
+              <MenuItemForInteractiveContent key={level}>
+                <MenuCheckbox
+                  id={`menu-check-${level}`}
+                  checked={enabled}
+                  onChange={onChange(level)}
+                  label={
+                    <Box
+                      flex={{
+                        direction: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                      style={{flex: 1}}
+                    >
+                      <div>{label}</div>
+                      <div style={{color: Colors.textLight()}}>{compactNumber(count)}</div>
+                    </Box>
+                  }
+                />
+              </MenuItemForInteractiveContent>
             );
           })}
         </Menu>

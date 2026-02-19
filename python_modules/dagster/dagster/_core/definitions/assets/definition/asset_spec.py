@@ -2,15 +2,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property
 from types import EllipsisType
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Union, overload  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -96,9 +88,9 @@ class AssetExecutionType(Enum):
     MATERIALIZATION = "MATERIALIZATION"
 
 
-def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
-    if kinds is not None and len(kinds) > 3:
-        raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
+def validate_kind_tags(kinds: AbstractSet[str] | None) -> None:
+    if kinds is not None and len(kinds) > 10:
+        raise DagsterInvalidDefinitionError("Assets can have at most ten kinds currently.")
 
 
 @hidden_param(
@@ -150,34 +142,34 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
 
     key: PublicAttr[AssetKey]
     deps: PublicAttr[Iterable[AssetDep]]
-    description: PublicAttr[Optional[str]]
+    description: PublicAttr[str | None]
     metadata: PublicAttr[Mapping[str, Any]]
-    group_name: PublicAttr[Optional[str]]
+    group_name: PublicAttr[str | None]
     skippable: PublicAttr[bool]
-    code_version: PublicAttr[Optional[str]]
-    legacy_freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
-    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
-    automation_condition: PublicAttr[Optional[AutomationCondition]]
+    code_version: PublicAttr[str | None]
+    legacy_freshness_policy: PublicAttr[LegacyFreshnessPolicy | None]
+    freshness_policy: PublicAttr[FreshnessPolicy | None]
+    automation_condition: PublicAttr[AutomationCondition | None]
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
-    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
+    partitions_def: PublicAttr[PartitionsDefinition | None]
 
     def __new__(
         cls,
         key: CoercibleToAssetKey,
         *,
-        deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
-        description: Optional[str] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
+        deps: Iterable["CoercibleToAssetDep"] | None = None,
+        description: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
         skippable: bool = False,
-        group_name: Optional[str] = None,
-        code_version: Optional[str] = None,
-        automation_condition: Optional[AutomationCondition] = None,
-        owners: Optional[Sequence[str]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        kinds: Optional[set[str]] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        group_name: str | None = None,
+        code_version: str | None = None,
+        automation_condition: AutomationCondition | None = None,
+        owners: Sequence[str] | None = None,
+        tags: Mapping[str, str] | None = None,
+        kinds: set[str] | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        freshness_policy: FreshnessPolicy | None = None,
         **kwargs,
     ):
         from dagster._core.definitions.assets.definition.asset_dep import (
@@ -243,17 +235,17 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     def dagster_internal_init(
         *,
         key: CoercibleToAssetKey,
-        deps: Optional[Iterable["CoercibleToAssetDep"]],
-        description: Optional[str],
-        metadata: Optional[Mapping[str, Any]],
+        deps: Iterable["CoercibleToAssetDep"] | None,
+        description: str | None,
+        metadata: Mapping[str, Any] | None,
         skippable: bool,
-        group_name: Optional[str],
-        code_version: Optional[str],
-        automation_condition: Optional[AutomationCondition],
-        owners: Optional[Sequence[str]],
-        tags: Optional[Mapping[str, str]],
-        kinds: Optional[set[str]],
-        partitions_def: Optional[PartitionsDefinition],
+        group_name: str | None,
+        code_version: str | None,
+        automation_condition: AutomationCondition | None,
+        owners: Sequence[str] | None,
+        tags: Mapping[str, str] | None,
+        kinds: set[str] | None,
+        partitions_def: PartitionsDefinition | None,
         **kwargs,
     ) -> "AssetSpec":
         check.invariant(kwargs.get("auto_materialize_policy") is None)
@@ -283,7 +275,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         }
 
     @property
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+    def auto_materialize_policy(self) -> AutoMaterializePolicy | None:
         return (
             self.automation_condition.as_auto_materialize_policy()
             if self.automation_condition
@@ -315,19 +307,19 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         self,
         *,
         key: CoercibleToAssetKey | EllipsisType = ...,
-        deps: Optional[Iterable["CoercibleToAssetDep"]] | EllipsisType = ...,
-        description: Optional[str] | EllipsisType = ...,
-        metadata: Optional[Mapping[str, Any]] | EllipsisType = ...,
+        deps: Iterable["CoercibleToAssetDep"] | None | EllipsisType = ...,
+        description: str | None | EllipsisType = ...,
+        metadata: Mapping[str, Any] | None | EllipsisType = ...,
         skippable: bool | EllipsisType = ...,
-        group_name: Optional[str] | EllipsisType = ...,
-        code_version: Optional[str] | EllipsisType = ...,
-        automation_condition: Optional[AutomationCondition] | EllipsisType = ...,
-        owners: Optional[Sequence[str]] | EllipsisType = ...,
-        tags: Optional[Mapping[str, str]] | EllipsisType = ...,
-        kinds: Optional[set[str]] | EllipsisType = ...,
-        partitions_def: Optional[PartitionsDefinition] | EllipsisType = ...,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] | EllipsisType = ...,
-        freshness_policy: Optional[FreshnessPolicy] | EllipsisType = ...,
+        group_name: str | None | EllipsisType = ...,
+        code_version: str | None | EllipsisType = ...,
+        automation_condition: AutomationCondition | None | EllipsisType = ...,
+        owners: Sequence[str] | None | EllipsisType = ...,
+        tags: Mapping[str, str] | None | EllipsisType = ...,
+        kinds: set[str] | None | EllipsisType = ...,
+        partitions_def: PartitionsDefinition | None | EllipsisType = ...,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None | EllipsisType = ...,
+        freshness_policy: FreshnessPolicy | None | EllipsisType = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {

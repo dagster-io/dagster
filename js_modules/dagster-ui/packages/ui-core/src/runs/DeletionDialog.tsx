@@ -1,14 +1,13 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
+  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   Mono,
+  ProgressBar,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
 
@@ -140,7 +139,7 @@ export const DeletionDialog = (props: Props) => {
     switch (state.step) {
       case 'initial':
         return (
-          <Group direction="column" spacing={8}>
+          <Box flex={{direction: 'column', gap: 8}}>
             <div>{`${count} ${count === 1 ? 'run' : 'runs'} will be deleted.`}</div>
             <div>
               Deleting runs will not prevent them from continuing to execute, and may result in
@@ -164,19 +163,19 @@ export const DeletionDialog = (props: Props) => {
               </div>
             ) : null}
             <div>Do you wish to continue with deletion?</div>
-          </Group>
+          </Box>
         );
       case 'deleting':
       case 'completed':
         const value = count > 0 ? state.deletion.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
+          <Box flex={{direction: 'column', gap: 8}}>
             <div>Deleting…</div>
-            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'deleting' ? (
               <NavigationBlock message="Deletion in progress, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -232,34 +231,34 @@ export const DeletionDialog = (props: Props) => {
     const successCount = state.deletion.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="center">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>{`Successfully deleted ${successCount} ${
               successCount === 1 ? 'run' : 'runs'
             }.`}</div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="center">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
-            </Group>
+            </Box>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Group direction="row" spacing={8}>
+                  <Box flex={{direction: 'row', gap: 8}}>
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -274,10 +273,10 @@ export const DeletionDialog = (props: Props) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

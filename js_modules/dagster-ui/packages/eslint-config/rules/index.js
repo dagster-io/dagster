@@ -1,5 +1,5 @@
-/* eslint-disable */
 const projectName = 'dagster-rules';
+const packageJson = require('../package.json');
 
 const rules = {
   'missing-graphql-variables-type': require('./missing-graphql-variables-type'),
@@ -10,6 +10,10 @@ const rules = {
 };
 
 module.exports = {
+  meta: {
+    name: 'eslint-plugin-dagster-rules',
+    version: packageJson.version,
+  },
   parser: `@typescript-eslint/parser`,
   configs: {
     all: {

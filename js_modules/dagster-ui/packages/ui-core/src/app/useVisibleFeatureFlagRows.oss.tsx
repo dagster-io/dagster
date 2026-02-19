@@ -12,14 +12,6 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagSidebarResources,
   },
   {
-    key: 'Display faceted asset graph nodes',
-    flagType: FeatureFlag.flagAssetNodeFacets,
-  },
-  {
-    key: 'Display integrations marketplace',
-    flagType: FeatureFlag.flagMarketplace,
-  },
-  {
     key: 'Disable WebSockets',
     flagType: FeatureFlag.flagDisableWebsockets,
   },
@@ -32,11 +24,7 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
   },
   {
-    key: 'Use new navigation layout',
-    flagType: FeatureFlag.flagNavigationUpdate,
-  },
-  {
-    key: 'Use new hierarchical asset catalog sidebar',
+    key: 'Use new catalog layout (beta)',
     flagType: FeatureFlag.flagAssetCatalogSidebar,
   },
 ];

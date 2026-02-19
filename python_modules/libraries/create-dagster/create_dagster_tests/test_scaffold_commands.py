@@ -1,18 +1,20 @@
 import os
 import subprocess
 import sys
+import uuid
 from pathlib import Path
-from typing import Literal, Optional, TypeAlias, get_args
+from typing import Literal, TypeAlias, get_args
 
 import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
+import yaml
 from create_dagster.scaffold import _get_editable_dagster_from_env
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
     create_toml_node,
-    discover_git_root,
+    discover_repo_root,
     get_toml_node,
     has_toml_node,
     modify_toml_as_dict,
@@ -49,7 +51,7 @@ from dagster_test.dg_utils.utils import (
     ],
 )
 def test_scaffold_workspace_command_success(
-    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str]
+    monkeypatch, cli_args: tuple[str, ...], input_str: str | None
 ) -> None:
     monkeypatch.setattr("create_dagster.cli.scaffold.is_uv_installed", lambda: True)
 
@@ -76,7 +78,7 @@ def test_scaffold_workspace_command_success(
 
 
 def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
@@ -134,13 +136,13 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
 def test_scaffold_project_success(
     monkeypatch,
     cli_args: tuple[str, ...],
-    input_str: Optional[str],
+    input_str: str | None,
     opts: dict[str, object],
 ) -> None:
     use_preexisting_venv = check.opt_bool_elem(opts, "use_preexisting_venv") or False
     no_uv = check.opt_bool_elem(opts, "no_uv") or False
     # Remove when we are able to test without editable install
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     if no_uv:
         monkeypatch.setattr("create_dagster.cli.scaffold.is_uv_installed", lambda: False)
@@ -169,6 +171,11 @@ def test_scaffold_project_success(
         # Standalone projects should have README.md and .gitignore
         assert Path("foo-bar/README.md").exists()
         assert Path("foo-bar/.gitignore").exists()
+        # Verify .dg/telemetry.yaml exists and contains a valid UUID
+        assert Path("foo-bar/.dg/telemetry.yaml").exists()
+        telemetry_content = yaml.safe_load(Path("foo-bar/.dg/telemetry.yaml").read_text())
+        assert "project_id" in telemetry_content
+        uuid.UUID(telemetry_content["project_id"])  # Raises if invalid UUID
 
         # Verify README.md contains the project name
         readme_content = Path("foo-bar/README.md").read_text()
@@ -190,7 +197,7 @@ def test_scaffold_project_success(
 
 def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
     # Remove when we are able to test without editable install
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
@@ -209,6 +216,11 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         # Workspace projects should NOT have README.md and .gitignore
         assert not Path("projects/foo-bar/README.md").exists()
         assert not Path("projects/foo-bar/.gitignore").exists()
+        # Verify .dg/telemetry.yaml exists and contains a valid UUID
+        assert Path("projects/foo-bar/.dg/telemetry.yaml").exists()
+        telemetry_content = yaml.safe_load(Path("projects/foo-bar/.dg/telemetry.yaml").read_text())
+        assert "project_id" in telemetry_content
+        uuid.UUID(telemetry_content["project_id"])  # Raises if invalid UUID
 
         # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
@@ -256,7 +268,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
 
 def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monkeypatch):
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with (
         ProxyRunner.test() as runner,
@@ -288,7 +300,7 @@ EditableOption: TypeAlias = Literal["--use-editable-dagster"]
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
 def test_scaffold_project_editable_dagster_success(option: EditableOption, monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, use_editable_dagster=False),
@@ -396,13 +408,12 @@ def validate_published_pyproject_toml(
 
 
 def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     monkeypatch.setenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR, "1")
     with (
         ProxyRunner.test() as runner,
         runner.isolated_filesystem(),
-        environ({"DAGSTER_GIT_REPO_DIR": str(dagster_git_repo_dir)}),
     ):
         # We need to use subprocess rather than runner here because the environment variable affects
         # CLI defaults set at process startup.
@@ -415,6 +426,8 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
 
 
 def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke_create_dagster("project", "--no-uv-sync", "foo-bar")
         assert_runner_result(result)
@@ -437,6 +450,8 @@ def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None
                 "./foo-bar",
                 "-e",
                 f"{root}/python_modules/dagster",
+                "-e",
+                f"{root}/python_modules/dagster-pipes",
                 "-e",
                 f"{root}/python_modules/libraries/dagster-shared",
             ],

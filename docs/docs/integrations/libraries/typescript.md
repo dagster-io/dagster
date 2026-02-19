@@ -1,6 +1,7 @@
 ---
 title: Dagster & TypeScript
 sidebar_label: TypeScript
+sidebar_position: 1
 description: The dagster-pipes-typescript npm package is a Dagster Pipes implementation for the TypeScript programming language that allows integration between any TypeScript process and the Dagster orchestrator.
 tags: [dagster-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/pipes/implementations/typescript

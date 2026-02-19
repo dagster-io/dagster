@@ -1,6 +1,6 @@
 import random
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
@@ -502,8 +502,8 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         description: str,
         partitions_def: PartitionsDefinition,
         true_partition_keys: Sequence[str],
-        candidate_partition_keys: Optional[Sequence[str]] = None,
-        child_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
+        candidate_partition_keys: Sequence[str] | None = None,
+        child_evaluations: Sequence[AutomationConditionEvaluation] | None = None,
     ) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=AutomationConditionNodeSnapshot(
@@ -881,7 +881,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert since_node["sinceMetadata"] is not None
         since_metadata_result = since_node["sinceMetadata"]
 
-        assert since_metadata_result["triggerEvaluationId"] == 5
+        assert since_metadata_result["triggerEvaluationId"] == "5"
         assert since_metadata_result["triggerTimestamp"] == 1234567890.0
-        assert since_metadata_result["resetEvaluationId"] == 3
+        assert since_metadata_result["resetEvaluationId"] == "3"
         assert since_metadata_result["resetTimestamp"] == 1234567880.0

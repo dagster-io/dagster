@@ -1,5 +1,5 @@
 dev_webapp:
-	NEXT_PUBLIC_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn start
+	NEXT_PUBLIC_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn workspace @dagster-io/app-oss start
 
 generate-graphql:
 	yarn workspace @dagster-io/ui-core generate-graphql
@@ -9,6 +9,9 @@ generate-perms:
 
 ts:
 	yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-core ts && yarn workspace @dagster-io/ui-components ts
+
+tsgo:
+	yarn workspace @dagster-io/app-oss tsgo && yarn workspace @dagster-io/ui-core tsgo && yarn workspace @dagster-io/ui-components tsgo
 
 lint:
 	yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui-components lint

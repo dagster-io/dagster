@@ -60,12 +60,17 @@ class IntSourceType(ScalarUnion):
         key, cfg = next(iter(value.items()))
         check.invariant(key == "env", "Only valid key is env")
         value = _ensure_env_variable(cfg)
+        validation_failed = False
         try:
             return int(value)
-        except ValueError as e:
+        except ValueError:
+            # raise exception separately to ensure the exception chain doesn't leak the value of the env var
+            validation_failed = True
+
+        if validation_failed:
             raise PostProcessingError(
-                f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an int.'
-            ) from e
+                f'Value stored in env variable "{cfg}" cannot be coerced into an int.'
+            )
 
 
 class BoolSourceType(ScalarUnion):
@@ -87,12 +92,18 @@ class BoolSourceType(ScalarUnion):
         key, cfg = next(iter(value.items()))
         check.invariant(key == "env", "Only valid key is env")
         value = _ensure_env_variable(cfg)
+        validation_failed = False
+
         try:
             return get_boolean_string_value(value)
-        except ValueError as e:
+        except ValueError:
+            # raise exception separately to ensure the exception chain doesn't leak the value of the env var
+            validation_failed = True
+
+        if validation_failed:
             raise PostProcessingError(
-                f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an bool.'
-            ) from e
+                f'Value stored in env variable "{cfg}" cannot be coerced into an bool.'
+            )
 
 
 StringSource: StringSourceType = StringSourceType()

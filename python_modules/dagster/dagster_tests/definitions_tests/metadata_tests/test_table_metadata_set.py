@@ -3,6 +3,7 @@ import pytest
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
+from pydantic import ValidationError
 
 
 @pytest.fixture(autouse=True)
@@ -121,3 +122,43 @@ def test_column_lineage() -> None:
     materialization = dg.AssetMaterialization(asset_key="foo", metadata=splat_table_metadata)
     extracted_table_metadata = TableMetadataSet.extract(materialization.metadata)
     assert extracted_table_metadata.column_lineage == expected_column_lineage
+
+
+def test_extract_normalized_table_name() -> None:
+    invalid_metadata = {
+        "dagster/column_schema": "foo",
+        "dagster/table_name": dg.FloatMetadataValue(1.0),
+    }
+
+    with pytest.raises(ValidationError):
+        TableMetadataSet.extract(invalid_metadata)
+
+    assert TableMetadataSet.extract_normalized_table_name(invalid_metadata) is None
+
+    invalid_metadata_with_valid_table_name = {
+        "dagster/column_schema": "foo",
+        "dagster/table_name": "BAR",
+    }
+
+    with pytest.raises(ValidationError):
+        TableMetadataSet.extract(invalid_metadata_with_valid_table_name)
+
+    assert (
+        TableMetadataSet.extract_normalized_table_name(invalid_metadata_with_valid_table_name)
+        == "bar"
+    )
+
+    invalid_metadata_with_valid_legacy_table_name = {
+        "dagster/column_schema": "foo",
+        "dagster/relation_identifier": "BAR",
+    }
+
+    with pytest.raises(ValidationError):
+        TableMetadataSet.extract(invalid_metadata_with_valid_legacy_table_name)
+
+    assert (
+        TableMetadataSet.extract_normalized_table_name(
+            invalid_metadata_with_valid_legacy_table_name
+        )
+        == "bar"
+    )

@@ -1,13 +1,12 @@
 import subprocess
 from collections.abc import Sequence
-from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("dagster-dg-cli")
 
 
-def _subprocess(command: Sequence[str], cwd: Optional[str] = None) -> str:
+def _subprocess(command: Sequence[str], cwd: str | None = None) -> str:
     """Execute a subprocess command and return decoded output.
 
     Wrapper around subprocess.check_output that captures both stdout and stderr,
@@ -297,7 +296,7 @@ async def list_available_integrations(project_path: str) -> str:
     return _subprocess(
         [
             "dg",
-            "docs",
+            "utils",
             "integrations",
             "--json",
         ],

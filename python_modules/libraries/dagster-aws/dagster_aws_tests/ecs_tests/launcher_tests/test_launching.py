@@ -39,7 +39,8 @@ def test_default_launcher(
     task_long_arn_format,
 ):
     ecs.put_account_setting(name="taskLongArnFormat", value=task_long_arn_format)
-    assert not run.tags
+    assert "ecs/task_arn" not in run.tags
+    assert "ecs/cluster" not in run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -213,7 +214,8 @@ def test_launcher_dont_use_current_task(
     cluster = instance.run_launcher.run_task_kwargs["cluster"]
     assert cluster == "my_cluster"
 
-    assert not run.tags
+    assert "ecs/task_arn" not in run.tags
+    assert "ecs/cluster" not in run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
@@ -1444,7 +1446,8 @@ def test_custom_launcher(
     custom_workspace,
     custom_run,
 ):
-    assert not custom_run.tags
+    assert "ecs/task_arn" not in custom_run.tags
+    assert "ecs/cluster" not in custom_run.tags
 
     initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -1575,3 +1578,56 @@ def test_removing_network_configuration(
 
         assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
         assert "networkConfiguration" not in task
+
+
+def test_container_overrides(ecs, instance, workspace, run, task_definition):
+    # By default, no resource requirements
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    container_override = task.get("overrides").get("containerOverrides")[0]
+    assert container_override.get("name") == "run"
+    assert not container_override.get("resourceRequirements")
+
+    # Override with resource requirements (e.g., GPU)
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    container_overrides = {
+        "resourceRequirements": [{"type": "GPU", "value": "1"}],
+    }
+    instance.add_run_tags(run.run_id, {"ecs/container_overrides": json.dumps(container_overrides)})
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = next(iter(set(tasks).difference(existing_tasks)))
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    container_override = task.get("overrides").get("containerOverrides")[0]
+    assert container_override.get("name") == "run"
+    assert container_override.get("resourceRequirements") == [{"type": "GPU", "value": "1"}]
+
+    # Override with multiple fields
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    container_overrides = {
+        "resourceRequirements": [{"type": "GPU", "value": "2"}],
+        "environment": [{"name": "CUSTOM_VAR", "value": "custom_value"}],
+    }
+    instance.add_run_tags(run.run_id, {"ecs/container_overrides": json.dumps(container_overrides)})
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = next(iter(set(tasks).difference(existing_tasks)))
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    container_override = task.get("overrides").get("containerOverrides")[0]
+    assert container_override.get("name") == "run"
+    assert container_override.get("resourceRequirements") == [{"type": "GPU", "value": "2"}]
+    assert container_override.get("environment") == [
+        {"name": "CUSTOM_VAR", "value": "custom_value"}
+    ]

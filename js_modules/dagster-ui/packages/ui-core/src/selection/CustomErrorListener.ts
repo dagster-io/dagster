@@ -1,4 +1,4 @@
-import {ANTLRErrorListener, RecognitionException, Recognizer} from 'antlr4ts';
+import {BaseErrorListener, RecognitionException, Token} from 'antlr4ng';
 
 export type SyntaxError = {
   message: string;
@@ -7,20 +7,21 @@ export type SyntaxError = {
   offendingSymbol?: string | null | undefined;
 };
 
-export class CustomErrorListener implements ANTLRErrorListener<any> {
+export class CustomErrorListener extends BaseErrorListener {
   private errors: SyntaxError[];
 
   constructor() {
+    super();
     this.errors = [];
   }
 
-  syntaxError(
-    _recognizer: Recognizer<any, any>,
-    offendingSymbol: any,
+  override syntaxError(
+    _recognizer: unknown,
+    offendingSymbol: Token | null,
     _line: number,
     charPositionInLine: number,
     msg: string,
-    _e: RecognitionException | undefined,
+    _e: RecognitionException | null,
   ): void {
     let from = charPositionInLine;
     if (offendingSymbol?.text === '<EOF>') {

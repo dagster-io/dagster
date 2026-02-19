@@ -121,7 +121,7 @@ class Resolvable:
         cls,
         yaml: str,
         *,
-        scope: Optional[Mapping[str, Any]] = None,
+        scope: Mapping[str, Any] | None = None,
     ):
         parsed_and_src_tree = try_parse_yaml_with_source_position(yaml)
         model_cls = cls.model()
@@ -178,7 +178,11 @@ def derive_model_type(
 
             field_infos = []
             if annotation_info.field_info:
-                field_infos.append(annotation_info.field_info)
+                # remove the default_factory as we set a `default` marker field on the Model type
+                # for unserializable defaults (and functions are not serializable)
+                field_infos.append(
+                    FieldInfo.merge_field_infos(annotation_info.field_info, default_factory=None)
+                )
 
             if annotation_info.has_default:
                 # if the annotation has a serializable default
@@ -208,7 +212,7 @@ def derive_model_type(
 
             # make all fields injectable
             if field_type != str:
-                field_type = Union[field_type, str]
+                field_type = field_type | str
 
             model_fields[field_name] = (
                 field_type,
@@ -266,7 +270,7 @@ class AnnotationInfo:
     type: Any
     default: Any
     has_default: bool
-    field_info: Optional[FieldInfo]
+    field_info: FieldInfo | None
 
 
 def _get_annotations(
@@ -318,7 +322,7 @@ def _get_annotations(
 
 def _get_init_kwargs(
     target_type: type[Resolvable],
-) -> Optional[dict[str, AnnotationInfo]]:
+) -> dict[str, AnnotationInfo] | None:
     if target_type.__init__ is object.__init__:
         return None
 
@@ -427,7 +431,7 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     )
 
 
-def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Resolver]:
+def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Resolver | None:
     if _is_implicitly_resolved_type(annotation):
         return Resolver.default()
 
@@ -508,7 +512,7 @@ def _wrap(ttype, path: Sequence[_TypeContainer]):
     result_type = ttype
     for container in reversed(path):
         if container is _TypeContainer.OPTIONAL:
-            result_type = Optional[result_type]
+            result_type = Optional[result_type]  # noqa: UP045
         elif container is _TypeContainer.SEQUENCE:
             # use tuple instead of Sequence for perf
             result_type = tuple[result_type, ...]

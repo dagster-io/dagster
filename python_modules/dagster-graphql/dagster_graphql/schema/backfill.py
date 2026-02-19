@@ -29,7 +29,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 from dagster_shared import seven
-from dagster_shared.error import DagsterError
 
 from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
@@ -194,7 +193,7 @@ class GrapheneAssetPartitions(graphene.ObjectType):
     class Meta:
         name = "AssetPartitions"
 
-    def __init__(self, asset_key: AssetKey, partitions_subset: Optional[PartitionsSubset]):
+    def __init__(self, asset_key: AssetKey, partitions_subset: PartitionsSubset | None):
         if partitions_subset is None:
             partitions = None
         else:
@@ -221,7 +220,7 @@ class GrapheneAssetPartitionRange(graphene.ObjectType):
     class Meta:
         name = "AssetPartitionRange"
 
-    def __init__(self, asset_key: AssetKey, partition_range: Optional[PartitionKeyRange]):
+    def __init__(self, asset_key: AssetKey, partition_range: PartitionKeyRange | None):
         super().__init__(
             assetKey=GrapheneAssetKey(path=asset_key.path),
             partitionRange=(
@@ -252,7 +251,7 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
             root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
                 graphene_info.context
             )
-        except DagsterError:
+        except Exception:
             logging.getLogger("dagster").warning(
                 "Error generating root target partitions", exc_info=True
             )
@@ -412,7 +411,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             assetCheckSelection=[],
         )
 
-    def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[RemotePartitionSet]:
+    def _get_partition_set(self, graphene_info: ResolveInfo) -> RemotePartitionSet | None:
         if self._backfill_job.partition_set_origin is None:
             return None
 
@@ -521,7 +520,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
         return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
 
-    def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
+    def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> float | None:
         if self._backfill_job.backfill_end_timestamp is not None:
             return self._backfill_job.backfill_end_timestamp
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
@@ -539,16 +538,16 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         return max_end_time
 
-    def resolve_endTime(self, graphene_info: ResolveInfo) -> Optional[float]:
+    def resolve_endTime(self, graphene_info: ResolveInfo) -> float | None:
         return self.resolve_endTimestamp(graphene_info)
 
     def resolve_isValidSerialization(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_valid_serialization(_graphene_info.context)
 
-    def resolve_partitionNames(self, _graphene_info: ResolveInfo) -> Optional[Sequence[str]]:
+    def resolve_partitionNames(self, _graphene_info: ResolveInfo) -> Sequence[str] | None:
         return self._backfill_job.get_partition_names(_graphene_info.context)
 
-    def resolve_numPartitions(self, _graphene_info: ResolveInfo) -> Optional[int]:
+    def resolve_numPartitions(self, _graphene_info: ResolveInfo) -> int | None:
         return self._backfill_job.get_num_partitions(_graphene_info.context)
 
     def resolve_numCancelable(self, _graphene_info: ResolveInfo) -> int:
@@ -602,7 +601,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_partitionsTargetedForAssetKey(
         self, graphene_info: ResolveInfo, asset_key
-    ) -> Optional[PartitionsSubset]:
+    ) -> PartitionsSubset | None:
         from dagster._core.definitions.events import AssetKey
 
         if not self._backfill_job.is_asset_backfill:
@@ -618,13 +617,13 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_assetBackfillData(
         self, graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAssetBackfillData]:
+    ) -> GrapheneAssetBackfillData | None:
         if not self._backfill_job.is_asset_backfill:
             return None
 
         return GrapheneAssetBackfillData(self._backfill_job)
 
-    def resolve_error(self, _graphene_info: ResolveInfo) -> Optional[GraphenePythonError]:
+    def resolve_error(self, _graphene_info: ResolveInfo) -> GraphenePythonError | None:
         if self._backfill_job.error:
             return GraphenePythonError(self._backfill_job.error)
         return None
@@ -639,16 +638,16 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, self._backfill_job
         )
 
-    def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_user(self, _graphene_info: ResolveInfo) -> str | None:
         return self._backfill_job.user
 
-    def resolve_title(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_title(self, _graphene_info: ResolveInfo) -> str | None:
         return self._backfill_job.title
 
-    def resolve_description(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_description(self, _graphene_info: ResolveInfo) -> str | None:
         return self._backfill_job.description
 
-    def resolve_logEvents(self, graphene_info: ResolveInfo, cursor: Optional[str] = None):
+    def resolve_logEvents(self, graphene_info: ResolveInfo, cursor: str | None = None):
         from dagster_graphql.schema.instigation import (
             GrapheneInstigationEvent,
             GrapheneInstigationEventConnection,

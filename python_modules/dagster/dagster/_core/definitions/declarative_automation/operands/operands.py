@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.serdes.utils import SerializableTimeDelta
@@ -102,7 +101,9 @@ class RunInProgressAutomationCondition(SubsetAutomationCondition):
         return "run_in_progress"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return await context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
+        return await context.asset_graph_view.compute_run_in_progress_subset(
+            key=context.key, from_subset=context.candidate_subset
+        )
 
 
 @whitelist_for_serdes
@@ -113,7 +114,9 @@ class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
         return "backfill_in_progress"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return await context.asset_graph_view.compute_backfill_in_progress_subset(key=context.key)
+        return await context.asset_graph_view.compute_backfill_in_progress_subset(
+            key=context.key, from_subset=context.candidate_subset
+        )
 
 
 @whitelist_for_serdes(storage_name="FailedAutomationCondition")
@@ -124,7 +127,9 @@ class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
         return "execution_failed"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return await context.asset_graph_view.compute_execution_failed_subset(key=context.key)
+        return await context.asset_graph_view.compute_execution_failed_subset(
+            key=context.key, from_subset=context.candidate_subset
+        )
 
 
 @whitelist_for_serdes
@@ -259,11 +264,11 @@ class CronTickPassedCondition(SubsetAutomationCondition):
 @whitelist_for_serdes
 @record
 class InLatestTimeWindowCondition(SubsetAutomationCondition):
-    serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
+    serializable_lookback_timedelta: SerializableTimeDelta | None = None
 
     @staticmethod
     def from_lookback_delta(
-        lookback_delta: Optional[datetime.timedelta],
+        lookback_delta: datetime.timedelta | None,
     ) -> "InLatestTimeWindowCondition":
         return InLatestTimeWindowCondition(
             serializable_lookback_timedelta=SerializableTimeDelta.from_timedelta(lookback_delta)
@@ -272,7 +277,7 @@ class InLatestTimeWindowCondition(SubsetAutomationCondition):
         )
 
     @property
-    def lookback_timedelta(self) -> Optional[datetime.timedelta]:
+    def lookback_timedelta(self) -> datetime.timedelta | None:
         return (
             self.serializable_lookback_timedelta.to_timedelta()
             if self.serializable_lookback_timedelta
@@ -322,5 +327,5 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
             else AssetCheckExecutionResolvedStatus.FAILED
         )
         return await context.asset_graph_view.compute_subset_with_status(
-            key=context.key, status=target_status
+            key=context.key, status=target_status, from_subset=context.candidate_subset
         )

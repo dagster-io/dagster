@@ -5,6 +5,7 @@ import {
   ChartEvent,
   Chart as ChartJS,
   ChartOptions,
+  Tooltip as ChartTooltip,
   LineElement,
   LinearScale,
   PointElement,
@@ -19,7 +20,7 @@ import {TimeContext} from '../app/time/TimeContext';
 import {timestampToString} from '../app/time/timestampToString';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, TimeScale);
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, TimeScale, ChartTooltip);
 
 export interface AssetValueGraphData {
   minY: number;
@@ -149,7 +150,7 @@ export const AssetValueGraph = (props: {
             return points.map(({parsed}) => {
               if (props.data.xAxis === 'time') {
                 return timestampToString({
-                  timestamp: {ms: parsed.x},
+                  timestamp: {ms: parsed.x ?? 0},
                   locale,
                   timezone: userTimezone,
                   timeFormat: {},
@@ -181,5 +182,9 @@ export const AssetValueGraph = (props: {
     },
   };
 
-  return <Line data={graphData} height={props.height || 100} options={options} key={props.width} />;
+  return (
+    <div style={{height: '100%', position: 'relative'}}>
+      <Line data={graphData} options={options} />
+    </div>
+  );
 };

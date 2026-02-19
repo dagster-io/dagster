@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-
 import {CaptionMono} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {CSSProperties, useRef} from 'react';

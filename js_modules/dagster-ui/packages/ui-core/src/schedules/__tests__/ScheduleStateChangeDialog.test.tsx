@@ -101,6 +101,7 @@ describe('ScheduleStateChangeDialog', () => {
 
   describe('Mutation: start', () => {
     it('starts schedules', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStartAlaskaSuccess(100), buildStartColoradoSuccess(100)];
 
       render(
@@ -115,7 +116,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -129,6 +130,7 @@ describe('ScheduleStateChangeDialog', () => {
     });
 
     it('shows error when starting a schedule fails', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStartAlaskaSuccess(100), buildStartColoradoError(100)];
 
       render(
@@ -143,7 +145,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -165,6 +167,7 @@ describe('ScheduleStateChangeDialog', () => {
 
   describe('Mutation: stop', () => {
     it('stops schedules', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStopDelawareSuccess(100), buildStopHawaiiSuccess(100)];
 
       render(
@@ -179,7 +182,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -193,6 +196,7 @@ describe('ScheduleStateChangeDialog', () => {
     });
 
     it('shows error when stopping a schedule fails', async () => {
+      const user = userEvent.setup();
       const mocks = [buildStopDelawareSuccess(100), buildStopHawaiiError(100)];
 
       render(
@@ -207,7 +211,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      await user.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 
 class DimensionDependency(NamedTuple):
     partition_mapping: PartitionMapping
-    upstream_dimension_name: Optional[str] = None
-    downstream_dimension_name: Optional[str] = None
+    upstream_dimension_name: str | None = None
+    downstream_dimension_name: str | None = None
 
 
 class BaseMultiPartitionMapping(ABC):
@@ -39,7 +39,7 @@ class BaseMultiPartitionMapping(ABC):
     ) -> Sequence[DimensionDependency]: ...
 
     def get_partitions_def(
-        self, partitions_def: PartitionsDefinition, dimension_name: Optional[str]
+        self, partitions_def: PartitionsDefinition, dimension_name: str | None
     ) -> PartitionsDefinition:
         if isinstance(partitions_def, MultiPartitionsDefinition):
             if not isinstance(dimension_name, str):
@@ -53,7 +53,7 @@ class BaseMultiPartitionMapping(ABC):
         a_partitions_subset: PartitionsSubset,
         b_partitions_def: PartitionsDefinition,
         a_upstream_of_b: bool,
-    ) -> Union[UpstreamPartitionsResult, PartitionsSubset]:
+    ) -> UpstreamPartitionsResult | PartitionsSubset:
         """Given two partitions definitions a_partitions_def and b_partitions_def that have a dependency
         relationship (a_upstream_of_b is True if a_partitions_def is upstream of b_partitions_def),
         and a_partition_keys, a list of partition keys in a_partitions_def, returns a list of
@@ -72,12 +72,12 @@ class BaseMultiPartitionMapping(ABC):
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
         # partition keys in b_partitions_def that are dependencies of that partition
-        dep_b_keys_by_a_dim_and_key: dict[Optional[str], dict[Optional[str], list[str]]] = (
-            defaultdict(lambda: defaultdict(list))
+        dep_b_keys_by_a_dim_and_key: dict[str | None, dict[str | None, list[str]]] = defaultdict(
+            lambda: defaultdict(list)
         )
         required_but_nonexistent_upstream_partitions = set()
 
-        b_dimension_partitions_def_by_name: dict[Optional[str], PartitionsDefinition] = (
+        b_dimension_partitions_def_by_name: dict[str | None, PartitionsDefinition] = (
             {
                 dimension.name: dimension.partitions_def
                 for dimension in b_partitions_def.partitions_defs
@@ -226,10 +226,10 @@ class BaseMultiPartitionMapping(ABC):
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_subset: PartitionsSubset | None,
+        downstream_partitions_def: PartitionsDefinition | None,
         upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         with partition_loading_context(current_time, dynamic_partitions_store):
@@ -253,7 +253,7 @@ class BaseMultiPartitionMapping(ABC):
         upstream_partitions_subset: PartitionsSubset,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         with partition_loading_context(current_time, dynamic_partitions_store):

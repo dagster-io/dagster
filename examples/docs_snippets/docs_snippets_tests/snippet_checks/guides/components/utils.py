@@ -142,6 +142,7 @@ def get_editable_install_cmd_for_project(
             EDITABLE_DIR.parent / "dagster-pipes",
             EDITABLE_DIR.parent / "dagster-test",
             EDITABLE_DIR.parent / "dagster-webserver",
+            EDITABLE_DIR.parent / "dagster-graphql",
             EDITABLE_DIR / "dagster-shared",
         ],
     )
@@ -153,7 +154,7 @@ def get_editable_install_cmd_for_paths(
     if package_manager == "uv":
         lines = [
             "uv add --editable",
-            *[(str(path)) for path in paths if path != Path(".")],
+            *[str(path) for path in paths if path != Path(".")],
         ]
     elif package_manager == "pip":
         lines = [

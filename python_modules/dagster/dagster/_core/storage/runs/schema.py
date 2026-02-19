@@ -118,7 +118,7 @@ BulkActionsTable = db.Table(
     db.Column("key", db.String(32), unique=True, nullable=False),
     db.Column("status", db.String(255), nullable=False),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
-    db.Column("body", db.Text),
+    db.Column("body", MySQLCompatabilityTypes.LongText),
     db.Column("action_type", db.String(32)),
     db.Column("selector_id", db.Text),
     db.Column("job_name", db.Text, nullable=True),

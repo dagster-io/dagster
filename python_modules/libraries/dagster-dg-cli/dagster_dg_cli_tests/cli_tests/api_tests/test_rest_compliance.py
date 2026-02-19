@@ -1,6 +1,7 @@
 """Test suite to ensure REST compliance for Dagster Plus API interfaces."""
 
 import inspect
+from types import UnionType
 from typing import Union, get_args, get_origin
 
 import pytest
@@ -97,7 +98,7 @@ class TestRestCompliance:
                     return_type = sig.return_annotation
 
                     # Get the actual class if it's Optional
-                    if get_origin(return_type) in (Union, type(Union)):
+                    if get_origin(return_type) in (Union, UnionType):
                         args = get_args(return_type)
                         non_none_args = [arg for arg in args if arg is not type(None)]
                         if non_none_args:
@@ -144,7 +145,7 @@ class TestRestCompliance:
                         # Parameters with defaults should be Optional
                         if param.annotation != inspect.Parameter.empty:
                             origin = get_origin(param.annotation)
-                            is_optional = origin in (Union, type(Union)) and type(None) in get_args(
+                            is_optional = origin in (Union, UnionType) and type(None) in get_args(
                                 param.annotation
                             )
                             assert is_optional or param.default is None, (

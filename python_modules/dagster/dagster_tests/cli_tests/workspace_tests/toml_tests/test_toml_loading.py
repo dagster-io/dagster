@@ -72,52 +72,52 @@ def test_load_multiple_modules_from_toml():
 def test_load_mixed_modules_and_module_name_from_toml():
     with raises(
         ValueError,
-        match="Only one of 'module_name' or 'modules' should be specified, not both.",
+        match=r"Only one of 'module_name' or 'modules' should be specified, not both.",
     ):
         get_origins_from_toml(dg.file_relative_path(__file__, "mixed_modules_and_module_name.toml"))
 
 
 def test_load_invalid_empty_modules_from_toml():
-    with raises(ValueError, match="'modules' list should not be empty if specified."):
+    with raises(ValueError, match=r"'modules' list should not be empty if specified."):
         get_origins_from_toml(dg.file_relative_path(__file__, "invalid_empty_modules.toml"))
 
 
 def test_is_valid_modules_list_from_toml():
     # Only matchess first error of many, rest is covered below
-    with raises(ValueError, match="Dictionary at index 0 does not contain the key 'type'."):
+    with raises(ValueError, match=r"Dictionary at index 0 does not contain the key 'type'."):
         get_origins_from_toml(dg.file_relative_path(__file__, "invalid_modules_dict.toml"))
 
 
 def test_is_valid_modules_list_not_a_list():
-    with raises(ValueError, match="Modules should be a list."):
+    with raises(ValueError, match=r"Modules should be a list."):
         is_valid_modules_list("not a list")  # pyright: ignore[reportArgumentType]
 
 
 def test_is_valid_modules_list_item_not_dict():
     modules = ["not a dictionary"]
-    with raises(ValueError, match="Item at index 0 is not a dictionary."):
+    with raises(ValueError, match=r"Item at index 0 is not a dictionary."):
         is_valid_modules_list(modules)  # pyright: ignore[reportArgumentType]
 
 
 def test_is_valid_modules_list_missing_type():
     modules = [{"name": "foo"}]
-    with raises(ValueError, match="Dictionary at index 0 does not contain the key 'type'."):
+    with raises(ValueError, match=r"Dictionary at index 0 does not contain the key 'type'."):
         is_valid_modules_list(modules)
 
 
 def test_is_valid_modules_list_type_not_string():
     modules = [{"type": 123, "name": "foo"}]
-    with raises(ValueError, match="The 'type' value in dictionary at index 0 is not a string."):
+    with raises(ValueError, match=r"The 'type' value in dictionary at index 0 is not a string."):
         is_valid_modules_list(modules)
 
 
 def test_is_valid_modules_list_missing_name():
     modules = [{"type": "module"}]
-    with raises(ValueError, match="Dictionary at index 0 does not contain the key 'name'."):
+    with raises(ValueError, match=r"Dictionary at index 0 does not contain the key 'name'."):
         is_valid_modules_list(modules)
 
 
 def test_is_valid_modules_list_name_not_string():
     modules = [{"type": "module", "name": 123}]
-    with raises(ValueError, match="The 'name' value in dictionary at index 0 is not a string."):
+    with raises(ValueError, match=r"The 'name' value in dictionary at index 0 is not a string."):
         is_valid_modules_list(modules)

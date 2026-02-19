@@ -1,15 +1,15 @@
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetGraphQueryItem} from '../../../asset-graph/types';
 import {AssetHealthStatus} from '../../../graphql/types';
 import {SUB_STATUSES, getAttributesMap} from '../util';
 
 // Mock the observeEnabled function
-jest.mock('shared/app/observeEnabled.oss', () => ({
-  observeEnabled: jest.fn(),
+jest.mock('shared/app/assetHealthEnabled.oss', () => ({
+  assetHealthEnabled: jest.fn(),
 }));
 
-const mockObserveEnabled = observeEnabled as jest.MockedFunction<typeof observeEnabled>;
+const mockAssetHealthEnabled = assetHealthEnabled as jest.MockedFunction<typeof assetHealthEnabled>;
 
 describe('getAttributesMap', () => {
   const mockAssets: AssetGraphQueryItem[] = [
@@ -52,7 +52,7 @@ describe('getAttributesMap', () => {
   });
 
   it('should not include status attribute when observeEnabled is false', () => {
-    mockObserveEnabled.mockReturnValue(false);
+    mockAssetHealthEnabled.mockReturnValue(false);
 
     const result = getAttributesMap(mockAssets);
 
@@ -67,8 +67,8 @@ describe('getAttributesMap', () => {
     });
   });
 
-  it('should include status attribute when observeEnabled is true', () => {
-    mockObserveEnabled.mockReturnValue(true);
+  it('should include status attribute when assetHealthEnabled is true', () => {
+    mockAssetHealthEnabled.mockReturnValue(true);
 
     const result = getAttributesMap(mockAssets);
 
@@ -76,7 +76,7 @@ describe('getAttributesMap', () => {
   });
 
   it('should handle empty assets array', () => {
-    mockObserveEnabled.mockReturnValue(true);
+    mockAssetHealthEnabled.mockReturnValue(true);
 
     const result = getAttributesMap([]);
 

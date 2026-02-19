@@ -1,14 +1,14 @@
 import copy
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest import mock
 
 import pytest
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
-from dagster_dbt import build_dbt_asset_selection
+from dagster_dbt import DagsterDbtTranslator, build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
@@ -146,8 +146,8 @@ if TYPE_CHECKING:
 )
 def test_dbt_asset_selection(
     test_jaffle_shop_manifest: dict[str, Any],
-    select: Optional[str],
-    exclude: Optional[str],
+    select: str | None,
+    exclude: str | None,
     expected_dbt_resource_names: set[str],
 ) -> None:
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
@@ -198,8 +198,8 @@ def test_dbt_asset_selection(
 )
 def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
     test_jaffle_shop_manifest: dict[str, Any],
-    select: Optional[str],
-    exclude: Optional[str],
+    select: str | None,
+    exclude: str | None,
     expected_dbt_resource_names: set[str],
 ):
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
@@ -290,7 +290,7 @@ def test_dbt_asset_selection_equality(
 
         assert dbt_manifest_asset_selection != replace(
             dbt_manifest_asset_selection,
-            dagster_dbt_translator=mock.MagicMock(),
+            dagster_dbt_translator=mock.MagicMock(spec=DagsterDbtTranslator),
         )
 
         assert dbt_manifest_asset_selection != replace(

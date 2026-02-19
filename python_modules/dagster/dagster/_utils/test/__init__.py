@@ -62,7 +62,7 @@ from dagster._utils.temp_file import (
 
 
 def create_test_pipeline_execution_context(
-    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    logger_defs: Mapping[str, LoggerDefinition] | None = None,
 ) -> PlanExecutionContext:
     loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
@@ -145,7 +145,7 @@ def build_job_with_input_stubs(
 
 def wrap_op_in_graph(
     op_def: OpDefinition,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Mapping[str, Any] | None = None,
     do_input_mapping: bool = True,
     do_output_mapping: bool = True,
 ) -> GraphDefinition:
@@ -192,14 +192,14 @@ def wrap_op_in_graph(
 
 def wrap_op_in_graph_and_execute(
     op_def: OpDefinition,
-    resources: Optional[Mapping[str, Any]] = None,
-    input_values: Optional[Mapping[str, Any]] = None,
-    tags: Optional[Mapping[str, Any]] = None,
-    run_config: Optional[Mapping[str, object]] = None,
+    resources: Mapping[str, Any] | None = None,
+    input_values: Mapping[str, Any] | None = None,
+    tags: Mapping[str, Any] | None = None,
+    run_config: Mapping[str, object] | None = None,
     raise_on_error: bool = True,
     do_input_mapping: bool = True,
     do_output_mapping: bool = True,
-    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    logger_defs: Mapping[str, LoggerDefinition] | None = None,
 ) -> ExecuteInProcessResult:
     """Execute a single op in an ephemeral, in-process job.
 
@@ -303,8 +303,8 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
     def __init__(
         self,
         base_dir: str,
-        sleep_interval: Optional[float] = None,
-        inst_data: Optional[ConfigurableClassData] = None,
+        sleep_interval: float | None = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._sleep_interval = sleep_interval
         self._check_calls = defaultdict(int)
@@ -317,7 +317,7 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: TestStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: TestStorageConfig
     ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
         return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
 
@@ -328,9 +328,9 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
     def get_records_for_run(
         self,
         run_id: str,
-        cursor: Optional[str] = None,
-        of_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+        limit: int | None = None,
         ascending: bool = True,
     ) -> EventLogConnection:
         self._records_for_run_calls[run_id] = self._records_for_run_calls[run_id] + 1

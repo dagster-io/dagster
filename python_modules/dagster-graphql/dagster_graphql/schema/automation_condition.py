@@ -1,9 +1,9 @@
 import graphene
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
+    get_expanded_label,
 )
 
-from dagster_graphql.schema.asset_condition_evaluations import get_expanded_label
 from dagster_graphql.schema.util import non_null_list
 
 

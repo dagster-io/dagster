@@ -1,4 +1,4 @@
-import {Box, Spinner} from '@dagster-io/ui-components';
+import {Body2, Box, Button, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import React, {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
@@ -11,7 +11,6 @@ import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
-import {AssetNode2025} from '../asset-graph/AssetNode2025';
 import {AssetNodeFacetSettingsButton} from '../asset-graph/AssetNodeFacetSettingsButton';
 import {useSavedAssetNodeFacets} from '../asset-graph/AssetNodeFacets';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
@@ -56,19 +55,21 @@ const AssetNodeLineageGraphInner = ({
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
+  const [forceLargeGraph, setForceLargeGraph] = useState(false);
 
-  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
+  const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
-  const {layout, loading} = useAssetLayout(
+  const {layout, loading, error} = useAssetLayout(
     assetGraphData,
     allGroups,
     useMemo(
       () => ({
         direction,
         flagAssetGraphGroupsPerCodeLocation,
-        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+        forceLargeGraph,
+        facets: Array.from(facets),
       }),
-      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
+      [direction, facets, forceLargeGraph, flagAssetGraphGroupsPerCodeLocation],
     ),
   );
   const viewportEl = useRef<SVGViewportRef>();
@@ -88,6 +89,38 @@ const AssetNodeLineageGraphInner = ({
   };
 
   useLastSavedZoomLevel(viewportEl, layout, assetGraphId);
+
+  if (error === 'cycles') {
+    return (
+      <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <NonIdealState
+          icon="error"
+          title="Cycle detected"
+          description="This graph contains a cycle and cannot be displayed. Check your asset dependencies for circular references."
+        />
+      </Box>
+    );
+  }
+
+  if (error === 'too-large') {
+    return (
+      <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <NonIdealState
+          icon="graph_horizontal"
+          title="Lineage graph too large"
+          description={
+            <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
+              <Body2>
+                This asset has too many upstream or downstream dependencies to render. Try reducing
+                the lineage depth or click below to render anyway.
+              </Body2>
+              <Button onClick={() => setForceLargeGraph(true)}>Show Lineage Graph</Button>
+            </Box>
+          }
+        />
+      </Box>
+    );
+  }
 
   if (!layout || loading) {
     return (
@@ -115,9 +148,7 @@ const AssetNodeLineageGraphInner = ({
         additionalToolbarElements={
           <>
             <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
-            {flagAssetNodeFacets ? (
-              <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
-            ) : undefined}
+            <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
           </>
         }
       >
@@ -189,10 +220,10 @@ const AssetNodeLineageGraphInner = ({
                   >
                     {!graphNode ? (
                       <AssetNodeLink assetKey={{path}} />
-                    ) : scale < MINIMAL_SCALE || (flagAssetNodeFacets && facets.size === 0) ? (
+                    ) : scale < MINIMAL_SCALE || facets.size === 0 ? (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
                         <AssetNodeMinimal
-                          facets={flagAssetNodeFacets ? facets : null}
+                          facets={facets}
                           definition={graphNode.definition}
                           selected={graphNode.id === assetGraphId}
                           height={bounds.height}
@@ -200,18 +231,11 @@ const AssetNodeLineageGraphInner = ({
                       </AssetNodeContextMenuWrapper>
                     ) : (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                        {flagAssetNodeFacets ? (
-                          <AssetNode2025
-                            facets={facets}
-                            definition={graphNode.definition}
-                            selected={graphNode.id === assetGraphId}
-                          />
-                        ) : (
-                          <AssetNode
-                            definition={graphNode.definition}
-                            selected={graphNode.id === assetGraphId}
-                          />
-                        )}
+                        <AssetNode
+                          facets={facets}
+                          definition={graphNode.definition}
+                          selected={graphNode.id === assetGraphId}
+                        />
                       </AssetNodeContextMenuWrapper>
                     )}
                   </foreignObject>

@@ -242,7 +242,11 @@ def test_pdb_works():
     stdout, _stderr = please_dont_hang.communicate(timeout=10, input=b"p foo\nquit\n")
 
     assert "'HELLO'" in stdout.decode()
-    assert "bdb.BdbQuit" in stdout.decode()
+    if sys.version_info < (3, 14):
+        assert "bdb.BdbQuit" in stdout.decode()
+    else:
+        # 3.14 adds a prompt to confirm quitting
+        assert "Quit anyway? [y/n] " in stdout.decode()
 
 
 def test_interrupt_compute_log_tail_grandchild(

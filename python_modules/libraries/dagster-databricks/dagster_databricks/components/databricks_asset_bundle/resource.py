@@ -1,5 +1,12 @@
+import asyncio
 from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
+
+import aiohttp
+
+DATABRICKS_JOBS_API_PATH = "/api/2.1/jobs"
+MAX_CONCURRENT_REQUESTS = 10
+RATE_LIMIT_STATUS_CODE = 429
 
 from dagster import (
     AssetExecutionContext,
@@ -16,6 +23,7 @@ from databricks.sdk.service import compute, jobs
 from pydantic import Field
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DatabricksJob,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
@@ -44,9 +52,64 @@ class DatabricksWorkspace(ConfigurableResource):
             token=self.token,
         )
 
+    async def fetch_jobs(self, databricks_filter: Any) -> list[DatabricksJob]:
+        """Fetches jobs efficiently using async I/O directly from the resource."""
+        headers = {"Authorization": f"Bearer {self.token}"}
+        base_url = self.host.rstrip("/")
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}list"
+            async with session.get(list_url) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                all_jobs_lite = data.get("jobs", [])
+
+        job_ids_to_fetch = []
+        for j in all_jobs_lite:
+            if databricks_filter and not databricks_filter.include_job(j):
+                continue
+            job_ids_to_fetch.append(j["job_id"])
+
+        if not job_ids_to_fetch:
+            return []
+
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+
+        async def _fetch_single_job(job_id: int) -> dict | None:
+            async with semaphore:
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/get?job_id={job_id}"
+                    async with session.get(url) as resp:
+                        if resp.status == MAX_CONCURRENT_REQUESTS:
+                            await asyncio.sleep(1)
+                            return await _fetch_single_job(job_id)
+
+                        if resp.status != 200:
+                            resp.raise_for_status()
+
+                        return await resp.json()
+
+        tasks_coroutines = [_fetch_single_job(jid) for jid in job_ids_to_fetch]
+        raw_jobs = await asyncio.gather(*tasks_coroutines)
+
+        final_jobs = []
+        for rj in raw_jobs:
+            if not rj:
+                continue
+
+            settings = rj.get("settings", {})
+            job = DatabricksJob(
+                job_id=rj["job_id"],
+                name=settings.get("name", "Unnamed Job"),
+                tasks=settings.get("tasks", []),
+            )
+            final_jobs.append(job)
+
+        return final_jobs
+
     def submit_and_poll(
         self, component: "DatabricksAssetBundleComponent", context: AssetExecutionContext
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> Iterator[AssetMaterialization | MaterializeResult]:
         # Get selected asset keys that are being materialized
         assets_def = context.assets_def
         selected_asset_keys = context.selected_asset_keys

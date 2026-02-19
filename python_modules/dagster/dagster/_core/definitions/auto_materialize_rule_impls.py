@@ -2,7 +2,7 @@ import datetime
 import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -206,7 +206,7 @@ class MaterializeOnCronRule(
 class AutoMaterializeAssetPartitionsFilter(
     NamedTuple(
         "_AutoMaterializeAssetPartitionsFilter",
-        [("latest_run_required_tags", Optional[Mapping[str, str]])],
+        [("latest_run_required_tags", Mapping[str, str] | None)],
     )
 ):
     """A filter that can be applied to an asset partition, during auto-materialize evaluation, and
@@ -310,10 +310,10 @@ class MaterializeOnParentUpdatedRule(
     AutoMaterializeRule,
     NamedTuple(
         "_MaterializeOnParentUpdatedRule",
-        [("updated_parent_filter", Optional[AutoMaterializeAssetPartitionsFilter])],
+        [("updated_parent_filter", AutoMaterializeAssetPartitionsFilter | None)],
     ),
 ):
-    def __new__(cls, updated_parent_filter: Optional[AutoMaterializeAssetPartitionsFilter] = None):
+    def __new__(cls, updated_parent_filter: AutoMaterializeAssetPartitionsFilter | None = None):
         return super().__new__(cls, updated_parent_filter=updated_parent_filter)
 
     @property
@@ -1056,14 +1056,19 @@ class SkipOnBackfillInProgressRule(
             AutomationResult,
         )
 
+        # this backfilling subset is aware of the current partitions definitions, and so will
+        # be valid
+        asset_subset = (
+            context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset().get_asset_subset(
+                context.legacy_context.asset_key
+            )
+            or context.asset_graph_view.get_empty_subset(
+                key=context.legacy_context.asset_key
+            ).convert_to_serializable_subset()
+        )
+
         backfilling_subset = ValidAssetSubset.coerce_from_subset(
-            # this backfilling subset is aware of the current partitions definitions, and so will
-            # be valid
-            (
-                context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-            ).get_asset_subset(
-                context.legacy_context.asset_key, context.legacy_context.asset_graph
-            ),
+            asset_subset,
             context.legacy_context.partitions_def,
         )
 

@@ -19,14 +19,14 @@ We expose `AgentMemory`, and `AgentCpu` fields in the Cloud Formation templates 
 
 ## Per-location configuration
 
-When [adding a code location](/deployment/code-locations) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
+When [adding a code location](/guides/build/projects) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
 
-**Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
+**Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `build.yaml` file.
 
-The following example [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml) file illustrates the available fields:
+The following example [`build.yaml`](/deployment/dagster-plus/management/build-yaml) file illustrates the available fields:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -82,12 +82,18 @@ locations:
         repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
+
 ### Environment variables and secrets
 
 Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -178,6 +184,7 @@ user_code_launcher:
     log_group: <Log Group Name>
     launch_type: <"FARGATE"|"EC2">
     server_process_startup_timeout: <Timeout in seconds>
+    ecs_timeout: <Timeout in seconds>
     server_resources:
       cpu: '<CPU value>'
       memory: '<Memory value>'
@@ -233,7 +240,7 @@ agent_queues:
 | config.task_role_arn                  | The ARN of the [Amazon ECS task IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html). This role allows the containers running in the ECS task to interact with AWS. <br/> **Note**: This role must include a trust relationship that allows ECS to use it.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | config.log_group                      | The name of a CloudWatch [log group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html#Create-Log-Group).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | config.server_process_startup_timeout | The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load after your ECS task starts up and results in timeouts in the **Deployment** tab, you can increase this setting above the default. **Note** This setting isn't applicable to the time it takes for a job to execute. <br/>• **Default** - 180 (seconds)                                                                                                                                                                                                                                                                                   |
-| config.ecs_timeout                    | How long (in seconds) to wait for ECS to spin up a new service and task for a code server. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default. <br/>• **Default** - 300 (seconds)                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| config.ecs_timeout                    | How long (in seconds) to wait for ECS to spin up a new service and task for a code server. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default. <br/>• **Default** - 600 (seconds)                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | config.ecs_grace_period               | How long (in seconds) to continue polling if an ECS API endpoint fails during creation of a new code server (because the ECS API is eventually consistent). <br/>• **Default** - 30 (seconds)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | config.server_resources               | The resources that the agent should allocate to the ECS service for each code location that it creates. If set, must be a dictionary with a `cpu` and/or `memory` key and string values. **Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)                                                                                                                                                                                                                                                                                                                                         |
 | config.server_sidecar_containers      | Additional sidecar containers to include along with the Dagster container. If set, must be a list of dictionaries with valid ECS container definitions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |

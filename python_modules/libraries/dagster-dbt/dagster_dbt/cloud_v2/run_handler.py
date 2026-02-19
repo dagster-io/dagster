@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from dagster import (
     AssetCheckEvaluation,
@@ -12,7 +12,9 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._record import record
+from dagster._time import get_current_timestamp
 from dateutil import parser
+from requests.exceptions import RequestException
 
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
@@ -47,7 +49,7 @@ class DbtCloudJobRunHandler:
             client=client,
         )
 
-    def wait(self, timeout: Optional[float] = None) -> DbtCloudRun:
+    def wait(self, timeout: float | None = None) -> DbtCloudRun:
         run_details = self.client.poll_run(run_id=self.run_id, poll_timeout=timeout)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run
@@ -61,8 +63,28 @@ class DbtCloudJobRunHandler:
     def list_run_artifacts(self) -> Sequence[str]:
         return self.client.list_run_artifacts(run_id=self.run_id)
 
+    def get_run_logs(self) -> str | None:
+        """Retrieves the stdout/stderr logs from the completed dbt Cloud run.
+
+        This method fetches logs from the run_steps by calling get_run_details
+        with include_related=["run_steps"].
+
+        Returns:
+            Optional[str]: The concatenated log text content from all run steps,
+                or None if logs are not available.
+        """
+        try:
+            return self.client.get_run_logs(run_id=self.run_id)
+        except RequestException as e:
+            logger.warning(f"Failed to retrieve logs for run {self.run_id}: {e}")
+            return None
+
 
 def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
+    timing = result["timing"]
+    if len(timing) == 0:
+        # as a fallback, use the current timestamp
+        return get_current_timestamp()
     # result["timing"] is a list of events in run_results.json
     # For successful models and passing tests,
     # the last item of that list includes the timing details of the execution.
@@ -87,9 +109,9 @@ class DbtCloudJobRunResults:
         self,
         client: DbtCloudWorkspaceClient,
         manifest: Mapping[str, Any],
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[AssetExecutionContext] = None,
-    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
+        context: AssetExecutionContext | None = None,
+    ) -> Iterator[AssetCheckEvaluation | AssetCheckResult | AssetMaterialization | Output]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:

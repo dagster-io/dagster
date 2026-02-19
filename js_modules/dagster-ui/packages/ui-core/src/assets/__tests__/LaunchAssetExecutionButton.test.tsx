@@ -121,28 +121,31 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should be disabled if the selection is empty', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: []},
       });
       const button = await screen.findByTestId('materialize-button');
       expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('Select one or more assets to materialize')).toBeDefined();
+      await user.hover(button);
+      expect(
+        await screen.findByRole('tooltip', {name: /Select one or more assets to materialize/i}),
+      ).toBeVisible();
     });
   });
 
   describe('observable assets', () => {
     it('should disable the sub-menu item if the selection includes no observable assets', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: [ASSET_DAILY]},
       });
 
-      await userEvent.click(await screen.findByTestId('materialize-button-dropdown'));
-
-      const observeOption = await screen.findByTestId('materialize-secondary-option');
-      expect(observeOption.textContent).toEqual('Observe selected');
-      expect(observeOption).toHaveClass('bp5-disabled');
+      await user.click(await screen.findByTestId('materialize-button-dropdown'));
+      const secondaryOption = await screen.findByRole('menuitem', {name: /observe selected/i});
+      expect(secondaryOption).toBeVisible();
+      expect(secondaryOption).toBeDisabled();
     });
 
     it('should enable the sub-menu item if the selection includes observable assets', async () => {
@@ -179,14 +182,17 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should be disabled if the entire selection is non-executable assets', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: [UNPARTITIONED_NON_EXECUTABLE_ASSET]},
       });
       const button = await screen.findByTestId('materialize-button');
       expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('External assets cannot be materialized')).toBeDefined();
+      await user.hover(button);
+      expect(
+        await screen.findByRole('tooltip', {name: /External assets cannot be materialized/i}),
+      ).toBeVisible();
     });
   });
 
@@ -263,16 +269,19 @@ describe('LaunchAssetExecutionButton', () => {
 
     describe('permissions', () => {
       it('should be disabled if you do not have permission to execute assets', async () => {
+        const user = userEvent.setup();
         renderButton({
           scope: {all: [{...UNPARTITIONED_ASSET, hasMaterializePermission: false}]},
         });
         const button = await screen.findByTestId('materialize-button');
         expect(button).toBeDisabled();
 
-        userEvent.hover(button);
+        await user.hover(button);
         expect(
-          await screen.findByText('You do not have permission to materialize assets'),
-        ).toBeDefined();
+          await screen.findByRole('tooltip', {
+            name: /You do not have permission to materialize assets/i,
+          }),
+        ).toBeVisible();
       });
     });
 
@@ -306,7 +315,7 @@ describe('LaunchAssetExecutionButton', () => {
         preferredJobName: undefined,
       });
       await clickMaterializeButton();
-      await waitFor(() => expect(screen.getByText('Launchpad (configure assets)')).toBeVisible());
+      expect(await screen.findByText('Launchpad (configure assets)')).toBeVisible();
     });
 
     it('should show an error if the assets do not share a code location', async () => {

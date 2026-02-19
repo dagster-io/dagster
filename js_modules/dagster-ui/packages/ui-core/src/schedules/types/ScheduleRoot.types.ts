@@ -118,4 +118,4 @@ export type ScheduleRootQuery = {
   };
 };
 
-export const ScheduleRootQueryVersion = '51b9af155e42eda9cfcd415db7fd1e885c9912ede375879156b1d063da6a7d66';
+export const ScheduleRootQueryVersion = 'da4d343e5bc6f68278f354dc62d5148a9709a89436104b43cca504427a274a8b';

@@ -1,6 +1,5 @@
 import os
 import time
-from typing import Optional
 from unittest import mock
 
 import dagster as dg
@@ -17,7 +16,7 @@ from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._time import get_current_datetime
 
-from dagster_tests.api_tests.utils import get_bar_repo_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle, with_invalid_origin
 
 
 def test_external_schedule_execution_data_api_grpc():
@@ -38,13 +37,13 @@ def test_external_schedule_execution_data_api_grpc():
 
 
 @pytest.mark.parametrize("env_var_default_val", [200, None], ids=["env-var-set", "env-var-not-set"])
-def test_external_schedule_client_timeout(instance, env_var_default_val: Optional[int]):
+def test_external_schedule_client_timeout(instance, env_var_default_val: int | None):
     if env_var_default_val:
         os.environ["DAGSTER_SCHEDULE_GRPC_TIMEOUT_SECONDS"] = str(env_var_default_val)
     with get_bar_repo_handle(instance) as repository_handle:
         with pytest.raises(
             DagsterUserCodeUnreachableError,
-            match="User code server request timed out due to taking longer than 1 seconds to complete.",
+            match=r"User code server request timed out due to taking longer than 1 seconds to complete.",
         ):
             sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance, repository_handle, "schedule_times_out", None, None, timeout=1
@@ -104,12 +103,14 @@ def test_external_schedule_execution_deserialize_error():
             ) as api_client:
                 result = dg.deserialize_value(
                     api_client.external_schedule_execution(
-                        external_schedule_execution_args=ExternalScheduleExecutionArgs(
-                            repository_origin=origin,
-                            instance_ref=instance.get_ref(),
-                            schedule_name="foobar",
-                            scheduled_execution_timestamp=None,
-                        )._replace(repository_origin="INVALID")
+                        external_schedule_execution_args=with_invalid_origin(
+                            ExternalScheduleExecutionArgs(
+                                repository_origin=origin,
+                                instance_ref=instance.get_ref(),
+                                schedule_name="foobar",
+                                scheduled_execution_timestamp=None,
+                            )
+                        )
                     )
                 )
                 assert isinstance(result, ScheduleExecutionErrorSnap)

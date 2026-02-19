@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import click
 from dagster_dg_core.component import EnvRegistry
@@ -73,12 +73,18 @@ def DagsterOuterTable(columns: Sequence[str]) -> "Table":
 @dg_path_options
 @cli_telemetry_wrapper
 def list_project_command(target_path: Path, **global_options: object) -> None:
-    """List projects in the current workspace."""
+    """List projects in the current workspace or emit the current project directory."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_environment(target_path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    for project in dg_context.project_specs:
-        click.echo(project.path)
+    if dg_context.is_in_workspace:
+        # In a workspace, list all projects with their relative paths
+        for project in dg_context.project_specs:
+            click.echo(project.path)
+    elif dg_context.is_project:
+        # In a standalone project (not in a workspace), emit the current directory
+        # This allows the command to work in both contexts for CI/CD workflows
+        click.echo(".")
 
 
 # ########################
@@ -103,7 +109,7 @@ def list_project_command(target_path: Path, **global_options: object) -> None:
 @dg_global_options
 @cli_telemetry_wrapper
 def list_components_command(
-    target_path: Path, package: Optional[str], output_json: bool, **global_options: object
+    target_path: Path, package: str | None, output_json: bool, **global_options: object
 ) -> None:
     """List all available Dagster component types in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -251,7 +257,7 @@ def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
         raise ValueError(f"Invalid column: {column}")
 
 
-def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str]:
+def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> str | None:
     if column == DefsColumn.KEY:
         return asset.key
     elif column == DefsColumn.GROUP:
@@ -270,7 +276,7 @@ def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str
         raise ValueError(f"Invalid column: {column}")
 
 
-def _get_asset_check_value(column: DefsColumn, asset_check: DgAssetCheckMetadata) -> Optional[str]:
+def _get_asset_check_value(column: DefsColumn, asset_check: DgAssetCheckMetadata) -> str | None:
     if column == DefsColumn.KEY:
         return asset_check.key
     elif column == DefsColumn.DEPS:
@@ -281,7 +287,7 @@ def _get_asset_check_value(column: DefsColumn, asset_check: DgAssetCheckMetadata
         raise ValueError(f"Invalid column: {column}")
 
 
-def _get_job_value(column: DefsColumn, job: DgJobMetadata) -> Optional[str]:
+def _get_job_value(column: DefsColumn, job: DgJobMetadata) -> str | None:
     if column == DefsColumn.KEY:
         return job.name
     elif column == DefsColumn.DESCRIPTION:
@@ -290,14 +296,14 @@ def _get_job_value(column: DefsColumn, job: DgJobMetadata) -> Optional[str]:
         raise ValueError(f"Invalid column: {column}")
 
 
-def _get_resource_value(column: DefsColumn, resource: DgResourceMetadata) -> Optional[str]:
+def _get_resource_value(column: DefsColumn, resource: DgResourceMetadata) -> str | None:
     if column == DefsColumn.KEY:
         return resource.name
     else:
         raise ValueError(f"Invalid column: {column}")
 
 
-def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> Optional[str]:
+def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> str | None:
     if column == DefsColumn.KEY:
         return schedule.name
     elif column == DefsColumn.CRON:
@@ -306,7 +312,7 @@ def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> Opt
         raise ValueError(f"Invalid column: {column}")
 
 
-def _get_sensor_value(column: DefsColumn, sensor: DgSensorMetadata) -> Optional[str]:
+def _get_sensor_value(column: DefsColumn, sensor: DgSensorMetadata) -> str | None:
     if column == DefsColumn.KEY:
         return sensor.name
     else:
@@ -323,7 +329,7 @@ GET_VALUE_BY_DEFS_TYPE = {
 }
 
 
-def _get_value(column: DefsColumn, defs_type: DefsType, defn: Any) -> Optional[Text]:
+def _get_value(column: DefsColumn, defs_type: DefsType, defn: Any) -> Text | None:
     raw_value = GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)
     value = Text(raw_value) if raw_value else None
     if value and column in _TRUNCATED_COLUMN_WIDTHS:
@@ -385,9 +391,9 @@ def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequenc
 def list_defs_command(
     output_json: bool,
     target_path: Path,
-    path: Optional[Path],
-    assets: Optional[str],
-    columns: Optional[Sequence[str]],
+    path: Path | None,
+    assets: str | None,
+    columns: Sequence[str] | None,
     **global_options: object,
 ) -> None:
     """List registered Dagster definitions in the current project environment."""
@@ -472,7 +478,7 @@ class DagsterPlusScopesForVariable:
 
 def _get_dagster_plus_keys(
     location_name: str, env_var_keys: set[str]
-) -> Optional[Mapping[str, DagsterPlusScopesForVariable]]:
+) -> Mapping[str, DagsterPlusScopesForVariable] | None:
     """Retrieves the set Dagster Plus keys for the given location name, if Plus is configured, otherwise returns None."""
     if not DagsterPlusCliConfig.exists():
         return None
@@ -568,7 +574,7 @@ def list_env_command(target_path: Path, **global_options: object) -> None:
 @cli_telemetry_wrapper
 def list_component_tree_command(
     target_path: Path,
-    output_file: Optional[str],
+    output_file: str | None,
     **other_opts: object,
 ) -> None:
     cli_config = normalize_cli_config(other_opts, click.get_current_context())

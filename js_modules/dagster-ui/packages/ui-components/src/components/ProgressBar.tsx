@@ -1,38 +1,27 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar as BlueprintProgressBar, ProgressBarProps} from '@blueprintjs/core';
-import styled from 'styled-components';
+import * as Progress from '@radix-ui/react-progress';
+import clsx from 'clsx';
 
 import {Colors} from './Color';
+import styles from './css/ProgressBar.module.css';
 
-interface Props extends ProgressBarProps {
+interface ProgressBarProps {
+  value: number; // 0-100
+  animate?: boolean;
   fillColor?: string;
 }
 
-export const ProgressBar = ({fillColor = Colors.accentGray(), ...rest}: Props) => {
+export const ProgressBar = (props: ProgressBarProps) => {
+  const {value, animate = false, fillColor = Colors.accentBlue()} = props;
+
+  const radixValue = Math.round(Math.max(0, Math.min(100, value)));
+  const style = {
+    '--progress-fill-color': fillColor,
+    '--progress-value': radixValue,
+  } as React.CSSProperties;
+
   return (
-    <StyledProgressBar
-      {...rest}
-      intent="none"
-      $fillColor={fillColor}
-      stripes={rest.animate ? true : false}
-    />
+    <Progress.Root className={styles.root} style={style} value={radixValue} max={100}>
+      <Progress.Indicator className={clsx(styles.indicator, animate && styles.animated)} />
+    </Progress.Root>
   );
 };
-
-const StyledProgressBar = styled(BlueprintProgressBar)<{$fillColor: string}>`
-  &.bp5-progress-bar {
-    background: transparent;
-
-    ::before {
-      content: '';
-      background: ${(p) => p.$fillColor};
-      position: absolute;
-      inset: 0;
-      opacity: 0.25;
-    }
-
-    .bp5-progress-meter {
-      background-color: ${(p) => p.$fillColor};
-    }
-  }
-`;

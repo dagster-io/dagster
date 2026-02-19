@@ -58,7 +58,7 @@ class DockerContainerContext(
     NamedTuple(
         "_DockerContainerContext",
         [
-            ("registry", Optional[Mapping[str, str]]),
+            ("registry", Mapping[str, str] | None),
             ("env_vars", Sequence[str]),
             ("networks", Sequence[str]),
             ("container_kwargs", Mapping[str, Any]),
@@ -75,10 +75,10 @@ class DockerContainerContext(
 
     def __new__(
         cls,
-        registry: Optional[Mapping[str, str]] = None,
-        env_vars: Optional[Sequence[str]] = None,
-        networks: Optional[Sequence[str]] = None,
-        container_kwargs: Optional[Mapping[str, Any]] = None,
+        registry: Mapping[str, str] | None = None,
+        env_vars: Sequence[str] | None = None,
+        networks: Sequence[str] | None = None,
+        container_kwargs: Mapping[str, Any] | None = None,
     ):
         return super().__new__(
             cls,

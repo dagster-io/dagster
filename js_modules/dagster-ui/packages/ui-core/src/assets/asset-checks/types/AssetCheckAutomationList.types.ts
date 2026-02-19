@@ -17,7 +17,7 @@ export type AssetCheckAutomationListQuery = {
           __typename: 'AssetConditionEvaluationRecord';
           id: string;
           evaluationId: string;
-          numRequested: number;
+          numRequested: number | null;
           runIds: Array<string>;
           timestamp: number;
           startTimestamp: number | null;
@@ -33,7 +33,7 @@ export type AssetCheckAutomationListQuery = {
                   description: string;
                   startTimestamp: number | null;
                   endTimestamp: number | null;
-                  numTrue: number;
+                  numTrue: number | null;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
                   numCandidates: number | null;
@@ -451,7 +451,7 @@ export type AssetCheckAutomationListQuery = {
             startTimestamp: number | null;
             endTimestamp: number | null;
             numCandidates: number | null;
-            numTrue: number;
+            numTrue: number | null;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
             operatorType: string;
@@ -462,6 +462,13 @@ export type AssetCheckAutomationListQuery = {
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {__typename: 'AssetKey'; path: Array<string>};
+            sinceMetadata: {
+              __typename: 'SinceConditionMetadata';
+              triggerEvaluationId: string | null;
+              triggerTimestamp: number | null;
+              resetEvaluationId: string | null;
+              resetTimestamp: number | null;
+            } | null;
           }>;
         }>;
       }
@@ -469,4 +476,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = '559745a4f28472ae6f81faa603be4b4cedacad38132ce20f72e1799833430273';
+export const AssetCheckAutomationListQueryVersion = '96ee49b9705f97bba87a7854956d527146b7152f615e7d68e9e2bcab336f0f66';

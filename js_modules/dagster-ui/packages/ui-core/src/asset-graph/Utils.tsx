@@ -15,6 +15,7 @@ import {
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import {ILayoutOp} from '../graph/layout';
 import {RunStatus} from '../graphql/types';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
@@ -115,31 +116,42 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   return data;
 };
 
+export const buildGraphDataFromOps = (
+  ops: ILayoutOp[],
+): {
+  nodes: {[opName: string]: {id: string}};
+  downstream: {[opName: string]: {[childOpName: string]: boolean}};
+} => {
+  const nodes: {[opName: string]: {id: string}} = {};
+  const downstream: {[opName: string]: {[childOpName: string]: boolean}} = {};
+
+  // First pass: register all nodes
+  for (const op of ops) {
+    nodes[op.name] = {id: op.name};
+  }
+
+  // Second pass: build downstream edges by inverting input dependencies
+  // If op A has an input that dependsOn solid B, then B → A (A is downstream of B)
+  for (const op of ops) {
+    for (const input of op.inputs) {
+      for (const dep of input.dependsOn) {
+        const upstreamName = dep.solid.name;
+        if (nodes[upstreamName]) {
+          if (!downstream[upstreamName]) {
+            downstream[upstreamName] = {};
+          }
+          downstream[upstreamName][op.name] = true;
+        }
+      }
+    }
+  }
+
+  return {nodes, downstream};
+};
+
 export const nodeDependsOnSelf = (node: GraphNode) => {
   const id = toGraphId(node.assetKey);
   return node.definition.dependedByKeys.some((d) => toGraphId(d) === id);
-};
-
-export const graphHasCycles = (graphData: GraphData) => {
-  const nodes = new Set(Object.keys(graphData.nodes));
-  const search = (stack: string[], node: string): boolean => {
-    if (stack.indexOf(node) !== -1) {
-      return true;
-    }
-    if (nodes.delete(node) === true) {
-      const nextStack = stack.concat(node);
-      return Object.keys(graphData.downstream[node] || {}).some((nextNode) =>
-        search(nextStack, nextNode),
-      );
-    }
-    return false;
-  };
-  let hasCycles = false;
-  while (nodes.size !== 0 && !hasCycles) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    hasCycles = search([], nodes.values().next().value!);
-  }
-  return hasCycles;
 };
 
 export const buildSVGPathHorizontal = pathHorizontalDiagonal({

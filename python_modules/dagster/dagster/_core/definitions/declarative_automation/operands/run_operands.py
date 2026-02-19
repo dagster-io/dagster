@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -46,8 +46,8 @@ class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
 
 def _run_tag_filter_fn(
     run_record: "RunRecord",
-    tag_keys: Optional[Set[str]],
-    tag_values: Optional[Mapping[str, str]],
+    tag_keys: Set[str] | None,
+    tag_values: Mapping[str, str] | None,
 ) -> bool:
     if tag_keys and not all(key in run_record.dagster_run.tags for key in tag_keys):
         return False
@@ -60,8 +60,8 @@ def _run_tag_filter_fn(
 
 def _get_run_tag_filter_name(
     base_name: str,
-    tag_keys: Optional[Set[str]],
-    tag_values: Optional[Mapping[str, str]],
+    tag_keys: Set[str] | None,
+    tag_values: Mapping[str, str] | None,
 ) -> str:
     props = []
     name = base_name
@@ -80,8 +80,8 @@ def _get_run_tag_filter_name(
 @whitelist_for_serdes
 @record
 class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
-    tag_keys: Optional[Set[str]] = None
-    tag_values: Optional[Mapping[str, str]] = None
+    tag_keys: Set[str] | None = None
+    tag_values: Mapping[str, str] | None = None
 
     @property
     def name(self) -> str:
@@ -98,8 +98,8 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
 
 @record
 class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
-    tag_keys: Optional[Set[str]] = None
-    tag_values: Optional[Mapping[str, str]] = None
+    tag_keys: Set[str] | None = None
+    tag_values: Mapping[str, str] | None = None
 
     @property
     @abstractmethod
@@ -191,8 +191,8 @@ class AnyNewUpdateHasRunTagsCondition(NewUpdatesWithRunTagsCondition):
 @whitelist_for_serdes
 @record
 class AllNewUpdatesHaveRunTagsCondition(NewUpdatesWithRunTagsCondition):
-    tag_keys: Optional[Set[str]] = None
-    tag_values: Optional[Mapping[str, str]] = None
+    tag_keys: Set[str] | None = None
+    tag_values: Mapping[str, str] | None = None
 
     @property
     def base_name(self) -> str:

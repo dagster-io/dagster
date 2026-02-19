@@ -1,0 +1,10 @@
+tree my-workspace
+
+my-workspace
+├── deployments
+│   └── local
+│       └── pyproject.toml
+├── dg.toml
+└── projects
+
+4 directories, 2 files

@@ -1,4 +1,4 @@
-import {CharStreams, CommonTokenStream} from 'antlr4ts';
+import {CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AntlrJobSelectionVisitor} from './AntlrJobSelectionVisitor';
 import {JobSelectionLexer} from './generated/JobSelectionLexer';
@@ -20,11 +20,12 @@ export const parseJobSelectionQuery = <T extends Job>(
   query: string,
 ): JobSelectionQueryResult<T> | Error => {
   try {
-    const lexer = new JobSelectionLexer(CharStreams.fromString(query));
+    const lexer = new JobSelectionLexer(CharStream.fromString(query));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new JobSelectionParser(tokenStream);
     parser.removeErrorListeners();
@@ -33,7 +34,7 @@ export const parseJobSelectionQuery = <T extends Job>(
     const tree = parser.start();
 
     const visitor = new AntlrJobSelectionVisitor(all_jobs);
-    const all_selection = visitor.visit(tree);
+    const all_selection = visitor.visit(tree) ?? new Set<T>();
 
     return {
       all: all_selection,

@@ -3,7 +3,7 @@ import shlex
 from argparse import ArgumentParser, Namespace
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster import (
@@ -47,18 +47,18 @@ DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        dbt_cloud_resource_def: Union[DbtCloudClientResource, ResourceDefinition],
+        dbt_cloud_resource_def: DbtCloudClientResource | ResourceDefinition,
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-        node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
+        node_info_to_group_fn: Callable[[Mapping[str, Any]], str | None],
         node_info_to_freshness_policy_fn: Callable[
-            [Mapping[str, Any]], Optional[LegacyFreshnessPolicy]
+            [Mapping[str, Any]], LegacyFreshnessPolicy | None
         ],
         node_info_to_auto_materialize_policy_fn: Callable[
-            [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+            [Mapping[str, Any]], AutoMaterializePolicy | None
         ],
-        partitions_def: Optional[PartitionsDefinition] = None,
-        partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+        partitions_def: PartitionsDefinition | None = None,
+        partition_key_to_vars_fn: Callable[[str], Mapping[str, Any]] | None = None,
     ):
         self._dbt_cloud_resource_def: ResourceDefinition = (
             dbt_cloud_resource_def.get_resource_definition()
@@ -72,8 +72,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             else dbt_cloud_resource_def(build_init_resource_context())
         )
         self._job_id = job_id
+        self._account_id: int = self._dbt_cloud._account_id  # noqa: SLF001
         self._project_id: int
         self._has_generate_docs: bool
+        self._environment_id: int | None = None
         self._job_commands: list[str]
         self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
@@ -240,6 +242,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
         self._has_generate_docs = job["generate_docs"]
+        self._environment_id = job.get("environment_id")
 
         # We constraint the kinds of dbt Cloud jobs that we support running.
         #
@@ -380,7 +383,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _build_dbt_cloud_assets_metadata(
         self, resource_props: Mapping[str, Any]
     ) -> RawMetadataMapping:
-        metadata = {
+        metadata: dict[str, Any] = {
             "dbt Cloud Job": MetadataValue.url(
                 self._dbt_cloud.build_url_for_job(
                     project_id=self._project_id,
@@ -397,6 +400,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     unique_id=resource_props["unique_id"],
                 )
             )
+
+        # Add internal metadata for tracking/debugging
+        metadata["dagster_dbt/cloud_account_id"] = MetadataValue.int(self._account_id)
+        metadata["dagster_dbt/cloud_project_id"] = MetadataValue.int(self._project_id)
+        if self._environment_id is not None:
+            metadata["dagster_dbt/cloud_environment_id"] = MetadataValue.int(self._environment_id)
 
         return metadata
 
@@ -530,17 +539,17 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 @beta_param(param="partitions_def")
 @beta_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
-    dbt_cloud: Union[DbtCloudClientResource, ResourceDefinition],
+    dbt_cloud: DbtCloudClientResource | ResourceDefinition,
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[
-        [Mapping[str, Any]], Optional[str]
+        [Mapping[str, Any]], str | None
     ] = default_group_from_dbt_resource_props,
     node_info_to_auto_materialize_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+        [Mapping[str, Any]], AutoMaterializePolicy | None
     ] = default_auto_materialize_policy_fn,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    partitions_def: PartitionsDefinition | None = None,
+    partition_key_to_vars_fn: Callable[[str], Mapping[str, Any]] | None = None,
 ) -> CacheableAssetsDefinition:
     """Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
     determine the set of dbt models, the project is compiled to generate the necessary artifacts

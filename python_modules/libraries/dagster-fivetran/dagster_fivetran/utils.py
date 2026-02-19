@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
 from dagster import (
@@ -57,9 +57,9 @@ def get_translator_from_fivetran_assets(
 def metadata_for_table(
     table_data: Mapping[str, Any],
     connector_url: str,
-    database: Optional[str],
-    schema: Optional[str],
-    table: Optional[str],
+    database: str | None,
+    schema: str | None,
+    table: str | None,
     include_column_info: bool = False,
 ) -> RawMetadataMapping:
     metadata: dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
@@ -100,9 +100,9 @@ def _table_data_to_materialization(
     schema_source_name: str,
     table_source_name: str,
     table_data: Mapping[str, Any],
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-) -> Optional[AssetMaterialization]:
+    table_to_asset_key_map: Mapping[str, AssetKey] | None = None,
+    asset_key_prefix: Sequence[str] | None = None,
+) -> AssetMaterialization | None:
     table_name = table_data["name_in_destination"]
     if table_to_asset_key_map:
         asset_key = table_to_asset_key_map.get(
@@ -136,8 +136,8 @@ def _table_data_to_materialization(
 
 def generate_materializations(
     fivetran_output: FivetranOutput,
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
+    table_to_asset_key_map: Mapping[str, AssetKey] | None = None,
+    asset_key_prefix: Sequence[str] | None = None,
 ) -> Iterator[AssetMaterialization]:
     for schema_source_name, schema in fivetran_output.schema_config["schemas"].items():
         schema_name = schema["name_in_destination"]

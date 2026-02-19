@@ -30,6 +30,7 @@ from dagster_tests.api_tests.utils import (
     get_bar_workspace,
     get_code_location,
     get_workspace,
+    with_invalid_origin,
 )
 
 
@@ -108,9 +109,12 @@ def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstan
 
         result = dg.deserialize_value(
             api_client.external_partition_names(
-                partition_names_args=PartitionNamesArgs(
-                    repository_origin=repository_origin, partition_set_name="foo_partition_set"
-                )._replace(repository_origin="INVALID"),
+                partition_names_args=with_invalid_origin(
+                    PartitionNamesArgs(
+                        repository_origin=repository_origin,
+                        partition_set_name="foo_partition_set",
+                    )
+                ),
             )
         )
         assert isinstance(result, PartitionExecutionErrorSnap)
@@ -177,13 +181,15 @@ def test_external_partition_config_deserialize_error_grpc(instance: DagsterInsta
 
         result = dg.deserialize_value(
             api_client.external_partition_config(
-                partition_args=PartitionArgs(
-                    repository_origin=repository_handle.get_remote_origin(),
-                    partition_set_name="foo_partition_set",
-                    partition_name="bar",
-                    instance_ref=instance.get_ref(),
-                )._replace(repository_origin="INVALID"),
-            )
+                partition_args=with_invalid_origin(
+                    PartitionArgs(
+                        repository_origin=repository_handle.get_remote_origin(),
+                        partition_set_name="foo_partition_set",
+                        partition_name="bar",
+                        instance_ref=instance.get_ref(),
+                    )
+                ),
+            ),
         )
 
         assert isinstance(result, PartitionExecutionErrorSnap)
@@ -255,13 +261,15 @@ def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstan
 
         result = dg.deserialize_value(
             api_client.external_partition_tags(
-                partition_args=PartitionArgs(
-                    repository_origin=repository_origin,
-                    partition_set_name="fooba_partition_set",
-                    partition_name="c",
-                    instance_ref=instance.get_ref(),
-                )._replace(repository_origin="INVALID"),
-            )
+                partition_args=with_invalid_origin(
+                    PartitionArgs(
+                        repository_origin=repository_origin,
+                        partition_set_name="fooba_partition_set",
+                        partition_name="c",
+                        instance_ref=instance.get_ref(),
+                    )
+                ),
+            ),
         )
         assert isinstance(result, PartitionExecutionErrorSnap)
 
@@ -301,13 +309,15 @@ def test_external_partition_set_execution_params_deserialize_error_grpc(instance
 
         result = dg.deserialize_value(
             api_client.external_partition_set_execution_params(
-                partition_set_execution_param_args=PartitionSetExecutionParamArgs(
-                    repository_origin=repository_origin,
-                    partition_set_name="baz_partition_set",
-                    partition_names=["a", "b", "c"],
-                    instance_ref=instance.get_ref(),
-                )._replace(repository_origin="INVALID"),
-            )
+                partition_set_execution_param_args=with_invalid_origin(
+                    PartitionSetExecutionParamArgs(
+                        repository_origin=repository_origin,
+                        partition_set_name="baz_partition_set",
+                        partition_names=["a", "b", "c"],
+                        instance_ref=instance.get_ref(),
+                    )
+                ),
+            ),
         )
 
         assert isinstance(result, PartitionExecutionErrorSnap)

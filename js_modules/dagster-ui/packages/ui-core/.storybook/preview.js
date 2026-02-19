@@ -1,20 +1,16 @@
 import {
+  Colors,
   FontFamily,
+  GlobalDialogStyle,
   GlobalGeist,
   GlobalGeistMono,
-  GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalTooltipStyle,
-  Colors,
   Toaster,
 } from '@dagster-io/ui-components';
-
-import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 import {withThemeByClassName} from '@storybook/addon-themes';
-
+import {MemoryRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components';
 
 import '@dagster-io/ui-components/fonts/Fonts.css';
@@ -69,7 +65,6 @@ export const decorators = [
       <GlobalThemeStyle />
       <GlobalGeist />
       <GlobalGeistMono />
-      <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />

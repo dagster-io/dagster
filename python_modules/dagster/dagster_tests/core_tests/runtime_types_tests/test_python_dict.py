@@ -205,7 +205,7 @@ def test_dict_type_loader_typing_fail():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Input 'dict_input' of op 'emit_dict' has no way of being resolved.",
+        match=r"Input 'dict_input' of op 'emit_dict' has no way of being resolved.",
     ):
         wrap_op_in_graph_and_execute(
             emit_dict,

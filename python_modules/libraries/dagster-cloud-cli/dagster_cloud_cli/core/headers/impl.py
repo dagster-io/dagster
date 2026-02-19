@@ -1,5 +1,4 @@
 import platform
-from typing import Optional
 
 from dagster_cloud_cli.core.headers.auth import (
     API_TOKEN_HEADER,
@@ -17,8 +16,8 @@ from dagster_cloud_cli.version import __version__
 def get_dagster_cloud_api_headers(
     agent_token: str,
     scope: DagsterCloudInstanceScope,
-    deployment_name: Optional[str] = None,
-    additional_headers: Optional[dict[str, str]] = None,
+    deployment_name: str | None = None,
+    additional_headers: dict[str, str] | None = None,
 ) -> dict[str, str]:
     return {
         **{

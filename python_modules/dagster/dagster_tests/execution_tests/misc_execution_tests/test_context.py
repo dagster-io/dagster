@@ -12,8 +12,16 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.execution.api import execute_run
+from dagster._core.remote_origin import (
+    RegisteredCodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._core.storage.fs_io_manager import FilesystemIOManager
+from dagster._core.test_utils import create_run_for_test
 
 
 def test_op_execution_context():
@@ -622,3 +630,29 @@ def test_load_asset_value_multiple_upstream_partition_keys():
         result = global_asset_job.execute_in_process(asset_selection=[downstream_asset.key])
         assert result.success
         assert result.output_for_node("downstream_asset") == 6
+
+
+def test_location_name_property():
+    @dg.op
+    def location_check(context: OpExecutionContext):
+        return context.location_name
+
+    @dg.job(executor_def=dg.in_process_executor)
+    def location_check_job():
+        location_check()
+
+    location_name = "the_location"
+    with dg.instance_for_test() as instance:
+        run = create_run_for_test(
+            instance,
+            remote_job_origin=RemoteJobOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    repository_name="the_repo",
+                    code_location_origin=RegisteredCodeLocationOrigin(location_name=location_name),
+                ),
+                job_name="the_job",
+            ),
+        )
+        with execute_run(InMemoryJob(location_check_job), run, instance) as result:
+            assert result.success
+            assert result.output_for_node("location_check") == location_name

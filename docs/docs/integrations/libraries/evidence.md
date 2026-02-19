@@ -1,6 +1,7 @@
 ---
 title: Dagster & Evidence (Component)
 sidebar_label: Evidence
+sidebar_position: 1
 description: The Evidence library offers a component to easily generate dashboards from your Evidence project.
 tags: [community-supported, bi, component]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-evidence

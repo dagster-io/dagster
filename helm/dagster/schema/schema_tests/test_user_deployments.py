@@ -1,6 +1,6 @@
 import json
 import subprocess
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
@@ -469,7 +469,7 @@ def test_readiness_probe_can_be_disabled(template: HelmTemplate):
 
 def test_readiness_probe_can_be_customized(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
-    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(timeoutSeconds=42)
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(enabled=True, timeoutSeconds=42)
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
     )
@@ -560,6 +560,50 @@ def test_startup_probe_default_exec(template: HelmTemplate):
     ]
 
 
+def test_readiness_probe_exec(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(
+        enabled=True, exec=dict(command=["my", "command"])
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.readiness_probe._exec.command == [  # noqa: SLF001
+        "my",
+        "command",
+    ]
+
+
+def test_liveness_probe_exec(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.livenessProbe = kubernetes.LivenessProbe.construct(
+        exec=dict(command=["my", "command"])
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.liveness_probe._exec.command == [  # noqa: SLF001
+        "my",
+        "command",
+    ]
+
+
 @pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
 def test_user_deployment_default_image_tag_is_chart_version(
     template: HelmTemplate, chart_version: str
@@ -577,7 +621,7 @@ def test_user_deployment_default_image_tag_is_chart_version(
 
 
 @pytest.mark.parametrize("tag", [5176135, "abc1234", "20220531.1", "1234"])
-def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[str, int]):
+def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: str | int):
     deployment = create_simple_user_deployment("foo")
     deployment.image.tag = tag
 
@@ -642,6 +686,164 @@ def test_user_deployment_digest_only(template: HelmTemplate):
     image = user_deployments[0].spec.template.spec.containers[0].image
     # Should use digest format: repository@digest
     assert image == "repo/foo@sha256:abc123def456789"
+
+
+def test_init_container_with_string_image(template: HelmTemplate):
+    """Test that init containers with legacy string image format still work."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.initContainers = [
+        kubernetes.Container.construct(
+            None,
+            name="init-test",
+            image="busybox:latest",
+            command=["sh", "-c", "echo hello"],
+        )
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+    init_containers = user_deployments[0].spec.template.spec.init_containers
+    assert len(init_containers) == 1
+    assert init_containers[0].name == "init-test"
+    assert init_containers[0].image == "busybox:latest"
+    assert init_containers[0].command == ["sh", "-c", "echo hello"]
+
+
+def test_init_container_with_structured_image_tag(template: HelmTemplate):
+    """Test init container with structured image format using tag."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.initContainers = [
+        kubernetes.InitContainerWithStructuredImage.construct(
+            name="init-test",
+            image=kubernetes.InitContainerImage(
+                repository="busybox",
+                tag="1.36",
+            ),
+            command=["sh", "-c", "echo hello"],
+        )
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+    init_containers = user_deployments[0].spec.template.spec.init_containers
+    assert len(init_containers) == 1
+    assert init_containers[0].name == "init-test"
+    assert init_containers[0].image == "busybox:1.36"
+
+
+def test_init_container_with_structured_image_digest(template: HelmTemplate):
+    """Test init container with structured image format using digest."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.initContainers = [
+        kubernetes.InitContainerWithStructuredImage.construct(
+            name="init-test",
+            image=kubernetes.InitContainerImage(
+                repository="busybox",
+                digest="sha256:abc123def456",
+            ),
+            command=["sh", "-c", "echo hello"],
+        )
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+    init_containers = user_deployments[0].spec.template.spec.init_containers
+    assert len(init_containers) == 1
+    assert init_containers[0].name == "init-test"
+    assert init_containers[0].image == "busybox@sha256:abc123def456"
+
+
+def test_init_container_digest_takes_precedence_over_tag(template: HelmTemplate):
+    """Test that digest takes precedence over tag for init container images."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.initContainers = [
+        kubernetes.InitContainerWithStructuredImage.construct(
+            name="init-test",
+            image=kubernetes.InitContainerImage(
+                repository="busybox",
+                tag="1.36",
+                digest="sha256:abc123def456",
+            ),
+            command=["sh", "-c", "echo hello"],
+        )
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+    init_containers = user_deployments[0].spec.template.spec.init_containers
+    assert len(init_containers) == 1
+    assert init_containers[0].name == "init-test"
+    # Digest should take precedence over tag
+    assert init_containers[0].image == "busybox@sha256:abc123def456"
+
+
+def test_init_container_with_pull_policy(template: HelmTemplate):
+    """Test that pullPolicy is properly set for init containers with structured images."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.initContainers = [
+        kubernetes.InitContainerWithStructuredImage.construct(
+            name="init-test",
+            image=kubernetes.InitContainerImage(
+                repository="busybox",
+                tag="1.36",
+                pullPolicy="IfNotPresent",
+            ),
+            command=["sh", "-c", "echo hello"],
+        )
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+    init_containers = user_deployments[0].spec.template.spec.init_containers
+    assert len(init_containers) == 1
+    assert init_containers[0].name == "init-test"
+    assert init_containers[0].image == "busybox:1.36"
+    assert init_containers[0].image_pull_policy == "IfNotPresent"
 
 
 def _assert_no_container_context(user_deployment):
@@ -1073,7 +1275,7 @@ def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launc
     assert len(user_deployments) == 1
 
     image = user_deployments[0].spec.template.spec.containers[0].image
-    image_name, image_tag = image.split(":")
+    _image_name, _image_tag = image.split(":")
 
     deployed_sidecars = user_deployments[0].spec.template.spec.containers[1:]
     assert deployed_sidecars == [
@@ -1216,7 +1418,7 @@ def test_subchart_default_postgres_password(subchart_template: HelmTemplate):
 
 
 @pytest.mark.parametrize("tag", [5176135, "abc1234"])
-def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union[str, int]):
+def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: str | int):
     deployment_values = DagsterUserDeploymentsHelmValues.construct(
         deployments=[
             UserDeployment.construct(
@@ -1462,8 +1664,8 @@ def test_old_env(template: HelmTemplate, user_deployment_configmap_template):
 )
 def test_deployment_strategy(
     template: HelmTemplate,
-    strategy: Optional[dict[str, Any]],
-    expected: Optional[dict[str, Any]],
+    strategy: dict[str, Any] | None,
+    expected: dict[str, Any] | None,
 ):
     deployment = create_simple_user_deployment("foo")
     if strategy:

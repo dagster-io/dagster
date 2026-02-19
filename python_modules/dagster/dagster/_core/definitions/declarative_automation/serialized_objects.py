@@ -1,3 +1,4 @@
+import itertools
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import (  # noqa: UP035
@@ -9,7 +10,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypeAlias,
     TypeVar,
-    Union,
 )
 
 from dagster_shared.serdes import whitelist_for_serdes
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
         AutomationContext,
     )
 
-StructuredCursor = Union[str, SerializableEntitySubset, Sequence[SerializableEntitySubset]]
+StructuredCursor: TypeAlias = str | SerializableEntitySubset | Sequence[SerializableEntitySubset]
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
 
@@ -73,7 +73,7 @@ def _get_maybe_compressed_dynamic_partitions_subset(
 
 def get_serializable_candidate_subset(
     candidate_subset: EntitySubset,
-) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
+) -> SerializableEntitySubset | HistoricalAllPartitionsSubsetSentinel:
     """Do not serialize the candidate subset directly if it is an AllPartitionsSubset, compress
     DefaultPartitionsSubset on a DynamicPartitionsDefinition to a KeyRangesPartitionsSubset.
     """
@@ -93,7 +93,7 @@ def get_serializable_true_subset(true_subset: EntitySubset) -> SerializableEntit
     return _get_maybe_compressed_dynamic_partitions_subset(true_subset)
 
 
-OperatorType: TypeAlias = Union[Literal["and"], Literal["or"], Literal["not"], Literal["identity"]]
+OperatorType: TypeAlias = Literal["and"] | Literal["or"] | Literal["not"] | Literal["identity"]
 
 
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
@@ -103,8 +103,8 @@ class AutomationConditionNodeSnapshot(NamedTuple):
     class_name: str
     description: str
     unique_id: str
-    label: Optional[str] = None
-    name: Optional[str] = None
+    label: str | None = None
+    name: str | None = None
     operator_type: OperatorType = "identity"
 
 
@@ -134,17 +134,15 @@ class AutomationConditionEvaluation(Generic[T_EntityKey]):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AutomationConditionNodeSnapshot
-    start_timestamp: Optional[float]
-    end_timestamp: Optional[float]
+    start_timestamp: float | None
+    end_timestamp: float | None
 
     true_subset: SerializableEntitySubset[T_EntityKey]
-    candidate_subset: Union[
-        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
-    ]
+    candidate_subset: SerializableEntitySubset[T_EntityKey] | HistoricalAllPartitionsSubsetSentinel
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
-    metadata: Optional[MetadataMapping] = None
+    metadata: MetadataMapping | None = None
 
     @property
     def key(self) -> T_EntityKey:
@@ -193,16 +191,12 @@ class AutomationConditionEvaluationWithRunIds(Generic[T_EntityKey]):
 @dataclass
 class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     true_subset: SerializableEntitySubset[T_EntityKey]
-    candidate_subset: Union[
-        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
-    ]
+    candidate_subset: SerializableEntitySubset[T_EntityKey] | HistoricalAllPartitionsSubsetSentinel
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
-    extra_state: Optional[StructuredCursor]
-    metadata: Optional[MetadataMapping] = None
+    extra_state: StructuredCursor | None
+    metadata: MetadataMapping | None = None
 
-    def get_structured_cursor(
-        self, as_type: type[T_StructuredCursor]
-    ) -> Optional[T_StructuredCursor]:
+    def get_structured_cursor(self, as_type: type[T_StructuredCursor]) -> T_StructuredCursor | None:
         """Returns the extra_state value if it is of the expected type. Otherwise, returns None."""
         if isinstance(self.extra_state, as_type):
             return self.extra_state
@@ -227,7 +221,7 @@ class AutomationConditionCursor(Generic[T_EntityKey]):
 
     previous_requested_subset: SerializableEntitySubset
     effective_timestamp: float
-    last_event_id: Optional[int]
+    last_event_id: int | None
 
     node_cursors_by_unique_id: Mapping[str, AutomationConditionNodeCursor]
     result_value_hash: str
@@ -300,10 +294,10 @@ class AutomationConditionEvaluationState:
     """DEPRECATED: exists only for backcompat purposes."""
 
     previous_evaluation: AutomationConditionEvaluation
-    previous_tick_evaluation_timestamp: Optional[float]
+    previous_tick_evaluation_timestamp: float | None
 
-    max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
+    max_storage_id: int | None
+    extra_state_by_unique_id: Mapping[str, StructuredCursor | None]
 
     @property
     def asset_key(self) -> AssetKey:
@@ -312,3 +306,38 @@ class AutomationConditionEvaluationState:
     @property
     def true_subset(self) -> SerializableEntitySubset:
         return self.previous_evaluation.true_subset
+
+
+def get_expanded_label(
+    item: AutomationConditionEvaluation | AutomationConditionSnapshot,
+    use_label=False,
+) -> Sequence[str]:
+    if isinstance(item, AutomationConditionSnapshot):
+        label, name, description, children = (
+            item.node_snapshot.label,
+            item.node_snapshot.name,
+            item.node_snapshot.description,
+            item.children,
+        )
+    else:
+        snapshot = item.condition_snapshot
+        label, name, description, children = (
+            snapshot.label,
+            snapshot.name,
+            snapshot.description,
+            item.child_evaluations,
+        )
+
+    if use_label and label is not None:
+        return [label]
+    node_text = name or description
+    child_labels = [f"({' '.join(get_expanded_label(c, use_label=True))})" for c in children]
+    if len(child_labels) == 0:
+        return [node_text]
+    elif len(child_labels) == 1:
+        return [node_text, f"{child_labels[0]}"]
+    else:
+        # intersperses node_text (e.g. AND) between each child label
+        return list(itertools.chain(*itertools.zip_longest(child_labels, [], fillvalue=node_text)))[
+            :-1
+        ]

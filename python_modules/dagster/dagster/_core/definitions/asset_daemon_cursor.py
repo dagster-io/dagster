@@ -11,9 +11,10 @@ from dagster_shared.serdes.serdes import (
     PackableValue,
     SerializableNonScalarKeyMapping,
     UnpackContext,
+    UnpackedValue,
     WhitelistMap,
+    inner_unpack_value,
     pack_value,
-    unpack_value,
     whitelist_for_serdes,
 )
 
@@ -53,8 +54,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
+    ) -> UnpackedValue:
+        return inner_unpack_value(unpacked_value, whitelist_map, context)
 
 
 @whitelist_for_serdes(
@@ -80,8 +81,8 @@ class AssetDaemonCursor:
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
-    previous_evaluation_state: Optional[Sequence["AutomationConditionEvaluationState"]]
-    previous_condition_cursors: Optional[Sequence["AutomationConditionCursor"]] = None
+    previous_evaluation_state: Sequence["AutomationConditionEvaluationState"] | None
+    previous_condition_cursors: Sequence["AutomationConditionCursor"] | None = None
 
     @staticmethod
     def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
@@ -169,7 +170,7 @@ class AssetDaemonCursor:
 
 
 def backcompat_deserialize_asset_daemon_cursor_str(
-    cursor_str: str, asset_graph: Optional[BaseAssetGraph], default_evaluation_id: int
+    cursor_str: str, asset_graph: BaseAssetGraph | None, default_evaluation_id: int
 ) -> AssetDaemonCursor:
     """This serves as a backcompat layer for deserializing the old cursor format. Will only recover
     the previous evaluation id.
@@ -198,7 +199,7 @@ class LegacyAssetDaemonCursorWrapper(NamedTuple):
 
     serialized_cursor: str
 
-    def get_asset_daemon_cursor(self, asset_graph: Optional[BaseAssetGraph]) -> AssetDaemonCursor:
+    def get_asset_daemon_cursor(self, asset_graph: BaseAssetGraph | None) -> AssetDaemonCursor:
         return backcompat_deserialize_asset_daemon_cursor_str(
             self.serialized_cursor, asset_graph, 0
         )

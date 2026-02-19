@@ -7,7 +7,7 @@ import textwrap
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from dagster import AssetKey
@@ -32,8 +32,13 @@ from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline 
 
 
 def dlt_init(source: str, dest: str) -> None:
-    yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
-    subprocess.check_call(["dlt", "init", source, dest], stdin=yes.stdout)
+    # Use text input instead of Unix 'yes' command for cross-platform compatibility
+    subprocess.run(
+        ["dlt", "init", source, dest],
+        input="y\n" * 100,
+        text=True,
+        check=True,
+    )
 
 
 @contextmanager
@@ -41,7 +46,7 @@ def setup_dlt_component(
     load_py_contents: Callable,
     defs_yaml_contents: dict[str, Any],
     setup_dlt_sources: Callable,
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
 ) -> Iterator[tuple[DltLoadCollectionComponent, Definitions]]:
     """Sets up a components project with a dlt component based on provided params."""
     with create_defs_folder_sandbox(
@@ -217,7 +222,7 @@ class TestDltTranslation(TestTranslationBatched):
         dlt_pipeline: Pipeline,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
     ) -> None:
         body = copy.deepcopy(BASIC_GITHUB_COMPONENT_BODY)
         body["attributes"]["loads"][0]["translation"] = attributes
@@ -228,7 +233,7 @@ class TestDltTranslation(TestTranslationBatched):
                 defs_yaml_contents=body,
                 setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
             ) as (
-                component,
+                _component,
                 defs,
             ),
         ):
@@ -300,7 +305,7 @@ def test_scaffold_component_with_source_and_destination(source: str, destination
 
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
-            defs,
+            _defs,
         ):
             assert isinstance(component, DltLoadCollectionComponent)
             # scaffolder generates a silly sample load right now because the complex parsing logic is flaky

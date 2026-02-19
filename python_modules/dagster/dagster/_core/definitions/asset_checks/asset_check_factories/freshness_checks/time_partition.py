@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Sequence
-from typing import Any, Union
+from typing import Any
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
@@ -45,7 +45,7 @@ from dagster._utils.schedules import (
 @superseded(additional_warn_text="Attach `FreshnessPolicy` objects to your assets instead.")
 def build_time_partition_freshness_checks(
     *,
-    assets: Sequence[Union[SourceAsset, CoercibleToAssetKey, AssetsDefinition]],
+    assets: Sequence[SourceAsset | CoercibleToAssetKey | AssetsDefinition],
     deadline_cron: str,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,

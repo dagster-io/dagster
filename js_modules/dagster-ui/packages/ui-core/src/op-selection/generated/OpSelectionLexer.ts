@@ -1,15 +1,9 @@
-// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /home/user/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.13.1
 
-import {CharStream} from 'antlr4ts/CharStream';
-import {Lexer} from 'antlr4ts/Lexer';
-import {Vocabulary} from 'antlr4ts/Vocabulary';
-import {VocabularyImpl} from 'antlr4ts/VocabularyImpl';
-import {ATN} from 'antlr4ts/atn/ATN';
-import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
-import {LexerATNSimulator} from 'antlr4ts/atn/LexerATNSimulator';
-import * as Utils from 'antlr4ts/misc/Utils';
+import * as antlr from 'antlr4ng';
+import {Token} from 'antlr4ng';
 
-export class OpSelectionLexer extends Lexer {
+export class OpSelectionLexer extends antlr.Lexer {
   public static readonly AND = 1;
   public static readonly OR = 2;
   public static readonly NOT = 3;
@@ -27,39 +21,16 @@ export class OpSelectionLexer extends Lexer {
   public static readonly UNQUOTED_WILDCARD_STRING = 15;
   public static readonly WS = 16;
 
-  // tslint:disable:no-trailing-whitespace
-  public static readonly channelNames: string[] = ['DEFAULT_TOKEN_CHANNEL', 'HIDDEN'];
+  public static readonly channelNames = ['DEFAULT_TOKEN_CHANNEL', 'HIDDEN'];
 
-  // tslint:disable:no-trailing-whitespace
-  public static readonly modeNames: string[] = ['DEFAULT_MODE'];
-
-  public static readonly ruleNames: string[] = [
-    'AND',
-    'OR',
-    'NOT',
-    'STAR',
-    'PLUS',
-    'DIGITS',
-    'COLON',
-    'LPAREN',
-    'RPAREN',
-    'NAME',
-    'SINKS',
-    'ROOTS',
-    'QUOTED_STRING',
-    'UNQUOTED_STRING',
-    'UNQUOTED_WILDCARD_STRING',
-    'WS',
-  ];
-
-  private static readonly _LITERAL_NAMES: Array<string | undefined> = [
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+  public static readonly literalNames = [
+    null,
+    null,
+    null,
+    null,
     "'*'",
     "'+'",
-    undefined,
+    null,
     "':'",
     "'('",
     "')'",
@@ -67,8 +38,9 @@ export class OpSelectionLexer extends Lexer {
     "'sinks'",
     "'roots'",
   ];
-  private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
-    undefined,
+
+  public static readonly symbolicNames = [
+    null,
     'AND',
     'OR',
     'NOT',
@@ -86,108 +58,129 @@ export class OpSelectionLexer extends Lexer {
     'UNQUOTED_WILDCARD_STRING',
     'WS',
   ];
-  public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
-    OpSelectionLexer._LITERAL_NAMES,
-    OpSelectionLexer._SYMBOLIC_NAMES,
-    [],
-  );
 
-  // @Override
-  // @NotNull
-  public get vocabulary(): Vocabulary {
-    return OpSelectionLexer.VOCABULARY;
-  }
-  // tslint:enable:no-trailing-whitespace
+  public static readonly modeNames = ['DEFAULT_MODE'];
 
-  constructor(input: CharStream) {
+  public static readonly ruleNames = [
+    'AND',
+    'OR',
+    'NOT',
+    'STAR',
+    'PLUS',
+    'DIGITS',
+    'COLON',
+    'LPAREN',
+    'RPAREN',
+    'NAME',
+    'SINKS',
+    'ROOTS',
+    'QUOTED_STRING',
+    'UNQUOTED_STRING',
+    'UNQUOTED_WILDCARD_STRING',
+    'WS',
+  ];
+
+  public constructor(input: antlr.CharStream) {
     super(input);
-    this._interp = new LexerATNSimulator(OpSelectionLexer._ATN, this);
+    this.interpreter = new antlr.LexerATNSimulator(
+      this,
+      OpSelectionLexer._ATN,
+      OpSelectionLexer.decisionsToDFA,
+      new antlr.PredictionContextCache(),
+    );
   }
 
-  // @Override
   public get grammarFileName(): string {
     return 'OpSelection.g4';
   }
 
-  // @Override
+  public get literalNames(): (string | null)[] {
+    return OpSelectionLexer.literalNames;
+  }
+  public get symbolicNames(): (string | null)[] {
+    return OpSelectionLexer.symbolicNames;
+  }
   public get ruleNames(): string[] {
     return OpSelectionLexer.ruleNames;
   }
 
-  // @Override
-  public get serializedATN(): string {
+  public get serializedATN(): number[] {
     return OpSelectionLexer._serializedATN;
   }
 
-  // @Override
   public get channelNames(): string[] {
     return OpSelectionLexer.channelNames;
   }
 
-  // @Override
   public get modeNames(): string[] {
     return OpSelectionLexer.modeNames;
   }
 
-  public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x02\x12w\b\x01\x04' +
-    '\x02\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04' +
-    '\x07\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r' +
-    '\x04\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x03\x02\x03\x02' +
-    '\x03\x02\x03\x02\x03\x02\x03\x02\x05\x02*\n\x02\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x05\x030\n\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04' +
-    '\x05\x048\n\x04\x03\x05\x03\x05\x03\x06\x03\x06\x03\x07\x06\x07?\n\x07' +
-    '\r\x07\x0E\x07@\x03\b\x03\b\x03\t\x03\t\x03\n\x03\n\x03\v\x03\v\x03\v' +
-    '\x03\v\x03\v\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\r\x03\r\x03\r\x03' +
-    '\r\x03\r\x03\r\x03\x0E\x03\x0E\x07\x0E\\\n\x0E\f\x0E\x0E\x0E_\v\x0E\x03' +
-    '\x0E\x03\x0E\x03\x0F\x03\x0F\x07\x0Fe\n\x0F\f\x0F\x0E\x0Fh\v\x0F\x03\x10' +
-    '\x03\x10\x07\x10l\n\x10\f\x10\x0E\x10o\v\x10\x03\x11\x06\x11r\n\x11\r' +
-    '\x11\x0E\x11s\x03\x11\x03\x11\x02\x02\x02\x12\x03\x02\x03\x05\x02\x04' +
-    '\x07\x02\x05\t\x02\x06\v\x02\x07\r\x02\b\x0F\x02\t\x11\x02\n\x13\x02\v' +
-    '\x15\x02\f\x17\x02\r\x19\x02\x0E\x1B\x02\x0F\x1D\x02\x10\x1F\x02\x11!' +
-    '\x02\x12\x03\x02\t\x03\x022;\x06\x02\f\f\x0F\x0F$$^^\x05\x02C\\aac|\x06' +
-    '\x022;C\\aac|\x06\x02,,C\\aac|\x07\x02,,2;C\\aac|\x05\x02\v\f\x0F\x0F' +
-    '""\x02~\x02\x03\x03\x02\x02\x02\x02\x05\x03\x02\x02\x02\x02\x07\x03' +
-    '\x02\x02\x02\x02\t\x03\x02\x02\x02\x02\v\x03\x02\x02\x02\x02\r\x03\x02' +
-    '\x02\x02\x02\x0F\x03\x02\x02\x02\x02\x11\x03\x02\x02\x02\x02\x13\x03\x02' +
-    '\x02\x02\x02\x15\x03\x02\x02\x02\x02\x17\x03\x02\x02\x02\x02\x19\x03\x02' +
-    '\x02\x02\x02\x1B\x03\x02\x02\x02\x02\x1D\x03\x02\x02\x02\x02\x1F\x03\x02' +
-    '\x02\x02\x02!\x03\x02\x02\x02\x03)\x03\x02\x02\x02\x05/\x03\x02\x02\x02' +
-    '\x077\x03\x02\x02\x02\t9\x03\x02\x02\x02\v;\x03\x02\x02\x02\r>\x03\x02' +
-    '\x02\x02\x0FB\x03\x02\x02\x02\x11D\x03\x02\x02\x02\x13F\x03\x02\x02\x02' +
-    '\x15H\x03\x02\x02\x02\x17M\x03\x02\x02\x02\x19S\x03\x02\x02\x02\x1BY\x03' +
-    '\x02\x02\x02\x1Db\x03\x02\x02\x02\x1Fi\x03\x02\x02\x02!q\x03\x02\x02\x02' +
-    "#$\x07c\x02\x02$%\x07p\x02\x02%*\x07f\x02\x02&'\x07C\x02\x02'(\x07P" +
-    '\x02\x02(*\x07F\x02\x02)#\x03\x02\x02\x02)&\x03\x02\x02\x02*\x04\x03\x02' +
-    '\x02\x02+,\x07q\x02\x02,0\x07t\x02\x02-.\x07Q\x02\x02.0\x07T\x02\x02/' +
-    '+\x03\x02\x02\x02/-\x03\x02\x02\x020\x06\x03\x02\x02\x0212\x07p\x02\x02' +
-    '23\x07q\x02\x0238\x07v\x02\x0245\x07P\x02\x0256\x07Q\x02\x0268\x07V\x02' +
-    '\x0271\x03\x02\x02\x0274\x03\x02\x02\x028\b\x03\x02\x02\x029:\x07,\x02' +
-    '\x02:\n\x03\x02\x02\x02;<\x07-\x02\x02<\f\x03\x02\x02\x02=?\t\x02\x02' +
-    '\x02>=\x03\x02\x02\x02?@\x03\x02\x02\x02@>\x03\x02\x02\x02@A\x03\x02\x02' +
-    '\x02A\x0E\x03\x02\x02\x02BC\x07<\x02\x02C\x10\x03\x02\x02\x02DE\x07*\x02' +
-    '\x02E\x12\x03\x02\x02\x02FG\x07+\x02\x02G\x14\x03\x02\x02\x02HI\x07p\x02' +
-    '\x02IJ\x07c\x02\x02JK\x07o\x02\x02KL\x07g\x02\x02L\x16\x03\x02\x02\x02' +
-    'MN\x07u\x02\x02NO\x07k\x02\x02OP\x07p\x02\x02PQ\x07m\x02\x02QR\x07u\x02' +
-    '\x02R\x18\x03\x02\x02\x02ST\x07t\x02\x02TU\x07q\x02\x02UV\x07q\x02\x02' +
-    'VW\x07v\x02\x02WX\x07u\x02\x02X\x1A\x03\x02\x02\x02Y]\x07$\x02\x02Z\\' +
-    '\n\x03\x02\x02[Z\x03\x02\x02\x02\\_\x03\x02\x02\x02][\x03\x02\x02\x02' +
-    ']^\x03\x02\x02\x02^`\x03\x02\x02\x02_]\x03\x02\x02\x02`a\x07$\x02\x02' +
-    'a\x1C\x03\x02\x02\x02bf\t\x04\x02\x02ce\t\x05\x02\x02dc\x03\x02\x02\x02' +
-    'eh\x03\x02\x02\x02fd\x03\x02\x02\x02fg\x03\x02\x02\x02g\x1E\x03\x02\x02' +
-    '\x02hf\x03\x02\x02\x02im\t\x06\x02\x02jl\t\x07\x02\x02kj\x03\x02\x02\x02' +
-    'lo\x03\x02\x02\x02mk\x03\x02\x02\x02mn\x03\x02\x02\x02n \x03\x02\x02\x02' +
-    'om\x03\x02\x02\x02pr\t\b\x02\x02qp\x03\x02\x02\x02rs\x03\x02\x02\x02s' +
-    'q\x03\x02\x02\x02st\x03\x02\x02\x02tu\x03\x02\x02\x02uv\b\x11\x02\x02' +
-    'v"\x03\x02\x02\x02\v\x02)/7@]fms\x03\b\x02\x02';
-  public static __ATN: ATN;
-  public static get _ATN(): ATN {
+  public static readonly _serializedATN: number[] = [
+    4, 0, 16, 117, 6, -1, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2,
+    6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7, 10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7,
+    13, 2, 14, 7, 14, 2, 15, 7, 15, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 3, 0, 40, 8, 0, 1, 1, 1, 1,
+    1, 1, 1, 1, 3, 1, 46, 8, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 54, 8, 2, 1, 3, 1, 3, 1,
+    4, 1, 4, 1, 5, 4, 5, 61, 8, 5, 11, 5, 12, 5, 62, 1, 6, 1, 6, 1, 7, 1, 7, 1, 8, 1, 8, 1, 9, 1, 9,
+    1, 9, 1, 9, 1, 9, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 11, 1, 11, 1, 11, 1, 11, 1, 11,
+    1, 11, 1, 12, 1, 12, 5, 12, 90, 8, 12, 10, 12, 12, 12, 93, 9, 12, 1, 12, 1, 12, 1, 13, 1, 13, 5,
+    13, 99, 8, 13, 10, 13, 12, 13, 102, 9, 13, 1, 14, 1, 14, 5, 14, 106, 8, 14, 10, 14, 12, 14, 109,
+    9, 14, 1, 15, 4, 15, 112, 8, 15, 11, 15, 12, 15, 113, 1, 15, 1, 15, 0, 0, 16, 1, 1, 3, 2, 5, 3,
+    7, 4, 9, 5, 11, 6, 13, 7, 15, 8, 17, 9, 19, 10, 21, 11, 23, 12, 25, 13, 27, 14, 29, 15, 31, 16,
+    1, 0, 7, 1, 0, 48, 57, 4, 0, 10, 10, 13, 13, 34, 34, 92, 92, 3, 0, 65, 90, 95, 95, 97, 122, 4,
+    0, 48, 57, 65, 90, 95, 95, 97, 122, 4, 0, 42, 42, 65, 90, 95, 95, 97, 122, 5, 0, 42, 42, 48, 57,
+    65, 90, 95, 95, 97, 122, 3, 0, 9, 10, 13, 13, 32, 32, 124, 0, 1, 1, 0, 0, 0, 0, 3, 1, 0, 0, 0,
+    0, 5, 1, 0, 0, 0, 0, 7, 1, 0, 0, 0, 0, 9, 1, 0, 0, 0, 0, 11, 1, 0, 0, 0, 0, 13, 1, 0, 0, 0, 0,
+    15, 1, 0, 0, 0, 0, 17, 1, 0, 0, 0, 0, 19, 1, 0, 0, 0, 0, 21, 1, 0, 0, 0, 0, 23, 1, 0, 0, 0, 0,
+    25, 1, 0, 0, 0, 0, 27, 1, 0, 0, 0, 0, 29, 1, 0, 0, 0, 0, 31, 1, 0, 0, 0, 1, 39, 1, 0, 0, 0, 3,
+    45, 1, 0, 0, 0, 5, 53, 1, 0, 0, 0, 7, 55, 1, 0, 0, 0, 9, 57, 1, 0, 0, 0, 11, 60, 1, 0, 0, 0, 13,
+    64, 1, 0, 0, 0, 15, 66, 1, 0, 0, 0, 17, 68, 1, 0, 0, 0, 19, 70, 1, 0, 0, 0, 21, 75, 1, 0, 0, 0,
+    23, 81, 1, 0, 0, 0, 25, 87, 1, 0, 0, 0, 27, 96, 1, 0, 0, 0, 29, 103, 1, 0, 0, 0, 31, 111, 1, 0,
+    0, 0, 33, 34, 5, 97, 0, 0, 34, 35, 5, 110, 0, 0, 35, 40, 5, 100, 0, 0, 36, 37, 5, 65, 0, 0, 37,
+    38, 5, 78, 0, 0, 38, 40, 5, 68, 0, 0, 39, 33, 1, 0, 0, 0, 39, 36, 1, 0, 0, 0, 40, 2, 1, 0, 0, 0,
+    41, 42, 5, 111, 0, 0, 42, 46, 5, 114, 0, 0, 43, 44, 5, 79, 0, 0, 44, 46, 5, 82, 0, 0, 45, 41, 1,
+    0, 0, 0, 45, 43, 1, 0, 0, 0, 46, 4, 1, 0, 0, 0, 47, 48, 5, 110, 0, 0, 48, 49, 5, 111, 0, 0, 49,
+    54, 5, 116, 0, 0, 50, 51, 5, 78, 0, 0, 51, 52, 5, 79, 0, 0, 52, 54, 5, 84, 0, 0, 53, 47, 1, 0,
+    0, 0, 53, 50, 1, 0, 0, 0, 54, 6, 1, 0, 0, 0, 55, 56, 5, 42, 0, 0, 56, 8, 1, 0, 0, 0, 57, 58, 5,
+    43, 0, 0, 58, 10, 1, 0, 0, 0, 59, 61, 7, 0, 0, 0, 60, 59, 1, 0, 0, 0, 61, 62, 1, 0, 0, 0, 62,
+    60, 1, 0, 0, 0, 62, 63, 1, 0, 0, 0, 63, 12, 1, 0, 0, 0, 64, 65, 5, 58, 0, 0, 65, 14, 1, 0, 0, 0,
+    66, 67, 5, 40, 0, 0, 67, 16, 1, 0, 0, 0, 68, 69, 5, 41, 0, 0, 69, 18, 1, 0, 0, 0, 70, 71, 5,
+    110, 0, 0, 71, 72, 5, 97, 0, 0, 72, 73, 5, 109, 0, 0, 73, 74, 5, 101, 0, 0, 74, 20, 1, 0, 0, 0,
+    75, 76, 5, 115, 0, 0, 76, 77, 5, 105, 0, 0, 77, 78, 5, 110, 0, 0, 78, 79, 5, 107, 0, 0, 79, 80,
+    5, 115, 0, 0, 80, 22, 1, 0, 0, 0, 81, 82, 5, 114, 0, 0, 82, 83, 5, 111, 0, 0, 83, 84, 5, 111, 0,
+    0, 84, 85, 5, 116, 0, 0, 85, 86, 5, 115, 0, 0, 86, 24, 1, 0, 0, 0, 87, 91, 5, 34, 0, 0, 88, 90,
+    8, 1, 0, 0, 89, 88, 1, 0, 0, 0, 90, 93, 1, 0, 0, 0, 91, 89, 1, 0, 0, 0, 91, 92, 1, 0, 0, 0, 92,
+    94, 1, 0, 0, 0, 93, 91, 1, 0, 0, 0, 94, 95, 5, 34, 0, 0, 95, 26, 1, 0, 0, 0, 96, 100, 7, 2, 0,
+    0, 97, 99, 7, 3, 0, 0, 98, 97, 1, 0, 0, 0, 99, 102, 1, 0, 0, 0, 100, 98, 1, 0, 0, 0, 100, 101,
+    1, 0, 0, 0, 101, 28, 1, 0, 0, 0, 102, 100, 1, 0, 0, 0, 103, 107, 7, 4, 0, 0, 104, 106, 7, 5, 0,
+    0, 105, 104, 1, 0, 0, 0, 106, 109, 1, 0, 0, 0, 107, 105, 1, 0, 0, 0, 107, 108, 1, 0, 0, 0, 108,
+    30, 1, 0, 0, 0, 109, 107, 1, 0, 0, 0, 110, 112, 7, 6, 0, 0, 111, 110, 1, 0, 0, 0, 112, 113, 1,
+    0, 0, 0, 113, 111, 1, 0, 0, 0, 113, 114, 1, 0, 0, 0, 114, 115, 1, 0, 0, 0, 115, 116, 6, 15, 0,
+    0, 116, 32, 1, 0, 0, 0, 9, 0, 39, 45, 53, 62, 91, 100, 107, 113, 1, 6, 0, 0,
+  ];
+
+  private static __ATN: antlr.ATN;
+  public static get _ATN(): antlr.ATN {
     if (!OpSelectionLexer.__ATN) {
-      OpSelectionLexer.__ATN = new ATNDeserializer().deserialize(
-        Utils.toCharArray(OpSelectionLexer._serializedATN),
+      OpSelectionLexer.__ATN = new antlr.ATNDeserializer().deserialize(
+        OpSelectionLexer._serializedATN,
       );
     }
 
     return OpSelectionLexer.__ATN;
   }
+
+  private static readonly vocabulary = new antlr.Vocabulary(
+    OpSelectionLexer.literalNames,
+    OpSelectionLexer.symbolicNames,
+    [],
+  );
+
+  public override get vocabulary(): antlr.Vocabulary {
+    return OpSelectionLexer.vocabulary;
+  }
+
+  private static readonly decisionsToDFA = OpSelectionLexer._ATN.decisionToState.map(
+    (ds: antlr.DecisionState, index: number) => new antlr.DFA(ds, index),
+  );
 }

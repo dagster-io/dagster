@@ -1,5 +1,7 @@
 .PHONY: pyright
 
+export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
+
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
 # - Multi-command rules (like `ruff` below) by default terminate as soon as a command has a non-0
@@ -7,6 +9,7 @@
 #   regardless of the preceding command's exit status.
 
 pyright:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --all
 
 install_prettier:
@@ -16,11 +19,13 @@ install_pyright:
 	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
 
 rebuild_pyright:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --all --rebuild
 
 # Skip typecheck so that this can be used to test if all requirements can successfully be resolved
 # in CI independently of typechecking.
 rebuild_pyright_pins:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --update-pins --skip-typecheck
 
 quick_pyright:
@@ -77,7 +82,11 @@ sanity_check:
 	@! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
-	cd js_modules/dagster-ui/; yarn install && yarn build
+	corepack enable
+	yarn install
+	yarn workspace @dagster-io/app-oss build
+	yarn workspace @dagster-io/app-oss replace-asset-prefix
+	cd python_modules/dagster-webserver/dagster_webserver && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagster-ui/packages/app-oss/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphiql ./webapp/build/vendor && cp ../../../js_modules/dagster-ui/packages/app-oss/csp-header.txt ./webapp/build
 
 rebuild_ui_with_profiling: sanity_check
 	cd js_modules/dagster-ui/; yarn install && yarn build-with-profiling
@@ -96,16 +105,6 @@ check_manifest:
 	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
-
-ready_dagster_dg_docs_for_publish:
-	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
-	mkdir -p python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
-	cp -r js_modules/dagster-ui/packages/dg-docs-components python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
-	cp -r js_modules/dagster-ui/packages/dg-docs-site python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
-	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-components/.next
-	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/.next
-	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-components/node_modules
-	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/node_modules
 
 format_docs:
 	cd docs; yarn format

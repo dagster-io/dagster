@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   TextInput,
   Tooltip,
@@ -147,9 +146,9 @@ export const EditableTagList = ({
   const copyAction = useCopyAction();
 
   return (
-    <Group spacing={16} direction="column">
+    <Box flex={{direction: 'column', gap: 16}}>
       {tagsFromDefinition.length ? (
-        <Group direction="column" spacing={8}>
+        <Box flex={{direction: 'column', gap: 8}}>
           <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
             Tags from definition:
           </Box>
@@ -169,7 +168,7 @@ export const EditableTagList = ({
               return <RunTag tag={tag} key={key} actions={[copyAction]} />;
             })}
           </TagList>
-        </Group>
+        </Box>
       ) : null}
       <Box flex={{direction: 'column', gap: 12}}>
         {editableTagsHeading ? <div>{editableTagsHeading}</div> : null}
@@ -216,7 +215,7 @@ export const EditableTagList = ({
           </Button>
         </Box>
       </Box>
-    </Group>
+    </Box>
   );
 };
 

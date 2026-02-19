@@ -7,7 +7,7 @@ import atexit
 import sys
 from itertools import islice
 from os import environ
-from typing import Any, Optional
+from typing import Any
 
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
@@ -122,9 +122,7 @@ class MlFlow(metaclass=MlflowMeta):
         # a process exits in parallel runs
         atexit.unregister(mlflow.end_run)
 
-    def _get_current_run_id(
-        self, experiment: Optional[Any] = None, dagster_run_id: Optional[str] = None
-    ):
+    def _get_current_run_id(self, experiment: Any | None = None, dagster_run_id: str | None = None):
         """Gets the run id of a specific dagster run and experiment id.
         If it doesn't exist then it returns a None.
 

@@ -27,18 +27,20 @@ export type AssetHealthQuery = {
             materializationStatusMetadata:
               | {
                   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-                  failedRunId: string;
+                  failedRunId: string | null;
                 }
               | {
                   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
                   numMissingPartitions: number;
                   numFailedPartitions: number;
                   totalNumPartitions: number;
+                  latestFailedRunId: string | null;
                 }
               | {
                   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
                   numMissingPartitions: number;
                   totalNumPartitions: number;
+                  latestRunId: string | null;
                 }
               | null;
             assetChecksStatusMetadata:
@@ -80,6 +82,7 @@ export type AssetHealthQuery = {
 
 export type AssetHealthFragment = {
   __typename: 'Asset';
+  id: string;
   latestMaterializationTimestamp: number | null;
   latestFailedToMaterializeTimestamp: number | null;
   freshnessStatusChangedTimestamp: number | null;
@@ -91,17 +94,22 @@ export type AssetHealthFragment = {
     assetChecksStatus: Types.AssetHealthStatus;
     freshnessStatus: Types.AssetHealthStatus;
     materializationStatusMetadata:
-      | {__typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta'; failedRunId: string}
+      | {
+          __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
+          failedRunId: string | null;
+        }
       | {
           __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
           numMissingPartitions: number;
           numFailedPartitions: number;
           totalNumPartitions: number;
+          latestFailedRunId: string | null;
         }
       | {
           __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
           numMissingPartitions: number;
           totalNumPartitions: number;
+          latestRunId: string | null;
         }
       | null;
     assetChecksStatusMetadata:
@@ -134,17 +142,19 @@ export type AssetHealthMaterializationDegradedPartitionedMetaFragment = {
   numMissingPartitions: number;
   numFailedPartitions: number;
   totalNumPartitions: number;
+  latestFailedRunId: string | null;
 };
 
 export type AssetHealthMaterializationHealthyPartitionedMetaFragment = {
   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
   numMissingPartitions: number;
   totalNumPartitions: number;
+  latestRunId: string | null;
 };
 
 export type AssetHealthMaterializationDegradedNotPartitionedMetaFragment = {
   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-  failedRunId: string;
+  failedRunId: string | null;
 };
 
 export type AssetHealthCheckDegradedMetaFragment = {
@@ -171,4 +181,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = 'ff7311f69faa34a94e386cd735beccef7a4d933078bc9b5caf9b95e638637e05';
+export const AssetHealthQueryVersion = 'e06ca48f7c8e64526e1178b901ba13db9697654e42f861ddba39e1b0045ba4ad';

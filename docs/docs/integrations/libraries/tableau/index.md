@@ -1,6 +1,7 @@
 ---
 title: Dagster & Tableau (Component)
 sidebar_label: Tableau
+sidebar_position: 1
 description: The dagster-tableau library provides a TableauComponent, which can be used to represent Tableau assets as assets in Dagster.
 tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
@@ -168,3 +169,87 @@ You may also specify distinct translation behavior for specific data types. For 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/11-list-defs.txt" />
 </WideContent>
+
+## 6. Filter workbooks and projects
+
+You can filter which Tableau content is loaded into Dagster using the `tableau_selector`. This is useful when you only want to materialize a subset of your Tableau workspace.
+
+### Filter by workbook ID
+
+To include only specific workbooks, use the `tableau_selector` with a `workbooks` section containing a list of workbook IDs:
+
+```yaml
+type: dagster_tableau.TableauComponent
+
+attributes:
+  workspace:
+    type: cloud
+    connected_app_client_id: '{{ env.TABLEAU_CLIENT_ID }}'
+    connected_app_secret_id: '{{ env.TABLEAU_SECRET_ID }}'
+    connected_app_secret_value: '{{ env.TABLEAU_SECRET_VALUE }}'
+    username: '{{ env.TABLEAU_USERNAME }}'
+    site_name: my_site
+    pod_name: my_pod
+  tableau_selector:
+    workbooks:
+      ids:
+        - 'workbook-123'
+        - 'workbook-456'
+```
+
+### Filter by project
+
+To include all workbooks from specific projects, use the `tableau_selector` with a `projects` section. You can filter by project ID or project name:
+
+```yaml
+type: dagster_tableau.TableauComponent
+
+attributes:
+  workspace:
+    type: cloud
+    connected_app_client_id: '{{ env.TABLEAU_CLIENT_ID }}'
+    connected_app_secret_id: '{{ env.TABLEAU_SECRET_ID }}'
+    connected_app_secret_value: '{{ env.TABLEAU_SECRET_VALUE }}'
+    username: '{{ env.TABLEAU_USERNAME }}'
+    site_name: my_site
+    pod_name: my_pod
+  tableau_selector:
+    projects:
+      ids:
+        - 'project-123'
+        - 'project-456'
+      names:
+        - 'Sales Analytics'
+        - 'Marketing Dashboards'
+```
+
+### Combine workbook and project filters
+
+You can use both `workbooks` and `projects` selectors together within `tableau_selector`. Workbooks that match either selector will be included:
+
+```yaml
+type: dagster_tableau.TableauComponent
+
+attributes:
+  workspace:
+    type: cloud
+    connected_app_client_id: '{{ env.TABLEAU_CLIENT_ID }}'
+    connected_app_secret_id: '{{ env.TABLEAU_SECRET_ID }}'
+    connected_app_secret_value: '{{ env.TABLEAU_SECRET_VALUE }}'
+    username: '{{ env.TABLEAU_USERNAME }}'
+    site_name: my_site
+    pod_name: my_pod
+  tableau_selector:
+    workbooks:
+      ids:
+        - 'workbook-123'
+    projects:
+      names:
+        - 'Production Dashboards'
+```
+
+:::note
+
+When using the `projects` selector, published data sources will also be filtered to only include data sources from the selected projects. Embedded data sources from matching workbooks are always included.
+
+:::

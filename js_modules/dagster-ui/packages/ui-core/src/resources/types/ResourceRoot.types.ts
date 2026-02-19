@@ -4,6 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type ResourceDetailsFragment = {
   __typename: 'ResourceDetails';
+  id: string;
   name: string;
   description: string | null;
   schedulesUsing: Array<string>;
@@ -29,6 +30,7 @@ export type ResourceDetailsFragment = {
     type: Types.NestedResourceType;
     resource: {
       __typename: 'ResourceDetails';
+      id: string;
       name: string;
       resourceType: string;
       description: string | null;
@@ -39,6 +41,7 @@ export type ResourceDetailsFragment = {
     name: string;
     resource: {
       __typename: 'ResourceDetails';
+      id: string;
       name: string;
       resourceType: string;
       description: string | null;
@@ -67,6 +70,7 @@ export type ResourceRootQuery = {
       }
     | {
         __typename: 'ResourceDetails';
+        id: string;
         name: string;
         description: string | null;
         schedulesUsing: Array<string>;
@@ -92,6 +96,7 @@ export type ResourceRootQuery = {
           type: Types.NestedResourceType;
           resource: {
             __typename: 'ResourceDetails';
+            id: string;
             name: string;
             resourceType: string;
             description: string | null;
@@ -102,6 +107,7 @@ export type ResourceRootQuery = {
           name: string;
           resource: {
             __typename: 'ResourceDetails';
+            id: string;
             name: string;
             resourceType: string;
             description: string | null;
@@ -117,4 +123,4 @@ export type ResourceRootQuery = {
     | {__typename: 'ResourceNotFoundError'};
 };
 
-export const ResourceRootQueryVersion = '43f17e6a448c083d86843c38edbae83098853097a8a7a5f3ef3a3238e3880bff';
+export const ResourceRootQueryVersion = '72539e6a9e0954af4c08a716fca0de15e9506debb465fa8b472762e23368c8f3';

@@ -35,7 +35,7 @@ def test_event_list_hook_invocation():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Decorated function expects two parameters, context and event_list, but 0 were"
+            r"Decorated function expects two parameters, context and event_list, but 0 were"
             " provided."
         ),
     ):
@@ -44,7 +44,7 @@ def test_event_list_hook_invocation():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Decorated function expects two parameters, context and event_list, but 1 were"
+            r"Decorated function expects two parameters, context and event_list, but 1 were"
             " provided."
         ),
     ):
@@ -53,7 +53,7 @@ def test_event_list_hook_invocation():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Decorated function expects two parameters, context and event_list, but 1 were"
+            r"Decorated function expects two parameters, context and event_list, but 1 were"
             " provided."
         ),
     ):
@@ -62,19 +62,19 @@ def test_event_list_hook_invocation():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Decorated function expects two parameters, context and event_list, but 1 were"
+            r"Decorated function expects two parameters, context and event_list, but 1 were"
             " provided."
         ),
     ):
         basic_event_list_hook(None)
 
     with pytest.raises(
-        dg.DagsterInvalidInvocationError, match="Could not find expected argument 'context'."
+        dg.DagsterInvalidInvocationError, match=r"Could not find expected argument 'context'."
     ):
         basic_event_list_hook(foo=None, event_list=[])
 
     with pytest.raises(
-        dg.DagsterInvalidInvocationError, match="Could not find expected argument 'event_list'."
+        dg.DagsterInvalidInvocationError, match=r"Could not find expected argument 'event_list'."
     ):
         basic_event_list_hook(context=None, bar=[])
 
@@ -100,12 +100,12 @@ def test_context_hook_invocation(hook_decorator):
 
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Decorated function expects one parameter, _, but 0 were provided.",
+        match=r"Decorated function expects one parameter, _, but 0 were provided.",
     ):
         my_hook()  # pyright: ignore[reportCallIssue]
 
     with pytest.raises(
-        dg.DagsterInvalidInvocationError, match="Could not find expected argument '_'."
+        dg.DagsterInvalidInvocationError, match=r"Could not find expected argument '_'."
     ):
         my_hook(foo=None)  # pyright: ignore[reportCallIssue]
 
@@ -234,7 +234,7 @@ def test_properties_on_hook_context():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Tried to access the HookContext instance, but no instance was provided to"
+            r"Tried to access the HookContext instance, but no instance was provided to"
             " `build_hook_context`."
         ),
     ):

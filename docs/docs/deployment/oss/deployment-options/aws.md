@@ -41,11 +41,11 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 - A Postgres container for persistent storage
 - A container with user job code
 
-The [Dagster instance](/deployment/oss/oss-instance-configuration) uses the <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLauncher" /> to launch each run in its own ECS task.
+The [Dagster instance](/deployment/oss/oss-instance-configuration) uses the <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.EcsRunLauncher" /> to launch each run in its own ECS task.
 
 ### Launching runs in ECS
 
-The <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of your Dagster deployment is also running in ECS.
+The <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of your Dagster deployment is also running in ECS.
 
 By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the task that launches the run but overrides its container definition with a new command to launch a Dagster run.
 
@@ -109,7 +109,7 @@ If these tags are set, they will override any defaults set on the run launcher.
 
 ### Customizing the launched run's task
 
-The <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
+The <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
 
 To adjust the configuration of the launched run's task, set the `run_launcher.config.run_task_kwargs` field to a dictionary with additional key-value pairs that should be passed into the `run_task` boto3 API call. For example, to launch new runs in EC2 from a task running in Fargate, you could apply this configuration:
 
@@ -165,6 +165,64 @@ Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/lates
 - Keys are in camelCase as they correspond to arguments in boto's API
 - All arguments with the exception of `taskDefinition` and `overrides` can be used in `run_launcher.config.run_task_kwargs`. `taskDefinition` can be overridden by configuring the `run_launcher.config.task_definition` field instead.
 
+### Customizing task and container overrides
+
+For more fine-grained control over the ECS task, you can use the `ecs/task_overrides` and `ecs/container_overrides` tags. These allow you to pass additional configuration to the [task overrides](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskOverride.html) and [container overrides](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerOverride.html) in the `run_task` API call.
+
+#### Task overrides
+
+Use the `ecs/task_overrides` tag to set task-level overrides. For example:
+
+```py
+import dagster as dg
+
+@dg.op()
+def my_op(context):
+  context.log.info('running')
+
+@dg.job(
+  tags={
+    "ecs/task_overrides": {
+      "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
+    },
+  }
+)
+def my_job():
+  my_op()
+```
+
+#### Container overrides
+
+Use the `ecs/container_overrides` tag to set container-level overrides. For example:
+
+```py
+import dagster as dg
+
+@dg.op()
+def my_op(context):
+  context.log.info('running')
+
+@dg.job(
+  tags={
+    "ecs/container_overrides": {
+      "resourceRequirements": [
+        {"type": "GPU", "value": "1"},
+      ],
+    },
+  }
+)
+def my_job():
+  my_op()
+```
+
+:::note
+
+Using the `ecs/container_overrides` tag requires dagster version `1.12.9` or higher.
+
+The run launcher will always override the `name` and `command` fields of the container, so you cannot override these values. If you use the `ecs/cpu` or `ecs/memory` tags together with `ecs/container_overrides`, the values from the dedicated tags will be merged together, with values from `ecs/container_overrides` breaking any ties.
+
+:::
+
 ### Secrets management in ECS
 
 ECS can bind [AWS Secrets Managers secrets as environment variables when runs launch](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html). By default, Dagster will fetch any Secrets Manager secrets tagged with the `dagster` key and set them as environment variables.
@@ -203,7 +261,7 @@ In this example, any secret tagged with `dagster` will be included in the enviro
 
 To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers). For example, using an S3 bucket to store data passed between ops.
 
-You'll need to use <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
+You'll need to use <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 
 <CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.py" />
 
