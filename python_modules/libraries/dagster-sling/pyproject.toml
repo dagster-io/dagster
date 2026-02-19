@@ -3,9 +3,9 @@ requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dagster-graphql"
+name = "dagster-sling"
 version = "1!0+dev"
-description = "The GraphQL API for Dagster."
+description = "Package for performing ETL/ELT tasks with Sling in Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
@@ -19,27 +19,37 @@ classifiers = [
 ]
 dependencies = [
     "dagster==1!0+dev",
-    "graphene>=3,<4",
-    "gql[requests]>=3,<5",
-    "requests",
-    "starlette",  # used for run_in_threadpool utility fn
+    "sling>=1.1.5",
+    # Required due to a bug in uv that can cause sling-linux-amd64 to be installed instead.
+    # See: https://github.com/astral-sh/uv/issues/10945
+    "sling-mac-arm64; platform_system=='Darwin' and platform_machine=='arm64'",
 ]
 
 [project.urls]
-Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql"
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling"
 
-[project.scripts]
-dagster-graphql = "dagster_graphql.cli:main"
+[project.entry-points."dagster_dg_cli.registry_modules"]
+dagster_sling = "dagster_sling"
 
 [project.optional-dependencies]
-test = ["dagster-test"]
+test = [
+    "duckdb",
+    "dagster-dg-cli",
+]
 
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_graphql_tests*"]
+exclude = [
+    "dagster_sling_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "pytest.ini", "tox.ini", "tox_postgres.ini", "dagster_graphql_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_sling_tests/**",
+]

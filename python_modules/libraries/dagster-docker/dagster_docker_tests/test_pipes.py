@@ -38,7 +38,7 @@ def test_default():
             ],
             context=context,
             extras={"storage_root": "/tmp/", "multiplier": 2},
-            env={"PYTHONPATH": "/dagster_test/toys/external_execution/"},
+            env={"PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/"},
         ).get_results()
 
     result = materialize(
@@ -97,7 +97,9 @@ def test_file_io():
                 context=context,
                 extras={"storage_root": container_storage, "multiplier": 2},
                 container_kwargs={
-                    "environment": {"PYTHONPATH": "/dagster_test/toys/external_execution/"},
+                    "environment": {
+                        "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/"
+                    },
                     "volumes": volumes,
                 },
             ).get_results()

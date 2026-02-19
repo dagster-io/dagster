@@ -3,9 +3,9 @@ requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dagster-graphql"
+name = "dagster-fivetran"
 version = "1!0+dev"
-description = "The GraphQL API for Dagster."
+description = "Package for integrating Fivetran with Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
@@ -19,27 +19,38 @@ classifiers = [
 ]
 dependencies = [
     "dagster==1!0+dev",
-    "graphene>=3,<4",
-    "gql[requests]>=3,<5",
-    "requests",
-    "starlette",  # used for run_in_threadpool utility fn
 ]
 
 [project.urls]
-Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql"
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran"
 
 [project.scripts]
-dagster-graphql = "dagster_graphql.cli:main"
+dagster-fivetran = "dagster_fivetran.cli:main"
+
+[project.entry-points."dagster_dg_cli.registry_modules"]
+dagster_fivetran = "dagster_fivetran"
 
 [project.optional-dependencies]
-test = ["dagster-test"]
+managed = [
+    "dagster-managed-elements==1!0+dev",
+]
+test = [
+    "pytest-order",
+]
 
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_graphql_tests*"]
+exclude = [
+    "dagster_fivetran_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "pytest.ini", "tox.ini", "tox_postgres.ini", "dagster_graphql_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_fivetran_tests/**",
+]

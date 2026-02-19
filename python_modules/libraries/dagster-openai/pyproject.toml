@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-openai"
+version = "1!0+dev"
+description = "An OpenAI client resource for interacting with OpenAI API."
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    "openai",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-openai"
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_openai_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_openai_tests/**",
+]
