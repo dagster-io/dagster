@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import dagster as dg
 from dagster._annotations import preview, public
 from pydantic import Field
@@ -36,11 +34,11 @@ class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     storage_account: str = Field(description="The storage account name")
 
-    credential: Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential] = Field(
+    credential: ADLS2SASToken | ADLS2Key | ADLS2DefaultAzureCredential = Field(
         description="The credentials with which to authenticate",
     )
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None, description="Resource key for binding to definitions"
     )
 
