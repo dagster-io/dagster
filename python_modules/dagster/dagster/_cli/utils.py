@@ -3,7 +3,7 @@ import os
 import tempfile
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import click
 
@@ -85,7 +85,7 @@ def get_temporary_instance_for_cli(
 @contextmanager
 def get_possibly_temporary_instance_for_cli(
     cli_command: str = "this command",
-    instance_ref: Optional[InstanceRef] = None,
+    instance_ref: InstanceRef | None = None,
     logger: logging.Logger = logging.getLogger("dagster"),
 ) -> Iterator[DagsterInstance]:
     """Create an instance at the entrypoint for a dagster CLI command. Handles loading
@@ -113,7 +113,7 @@ def get_possibly_temporary_instance_for_cli(
 
 @contextmanager
 def get_instance_for_cli(
-    instance_ref: Optional[InstanceRef] = None,
+    instance_ref: InstanceRef | None = None,
     logger: logging.Logger = logging.getLogger("dagster"),
 ) -> Iterator[DagsterInstance]:
     """Create an instance at the entrypoint for a dagster CLI command. Handles loading

@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Optional, TypeVar, Union
+from typing import IO, TypeVar
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -194,7 +194,7 @@ class PipesFileMessageReader(PipesMessageReader):
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
         try:
-            for line in tail_file(self._path, lambda: is_resource_complete.is_set()):
+            for line in tail_file(self._path, is_resource_complete.is_set):
                 message = json.loads(line)
                 handler.handle_message(message)
         except:
@@ -277,13 +277,13 @@ class PipesThreadedMessageReader(PipesMessageReader):
 
     interval: float
     log_readers: dict[str, "PipesLogReader"]
-    opened_payload: Optional[PipesOpenedData]
-    launched_payload: Optional[PipesLaunchedData]
+    opened_payload: PipesOpenedData | None
+    launched_payload: PipesLaunchedData | None
 
     def __init__(
         self,
         interval: float = 10,
-        log_readers: Optional[Sequence["PipesLogReader"]] = None,
+        log_readers: Sequence["PipesLogReader"] | None = None,
     ):
         self.interval = interval
 
@@ -366,8 +366,8 @@ class PipesThreadedMessageReader(PipesMessageReader):
 
     @abstractmethod
     def download_messages(
-        self, cursor: Optional[TCursor], params: PipesParams
-    ) -> Optional[tuple[TCursor, str]]:
+        self, cursor: TCursor | None, params: PipesParams
+    ) -> tuple[TCursor, str] | None:
         """Download a chunk of messages from the target location.
 
         Args:
@@ -554,20 +554,20 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
     def __init__(
         self,
         interval: float = 10,
-        log_readers: Optional[Sequence["PipesLogReader"]] = None,
+        log_readers: Sequence["PipesLogReader"] | None = None,
     ):
         super().__init__(interval=interval, log_readers=log_readers)
 
         self.counter = 1
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         ...
         # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
 
     def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[tuple[int, str]]:
+        self, cursor: int | None, params: PipesParams
+    ) -> tuple[int, str] | None:
         # mapping new interface to the old one
         # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
         chunk = self.download_messages_chunk(self.counter, params)
@@ -595,7 +595,7 @@ class PipesLogReader(ABC):
         return self.__class__.__name__
 
     @property
-    def debug_info(self) -> Optional[str]:
+    def debug_info(self) -> str | None:
         """An optional message containing debug information about the log reader.
 
         It will be included in error messages when the log reader fails to start or throws an exception.
@@ -616,19 +616,19 @@ class PipesChunkedLogReader(PipesLogReader):
     """
 
     def __init__(
-        self, *, interval: float = 10, target_stream: IO[str], debug_info: Optional[str] = None
+        self, *, interval: float = 10, target_stream: IO[str], debug_info: str | None = None
     ):
         self.interval = interval
         self.target_stream = target_stream
-        self.thread: Optional[Thread] = None
+        self.thread: Thread | None = None
         self._debug_info = debug_info
 
     @property
-    def debug_info(self) -> Optional[str]:
+    def debug_info(self) -> str | None:
         return self._debug_info
 
     @abstractmethod
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]: ...
+    def download_log_chunk(self, params: PipesParams) -> str | None: ...
 
     def start(self, params: PipesParams, is_session_closed: Event) -> None:
         self.thread = Thread(target=self._reader_thread, args=(params, is_session_closed))
@@ -723,10 +723,10 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 @public
 @contextmanager
 def open_pipes_session(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: OpExecutionContext | AssetExecutionContext,
     context_injector: PipesContextInjector,
     message_reader: PipesMessageReader,
-    extras: Optional[PipesExtras] = None,
+    extras: PipesExtras | None = None,
 ) -> Iterator[PipesSession]:
     """Context manager that opens and closes a pipes session.
 

@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple  # noqa: UP035
 
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.utils.hash import hash_collection
@@ -54,19 +54,16 @@ class RepositoryLoadData(
             # version information about the state of each of the state backed components in the
             # location. the full state object is stored separately in the DefsStateStorage,
             # which will generally be blob storage.
-            ("defs_state_info", Optional[DefsStateInfo]),
+            ("defs_state_info", DefsStateInfo | None),
         ],
     )
 ):
     def __new__(
         cls,
-        cacheable_asset_data: Optional[
-            Mapping[str, Sequence[AssetsDefinitionCacheableData]]
-        ] = None,
-        reconstruction_metadata: Optional[
-            Mapping[str, CodeLocationReconstructionMetadataValue]
-        ] = None,
-        defs_state_info: Optional[DefsStateInfo] = None,
+        cacheable_asset_data: Mapping[str, Sequence[AssetsDefinitionCacheableData]] | None = None,
+        reconstruction_metadata: Mapping[str, CodeLocationReconstructionMetadataValue]
+        | None = None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         return super().__new__(
             cls,
@@ -115,9 +112,9 @@ class RepositoryDefinition:
         name: str,
         *,
         repository_data: RepositoryData,
-        description: Optional[str] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        description: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        repository_load_data: RepositoryLoadData | None = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -128,13 +125,13 @@ class RepositoryDefinition:
         )
 
     @property
-    def repository_load_data(self) -> Optional[RepositoryLoadData]:
+    def repository_load_data(self) -> RepositoryLoadData | None:
         return self._repository_load_data
 
     def replace_repository_load_data(
         self,
         reconstruction_metadata: Mapping[str, str],
-        defs_state_info: Optional[DefsStateInfo],
+        defs_state_info: DefsStateInfo | None,
     ) -> "RepositoryDefinition":
         """Modifies the repository load data to include the provided reconstruction metadata and defs state info."""
         check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
@@ -180,13 +177,13 @@ class RepositoryDefinition:
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Optional[str]: A human-readable description of the repository."""
         return self._description
 
     @public
     @property
-    def metadata(self) -> Optional[MetadataMapping]:
+    def metadata(self) -> MetadataMapping | None:
         """Optional[MetadataMapping]: Arbitrary metadata for the repository."""
         return self._metadata
 
@@ -336,15 +333,15 @@ class RepositoryDefinition:
 
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
-    ) -> Optional[JobDefinition]:
+    ) -> JobDefinition | None:
         return self.get_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_maybe_subset_job_def(
         self,
         job_name: str,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ):
         defn = self.get_job(job_name)
         return defn.get_subset(
@@ -358,11 +355,11 @@ class RepositoryDefinition:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[type] = None,
-        instance: Optional[DagsterInstance] = None,
-        partition_key: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        resource_config: Optional[Any] = None,
+        python_type: type | None = None,
+        instance: DagsterInstance | None = None,
+        partition_key: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        resource_config: Any | None = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -401,9 +398,7 @@ class RepositoryDefinition:
             )
 
     @public
-    def get_asset_value_loader(
-        self, instance: Optional[DagsterInstance] = None
-    ) -> "AssetValueLoader":
+    def get_asset_value_loader(self, instance: DagsterInstance | None = None) -> "AssetValueLoader":
         """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids

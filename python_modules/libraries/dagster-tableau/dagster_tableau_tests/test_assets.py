@@ -40,7 +40,7 @@ def test_tableau_assets_refreshable_ids_invalid(
         workspace=resource,
     )
 
-    external_asset_specs, materializable_asset_specs = (
+    _external_asset_specs, materializable_asset_specs = (
         parse_tableau_external_and_materializable_asset_specs(tableau_specs)
     )
 

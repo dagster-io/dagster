@@ -112,7 +112,7 @@ def test_metadata_value_timestamp():
 
     dt_without_timezone = datetime(2024, 3, 6, 12, 0, 0)
     with pytest.raises(
-        CheckError, match="Datetime values provided to MetadataValue.timestamp must have timezones"
+        CheckError, match=r"Datetime values provided to MetadataValue.timestamp must have timezones"
     ):
         MetadataValue.timestamp(dt_without_timezone)
 

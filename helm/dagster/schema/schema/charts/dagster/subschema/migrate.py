@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 from schema.charts.utils import kubernetes
@@ -7,5 +5,5 @@ from schema.charts.utils import kubernetes
 
 class Migrate(BaseModel):
     enabled: bool
-    extraContainers: Optional[list[kubernetes.Container]]
-    initContainers: Optional[list[kubernetes.Container]]
+    extraContainers: list[kubernetes.Container] | None
+    initContainers: list[kubernetes.Container] | None

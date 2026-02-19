@@ -59,15 +59,15 @@ class LegacyRuleEvaluationContext:
 
     asset_key: AssetKey
     condition: "AutomationCondition"
-    cursor: Optional[AutomationConditionCursor]
-    node_cursor: Optional[AutomationConditionNodeCursor]
+    cursor: AutomationConditionCursor | None
+    node_cursor: AutomationConditionNodeCursor | None
     candidate_subset: ValidAssetSubset
 
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
 
     request_subsets_by_key: Mapping[EntityKey, EntitySubset]
-    expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
+    expected_data_time_mapping: Mapping[AssetKey, datetime.datetime | None]
 
     start_timestamp: float
     respect_materialization_data_versions: bool
@@ -132,7 +132,7 @@ class LegacyRuleEvaluationContext:
         return self.instance_queryer.asset_graph
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         return self.asset_graph.get(self.asset_key).partitions_def
 
     @property
@@ -141,11 +141,11 @@ class LegacyRuleEvaluationContext:
         return self.instance_queryer.evaluation_time
 
     @property
-    def previous_max_storage_id(self) -> Optional[int]:
+    def previous_max_storage_id(self) -> int | None:
         return self.cursor.temporal_context.last_event_id if self.cursor else None
 
     @property
-    def previous_evaluation_timestamp(self) -> Optional[float]:
+    def previous_evaluation_timestamp(self) -> float | None:
         return self.cursor.effective_timestamp if self.cursor else None
 
     @property
@@ -206,7 +206,7 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
-    def _previous_tick_discarded_subset(self) -> Optional[SerializableEntitySubset[AssetKey]]:
+    def _previous_tick_discarded_subset(self) -> SerializableEntitySubset[AssetKey] | None:
         """Fetches the unique id corresponding to the DiscardOnMaxMaterializationsExceededRule, if
         that rule is part of the broader condition.
         """
@@ -277,7 +277,7 @@ class LegacyRuleEvaluationContext:
     @root_property
     def _parent_has_updated_subset_and_new_latest_storage_id(
         self,
-    ) -> tuple[ValidAssetSubset, Optional[int]]:
+    ) -> tuple[ValidAssetSubset, int | None]:
         """Returns the set of asset partitions whose parents have updated since the last time this
         condition was evaluated.
         """
@@ -305,7 +305,7 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
-    def new_max_storage_id(self) -> Optional[int]:
+    def new_max_storage_id(self) -> int | None:
         _, storage_id = self._parent_has_updated_subset_and_new_latest_storage_id
         return storage_id
 
@@ -388,7 +388,7 @@ class LegacyRuleEvaluationContext:
             AssetSubsetWithMetadata,
         )
 
-        mapping = defaultdict(lambda: self.empty_subset())
+        mapping = defaultdict(self.empty_subset)
         has_new_metadata_subset = self.empty_subset()
         for frozen_metadata, asset_partitions in asset_partitions_by_frozen_metadata.items():
             mapping[frozen_metadata] = ValidAssetSubset.from_asset_partitions_set(

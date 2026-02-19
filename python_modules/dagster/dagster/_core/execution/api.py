@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -268,7 +268,7 @@ def execute_run(
 
 @contextmanager
 def ephemeral_instance_if_missing(
-    instance: Optional[DagsterInstance],
+    instance: DagsterInstance | None,
 ) -> Iterator[DagsterInstance]:
     if instance:
         yield instance
@@ -321,11 +321,11 @@ def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
     run_config: Any = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Mapping[str, Any] | None = None,
     raise_on_error: bool = False,
-    op_selection: Optional[Sequence[str]] = None,
-    reexecution_options: Optional[ReexecutionOptions] = None,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
+    op_selection: Sequence[str] | None = None,
+    reexecution_options: ReexecutionOptions | None = None,
+    asset_selection: Sequence[AssetKey] | None = None,
 ) -> JobExecutionResult:
     """Execute a job synchronously.
 
@@ -457,13 +457,13 @@ def execute_job(
 
 @telemetry_wrapper
 def _logged_execute_job(
-    job_arg: Union[IJob, JobDefinition],
+    job_arg: IJob | JobDefinition,
     instance: DagsterInstance,
-    run_config: Optional[Mapping[str, object]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    op_selection: Optional[Sequence[str]] = None,
+    run_config: Mapping[str, object] | None = None,
+    tags: Mapping[str, str] | None = None,
+    op_selection: Sequence[str] | None = None,
     raise_on_error: bool = True,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Sequence[AssetKey] | None = None,
 ) -> JobExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -506,10 +506,10 @@ def _logged_execute_job(
 
 
 def _reexecute_job(
-    job_arg: Union[IJob, JobDefinition],
-    run_config: Optional[Mapping[str, object]],
+    job_arg: IJob | JobDefinition,
+    run_config: Mapping[str, object] | None,
     reexecution_options: ReexecutionOptions,
-    tags: Optional[Mapping[str, str]],
+    tags: Mapping[str, str] | None,
     instance: DagsterInstance,
     raise_on_error: bool,
 ) -> JobExecutionResult:
@@ -529,7 +529,7 @@ def _reexecute_job(
                 f"No parent run with id {reexecution_options.parent_run_id} found in instance.",
             )
 
-        execution_plan: Optional[ExecutionPlan] = None
+        execution_plan: ExecutionPlan | None = None
         # resolve step selection DSL queries using parent execution information
         if isinstance(reexecution_options, ReexecuteFromFailureOption):
             step_keys, known_state = KnownExecutionState.build_resume_retry_reexecution(
@@ -587,8 +587,8 @@ def execute_plan_iterator(
     job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
-    retry_mode: Optional[RetryMode] = None,
-    run_config: Optional[Mapping[str, object]] = None,
+    retry_mode: RetryMode | None = None,
+    run_config: Mapping[str, object] | None = None,
     step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
@@ -623,8 +623,8 @@ def execute_plan(
     job: IJob,
     instance: DagsterInstance,
     dagster_run: DagsterRun,
-    run_config: Optional[Mapping[str, object]] = None,
-    retry_mode: Optional[RetryMode] = None,
+    run_config: Mapping[str, object] | None = None,
+    retry_mode: RetryMode | None = None,
 ) -> Sequence[DagsterEvent]:
     """This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_job() above.
@@ -675,13 +675,13 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    job: Union[IJob, JobDefinition],
-    run_config: Optional[Mapping[str, object]] = None,
-    step_keys_to_execute: Optional[Sequence[str]] = None,
-    known_state: Optional[KnownExecutionState] = None,
-    instance_ref: Optional[InstanceRef] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    repository_load_data: Optional[RepositoryLoadData] = None,
+    job: IJob | JobDefinition,
+    run_config: Mapping[str, object] | None = None,
+    step_keys_to_execute: Sequence[str] | None = None,
+    known_state: KnownExecutionState | None = None,
+    instance_ref: InstanceRef | None = None,
+    tags: Mapping[str, str] | None = None,
+    repository_load_data: RepositoryLoadData | None = None,
 ) -> ExecutionPlan:
     if isinstance(job, IJob):
         # If you have repository_load_data, make sure to use it when building plan
@@ -886,16 +886,16 @@ class ExecuteRunWithPlanIterable:
 
 
 def _check_execute_job_args(
-    job_arg: Union[JobDefinition, IJob],
-    run_config: Optional[Mapping[str, object]],
-    tags: Optional[Mapping[str, str]],
-    op_selection: Optional[Sequence[str]] = None,
+    job_arg: JobDefinition | IJob,
+    run_config: Mapping[str, object] | None,
+    tags: Mapping[str, str] | None,
+    op_selection: Sequence[str] | None = None,
 ) -> tuple[
     IJob,
-    Optional[Mapping],
+    Mapping | None,
     Mapping[str, str],
-    Optional[AbstractSet[str]],
-    Optional[Sequence[str]],
+    AbstractSet[str] | None,
+    Sequence[str] | None,
 ]:
     ijob = InMemoryJob(job_arg) if isinstance(job_arg, JobDefinition) else job_arg
     job_def = job_arg if isinstance(job_arg, JobDefinition) else job_arg.get_definition()
@@ -923,7 +923,7 @@ def _check_execute_job_args(
 def _resolve_reexecute_step_selection(
     instance: DagsterInstance,
     job: IJob,
-    run_config: Optional[Mapping],
+    run_config: Mapping | None,
     parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
 ) -> ExecutionPlan:
@@ -948,8 +948,8 @@ def _resolve_reexecute_step_selection(
 
 
 def _job_with_repository_load_data(
-    job_arg: Union[JobDefinition, IJob],
-) -> tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
+    job_arg: JobDefinition | IJob,
+) -> tuple[JobDefinition | IJob, RepositoryLoadData | None]:
     """For ReconstructableJob, generate and return any required RepositoryLoadData, alongside
     a ReconstructableJob with this repository load data baked in.
     """

@@ -5,7 +5,6 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from datetime import datetime
-from typing import Optional, Union
 from uuid import uuid4
 
 from dagster import (
@@ -37,14 +36,14 @@ from pydantic import UUID4
 
 
 def event_log(
-    error_info: Optional[SerializableErrorInfo] = None,  # No error info by default
-    level: Union[str, int] = "INFO",  # Default to level `INFO`
+    error_info: SerializableErrorInfo | None = None,  # No error info by default
+    level: str | int = "INFO",  # Default to level `INFO`
     user_message: str = "test rate limit",  # A default user message
     run_id: str = "missing",  # Default to `missing` if no run ID is provided
     timestamp: float = datetime.now().timestamp(),  # Default to the current timestamp
-    step_key: Optional[str] = None,  # No specific step key by default
-    job_name: Optional[str] = None,  # No job name by default
-    dagster_event: Optional[DagsterEvent] = None,  # No associated Dagster event by default
+    step_key: str | None = None,  # No specific step key by default
+    job_name: str | None = None,  # No job name by default
+    dagster_event: DagsterEvent | None = None,  # No associated Dagster event by default
 ) -> EventLogEntry:
     return EventLogEntry(
         error_info=error_info,
@@ -59,16 +58,16 @@ def event_log(
 
 
 def dagster_event(
-    event_type_value: Union[str, DagsterEventType] = DagsterEventType.ALERT_START.value,
+    event_type_value: str | DagsterEventType = DagsterEventType.ALERT_START.value,
     job_name: str = "default_job",
-    step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
-    node_handle: Optional[NodeHandle] = None,
-    step_kind_value: Optional[str] = None,
-    logging_tags: Optional[Mapping[str, str]] = None,
-    event_specific_data: Optional[EventSpecificData] = None,
-    message: Optional[str] = None,
-    pid: Optional[int] = None,
-    step_key: Optional[str] = None,
+    step_handle: StepHandle | ResolvedFromDynamicStepHandle | None = None,
+    node_handle: NodeHandle | None = None,
+    step_kind_value: str | None = None,
+    logging_tags: Mapping[str, str] | None = None,
+    event_specific_data: EventSpecificData | None = None,
+    message: str | None = None,
+    pid: int | None = None,
+    step_key: str | None = None,
 ) -> DagsterEvent:
     if isinstance(event_type_value, DagsterEventType):
         event_type_value = event_type_value.value
@@ -88,23 +87,23 @@ def dagster_event(
 
 def dagster_run(
     job_name: str = "test-job",
-    run_id: Optional[Union[str, UUID4]] = None,
-    run_config: Optional[Mapping[str, object]] = None,
-    asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-    op_selection: Optional[Sequence[str]] = None,
-    resolved_op_selection: Optional[AbstractSet[str]] = None,
-    step_keys_to_execute: Optional[Sequence[str]] = None,
+    run_id: str | UUID4 | None = None,
+    run_config: Mapping[str, object] | None = None,
+    asset_selection: AbstractSet[AssetKey] | None = None,
+    asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
+    op_selection: Sequence[str] | None = None,
+    resolved_op_selection: AbstractSet[str] | None = None,
+    step_keys_to_execute: Sequence[str] | None = None,
     status: DagsterRunStatus = DagsterRunStatus.NOT_STARTED,
-    tags: Optional[Mapping[str, str]] = None,
-    root_run_id: Optional[str] = None,
-    parent_run_id: Optional[str] = None,
-    job_snapshot_id: Optional[str] = None,
-    execution_plan_snapshot_id: Optional[str] = None,
-    remote_job_origin: Optional[RemoteJobOrigin] = None,
-    job_code_origin: Optional[JobPythonOrigin] = None,
+    tags: Mapping[str, str] | None = None,
+    root_run_id: str | None = None,
+    parent_run_id: str | None = None,
+    job_snapshot_id: str | None = None,
+    execution_plan_snapshot_id: str | None = None,
+    remote_job_origin: RemoteJobOrigin | None = None,
+    job_code_origin: JobPythonOrigin | None = None,
     has_repository_load_data: bool = False,
-    run_op_concurrency: Optional[RunOpConcurrency] = None,
+    run_op_concurrency: RunOpConcurrency | None = None,
     **kwargs,
 ):
     if run_id is None:
@@ -141,7 +140,7 @@ def remote_repository(
     repository_snap: RepositorySnap,
     repository_handle: RepositoryHandle,
     auto_materialize_use_sensors: bool = True,
-    ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
+    ref_to_data_fn: Callable[[JobRefSnap], JobDataSnap] | None = None,
 ):
     return RemoteRepository(
         repository_snap=repository_snap,

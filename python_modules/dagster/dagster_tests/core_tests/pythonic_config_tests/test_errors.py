@@ -21,7 +21,7 @@ def test_invalid_config_type_basic() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class <class 'test_errors.test_invalid_config_type_basic.<locals>.DoSomethingConfig'> on field 'unsupported_param'.
+        match=r"""Error defining Dagster config class <class 'test_errors.test_invalid_config_type_basic.<locals>.DoSomethingConfig'> on field 'unsupported_param'.
 Unable to resolve config type <class 'test_errors.test_invalid_config_type_basic.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
@@ -30,7 +30,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -50,7 +50,7 @@ def test_invalid_config_type_nested() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class <class 'test_errors.test_invalid_config_type_nested.<locals>.MyNestedConfig'> on field 'unsupported_param'.
+        match=r"""Error defining Dagster config class <class 'test_errors.test_invalid_config_type_nested.<locals>.MyNestedConfig'> on field 'unsupported_param'.
 Unable to resolve config type <class 'test_errors.test_invalid_config_type_nested.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
@@ -59,7 +59,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -76,7 +76,7 @@ def test_invalid_resource_basic() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class <class 'test_errors.test_invalid_resource_basic.<locals>.MyBadResource'> on field 'unsupported_param'.
+        match=r"""Error defining Dagster config class <class 'test_errors.test_invalid_resource_basic.<locals>.MyBadResource'> on field 'unsupported_param'.
 Unable to resolve config type <class 'test_errors.test_invalid_resource_basic.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
@@ -85,12 +85,12 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)
 
 
 If this config type represents a resource dependency, its annotation must either:
     - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
-    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency\\[MyUnsupportedType\\]""",
+    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency\[MyUnsupportedType\]""",
     ):
         MyBadResource(unsupported_param=MyUnsupportedType())
 
@@ -101,7 +101,7 @@ def test_invalid_config_class_directly_on_op() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class.
+        match=r"""Error defining Dagster config class.
 Unable to resolve config type <class 'test_errors.test_invalid_config_class_directly_on_op.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
@@ -110,7 +110,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -119,7 +119,7 @@ This config type can be a:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class.
+        match=r"""Error defining Dagster config class.
 Unable to resolve config type <class 'test_errors.test_invalid_config_class_directly_on_op.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
@@ -128,7 +128,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.asset
@@ -139,8 +139,8 @@ This config type can be a:
 def test_unsupported_primitive_config_type_directly_on_op() -> None:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class.
-Unable to resolve config type typing.Tuple\\[str, str\\] to a supported Dagster config type.
+        match=r"""Error defining Dagster config class.
+Unable to resolve config type typing.Tuple\[str, str\] to a supported Dagster config type.
 
 
 This config type can be a:
@@ -148,7 +148,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.op
@@ -157,8 +157,8 @@ This config type can be a:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class.
-Unable to resolve config type typing.Tuple\\[str, str\\] to a supported Dagster config type.
+        match=r"""Error defining Dagster config class.
+Unable to resolve config type typing.Tuple\[str, str\] to a supported Dagster config type.
 
 
 This config type can be a:
@@ -166,7 +166,7 @@ This config type can be a:
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type \(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\)""",
     ):
 
         @dg.asset
@@ -220,7 +220,7 @@ def test_annotate_with_resource_factory() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource param 'my_string' is annotated as '<class"
+            r"Resource param 'my_string' is annotated as '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
@@ -236,7 +236,7 @@ def test_annotate_with_resource_factory() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource param 'my_string' is annotated as '<class"
+            r"Resource param 'my_string' is annotated as '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
@@ -299,7 +299,7 @@ def test_annotate_with_bare_resource_def() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource param 'my_resource' is annotated as '<class"
+            r"Resource param 'my_resource' is annotated as '<class"
             " 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>', but"
             " '<class 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>'"
             " outputs an unknown value to user code such as @ops and @assets. This annotation"
@@ -314,7 +314,7 @@ def test_annotate_with_bare_resource_def() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource param 'my_resource' is annotated as '<class"
+            r"Resource param 'my_resource' is annotated as '<class"
             " 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>', but"
             " '<class 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>'"
             " outputs an unknown value to user code such as @ops and @assets. This annotation"
@@ -334,7 +334,7 @@ def test_using_dagster_field_by_mistake_config() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+            r"Using 'dagster.Field' is not supported within a Pythonic config or resource"
             " definition. 'dagster.Field' should only be used in legacy Dagster config schemas. Did"
             " you mean to use 'pydantic.Field' instead?"
         ),
@@ -352,7 +352,7 @@ def test_using_dagster_field_by_mistake_resource() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+            r"Using 'dagster.Field' is not supported within a Pythonic config or resource"
             " definition. 'dagster.Field' should only be used in legacy Dagster config schemas. Did"
             " you mean to use 'pydantic.Field' instead?"
         ),
@@ -366,7 +366,7 @@ def test_trying_to_set_a_field() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="'MyConfig' is a Pythonic config class and does not support item assignment.",
+        match=r"'MyConfig' is a Pythonic config class and does not support item assignment.",
     ):
         my_config = MyConfig(my_str="foo")
         my_config.my_str = "bar"
@@ -379,7 +379,7 @@ def test_trying_to_set_a_field_resource() -> None:
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "'MyResource' is a Pythonic resource and does not support item assignment, as it"
+            r"'MyResource' is a Pythonic resource and does not support item assignment, as it"
             " inherits from 'pydantic.BaseModel' with frozen=True. If trying to"
             " maintain state on this resource, consider building a separate, stateful"
             " client class, and provide a method on the resource to construct and"
@@ -401,7 +401,7 @@ def test_custom_dagster_type_as_config_type() -> None:
 
     with pytest.raises(
         DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class 'MyOpConfig' on field 'dagster_type_field'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
+        match=r"""Error defining Dagster config class 'MyOpConfig' on field 'dagster_type_field'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
 
 This config type can be a:
     - Python primitive type

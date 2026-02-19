@@ -7,17 +7,7 @@ from collections import OrderedDict, deque
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from contextvars import copy_context
-from typing import (  # noqa: UP035
-    AbstractSet,
-    Any,
-    Callable,
-    Final,
-    Optional,
-    TypedDict,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, Final, TypedDict, TypeVar, cast  # noqa: UP035
 from weakref import WeakSet
 
 import toposort as toposort_
@@ -46,7 +36,7 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
 T = TypeVar("T", bound=Any)
 
 
-def coerce_valid_log_level(log_level: Union[str, int]) -> int:
+def coerce_valid_log_level(log_level: str | int) -> int:
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
         return log_level
@@ -65,7 +55,7 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
 
 def toposort(
-    data: Mapping[T, AbstractSet[T]], sort_key: Optional[Callable[[T], Any]] = None
+    data: Mapping[T, AbstractSet[T]], sort_key: Callable[[T], Any] | None = None
 ) -> Sequence[Sequence[T]]:
     # Workaround a bug in older versions of toposort that choke on frozenset
     data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
@@ -121,15 +111,15 @@ def parse_env_var(env_var_str: str) -> tuple[str, str]:
 class RequestUtilizationMetrics(TypedDict):
     """A dict of utilization metrics for a threadpool executor. We use generic language in case we use this metrics in a scenario where we switch away from a threadpool executor at a later time."""
 
-    max_concurrent_requests: Optional[int]
-    num_running_requests: Optional[int]
-    num_queued_requests: Optional[int]
+    max_concurrent_requests: int | None
+    num_running_requests: int | None
+    num_queued_requests: int | None
 
 
 class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
     def __init__(
         self,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         thread_name_prefix: str = "",
         initializer: Any = None,
         initargs: tuple[Any, ...] = (),
@@ -199,7 +189,7 @@ def imap(
         iterable: The iterator to apply the function to.
         func: The function to apply to each element of the iterator.
     """
-    work_queue: deque[Future] = deque([])
+    work_queue: deque[Future] = deque()
 
     # create a small task which waits on the iterator
     # and enqueues work items as they become available

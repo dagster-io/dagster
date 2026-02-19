@@ -2,12 +2,10 @@ import logging
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Optional
 
-import pkg_resources
 from buildkite_shared.environment import is_feature_branch, run_all_tests
 from buildkite_shared.git import ChangedFiles
-from buildkite_shared.python_packages import PythonPackages, changed_filetypes
+from buildkite_shared.python_packages import PythonPackages, changed_filetypes, parse_requirements
 
 
 def requirements(name: str, directory: str):
@@ -20,8 +18,8 @@ def requirements(name: str, directory: str):
     # we can use a buildkite_deps.txt file to capture requirements
     buildkite_deps_txt = Path(directory) / "buildkite_deps.txt"
     if buildkite_deps_txt.exists():
-        parsed = pkg_resources.parse_requirements(buildkite_deps_txt.read_text())
-        return [requirement for requirement in parsed]
+        parsed = parse_requirements(buildkite_deps_txt.read_text().splitlines())
+        return list(parsed)
 
     # Otherwise return nothing
     return []
@@ -29,10 +27,11 @@ def requirements(name: str, directory: str):
 
 def skip_reason(
     directory: str,
-    name: Optional[str] = None,
-    always_run_if: Optional[Callable[[], bool]] = None,
-    skip_if: Optional[Callable[[], Optional[str]]] = None,
-) -> Optional[str]:
+    name: str | None = None,
+    always_run_if: Callable[[], bool] | None = None,
+    skip_if: Callable[[], str | None] | None = None,
+    is_oss: bool = False,
+) -> str | None:
     """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
     We actually use this to determine whether or not to run the package.
     """
@@ -56,10 +55,13 @@ def skip_reason(
         logging.info(f"Building {name} we're not on a feature branch")
         return None
 
-    for change in ChangedFiles.all:
+    # OSS directory paths are always relative to the OSS root, so we need to
+    # compare against changes relative to OSS root.
+    changeset = ChangedFiles.all_oss if is_oss else ChangedFiles.all
+    for change in changeset:
         if (
             # Our change is in this package's directory
-            (Path(directory) in change.parents)
+            Path(directory) in change.parents
             # The file can alter behavior - exclude things like README changes
             # which we tend to include in .md files
             and change.suffix in changed_filetypes

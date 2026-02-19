@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 
 class MSTeamsHyperlink(NamedTuple):
@@ -7,7 +7,7 @@ class MSTeamsHyperlink(NamedTuple):
 
 
 def build_message_with_link(
-    is_legacy_webhook: bool, text: str, link: Optional[MSTeamsHyperlink]
+    is_legacy_webhook: bool, text: str, link: MSTeamsHyperlink | None
 ) -> str:
     if link:
         if is_legacy_webhook:

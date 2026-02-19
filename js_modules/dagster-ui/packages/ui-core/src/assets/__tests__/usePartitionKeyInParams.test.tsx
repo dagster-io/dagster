@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 
 import {usePartitionKeyInParams} from '../usePartitionKeyInParams';
 
@@ -20,7 +20,7 @@ describe('usePartitionKeyInParams', () => {
     };
 
     render(<HookUse />);
-    await waitFor(() => expect(screen.getByText('Done')).toBeVisible());
+    expect(await screen.findByText('Done')).toBeVisible();
   });
 
   it('should default to no value for a one-dimensional partition key', async () => {
@@ -36,7 +36,7 @@ describe('usePartitionKeyInParams', () => {
     };
 
     render(<HookUse />);
-    await waitFor(() => expect(screen.getByText('Done')).toBeVisible());
+    expect(await screen.findByText('Done')).toBeVisible();
   });
 
   it('should parse and set a two-dimensional partition key', async () => {
@@ -64,7 +64,7 @@ describe('usePartitionKeyInParams', () => {
     };
 
     render(<HookUse />);
-    await waitFor(() => expect(screen.getByText('Done')).toBeVisible());
+    expect(await screen.findByText('Done')).toBeVisible();
   });
 
   it('should allow a partial selection of just the first partition key', async () => {
@@ -83,7 +83,7 @@ describe('usePartitionKeyInParams', () => {
     };
 
     render(<HookUse />);
-    await waitFor(() => expect(screen.getByText('Done')).toBeVisible());
+    expect(await screen.findByText('Done')).toBeVisible();
   });
 
   it('should default to no values for a two-dimensional partition key', async () => {
@@ -100,7 +100,7 @@ describe('usePartitionKeyInParams', () => {
     };
 
     render(<HookUse />);
-    await waitFor(() => expect(screen.getByText('Done')).toBeVisible());
+    expect(await screen.findByText('Done')).toBeVisible();
   });
 
   it('should default to the 1st key of dimension 1 if dimension 2 is selected first', async () => {
@@ -120,6 +120,6 @@ describe('usePartitionKeyInParams', () => {
     };
 
     render(<HookUse />);
-    await waitFor(() => expect(screen.getByText('Done')).toBeVisible());
+    expect(await screen.findByText('Done')).toBeVisible();
   });
 });

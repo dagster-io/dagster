@@ -41,7 +41,7 @@ STEP_STATS_EVENT_TYPES = {
 def build_run_stats_from_events(
     run_id: str,
     entries: Iterable[EventLogEntry],
-    previous_stats: Optional[DagsterRunStatsSnapshot] = None,
+    previous_stats: DagsterRunStatsSnapshot | None = None,
 ) -> DagsterRunStatsSnapshot:
     try:
         iter(entries)
@@ -121,15 +121,15 @@ class StepEventStatus(Enum):
 @whitelist_for_serdes
 @record_custom
 class RunStepMarker(IHaveNew):
-    start_time: Optional[float]
-    end_time: Optional[float]
-    key: Optional[str]
+    start_time: float | None
+    end_time: float | None
+    key: str | None
 
     def __new__(
         cls,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-        key: Optional[str] = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        key: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -144,29 +144,29 @@ class RunStepMarker(IHaveNew):
 class RunStepKeyStatsSnapshot(IHaveNew):
     run_id: str
     step_key: str
-    status: Optional[StepEventStatus]
-    start_time: Optional[float]
-    end_time: Optional[float]
+    status: StepEventStatus | None
+    start_time: float | None
+    end_time: float | None
     materialization_events: Sequence[EventLogEntry]
     expectation_results: Sequence[ExpectationResult]
-    attempts: Optional[int]
+    attempts: int | None
     attempts_list: Sequence[RunStepMarker]
     markers: Sequence[RunStepMarker]
-    partial_attempt_start: Optional[float]
+    partial_attempt_start: float | None
 
     def __new__(
         cls,
         run_id: str,
         step_key: str,
-        status: Optional[StepEventStatus] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-        materialization_events: Optional[Sequence[EventLogEntry]] = None,
-        expectation_results: Optional[Sequence[ExpectationResult]] = None,
-        attempts: Optional[int] = None,
-        attempts_list: Optional[Sequence[RunStepMarker]] = None,
-        markers: Optional[Sequence[RunStepMarker]] = None,
-        partial_attempt_start: Optional[float] = None,
+        status: StepEventStatus | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        materialization_events: Sequence[EventLogEntry] | None = None,
+        expectation_results: Sequence[ExpectationResult] | None = None,
+        attempts: int | None = None,
+        attempts_list: Sequence[RunStepMarker] | None = None,
+        markers: Sequence[RunStepMarker] | None = None,
+        partial_attempt_start: float | None = None,
     ):
         return super().__new__(
             cls,
@@ -198,7 +198,7 @@ class RunStepKeyStatsSnapshot(IHaveNew):
 class RunStepStatsSnapshot:
     run_id: str
     step_key_stats: Sequence[RunStepKeyStatsSnapshot]
-    partial_markers: Optional[Mapping[str, Sequence[RunStepMarker]]]
+    partial_markers: Mapping[str, Sequence[RunStepMarker]] | None
 
 
 def build_run_step_stats_from_events(

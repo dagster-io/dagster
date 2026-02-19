@@ -1,6 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 import {DocumentNode} from 'graphql';
 
+import {Unmasked} from '../../../apollo-client';
 import {
   AutoMaterializeDecisionType,
   buildAssetConditionEvaluation,
@@ -45,7 +46,7 @@ export function buildQueryMock<
       data: {
         __typename: 'Query',
         ...data,
-      } as TQuery,
+      } as Unmasked<TQuery>,
     },
   };
 }

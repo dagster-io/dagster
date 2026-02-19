@@ -20,8 +20,8 @@ class DgApiErrorInfo(BaseModel):
     """Error information model."""
 
     message: str
-    className: Optional[str] = None
-    stack: Optional[list[str]] = None
+    className: str | None = None
+    stack: list[str] | None = None
     cause: Optional["DgApiErrorInfo"] = None
 
     class Config:
@@ -41,9 +41,9 @@ class DgApiRunEvent(BaseModel):
     message: str
     timestamp: str  # ISO 8601 timestamp
     level: RunEventLevel
-    step_key: Optional[str] = None
-    event_type: Optional[str] = None
-    error: Optional[DgApiErrorInfo] = None
+    step_key: str | None = None
+    event_type: str | None = None
+    error: DgApiErrorInfo | None = None
 
     class Config:
         from_attributes = True
@@ -54,7 +54,7 @@ class RunEventList(BaseModel):
 
     items: list[DgApiRunEvent]
     total: int
-    cursor: Optional[str] = None
+    cursor: str | None = None
     has_more: bool = False
 
     class Config:

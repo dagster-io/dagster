@@ -5,13 +5,14 @@ import os
 import subprocess
 import time
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 
 import dagster._check as check
 import kubernetes
 import pytest
 import requests
 import yaml
-from dagster._utils import find_free_port, git_repository_root
+from dagster._utils import discover_oss_root, find_free_port
 from dagster._utils.merger import merge_dicts
 from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_k8s.client import DagsterKubernetesClient
@@ -457,7 +458,7 @@ def _helm_chart_helper(
             "-f",
             "-",
             release_name,
-            os.path.join(git_repository_root(), chart_name),
+            os.path.join(discover_oss_root(Path(__file__)), chart_name),
         ]
 
         print("Running Helm Install: \n", " ".join(helm_cmd), "\nWith config:\n", helm_config_yaml)
@@ -619,7 +620,7 @@ def _helm_chart_helper(
             print("Uninstalling helm chart")
             check_output(
                 ["helm", "uninstall", release_name, "--namespace", namespace],  # pyright: ignore[reportPossiblyUnboundVariable]
-                cwd=git_repository_root(),
+                cwd=discover_oss_root(Path(__file__)),
             )
 
 

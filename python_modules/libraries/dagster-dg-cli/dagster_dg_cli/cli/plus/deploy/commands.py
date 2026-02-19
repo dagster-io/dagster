@@ -4,7 +4,7 @@ import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import click
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
@@ -51,7 +51,7 @@ def _get_snapshot_base_deployment_conditions():
     return SnapshotBaseDeploymentCondition
 
 
-def _get_organization(input_organization: Optional[str], plus_config: DagsterPlusCliConfig) -> str:
+def _get_organization(input_organization: str | None, plus_config: DagsterPlusCliConfig) -> str:
     organization = input_organization or plus_config.organization
     if not organization:
         raise click.UsageError(
@@ -61,7 +61,7 @@ def _get_organization(input_organization: Optional[str], plus_config: DagsterPlu
     return organization
 
 
-def _get_deployment(input_deployment: Optional[str], plus_config: DagsterPlusCliConfig) -> str:
+def _get_deployment(input_deployment: str | None, plus_config: DagsterPlusCliConfig) -> str:
     deployment = input_deployment or plus_config.default_deployment
     if not deployment:
         raise click.UsageError(
@@ -92,8 +92,50 @@ org_and_deploy_option_group = make_option_group(
 )
 
 
+build_strategy_option_group = make_option_group(
+    {
+        not_none(option.name): option
+        for option in [
+            click.Option(
+                ["--build-strategy"],
+                type=click.Choice(["docker", "python-executable"]),
+                default="docker",
+                help=(
+                    "Build strategy used to build code locations. 'docker' builds a Docker image "
+                    "(required for Hybrid agents). 'python-executable' builds PEX files "
+                    "(Serverless agents only)."
+                ),
+                envvar="DAGSTER_BUILD_STRATEGY",
+            ),
+        ]
+    }
+)
+
+
+pex_build_method_option_group = make_option_group(
+    {
+        not_none(option.name): option
+        for option in [
+            click.Option(
+                ["--pex-build-method"],
+                type=click.Choice(["local", "docker", "docker-fallback"]),
+                default="docker-fallback",
+                help=(
+                    "Build method for PEX dependencies. 'docker-fallback' tries local first then Docker (default), "
+                    "'local' uses only the current environment, 'docker' uses only a Docker builder. "
+                    "Only applies when --build-strategy=python-executable."
+                ),
+                envvar="DAGSTER_PEX_BUILD_METHOD",
+            ),
+        ]
+    }
+)
+
+
 @click.group(name="deploy", cls=DgClickGroup, invoke_without_command=True)
 @org_and_deploy_option_group
+@build_strategy_option_group
+@pex_build_method_option_group
 @click.option(
     "--python-version",
     "python_version",
@@ -152,19 +194,21 @@ org_and_deploy_option_group = make_option_group(
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_group(
-    organization: Optional[str],
-    deployment: Optional[str],
-    python_version: Optional[str],
+    organization: str | None,
+    deployment: str | None,
+    build_strategy: str,
+    pex_build_method: str,
+    python_version: str | None,
     agent_type_str: str,
-    deployment_type_str: Optional[str],
-    git_url: Optional[str],
-    commit_hash: Optional[str],
-    use_editable_dagster: Optional[str],
+    deployment_type_str: str | None,
+    git_url: str | None,
+    commit_hash: str | None,
+    use_editable_dagster: str | None,
     skip_confirmation_prompt: bool,
     location_names: tuple[str],
     target_path: Path,
-    status_url: Optional[str],
-    snapshot_base_condition_str: Optional[str],
+    status_url: str | None,
+    snapshot_base_condition_str: str | None,
     skip_validation: bool,
     **global_options: object,
 ) -> None:
@@ -178,6 +222,9 @@ def deploy_group(
     Each of the individual stages of the deploy is also available as its own subcommand for additional
     customization.
     """
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+    from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
+
     if click.get_current_context().invoked_subcommand:
         return
 
@@ -212,6 +259,9 @@ def deploy_group(
     else:
         agent_type = get_agent_type(plus_config)
 
+    build_strategy_enum = BuildStrategy(build_strategy)
+    pex_build_method_enum = BuildMethod(pex_build_method)
+
     init_deploy_session(
         organization,
         deployment,
@@ -231,6 +281,8 @@ def deploy_group(
     build_artifact(
         dg_context,
         agent_type,
+        build_strategy_enum,
+        pex_build_method_enum,
         statedir,
         bool(use_editable_dagster),
         python_version,
@@ -304,16 +356,16 @@ def _validate_location_names(
 @dg_global_options
 @cli_telemetry_wrapper
 def start_deploy_session_command(
-    organization: Optional[str],
-    deployment: Optional[str],
-    deployment_type_str: Optional[str],
+    organization: str | None,
+    deployment: str | None,
+    deployment_type_str: str | None,
     skip_confirmation_prompt: bool,
-    git_url: Optional[str],
-    commit_hash: Optional[str],
+    git_url: str | None,
+    commit_hash: str | None,
     location_names: tuple[str],
     target_path: Path,
-    status_url: Optional[str],
-    snapshot_base_condition_str: Optional[str],
+    status_url: str | None,
+    snapshot_base_condition_str: str | None,
     skip_validation: bool,
     **global_options: object,
 ) -> None:
@@ -368,6 +420,8 @@ def start_deploy_session_command(
     type=click.Choice([agent_type.value.lower() for agent_type in DgPlusAgentType]),
     help="Whether this a Hybrid or serverless code location.",
 )
+@build_strategy_option_group
+@pex_build_method_option_group
 @click.option(
     "--python-version",
     "python_version",
@@ -389,8 +443,10 @@ def start_deploy_session_command(
 @cli_telemetry_wrapper
 def build_and_push_command(
     agent_type_str: str,
-    python_version: Optional[str],
-    use_editable_dagster: Optional[str],
+    build_strategy: str,
+    pex_build_method: str,
+    python_version: str | None,
+    use_editable_dagster: str | None,
     location_names: tuple[str],
     target_path: Path,
     **global_options: object,
@@ -398,6 +454,9 @@ def build_and_push_command(
     """Builds a Docker image to be deployed, and pushes it to the registry
     that was configured when the deploy session was started.
     """
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+    from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
@@ -410,11 +469,16 @@ def build_and_push_command(
         plus_config = DagsterPlusCliConfig.get()
         agent_type = get_agent_type(plus_config)
 
+    build_strategy_enum = BuildStrategy(build_strategy)
+    pex_build_method_enum = BuildMethod(pex_build_method)
+
     statedir = _get_statedir()
 
     build_artifact(
         dg_context,
         agent_type,
+        build_strategy_enum,
+        pex_build_method_enum,
         statedir,
         bool(use_editable_dagster),
         python_version,

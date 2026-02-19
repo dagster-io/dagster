@@ -41,7 +41,7 @@ class SerializableErrorInfo(LegacyNamedTupleMixin):
     # * added context - default to None for similar reasons
     message: str
     stack: Sequence[str]
-    cls_name: Optional[str]
+    cls_name: str | None
     cause: Optional["SerializableErrorInfo"] = None
     context: Optional["SerializableErrorInfo"] = None
 
@@ -109,7 +109,7 @@ NO_HINT = lambda _, __: None
 
 def remove_system_frames_from_error(
     error_info: SerializableErrorInfo,
-    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]] = NO_HINT,
+    build_system_frame_removed_hint: Callable[[bool, int], str | None] = NO_HINT,
 ) -> SerializableErrorInfo:
     """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
     and import machinery, which are generally not useful for users to debug their code.
@@ -122,9 +122,9 @@ def remove_system_frames_from_error(
 
 
 def make_simple_frames_removed_hint(
-    additional_first_hint_warning: Optional[str] = None,
-) -> Callable[[bool, int], Optional[str]]:
-    def frames_removed_hint(is_first_hidden_frame: bool, num_hidden_frames: int) -> Optional[str]:
+    additional_first_hint_warning: str | None = None,
+) -> Callable[[bool, int], str | None]:
+    def frames_removed_hint(is_first_hidden_frame: bool, num_hidden_frames: int) -> str | None:
         base_hint = f"{num_hidden_frames} dagster system frames hidden"
         if is_first_hidden_frame and additional_first_hint_warning:
             return f"  [{base_hint}, {additional_first_hint_warning}]\n"
@@ -137,7 +137,7 @@ def make_simple_frames_removed_hint(
 def remove_matching_lines_from_error_info(
     error_info: SerializableErrorInfo,
     match_substrs: Sequence[str],
-    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
+    build_system_frame_removed_hint: Callable[[bool, int], str | None],
 ) -> SerializableErrorInfo:
     """Utility which truncates a stacktrace to drop lines which match the given strings.
     This is useful for e.g. removing Dagster framework lines from a stacktrace that
@@ -174,7 +174,7 @@ def remove_matching_lines_from_error_info(
 def remove_matching_lines_from_stack_trace(
     stack: Sequence[str],
     matching_lines: Sequence[str],
-    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
+    build_system_frame_removed_hint: Callable[[bool, int], str | None],
 ) -> Sequence[str]:
     ctr = 0
     out = []

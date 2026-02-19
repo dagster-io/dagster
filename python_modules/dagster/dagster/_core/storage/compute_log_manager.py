@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
-from typing import IO, Final, NamedTuple, Optional
+from typing import IO, Final, NamedTuple
 
 from typing_extensions import Self
 
@@ -25,8 +25,8 @@ class ComputeIOType(Enum):
 @whitelist_for_serdes
 @record
 class LogRetrievalShellCommand:
-    stdout: Optional[str]
-    stderr: Optional[str]
+    stdout: str | None
+    stderr: str | None
 
 
 class CapturedLogContext(
@@ -34,10 +34,10 @@ class CapturedLogContext(
         "_CapturedLogContext",
         [
             ("log_key", Sequence[str]),
-            ("external_url", Optional[str]),
-            ("external_stdout_url", Optional[str]),
-            ("external_stderr_url", Optional[str]),
-            ("shell_cmd", Optional[LogRetrievalShellCommand]),
+            ("external_url", str | None),
+            ("external_stdout_url", str | None),
+            ("external_stderr_url", str | None),
+            ("shell_cmd", LogRetrievalShellCommand | None),
         ],
     )
 ):
@@ -49,10 +49,10 @@ class CapturedLogContext(
     def __new__(
         cls,
         log_key: Sequence[str],
-        external_stdout_url: Optional[str] = None,
-        external_stderr_url: Optional[str] = None,
-        external_url: Optional[str] = None,
-        shell_cmd: Optional[LogRetrievalShellCommand] = None,
+        external_stdout_url: str | None = None,
+        external_stderr_url: str | None = None,
+        external_url: str | None = None,
+        shell_cmd: LogRetrievalShellCommand | None = None,
     ):
         if external_url and (external_stdout_url or external_stderr_url):
             check.failed(
@@ -75,9 +75,9 @@ class CapturedLogData(
         "_CapturedLogData",
         [
             ("log_key", Sequence[str]),
-            ("stdout", Optional[bytes]),
-            ("stderr", Optional[bytes]),
-            ("cursor", Optional[str]),
+            ("stdout", bytes | None),
+            ("stderr", bytes | None),
+            ("cursor", str | None),
         ],
     )
 ):
@@ -88,9 +88,9 @@ class CapturedLogData(
     def __new__(
         cls,
         log_key: Sequence[str],
-        stdout: Optional[bytes] = None,
-        stderr: Optional[bytes] = None,
-        cursor: Optional[str] = None,
+        stdout: bytes | None = None,
+        stderr: bytes | None = None,
+        cursor: str | None = None,
     ):
         return super().__new__(cls, log_key, stdout, stderr, cursor)
 
@@ -99,10 +99,10 @@ class CapturedLogMetadata(
     NamedTuple(
         "_CapturedLogMetadata",
         [
-            ("stdout_location", Optional[str]),
-            ("stderr_location", Optional[str]),
-            ("stdout_download_url", Optional[str]),
-            ("stderr_download_url", Optional[str]),
+            ("stdout_location", str | None),
+            ("stderr_location", str | None),
+            ("stdout_download_url", str | None),
+            ("stderr_download_url", str | None),
         ],
     )
 ):
@@ -114,10 +114,10 @@ class CapturedLogMetadata(
 
     def __new__(
         cls,
-        stdout_location: Optional[str] = None,
-        stderr_location: Optional[str] = None,
-        stdout_download_url: Optional[str] = None,
-        stderr_download_url: Optional[str] = None,
+        stdout_location: str | None = None,
+        stderr_location: str | None = None,
+        stdout_download_url: str | None = None,
+        stderr_download_url: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -133,15 +133,15 @@ class CapturedLogSubscription:
         self,
         manager: "ComputeLogManager[T_DagsterInstance]",
         log_key: Sequence[str],
-        cursor: Optional[str],
+        cursor: str | None,
     ):
         self._manager = manager
         self._log_key = log_key
         self._cursor = cursor
-        self._observer: Optional[Callable[[CapturedLogData], None]] = None
+        self._observer: Callable[[CapturedLogData], None] | None = None
         self.is_complete = False
 
-    def __call__(self, observer: Optional[Callable[[CapturedLogData], None]]) -> Self:
+    def __call__(self, observer: Callable[[CapturedLogData], None] | None) -> Self:
         self._observer = observer
         self.fetch()
         if self._manager.is_capture_complete(self._log_key):
@@ -176,7 +176,7 @@ class CapturedLogSubscription:
         self.is_complete = True
 
 
-def _has_max_data(chunk: Optional[bytes]) -> bool:
+def _has_max_data(chunk: bytes | None) -> bool:
     # function is used as predicate but does not actually return a boolean
     return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ  # type: ignore
 
@@ -201,7 +201,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Iterator[Optional[IO[bytes]]]:
+    ) -> Iterator[IO[bytes] | None]:
         """Context manager for providing an IO stream that enables the caller to write to a log stream
         managed by the captured log manager, to be read later using the given log key.
 
@@ -226,8 +226,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         log_key: Sequence[str],
         io_type: ComputeIOType,
         offset: int,
-        max_bytes: Optional[int],
-    ) -> tuple[Optional[bytes], int]:
+        max_bytes: int | None,
+    ) -> tuple[bytes | None, int]:
         """Returns a chunk of the captured io_type logs for a given log key.
 
         Args:
@@ -255,8 +255,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def delete_logs(
         self,
-        log_key: Optional[Sequence[str]] = None,
-        prefix: Optional[Sequence[str]] = None,
+        log_key: Sequence[str] | None = None,
+        prefix: Sequence[str] | None = None,
     ) -> None:
         """Deletes the captured logs for a given log key.
 
@@ -267,7 +267,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def subscribe(
-        self, log_key: Sequence[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: str | None = None
     ) -> CapturedLogSubscription:
         """Registers an observable object for log data.
 
@@ -290,7 +290,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def dispose(self):
         pass
 
-    def parse_cursor(self, cursor: Optional[str] = None) -> tuple[int, int]:
+    def parse_cursor(self, cursor: str | None = None) -> tuple[int, int]:
         # Translates a string cursor into a set of byte offsets for stdout, stderr
         if not cursor:
             return 0, 0
@@ -308,8 +308,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_log_data(
         self,
         log_key: Sequence[str],
-        cursor: Optional[str] = None,
-        max_bytes: Optional[int] = None,
+        cursor: str | None = None,
+        max_bytes: int | None = None,
     ) -> CapturedLogData:
         stdout_offset, stderr_offset = self.parse_cursor(cursor)
         stdout, new_stdout_offset = self.get_log_data_for_type(
@@ -363,9 +363,9 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def read_log_lines_for_log_key_prefix(
         self,
         log_key_prefix: Sequence[str],
-        cursor: Optional[str],
+        cursor: str | None,
         io_type: ComputeIOType,
-    ) -> tuple[Sequence[str], Optional[LogLineCursor]]:
+    ) -> tuple[Sequence[str], LogLineCursor | None]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
         as if they are a single continuous file. Reads env var DAGSTER_CAPTURED_LOG_CHUNK_SIZE lines at a time.
         Returns the lines read and the next cursor.
@@ -378,7 +378,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         # find all of the log_keys to read from and sort them in the order to be read
         log_keys = sorted(
             self.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=io_type),
-            key=lambda x: "/".join(x),
+            key="/".join,
         )
         if len(log_keys) == 0:
             return [], None

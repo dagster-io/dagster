@@ -8,8 +8,7 @@ import time
 import uuid
 from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
-from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Optional, Union
+from typing import IO, Any, AnyStr
 
 import sling
 from dagster import (
@@ -108,7 +107,7 @@ class SlingConnectionResource(PermissiveConfig):
     type: str = Field(
         description="Type of the source connection, must match the Sling connection types. Use 'file' for local storage."
     )
-    connection_string: Optional[str] = Field(
+    connection_string: str | None = Field(
         description="The optional connection string for the source database, if not using keyword arguments.",
         default=None,
     )
@@ -150,7 +149,7 @@ class SlingResource(ConfigurableResource):
 
     @staticmethod
     def _get_replication_streams_for_context(
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
     ) -> dict[str, Any]:
         """Computes the sling replication streams config for a given execution context with an
         assets def, possibly involving a subset selection of sling assets.
@@ -216,7 +215,7 @@ class SlingResource(ConfigurableResource):
         return d
 
     def _query_metadata(
-        self, metadata_string: str, start_time: float, base_metadata: Union[list, None] = None
+        self, metadata_string: str, start_time: float, base_metadata: list | None = None
     ):
         """Metadata quering using regular expression from standard sling log.
 
@@ -310,17 +309,6 @@ class SlingResource(ConfigurableResource):
             fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
             yield self._clean_line(fmt_line)
 
-    def _exec_sling_cmd(
-        self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
-    ) -> Generator[str, None, None]:
-        with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
-            if proc.stdout:
-                yield from self._process_stdout(proc.stdout, encoding=encoding)
-
-            proc.wait()
-            if proc.returncode != 0:
-                raise Exception("Sling command failed with error code %s", proc.returncode)
-
     def _parse_json_table_output(self, table_output: dict[str, Any]) -> list[dict[str, str]]:
         column_keys: list[str] = table_output["fields"]
         column_values: list[list[str]] = table_output["rows"]
@@ -378,9 +366,9 @@ class SlingResource(ConfigurableResource):
     def replicate(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
-        replication_config: Optional[SlingReplicationParam] = None,
-        dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
+        context: OpExecutionContext | AssetExecutionContext,
+        replication_config: SlingReplicationParam | None = None,
+        dagster_sling_translator: DagsterSlingTranslator | None = None,
         debug: bool = False,
         stream: bool = False,
     ) -> SlingEventIterator[SlingEventType]:
@@ -419,7 +407,7 @@ class SlingResource(ConfigurableResource):
     def _replicate(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
@@ -454,12 +442,12 @@ class SlingResource(ConfigurableResource):
 
     def _batch_sling_replicate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         env: dict,
         debug: bool,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in batch mode."""
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
@@ -527,12 +515,12 @@ class SlingResource(ConfigurableResource):
 
     def _stream_sling_replicate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         env: dict,
         debug: bool,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in stream mode."""
         # define variable to use to compute metadata during run
         current_stream = None

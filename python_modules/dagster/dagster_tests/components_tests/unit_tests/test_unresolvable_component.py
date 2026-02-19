@@ -24,7 +24,7 @@ def test_unresolvable_component():
             },
         )
         with pytest.raises(ComponentTreeException) as e:
-            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, _defs):
                 ...
 
         # the ComponentTreeException wraps the DagsterInvalidDefinitionError

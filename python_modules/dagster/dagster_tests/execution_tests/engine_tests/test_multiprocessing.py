@@ -172,7 +172,7 @@ def test_mem_storage_error_job_multiprocess():
         with pytest.raises(
             dg.DagsterUnmetExecutorRequirementsError,
             match=(
-                "your job includes op outputs that will not be stored somewhere where other"
+                r"your job includes op outputs that will not be stored somewhere where other"
                 " processes can retrieve them."
             ),
         ):
@@ -200,7 +200,7 @@ def test_invalid_instance():
 
 
 def test_no_handle():
-    with pytest.raises(CheckError, match='Param "job" is not a ReconstructableJob.'):
+    with pytest.raises(CheckError, match=r'Param "job" is not a ReconstructableJob.'):
         dg.execute_job(
             define_diamond_job(),  # pyright: ignore[reportArgumentType]
             instance=DagsterInstance.ephemeral(),

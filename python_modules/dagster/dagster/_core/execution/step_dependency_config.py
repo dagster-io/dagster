@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster_shared.record import record
 
 from dagster._config import Field, Shape
@@ -24,7 +22,7 @@ class StepDependencyConfig:
         return StepDependencyConfig(require_upstream_step_success=True)
 
     @staticmethod
-    def from_config(config_value: Optional[dict[str, bool]]) -> "StepDependencyConfig":
+    def from_config(config_value: dict[str, bool] | None) -> "StepDependencyConfig":
         return StepDependencyConfig(
             require_upstream_step_success=config_value["require_upstream_step_success"]
             if config_value

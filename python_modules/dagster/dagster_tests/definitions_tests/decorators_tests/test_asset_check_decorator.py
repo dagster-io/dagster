@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import dagster as dg
 import pytest
@@ -27,7 +27,7 @@ def execute_assets_and_checks(
     raise_on_error: bool = True,
     resources=None,
     instance=None,
-    selection: Optional[dg.AssetSelection] = None,
+    selection: dg.AssetSelection | None = None,
 ) -> dg.ExecuteInProcessResult:
     defs = dg.Definitions(
         assets=assets,
@@ -534,7 +534,7 @@ def test_definitions_conflicting_checks() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Duplicate asset check key.+asset1.+check1",
+        match=r"Duplicate asset check key.+asset1.+check1",
     ):
         Definitions.validate_loadable(dg.Definitions(asset_checks=[make_check(), make_check()]))
 
@@ -1311,3 +1311,71 @@ def test_multi_asset_check_pool() -> None:
     def my_check1(asset1: int) -> dg.AssetCheckResult: ...
 
     assert my_check1.op.pool == "my_pool"
+
+
+def test_asset_check_with_mismatched_partitions_def() -> None:
+    """Test that a partitioned asset check with a different partitions_def than its target asset raises an error."""
+    daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    weekly_partitions = dg.WeeklyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.asset(partitions_def=daily_partitions)
+    def my_asset() -> None: ...
+    @dg.asset_check(asset=my_asset, partitions_def=weekly_partitions)
+    def my_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Asset check 'my_asset:my_check' targets asset 'my_asset' but has a different partitions definition",
+    ):
+        dg.Definitions.validate_loadable(dg.Definitions(assets=[my_asset], asset_checks=[my_check]))
+
+
+def test_unpartitioned_check_on_partitioned_asset() -> None:
+    """Test that an unpartitioned asset check can target a partitioned asset."""
+    daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.asset(partitions_def=daily_partitions)
+    def my_asset() -> None: ...
+    @dg.asset_check(asset=my_asset)
+    def my_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    # This should not raise an error - unpartitioned checks can target partitioned assets
+    dg.Definitions.validate_loadable(dg.Definitions(assets=[my_asset], asset_checks=[my_check]))
+
+
+def test_execute_partitioned_asset_check_with_input() -> None:
+    """Test that executing a partitioned asset check that receives the asset value as input works.
+
+    This is a regression test for a bug where entity_partitions_def (formerly asset_partitions_def)
+    only looked at asset specs, not check specs, causing input loading to fail for partitioned checks.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def my_asset() -> int:
+        return 1
+
+    @dg.asset_check(asset=my_asset, partitions_def=partitions_def)
+    def my_check(my_asset: int) -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=my_asset > 0)
+
+    defs = dg.Definitions(
+        assets=[my_asset],
+        asset_checks=[my_check],
+        jobs=[
+            dg.define_asset_job(
+                "job1",
+                selection=AssetSelection.all() | AssetSelection.all_asset_checks(),
+                partitions_def=partitions_def,
+            )
+        ],
+    )
+    job_def = defs.resolve_job_def("job1")
+    result = job_def.execute_in_process(partition_key="a")
+
+    assert result.success
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    assert check_evals[0].passed

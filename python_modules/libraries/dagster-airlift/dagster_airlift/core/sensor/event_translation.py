@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, Any, Callable, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, TypeAlias, cast  # noqa: UP035
 
 from dagster import (
     AssetMaterialization,
@@ -25,7 +25,7 @@ from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.serialization.serialized_data import DagHandle
 
-AssetEvent = Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]
+AssetEvent: TypeAlias = AssetMaterialization | AssetObservation | AssetCheckEvaluation
 DagsterEventTransformerFn = Callable[
     [SensorEvaluationContext, AirflowDefinitionsData, Sequence[AssetMaterialization]],
     Iterable[AssetEvent],

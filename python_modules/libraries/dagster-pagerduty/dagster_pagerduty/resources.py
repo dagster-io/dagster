@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 
 import pypd
 from dagster import ConfigurableResource, resource
@@ -41,12 +41,12 @@ class PagerDutyService(ConfigurableResource):
         source: str,
         severity: str,
         event_action: str = "trigger",
-        dedup_key: Optional[str] = None,
-        timestamp: Optional[str] = None,
-        component: Optional[str] = None,
-        group: Optional[str] = None,
-        event_class: Optional[str] = None,
-        custom_details: Optional[object] = None,
+        dedup_key: str | None = None,
+        timestamp: str | None = None,
+        component: str | None = None,
+        group: str | None = None,
+        event_class: str | None = None,
+        custom_details: object | None = None,
     ) -> object:
         """Events API v2 enables you to add PagerDuty's advanced event and incident management
         functionality to any system that can make an outbound HTTP connection.

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
 from functools import cached_property
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 from dagster_shared import check
 
@@ -25,12 +25,10 @@ from dagster.components.resolved.core_models import (
 )
 from dagster.components.resolved.model import Model
 
-T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
+T = TypeVar("T", bound=MaterializeResult | AssetCheckResult)
 
 
-def to_iterable(
-    result: Any, of_type: Union[type[T], tuple[type[T], ...]]
-) -> Generator[T, None, None]:
+def to_iterable(result: Any, of_type: type[T] | tuple[type[T], ...]) -> Generator[T, None, None]:
     if isinstance(result, of_type):
         yield result
     elif isinstance(result, Iterable):
@@ -55,8 +53,8 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
     which can all be expressed as a single ExecutableComponent.
     """
 
-    assets: Optional[list[ResolvedAssetSpec]] = None
-    checks: Optional[list[ResolvedAssetCheckSpec]] = None
+    assets: list[ResolvedAssetSpec] | None = None
+    checks: list[ResolvedAssetCheckSpec] | None = None
 
     @property
     @abstractmethod
@@ -67,15 +65,15 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
         return set()
 
     @cached_property
-    def config_fields(self) -> Optional[dict[str, Field]]:
+    def config_fields(self) -> dict[str, Field] | None:
         return None
 
     @abstractmethod
     def invoke_execute_fn(
         self,
-        context: Union[AssetExecutionContext, AssetCheckExecutionContext],
+        context: AssetExecutionContext | AssetCheckExecutionContext,
         component_load_context: ComponentLoadContext,
-    ) -> Iterable[Union[MaterializeResult, AssetCheckResult]]: ...
+    ) -> Iterable[MaterializeResult | AssetCheckResult]: ...
 
     def build_underlying_assets_def(
         self, component_load_context: ComponentLoadContext

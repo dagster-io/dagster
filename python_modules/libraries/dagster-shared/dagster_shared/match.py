@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from types import UnionType
 from typing import (
     Any,
     ForwardRef,
@@ -16,7 +17,7 @@ T = TypeVar("T", bound=Any)
 
 # Use Any for type_ because there isn't a good static type that can handle all the cases listed
 # here.
-def match_type(obj: object, type_: Union[type[T], tuple[type[T]]]) -> TypeGuard[T]:
+def match_type(obj: object, type_: type[T] | tuple[type[T]]) -> TypeGuard[T]:
     if isinstance(type_, tuple):
         return any(match_type(obj, t) for t in type_)
 
@@ -36,7 +37,7 @@ def match_type(obj: object, type_: Union[type[T], tuple[type[T]]]) -> TypeGuard[
             return isinstance(obj, type_)
 
     # Handle Union (e.g. Union[int, str])
-    if origin is Union:
+    if origin in (Union, UnionType):
         subtypes = get_args(type_)  # e.g. (int, str)
         return any(match_type(obj, st) for st in subtypes)
 

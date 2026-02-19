@@ -2,7 +2,7 @@ import re
 import warnings
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import dagster_shared.seven as seven
 from dagster_shared.utils import get_boolean_string_value
@@ -95,7 +95,7 @@ class TagConcurrencyLimitsCounter:
                 self._unique_value_counts[tag_tuple] += 1
 
 
-def get_boolean_tag_value(tag_value: Optional[str], default_value: bool = False) -> bool:
+def get_boolean_tag_value(tag_value: str | None, default_value: bool = False) -> bool:
     if tag_value is None:
         return default_value
 
@@ -126,7 +126,7 @@ VALID_STRICT_TAG_VALUE_REGEX = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
 
 
 def normalize_tags(
-    tags: Optional[Mapping[str, Any]],
+    tags: Mapping[str, Any] | None,
     strict: bool = False,
     allow_private_system_tags: bool = True,
     warning_stacklevel: int = 4,

@@ -1158,7 +1158,7 @@ export const AssetNodeScenariosPartitioned = [
     liveData: LiveDataForNodePartitionedLatestRunFailed,
     healthData: HealthDataDegraded,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['100% filled', '1 failed', 'Degraded'],
+    expectedText: ['99% filled', '1 failed', 'Degraded'],
   },
 
   {

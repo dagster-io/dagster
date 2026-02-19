@@ -3,7 +3,6 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 from dagster_shared import seven
 from typer import Argument, Option, Typer
@@ -418,7 +417,7 @@ def build_python_dependencies(
 def deploy_python_executable_command(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     location_load_timeout: int,
     agent_heartbeat_timeout: int,
     build_method: pex_builder.deps.BuildMethod,

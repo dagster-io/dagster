@@ -40,31 +40,30 @@ if TYPE_CHECKING:
 class UnresolvedAssetJobDefinition(IHaveNew):
     name: str
     selection: AssetSelection
-    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]
-    description: Optional[str]
-    tags: Optional[Mapping[str, str]]
-    run_tags: Optional[Mapping[str, str]]
-    metadata: Optional[Mapping[str, Any]]
-    partitions_def: Optional[PartitionsDefinition]
-    executor_def: Optional[ExecutorDefinition]
-    hooks: Optional[AbstractSet[HookDefinition]]
-    op_retry_policy: Optional[RetryPolicy]
+    config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"] | None
+    description: str | None
+    tags: Mapping[str, str] | None
+    run_tags: Mapping[str, str] | None
+    metadata: Mapping[str, Any] | None
+    partitions_def: PartitionsDefinition | None
+    executor_def: ExecutorDefinition | None
+    hooks: AbstractSet[HookDefinition] | None
+    op_retry_policy: RetryPolicy | None
 
     def __new__(
         cls,
         name: str,
         selection: AssetSelection,
-        config: Optional[
-            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
-        ] = None,
-        description: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        run_tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        executor_def: Optional[ExecutorDefinition] = None,
-        hooks: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional[RetryPolicy] = None,
+        config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
+        | None = None,
+        description: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        run_tags: Mapping[str, str] | None = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        executor_def: ExecutorDefinition | None = None,
+        hooks: AbstractSet[HookDefinition] | None = None,
+        op_retry_policy: RetryPolicy | None = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -93,12 +92,12 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     def run_request_for_partition(
         self,
         partition_key: str,
-        run_key: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        asset_selection: Optional[Sequence[AssetKey]] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        run_key: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        asset_selection: Sequence[AssetKey] | None = None,
+        run_config: Mapping[str, Any] | None = None,
+        current_time: datetime | None = None,
+        dynamic_partitions_store: DynamicPartitionsStore | None = None,
     ) -> RunRequest:
         """Creates a RunRequest object for a run that processes the given partition.
 
@@ -169,8 +168,8 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     def resolve(
         self,
         asset_graph: "AssetGraph",
-        default_executor_def: Optional[ExecutorDefinition] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        default_executor_def: ExecutorDefinition | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
         try:
@@ -242,16 +241,14 @@ class UnresolvedAssetJobDefinition(IHaveNew):
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
-    config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
-    ] = None,
-    description: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
-    run_tags: Optional[Mapping[str, object]] = None,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    executor_def: Optional[ExecutorDefinition] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
+    config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"] | None = None,
+    description: str | None = None,
+    tags: Mapping[str, object] | None = None,
+    run_tags: Mapping[str, object] | None = None,
+    metadata: Mapping[str, RawMetadataValue] | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    executor_def: ExecutorDefinition | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: Optional["RetryPolicy"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe

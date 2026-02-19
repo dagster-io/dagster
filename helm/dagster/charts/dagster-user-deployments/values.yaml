@@ -117,6 +117,21 @@ deployments:
 
     # Init containers to run before the main container. See:
     # https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+    #
+    # Image can be specified as a string or structured object:
+    #
+    # initContainers:
+    #   - name: init-permissions
+    #     image: "busybox:latest"  # Legacy string format
+    #     command: ["sh", "-c", "chmod 755 /data"]
+    #
+    #   - name: init-with-digest
+    #     image:                    # Structured format (digest takes precedence over tag)
+    #       repository: "busybox"
+    #       tag: "1.36"
+    #       digest: "sha256:abc123..."
+    #       pullPolicy: "IfNotPresent"
+    #     command: ["sh", "-c", "echo hello"]
     initContainers: []
 
     # Additional containers (i.e. sidecars) to run alongside the main container. See:

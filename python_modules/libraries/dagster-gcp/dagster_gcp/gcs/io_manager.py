@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, Optional, Union
+from typing import Any
 
 from dagster import (
     ConfigurableIOManager,
@@ -26,7 +26,7 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 
 
 class PickledObjectGCSIOManager(UPathIOManager):
-    def __init__(self, bucket: str, client: Optional[Any] = None, prefix: str = "dagster"):
+    def __init__(self, bucket: str, client: Any | None = None, prefix: str = "dagster"):
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client or storage.Client()
         self.bucket_obj = self.client.bucket(bucket)
@@ -44,7 +44,7 @@ class PickledObjectGCSIOManager(UPathIOManager):
         blobs = self.client.list_blobs(self.bucket, prefix=key)
         return len(list(blobs)) > 0
 
-    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def get_op_output_relative_path(self, context: InputContext | OutputContext) -> UPath:
         parts = context.get_identifier()
         run_id = parts[0]
         output_parts = parts[1:]

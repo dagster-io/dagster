@@ -2,7 +2,7 @@ import os
 import time
 from datetime import datetime, timedelta, timezone, tzinfo
 from functools import lru_cache
-from typing import Union, cast
+from typing import cast
 
 import dagster._check as check
 from dagster._vendored.dateutil import parser
@@ -69,7 +69,7 @@ def create_datetime(year, month, day, *args, **kwargs):
     return datetime(year, month, day, *args, **kwargs, tzinfo=tz)
 
 
-def datetime_from_timestamp(timestamp: float, tz: Union[str, tzinfo] = timezone.utc) -> datetime:
+def datetime_from_timestamp(timestamp: float, tz: str | tzinfo = timezone.utc) -> datetime:
     """Creates a datetime object from a unix timestamp. Will always have a timezone
     (defaults to UTC if none is specified).
     """

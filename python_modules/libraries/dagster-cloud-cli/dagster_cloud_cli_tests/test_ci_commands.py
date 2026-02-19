@@ -354,7 +354,7 @@ def test_ci_build_docker(
     assert b_upload_tag == b_tag
     assert b_upload_registry_info == b_registry_info
 
-    (c_build_dir, c_tag, c_registry_info), b_kwargs = build_image.call_args_list[1]
+    (c_build_dir, c_tag, _c_registry_info), b_kwargs = build_image.call_args_list[1]
     assert c_tag.startswith(f"{deployment_name}-c")
     assert c_build_dir == os.path.join(project_dir, "subdir")
 

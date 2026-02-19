@@ -1,6 +1,6 @@
 import zlib
 from collections.abc import Mapping
-from typing import ContextManager, Optional  # noqa: UP035
+from typing import ContextManager  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -71,7 +71,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         self,
         postgres_url: str,
         should_autocreate_tables: bool = True,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = postgres_url
@@ -129,7 +129,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         )
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -138,7 +138,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: PostgresStorageConfig
     ):
         return PostgresRunStorage(
             inst_data=inst_data,

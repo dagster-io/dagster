@@ -5,7 +5,6 @@ import os
 from dagster import materialize_to_memory
 from dagster._core.execution.api import create_execution_plan
 from dagster_pyspark import PySparkResource
-
 from with_pyspark_emr.definitions import defs, people, people_over_50
 
 

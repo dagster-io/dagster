@@ -5,7 +5,7 @@ import tempfile
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 import dagster as dg
@@ -118,7 +118,7 @@ class TestDbtOpCustomization(TestOpCustomization):
 @pytest.mark.parametrize(
     "backfill_policy", [None, "single_run", "multi_run", "multi_run_with_max_partitions"]
 )
-def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
+def test_python_params(dbt_path: Path, backfill_policy: str | None) -> None:
     backfill_policy_arg = {}
     if backfill_policy == "single_run":
         backfill_policy_arg["backfill_policy"] = {"type": "single_run"}
@@ -221,13 +221,27 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
+def test_target_path_from_component_string(dbt_path: Path) -> None:
+    component = load_component_for_test(
+        DbtProjectComponent,
+        {
+            "project": {
+                "project_dir": str(dbt_path),
+                "target_path": "tmp_dbt_target",
+            }
+        },
+    )
+    assert isinstance(component.dbt_project.target_path, Path)
+    assert component.dbt_project.target_path == Path("tmp_dbt_target")
+
+
 class TestDbtTranslation(TestTranslation):
     def test_translation(
         self,
         dbt_path: Path,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
     ) -> None:
         defs = build_component_defs_for_test(
             DbtProjectComponent,
@@ -403,7 +417,7 @@ def test_state_path(
         ),
     ],
 )
-def test_cli_args(dbt_path: Path, cli_args: Optional[list[str]], expected_args: list[str]) -> None:
+def test_cli_args(dbt_path: Path, cli_args: list[str] | None, expected_args: list[str]) -> None:
     args = {"cli_args": cli_args} if cli_args else {}
 
     comp = load_component_for_test(
@@ -474,7 +488,7 @@ def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
     @dataclass
     class CustomDbtProjectComponent(DbtProjectComponent):
         def get_asset_spec(
-            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
         ) -> dg.AssetSpec:
             # Get the base asset spec from the parent implementation
             base_spec = super().get_asset_spec(manifest, unique_id, project)
@@ -678,7 +692,7 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
             return AdvancedConfig
 
         def get_asset_spec(
-            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
         ) -> dg.AssetSpec:
             base_spec = super().get_asset_spec(manifest, unique_id, project)
             dbt_props = self.get_resource_props(manifest, unique_id)

@@ -455,7 +455,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
 
         assert not run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
 
-        with pytest.raises(Exception, match="Limit of 5000 is too large. Max is 1000"):
+        with pytest.raises(Exception, match=r"Limit of 5000 is too large. Max is 1000"):
             run_logs_result = execute_dagster_graphql(
                 read_context,
                 RUN_LOGS_QUERY,
@@ -475,7 +475,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
             )
             assert len(run_logs_result.data["pipelineRunOrError"]["eventConnection"]["events"]) == 5
 
-            with pytest.raises(Exception, match="Limit of 1000 is too large. Max is 5"):
+            with pytest.raises(Exception, match=r"Limit of 1000 is too large. Max is 5"):
                 run_logs_result = execute_dagster_graphql(
                     read_context,
                     RUN_LOGS_QUERY,

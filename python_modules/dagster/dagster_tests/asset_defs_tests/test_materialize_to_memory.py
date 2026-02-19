@@ -70,7 +70,7 @@ def test_materialize_resources_not_satisfied():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Attempted to call `materialize_to_memory` with a resource provided for io manager key"
+            r"Attempted to call `materialize_to_memory` with a resource provided for io manager key"
             " 'io_manager'. Do not provide resources for io manager keys when calling"
             " `materialize_to_memory`, as it will override io management behavior for all keys."
         ),
@@ -91,7 +91,7 @@ def test_materialize_conflicting_resources():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        match=r"Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
         dg.materialize_to_memory([first, second])
 
@@ -129,7 +129,7 @@ def test_materialize_source_assets():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Attempted to call `materialize_to_memory` with a resource "
+            r"Attempted to call `materialize_to_memory` with a resource "
             "provided for io manager key 'the_source__io_manager'. Do not provide "
             "resources for io manager keys when calling `materialize_to_memory`, as "
             "it will override io management behavior for all keys."
@@ -267,7 +267,7 @@ def test_materialize_to_memory_provided_io_manager_instance():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Attempted to call `materialize_to_memory` with a resource "
+            r"Attempted to call `materialize_to_memory` with a resource "
             "provided for io manager key 'blah'. Do not provide resources for io "
             "manager keys when calling `materialize_to_memory`, as it will override "
             "io management behavior for all keys."
@@ -285,7 +285,7 @@ def test_materialize_to_memory_provided_io_manager_instance():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "Attempted to call `materialize_to_memory` with a resource "
+            r"Attempted to call `materialize_to_memory` with a resource "
             "provided for io manager key 'blah'. Do not provide resources for io "
             "manager keys when calling `materialize_to_memory`, as it will override "
             "io management behavior for all keys."

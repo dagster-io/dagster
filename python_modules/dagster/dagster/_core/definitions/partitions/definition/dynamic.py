@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, public
@@ -36,13 +36,9 @@ class DynamicPartitionsDefinition(
         [
             (
                 "partition_fn",
-                PublicAttr[
-                    Optional[
-                        Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
-                    ]
-                ],
+                PublicAttr[Callable[[datetime | None], Sequence[Partition] | Sequence[str]] | None],
             ),
-            ("name", PublicAttr[Optional[str]]),
+            ("name", PublicAttr[str | None]),
         ],
     ),
 ):
@@ -77,10 +73,9 @@ class DynamicPartitionsDefinition(
 
     def __new__(
         cls,
-        partition_fn: Optional[
-            Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
-        ] = None,
-        name: Optional[str] = None,
+        partition_fn: Callable[[datetime | None], Sequence[Partition] | Sequence[str]]
+        | None = None,
+        name: str | None = None,
     ):
         partition_fn = check.opt_callable_param(partition_fn, "partition_fn")
         name = check.opt_str_param(name, "name")
@@ -140,7 +135,7 @@ class DynamicPartitionsDefinition(
     @public
     def get_partition_keys(
         self,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[str]:
         """Returns a list of strings representing the partition keys of the
@@ -182,7 +177,7 @@ class DynamicPartitionsDefinition(
         context: PartitionLoadingContext,
         limit: int,
         ascending: bool,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         with partition_loading_context(new_ctx=context):
             partition_keys = self.get_partition_keys()
@@ -193,7 +188,7 @@ class DynamicPartitionsDefinition(
     def has_partition_key(
         self,
         partition_key: str,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> bool:
         with partition_loading_context(current_time, dynamic_partitions_store) as ctx:

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster import (
     AssetKey,
@@ -52,7 +52,7 @@ class DbtManifestAssetSelection(AssetSelection):
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
     selector: str
-    project: Optional[DbtProject] = None
+    project: DbtProject | None = None
 
     def __eq__(self, other):
         if not isinstance(other, DbtManifestAssetSelection):
@@ -74,16 +74,18 @@ class DbtManifestAssetSelection(AssetSelection):
             and self.selector == other.selector
         )
 
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
+
     @classmethod
     def build(
         cls,
         manifest: DbtManifestParam,
         select: str = DBT_DEFAULT_SELECT,
         *,
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
         exclude: str = DBT_DEFAULT_EXCLUDE,
         selector: str = DBT_DEFAULT_SELECTOR,
-        project: Optional[DbtProject] = None,
+        project: DbtProject | None = None,
     ):
         return cls(
             manifest=validate_manifest(manifest),

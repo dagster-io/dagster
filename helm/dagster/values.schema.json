@@ -1513,6 +1513,77 @@
             "title": "InitContainer",
             "type": "object"
         },
+        "InitContainerImage": {
+            "description": "Image specification for init containers, with all fields optional except repository.",
+            "properties": {
+                "repository": {
+                    "title": "Repository",
+                    "type": "string"
+                },
+                "tag": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Tag"
+                },
+                "digest": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Digest"
+                },
+                "pullPolicy": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/PullPolicy"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                }
+            },
+            "required": [
+                "repository"
+            ],
+            "title": "InitContainerImage",
+            "type": "object"
+        },
+        "InitContainerWithStructuredImage": {
+            "additionalProperties": true,
+            "description": "Init container with structured image specification (repository/tag/digest).",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/$defs/InitContainerImage"
+                }
+            },
+            "required": [
+                "name",
+                "image"
+            ],
+            "title": "InitContainerWithStructuredImage",
+            "type": "object"
+        },
         "K8sRunLauncherConfig": {
             "additionalProperties": false,
             "properties": {
@@ -3301,7 +3372,14 @@
                     "anyOf": [
                         {
                             "items": {
-                                "$ref": "#/$defs/Container"
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/Container"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/InitContainerWithStructuredImage"
+                                    }
+                                ]
                             },
                             "type": "array"
                         },

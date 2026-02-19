@@ -9,6 +9,18 @@ This directory contains the following packages:
 - `ui-components`: The core React component library, representing our design system
 - `eslint-config`: A custom eslint configuration used across our frontend projects.
 
+### Workspace configuration
+
+Internally, the sub-packages (`packages/*`) are registered as workspaces in the repository root `package.json`, so there is no `package.json` or `.yarnrc.yml` at this directory level. Instead, the OSS versions of these files are stored under alternative names that Yarn ignores:
+
+- `package.oss.json` — the workspace-root `package.json` used by the OSS repo
+- `.yarnrc.oss.yml` — the Yarn configuration used by the OSS repo
+- `yarn.oss.lock` - The Yarn lockfile used by the oSS repo
+
+Copybara renames these files back to their standard names when syncing to the public `dagster-io/dagster` repository, and reverses the rename when syncing changes back in.
+
+In OSS, the package.json and Yarn can therefore behave as if `dagster-ui` is itself the workspace. The dagster-ui `yarn.lock` will be updated after Copybara renames the files, in order to pick up any changes to dependencies within `dagster-ui`. This updated `yarn.lock` will then be synced back to internal, and developers working on `internal` should not have to commit any changes for it.
+
 ### Contributing
 
 There are a handful of commands you can run locally from the `dagster-ui` directory prior to pushing a branch for a pull request:

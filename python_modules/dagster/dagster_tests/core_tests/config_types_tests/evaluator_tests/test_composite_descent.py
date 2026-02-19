@@ -790,7 +790,7 @@ def test_configured_graph_cannot_stub_inner_ops_config():
 
     with pytest.raises(
         dg.DagsterInvalidConfigError,
-        match='Received unexpected config entry "ops" at path root:ops:return_int_graph.',
+        match=r'Received unexpected config entry "ops" at path root:ops:return_int_graph.',
     ):
         return_int_job.execute_in_process(
             {
@@ -816,7 +816,7 @@ def test_configuring_graph_with_no_config_mapping():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Only graphs utilizing config mapping can be pre-configured. The graph "
+            r"Only graphs utilizing config mapping can be pre-configured. The graph "
             '"graph_without_config_fn"'
         ),
     ):

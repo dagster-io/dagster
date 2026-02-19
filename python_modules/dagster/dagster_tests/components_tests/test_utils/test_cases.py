@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass
@@ -11,10 +10,10 @@ class ComponentValidationTestCase:
     """
 
     component_path: str
-    component_type_filepath: Optional[Path]
+    component_type_filepath: Path | None
     should_error: bool
-    validate_error_msg: Optional[Callable[[str], None]] = None
-    check_error_msg: Optional[Callable[[str], None]] = None
+    validate_error_msg: Callable[[str], None] | None = None
+    check_error_msg: Callable[[str], None] | None = None
 
 
 def msg_includes_all_of(*substrings: str) -> Callable[[str], None]:

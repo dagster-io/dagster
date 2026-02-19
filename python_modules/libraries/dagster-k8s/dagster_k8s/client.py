@@ -425,7 +425,7 @@ class DagsterKubernetesClient:
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
-        start_time: Optional[float] = None,
+        start_time: float | None = None,
     ):
         if wait_timeout:
             check.float_param(start_time, "start_time")
@@ -482,7 +482,7 @@ class DagsterKubernetesClient:
         job_name: str,
         namespace: str,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
-    ) -> Optional[V1JobStatus]:
+    ) -> Optional[V1JobStatus]:  # noqa: UP045
         def _get_job_status():
             try:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
@@ -604,7 +604,7 @@ class DagsterKubernetesClient:
         wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time: Any = None,
-        ignore_containers: Optional[set] = None,
+        ignore_containers: set | None = None,
     ) -> None:
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
@@ -686,9 +686,14 @@ class DagsterKubernetesClient:
             all_statuses = []
             all_statuses.extend(pod.status.init_container_statuses or [])
             all_statuses.extend(pod.status.container_statuses or [])
-            initcontainers = set(s.name for s in (pod.status.init_container_statuses or []))
 
             # Filter out ignored containers
+            initcontainers = set(
+                s.name
+                for s in (pod.status.init_container_statuses or [])
+                if s.name not in ignore_containers
+            )
+
             all_statuses = [s for s in all_statuses if s.name not in ignore_containers]
 
             # Always get the first status from the list, which will first get the
@@ -812,7 +817,7 @@ class DagsterKubernetesClient:
         self,
         pod_name: str,
         namespace: str,
-        container_name: Optional[str] = None,
+        container_name: str | None = None,
         **kwargs,
     ) -> str:
         """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
@@ -945,8 +950,8 @@ class DagsterKubernetesClient:
         self,
         pod_name,
         namespace,
-        pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod
-        include_container_logs: Optional[bool] = True,
+        pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod  # noqa: UP045
+        include_container_logs: bool | None = True,
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(

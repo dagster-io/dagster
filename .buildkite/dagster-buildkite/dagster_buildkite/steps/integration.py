@@ -1,6 +1,5 @@
 import os
 from collections.abc import Callable
-from typing import Optional, Union
 
 from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -67,7 +66,7 @@ def build_backcompat_suite_steps() -> list[TopLevelStepConfiguration]:
     )
 
 
-def backcompat_extra_cmds(_, factor: Optional[ToxFactor]) -> list[str]:
+def backcompat_extra_cmds(_, factor: ToxFactor | None) -> list[str]:
     tox_factor_map = {
         "user-code-latest-release": LATEST_DAGSTER_RELEASE,
         "user-code-earliest-release": EARLIEST_TESTED_RELEASE,
@@ -173,7 +172,7 @@ def skip_if_not_azure_commit():
     """If no dagster-azure files are changed, skip the azure live tests."""
     return (
         None
-        if (any("dagster-azure" in str(path) for path in ChangedFiles.all))
+        if (any("dagster-azure" in str(path) for path in ChangedFiles.all_oss))
         else "Not a dagster-azure commit"
     )
 
@@ -182,7 +181,7 @@ def skip_if_not_gcp_commit():
     """If no dagster-gcp files are changed, skip the gcp live tests."""
     return (
         None
-        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all))
+        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all_oss))
         else "Not a dagster-gcp commit"
     )
 
@@ -238,13 +237,13 @@ def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
 
 def build_integration_suite_steps(
     directory: str,
-    pytest_tox_factors: Optional[list[ToxFactor]],
-    pytest_extra_cmds: Optional[PytestExtraCommandsFunction] = None,
+    pytest_tox_factors: list[ToxFactor] | None,
+    pytest_extra_cmds: PytestExtraCommandsFunction | None = None,
     queue=None,
-    always_run_if: Optional[Callable[[], bool]] = None,
-    unsupported_python_versions: Optional[
-        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
-    ] = None,
+    always_run_if: Callable[[], bool] | None = None,
+    unsupported_python_versions: list[AvailablePythonVersion]
+    | UnsupportedVersionsFunction
+    | None = None,
 ) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         directory,

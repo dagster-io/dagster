@@ -1,13 +1,13 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, TypeAlias
 
 from dagster.components import Resolver
 from pydantic import BaseModel
 
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
 
-DatabricksJobInfo = Union[dict[str, Any], DatabricksJob]
+DatabricksJobInfo: TypeAlias = dict[str, Any] | DatabricksJob
 
 
 @dataclass
@@ -20,7 +20,7 @@ class IncludeJobsConfig(BaseModel):
 
 
 class DatabricksFilterConfig(BaseModel):
-    include_jobs: Optional[IncludeJobsConfig] = None
+    include_jobs: IncludeJobsConfig | None = None
 
 
 def resolve_databricks_filter(context, config: DatabricksFilterConfig) -> DatabricksFilter:

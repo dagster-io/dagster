@@ -2,7 +2,7 @@ import os
 import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, nullcontext
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -98,9 +98,11 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
+            lambda asset_spec: (
+                "snowflake" in asset_spec.kinds
+                and "dbt" in asset_spec.kinds
+                and asset_spec.tags.get("foo") == "bar"
+            ),
             False,
         ),
         ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
@@ -116,8 +118,9 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"deps": ["customers"]},
-            lambda asset_spec: len(asset_spec.deps) == 1
-            and asset_spec.deps[0].asset_key == AssetKey("customers"),
+            lambda asset_spec: (
+                len(asset_spec.deps) == 1 and asset_spec.deps[0].asset_key == AssetKey("customers")
+            ),
             False,
         ),
         (
@@ -147,7 +150,7 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
 )
 def test_translation(
     attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
+    assertion: Callable[[AssetSpec], bool] | None,
     should_error: bool,
     sigma_sample_data: Any,
     sigma_auth_token: str,
@@ -168,7 +171,7 @@ def test_translation(
         with (
             setup_sigma_component(
                 defs_yaml_contents=body,
-            ) as (component, defs),
+            ) as (_component, defs),
         ):
             if "key_prefix" in attributes:
                 key = AssetKey(["cool_prefix", "Sample_Workbook"])
@@ -207,7 +210,7 @@ def test_per_content_type_translation(sigma_sample_data: Any, sigma_auth_token: 
         setup_sigma_component(
             defs_yaml_contents=body,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 from schema.charts.utils.kubernetes import ExternalImage
@@ -17,5 +15,5 @@ class PostgreSQL(BaseModel):
     postgresqlPassword: str
     postgresqlDatabase: str
     postgresqlParams: dict
-    postgresqlScheme: Optional[str] = None
+    postgresqlScheme: str | None = None
     service: Service

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster._check as check
 import graphene
@@ -14,6 +14,7 @@ from dagster._core.definitions.selector import (
     SensorSelector,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import PartitionKeyFilter
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.remote_representation.external import CompoundID
@@ -645,6 +646,14 @@ class GrapheneQuery(graphene.ObjectType):
         non_null_list(GrapheneAssetCheckExecution),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+        partition=graphene.Argument(
+            graphene.String,
+            description=(
+                "Optional partition key filter. When omitted, returns all executions across all "
+                'partitions. When set to empty string (""), returns only unpartitioned executions. '
+                "When set to a specific value, returns executions for that partition."
+            ),
+        ),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         description="Retrieve the executions for a given asset check.",
@@ -659,7 +668,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_repositoriesOrError(
         self,
         graphene_info: ResolveInfo,
-        repositorySelector: Optional[GrapheneRepositorySelector] = None,
+        repositorySelector: GrapheneRepositorySelector | None = None,
     ):
         if repositorySelector:
             return GrapheneRepositoryConnection(
@@ -696,8 +705,8 @@ class GrapheneQuery(graphene.ObjectType):
     async def resolve_pipelineSnapshotOrError(
         self,
         graphene_info: ResolveInfo,
-        snapshotId: Optional[str] = None,
-        activePipelineSelector: Optional[GraphenePipelineSelector] = None,
+        snapshotId: str | None = None,
+        activePipelineSelector: GraphenePipelineSelector | None = None,
     ):
         if activePipelineSelector:
             job_selector = pipeline_selector_from_graphql(activePipelineSelector)
@@ -717,7 +726,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_graphOrError(
         self,
         graphene_info: ResolveInfo,
-        selector: Optional[GrapheneGraphSelector] = None,
+        selector: GrapheneGraphSelector | None = None,
     ):
         if selector is None:
             raise DagsterInvariantViolationError(
@@ -747,7 +756,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         repositorySelector: GrapheneRepositorySelector,
-        scheduleStatus: Optional[GrapheneInstigationStatus] = None,
+        scheduleStatus: GrapheneInstigationStatus | None = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
             instigator_statuses = {
@@ -795,7 +804,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info,
         repositorySelector: GrapheneRepositorySelector,
-        sensorStatus: Optional[GrapheneInstigationStatus] = None,
+        sensorStatus: GrapheneInstigationStatus | None = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
             instigator_statuses = {
@@ -818,7 +827,7 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         *,
         instigationSelector: GrapheneInstigationSelector,
-        id: Optional[str] = None,
+        id: str | None = None,
     ):
         return get_instigator_state_by_selector(
             graphene_info,
@@ -874,9 +883,9 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_pipelineRunsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filter: GrapheneRunsFilter | None = None,  # noqa: A002
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         selector = filter.to_selector() if filter is not None else None
 
@@ -892,9 +901,9 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filter: GrapheneRunsFilter | None = None,  # noqa: A002
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         selector = filter.to_selector() if filter is not None else None
 
@@ -907,9 +916,9 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runIdsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filter: GrapheneRunsFilter | None = None,  # noqa: A002
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         selector = filter.to_selector() if filter is not None else None
 
@@ -927,8 +936,8 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         limit: int,
         view: GrapheneRunsFeedView,
-        cursor: Optional[str] = None,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
+        cursor: str | None = None,
+        filter: GrapheneRunsFilter | None = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
         return get_runs_feed_entries(
@@ -939,7 +948,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         view: GrapheneRunsFeedView,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
+        filter: GrapheneRunsFilter | None = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
         return GrapheneRunsFeedCount(
@@ -968,7 +977,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         repositorySelector: RepositorySelector,
-        partitionSetName: Optional[str] = None,
+        partitionSetName: str | None = None,
     ):
         return get_partition_set(
             graphene_info,
@@ -986,8 +995,8 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         tagKeys: list[str],
-        valuePrefix: Optional[str] = None,
-        limit: Optional[int] = None,
+        valuePrefix: str | None = None,
+        limit: int | None = None,
     ):
         return get_run_tags(graphene_info, tagKeys, valuePrefix, limit)
 
@@ -1001,7 +1010,7 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
-        runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
+        runConfigData: Any | None = None,  # custom scalar (GrapheneRunConfigData)
     ):
         return await validate_pipeline_config(
             graphene_info,
@@ -1015,7 +1024,7 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
-        runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
+        runConfigData: Any | None = None,  # custom scalar (GrapheneRunConfigData)
     ):
         return await get_execution_plan(
             graphene_info,
@@ -1028,7 +1037,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         selector: GraphenePipelineSelector,
-        mode: Optional[str] = None,
+        mode: str | None = None,
     ):
         return await resolve_run_config_schema_or_error(
             graphene_info, pipeline_selector_from_graphql(selector), mode
@@ -1041,9 +1050,9 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         loadMaterializations: bool,
-        group: Optional[GrapheneAssetGroupSelector] = None,
-        pipeline: Optional[GraphenePipelineSelector] = None,
-        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
+        group: GrapheneAssetGroupSelector | None = None,
+        pipeline: GraphenePipelineSelector | None = None,
+        assetKeys: Sequence[GrapheneAssetKeyInput] | None = None,
     ) -> Sequence[GrapheneAssetNode]:
         if assetKeys == []:
             return []
@@ -1122,10 +1131,10 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetsOrError(
         self,
         graphene_info: ResolveInfo,
-        prefix: Optional[Sequence[str]] = None,
-        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        prefix: Sequence[str] | None = None,
+        assetKeys: Sequence[GrapheneAssetKeyInput] | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         return get_assets(
             graphene_info,
@@ -1143,9 +1152,9 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetRecordsOrError(
         self,
         graphene_info: ResolveInfo,
-        prefix: Optional[Sequence[str]] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        prefix: Sequence[str] | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         return get_asset_records(
             graphene_info,
@@ -1185,10 +1194,10 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_partitionBackfillsOrError(
         self,
         graphene_info: ResolveInfo,
-        status: Optional[GrapheneBulkActionStatus] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        filters: Optional[GrapheneBulkActionsFilter] = None,
+        status: GrapheneBulkActionStatus | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        filters: GrapheneBulkActionsFilter | None = None,
     ):
         return get_backfills(
             graphene_info,
@@ -1224,8 +1233,8 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         runId: str,
-        afterCursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        afterCursor: str | None = None,
+        limit: int | None = None,
     ):
         return get_logs_for_run(graphene_info, runId, afterCursor, limit)
 
@@ -1238,8 +1247,8 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         logKey: Sequence[str],
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ) -> GrapheneCapturedLogs:
         log_data = get_compute_log_manager(graphene_info).get_log_data(
             logKey, cursor=cursor, max_bytes=limit
@@ -1257,7 +1266,7 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         assetKey: GrapheneAssetKeyInput,
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ):
         asset_key = AssetKey.from_graphql_input(assetKey)
         return fetch_auto_materialize_asset_evaluations(
@@ -1279,7 +1288,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationForPartition(
         self,
         graphene_info: ResolveInfo,
-        assetKey: Optional[GrapheneAssetKeyInput],
+        assetKey: GrapheneAssetKeyInput | None,
         evaluationId: str,
         partition: str,
     ):
@@ -1293,10 +1302,10 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationRecordsOrError(
         self,
         graphene_info: ResolveInfo,
-        assetKey: Optional[GrapheneAssetKeyInput],
+        assetKey: GrapheneAssetKeyInput | None,
         limit: int,
-        cursor: Optional[str] = None,
-        assetCheckKey: Optional[GrapheneAssetCheckHandleInput] = None,
+        cursor: str | None = None,
+        assetCheckKey: GrapheneAssetCheckHandleInput | None = None,
     ):
         return fetch_asset_condition_evaluation_records_for_asset_key(
             graphene_info=graphene_info,
@@ -1308,7 +1317,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_truePartitionsForAutomationConditionEvaluationNode(
         self,
         graphene_info: ResolveInfo,
-        assetKey: Optional[GrapheneAssetKeyInput],
+        assetKey: GrapheneAssetKeyInput | None,
         evaluationId: str,
         nodeUniqueId: str,
     ):
@@ -1365,8 +1374,20 @@ class GrapheneQuery(graphene.ObjectType):
         assetKey: GrapheneAssetKeyInput,
         checkName: str,
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
+        partition: str | None = None,
     ):
+        # Handle ternary partition filter state:
+        # - partition=None (omitted): partition_filter=None (ALL executions)
+        # - partition="": PartitionKeyFilter(key=None) (unpartitioned only)
+        # - partition="value": PartitionKeyFilter(key="value") (specific partition)
+        if partition is None:
+            partition_filter = None
+        elif partition == "":
+            partition_filter = PartitionKeyFilter(key=None)
+        else:
+            partition_filter = PartitionKeyFilter(key=partition)
+
         return fetch_asset_check_executions(
             graphene_info.context,
             asset_check_key=AssetCheckKey(
@@ -1374,6 +1395,7 @@ class GrapheneQuery(graphene.ObjectType):
             ),
             limit=limit,
             cursor=cursor,
+            partition_filter=partition_filter,
         )
 
     def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):

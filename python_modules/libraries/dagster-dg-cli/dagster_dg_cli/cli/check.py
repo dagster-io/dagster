@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 import dagster_shared.check as check
@@ -157,7 +157,7 @@ def check_definitions_command(
     log_format: str,
     verbose: bool,  # from dg_global_options
     target_path: Path,
-    check_yaml: Optional[bool],
+    check_yaml: bool | None,
     use_active_venv: bool,
     **global_options: Mapping[str, object],
 ) -> None:

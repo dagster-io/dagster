@@ -28,6 +28,7 @@ query {
                     jobs {
                         name
                         graphName
+                        isAssetJob
                     }
                 }
                 isReloadSupported

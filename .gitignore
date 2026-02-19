@@ -190,3 +190,6 @@ exponent.txt
 .claude/.local
 
 .workstack
+.erk/scratch/
+.impl/
+.erk/config.local.toml

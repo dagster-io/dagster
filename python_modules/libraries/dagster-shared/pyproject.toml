@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-shared"
+version = "1!0+dev"
+description = "Shared code between dagster and dagster-dg-core."
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.15"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "PyYAML>=5.1",
+    "packaging>=20.9",
+    "platformdirs",
+    "pydantic>=2,<3.0.0",
+    "typing_extensions>=4.11.0,<5",
+    "tomlkit",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-shared"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "flaky",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = ["dagster_shared_tests*"]
+
+[tool.check-manifest]
+ignore = [".coveragerc", "tox.ini", "pytest.ini", "CLAUDE.md", "dagster_shared_tests/**"]

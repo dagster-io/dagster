@@ -105,7 +105,7 @@ def test_params() -> None:
             assets=[my_asset, my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
         )
 
-    with pytest.raises(CheckError, match="Invalid cron string."):
+    with pytest.raises(CheckError, match=r"Invalid cron string."):
         dg.build_last_update_freshness_checks(
             assets=[my_asset],
             deadline_cron="very invalid",

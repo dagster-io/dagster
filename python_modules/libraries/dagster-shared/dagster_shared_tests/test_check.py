@@ -1533,13 +1533,13 @@ def test_iterable():
     assert check.iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
     assert list(check.iterable_param((i for i in [1, 2]), "thisisfine")) == [1, 2]
 
-    with pytest.raises(CheckError, match="Iterable.*str"):
+    with pytest.raises(CheckError, match=r"Iterable.*str"):
         check.iterable_param("lkjsdkf", "stringisiterable")
 
-    with pytest.raises(CheckError, match="Iterable.*None"):
+    with pytest.raises(CheckError, match=r"Iterable.*None"):
         check.iterable_param(None, "nonenotallowed")  # pyright: ignore[reportArgumentType]
 
-    with pytest.raises(CheckError, match="Iterable.*int"):
+    with pytest.raises(CheckError, match=r"Iterable.*int"):
         check.iterable_param(1, "intnotallowed")  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
@@ -1570,10 +1570,10 @@ def test_opt_iterable():
 
     check.opt_iterable_param(None, "noneisallowed")
 
-    with pytest.raises(CheckError, match="Iterable.*str"):
+    with pytest.raises(CheckError, match=r"Iterable.*str"):
         check.opt_iterable_param("lkjsdkf", "stringisiterable")
 
-    with pytest.raises(CheckError, match="Iterable.*int"):
+    with pytest.raises(CheckError, match=r"Iterable.*int"):
         check.opt_iterable_param(1, "intnotallowed")  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
@@ -1672,13 +1672,13 @@ BUILD_CASES = [
     (float, [4.2], ["4.1"]),
     (str, ["hi"], [Foo()]),
     (Bar, [Bar()], [Foo()]),
-    (Optional[Bar], [Bar()], [Foo()]),
+    (Bar | None, [Bar()], [Foo()]),
     (List[str], [["a", "b"]], [[1, 2]]),
     (Sequence[str], [["a", "b"]], [[1, 2], "just_a_string"]),
     (Iterable[str], [["a", "b"]], [[1, 2]]),
     (Set[str], [{"a", "b"}], [{1, 2}]),
     (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
-    (Optional[AbstractSet[str]], [{"a", "b"}, None], [{1, 2}]),
+    (AbstractSet[str] | None, [{"a", "b"}, None], [{1, 2}]),
     (
         Mapping[str, AbstractSet[str]],
         [
@@ -1693,14 +1693,14 @@ BUILD_CASES = [
     ),
     (Dict[str, int], [{"a": 1}], [{1: "a"}]),
     (Mapping[str, int], [{"a": 1}], [{1: "a"}]),
-    (Optional[int], [None], ["4"]),
-    (Optional[Bar], [None], [Foo()]),
-    (Optional[List[str]], [["a", "b"]], [[1, 2]]),
-    (Optional[Sequence[str]], [["a", "b"]], [[1, 2]]),
-    (Optional[Iterable[str]], [["a", "b"]], [[1, 2]]),
-    (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
-    (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
-    (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
+    (int | None, [None], ["4"]),
+    (Bar | None, [None], [Foo()]),
+    (list[str] | None, [["a", "b"]], [[1, 2]]),
+    (Sequence[str] | None, [["a", "b"]], [[1, 2]]),
+    (Iterable[str] | None, [["a", "b"]], [[1, 2]]),
+    (set[str] | None, [{"a", "b"}], [{1, 2}]),
+    (dict[str, int] | None, [{"a": 1}], [{1: "a"}]),
+    (Mapping[str, int] | None, [{"a": 1}], [{1: "a"}]),
     (Annotated[Bar, None], [Bar()], [Foo()]),
     (Annotated["Bar", None], [Bar()], [Foo()]),
     (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
@@ -1709,17 +1709,18 @@ BUILD_CASES = [
         [[]],  # avoid importing TestType
         [[Foo()]],
     ),
-    (Union[bool, Foo], [True], [None]),
+    (Union[bool, Foo], [True], [None]),  # noqa: UP007
+    (bool | Foo, [True], [None]),
     (Union[Foo, "Bar"], [Bar()], [None]),
     (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
-    (TypeVar("T", bound=Optional[Foo]), [None], [Bar()]),
+    (TypeVar("T", bound=Foo | None), [None], [Bar()]),
     (TypeVar("T"), [Foo(), None], []),
     (Literal["apple"], ["apple"], ["banana"]),
     (Literal["apple", "manzana"], ["apple", "manzana"], ["banana"]),
     (Callable, [lambda x: x, int], [4]),
     (Callable[[], int], [lambda x: x, int], [4]),
     (
-        Optional[Callable[[], int]],
+        Callable[[], int] | None,
         [
             None,
             lambda x: x,
@@ -1744,7 +1745,7 @@ BUILD_CASES = [
         ],
         [None, Foo()],
     ),
-    (Optional[MyTypedDict], [{"foo": "f", "bar": "b"}, None], [Foo()]),
+    (MyTypedDict | None, [{"foo": "f", "bar": "b"}, None], [Foo()]),
 ]
 
 
@@ -1790,7 +1791,7 @@ def test_forward_ref_flow() -> None:
 
 
 def test_never():
-    def _val() -> Union[int, str]:
+    def _val() -> int | str:
         return 4
 
     v = _val()

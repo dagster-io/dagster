@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import boto3
 import requests
@@ -65,10 +65,10 @@ class MwaaSessionAuthBackend(AirflowAuthBackend):
         self.mwaa_client = mwaa_client
         self.env_name = env_name
         # Session info is generated when we either try to retrieve a session or retrieve the web server url
-        self._session_info: Optional[tuple[str, str]] = None
+        self._session_info: tuple[str, str] | None = None
 
     @staticmethod
-    def from_profile(region: str, env_name: str, profile_name: Optional[str] = None):
+    def from_profile(region: str, env_name: str, profile_name: str | None = None):
         boto_session = boto3.Session(profile_name=profile_name, region_name=region)
         mwaa = boto_session.client("mwaa")
         return MwaaSessionAuthBackend(mwaa_client=mwaa, env_name=env_name)

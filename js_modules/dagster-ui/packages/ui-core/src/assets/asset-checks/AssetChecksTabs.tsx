@@ -1,14 +1,24 @@
 import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
 
-export type AssetChecksTabType = 'overview' | 'execution-history' | 'automation-history';
+export type AssetChecksTabType =
+  | 'overview'
+  | 'execution-history'
+  | 'automation-history'
+  | 'partitions';
 
 interface Props {
   activeTab: AssetChecksTabType;
   enableAutomationHistory: boolean;
   onChange: (tabId: AssetChecksTabType) => void;
+  hasPartitions: boolean;
 }
 
-export const AssetChecksTabs = ({activeTab, enableAutomationHistory, onChange}: Props) => {
+export const AssetChecksTabs = ({
+  activeTab,
+  enableAutomationHistory,
+  onChange,
+  hasPartitions,
+}: Props) => {
   return (
     <Tabs selectedTabId={activeTab} onChange={onChange}>
       <Tab id="overview" title="Overview" />
@@ -26,6 +36,7 @@ export const AssetChecksTabs = ({activeTab, enableAutomationHistory, onChange}: 
         }
         disabled={!enableAutomationHistory}
       />
+      {hasPartitions && <Tab id="partitions" title="Partitions" />}
     </Tabs>
   );
 };

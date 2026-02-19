@@ -96,6 +96,7 @@
 -e python_modules/libraries/dagster-twilio/
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
+-e python_modules/libraries/dagster-polytomic/
 
 ### COMMUNITY
 dagster-anthropic

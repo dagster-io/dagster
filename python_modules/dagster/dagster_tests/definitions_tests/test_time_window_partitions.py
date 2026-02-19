@@ -3,7 +3,7 @@ import random
 import re
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Optional, cast
+from typing import cast
 
 import dagster as dg
 import pytest
@@ -474,9 +474,9 @@ def assert_expected_partition_keys(
 def test_time_partitions_daily_partitions(
     start: datetime,
     partition_days_offset: int,
-    current_time: Optional[datetime],
+    current_time: datetime | None,
     expected_partition_keys: Sequence[str],
-    timezone: Optional[str],
+    timezone: str | None,
 ):
     partitions_def = dg.DailyPartitionsDefinition(
         start_date=start, end_offset=partition_days_offset, timezone=timezone
@@ -765,7 +765,7 @@ def test_time_partitions_weekly_partitions(
 )
 def test_time_partitions_hourly_partitions(
     start: datetime,
-    timezone: Optional[str],
+    timezone: str | None,
     partition_hours_offset: int,
     current_time,
     expected_partition_keys: Sequence[str],
@@ -1193,7 +1193,7 @@ def test_dst_transition_15_minute_partitions() -> None:
     ],
 )
 def test_dst_transition_has_partition_key(
-    timezone: Optional[str], partition_key: str, expected: bool
+    timezone: str | None, partition_key: str, expected: bool
 ) -> None:
     partitions_def = dg.HourlyPartitionsDefinition("2020-10-01-00:00", timezone=timezone)
     assert partitions_def.has_partition_key(partition_key) == expected

@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 def get_sensors_or_error(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
-    instigator_statuses: Optional[set[InstigatorStatus]] = None,
+    instigator_statuses: set[InstigatorStatus] | None = None,
 ) -> "GrapheneSensors":
     from dagster_graphql.schema.sensors import GrapheneSensor, GrapheneSensors
 
@@ -208,7 +208,7 @@ def get_sensor_next_tick(
 
 
 def set_sensor_cursor(
-    graphene_info: ResolveInfo, selector: SensorSelector, cursor: Optional[str]
+    graphene_info: ResolveInfo, selector: SensorSelector, cursor: str | None
 ) -> "GrapheneSensor":
     check.inst_param(selector, "selector", SensorSelector)
     check.opt_str_param(cursor, "cursor")

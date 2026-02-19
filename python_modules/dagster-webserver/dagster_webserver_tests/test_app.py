@@ -337,6 +337,7 @@ def test_dagster_webserver_logs(_, telemetry_caplog):
                         "elapsed_time",
                         "event_id",
                         "instance_id",
+                        "user_id",
                         "python_version",
                         "run_storage_id",
                         "metadata",

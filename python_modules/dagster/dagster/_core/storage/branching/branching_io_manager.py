@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from dagster import InputContext, OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManager, ResourceDependency
@@ -10,14 +10,14 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
 
 
-def get_text_metadata_value(materialization: AssetMaterialization, key: str) -> Optional[str]:
+def get_text_metadata_value(materialization: AssetMaterialization, key: str) -> str | None:
     metadata_value = materialization.metadata.get(key)
     return metadata_value.value if isinstance(metadata_value, TextMetadataValue) else None
 
 
 def latest_materialization_log_entry(
-    instance: DagsterInstance, asset_key: AssetKey, partition_key: Optional[str] = None
-) -> Optional[EventLogEntry]:
+    instance: DagsterInstance, asset_key: AssetKey, partition_key: str | None = None
+) -> EventLogEntry | None:
     event_records = instance.fetch_materializations(
         AssetRecordsFilter(
             asset_key=asset_key,

@@ -1,23 +1,5 @@
 name: Deploy Docs
 on:
-  push:
-    branches:
-      - master
-      - 'release-*'
-    paths:
-      - docs/**
-      - examples/docs_snippets/**
-      - examples/docs_projects/**
-      - examples/airlift-migration-tutorial/**
-      - .github/workflows/build-docs.yml
-      - '!docs/README.md'
-      - '!docs/CONTRIBUTING.md'
-      - '!docs/content-templates/**'
-      # Required for `yarn rebuild-kinds-tags`
-      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
-      # Required to rebuild docs on new version release
-      - python_modules/dagster/dagster/version.py
-      - CHANGES.md
   pull_request:
     paths:
       - docs/**

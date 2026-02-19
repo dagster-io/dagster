@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeAlias, Union
+from typing import Any, TypeAlias
 
 from dagster import _check as check
 from dagster._annotations import public
@@ -28,6 +28,9 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
@@ -98,21 +101,22 @@ def _build_asset_check_named_ins(
 @public
 def asset_check(
     *,
-    asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    asset: CoercibleToAssetKey | AssetsDefinition | SourceAsset,
+    name: str | None = None,
+    description: str | None = None,
     blocking: bool = False,
-    additional_ins: Optional[Mapping[str, AssetIn]] = None,
-    additional_deps: Optional[Iterable[CoercibleToAssetDep]] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    config_schema: Optional[UserConfigSchema] = None,
-    compute_kind: Optional[str] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    metadata: Optional[Mapping[str, Any]] = None,
-    automation_condition: Optional[AutomationCondition[AssetCheckKey]] = None,
-    pool: Optional[str] = None,
+    additional_ins: Mapping[str, AssetIn] | None = None,
+    additional_deps: Iterable[CoercibleToAssetDep] | None = None,
+    required_resource_keys: set[str] | None = None,
+    resource_defs: Mapping[str, object] | None = None,
+    config_schema: UserConfigSchema | None = None,
+    compute_kind: str | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    retry_policy: RetryPolicy | None = None,
+    metadata: Mapping[str, Any] | None = None,
+    automation_condition: AutomationCondition[AssetCheckKey] | None = None,
+    pool: str | None = None,
+    partitions_def: PartitionsDefinition | None = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -151,6 +155,7 @@ def asset_check(
         automation_condition (Optional[AutomationCondition]): An AutomationCondition which determines
             when this check should be executed.
         pool (Optional[str]): A string that identifies the concurrency pool that governs this asset check's execution.
+        partitions_def (Optional[PartitionsDefinition]): The PartitionsDefinition for this asset check.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -218,6 +223,7 @@ def asset_check(
             blocking=blocking,
             metadata=metadata,
             automation_condition=automation_condition,
+            partitions_def=partitions_def,
         )
 
         resource_defs_for_execution = wrap_resources_for_execution(resource_defs)
@@ -284,18 +290,18 @@ MultiAssetCheckFunction: TypeAlias = Callable[..., MultiAssetCheckFunctionReturn
 @public
 def multi_asset_check(
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     specs: Sequence[AssetCheckSpec],
-    description: Optional[str] = None,
+    description: str | None = None,
     can_subset: bool = False,
-    compute_kind: Optional[str] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    config_schema: Optional[UserConfigSchema] = None,
-    ins: Optional[Mapping[str, CoercibleToAssetIn]] = None,
-    pool: Optional[str] = None,
+    compute_kind: str | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    resource_defs: Mapping[str, object] | None = None,
+    required_resource_keys: set[str] | None = None,
+    retry_policy: RetryPolicy | None = None,
+    config_schema: UserConfigSchema | None = None,
+    ins: Mapping[str, CoercibleToAssetIn] | None = None,
+    pool: str | None = None,
 ) -> Callable[[Callable[..., Any]], AssetChecksDefinition]:
     """Defines a set of asset checks that can be executed together with the same op.
 

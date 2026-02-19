@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
@@ -8,12 +8,12 @@ from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", Optional[float])])):
+class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", float | None)])):
     """Set of asset fields that do not change with every materialization.  These are generally updated
     on some non-materialization action (e.g. wipe).
     """
 
-    def __new__(cls, last_wipe_timestamp: Optional[float] = None):
+    def __new__(cls, last_wipe_timestamp: float | None = None):
         check.opt_float_param(last_wipe_timestamp, "last_wipe_timestamp")
         return super().__new__(cls, last_wipe_timestamp)
 

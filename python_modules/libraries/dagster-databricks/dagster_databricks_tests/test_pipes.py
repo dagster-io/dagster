@@ -2,7 +2,7 @@ import os
 import re
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import pytest
@@ -106,7 +106,7 @@ def make_submit_task_dict(
     forward_logs: bool,
     task_type: str,
     file_path_key: str,
-    cluster_id: Optional[str] = None,
+    cluster_id: str | None = None,
 ) -> dict[str, Any]:
     submit_spec = {
         "libraries": [
@@ -146,7 +146,7 @@ def make_submit_task(
     forward_logs: bool,
     task_type: str,
     file_path_key: str,
-    cluster_id: Optional[str] = None,
+    cluster_id: str | None = None,
 ) -> jobs.SubmitTask:
     return jobs.SubmitTask.from_dict(
         make_submit_task_dict(
