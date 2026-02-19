@@ -246,9 +246,9 @@ class GrapheneReportAssetCheckEvaluationParams(graphene.InputObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKeyInput)
     checkName = graphene.NonNull(graphene.String)
     passed = graphene.NonNull(graphene.Boolean)
-    severity = graphene.Field(GrapheneAssetCheckSeverity)
-    serializedMetadata = graphene.Field(graphene.String)
-    partition = graphene.Field(graphene.String)
+    severity = graphene.InputField(GrapheneAssetCheckSeverity)
+    serializedMetadata = graphene.InputField(graphene.String)
+    partition = graphene.InputField(graphene.String)
 
     class Meta:
         name = "ReportAssetCheckEvaluationParams"
