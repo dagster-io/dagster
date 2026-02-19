@@ -27,7 +27,7 @@ uvx create-dagster@latest project external_pipeline
 Next, we can scaffold the asset file:
 
 ```bash
-dg scaffold defs dagster.assets dagster_code.py
+dg scaffold defs dagster.asset dagster_code.py
 ```
 
 Next, you’ll define the asset. Copy and paste the following into the file `src/external_pipeline/defs/dagster_code.py`:
