@@ -4,7 +4,7 @@ import json
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -13,18 +13,18 @@ class CacheEntry:
 
     commit_hash: str
     branch_name: str
-    pr_number: Optional[str]
+    pr_number: str | None
     analysis_timestamp: float
 
     # Cached analysis data
     diff_summary: dict[str, Any]
-    smart_analysis: Optional[dict[str, Any]]
+    smart_analysis: dict[str, Any] | None
 
 
 class CacheManager:
     """Manages persistent cache for repository analysis."""
 
-    def __init__(self, cache_dir: Optional[Path] = None):
+    def __init__(self, cache_dir: Path | None = None):
         """Initialize cache manager."""
         if cache_dir is None:
             # Default to .git directory
@@ -70,7 +70,7 @@ class CacheManager:
             and age < max_age_seconds
         )
 
-    def get_cached_analysis(self) -> Optional[CacheEntry]:
+    def get_cached_analysis(self) -> CacheEntry | None:
         """Get cached analysis for current repository state."""
         if not self.cache_file.exists():
             return None
@@ -92,8 +92,8 @@ class CacheManager:
     def store_analysis(
         self,
         diff_summary: dict[str, Any],
-        smart_analysis: Optional[dict[str, Any]] = None,
-        pr_number: Optional[str] = None,
+        smart_analysis: dict[str, Any] | None = None,
+        pr_number: str | None = None,
     ) -> None:
         """Store analysis results in cache."""
         entry = CacheEntry(

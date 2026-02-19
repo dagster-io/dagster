@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import Self
 
@@ -18,7 +18,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
     Use the :py:class:`dagster.DefaultRunLauncher`.
     """
 
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         self._repository = None
         self._instance_ref = None
@@ -26,7 +26,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod

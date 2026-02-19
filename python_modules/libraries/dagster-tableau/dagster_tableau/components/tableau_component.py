@@ -3,7 +3,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -108,7 +108,7 @@ class TableauWorkbookSelector(dg.Model, dg.Resolvable):
     """Selector for filtering Tableau workbooks by ID."""
 
     ids: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Field(default=None, description="A list of workbook IDs to include in the collection."),
     ] = None
 
@@ -121,11 +121,11 @@ class TableauProjectsSelector(dg.Model, dg.Resolvable):
     """
 
     ids: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Field(default=None, description="A list of project IDs to include workbooks from."),
     ] = None
     names: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Field(default=None, description="A list of project names to include workbooks from."),
     ] = None
 
@@ -134,11 +134,11 @@ class TableauSelector(dg.Model, dg.Resolvable):
     """Unified selector for filtering Tableau content by workbooks and/or projects."""
 
     workbooks: Annotated[
-        Optional[TableauWorkbookSelector],
+        TableauWorkbookSelector | None,
         Field(default=None, description="Workbook selector configuration."),
     ] = None
     projects: Annotated[
-        Optional[TableauProjectsSelector],
+        TableauProjectsSelector | None,
         Field(default=None, description="Project selector configuration."),
     ] = None
 
@@ -147,8 +147,8 @@ class TableauSelector(dg.Model, dg.Resolvable):
 class ResolvedTableauSelector:
     """Resolved Tableau selector containing the filter functions."""
 
-    workbook_filter_fn: Optional[Callable[[TableauWorkbookMetadata], bool]] = None
-    project_filter_fn: Optional[Callable[[TableauWorkbookMetadata], bool]] = None
+    workbook_filter_fn: Callable[[TableauWorkbookMetadata], bool] | None = None
+    project_filter_fn: Callable[[TableauWorkbookMetadata], bool] | None = None
 
 
 def _resolve_tableau_selector(
@@ -274,9 +274,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
         Resolver(
             _resolve_tableau_workspace,
             model_field_name="workspace",
-            model_field_type=Union[
-                TableauCloudWorkspaceArgs.model(), TableauServerWorkspaceArgs.model()
-            ],
+            model_field_type=TableauCloudWorkspaceArgs.model() | TableauServerWorkspaceArgs.model(),
             description="Configuration for connecting to the Tableau workspace. Use 'type: cloud' for Tableau Cloud or 'type: server' for Tableau Server.",
             examples=[
                 {
@@ -310,11 +308,11 @@ class TableauComponent(StateBackedComponent, Resolvable):
     ] = field(default_factory=ResolvedTableauSelector)
 
     # Takes a list of workbook names or ids to enable refresh for, or True to enable for all embedded datasources
-    enable_embedded_datasource_refresh: Union[bool, list[str]] = False
+    enable_embedded_datasource_refresh: bool | list[str] = False
     # Takes a list of published datasource names or id's to enable refresh for, or True to enable for all published datasources
-    enable_published_datasource_refresh: Union[bool, list[str]] = False
+    enable_published_datasource_refresh: bool | list[str] = False
 
-    translation: Optional[ResolvedMultilayerTranslationFn] = None
+    translation: ResolvedMultilayerTranslationFn | None = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -561,7 +559,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
         return True
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         """Builds Dagster definitions from the cached Tableau workspace state."""
         if state_path is None:

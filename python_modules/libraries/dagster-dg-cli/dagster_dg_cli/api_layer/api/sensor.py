@@ -1,7 +1,7 @@
 """Sensor API implementation."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.sensor import (
     get_sensor_via_graphql,
@@ -21,8 +21,8 @@ class DgApiSensorApi:
 
     def list_sensors(
         self,
-        repository_location_name: Optional[str] = None,
-        repository_name: Optional[str] = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> "DgApiSensorList":
         """List all sensors, optionally filtered by repository location and name."""
         return list_sensors_via_graphql(

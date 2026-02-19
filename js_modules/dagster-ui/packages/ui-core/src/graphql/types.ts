@@ -265,6 +265,7 @@ export type AssetCheckExecution = {
   evaluation: Maybe<AssetCheckEvaluation>;
   id: Scalars['String']['output'];
   partition: Maybe<Scalars['String']['output']>;
+  run: Maybe<Run>;
   runId: Scalars['String']['output'];
   status: AssetCheckExecutionResolvedStatus;
   stepKey: Maybe<Scalars['String']['output']>;
@@ -4644,6 +4645,7 @@ export type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Wo
 export type ReportAssetCheckEvaluationParams = {
   assetKey: AssetKeyInput;
   checkName: Scalars['String']['input'];
+  partition?: InputMaybe<Scalars['String']['input']>;
   passed: Scalars['Boolean']['input'];
   serializedMetadata?: InputMaybe<Scalars['String']['input']>;
   severity?: InputMaybe<AssetCheckSeverity>;
@@ -6786,6 +6788,12 @@ export const buildAssetCheckExecution = (
           : buildAssetCheckEvaluation({}, relationshipsToOmit),
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'enim',
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+          ? ({} as Run)
+          : buildRun({}, relationshipsToOmit),
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
     status:
       overrides && overrides.hasOwnProperty('status')
@@ -13985,6 +13993,7 @@ export const buildReportAssetCheckEvaluationParams = (
           ? ({} as AssetKeyInput)
           : buildAssetKeyInput({}, relationshipsToOmit),
     checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'aut',
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'rerum',
     passed: overrides && overrides.hasOwnProperty('passed') ? overrides.passed! : false,
     serializedMetadata:
       overrides && overrides.hasOwnProperty('serializedMetadata')

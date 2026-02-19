@@ -7,6 +7,7 @@ sidebar_custom_props:
 title: Examples
 canonicalUrl: '/examples'
 slug: '/examples'
+hide_title: true
 ---
 
 Explore how to solve real-world problems using Dagster.

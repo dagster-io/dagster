@@ -1,21 +1,19 @@
 """Use a pydantic definition to validate dagster_cloud.yaml."""
 
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class CodeSource(BaseModel, extra="forbid"):
-    package_name: Optional[str] = None
-    module_name: Optional[str] = None
-    python_file: Optional[str] = None
-    autoload_defs_module_name: Optional[str] = None
+    package_name: str | None = None
+    module_name: str | None = None
+    python_file: str | None = None
+    autoload_defs_module_name: str | None = None
 
     @model_validator(mode="before")
-    def exactly_one_source_defined(
-        cls, values: dict[str, Optional[str]]
-    ) -> dict[str, Optional[str]]:
+    def exactly_one_source_defined(cls, values: dict[str, str | None]) -> dict[str, str | None]:
         defined = [key for key, value in values.items() if value]
         if len(defined) > 1:
             raise ValueError(
@@ -29,33 +27,33 @@ class CodeSource(BaseModel, extra="forbid"):
 
 
 class Build(BaseModel, extra="forbid"):
-    directory: Optional[str] = None
-    registry: Optional[str] = None
+    directory: str | None = None
+    registry: str | None = None
 
 
 class Location(BaseModel, extra="forbid"):
     location_name: str
-    code_source: Optional[CodeSource] = None
-    build: Optional[Build] = None
-    working_directory: Optional[str] = None
-    image: Optional[str] = None
-    executable_path: Optional[str] = None
-    attribute: Optional[str] = None
-    container_context: Optional[dict[str, Any]] = None
-    agent_queue: Optional[str] = None
+    code_source: CodeSource | None = None
+    build: Build | None = None
+    working_directory: str | None = None
+    image: str | None = None
+    executable_path: str | None = None
+    attribute: str | None = None
+    container_context: dict[str, Any] | None = None
+    agent_queue: str | None = None
 
 
 class LocationDefaults(BaseModel, extra="forbid"):
-    build: Optional[Build] = None
-    working_directory: Optional[str] = None
-    image: Optional[str] = None
-    executable_path: Optional[str] = None
-    container_context: Optional[dict[str, Any]] = None
-    agent_queue: Optional[str] = None
+    build: Build | None = None
+    working_directory: str | None = None
+    image: str | None = None
+    executable_path: str | None = None
+    container_context: dict[str, Any] | None = None
+    agent_queue: str | None = None
 
 
 class DagsterCloudYaml(BaseModel, extra="forbid"):
-    defaults: Optional[LocationDefaults] = Field(
+    defaults: LocationDefaults | None = Field(
         description="Default values for code locations", default=None
     )
     locations: list[Location] = Field(description="List of code locations")

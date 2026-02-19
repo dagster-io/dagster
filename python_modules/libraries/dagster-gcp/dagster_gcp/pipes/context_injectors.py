@@ -4,7 +4,6 @@ import random
 import string
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 import dagster._check as check
 from dagster._core.pipes.client import PipesContextInjector, PipesParams
@@ -25,7 +24,7 @@ class PipesGCSContextInjector(PipesContextInjector):
 
     """
 
-    def __init__(self, *, bucket: str, client: GCSClient, key_prefix: Optional[str] = None):
+    def __init__(self, *, bucket: str, client: GCSClient, key_prefix: str | None = None):
         super().__init__()
         self.bucket = check.str_param(bucket, "bucket")
         self.key_prefix = check.opt_str_param(key_prefix, "key_prefix")

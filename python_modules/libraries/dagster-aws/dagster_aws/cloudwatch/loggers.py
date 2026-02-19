@@ -1,6 +1,5 @@
 import datetime
 import logging
-from typing import Optional
 
 import boto3
 from dagster import (
@@ -37,12 +36,12 @@ class CloudwatchLogsHandler(logging.Handler):
         log_group_name,
         log_stream_name,
         aws_region=None,
-        aws_access_key_id: Optional[str] = None,
-        aws_secret_access_key: Optional[str] = None,
-        endpoint_url: Optional[str] = None,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
+        endpoint_url: str | None = None,
         use_ssl: bool = True,
-        aws_session_token: Optional[str] = None,
-        verify: Optional[bool] = None,
+        aws_session_token: str | None = None,
+        verify: bool | None = None,
     ):
         self.client = boto3.client(
             "logs",

@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 
@@ -151,9 +151,9 @@ class RegisteredCodeLocationOrigin(LegacyNamedTupleMixin, CodeLocationOrigin):
 class InProcessCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocationOrigin):
     loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
     location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
-    container_image: Optional[str]
+    container_image: str | None
     entry_point: Sequence[str]
-    container_context: Optional[Mapping[str, Any]]
+    container_context: Mapping[str, Any] | None
 
     """Identifies a repository location constructed in the same process. Primarily
     used in tests, since Dagster system processes like the webserver and daemon do not
@@ -163,10 +163,10 @@ class InProcessCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocationO
     def __new__(
         cls,
         loadable_target_origin: LoadableTargetOrigin,
-        container_image: Optional[str] = None,
-        entry_point: Optional[Sequence[str]] = None,
+        container_image: str | None = None,
+        entry_point: Sequence[str] | None = None,
         container_context=None,
-        location_name: Optional[str] = None,
+        location_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -205,7 +205,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, Co
     location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __new__(
-        cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
+        cls, loadable_target_origin: LoadableTargetOrigin, location_name: str | None = None
     ):
         return super().__new__(
             cls,
@@ -286,20 +286,20 @@ class GrpcServerCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocation
     """
 
     host: str
-    port: Optional[int]
-    socket: Optional[str]
+    port: int | None
+    socket: str | None
     location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
-    use_ssl: Optional[bool]
-    additional_metadata: Optional[Mapping[str, Any]]
+    use_ssl: bool | None
+    additional_metadata: Mapping[str, Any] | None
 
     def __new__(
         cls,
         host: str,
-        port: Optional[int] = None,
-        socket: Optional[str] = None,
-        location_name: Optional[str] = None,
-        use_ssl: Optional[bool] = None,
-        additional_metadata: Optional[Mapping[str, Any]] = None,
+        port: int | None = None,
+        socket: str | None = None,
+        location_name: str | None = None,
+        use_ssl: bool | None = None,
+        additional_metadata: Mapping[str, Any] | None = None,
     ):
         return super().__new__(
             cls,

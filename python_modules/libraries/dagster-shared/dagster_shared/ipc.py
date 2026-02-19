@@ -8,7 +8,7 @@ import threading
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from subprocess import Popen
-from typing import Any, Optional
+from typing import Any
 
 import dagster_shared.check as check
 from dagster_shared.seven import IS_WINDOWS
@@ -39,7 +39,7 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: Any) -> "Popen[Any]":
     )
 
 
-def interrupt_ipc_subprocess(proc: "Popen[Any]", sig: Optional[int] = None) -> None:
+def interrupt_ipc_subprocess(proc: "Popen[Any]", sig: int | None = None) -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     proc.send_signal(sig or get_default_interrupt_signal())
 
@@ -52,7 +52,7 @@ def interrupt_then_kill_ipc_subprocess(proc: "Popen[Any]", wait_time: int = 10) 
         proc.kill()
 
 
-def interrupt_ipc_subprocess_pid(pid: int, sig: Optional[int] = None) -> None:
+def interrupt_ipc_subprocess_pid(pid: int, sig: int | None = None) -> None:
     """Send CTRL_BREAK_EVENT on Windows, SIGINT on other platforms."""
     os.kill(pid, sig or get_default_interrupt_signal())
 

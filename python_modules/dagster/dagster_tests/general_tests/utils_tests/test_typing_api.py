@@ -22,7 +22,7 @@ def test_closed_python_dict():
     assert is_closed_python_dict_type(typing.Dict[str, typing.List]) is True
     assert is_closed_python_dict_type(typing.Dict[str, typing.Dict]) is True
     assert is_closed_python_dict_type(typing.Dict[str, typing.Dict[str, typing.Dict]]) is True
-    assert is_closed_python_dict_type(typing.Dict[str, typing.Optional[typing.Dict]]) is True
+    assert is_closed_python_dict_type(typing.Dict[str, typing.Dict | None]) is True
 
     assert is_closed_python_dict_type(dict) is False
     assert is_closed_python_dict_type(typing.Dict) is False
@@ -34,7 +34,7 @@ def test_closed_python_dict():
 
 
 def test_is_typing_optional_py_3():
-    assert is_closed_python_optional_type(typing.Optional[int])
+    assert is_closed_python_optional_type(typing.Optional[int])  # noqa: UP045
     assert not is_closed_python_optional_type(typing.Optional)
     assert not is_closed_python_optional_type(None)
     assert not is_closed_python_optional_type(int)
@@ -43,7 +43,7 @@ def test_is_typing_optional_py_3():
 
 
 def test_get_inner_optional_py_3():
-    assert get_optional_inner_type(typing.Optional[int]) is int
+    assert get_optional_inner_type(typing.Optional[int]) is int  # noqa: UP045
 
 
 def test_closed_tuple_type():
@@ -54,7 +54,7 @@ def test_closed_tuple_type():
     assert is_closed_python_tuple_type(typing.Tuple[str, typing.List]) is True
     assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict]) is True
     assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict[str, typing.Dict]]) is True
-    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Optional[typing.Dict]]) is True
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict | None]) is True
 
     assert is_closed_python_tuple_type(tuple) is False
     assert is_closed_python_tuple_type(typing.Tuple) is False
@@ -82,7 +82,7 @@ def test_closed_set_type():
     assert is_closed_python_set_type(typing.Set[typing.List]) is True
     assert is_closed_python_set_type(typing.Set[typing.Dict]) is True
     assert is_closed_python_set_type(typing.Set[typing.Dict[str, typing.Dict]]) is True
-    assert is_closed_python_set_type(typing.Set[typing.Optional[typing.Dict]]) is True
+    assert is_closed_python_set_type(typing.Set[typing.Dict | None]) is True
 
 
 def test_closed_list_type():
@@ -114,39 +114,39 @@ def test_is_typing_type():
     assert is_typing_type(typing.Dict[str, typing.Dict[str, typing.Dict]]) is True
     assert is_typing_type(typing.Dict[str, typing.Dict]) is True
     assert is_typing_type(typing.Dict[str, typing.List]) is True
-    assert is_typing_type(typing.Dict[str, typing.Optional[typing.Dict]]) is True
+    assert is_typing_type(typing.Dict[str, typing.Dict | None]) is True
     assert is_typing_type(typing.Dict[str, typing.Tuple]) is True
     assert is_typing_type(typing.List) is True
     assert is_typing_type(typing.List[int]) is True
     assert is_typing_type(typing.Optional) is False
-    assert is_typing_type(typing.Optional[int]) is True
+    assert is_typing_type(typing.Optional[int]) is True  # noqa: UP045
     assert is_typing_type(typing.Set) is True
     assert is_typing_type(typing.Set[int]) is True
     assert is_typing_type(typing.Set[typing.Dict[str, typing.Dict]]) is True
     assert is_typing_type(typing.Set[typing.Dict]) is True
     assert is_typing_type(typing.Set[typing.List]) is True
-    assert is_typing_type(typing.Set[typing.Optional[typing.Dict]]) is True
+    assert is_typing_type(typing.Set[typing.Dict | None]) is True
     assert is_typing_type(typing.Set[typing.Tuple]) is True
     assert is_typing_type(typing.Tuple) is True
     assert is_typing_type(typing.Tuple[int, str]) is True
     assert is_typing_type(typing.Tuple[str, typing.Dict[str, typing.Dict]]) is True
     assert is_typing_type(typing.Tuple[str, typing.Dict]) is True
     assert is_typing_type(typing.Tuple[str, typing.List]) is True
-    assert is_typing_type(typing.Tuple[str, typing.Optional[typing.Dict]]) is True
+    assert is_typing_type(typing.Tuple[str, typing.Dict | None]) is True
     assert is_typing_type(typing.Tuple[str, typing.Tuple]) is True
 
 
 def test_flatten_unions() -> None:
     assert flatten_unions(str) == {str}
-    assert flatten_unions(typing.Union[str, float]) == {str, float}
-    assert flatten_unions(typing.Union[str, float, int]) == {str, float, int}
-    assert flatten_unions(typing.Optional[str]) == {str, type(None)}
-    assert flatten_unions(typing.Optional[typing.Union[str, float]]) == {
+    assert flatten_unions(typing.Union[str, float]) == {str, float}  # noqa: UP007
+    assert flatten_unions(typing.Union[str, float, int]) == {str, float, int}  # noqa: UP007
+    assert flatten_unions(typing.Optional[str]) == {str, type(None)}  # noqa: UP045
+    assert flatten_unions(typing.Optional[str | float]) == {  # noqa: UP045
         str,
         float,
         type(None),
     }
-    assert flatten_unions(typing.Union[typing.Union[str, float], int]) == {
+    assert flatten_unions(typing.Union[str | float, int]) == {  # noqa: UP007
         str,
         float,
         int,

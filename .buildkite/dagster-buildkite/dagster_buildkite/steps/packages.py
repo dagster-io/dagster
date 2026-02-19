@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import Optional, TypeAlias, Union
+from typing import TypeAlias
 
 from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -69,14 +69,12 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
 }
 
 PytestExtraCommandsFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, Optional[ToxFactor]], list[str]
+    [AvailablePythonVersion, ToxFactor | None], list[str]
 ]
 PytestDependenciesFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, Optional[ToxFactor]], list[str]
+    [AvailablePythonVersion, ToxFactor | None], list[str]
 ]
-UnsupportedVersionsFunction: TypeAlias = Callable[
-    [Optional[ToxFactor]], list[AvailablePythonVersion]
-]
+UnsupportedVersionsFunction: TypeAlias = Callable[[ToxFactor | None], list[AvailablePythonVersion]]
 
 
 @dataclass
@@ -125,23 +123,23 @@ class PackageSpec:
     """
 
     directory: str
-    name: Optional[str] = None
-    package_type: Optional[str] = None
-    unsupported_python_versions: Optional[
-        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
-    ] = None
-    pytest_extra_cmds: Optional[Union[list[str], PytestExtraCommandsFunction]] = None
-    pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = None
-    pytest_tox_factors: Optional[list[ToxFactor]] = None
-    env_vars: Optional[list[str]] = None
-    tox_file: Optional[str] = None
-    retries: Optional[int] = None
-    timeout_in_minutes: Optional[int] = None
-    queue: Optional[BuildkiteQueue] = None
+    name: str | None = None
+    package_type: str | None = None
+    unsupported_python_versions: (
+        list[AvailablePythonVersion] | UnsupportedVersionsFunction | None
+    ) = None
+    pytest_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
+    pytest_step_dependencies: list[str] | PytestDependenciesFunction | None = None
+    pytest_tox_factors: list[ToxFactor] | None = None
+    env_vars: list[str] | None = None
+    tox_file: str | None = None
+    retries: int | None = None
+    timeout_in_minutes: int | None = None
+    queue: BuildkiteQueue | None = None
     run_pytest: bool = True
     splits: int = 1
-    always_run_if: Optional[Callable[[], bool]] = None
-    skip_if: Optional[Callable[[], Optional[str]]] = None
+    always_run_if: Callable[[], bool] | None = None
+    skip_if: Callable[[], str | None] | None = None
 
     def __post_init__(self):
         if not self.name:
@@ -160,7 +158,7 @@ class PackageSpec:
         if self.run_pytest:
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
 
-            tox_factors: Sequence[Optional[ToxFactor]] = (
+            tox_factors: Sequence[ToxFactor | None] = (
                 self.pytest_tox_factors if self.pytest_tox_factors else [None]
             )
 
@@ -258,7 +256,7 @@ class PackageSpec:
             return []
 
     @property
-    def skip_reason(self) -> Optional[str]:
+    def skip_reason(self) -> str | None:
         """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
         We actually use this to determine whether or not to run the package.
 
@@ -274,7 +272,9 @@ class PackageSpec:
                 )
             return self._skip_reason
 
-        self._skip_reason = skip_reason(self.directory, self.name, self.always_run_if, self.skip_if)
+        self._skip_reason = skip_reason(
+            self.directory, self.name, self.always_run_if, self.skip_if, is_oss=True
+        )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
 
@@ -372,7 +372,7 @@ airline_demo_extra_cmds = [
 ]
 
 
-def dagster_graphql_extra_cmds(_, tox_factor: Optional[ToxFactor]) -> list[str]:
+def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
     if tox_factor and tox_factor.factor.startswith("postgres"):
         return [
             "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
@@ -596,7 +596,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
 
 
 def _unsupported_dagster_python_versions(
-    tox_factor: Optional[ToxFactor],
+    tox_factor: ToxFactor | None,
 ) -> list[AvailablePythonVersion]:
     if tox_factor and tox_factor.factor == "general_tests_old_protobuf":
         return [

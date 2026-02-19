@@ -1,6 +1,6 @@
 import random
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
@@ -502,8 +502,8 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         description: str,
         partitions_def: PartitionsDefinition,
         true_partition_keys: Sequence[str],
-        candidate_partition_keys: Optional[Sequence[str]] = None,
-        child_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
+        candidate_partition_keys: Sequence[str] | None = None,
+        child_evaluations: Sequence[AutomationConditionEvaluation] | None = None,
     ) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=AutomationConditionNodeSnapshot(

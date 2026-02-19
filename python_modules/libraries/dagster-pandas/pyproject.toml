@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-pandas"
+version = "1!0+dev"
+description = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    "pandas<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_pandas_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_pandas_tests/**",
+    "dagster_pandas/examples/**",
+]

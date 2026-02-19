@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 import pytest
 from dagster._core.definitions.data_version import extract_data_version_from_entry
@@ -11,8 +9,8 @@ from dagster._core.instance import DagsterInstance
 
 
 def _get_current_data_version(
-    key: AssetKey, instance: DagsterInstance, partition_key: Optional[str] = None
-) -> Optional[dg.DataVersion]:
+    key: AssetKey, instance: DagsterInstance, partition_key: str | None = None
+) -> dg.DataVersion | None:
     record = instance.get_latest_data_version_record(key)
     assert record is not None
     return extract_data_version_from_entry(record.event_log_entry)

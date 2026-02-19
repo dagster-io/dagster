@@ -4,6 +4,7 @@ description: Examples of full Dagster pipelines configured to solve specific rea
 canonicalUrl: '/examples/full-pipelines'
 slug: '/examples/full-pipelines'
 sidebar_class_name: hidden
+hide_title: true
 ---
 
 import DocCardList from '@theme/DocCardList';

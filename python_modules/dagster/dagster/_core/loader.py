@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import TYPE_CHECKING, Generic
 
 from typing_extensions import Self, TypeVar
 
@@ -84,14 +84,12 @@ class LoadableBy(ABC, Generic[TKey, TContext]):
     """Make An object Loadable by ID of type TKey using a LoadingContext."""
 
     @classmethod
-    async def _batch_load(cls, keys: Iterable[TKey], context: TContext) -> Iterable[Optional[Self]]:
+    async def _batch_load(cls, keys: Iterable[TKey], context: TContext) -> Iterable[Self | None]:
         return cls._blocking_batch_load(keys, context)
 
     @classmethod
     @abstractmethod
-    def _blocking_batch_load(
-        cls, keys: Iterable[TKey], context: TContext
-    ) -> Iterable[Optional[Self]]:
+    def _blocking_batch_load(cls, keys: Iterable[TKey], context: TContext) -> Iterable[Self | None]:
         # There is no good way of turning an async function into a sync one that
         # will allow us to execute that sync function inside of a broader async context.
         #
@@ -101,25 +99,25 @@ class LoadableBy(ABC, Generic[TKey, TContext]):
         raise NotImplementedError()
 
     @classmethod
-    async def gen(cls, context: TContext, id: TKey) -> Optional[Self]:
+    async def gen(cls, context: TContext, id: TKey) -> Self | None:
         """Fetch an object by its id."""
         loader, _ = context.get_loaders_for(cls)
         return await loader.load(id)
 
     @classmethod
-    async def gen_many(cls, context: TContext, ids: Iterable[TKey]) -> Iterable[Optional[Self]]:
+    async def gen_many(cls, context: TContext, ids: Iterable[TKey]) -> Iterable[Self | None]:
         """Fetch N objects by their id."""
         loader, _ = context.get_loaders_for(cls)
         return await loader.load_many(ids)
 
     @classmethod
-    def blocking_get(cls, context: TContext, id: TKey) -> Optional[Self]:
+    def blocking_get(cls, context: TContext, id: TKey) -> Self | None:
         """Fetch an object by its id."""
         _, blocking_loader = context.get_loaders_for(cls)
         return blocking_loader.blocking_load(id)
 
     @classmethod
-    def blocking_get_many(cls, context: TContext, ids: Iterable[TKey]) -> Iterable[Optional[Self]]:
+    def blocking_get_many(cls, context: TContext, ids: Iterable[TKey]) -> Iterable[Self | None]:
         """Fetch N objects by their id."""
         # in the future, can consider priming the non-blocking loader with the results of this
         # sync call

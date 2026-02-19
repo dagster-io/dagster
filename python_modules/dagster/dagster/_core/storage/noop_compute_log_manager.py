@@ -1,6 +1,6 @@
 from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import IO, Any, Optional
+from typing import IO, Any
 
 from typing_extensions import Self
 
@@ -20,7 +20,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
     """When enabled for a Dagster instance, stdout and stderr will not be available for any step."""
 
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
@@ -47,7 +47,7 @@ class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Generator[Optional[IO], None, None]:
+    ) -> Generator[IO | None, None, None]:
         yield None
 
     def get_log_data_for_type(
@@ -55,20 +55,20 @@ class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
         log_key: Sequence[str],
         io_type: ComputeIOType,
         offset: int,
-        max_bytes: Optional[int],
-    ) -> tuple[Optional[bytes], int]:
+        max_bytes: int | None,
+    ) -> tuple[bytes | None, int]:
         return None, 0
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()
 
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self, log_key: Sequence[str] | None = None, prefix: Sequence[str] | None = None
     ):
         pass
 
     def subscribe(
-        self, log_key: Sequence[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: str | None = None
     ) -> CapturedLogSubscription:
         return CapturedLogSubscription(self, log_key, cursor)
 

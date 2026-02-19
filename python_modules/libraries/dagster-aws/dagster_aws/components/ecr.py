@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -14,12 +13,12 @@ from dagster_aws.ecr import ECRPublicResource
 class ECRPublicResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """A component that provides an ECRPublicResource for connecting to AWS Public ECR."""
 
-    credentials: Optional[Boto3CredentialsComponent] = Field(
+    credentials: Boto3CredentialsComponent | None = Field(
         default=None,
         description="Optional AWS credentials. If not provided, environment defaults will be used.",
     )
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the ECR Public resource will be bound to the definitions.",
     )

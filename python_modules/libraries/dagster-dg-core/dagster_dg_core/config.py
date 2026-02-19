@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def discover_workspace_root(path: Path) -> Optional[Path]:
+def discover_workspace_root(path: Path) -> Path | None:
     workspace_config_path = discover_config_file(
         path, lambda config: config["directory_type"] == "workspace"
     )
@@ -65,14 +65,14 @@ def discover_workspace_root(path: Path) -> Optional[Path]:
 @record
 class DgConfigFileDiscoveryResult:
     root_path: Path
-    workspace_root_path: Optional[Path] = None
-    root_file_path: Optional[Path] = None
+    workspace_root_path: Path | None = None
+    root_file_path: Path | None = None
     root_validation_result: Optional["DgConfigValidationResult"] = None
-    container_workspace_file_path: Optional[Path] = None
+    container_workspace_file_path: Path | None = None
     container_workspace_validation_result: Optional["DgConfigValidationResult"] = None
-    user_file_path: Optional[Path] = None
+    user_file_path: Path | None = None
     user_config: Optional["DgRawCliConfig"] = None
-    cli_config_warning: Optional[str]
+    cli_config_warning: str | None
 
     @property
     def has_root_file(self) -> bool:
@@ -99,7 +99,7 @@ class DgConfigFileDiscoveryResult:
         return self.container_workspace_validation_result
 
     @property
-    def root_type(self) -> Optional[str]:
+    def root_type(self) -> str | None:
         if not self.root_file_path:
             return None
         return self.root_result.type
@@ -123,7 +123,7 @@ def discover_and_validate_config_files(path: Path) -> DgConfigFileDiscoveryResul
         path, lambda x: bool(x.get("directory_type") == "workspace")
     )
 
-    cli_config_warning: Optional[str] = None
+    cli_config_warning: str | None = None
     if root_config_path:
         root_path = root_config_path.parent
         root_file_validation_result = validate_dg_file_config(root_config_path)
@@ -321,13 +321,13 @@ class DgRawCliConfig(TypedDict, total=False):
 
 
 class DgRawBuildConfig(TypedDict):
-    registry: Optional[str]
-    directory: Optional[str]
+    registry: str | None
+    directory: str | None
 
 
 def merge_build_configs(
-    workspace_build_config: Optional[DgRawBuildConfig],
-    project_build_config: Optional[DgRawBuildConfig],
+    workspace_build_config: DgRawBuildConfig | None,
+    project_build_config: DgRawBuildConfig | None,
 ) -> DgRawBuildConfig:
     project_dict = remove_none_recursively(project_build_config or {})
     workspace_dict = remove_none_recursively(workspace_build_config or {})
@@ -338,8 +338,8 @@ def merge_build_configs(
 
 
 def merge_container_context_configs(
-    workspace_container_context_config: Optional[Mapping[str, Any]],
-    project_container_context_config: Optional[Mapping[str, Any]],
+    workspace_container_context_config: Mapping[str, Any] | None,
+    project_container_context_config: Mapping[str, Any] | None,
 ) -> Mapping[str, Any]:
     # defer for import performance
     from dagster_cloud_cli.config import DagsterCloudConfigDefaultsMerger
@@ -354,9 +354,9 @@ def merge_container_context_configs(
 @dataclass
 class DgProjectConfig:
     root_module: str
-    defs_module: Optional[str] = None
-    code_location_target_module: Optional[str] = None
-    code_location_name: Optional[str] = None
+    defs_module: str | None = None
+    code_location_target_module: str | None = None
+    code_location_name: str | None = None
     registry_modules: list[str] = field(default_factory=list)
 
     @classmethod
@@ -439,7 +439,7 @@ class DgWorkspaceScaffoldProjectOptions:
     @classmethod
     def get_raw_from_cli(
         cls,
-        use_editable_dagster: Optional[bool],
+        use_editable_dagster: bool | None,
     ) -> "DgRawWorkspaceNewProjectOptions":
         raw_scaffold_project_options: DgRawWorkspaceNewProjectOptions = {}
         if use_editable_dagster:
@@ -527,7 +527,7 @@ def is_project_file_config(config: "DgFileConfig") -> TypeGuard[DgProjectFileCon
     return config["directory_type"] == "project"
 
 
-DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
+DgFileConfig: TypeAlias = DgWorkspaceFileConfig | DgProjectFileConfig
 
 
 @contextmanager
@@ -549,7 +549,7 @@ def modify_dg_toml_config(
             yield get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table)
 
 
-def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:
+def load_dg_user_file_config(path: Path | None = None) -> DgRawCliConfig:
     path = path or get_dg_config_path()
     contents = load_config(path).get("cli", {})
 
@@ -577,7 +577,7 @@ def has_dg_user_file_config() -> bool:
 
 
 def load_dg_root_file_config(
-    path: Path, config_format: Optional[DgConfigFileFormat] = None
+    path: Path, config_format: DgConfigFileFormat | None = None
 ) -> DgFileConfig:
     return _load_dg_file_config(path, config_format)
 
@@ -590,7 +590,7 @@ def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
         raise_file_config_validation_error("Expected a workspace configuration.", path)
 
 
-def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]) -> DgFileConfig:
+def _load_dg_file_config(path: Path, config_format: DgConfigFileFormat | None) -> DgFileConfig:
     validation_result = validate_dg_file_config(path, config_format)
     if validation_result.has_errors:
         raise_file_config_validation_error(validation_result.message, path)
@@ -598,7 +598,7 @@ def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]
 
 
 def validate_dg_file_config(
-    path: Path, config_format: Optional[DgConfigFileFormat] = None
+    path: Path, config_format: DgConfigFileFormat | None = None
 ) -> "DgConfigValidationResult":
     """Validate a Dg config file at the given path."""
     import tomlkit
@@ -675,7 +675,7 @@ class _DgConfigMiscellaneousErrorRecord(_DgConfigErrorRecord):
 @record
 class DgConfigValidationResult:
     raw_config: dict[str, Any]
-    type: Optional[str]
+    type: str | None
     errors: list[_DgConfigErrorRecord] = field(default_factory=list)
 
     @property
@@ -707,7 +707,7 @@ class DgConfigValidationResult:
 
 
 class _DgConfigValidator:
-    def __init__(self, path_prefix: Optional[str]) -> None:
+    def __init__(self, path_prefix: str | None) -> None:
         self.path_prefix = path_prefix
         self.errors: list[_DgConfigErrorRecord] = []
 
@@ -840,7 +840,7 @@ class _DgConfigValidator:
         )
 
     def _validate_file_config_no_extraneous_keys(
-        self, valid_keys: set[str], section: Mapping[str, object], toml_path: Optional[str]
+        self, valid_keys: set[str], section: Mapping[str, object], toml_path: str | None
     ) -> None:
         extraneous_keys = [k for k in section.keys() if k not in valid_keys]
         parent_key = self._get_full_key(toml_path)
@@ -855,13 +855,13 @@ class _DgConfigValidator:
         section: Mapping[str, object],
         key: str,
         type_: Any,
-        path_prefix: Optional[str] = None,
+        path_prefix: str | None = None,
     ) -> bool:
         origin = get_origin(type_)
         is_required = origin is Required
         class_ = type_ if origin not in (Required, NotRequired) else get_args(type_)[0]
 
-        error_type: Optional[_DgConfigErrorType] = None
+        error_type: _DgConfigErrorType | None = None
         if is_required and key not in section:
             error_type = "missing_required_field"
         if key in section and not match_type(section[key], class_):
@@ -877,7 +877,7 @@ class _DgConfigValidator:
             return False
         return True
 
-    def _get_full_key(self, key: Optional[str]) -> str:
+    def _get_full_key(self, key: str | None) -> str:
         if self.path_prefix:
             return f"{self.path_prefix}.{key}" if key else self.path_prefix
         return key if key else "<root>"

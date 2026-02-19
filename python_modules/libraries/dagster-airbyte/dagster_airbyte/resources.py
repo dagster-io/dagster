@@ -3,7 +3,7 @@ import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar
 from urllib.parse import parse_qsl, urlparse
 
 import requests
@@ -83,13 +83,13 @@ class AirbyteClient(DagsterModel):
         ),
     )
     workspace_id: str = Field(..., description="The Airbyte workspace ID")
-    client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
-    client_secret: Optional[str] = Field(default=None, description="The Airbyte client secret.")
-    username: Optional[str] = Field(
+    client_id: str | None = Field(default=None, description="The Airbyte client ID.")
+    client_secret: str | None = Field(default=None, description="The Airbyte client secret.")
+    username: str | None = Field(
         default=None,
         description="The Airbyte username for authentication. Used for self-managed Airbyte with basic auth.",
     )
-    password: Optional[str] = Field(
+    password: str | None = Field(
         default=None,
         description="The Airbyte password for authentication. Used for self-managed Airbyte with basic auth.",
     )
@@ -119,7 +119,7 @@ class AirbyteClient(DagsterModel):
         default=DEFAULT_POLL_INTERVAL_SECONDS,
         description="The time (in seconds) that will be waited between successive polls.",
     )
-    poll_timeout: Optional[float] = Field(
+    poll_timeout: float | None = Field(
         default=None,
         description=(
             "The maximum time that will wait before this operation is timed "
@@ -143,8 +143,8 @@ class AirbyteClient(DagsterModel):
         ),
     )
 
-    _access_token_value: Optional[str] = PrivateAttr(default=None)
-    _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
+    _access_token_value: str | None = PrivateAttr(default=None)
+    _access_token_timestamp: float | None = PrivateAttr(default=None)
 
     @model_validator(mode="before")
     def validate_authentication(cls, values):
@@ -239,8 +239,8 @@ class AirbyteClient(DagsterModel):
         self,
         method: str,
         url: str,
-        data: Optional[Mapping[str, Any]] = None,
-        params: Optional[Mapping[str, Any]] = None,
+        data: Mapping[str, Any] | None = None,
+        params: Mapping[str, Any] | None = None,
         include_additional_request_headers: bool = True,
     ) -> Mapping[str, Any]:
         """Execute a single HTTP request with retry logic."""
@@ -273,7 +273,7 @@ class AirbyteClient(DagsterModel):
         method: str,
         url: str,
         params: dict[str, Any],
-        data: Optional[Mapping[str, Any]] = None,
+        data: Mapping[str, Any] | None = None,
         include_additional_request_params: bool = True,
     ) -> Sequence[Mapping[str, Any]]:
         """Execute paginated requests and yield all items."""
@@ -497,7 +497,7 @@ class BaseAirbyteWorkspace(ConfigurableResource):
         default=DEFAULT_POLL_INTERVAL_SECONDS,
         description="The time (in seconds) that will be waited between successive polls.",
     )
-    poll_timeout: Optional[float] = Field(
+    poll_timeout: float | None = Field(
         default=None,
         description=(
             "The maximum time that will wait before this operation is timed "
@@ -566,8 +566,8 @@ class BaseAirbyteWorkspace(ConfigurableResource):
     @cached_method
     def load_asset_specs(
         self,
-        dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
-        connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
+        dagster_airbyte_translator: DagsterAirbyteTranslator | None = None,
+        connection_selector_fn: Callable[[AirbyteConnection], bool] | None = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
@@ -798,12 +798,12 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
         ],
     )
     workspace_id: str = Field(..., description="The Airbyte workspace ID")
-    client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
-    client_secret: Optional[str] = Field(default=None, description="The Airbyte client secret.")
-    username: Optional[str] = Field(
+    client_id: str | None = Field(default=None, description="The Airbyte client ID.")
+    client_secret: str | None = Field(default=None, description="The Airbyte client secret.")
+    username: str | None = Field(
         default=None, description="The Airbyte username for authentication."
     )
-    password: Optional[str] = Field(
+    password: str | None = Field(
         default=None, description="The Airbyte password for authentication."
     )
 
@@ -884,8 +884,8 @@ class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
 @beta
 def load_airbyte_asset_specs(
     workspace: BaseAirbyteWorkspace,
-    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
-    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
+    dagster_airbyte_translator: DagsterAirbyteTranslator | None = None,
+    connection_selector_fn: Callable[[AirbyteConnection], bool] | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
@@ -962,8 +962,8 @@ def load_airbyte_asset_specs(
 @superseded(additional_warn_text="Use load_airbyte_asset_specs instead.")
 def load_airbyte_cloud_asset_specs(
     workspace: AirbyteCloudWorkspace,
-    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
-    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
+    dagster_airbyte_translator: DagsterAirbyteTranslator | None = None,
+    connection_selector_fn: Callable[[AirbyteConnection], bool] | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
@@ -1025,9 +1025,9 @@ def load_airbyte_cloud_asset_specs(
 
 @record
 class AirbyteWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace]
+    workspace: AirbyteWorkspace | AirbyteCloudWorkspace
     translator: DagsterAirbyteTranslator
-    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]]
+    connection_selector_fn: Callable[[AirbyteConnection], bool] | None
 
     @property
     def defs_key(self) -> str:

@@ -1,7 +1,7 @@
 import abc
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from dagster_shared.error import DagsterError
 from typing_extensions import Self
@@ -113,7 +113,7 @@ class Scheduler(abc.ABC):
         instance: DagsterInstance,
         schedule_origin_id: str,
         schedule_selector_id: str,
-        remote_schedule: Optional[RemoteSchedule],
+        remote_schedule: RemoteSchedule | None,
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
@@ -223,7 +223,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
         self,
         max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
         max_tick_retries: int = 0,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self.max_catchup_runs = check.opt_int_param(
             max_catchup_runs, "max_catchup_runs", DEFAULT_MAX_CATCHUP_RUNS
@@ -232,7 +232,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
         self._inst_data = inst_data
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod

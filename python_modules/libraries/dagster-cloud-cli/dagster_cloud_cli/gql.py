@@ -1,7 +1,7 @@
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from dagster_cloud_cli.core.graphql_client import (
     DagsterCloudGraphQLClient,
@@ -15,8 +15,8 @@ def graphql_client_from_url(
     url: str,
     token: str,
     retries: int = 3,
-    deployment_name: Optional[str] = None,
-    headers: Optional[dict[str, Any]] = None,
+    deployment_name: str | None = None,
+    headers: dict[str, Any] | None = None,
 ) -> Generator[DagsterCloudGraphQLClient, None, None]:
     with create_cloud_webserver_client(
         url.rstrip("/"), token, retries, deployment_name=deployment_name, headers=headers
@@ -24,7 +24,7 @@ def graphql_client_from_url(
         yield client
 
 
-def url_from_config(organization: str, deployment: Optional[str] = None) -> str:
+def url_from_config(organization: str, deployment: str | None = None) -> str:
     """Gets the Cloud webserver base url for a given organization and API token.
     Uses the default deployment if none is specified.
     """
@@ -54,15 +54,15 @@ class CliInputCodeLocation:
     def __init__(
         self,
         name: str,
-        python_file: Optional[str] = None,
-        package_name: Optional[str] = None,
-        image: Optional[str] = None,
-        module_name: Optional[str] = None,
-        working_directory: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        attribute: Optional[str] = None,
-        commit_hash: Optional[str] = None,
-        url: Optional[str] = None,
+        python_file: str | None = None,
+        package_name: str | None = None,
+        image: str | None = None,
+        module_name: str | None = None,
+        working_directory: str | None = None,
+        executable_path: str | None = None,
+        attribute: str | None = None,
+        commit_hash: str | None = None,
+        url: str | None = None,
     ):
         self.name = name
 
@@ -576,17 +576,17 @@ def create_or_update_branch_deployment(
     branch_name: str,
     commit_hash: str,
     timestamp: float,
-    branch_url: Optional[str] = None,
-    pull_request_url: Optional[str] = None,
-    pull_request_status: Optional[str] = None,
-    pull_request_number: Optional[str] = None,
-    commit_message: Optional[str] = None,
-    commit_url: Optional[str] = None,
-    author_name: Optional[str] = None,
-    author_email: Optional[str] = None,
-    author_avatar_url: Optional[str] = None,
-    base_deployment_name: Optional[str] = None,
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition] = None,
+    branch_url: str | None = None,
+    pull_request_url: str | None = None,
+    pull_request_status: str | None = None,
+    pull_request_number: str | None = None,
+    commit_message: str | None = None,
+    commit_url: str | None = None,
+    author_name: str | None = None,
+    author_email: str | None = None,
+    author_avatar_url: str | None = None,
+    base_deployment_name: str | None = None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None = None,
 ) -> str:
     result = client.execute(
         CREATE_OR_UPDATE_BRANCH_DEPLOYMENT,
@@ -680,7 +680,7 @@ def launch_run(
     job_name: str,
     tags: dict[str, Any],
     config: dict[str, Any],
-    asset_keys: Optional[list[str]],
+    asset_keys: list[str] | None,
 ) -> str:
     formatted_tags = [{"key": cast("str", k), "value": cast("str", v)} for k, v in tags.items()]
 
@@ -774,8 +774,8 @@ def mark_cli_event(
     event_type: CliEventType,
     duration_seconds: float,
     success: bool = True,
-    tags: Optional[list[str]] = None,
-    message: Optional[str] = None,
+    tags: list[str] | None = None,
+    message: str | None = None,
 ) -> Any:
     with suppress(Exception):
         result = client.execute(

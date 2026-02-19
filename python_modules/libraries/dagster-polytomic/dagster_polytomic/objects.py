@@ -1,6 +1,5 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Optional
 
 from dagster import _check as check
 from dagster_shared.record import record
@@ -43,10 +42,10 @@ class PolytomicConnection:
     """Represents a Polytomic connection."""
 
     id: str
-    name: Optional[str]
-    type: Optional[str]
-    organization_id: Optional[str]
-    status: Optional[str]
+    name: str | None
+    type: str | None
+    organization_id: str | None
+    status: str | None
 
     @classmethod
     def from_api_response(cls, response: ConnectionResponseSchema) -> "PolytomicConnection":
@@ -66,13 +65,13 @@ class PolytomicBulkSync:
     """Represents a Polytomic bulk sync."""
 
     id: str
-    name: Optional[str]
+    name: str | None
     active: bool
-    mode: Optional[str]
-    source_connection_id: Optional[str]
-    destination_connection_id: Optional[str]
-    organization_id: Optional[str]
-    destination_configuration_schema: Optional[str]
+    mode: str | None
+    source_connection_id: str | None
+    destination_connection_id: str | None
+    organization_id: str | None
+    destination_configuration_schema: str | None
 
     @classmethod
     def from_api_response(cls, response: BulkSyncResponse) -> "PolytomicBulkSync":
@@ -115,9 +114,9 @@ class PolytomicBulkSyncSchema:
 
     id: str
     enabled: bool
-    output_name: Optional[str]
-    partition_key: Optional[str]
-    tracking_field: Optional[str]
+    output_name: str | None
+    partition_key: str | None
+    tracking_field: str | None
     fields: list[PolytomicBulkField]
 
     @classmethod
@@ -145,15 +144,15 @@ class PolytomicBulkSyncEnrichedSchema:
     id: str
     bulk_sync_id: str
     enabled: bool
-    output_name: Optional[str]
-    partition_key: Optional[str]
-    tracking_field: Optional[str]
+    output_name: str | None
+    partition_key: str | None
+    tracking_field: str | None
     fields: list[PolytomicBulkField]
-    destination_configuration_schema: Optional[str]
-    source_connection_id: Optional[str]
-    source_connection_name: Optional[str]
-    destination_connection_id: Optional[str]
-    destination_connection_name: Optional[str]
+    destination_configuration_schema: str | None
+    source_connection_id: str | None
+    source_connection_name: str | None
+    destination_connection_id: str | None
+    destination_connection_name: str | None
 
 
 @whitelist_for_serdes
@@ -222,11 +221,11 @@ class PolytomicWorkspaceData:
     def _bulk_syncs_by_id(self) -> dict[str, PolytomicBulkSync]:
         return {bulk_sync.id: bulk_sync for bulk_sync in self.bulk_syncs}
 
-    def get_connection(self, connection_id: str) -> Optional[PolytomicConnection]:
+    def get_connection(self, connection_id: str) -> PolytomicConnection | None:
         """Get a connection by ID."""
         return self._connections_by_id.get(connection_id)
 
-    def get_bulk_sync(self, bulk_sync_id: str) -> Optional[PolytomicBulkSync]:
+    def get_bulk_sync(self, bulk_sync_id: str) -> PolytomicBulkSync | None:
         """Get a bulk sync by ID."""
         return self._bulk_syncs_by_id.get(bulk_sync_id)
 

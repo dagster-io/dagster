@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import Self
@@ -77,8 +77,8 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching
@@ -184,8 +184,8 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching
@@ -279,8 +279,8 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching

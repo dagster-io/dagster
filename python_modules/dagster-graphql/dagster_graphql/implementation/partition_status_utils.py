@@ -7,7 +7,7 @@ representations used by both regular assets and asset checks.
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
@@ -96,7 +96,7 @@ def build_time_partition_ranges_generic(
 
 
 def extract_partition_keys_by_status(
-    subsets: Mapping[StatusT, Optional[PartitionsSubset]],
+    subsets: Mapping[StatusT, PartitionsSubset | None],
     partitions_def: PartitionsDefinition,
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Mapping[StatusT, Sequence[str]]:
@@ -132,13 +132,13 @@ class MultiPartitionRange(Generic[StatusT]):
 
     primary_dim_start_key: str
     primary_dim_end_key: str
-    primary_dim_start_time: Optional[float]
-    primary_dim_end_time: Optional[float]
+    primary_dim_start_time: float | None
+    primary_dim_end_time: float | None
     secondary_dim: Any  # Recursive structure - can be any partition status type
 
 
 def build_multi_partition_ranges_generic(
-    subsets: Mapping[StatusT, Optional[PartitionsSubset]],
+    subsets: Mapping[StatusT, PartitionsSubset | None],
     partitions_def: MultiPartitionsDefinition,
     dynamic_partitions_store: DynamicPartitionsStore,
     build_secondary_dim: Callable[[Mapping[StatusT, PartitionsSubset]], Any],

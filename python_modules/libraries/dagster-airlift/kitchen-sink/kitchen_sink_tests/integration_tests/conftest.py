@@ -4,7 +4,7 @@ import time
 from collections.abc import Generator, Mapping, Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import pytest
 from dagster import AssetKey, DagsterInstance
@@ -94,7 +94,7 @@ class ExpectedMat(NamedTuple):
 
 def poll_for_expected_mats(
     af_instance: AirflowInstance,
-    expected_mats_per_dag: Mapping[str, Sequence[Union[ExpectedMat, AssetKey]]],
+    expected_mats_per_dag: Mapping[str, Sequence[ExpectedMat | AssetKey]],
 ) -> None:
     resolved_expected_mats_per_dag: Mapping[str, list[ExpectedMat]] = {
         dag_id: [

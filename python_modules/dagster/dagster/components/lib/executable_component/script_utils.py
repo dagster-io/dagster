@@ -2,7 +2,7 @@ import os
 import shlex
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 from dagster.components.lib.executable_component.component import OpSpec
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class ScriptSpec(OpSpec):
     type: Literal["script"] = "script"
     path: str
-    args: Optional[Union[list[str], str]] = None
+    args: list[str] | str | None = None
 
     @staticmethod
     def with_script_stem_as_default_name(

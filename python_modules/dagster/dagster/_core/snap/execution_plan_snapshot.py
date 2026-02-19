@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
+from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
@@ -48,10 +48,10 @@ class ExecutionPlanSnapshot(
             ("artifacts_persisted", bool),
             ("job_snapshot_id", str),
             ("step_keys_to_execute", Sequence[str]),
-            ("initial_known_state", Optional[KnownExecutionState]),
-            ("snapshot_version", Optional[int]),
-            ("executor_name", Optional[str]),
-            ("repository_load_data", Optional[RepositoryLoadData]),
+            ("initial_known_state", KnownExecutionState | None),
+            ("snapshot_version", int | None),
+            ("executor_name", str | None),
+            ("repository_load_data", RepositoryLoadData | None),
         ],
     )
 ):
@@ -70,11 +70,11 @@ class ExecutionPlanSnapshot(
         steps: Sequence["ExecutionStepSnap"],
         artifacts_persisted: bool,
         job_snapshot_id: str,
-        step_keys_to_execute: Optional[Sequence[str]] = None,
-        initial_known_state: Optional[KnownExecutionState] = None,
-        snapshot_version: Optional[int] = None,
-        executor_name: Optional[str] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        step_keys_to_execute: Sequence[str] | None = None,
+        initial_known_state: KnownExecutionState | None = None,
+        snapshot_version: int | None = None,
+        executor_name: str | None = None,
+        repository_load_data: RepositoryLoadData | None = None,
     ):
         return super().__new__(
             cls,
@@ -128,9 +128,9 @@ class ExecutionPlanSnapshot(
 
 @whitelist_for_serdes
 class ExecutionPlanSnapshotErrorData(
-    NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", SerializableErrorInfo | None)])
 ):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
+    def __new__(cls, error: SerializableErrorInfo | None):
         return super().__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -150,9 +150,9 @@ class ExecutionStepSnap(
             ("node_handle_id", str),
             ("kind", StepKind),
             ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
-            ("tags", Optional[Mapping[str, str]]),
-            ("step_handle", Optional[StepHandleUnion]),
-            ("pool", Optional[str]),
+            ("tags", Mapping[str, str] | None),
+            ("step_handle", StepHandleUnion | None),
+            ("pool", str | None),
         ],
     )
 ):
@@ -164,9 +164,9 @@ class ExecutionStepSnap(
         node_handle_id: str,
         kind: StepKind,
         metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
-        tags: Optional[Mapping[str, str]] = None,
-        step_handle: Optional[StepHandleUnion] = None,
-        pool: Optional[str] = None,
+        tags: Mapping[str, str] | None = None,
+        step_handle: StepHandleUnion | None = None,
+        pool: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -209,7 +209,7 @@ class ExecutionStepInputSnap(
             ("name", str),
             ("dagster_type_key", str),
             ("upstream_output_handles", Sequence[StepOutputHandle]),
-            ("source", Optional[StepInputSourceUnion]),
+            ("source", StepInputSourceUnion | None),
         ],
     )
 ):
@@ -218,7 +218,7 @@ class ExecutionStepInputSnap(
         name: str,
         dagster_type_key: str,
         upstream_output_handles: Sequence[StepOutputHandle],
-        source: Optional[StepInputSourceUnion] = None,
+        source: StepInputSourceUnion | None = None,
     ):
         return super().__new__(
             cls,
@@ -242,8 +242,8 @@ class ExecutionStepOutputSnap(
         [
             ("name", str),
             ("dagster_type_key", str),
-            ("node_handle", Optional[NodeHandle]),
-            ("properties", Optional[StepOutputProperties]),
+            ("node_handle", NodeHandle | None),
+            ("properties", StepOutputProperties | None),
         ],
     )
 ):
@@ -251,8 +251,8 @@ class ExecutionStepOutputSnap(
         cls,
         name: str,
         dagster_type_key: str,
-        node_handle: Optional[NodeHandle] = None,
-        properties: Optional[StepOutputProperties] = None,
+        node_handle: NodeHandle | None = None,
+        properties: StepOutputProperties | None = None,
     ):
         return super().__new__(
             cls,
@@ -263,7 +263,7 @@ class ExecutionStepOutputSnap(
         )
 
     @property
-    def entity_key(self) -> Optional[EntityKey]:
+    def entity_key(self) -> EntityKey | None:
         if self.properties:
             return self.properties.asset_key or self.properties.asset_check_key
         return None

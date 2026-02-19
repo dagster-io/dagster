@@ -2,7 +2,7 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple  # noqa: UP035
 
 from dagster_shared.serdes import serialize_value
 from dagster_shared.serdes.errors import SerializationError
@@ -29,23 +29,23 @@ class AssetsDefinitionCacheableData(
     NamedTuple(
         "_AssetsDefinitionCacheableData",
         [
-            ("keys_by_input_name", Optional[Mapping[str, AssetKey]]),
-            ("keys_by_output_name", Optional[Mapping[str, AssetKey]]),
-            ("internal_asset_deps", Optional[Mapping[str, AbstractSet[AssetKey]]]),
-            ("group_name", Optional[str]),
-            ("metadata_by_output_name", Optional[Mapping[str, RawMetadataMapping]]),
-            ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
+            ("keys_by_input_name", Mapping[str, AssetKey] | None),
+            ("keys_by_output_name", Mapping[str, AssetKey] | None),
+            ("internal_asset_deps", Mapping[str, AbstractSet[AssetKey]] | None),
+            ("group_name", str | None),
+            ("metadata_by_output_name", Mapping[str, RawMetadataMapping] | None),
+            ("key_prefix", CoercibleToAssetKeyPrefix | None),
             ("can_subset", bool),
-            ("extra_metadata", Optional[Mapping[Any, Any]]),
+            ("extra_metadata", Mapping[Any, Any] | None),
             (
                 "legacy_freshness_policies_by_output_name",
-                Optional[Mapping[str, LegacyFreshnessPolicy]],
+                Mapping[str, LegacyFreshnessPolicy] | None,
             ),
             (
                 "auto_materialize_policies_by_output_name",
-                Optional[Mapping[str, AutoMaterializePolicy]],
+                Mapping[str, AutoMaterializePolicy] | None,
             ),
-            ("backfill_policy", Optional[BackfillPolicy]),
+            ("backfill_policy", BackfillPolicy | None),
         ],
     )
 ):
@@ -55,21 +55,17 @@ class AssetsDefinitionCacheableData(
 
     def __new__(
         cls,
-        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
-        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
-        internal_asset_deps: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
-        group_name: Optional[str] = None,
-        metadata_by_output_name: Optional[Mapping[str, RawMetadataMapping]] = None,
-        key_prefix: Optional[Sequence[str]] = None,
+        keys_by_input_name: Mapping[str, AssetKey] | None = None,
+        keys_by_output_name: Mapping[str, AssetKey] | None = None,
+        internal_asset_deps: Mapping[str, AbstractSet[AssetKey]] | None = None,
+        group_name: str | None = None,
+        metadata_by_output_name: Mapping[str, RawMetadataMapping] | None = None,
+        key_prefix: Sequence[str] | None = None,
         can_subset: bool = False,
-        extra_metadata: Optional[Mapping[Any, Any]] = None,
-        legacy_freshness_policies_by_output_name: Optional[
-            Mapping[str, LegacyFreshnessPolicy]
-        ] = None,
-        auto_materialize_policies_by_output_name: Optional[
-            Mapping[str, AutoMaterializePolicy]
-        ] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        extra_metadata: Mapping[Any, Any] | None = None,
+        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy] | None = None,
+        auto_materialize_policies_by_output_name: Mapping[str, AutoMaterializePolicy] | None = None,
+        backfill_policy: BackfillPolicy | None = None,
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
@@ -162,11 +158,11 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
 
     def with_attributes(
         self,
-        asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        legacy_freshness_policy: Optional[
-            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
-        ] = None,
+        asset_key_replacements: Mapping[AssetKey, AssetKey] | None = None,
+        group_names_by_key: Mapping[AssetKey, str] | None = None,
+        legacy_freshness_policy: LegacyFreshnessPolicy
+        | Mapping[AssetKey, LegacyFreshnessPolicy]
+        | None = None,
     ) -> "CacheableAssetsDefinition":
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
             self,
@@ -187,10 +183,10 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
 
     def with_attributes_for_all(
         self,
-        group_name: Optional[str],
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
-        auto_materialize_policy: Optional[AutoMaterializePolicy],
-        backfill_policy: Optional[BackfillPolicy],
+        group_name: str | None,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None,
+        auto_materialize_policy: AutoMaterializePolicy | None,
+        backfill_policy: BackfillPolicy | None,
     ) -> "CacheableAssetsDefinition":
         """Utility method which allows setting attributes for all assets in this
         CacheableAssetsDefinition, since the keys may not be known at the time of
@@ -254,17 +250,17 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
     def __init__(
         self,
         wrapped: CacheableAssetsDefinition,
-        asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        group_name_for_all_assets: Optional[str] = None,
-        prefix_for_all_assets: Optional[list[str]] = None,
-        legacy_freshness_policy: Optional[
-            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
-        ] = None,
-        auto_materialize_policy: Optional[
-            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
-        ] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        asset_key_replacements: Mapping[AssetKey, AssetKey] | None = None,
+        group_names_by_key: Mapping[AssetKey, str] | None = None,
+        group_name_for_all_assets: str | None = None,
+        prefix_for_all_assets: list[str] | None = None,
+        legacy_freshness_policy: LegacyFreshnessPolicy
+        | Mapping[AssetKey, LegacyFreshnessPolicy]
+        | None = None,
+        auto_materialize_policy: AutoMaterializePolicy
+        | Mapping[AssetKey, AutoMaterializePolicy]
+        | None = None,
+        backfill_policy: BackfillPolicy | None = None,
     ):
         self._asset_key_replacements = asset_key_replacements or {}
         self._group_names_by_key = group_names_by_key or {}

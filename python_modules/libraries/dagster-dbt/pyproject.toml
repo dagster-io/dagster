@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-dbt"
+version = "1!0+dev"
+description = "A Dagster integration for dbt"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.14"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    # Follow the version support constraints for dbt Core:
+    # https://docs.getdbt.com/docs/dbt-versions/core
+    "dbt-core>=1.7,<1.12",
+    "gitpython",
+    "Jinja2",
+    "networkx",
+    "orjson",
+    "requests",
+    "rich",
+    "sqlglot[rs]<28.1.0",  # FW-731
+    "typer>=0.9.0",
+    "packaging",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt"
+
+[project.scripts]
+dagster-dbt-cloud = "dagster_dbt.cloud.cli:app"
+dagster-dbt = "dagster_dbt.cli.app:app"
+
+[project.entry-points."dagster_dg_cli.registry_modules"]
+dagster_dbt = "dagster_dbt"
+
+[project.optional-dependencies]
+# used for dbtfusion tests that don't use adapters
+test-bare = [
+    "pytest-rerunfailures",
+    "pytest-order",
+]
+test = [
+    "pytest-rerunfailures",
+    "pytest-order",
+    "dagster-duckdb",
+    "dagster-duckdb-pandas",
+    "dbt-duckdb<1.9.2",  # concurrency issues
+    "duckdb<1.4.0",  # compat issues
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_dbt_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_dbt_tests/**",
+]

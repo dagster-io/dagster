@@ -13,7 +13,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import reduce
 from itertools import groupby
-from typing import Final, Literal, Optional, cast
+from typing import Final, Literal, cast
 
 import tomli
 from typing_extensions import NotRequired, TypedDict
@@ -193,7 +193,7 @@ def get_pyspark_constraints_path():
     )
 
 
-def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
+def get_env_path(env: str, rel_path: str | None = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
     return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
 
@@ -420,7 +420,7 @@ def update_pinned_requirements(env: str) -> None:
 
 def run_pyright(
     env: str,
-    paths: Optional[Sequence[str]],
+    paths: Sequence[str] | None,
     rebuild: bool,
     pinned_deps: bool,
     venv_python: str,

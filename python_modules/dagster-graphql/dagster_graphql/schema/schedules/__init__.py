@@ -1,5 +1,3 @@
-from typing import Optional
-
 import graphene
 from dagster._core.definitions.selector import ScheduleSelector
 from dagster._core.errors import DagsterInvariantViolationError
@@ -111,9 +109,9 @@ class GrapheneStopRunningScheduleMutation(graphene.Mutation):
     def mutate(
         self,
         graphene_info: ResolveInfo,
-        id: Optional[str] = None,
-        schedule_origin_id: Optional[str] = None,
-        schedule_selector_id: Optional[str] = None,
+        id: str | None = None,
+        schedule_origin_id: str | None = None,
+        schedule_selector_id: str | None = None,
     ):
         if id:
             cid = CompoundID.from_string(id)

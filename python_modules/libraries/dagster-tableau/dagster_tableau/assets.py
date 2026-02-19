@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
 from dagster._annotations import beta, deprecated_param, superseded
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 def build_tableau_materializable_assets_definition(
     resource_key: str,
     specs: Sequence[AssetSpec],
-    refreshable_workbook_ids: Optional[Sequence[str]] = None,
-    refreshable_data_source_ids: Optional[Sequence[str]] = None,
+    refreshable_workbook_ids: Sequence[str] | None = None,
+    refreshable_data_source_ids: Sequence[str] | None = None,
 ) -> AssetsDefinition:
     """Returns the AssetsDefinition of the materializable assets in the Tableau workspace.
 

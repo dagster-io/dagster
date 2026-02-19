@@ -89,11 +89,6 @@ ignore = [
   "PERF401", # (manual-list-comprehension)
   "PERF402", # (manual-list-copy)
 
-  # (pyupgrade) Keep using Union[] and Optional[] syntax to avoid excessive changes.
-  # These will be enabled in later phases of the ruff unification objective.
-  # See: https://github.com/dagster-io/internal/issues/20346
-  "UP007",  # (non-pep604-annotation) Use X | Y for Union types
-  "UP045",  # (non-pep604-annotation) Use X | None for Optional types
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.

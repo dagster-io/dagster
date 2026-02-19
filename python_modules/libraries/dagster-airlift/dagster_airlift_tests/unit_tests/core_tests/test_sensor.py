@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -391,7 +390,7 @@ def simulate_materialize_from_proxy_operator(
     assets_def: AssetsDefinition,
     dag_run_id: str,
     dag_id: str,
-    task_id: Optional[str],
+    task_id: str | None,
 ) -> ExecuteInProcessResult:
     # TODO consolidate with code in proxy operator
     tags = {

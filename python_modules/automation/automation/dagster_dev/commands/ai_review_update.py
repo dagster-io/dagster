@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Optional
 
 import click
 import dagster._check as check
@@ -15,8 +14,8 @@ from dagster._record import record
 @record
 class CommandResult:
     success: bool
-    result: Optional[CompletedProcess]
-    error_message: Optional[str]
+    result: CompletedProcess | None
+    error_message: str | None
 
 
 def run_command_optional(cmd: list[str], description: str) -> CommandResult:
@@ -109,7 +108,7 @@ def idempotent_gt_squash(base_branch: str = "master") -> CommandResult:
     return CommandResult(success=True, result=None, error_message="Squash failed but continuing")
 
 
-def run_auto_prepare(context: Optional[dict] = None) -> None:
+def run_auto_prepare(context: dict | None = None) -> None:
     """Run gt squash and gt submit if needed."""
     click.echo("🔧 Running auto-prepare operations...")
 
@@ -155,9 +154,9 @@ def run_auto_prepare(context: Optional[dict] = None) -> None:
 def update_pr(
     title: str,
     body: str,
-    commit_title: Optional[str],
+    commit_title: str | None,
     auto_prepare: bool,
-    from_context: Optional[Path],
+    from_context: Path | None,
 ):
     """Update PR title, body, and commit message in one atomic operation.
 

@@ -1,6 +1,6 @@
 from collections import namedtuple
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Union
+from typing import Any
 
 import tableauserverclient as TSC
 from dagster import (
@@ -97,7 +97,7 @@ def parse_tableau_external_and_materializable_asset_specs(
 
 def create_view_asset_event(
     view: TSC.ViewItem, spec: AssetSpec, refreshed_workbook_ids: Set[str]
-) -> Iterator[Union[AssetObservation, Output]]:
+) -> Iterator[AssetObservation | Output]:
     asset_key = spec.key
     workbook_id = TableauViewMetadataSet.extract(spec.metadata).workbook_id
 
@@ -113,7 +113,7 @@ def create_view_asset_event(
 
 def create_data_source_asset_event(
     data_source: TSC.DatasourceItem, spec: AssetSpec, refreshed_data_source_ids: Set[str]
-) -> Iterator[Union[AssetObservation, Output]]:
+) -> Iterator[AssetObservation | Output]:
     asset_key = spec.key
     data_source_id = TableauDataSourceMetadataSet.extract(spec.metadata).id
 
@@ -139,7 +139,7 @@ def create_view_asset_observation(
 
 def create_asset_output(
     asset_key: AssetKey,
-    data: Union[TSC.DatasourceItem, TSC.ViewItem],
+    data: TSC.DatasourceItem | TSC.ViewItem,
     additional_metadata: Mapping[str, Any],
 ) -> Iterator[Output]:
     yield Output(
@@ -158,7 +158,7 @@ def create_asset_output(
 
 def create_asset_observation(
     asset_key: AssetKey,
-    data: Union[TSC.DatasourceItem, TSC.ViewItem],
+    data: TSC.DatasourceItem | TSC.ViewItem,
     additional_metadata: Mapping[str, Any],
 ) -> Iterator[AssetObservation]:
     yield AssetObservation(

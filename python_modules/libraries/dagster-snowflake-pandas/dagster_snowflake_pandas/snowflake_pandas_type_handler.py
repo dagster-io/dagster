@@ -1,5 +1,4 @@
 from collections.abc import Mapping, Sequence
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -24,14 +23,14 @@ def _table_exists(table_slice: TableSlice, connection):
     return len(tables) > 0
 
 
-def _get_table_column_types(table_slice: TableSlice, connection) -> Optional[Mapping[str, str]]:
+def _get_table_column_types(table_slice: TableSlice, connection) -> Mapping[str, str] | None:
     if _table_exists(table_slice, connection):
         schema_list = connection.cursor().execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
         return {item[0]: item[1] for item in schema_list}
 
 
 def _convert_timestamp_to_string(
-    s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
+    s: pd.Series, column_types: Mapping[str, str] | None, table_name: str
 ) -> pd.Series:
     """Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
@@ -354,5 +353,5 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         return [SnowflakePandasTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return pd.DataFrame

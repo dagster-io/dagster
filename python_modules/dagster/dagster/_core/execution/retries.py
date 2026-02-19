@@ -63,7 +63,7 @@ class RetryMode(Enum):
 
 
 class RetryState:
-    def __init__(self, previous_attempts: Optional[Mapping[str, int]] = None):
+    def __init__(self, previous_attempts: Mapping[str, int] | None = None):
         self._attempts = defaultdict(int)
         for key, val in check.opt_mapping_param(
             previous_attempts, "previous_attempts", key_type=str, value_type=int

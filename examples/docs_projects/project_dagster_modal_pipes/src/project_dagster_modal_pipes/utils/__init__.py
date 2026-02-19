@@ -1,7 +1,6 @@
 import os
 import re
 import urllib.request
-from typing import Optional
 
 from botocore.exceptions import ClientError
 
@@ -9,7 +8,7 @@ BROWSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.
 DATA_PATH = "data"
 
 
-def download_transcript_if_exists(entry) -> Optional[str]:
+def download_transcript_if_exists(entry) -> str | None:
     """Downloads full text transcript if present on RSS feed entry.
 
     Args:

@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import public
@@ -24,9 +24,9 @@ def dbt_cloud_assets(
     select: str = DBT_DEFAULT_SELECT,
     exclude: str = DBT_DEFAULT_EXCLUDE,
     selector: str = DBT_DEFAULT_SELECTOR,
-    name: Optional[str] = None,
-    group_name: Optional[str] = None,
-    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    name: str | None = None,
+    group_name: str | None = None,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt Cloud resources,
     described by a manifest.json for a given dbt Cloud workspace.

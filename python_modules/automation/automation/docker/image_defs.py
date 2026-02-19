@@ -4,7 +4,6 @@ import os
 import shutil
 from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Optional
 
 import dagster._check as check
 from dagster._utils import discover_oss_root
@@ -206,7 +205,7 @@ CUSTOM_BUILD_CONTEXTMANAGERS: dict[str, Callable] = {
 }
 
 
-def list_images(images_path: Optional[str] = None) -> list[DagsterDockerImage]:
+def list_images(images_path: str | None = None) -> list[DagsterDockerImage]:
     """List all images that we manage.
 
     Returns:
@@ -224,7 +223,7 @@ def list_images(images_path: Optional[str] = None) -> list[DagsterDockerImage]:
     return images
 
 
-def get_image(name: str, images_path: Optional[str] = None) -> DagsterDockerImage:
+def get_image(name: str, images_path: str | None = None) -> DagsterDockerImage:
     """Retrieve the image information from the list defined above."""
     image = next((img for img in list_images(images_path=images_path) if img.image == name), None)
     return check.not_none(image, f"could not find image {name}")

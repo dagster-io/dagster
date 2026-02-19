@@ -222,7 +222,7 @@ def get_chunk_size() -> int:
 async def gen_events_for_run(
     graphene_info: "ResolveInfo",
     run_id: str,
-    after_cursor: Optional[str] = None,
+    after_cursor: str | None = None,
 ) -> AsyncIterator[
     Union[
         "GraphenePipelineRunLogsSubscriptionFailure",
@@ -310,7 +310,7 @@ async def gen_events_for_run(
 
 
 async def gen_captured_log_data(
-    graphene_info: "ResolveInfo", log_key: Sequence[str], cursor: Optional[str] = None
+    graphene_info: "ResolveInfo", log_key: Sequence[str], cursor: str | None = None
 ) -> AsyncIterator["GrapheneCapturedLogs"]:
     from dagster_graphql.schema.logs.compute_logs import from_captured_log_data
 
@@ -385,10 +385,10 @@ def wipe_assets(
 def create_asset_event(
     event_type: DagsterEventType,
     asset_key: AssetKey,
-    partition_key: Optional[str],
-    description: Optional[str],
-    tags: Optional[Mapping[str, str]],
-) -> Union[AssetMaterialization, AssetObservation]:
+    partition_key: str | None,
+    description: str | None,
+    tags: Mapping[str, str] | None,
+) -> AssetMaterialization | AssetObservation:
     if event_type == DagsterEventType.ASSET_MATERIALIZATION:
         return AssetMaterialization(
             asset_key=asset_key, partition=partition_key, description=description, tags=tags
@@ -405,9 +405,9 @@ def report_runless_asset_events(
     graphene_info: "ResolveInfo",
     event_type: DagsterEventType,
     asset_key: AssetKey,
-    partition_keys: Optional[Sequence[str]] = None,
-    description: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    partition_keys: Sequence[str] | None = None,
+    description: str | None = None,
+    tags: Mapping[str, str] | None = None,
 ) -> "GrapheneReportRunlessAssetEventsSuccess":
     from dagster_graphql.schema.roots.mutation import GrapheneReportRunlessAssetEventsSuccess
 
@@ -432,7 +432,8 @@ def report_asset_check_evaluation(
     check_name: str,
     passed: bool,
     severity: "AssetCheckSeverity",
-    metadata: Optional[Mapping[str, "RawMetadataValue"]] = None,
+    metadata: Mapping[str, "RawMetadataValue"] | None = None,
+    partition: str | None = None,
 ) -> "GrapheneReportAssetCheckEvaluationSuccess":
     from dagster_graphql.schema.roots.mutation import GrapheneReportAssetCheckEvaluationSuccess
 
@@ -443,6 +444,7 @@ def report_asset_check_evaluation(
         passed=passed,
         severity=severity,
         metadata=metadata or {},
+        partition=partition,
     )
     instance.report_runless_asset_event(evaluation)
     return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)

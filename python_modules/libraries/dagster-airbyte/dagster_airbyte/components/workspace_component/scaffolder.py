@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
@@ -7,9 +5,9 @@ from pydantic import BaseModel
 
 
 class AirbyteScaffolderParams(BaseModel):
-    workspace_id: Optional[str] = None
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
+    workspace_id: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
 
 
 class AirbyteWorkspaceComponentScaffolder(Scaffolder[AirbyteScaffolderParams]):

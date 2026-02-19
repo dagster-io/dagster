@@ -481,9 +481,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
-    def resolve_config_field(
-        self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneConfigTypeField]:
+    def resolve_config_field(self, _graphene_info: ResolveInfo) -> GrapheneConfigTypeField | None:
         return (
             GrapheneConfigTypeField(
                 get_config_type=self._represented_pipeline.config_schema_snapshot.get_config_snap,
@@ -500,7 +498,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
             GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
         ]
 
-    def resolve_pool(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_pool(self, _graphene_info: ResolveInfo) -> str | None:
         return self._solid_def_snap.pool
 
 
@@ -624,7 +622,7 @@ class GrapheneSolidHandle(graphene.ObjectType):
         )
         self._solid = solid
 
-    def resolve_stepStats(self, _graphene_info: ResolveInfo, limit: Optional[int]):
+    def resolve_stepStats(self, _graphene_info: ResolveInfo, limit: int | None):
         if self._solid.get_is_dynamic_mapped():
             return GrapheneSolidStepStatsUnavailableError(
                 message="Step stats are not available for dynamically-mapped ops"
@@ -729,11 +727,11 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
-    ) -> Optional[GrapheneSolidHandle]:
+    ) -> GrapheneSolidHandle | None:
         return build_solid_handles(self._represented_pipeline).get(handleID)
 
     def resolve_solid_handles(
-        self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
+        self, _graphene_info: ResolveInfo, parentHandleID: str | None = None
     ) -> Sequence[GrapheneSolidHandle]:
         handles = build_solid_handles(self._represented_pipeline)
 
@@ -756,7 +754,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
 
 def build_solid_definition(
     represented_pipeline: RepresentedJob, solid_def_name: str
-) -> Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]:
+) -> GrapheneSolidDefinition | GrapheneCompositeSolidDefinition:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.str_param(solid_def_name, "solid_def_name")
 

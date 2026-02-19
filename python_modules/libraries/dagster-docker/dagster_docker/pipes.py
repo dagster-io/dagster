@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Any
 
 import docker
 import docker.errors
@@ -74,10 +74,10 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        env: Optional[Mapping[str, str]] = None,
-        registry: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        env: Mapping[str, str] | None = None,
+        registry: Mapping[str, str] | None = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.registry = check.opt_mapping_param(registry, "registry", key_type=str, value_type=str)
@@ -102,13 +102,13 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         image: str,
-        extras: Optional[PipesExtras] = None,
-        command: Optional[Union[str, Sequence[str]]] = None,
-        env: Optional[Mapping[str, str]] = None,
-        registry: Optional[Mapping[str, str]] = None,
-        container_kwargs: Optional[Mapping[str, Any]] = None,
+        extras: PipesExtras | None = None,
+        command: str | Sequence[str] | None = None,
+        env: Mapping[str, str] | None = None,
+        registry: Mapping[str, str] | None = None,
+        container_kwargs: Mapping[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Create a docker container and run it to completion, enriched with the pipes protocol.
 
@@ -187,9 +187,9 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
         self,
         client,
         image: str,
-        command: Optional[Union[str, Sequence[str]]],
-        env: Optional[Mapping[str, str]],
-        container_kwargs: Optional[Mapping[str, Any]],
+        command: str | Sequence[str] | None,
+        env: Mapping[str, str] | None,
+        container_kwargs: Mapping[str, Any] | None,
         open_pipes_session_env: Mapping[str, str],
     ):
         kwargs = dict(container_kwargs or {})

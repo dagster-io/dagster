@@ -1,6 +1,6 @@
 """GraphQL adapter for run events."""
 
-from typing import Any, Optional
+from typing import Any
 
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
@@ -63,7 +63,7 @@ query CliRunEventsQuery($runId: ID!, $limit: Int, $afterCursor: String) {
 """
 
 
-def _filter_events_by_type(events: list[dict], event_type: Optional[str]) -> list[dict]:
+def _filter_events_by_type(events: list[dict], event_type: str | None) -> list[dict]:
     """Client-side filtering logic for event types."""
     if not event_type:
         return events
@@ -80,7 +80,7 @@ def _filter_events_by_type(events: list[dict], event_type: Optional[str]) -> lis
     return filtered
 
 
-def _filter_events_by_step(events: list[dict], step_key: Optional[str]) -> list[dict]:
+def _filter_events_by_step(events: list[dict], step_key: str | None) -> list[dict]:
     """Client-side filtering logic for step keys."""
     if not step_key:
         return events
@@ -98,9 +98,9 @@ def get_run_events_via_graphql(
     client: IGraphQLClient,
     run_id: str,
     limit: int = 100,
-    after_cursor: Optional[str] = None,
-    event_type: Optional[str] = None,
-    step_key: Optional[str] = None,
+    after_cursor: str | None = None,
+    event_type: str | None = None,
+    step_key: str | None = None,
 ) -> dict[str, Any]:
     """Get run events via GraphQL with client-side filtering."""
     variables = {"runId": run_id, "limit": limit}
