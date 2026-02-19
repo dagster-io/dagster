@@ -528,7 +528,8 @@ class GrapheneUnsupportedOperationError(graphene.ObjectType):
     def __init__(self, message: str | None = None):
         super().__init__()
         self.message = check.str_param(message, "message") or "Unsupported operation."
-        
+
+
 class GrapheneInvalidEmailError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)

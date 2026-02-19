@@ -1,7 +1,6 @@
-import {memo, useCallback, useContext, useEffect, useRef, useState} from 'react';
+import {memo, useCallback, useEffect, useRef, useState} from 'react';
 
 import {gql, useQuery} from '../apollo-client';
-import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {RunStatus} from '../graphql/types';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -60,42 +59,9 @@ interface RunStatusQueryResult {
     | {__typename: string};
 }
 
-function getFaviconForStatus(status: RunStatus): string {
-  if (status === RunStatus.SUCCESS) return '/favicon-run-success.svg';
-  if (status === RunStatus.FAILURE) return '/favicon-run-failed.svg';
-  return '/favicon-run-pending.svg';
-}
-
-function showCompletionToast(
-  runId: string,
-  status: RunStatus,
-  pipelineName: string,
-  basePath: string,
-) {
+function showCompletionToast(runId: string, status: RunStatus, pipelineName: string) {
   const shortId = runId.slice(0, 8);
   const path = `/runs/${runId}`;
-
-  if (
-    typeof Notification !== 'undefined' &&
-    Notification.permission === 'granted' &&
-    document.hidden
-  ) {
-    const icon = `${window.location.origin}${basePath || ''}${getFaviconForStatus(status)}`;
-    let title: string;
-    let body: string;
-    if (status === RunStatus.SUCCESS) {
-      title = 'Run completed';
-      body = `Run ${shortId} (${pipelineName}) succeeded`;
-    } else if (status === RunStatus.FAILURE) {
-      title = 'Run failed';
-      body = `Run ${shortId} (${pipelineName}) failed`;
-    } else {
-      title = 'Run canceled';
-      body = `Run ${shortId} (${pipelineName}) was canceled`;
-    }
-    const notification = new Notification(title, {body, icon});
-    notification.onclick = () => window.focus();
-  }
 
   const toastAction = {
     type: 'custom' as const,
@@ -126,11 +92,10 @@ function showCompletionToast(
 
 interface SingleRunObserverProps {
   runId: string;
-  basePath: string;
   onComplete: (runId: string) => void;
 }
 
-const SingleRunCompletionObserver = memo(({runId, basePath, onComplete}: SingleRunObserverProps) => {
+const SingleRunCompletionObserver = memo(({runId, onComplete}: SingleRunObserverProps) => {
   const {data} = useQuery<RunStatusQueryResult>(RUN_STATUS_QUERY, {
     variables: {runId},
     pollInterval: POLL_INTERVAL_MS,
@@ -146,15 +111,14 @@ const SingleRunCompletionObserver = memo(({runId, basePath, onComplete}: SingleR
     if (!doneStatuses.has(run.status)) return;
 
     notifiedRef.current = true;
-    showCompletionToast(run.id, run.status, run.pipelineName, basePath);
+    showCompletionToast(run.id, run.status, run.pipelineName);
     onComplete(runId);
-  }, [data, runId, basePath, onComplete]);
+  }, [data, runId, onComplete]);
 
   return null;
 });
 
 export const RunCompletionNotificationObserver = () => {
-  const {basePath = ''} = useContext(AppContext);
   const [runIds, setRunIds] = useState<string[]>(() => {
     return getNotifyRunIds();
   });
@@ -209,7 +173,6 @@ export const RunCompletionNotificationObserver = () => {
         <SingleRunCompletionObserver
           key={runId}
           runId={runId}
-          basePath={basePath}
           onComplete={removeRunId}
         />
       ))}

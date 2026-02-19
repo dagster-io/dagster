@@ -72,7 +72,9 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   return (
     <div>
       <Box flex={{direction: 'row', gap: 8}}>
-        <RunAlertNotifications runId={run.id} runStatus={run.status} />
+        {run.status !== RunStatus.SUCCESS && (
+          <RunAlertNotifications runId={run.id} runStatus={run.status} />
+        )}
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason}>
             <Button icon={<Icon name={jobLink.icon} />} disabled>

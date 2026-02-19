@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import sys
-from email_validator import validate_email, EmailNotValidError
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union  # noqa: F401, UP035
 
@@ -23,6 +22,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
+from email_validator import EmailNotValidError, validate_email
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
@@ -451,6 +451,7 @@ def report_asset_check_evaluation(
     instance.report_runless_asset_event(evaluation)
     return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)
 
+
 def subscribe_to_notifications(
     graphene_info: "ResolveInfo",
     run_id: str,
@@ -461,7 +462,7 @@ def subscribe_to_notifications(
     from dagster_graphql.schema.roots.mutation import GrapheneSubscribeToNotificationsSuccess
 
     instance = graphene_info.context.instance
-    
+
     try:
         validate_email(email)
     except EmailNotValidError:

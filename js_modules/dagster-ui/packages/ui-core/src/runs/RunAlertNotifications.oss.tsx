@@ -34,8 +34,6 @@ export const RunAlertNotifications = ({
       unobserveRunCompletion(runId);
       setNotifyOn(false);
     } else {
-      if (typeof Notification !== 'undefined' && Notification.permission === 'default')
-        Notification.requestPermission();
       observeRunCompletion(runId);
       setNotifyOn(true);
     }
@@ -51,7 +49,7 @@ export const RunAlertNotifications = ({
             : 'Notify when this run completes'
       }
     >
-      <Button icon={<Icon name="notifications" />} disabled={isDone} onClick={handleToggle}>
+      <Button icon={<Icon name="notifications" />} disabled={isDone} {...(notifyOn && {intent: 'success'})} onClick={handleToggle}>
         {notifyOn ? 'Notifications on' : 'Notify on completion'}
       </Button>
     </Tooltip>

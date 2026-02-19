@@ -990,12 +990,10 @@ class GrapheneSubscribeToNotificationsMutation(graphene.Mutation):
         email = graphene.NonNull(graphene.String)
 
     @capture_error
-    def mutate(
-        self, graphene_info: ResolveInfo, runId: str, subscribe: bool, email: str
-    ):
+    def mutate(self, graphene_info: ResolveInfo, runId: str, subscribe: bool, email: str):
         return subscribe_to_notifications(
-            graphene_info, 
-            runId, 
+            graphene_info,
+            runId,
             subscribe,
             email,
         )
