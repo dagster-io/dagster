@@ -45,6 +45,28 @@ import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
+const ASSET_FAILURE_EVENTS_QUERY = gql`
+  query AssetFailureEventsQuery($runId: String!, $assetKey: AssetKeyInput!) {
+    assetFailureEvents(runId: $runId, assetKey: $assetKey) {
+      events {
+        eventType
+        timestamp
+      }
+    }
+  }
+`;
+
+export const fetchFailureEvents = async (runId: string, assetKey: AssetKey) => {
+  const {data} = await useQuery(ASSET_FAILURE_EVENTS_QUERY, {
+    variables: {runId, assetKey},
+  });
+
+  return data?.assetFailureEvents?.events.some(
+    (event: {eventType: string}) => event.eventType === 'ASSET_MATERIALIZATION_FAILURE',
+  );
+};
+
+
 export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
     ASSET_PARTITION_DETAIL_QUERY,
@@ -96,6 +118,14 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
 
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
+  }
+
+  const assetFailed = latestRunForPartition?.id
+    ? fetchFailureEvents(latestRunForPartition.id, props.assetKey)
+    : false;
+
+  if (assetFailed) {
+    return <FailedRunSinceMaterializationBanner run={latestRunForPartition} />;
   }
 
   return (

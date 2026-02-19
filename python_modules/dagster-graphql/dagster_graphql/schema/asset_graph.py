@@ -1493,3 +1493,40 @@ class GrapheneAssetNodeOrError(graphene.Union):
     class Meta:
         types = (GrapheneAssetNode, GrapheneAssetNotFoundError)
         name = "AssetNodeOrError"
+
+class GrapheneAssetFailureEvent(graphene.ObjectType):
+    eventType = graphene.NonNull(graphene.String)
+    timestamp = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetFailureEvent"
+
+class GrapheneAssetFailureEvents(graphene.ObjectType):
+    events = graphene.List(GrapheneAssetFailureEvent)
+
+    class Meta:
+        name = "AssetFailureEvents"
+
+class GrapheneAssetFailureEventsQuery(graphene.ObjectType):
+    assetFailureEvents = graphene.Field(
+        GrapheneAssetFailureEvents,
+        runId=graphene.NonNull(graphene.String),
+        assetKey=graphene.NonNull(GrapheneAssetKey),
+    )
+
+    def resolve_assetFailureEvents(self, info, runId, assetKey):
+        instance = info.context.instance
+        asset_records = instance.get_asset_records(AssetRecordsFilter(asset_key=assetKey))
+
+        failure_events = []
+        for record in asset_records:
+            for event in record.asset_entry.event_log:
+                if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION_FAILURE:
+                    failure_events.append(
+                        GrapheneAssetFailureEvent(
+                            eventType=event.dagster_event_type,
+                            timestamp=str(event.timestamp),
+                        )
+                    )
+
+        return GrapheneAssetFailureEvents(events=failure_events)
