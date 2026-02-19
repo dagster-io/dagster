@@ -19,6 +19,7 @@ The `dagster-azure` library provides a set of components that allow you to confi
 Unlike other libraries, Azure components utilize **Discriminated Unions** for credentials. This means you specify the `credential_type` inline within your YAML configuration to select the authentication method (SAS Token, Shared Key, DefaultCredential, or Anonymous).
 
 Supported credential types:
+
 - **`sas`**: Uses a Shared Access Signature token.
 - **`key`**: Uses a Storage Account Key.
 - **`default`**: Uses the environment's `DefaultAzureCredential` (supports Azure CLI, Managed Identity, etc.).
@@ -45,20 +46,21 @@ Components for interacting with ADLS2.
 ```yaml
 type: dagster_azure.AzureBlobStorageResourceComponent
 attributes:
-  account_url: "[https://myaccount.blob.core.windows.net](https://myaccount.blob.core.windows.net)"
+  account_url: '[https://myaccount.blob.core.windows.net](https://myaccount.blob.core.windows.net)'
   credential:
     credential_type: sas
-    token: "{{ env.AZURE_SAS_TOKEN }}"
+    token: '{{ env.AZURE_SAS_TOKEN }}'
   resource_key: blob_storage
 ```
+
 ### ADLS2 with Shared Key Connect using a Storage Account Key.
 
 ```yaml
 type: dagster_azure.ADLS2ResourceComponent
 attributes:
   storage_account: mystorageaccount
-  credential:
+    credential:
     credential_type: key
-    storage_account_key: "{{ env.AZURE_STORAGE_KEY }}"
+    key: '{{ env.AZURE_STORAGE_KEY }}'
   resource_key: adls2
 ```

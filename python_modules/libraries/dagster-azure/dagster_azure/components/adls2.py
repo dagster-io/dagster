@@ -37,7 +37,8 @@ class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     storage_account: str = Field(description="The storage account name")
 
     credential: Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential] = Field(
-        description="The credentials with which to authenticate"
+        discriminator="credential_type",
+        description="The credentials with which to authenticate",
     )
 
     resource_key: Optional[str] = Field(
