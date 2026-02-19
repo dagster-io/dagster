@@ -11,7 +11,7 @@
   position: absolute;
   top: 0;
   height: 8px;
-  border: 2px solid var(--color-accent-blue);
+  border: 2px solid var(--color-blue500);
   border-bottom: 0;
 }
 
