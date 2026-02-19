@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import dagster as dg
 from dagster._annotations import preview, public
 from pydantic import Field
@@ -37,14 +35,14 @@ class AzureBlobStorageResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     account_url: str = Field(description="The URL to the blob storage account")
 
-    credential: Union[
-        AzureBlobStorageSASTokenCredential,
-        AzureBlobStorageKeyCredential,
-        AzureBlobStorageDefaultCredential,
-        AzureBlobStorageAnonymousCredential,
-    ] = Field(description="Azure credential configuration")
+    credential: (
+        AzureBlobStorageSASTokenCredential
+        | AzureBlobStorageKeyCredential
+        | AzureBlobStorageDefaultCredential
+        | AzureBlobStorageAnonymousCredential
+    ) = Field(description="Azure credential configuration")
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None, description="Resource key for binding to definitions"
     )
 
