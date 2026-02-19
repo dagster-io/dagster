@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-gcp"
+version = "1!0+dev"
+description = "Package for GCP-specific Dagster framework op and resource components."
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.15"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    "dagster_pandas==1!0+dev",
+    "db-dtypes",  # Required as per https://github.com/googleapis/python-bigquery/issues/1188
+    "google-api-python-client",
+    "google-cloud-bigquery>=1.28.3",  # earliest version that imports without protobuf errors
+    "google-cloud-storage",
+    "oauth2client",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp"
+
+# we need pyarrow for testing read/write parquet files.
+[project.optional-dependencies]
+pyarrow = [
+    "pyarrow",
+]
+test = [
+    "gcp-storage-emulator",
+]
+dataproc = [
+    "google-cloud-dataproc",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_gcp_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_gcp_tests/**",
+]

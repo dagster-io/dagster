@@ -3,9 +3,9 @@ requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dagster-graphql"
+name = "dagster-azure"
 version = "1!0+dev"
-description = "The GraphQL API for Dagster."
+description = "Package for Azure-specific Dagster framework op and resource components."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
@@ -18,28 +18,33 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "azure-core<2.0.0,>=1.7.0",
+    "azure-identity<2.0.0,>=1.7.0",
+    "azure-ai-ml<2.0.0,>=1.28.0",
+    "azure-storage-blob<13.0.0,>=12.5.0",
+    "azure-storage-file-datalake<13.0.0,>=12.5",
     "dagster==1!0+dev",
-    "graphene>=3,<4",
-    "gql[requests]>=3,<5",
-    "requests",
-    "starlette",  # used for run_in_threadpool utility fn
 ]
 
 [project.urls]
-Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql"
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure"
 
 [project.scripts]
-dagster-graphql = "dagster_graphql.cli:main"
-
-[project.optional-dependencies]
-test = ["dagster-test"]
+dagster-azure = "dagster_azure.cli.cli:main"
 
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_graphql_tests*"]
+exclude = [
+    "dagster_azure_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "pytest.ini", "tox.ini", "tox_postgres.ini", "dagster_graphql_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_azure_tests/**",
+]

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster_looker"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    "lkml",
+    # Remove pin after resolution of: https://github.com/looker-open-source/sdk-codegen/issues/1518
+    "looker_sdk<24.18.0",
+    # Dialect.SET_OP_DISTINCT_BY_DEFAULT was introduced in version 25.19.0:
+    # https://github.com/tobymao/sqlglot/blob/v25.19.0/sqlglot/dialects/dialect.py
+    "sqlglot>=25.19.0",
+    "python-liquid<2",
+    "cattrs<23.2",  # https://github.com/looker-open-source/sdk-codegen/issues/1410
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker"
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_looker_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_looker_tests/**",
+]

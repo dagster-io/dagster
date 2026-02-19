@@ -3,9 +3,9 @@ requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dagster-graphql"
+name = "dagster-dask"
 version = "1!0+dev"
-description = "The GraphQL API for Dagster."
+description = "Package for using Dask as Dagster's execution engine."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
@@ -18,28 +18,43 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "bokeh",
     "dagster==1!0+dev",
-    "graphene>=3,<4",
-    "gql[requests]>=3,<5",
-    "requests",
-    "starlette",  # used for run_in_threadpool utility fn
+    "dask[dataframe]>=1.2.2",
+    "distributed>=1.28.1",
 ]
 
 [project.urls]
-Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql"
-
-[project.scripts]
-dagster-graphql = "dagster_graphql.cli:main"
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dask"
 
 [project.optional-dependencies]
-test = ["dagster-test"]
+yarn = [
+    "dask-yarn",
+]
+pbs = [
+    "dask-jobqueue",
+]
+kube = [
+    "dask-kubernetes<=2022.9.0",
+]
+# we need pyarrow for testing read/write parquet files.
+test = [
+    "pyarrow",
+]
 
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_graphql_tests*"]
+exclude = [
+    "dagster_dask_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "pytest.ini", "tox.ini", "tox_postgres.ini", "dagster_graphql_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_dask_tests/**",
+]
