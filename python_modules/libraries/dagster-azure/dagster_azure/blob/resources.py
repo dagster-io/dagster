@@ -22,7 +22,7 @@ class AzureBlobStorageKeyCredential(dg.Resolvable, Config):
     """Authentication using an azure shared-key."""
 
     credential_type: Literal["key"] = "key"
-    key: str | None = Field(default=None)
+    key: str | None = None
     "an azure shared-key"
 
 

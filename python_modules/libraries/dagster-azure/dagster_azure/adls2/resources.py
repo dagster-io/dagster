@@ -30,7 +30,7 @@ class ADLS2SASToken(dg.Resolvable, Config):
 
 class ADLS2Key(dg.Resolvable, Config):
     credential_type: Literal["key"] = "key"
-    key: str | None = Field(default=None)
+    key: str | None = None
 
 
 class ADLS2DefaultAzureCredential(dg.Resolvable, Config):
