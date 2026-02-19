@@ -1,3 +1,4 @@
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -33,7 +34,7 @@ class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
               resource_key: adls2
     """
 
-    storage_account: str | None = Field(default=None, description="The storage account name")
+    storage_account: Optional[str] = Field(default=None, description="The storage account name")  # noqa: UP045
 
     credential: ADLS2SASToken | ADLS2Key | ADLS2DefaultAzureCredential | None = Field(
         default=None,
