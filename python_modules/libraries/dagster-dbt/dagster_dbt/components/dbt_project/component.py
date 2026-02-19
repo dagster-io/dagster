@@ -10,6 +10,7 @@ from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 import dagster as dg
 from dagster._annotations import public
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTree
@@ -101,6 +102,100 @@ def _set_resolution_context(context: ResolutionContext):
         yield
     finally:
         _resolution_context.reset(token)
+
+
+# ---------------------------------------------------------------------------
+# Helpers for partitions-aware grouping
+# ---------------------------------------------------------------------------
+import datetime as _dt
+import hashlib as _hashlib
+
+_TIME_WINDOW_ATTRS = ("cron_schedule", "start", "start_date", "timezone", "fmt", "end_offset")
+
+
+def _normalize_val(val: Any) -> str:
+    """Normalize a partition-def attribute value to a stable string."""
+    if isinstance(val, (_dt.datetime, _dt.date)):
+        return val.isoformat()
+    if val is None:
+        return "None"
+    return str(val)
+
+
+def _partitions_def_key(pd: Any) -> tuple:
+    """Return a hashable key for a partitions definition using structural fields.
+
+    Recurses into sub-definitions (e.g. MultiPartitionsDefinition dimensions)
+    without constructing intermediate AssetSpec objects.
+    """
+    if pd is None:
+        return ("none",)
+
+    type_name = type(pd).__name__
+    parts: list[str] = [type_name]
+
+    # TimeWindowPartitionsDefinition (Daily/Hourly/Weekly/Monthly)
+    # Check against the full MRO so subclasses like DailyPartitionsDefinition
+    # are correctly identified as time-window defs.
+    mro_names = {c.__name__ for c in type(pd).__mro__}
+    is_time_window = "TimeWindowPartitionsDefinition" in mro_names
+
+    if is_time_window:
+        for attr in _TIME_WINDOW_ATTRS:
+            if hasattr(pd, attr):
+                v = getattr(pd, attr)
+                if attr == "timezone" and v is None:
+                    continue  # handled below as default UTC
+                parts.append(f"{attr}={_normalize_val(v)}")
+
+        # Default missing timezone to UTC so semantically equivalent
+        # defs (timezone absent vs timezone="UTC") land in the same group.
+        # Only apply when the def conceptually has a timezone attribute.
+        if not any(p.startswith("timezone=") for p in parts) and hasattr(pd, "timezone"):
+            parts.append("timezone=UTC")
+
+    # MultiPartitionsDefinition — handle both list and dict forms.
+    if hasattr(pd, "partitions_defs"):
+        raw = pd.partitions_defs
+        if isinstance(raw, dict):
+            for dim_name in sorted(raw):
+                obj = raw[dim_name]
+                # Normalize: could be a raw partitions_def or a wrapper object.
+                sub_pd = getattr(obj, "partitions_def", obj)
+                sub = _partitions_def_key(sub_pd)
+                parts.append(f"dim:{dim_name}={sub}")
+        else:
+            # list form — safe access via getattr
+            for dim in sorted(raw, key=lambda d: getattr(d, "name", "")):
+                dim_name = getattr(dim, "name", "")
+                dim_pd = getattr(dim, "partitions_def", None)
+                sub = _partitions_def_key(dim_pd)
+                parts.append(f"dim:{dim_name}={sub}")
+
+    # StaticPartitionsDefinition — stream-hash keys to keep tuple entries
+    # compact without allocating a huge joined string.
+    if type_name == "StaticPartitionsDefinition":
+        try:
+            keys = sorted(pd.get_partition_keys())
+            h = _hashlib.sha1()
+            for k in keys:
+                h.update(k.encode())
+                h.update(b"\0")
+            parts.append(f"keys_n={len(keys)}")
+            parts.append(f"keys_hash={h.hexdigest()}")
+        except Exception:
+            parts.append("static_unknown")
+
+    # DynamicPartitionsDefinition — use MRO so subclasses are caught.
+    if "DynamicPartitionsDefinition" in mro_names and getattr(pd, "name", None):
+        parts.append(f"name={pd.name}")
+
+    return tuple(parts)
+
+
+def _partitions_group_key(spec: dg.AssetSpec) -> tuple:
+    """Thin wrapper: extract and fingerprint the spec's partitions_def."""
+    return _partitions_def_key(spec.partitions_def)
 
 
 @public
@@ -367,11 +462,14 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     def write_state_to_path(self, state_path: Path) -> None:
         self._project_manager.prepare(state_path)
 
+    # ------------------------------------------------------------------
+    # Core: build_defs_from_state — splits into multiple @multi_asset
+    # ops when assets have incompatible partitions_defs.
+    # ------------------------------------------------------------------
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         project = self._project_manager.get_project(state_path)
-
         res_ctx = context.resolution_context
 
         asset_specs, check_specs = build_dbt_specs(
@@ -385,22 +483,129 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         )
         op_spec = self._get_op_spec(project)
 
+        # -- Group AssetSpecs by partitions_def --------------------------------
+        groups: dict[tuple, list[dg.AssetSpec]] = {}
+        for spec in asset_specs:
+            groups.setdefault(_partitions_group_key(spec), []).append(spec)
+
+        dg.get_dagster_logger().debug(
+            "DbtProjectComponent partition groups: %s",
+            [(k, len(v)) for k, v in groups.items()],
+        )
+
+        # -- Map check specs to their target asset key -------------------------
+        checks_by_asset_key: dict[dg.AssetKey, list[dg.AssetCheckSpec]] = {}
+        for cs in check_specs:
+            checks_by_asset_key.setdefault(cs.asset_key, []).append(cs)
+
+        # -- Single-group fast path (preserves original behavior exactly) ------
+        if len(groups) == 1:
+
+            @dg.multi_asset(
+                specs=asset_specs,
+                check_specs=check_specs,
+                can_subset=True,
+                name=op_spec.name,
+                op_tags=op_spec.tags,
+                backfill_policy=op_spec.backfill_policy,
+                pool=op_spec.pool,
+                config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
+                allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
+            )
+            def _fn(context: dg.AssetExecutionContext):
+                with _set_resolution_context(res_ctx):
+                    yield from self.execute(context=context, dbt=DbtCliResource(project))
+
+            return dg.Definitions(assets=[_fn])
+
+        # -- Mixed partitions: one @multi_asset per group ----------------------
+        # Unpartitioned canonical if present; otherwise biggest group gets the
+        # canonical name; deterministic alphabetical tie-break.
+        def _group_sort_key(kv):
+            gkey, specs = kv
+            is_none = gkey == ("none",)
+            return (0 if is_none else 1, -len(specs), gkey)
+
+        ordered_groups = sorted(groups.items(), key=_group_sort_key)
+
+        # Collect asset keys across all groups so we can detect orphan checks
+        # (e.g. source-test checks whose target asset isn't in asset_specs).
+        all_asset_keys = {s.key for s in asset_specs}
+
+        assets_defs: list[dg.AssetsDefinition] = []
+        for idx, (_gkey, specs_in_group) in enumerate(ordered_groups):
+            op_name = op_spec.name if idx == 0 else f"{op_spec.name}__partitions_{idx}"
+
+            # Checks belonging to assets in this group, with dedup.
+            seen_checks: set[tuple[str, str]] = set()
+            group_check_specs: list[dg.AssetCheckSpec] = []
+            for s in specs_in_group:
+                for cs in checks_by_asset_key.get(s.key, []):
+                    ck = (cs.name, cs.asset_key.to_user_string())
+                    if ck not in seen_checks:
+                        seen_checks.add(ck)
+                        group_check_specs.append(cs)
+
+            # Attach orphan checks (source-test checks) to the first group,
+            # but only when the feature is enabled — otherwise they'd fail
+            # validation since their target asset isn't in specs.
+            if idx == 0 and self.translator.settings.enable_source_tests_as_checks:
+                for cs in check_specs:
+                    ck = (cs.name, cs.asset_key.to_user_string())
+                    if cs.asset_key not in all_asset_keys and ck not in seen_checks:
+                        seen_checks.add(ck)
+                        group_check_specs.append(cs)
+
+            # Explicit partitions_def from the group (all specs share it).
+            p_def = specs_in_group[0].partitions_def
+
+            # Use a factory to bind loop-local variables cleanly.
+            assets_defs.append(
+                self._build_multi_asset(
+                    name=op_name,
+                    group_asset_specs=specs_in_group,
+                    group_check_specs=group_check_specs,
+                    partitions_def=p_def,
+                    op_spec=op_spec,
+                    res_ctx=res_ctx,
+                    project=project,
+                )
+            )
+
+        return dg.Definitions(assets=assets_defs)
+
+    def _build_multi_asset(
+        self,
+        *,
+        name: str,
+        group_asset_specs: list[dg.AssetSpec],
+        group_check_specs: list[dg.AssetCheckSpec],
+        partitions_def: Any,
+        op_spec: OpSpec,
+        res_ctx: ResolutionContext,
+        project: DbtProject,
+    ) -> dg.AssetsDefinition:
+        """Factory that creates a @dg.multi_asset with all variables explicitly
+        bound, avoiding the closure-in-loop late-binding bug.
+        """
+
         @dg.multi_asset(
-            specs=asset_specs,
-            check_specs=check_specs,
+            specs=group_asset_specs,
+            check_specs=group_check_specs,
             can_subset=True,
-            name=op_spec.name,
+            name=name,
             op_tags=op_spec.tags,
             backfill_policy=op_spec.backfill_policy,
             pool=op_spec.pool,
             config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
             allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
+            partitions_def=partitions_def,
         )
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):
                 yield from self.execute(context=context, dbt=DbtCliResource(project))
 
-        return dg.Definitions(assets=[_fn])
+        return _fn
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         # create a resolution scope that includes the partition key and range, if available
@@ -410,7 +615,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         )
         try:
             partition_time_window = context.partition_time_window
-        except Exception:
+        except (DagsterInvariantViolationError, ValueError):
             partition_time_window = None
 
         # resolve the cli args with additional partition-related scope
