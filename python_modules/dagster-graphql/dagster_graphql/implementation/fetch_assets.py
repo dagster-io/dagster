@@ -150,7 +150,11 @@ def get_additional_required_keys(
     graphene_info: "ResolveInfo",
     asset_keys: AbstractSet[AssetKey],
 ) -> list["AssetKey"]:
-    asset_nodes = {graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys}
+    asset_nodes = {
+        graphene_info.context.asset_graph.get(asset_key)
+        for asset_key in asset_keys
+        if graphene_info.context.asset_graph.has(asset_key)
+    }
 
     required_asset_keys = set()
     for asset_node in asset_nodes:
@@ -167,6 +171,8 @@ def get_asset_node_definition_collisions(
 
     repos: dict[AssetKey, list[GrapheneRepository]] = defaultdict(list)
     for asset_key in asset_keys:
+        if not graphene_info.context.asset_graph.has(asset_key):
+            continue
         remote_asset_node = graphene_info.context.asset_graph.get(asset_key)
         for info in remote_asset_node.repo_scoped_asset_infos:
             asset_node_snap = info.asset_node.asset_node_snap
