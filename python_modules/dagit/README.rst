@@ -13,5 +13,6 @@ Eg in dagster_examples
 Running dev ui:
 
 .. code-block:: sh
+
   NEXT_PUBLIC_BACKEND_ORIGIN="http://localhost:3333" yarn start
 
