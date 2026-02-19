@@ -1,6 +1,6 @@
 import os
 from collections.abc import Callable, Mapping
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
@@ -141,8 +141,8 @@ def test_load_component(
     expected_resolved_compute_config: ResolvedDatabricksNewClusterConfig
     | ResolvedDatabricksExistingClusterConfig
     | ResolvedDatabricksServerlessConfig,
-    custom_op_name: Optional[str],
-    custom_asset_specs: Optional[dict[str, list[dict[str, Any]]]],
+    custom_op_name: str | None,
+    custom_asset_specs: dict[str, list[dict[str, Any]]] | None,
     expected_asset_spec_keys: set[AssetKey],
     databricks_config_path: str,
 ):

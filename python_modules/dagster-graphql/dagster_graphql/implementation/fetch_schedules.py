@@ -117,7 +117,7 @@ def get_scheduler_or_error(graphene_info: ResolveInfo) -> "GrapheneScheduler":
 def get_schedules_or_error(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
-    instigator_statuses: Optional[set[InstigatorStatus]] = None,
+    instigator_statuses: set[InstigatorStatus] | None = None,
 ) -> "GrapheneSchedules":
     from dagster_graphql.schema.schedules import GrapheneSchedule, GrapheneSchedules
 

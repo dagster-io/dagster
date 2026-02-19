@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from dagster_shared.record import copy, record
 from typing_extensions import Self
@@ -40,14 +40,14 @@ class UnresolvedPartitionedAssetScheduleDefinition:
 
     name: str
     job: UnresolvedAssetJobDefinition
-    description: Optional[str]
+    description: str | None
     default_status: DefaultScheduleStatus
-    minute_of_hour: Optional[int]
-    hour_of_day: Optional[int]
-    day_of_week: Optional[int]
-    day_of_month: Optional[int]
-    tags: Optional[Mapping[str, str]]
-    metadata: Optional[Mapping[str, Any]]
+    minute_of_hour: int | None
+    hour_of_day: int | None
+    day_of_week: int | None
+    day_of_month: int | None
+    tags: Mapping[str, str] | None
+    metadata: Mapping[str, Any] | None
 
     def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
         partitions_def = resolved_job.partitions_def
@@ -78,17 +78,17 @@ class UnresolvedPartitionedAssetScheduleDefinition:
 
 def build_schedule_from_partitioned_job(
     job: JobDefinition | UnresolvedAssetJobDefinition,
-    description: Optional[str] = None,
-    name: Optional[str] = None,
-    minute_of_hour: Optional[int] = None,
-    hour_of_day: Optional[int] = None,
-    day_of_week: Optional[int] = None,
-    day_of_month: Optional[int] = None,
+    description: str | None = None,
+    name: str | None = None,
+    minute_of_hour: int | None = None,
+    hour_of_day: int | None = None,
+    day_of_week: int | None = None,
+    day_of_month: int | None = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-    tags: Optional[Mapping[str, str]] = None,
-    cron_schedule: Optional[str] = None,
-    execution_timezone: Optional[str] = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    tags: Mapping[str, str] | None = None,
+    cron_schedule: str | None = None,
+    execution_timezone: str | None = None,
+    metadata: RawMetadataMapping | None = None,
 ) -> UnresolvedPartitionedAssetScheduleDefinition | ScheduleDefinition:
     """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
@@ -235,7 +235,7 @@ def build_schedule_from_partitioned_job(
 def _get_schedule_evaluation_fn(
     partitions_def: PartitionsDefinition,
     job: JobDefinition | UnresolvedAssetJobDefinition,
-    tags: Optional[Mapping[str, str]] = None,
+    tags: Mapping[str, str] | None = None,
 ) -> Callable[[ScheduleEvaluationContext], SkipReason | RunRequest | RunRequestIterator]:
     def schedule_fn(context):
         # Run for the latest partition. Prior partitions will have been handled by prior ticks.

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, TypeAlias
+from typing import NamedTuple, TypeAlias
 
 from typing_extensions import Self
 
@@ -45,7 +45,7 @@ class AutomationTarget(
         "_AutomationTarget",
         [
             ("resolvable_to_job", ResolvableToJob),
-            ("op_selection", Optional[Sequence[str]]),
+            ("op_selection", Sequence[str] | None),
             ("assets_defs", Sequence[AssetsDefinition | SourceAsset]),
         ],
     )
@@ -61,8 +61,8 @@ class AutomationTarget(
     def __new__(
         cls,
         resolvable_to_job: JobDefinition | UnresolvedAssetJobDefinition | str,
-        op_selection: Optional[Sequence[str]] = None,
-        assets_defs: Optional[Sequence[AssetsDefinition | SourceAsset]] = None,
+        op_selection: Sequence[str] | None = None,
+        assets_defs: Sequence[AssetsDefinition | SourceAsset] | None = None,
     ):
         return super().__new__(
             cls,
@@ -83,7 +83,7 @@ class AutomationTarget(
     def from_coercible(
         cls,
         coercible: CoercibleToAutomationTarget,
-        automation_name: Optional[str] = None,  # only needed if we are generating an anonymous job
+        automation_name: str | None = None,  # only needed if we are generating an anonymous job
     ) -> Self:
         if isinstance(coercible, (JobDefinition, UnresolvedAssetJobDefinition)):
             return cls(coercible)

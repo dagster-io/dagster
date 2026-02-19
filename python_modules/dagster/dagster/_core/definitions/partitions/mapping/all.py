@@ -31,16 +31,16 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_def: PartitionsDefinition | None,
     ):
         pass
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_subset: PartitionsSubset | None,
+        downstream_partitions_def: PartitionsDefinition | None,
         upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
@@ -60,7 +60,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         upstream_partitions_subset: PartitionsSubset,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         with partition_loading_context(current_time, dynamic_partitions_store):

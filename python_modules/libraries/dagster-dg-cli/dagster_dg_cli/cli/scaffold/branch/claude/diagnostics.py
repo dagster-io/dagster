@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Literal, Optional, get_args
+from typing import Any, Literal, get_args
 
 from dagster_dg_cli.cli.scaffold.branch.models import (
     AIInteraction,
@@ -30,14 +30,14 @@ class ClaudeDiagnostics:
     def __init__(
         self,
         level: DiagnosticsLevel = "off",
-        output_dir: Optional[Path] = None,
-        correlation_id: Optional[str] = None,
+        output_dir: Path | None = None,
+        correlation_id: str | None = None,
     ):
         self.level = level
         self.correlation_id = correlation_id or str(uuid.uuid4())
         self.output_dir = output_dir or Path(tempfile.gettempdir()) / "dg" / "diagnostics"
         self.entries: list[DiagnosticsEntry] = []
-        self._output_file: Optional[Path] = None
+        self._output_file: Path | None = None
 
         # Ensure output directory exists and create output file if diagnostics are enabled
         if self.level != "off":
@@ -57,7 +57,7 @@ class ClaudeDiagnostics:
                 f.write(json.dumps(session_metadata) + "\n")
 
     @property
-    def output_file(self) -> Optional[Path]:
+    def output_file(self) -> Path | None:
         """Get the current output file path."""
         return self._output_file
 
@@ -84,7 +84,7 @@ class ClaudeDiagnostics:
         level: DiagnosticsLevel,
         category: str,
         message: str,
-        data: Optional[dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         """Log a diagnostics entry."""
         if not self._should_log(level):
@@ -283,7 +283,7 @@ class ClaudeDiagnostics:
             )
             raise
 
-    def flush(self) -> Optional[Path]:
+    def flush(self) -> Path | None:
         """Finalize the diagnostics file with session end timestamp."""
         if self.level == "off" or not self._output_file:
             return None
@@ -322,23 +322,23 @@ class ClaudeDiagnostics:
 
         return self._output_file
 
-    def error(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def error(self, *, category: str, message: str, data: dict[str, Any] | None = None) -> None:
         """Log an error-level entry."""
         self.log(level="error", category=category, message=message, data=data)
 
-    def info(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def info(self, *, category: str, message: str, data: dict[str, Any] | None = None) -> None:
         """Log an info-level entry."""
         self.log(level="info", category=category, message=message, data=data)
 
-    def debug(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def debug(self, *, category: str, message: str, data: dict[str, Any] | None = None) -> None:
         """Log a debug-level entry."""
         self.log(level="debug", category=category, message=message, data=data)
 
 
 def create_claude_diagnostics_service(
     level: DiagnosticsLevel = "off",
-    output_dir: Optional[str | Path] = None,
-    correlation_id: Optional[str] = None,
+    output_dir: str | Path | None = None,
+    correlation_id: str | None = None,
 ) -> ClaudeDiagnostics:
     """Create a new Claude diagnostics service instance."""
     output_path = Path(output_dir) if output_dir else None

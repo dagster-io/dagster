@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 from pinecone import Pinecone
 from pydantic import Field
@@ -22,7 +20,7 @@ class PineconeResource(dg.ConfigurableResource):
                 spec={"serverless": {"cloud": "aws", "region": "us-east-1"}},
             )
 
-    def get_index(self, index_name: str, namespace: Optional[str] = None):
+    def get_index(self, index_name: str, namespace: str | None = None):
         index = self._pinecone.Index(index_name)
         if namespace:
             return index, {"namespace": namespace}

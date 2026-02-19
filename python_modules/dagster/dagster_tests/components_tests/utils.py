@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Iterable, Mapping, Optional, TypeVar  # noqa: UP035
+from typing import Any, Iterable, Mapping, TypeVar  # noqa: UP035
 
 import dagster as dg
 import tomlkit
@@ -35,7 +35,7 @@ T_Component = TypeVar("T_Component", bound=Component)
 def load_context_and_component_for_test(
     component_type: type[T_Component],
     attrs: str | dict[str, Any],
-    template_vars_module: Optional[str] = None,
+    template_vars_module: str | None = None,
 ) -> tuple[dg.ComponentLoadContext, T_Component]:
     context = ComponentTree.for_test().load_context
     model_cls = check.not_none(
@@ -66,7 +66,7 @@ def load_component_for_test(
 def build_component_defs_for_test(
     component_type: type[dg.Component],
     attrs: dict[str, Any],
-    post_processing: Optional[Mapping[str, Any]] = None,
+    post_processing: Mapping[str, Any] | None = None,
 ) -> dg.Definitions:
     context, component = load_context_and_component_for_test(component_type, attrs)
     return post_process_defs(
@@ -124,7 +124,7 @@ def temp_code_location_bar() -> Iterator[None]:
 
 
 def _setup_component_in_folder(
-    src_path: str, dst_path: str, local_component_defn_to_inject: Optional[Path]
+    src_path: str, dst_path: str, local_component_defn_to_inject: Path | None
 ) -> None:
     origin_path = Path(__file__).parent / "integration_tests" / "integration_test_defs" / src_path
 
@@ -134,9 +134,7 @@ def _setup_component_in_folder(
 
 
 @contextlib.contextmanager
-def inject_component(
-    src_path: str, local_component_defn_to_inject: Optional[Path]
-) -> Iterator[str]:
+def inject_component(src_path: str, local_component_defn_to_inject: Path | None) -> Iterator[str]:
     with tempfile.TemporaryDirectory() as tmpdir:
         _setup_component_in_folder(src_path, tmpdir, local_component_defn_to_inject)
         yield tmpdir
@@ -144,7 +142,7 @@ def inject_component(
 
 @contextlib.contextmanager
 def create_project_from_components(
-    *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
+    *src_paths: str, local_component_defn_to_inject: Path | None = None
 ) -> Iterator[tuple[Path, str]]:
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.

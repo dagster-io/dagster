@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import Any, Optional, overload
+from typing import Any, overload
 
 import dagster._check as check
 from dagster._annotations import public
@@ -12,25 +12,25 @@ from dagster._core.definitions.output import GraphOut, OutputDefinition
 
 
 class _Graph:
-    name: Optional[str]
-    description: Optional[str]
+    name: str | None
+    description: str | None
     input_defs: Sequence[InputDefinition]
-    output_defs: Optional[Sequence[OutputDefinition]]
-    ins: Optional[Mapping[str, GraphIn]]
-    out: Optional[GraphOut | Mapping[str, GraphOut]]
-    tags: Optional[Mapping[str, str]]
-    config_mapping: Optional[ConfigMapping]
+    output_defs: Sequence[OutputDefinition] | None
+    ins: Mapping[str, GraphIn] | None
+    out: GraphOut | Mapping[str, GraphOut] | None
+    tags: Mapping[str, str] | None
+    config_mapping: ConfigMapping | None
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        input_defs: Optional[Sequence[InputDefinition]] = None,
-        output_defs: Optional[Sequence[OutputDefinition]] = None,
-        ins: Optional[Mapping[str, GraphIn]] = None,
-        out: Optional[GraphOut | Mapping[str, GraphOut]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        config_mapping: Optional[ConfigMapping] = None,
+        name: str | None = None,
+        description: str | None = None,
+        input_defs: Sequence[InputDefinition] | None = None,
+        output_defs: Sequence[OutputDefinition] | None = None,
+        ins: Mapping[str, GraphIn] | None = None,
+        out: GraphOut | Mapping[str, GraphOut] | None = None,
+        tags: Mapping[str, Any] | None = None,
+        config_mapping: ConfigMapping | None = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -111,29 +111,29 @@ def graph(compose_fn: Callable[..., Any]) -> GraphDefinition: ...
 @overload
 def graph(
     *,
-    name: Optional[str] = ...,
-    description: Optional[str] = ...,
-    input_defs: Optional[Sequence[InputDefinition]] = ...,
-    output_defs: Optional[Sequence[OutputDefinition]] = ...,
-    ins: Optional[Mapping[str, GraphIn]] = ...,
-    out: Optional[GraphOut | Mapping[str, GraphOut]] = ...,
-    tags: Optional[Mapping[str, Any]] = ...,
-    config: Optional[ConfigMapping | Mapping[str, Any]] = ...,
+    name: str | None = ...,
+    description: str | None = ...,
+    input_defs: Sequence[InputDefinition] | None = ...,
+    output_defs: Sequence[OutputDefinition] | None = ...,
+    ins: Mapping[str, GraphIn] | None = ...,
+    out: GraphOut | Mapping[str, GraphOut] | None = ...,
+    tags: Mapping[str, Any] | None = ...,
+    config: ConfigMapping | Mapping[str, Any] | None = ...,
 ) -> _Graph: ...
 
 
 @public
 def graph(
-    compose_fn: Optional[Callable] = None,
+    compose_fn: Callable | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    input_defs: Optional[Sequence[InputDefinition]] = None,
-    output_defs: Optional[Sequence[OutputDefinition]] = None,
-    ins: Optional[Mapping[str, GraphIn]] = None,
-    out: Optional[GraphOut | Mapping[str, GraphOut]] = None,
-    tags: Optional[Mapping[str, Any]] = None,
-    config: Optional[ConfigMapping | Mapping[str, Any]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    input_defs: Sequence[InputDefinition] | None = None,
+    output_defs: Sequence[OutputDefinition] | None = None,
+    ins: Mapping[str, GraphIn] | None = None,
+    out: GraphOut | Mapping[str, GraphOut] | None = None,
+    tags: Mapping[str, Any] | None = None,
+    config: ConfigMapping | Mapping[str, Any] | None = None,
 ) -> GraphDefinition | _Graph:
     """Create an op graph with the specified parameters from the decorated composition function.
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, Union, cast
 
 from typing_extensions import Self
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class ConfigurableDefinition(ABC):
     @property
     @abstractmethod
-    def config_schema(self) -> Optional[IDefinitionConfigSchema]:
+    def config_schema(self) -> IDefinitionConfigSchema | None:
         raise NotImplementedError()
 
     @property
@@ -31,7 +31,7 @@ class ConfigurableDefinition(ABC):
         return self.config_schema is not None and bool(self.config_schema.as_field())
 
     @property
-    def config_field(self) -> Optional[Field]:
+    def config_field(self) -> Field | None:
         return None if not self.config_schema else self.config_schema.as_field()
 
     # getter for typed access
@@ -74,7 +74,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         config_schema: CoercableToConfigSchema = None,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> Self:
         """Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -105,7 +105,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
     @abstractmethod
     def copy_for_configured(
         self,
-        description: Optional[str],
+        description: str | None,
         config_schema: IDefinitionConfigSchema,
     ) -> Self:
         raise NotImplementedError()
@@ -118,8 +118,8 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         name: str,
-        config_schema: Optional[UserConfigSchema] = None,
-        description: Optional[str] = None,
+        config_schema: UserConfigSchema | None = None,
+        description: str | None = None,
     ) -> Self:
         """Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -155,7 +155,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
     def copy_for_configured(
         self,
         name: str,
-        description: Optional[str],
+        description: str | None,
         config_schema: IDefinitionConfigSchema,
     ) -> Self: ...
 
@@ -196,11 +196,11 @@ T_Configurable = TypeVar(
 
 class FunctionAndConfigSchema(NamedTuple):
     function: Callable[[Any], Any]
-    config_schema: Optional[UserConfigSchema]
+    config_schema: UserConfigSchema | None
 
 
 def _wrap_user_fn_if_pythonic_config(
-    user_fn: Any, config_schema: Optional[UserConfigSchema]
+    user_fn: Any, config_schema: UserConfigSchema | None
 ) -> FunctionAndConfigSchema:
     """Helper function which allows users to provide a Pythonic config object to a @configurable
     function. Detects if the function has a single parameter annotated with a Config class.
@@ -252,7 +252,7 @@ def _wrap_user_fn_if_pythonic_config(
 
 def configured(
     configurable: T_Configurable,
-    config_schema: Optional[UserConfigSchema] = None,
+    config_schema: UserConfigSchema | None = None,
     **kwargs: Any,
 ) -> Callable[[object], T_Configurable]:
     """A decorator that makes it easy to create a function-configured version of an object.

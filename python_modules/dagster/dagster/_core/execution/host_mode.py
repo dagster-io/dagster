@@ -1,7 +1,6 @@
 import logging
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Optional
 
 from dagster_shared.error import DagsterError
 
@@ -166,7 +165,7 @@ def execute_run_host_mode(
     recon_job: ReconstructableJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
-    executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
+    executor_defs: Sequence[ExecutorDefinition] | None = None,
     raise_on_error: bool = False,
 ) -> Sequence[DagsterEvent]:
     check.inst_param(recon_job, "recon_job", ReconstructableJob)

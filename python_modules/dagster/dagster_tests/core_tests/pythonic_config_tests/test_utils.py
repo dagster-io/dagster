@@ -5,10 +5,10 @@ from dagster._utils.typing_api import is_closed_python_optional_type
 
 
 def test_is_closed_python_optional_type() -> None:
-    from typing import Optional, Union
+    from typing import Union
 
-    assert is_closed_python_optional_type(Optional[str])
-    assert is_closed_python_optional_type(Optional[int])
+    assert is_closed_python_optional_type(str | None)
+    assert is_closed_python_optional_type(int | None)
 
     assert not is_closed_python_optional_type(str)
     assert not is_closed_python_optional_type(int)

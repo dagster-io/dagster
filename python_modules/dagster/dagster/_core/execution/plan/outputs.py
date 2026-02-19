@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._core.definitions import AssetMaterialization, NodeHandle
@@ -25,10 +25,10 @@ class StepOutputProperties(
             ("is_dynamic", bool),
             ("is_asset", bool),
             ("should_materialize_DEPRECATED", bool),
-            ("asset_key", Optional[AssetKey]),
+            ("asset_key", AssetKey | None),
             ("is_asset_partitioned", bool),
-            ("asset_check_key", Optional[AssetCheckKey]),
-            ("asset_execution_type", Optional[AssetExecutionType]),
+            ("asset_check_key", AssetCheckKey | None),
+            ("asset_execution_type", AssetExecutionType | None),
         ],
     )
 ):
@@ -38,10 +38,10 @@ class StepOutputProperties(
         is_dynamic: bool,
         is_asset: bool,
         should_materialize_DEPRECATED: bool,
-        asset_key: Optional[AssetKey] = None,
+        asset_key: AssetKey | None = None,
         is_asset_partitioned: bool = False,
-        asset_check_key: Optional[AssetCheckKey] = None,
-        asset_execution_type: Optional[AssetExecutionType] = None,
+        asset_check_key: AssetCheckKey | None = None,
+        asset_execution_type: AssetExecutionType | None = None,
     ):
         return super().__new__(
             cls,
@@ -98,7 +98,7 @@ class StepOutput(
         return self.properties.is_asset
 
     @property
-    def asset_key(self) -> Optional[AssetKey]:
+    def asset_key(self) -> AssetKey | None:
         if not self.is_asset:
             return None
         return self.properties.asset_key
@@ -113,8 +113,8 @@ class StepOutputData(
         "_StepOutputData",
         [
             ("step_output_handle", "StepOutputHandle"),
-            ("type_check_data", Optional[TypeCheckData]),
-            ("version", Optional[str]),
+            ("type_check_data", TypeCheckData | None),
+            ("version", str | None),
             ("metadata", Mapping[str, MetadataValue]),
         ],
     )
@@ -124,11 +124,11 @@ class StepOutputData(
     def __new__(
         cls,
         step_output_handle: "StepOutputHandle",
-        type_check_data: Optional[TypeCheckData] = None,
-        version: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        type_check_data: TypeCheckData | None = None,
+        version: str | None = None,
+        metadata: Mapping[str, MetadataValue] | None = None,
         # graveyard
-        intermediate_materialization: Optional[AssetMaterialization] = None,
+        intermediate_materialization: AssetMaterialization | None = None,
     ):
         return super().__new__(
             cls,
@@ -147,7 +147,7 @@ class StepOutputData(
         return self.step_output_handle.output_name
 
     @property
-    def mapping_key(self) -> Optional[str]:
+    def mapping_key(self) -> str | None:
         return self.step_output_handle.mapping_key
 
 
@@ -155,12 +155,12 @@ class StepOutputData(
 class StepOutputHandle(
     NamedTuple(
         "_StepOutputHandle",
-        [("step_key", str), ("output_name", str), ("mapping_key", Optional[str])],
+        [("step_key", str), ("output_name", str), ("mapping_key", str | None)],
     )
 ):
     """A reference to a specific output that has or will occur within the scope of an execution."""
 
-    def __new__(cls, step_key: str, output_name: str = "result", mapping_key: Optional[str] = None):
+    def __new__(cls, step_key: str, output_name: str = "result", mapping_key: str | None = None):
         return super().__new__(
             cls,
             step_key=check.str_param(step_key, "step_key"),

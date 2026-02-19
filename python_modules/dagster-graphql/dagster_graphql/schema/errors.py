@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
@@ -527,7 +525,7 @@ class GrapheneUnsupportedOperationError(graphene.ObjectType):
         interfaces = (GrapheneError,)
         name = "UnsupportedOperationError"
 
-    def __init__(self, message: Optional[str] = None):
+    def __init__(self, message: str | None = None):
         super().__init__()
         self.message = check.str_param(message, "message") or "Unsupported operation."
         

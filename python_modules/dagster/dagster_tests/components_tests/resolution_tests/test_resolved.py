@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Annotated, Literal, NamedTuple, Optional, TypeAlias
+from typing import Annotated, Literal, NamedTuple, TypeAlias
 
 import dagster as dg
 import pytest
@@ -59,7 +59,7 @@ def test_nested():
     class MyThing(dg.Resolvable):
         name: str
         other_thing: OtherThing
-        other_things: Optional[list[OtherThing]]
+        other_things: list[OtherThing] | None
 
     MyThing.resolve_from_yaml(
         """
@@ -311,14 +311,14 @@ def test_nested_from_model():
 
     @dataclass
     class Double(dg.Resolvable):
-        foo: Optional[list[Annotated[str, Resolver.from_model(_resolve_from_obj)]]]
+        foo: list[Annotated[str, Resolver.from_model(_resolve_from_obj)]] | None
 
     with pytest.raises(Exception):
         Double.model()
 
     @dataclass
     class Opt(dg.Resolvable):
-        foo: Optional[Annotated[str, Resolver.from_model(_resolve_from_obj)]]
+        foo: Annotated[str, Resolver.from_model(_resolve_from_obj)] | None
 
     with pytest.raises(Exception):
         Opt.model()
@@ -374,7 +374,7 @@ def test_inject():
     class Target(dg.Resolvable, dg.Model):
         spec: dg.ResolvedAssetSpec
         specs: list[dg.ResolvedAssetSpec]
-        maybe_specs: Optional[list[dg.ResolvedAssetSpec]] = None
+        maybe_specs: list[dg.ResolvedAssetSpec] | None = None
 
     boop = dg.AssetSpec("boop")
     scope = {"boop": boop, "blank": None}
@@ -531,7 +531,7 @@ def test_containers():
         li: list[ResolvedFoo]
         t: tuple[ResolvedFoo, ...]
         s: Sequence[ResolvedFoo]
-        mli: Optional[list[ResolvedFoo]]
+        mli: list[ResolvedFoo] | None
         uli: list[ResolvedFoo] | str
 
     t = Target.resolve_from_yaml("""
@@ -604,7 +604,7 @@ def test_enums():
 def test_dicts():
     class Inner(dg.Resolvable, dg.Model):
         name: str
-        value: Optional[dg.ResolvedAssetSpec]
+        value: dg.ResolvedAssetSpec | None
 
     class HasDict(dg.Resolvable, dg.Model):
         thing: dict[str, Inner]

@@ -14,8 +14,8 @@ T_Type = TypeVar("T_Type", bound=Type[object])
 
 @overload
 def usable_as_dagster_type(
-    name: Optional[str] = ...,
-    description: Optional[str] = ...,
+    name: str | None = ...,
+    description: str | None = ...,
     loader: Optional["DagsterTypeLoader"] = ...,
 ) -> Callable[[T_Type], T_Type]: ...
 
@@ -27,8 +27,8 @@ def usable_as_dagster_type(
 
 
 def usable_as_dagster_type(
-    name: Optional[str | T_Type] = None,
-    description: Optional[str] = None,
+    name: str | T_Type | None = None,
+    description: str | None = None,
     loader: Optional["DagsterTypeLoader"] = None,
 ) -> T_Type | Callable[[T_Type], T_Type]:
     """Decorate a Python class to make it usable as a Dagster Type.

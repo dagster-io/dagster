@@ -5,7 +5,6 @@ from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Optional,
     TypeAlias,
     TypeGuard,
     cast,
@@ -58,9 +57,9 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         self,
         resource_fn: IOManagerFunction,
         config_schema: CoercableToConfigSchema = None,
-        description: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        version: Optional[str] = None,
+        description: str | None = None,
+        required_resource_keys: AbstractSet[str] | None = None,
+        version: str | None = None,
         input_config_schema: CoercableToConfigSchema = None,
         output_config_schema: CoercableToConfigSchema = None,
     ):
@@ -88,12 +87,12 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         return self._input_config_schema
 
     @property
-    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def output_config_schema(self) -> IDefinitionConfigSchema | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._output_config_schema
 
     def copy_for_configured(
         self,
-        description: Optional[str],
+        description: str | None,
         config_schema: CoercableToConfigSchema,
     ) -> "IOManagerDefinition":
         io_def = IOManagerDefinition(
@@ -112,7 +111,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     @public
     @staticmethod
     def hardcoded_io_manager(
-        value: "IOManager", description: Optional[str] = None
+        value: "IOManager", description: str | None = None
     ) -> "IOManagerDefinition":
         """A helper function that creates an ``IOManagerDefinition`` with a hardcoded IOManager.
 
@@ -168,22 +167,22 @@ def io_manager(config_schema: IOManagerFunction) -> IOManagerDefinition: ...
 @overload
 def io_manager(
     config_schema: CoercableToConfigSchema = None,
-    description: Optional[str] = None,
+    description: str | None = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[set[str]] = None,
-    version: Optional[str] = None,
+    required_resource_keys: set[str] | None = None,
+    version: str | None = None,
 ) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
 
 @public
 def io_manager(
     config_schema: IOManagerFunction | CoercableToConfigSchema = None,
-    description: Optional[str] = None,
+    description: str | None = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[set[str]] = None,
-    version: Optional[str] = None,
+    required_resource_keys: set[str] | None = None,
+    version: str | None = None,
 ) -> IOManagerDefinition | Callable[[IOManagerFunction], IOManagerDefinition]:
     """Define an IO manager.
 
@@ -237,7 +236,7 @@ def io_manager(
 
     def _wrap(resource_fn: IOManagerFunction) -> IOManagerDefinition:
         return _IOManagerDecoratorCallable(
-            config_schema=cast("Optional[UserConfigSchema]", config_schema),
+            config_schema=cast("UserConfigSchema | None", config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
@@ -257,11 +256,11 @@ class _IOManagerDecoratorCallable:
     def __init__(
         self,
         config_schema: CoercableToConfigSchema = None,
-        description: Optional[str] = None,
+        description: str | None = None,
         output_config_schema: CoercableToConfigSchema = None,
         input_config_schema: CoercableToConfigSchema = None,
-        required_resource_keys: Optional[set[str]] = None,
-        version: Optional[str] = None,
+        required_resource_keys: set[str] | None = None,
+        version: str | None = None,
     ):
         # type validation happens in IOManagerDefinition
         self.config_schema = config_schema

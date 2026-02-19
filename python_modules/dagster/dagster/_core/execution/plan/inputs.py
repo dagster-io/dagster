@@ -1,7 +1,7 @@
 import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional, TypeAlias, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, TypeAlias, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
@@ -57,7 +57,7 @@ class StepInput:
         return self.source.step_output_handle_dependencies
 
 
-def join_and_hash(*args: Optional[str]) -> Optional[str]:
+def join_and_hash(*args: str | None) -> str | None:
     lst = [check.opt_str_param(elem, "elem") for elem in args]
     if None in lst:
         return None
@@ -273,8 +273,8 @@ class FromStepOutput(StepInputSource, IHaveNew):
         step_output_handle: StepOutputHandle,
         fan_in: bool,
         # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
+        node_handle: NodeHandle | None = None,
+        input_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -297,7 +297,7 @@ class FromStepOutput(StepInputSource, IHaveNew):
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-        io_manager_key: Optional[str] = None,
+        io_manager_key: str | None = None,
     ) -> "InputContext":
         resolved_io_manager_key = (
             step_context.execution_plan.get_manager_key(
@@ -389,7 +389,7 @@ class FromConfig(StepInputSource):
     A None node_handle implies the inputs were provided at the root graph level.
     """
 
-    node_handle: Optional[NodeHandle]
+    node_handle: NodeHandle | None
     input_name: str
 
     def get_associated_input_def(self, job_def: JobDefinition) -> InputDefinition:
@@ -524,8 +524,8 @@ class FromMultipleSources(MultiStepInputSource, IHaveNew):
         cls,
         sources: Sequence[StepInputSource],
         # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
+        node_handle: NodeHandle | None = None,
+        input_name: str | None = None,
     ):
         check.sequence_param(sources, "sources", StepInputSource)
         for source in sources:
@@ -641,8 +641,8 @@ class FromPendingDynamicStepOutput(IHaveNew):
         cls,
         step_output_handle: StepOutputHandle,
         # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
+        node_handle: NodeHandle | None = None,
+        input_name: str | None = None,
     ):
         # Model the unknown mapping key from known execution step
         # using a StepOutputHandle with None mapping_key.
@@ -702,8 +702,8 @@ class FromUnresolvedStepOutput(IHaveNew):
         cls,
         unresolved_step_output_handle: UnresolvedStepOutputHandle,
         # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
+        node_handle: NodeHandle | None = None,
+        input_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -749,8 +749,8 @@ class FromDynamicCollect(IHaveNew):
         cls,
         source: FromPendingDynamicStepOutput | FromUnresolvedStepOutput,
         # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
+        node_handle: NodeHandle | None = None,
+        input_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -776,7 +776,7 @@ class FromDynamicCollect(IHaveNew):
     ) -> set[str]:
         return set()
 
-    def resolve(self, mapping_keys: Optional[Sequence[str]]):
+    def resolve(self, mapping_keys: Sequence[str] | None):
         if mapping_keys is None:
             # None means that the dynamic output was skipped, so create
             # a dependency on the dynamic output that will continue cascading the skip
@@ -836,7 +836,7 @@ class UnresolvedCollectStepInput:
     def resolved_by_output_name(self) -> str:
         return self.source.resolved_by_output_name
 
-    def resolve(self, mapping_keys: Optional[Sequence[str]]) -> StepInput:
+    def resolve(self, mapping_keys: Sequence[str] | None) -> StepInput:
         return StepInput(
             name=self.name,
             dagster_type_key=self.dagster_type_key,

@@ -79,7 +79,7 @@ class FreshnessPolicy(ABC):
 
     @staticmethod
     def time_window(
-        fail_window: timedelta, warn_window: Optional[timedelta] = None
+        fail_window: timedelta, warn_window: timedelta | None = None
     ) -> "TimeWindowFreshnessPolicy":
         """Defines freshness with reference to a time window.
 
@@ -151,10 +151,10 @@ class FreshnessPolicy(ABC):
 @record
 class TimeWindowFreshnessPolicy(FreshnessPolicy, IHaveNew):
     fail_window: SerializableTimeDelta
-    warn_window: Optional[SerializableTimeDelta] = None
+    warn_window: SerializableTimeDelta | None = None
 
     @classmethod
-    def from_timedeltas(cls, fail_window: timedelta, warn_window: Optional[timedelta] = None):
+    def from_timedeltas(cls, fail_window: timedelta, warn_window: timedelta | None = None):
         check.invariant(
             fail_window.total_seconds() >= 60,
             "Due to Dagster system constraints, fail_window cannot be less than 1 minute",
@@ -244,7 +244,7 @@ class FreshnessStateRecordBody:
     - Snapshot of the freshness policy at the time of record creation
     """
 
-    metadata: Optional[dict[str, Any]]
+    metadata: dict[str, Any] | None
 
 
 @record

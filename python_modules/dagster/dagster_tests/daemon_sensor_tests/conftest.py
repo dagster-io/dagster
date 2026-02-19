@@ -1,7 +1,6 @@
 import os
 import sys
 from collections.abc import Iterator
-from typing import Optional
 from unittest import mock
 
 import dagster as dg
@@ -58,7 +57,7 @@ def instance_fixture(instance_module_scoped: DagsterInstance) -> Iterator[dg.Dag
     yield instance_module_scoped
 
 
-def create_workspace_load_target(attribute: Optional[str] = "the_repo") -> ModuleTarget:
+def create_workspace_load_target(attribute: str | None = "the_repo") -> ModuleTarget:
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_sensor_run",
         attribute=attribute,

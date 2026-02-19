@@ -2,7 +2,7 @@ import dataclasses
 import datetime
 from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager, nullcontext
-from typing import Any, Optional, cast
+from typing import Any, cast
 from unittest import mock
 
 import dagster as dg
@@ -78,7 +78,7 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
 @contextmanager
 def get_daemon_instance(
     paused: bool = False,
-    extra_overrides: Optional[Mapping[str, Any]] = None,
+    extra_overrides: Mapping[str, Any] | None = None,
 ) -> Generator[dg.DagsterInstance, None, None]:
     with mock.patch(
         "dagster._core.instance.DagsterInstance.get_tick_termination_check_interval",

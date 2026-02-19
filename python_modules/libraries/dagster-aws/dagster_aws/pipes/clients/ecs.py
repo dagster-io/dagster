@@ -45,8 +45,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         client: Optional["ECSClient"] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
     ):
         self._client: ECSClient = client or boto3.client("ecs")
@@ -64,9 +64,9 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         *,
         context: OpExecutionContext | AssetExecutionContext,
         run_task_params: "RunTaskRequestTypeDef",
-        extras: Optional[dict[str, Any]] = None,
-        pipes_container_name: Optional[str] = None,
-        waiter_config: Optional[WaiterConfig] = None,
+        extras: dict[str, Any] | None = None,
+        pipes_container_name: str | None = None,
+        waiter_config: WaiterConfig | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run ECS tasks, enriched with the pipes protocol.
 
@@ -177,7 +177,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             task_id = task_arn.split("/")[-1]
             containers = task["containers"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
-            def get_cloudwatch_params(container_name: str) -> Optional[dict[str, str]]:
+            def get_cloudwatch_params(container_name: str) -> dict[str, str] | None:
                 """This will either return the log group and stream for the container, or None in case of a bad log configuration."""
                 if log_config := log_configurations.get(container_name):
                     if log_config["logDriver"] == "awslogs":
@@ -277,8 +277,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     def _wait_for_completion(
         self,
         start_response: "RunTaskResponseTypeDef",
-        cluster: Optional[str] = None,
-        waiter_config: Optional[WaiterConfig] = None,
+        cluster: str | None = None,
+        waiter_config: WaiterConfig | None = None,
     ) -> "DescribeTasksResponseTypeDef":
         waiter = self._client.get_waiter("tasks_stopped")
 
@@ -315,7 +315,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         self,
         context: OpExecutionContext | AssetExecutionContext,
         wait_response: "DescribeTasksResponseTypeDef",
-        cluster: Optional[str] = None,
+        cluster: str | None = None,
     ):
         task = wait_response["tasks"][0]
 

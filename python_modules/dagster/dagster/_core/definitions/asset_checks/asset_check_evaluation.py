@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Optional
 
 import dagster_shared.check as check
 from dagster_shared.record import IHaveNew, record, record_custom, replace
@@ -21,7 +20,7 @@ class AssetCheckEvaluationPlanned:
 
     asset_key: AssetKey
     check_name: str
-    partitions_subset: Optional[PartitionsSubset] = None
+    partitions_subset: PartitionsSubset | None = None
 
     @property
     def asset_check_key(self) -> AssetCheckKey:
@@ -70,23 +69,23 @@ class AssetCheckEvaluation(IHaveNew):
     check_name: str
     passed: bool
     metadata: Mapping[str, MetadataValue]
-    target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData]
+    target_materialization_data: AssetCheckEvaluationTargetMaterializationData | None
     severity: AssetCheckSeverity
-    description: Optional[str]
-    blocking: Optional[bool]
-    partition: Optional[str]
+    description: str | None
+    blocking: bool | None
+    partition: str | None
 
     def __new__(
         cls,
         asset_key: AssetKey,
         check_name: str,
         passed: bool,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
+        target_materialization_data: AssetCheckEvaluationTargetMaterializationData | None = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
-        description: Optional[str] = None,
-        blocking: Optional[bool] = None,
-        partition: Optional[str] = None,
+        description: str | None = None,
+        blocking: bool | None = None,
+        partition: str | None = None,
     ):
         return super().__new__(
             cls,

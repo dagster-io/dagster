@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -27,9 +27,9 @@ class RuleCondition(BuiltinAutomationCondition[AssetKey]):
     def get_node_unique_id(
         self,
         *,
-        parent_unique_id: Optional[str],
-        index: Optional[int],
-        target_key: Optional[EntityKey],
+        parent_unique_id: str | None,
+        index: int | None,
+        target_key: EntityKey | None,
     ) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid invalidating
         # old serialized information

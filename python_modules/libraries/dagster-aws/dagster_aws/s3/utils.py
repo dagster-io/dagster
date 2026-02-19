@@ -1,5 +1,3 @@
-from typing import Optional
-
 import boto3
 import dagster._check as check
 from botocore.handlers import disable_signing
@@ -26,15 +24,15 @@ class S3Callback:
 
 def construct_s3_client(
     max_attempts: int,
-    region_name: Optional[str] = None,
-    endpoint_url: Optional[str] = None,
+    region_name: str | None = None,
+    endpoint_url: str | None = None,
     use_unsigned_session: bool = False,
-    profile_name: Optional[str] = None,
+    profile_name: str | None = None,
     use_ssl: bool = True,
-    verify: Optional[str | bool] = None,
-    aws_access_key_id: Optional[str] = None,
-    aws_secret_access_key: Optional[str] = None,
-    aws_session_token: Optional[str] = None,
+    verify: str | bool | None = None,
+    aws_access_key_id: str | None = None,
+    aws_secret_access_key: str | None = None,
+    aws_session_token: str | None = None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")

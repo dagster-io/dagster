@@ -2,7 +2,6 @@ import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from dagster._annotations import public
@@ -50,7 +49,7 @@ class DbtProjectPreparer:
 class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
-        generate_cli_args: Optional[Sequence[str]] = None,
+        generate_cli_args: Sequence[str] | None = None,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
@@ -246,11 +245,11 @@ class DbtProject(IHaveNew):
     project_dir: Path
     target_path: Path
     profiles_dir: Path
-    profile: Optional[str]
-    target: Optional[str]
+    profile: str | None
+    target: str | None
     manifest_path: Path
-    packaged_project_dir: Optional[Path]
-    state_path: Optional[Path]
+    packaged_project_dir: Path | None
+    state_path: Path | None
     has_uninstalled_deps: bool
     preparer: DbtProjectPreparer
 
@@ -259,11 +258,11 @@ class DbtProject(IHaveNew):
         project_dir: Path | str,
         *,
         target_path: Path | str = Path("target"),
-        profiles_dir: Optional[Path | str] = None,
-        profile: Optional[str] = None,
-        target: Optional[str] = None,
-        packaged_project_dir: Optional[Path | str] = None,
-        state_path: Optional[Path | str] = None,
+        profiles_dir: Path | str | None = None,
+        profile: str | None = None,
+        target: str | None = None,
+        packaged_project_dir: Path | str | None = None,
+        state_path: Path | str | None = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():

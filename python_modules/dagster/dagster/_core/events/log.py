@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
@@ -32,14 +32,14 @@ class EventLogEntry(
     NamedTuple(
         "_EventLogEntry",
         [
-            ("error_info", PublicAttr[Optional[SerializableErrorInfo]]),
+            ("error_info", PublicAttr[SerializableErrorInfo | None]),
             ("level", PublicAttr[str | int]),
             ("user_message", PublicAttr[str]),
             ("run_id", PublicAttr[str]),
             ("timestamp", PublicAttr[float]),
-            ("step_key", PublicAttr[Optional[str]]),
-            ("job_name", PublicAttr[Optional[str]]),
-            ("dagster_event", PublicAttr[Optional[DagsterEvent]]),
+            ("step_key", PublicAttr[str | None]),
+            ("job_name", PublicAttr[str | None]),
+            ("dagster_event", PublicAttr[DagsterEvent | None]),
         ],
     )
 ):
@@ -116,7 +116,7 @@ class EventLogEntry(
 
     @public
     @property
-    def dagster_event_type(self) -> Optional[DagsterEventType]:
+    def dagster_event_type(self) -> DagsterEventType | None:
         """Optional[DagsterEventType]: The type of the DagsterEvent contained by this entry, if any."""
         return self.dagster_event.event_type if self.dagster_event else None
 
@@ -132,7 +132,7 @@ class EventLogEntry(
         return self.user_message
 
     @property
-    def asset_materialization(self) -> Optional[AssetMaterialization]:
+    def asset_materialization(self) -> AssetMaterialization | None:
         if (
             self.dagster_event
             and self.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
@@ -144,7 +144,7 @@ class EventLogEntry(
         return None
 
     @property
-    def asset_observation(self) -> Optional[AssetObservation]:
+    def asset_observation(self) -> AssetObservation | None:
         if (
             self.dagster_event
             and self.dagster_event.event_type_value == DagsterEventType.ASSET_OBSERVATION
@@ -156,7 +156,7 @@ class EventLogEntry(
         return None
 
     @property
-    def asset_check_evaluation(self) -> Optional[AssetCheckEvaluation]:
+    def asset_check_evaluation(self) -> AssetCheckEvaluation | None:
         if (
             self.dagster_event
             and self.dagster_event.event_type_value == DagsterEventType.ASSET_CHECK_EVALUATION
@@ -168,7 +168,7 @@ class EventLogEntry(
         return None
 
     @property
-    def tags(self) -> Optional[Mapping[str, str]]:
+    def tags(self) -> Mapping[str, str] | None:
         materialization = self.asset_materialization
         if materialization:
             return materialization.tags

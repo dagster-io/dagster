@@ -27,12 +27,11 @@ def permissive_schema_config() -> None:
     # start_permissive_schema_config
 
     import dagster as dg
-    from typing import Optional
     import requests
 
     class FilterConfig(dg.PermissiveConfig):
-        title: Optional[str] = None
-        description: Optional[str] = None
+        title: str | None = None
+        description: str | None = None
 
     @dg.asset
     def filtered_listings(config: FilterConfig):
@@ -231,12 +230,11 @@ def metadata_config() -> None:
 def optional_config() -> None:
     # start_optional_config
 
-    from typing import Optional
     import dagster as dg
     from pydantic import Field
 
     class MyAssetConfig(dg.Config):
-        person_name: Optional[str] = None
+        person_name: str | None = None
 
         # can pass default to pydantic.Field to attach metadata to the field
         greeting_phrase: str = Field(
@@ -387,7 +385,6 @@ def validated_schema_config() -> None:
 
 def required_config() -> None:
     # start_required_config
-    from typing import Optional
     from collections.abc import Callable
     import dagster as dg
     from pydantic import Field
@@ -395,10 +392,10 @@ def required_config() -> None:
     class MyAssetConfig(dg.Config):
         # ellipsis indicates that even though the type is Optional,
         # an input is required
-        person_first_name: Optional[str] = ...
+        person_first_name: str | None = ...
 
         # ellipsis can also be used with pydantic.Field to attach metadata
-        person_last_name: Optional[Callable] = Field(
+        person_last_name: Callable | None = Field(
             default=..., description="The last name of the person to greet"
         )
 

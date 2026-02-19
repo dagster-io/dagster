@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import Any, ContextManager, Iterator, NoReturn, Optional, TypeAlias  # noqa: UP035
+from typing import Any, ContextManager, Iterator, NoReturn, TypeAlias  # noqa: UP035
 from unittest import mock
 
 import dagster as dg
@@ -280,7 +280,7 @@ def args_with_default_cli_test_instance(*args):
 
 @contextmanager
 def grpc_server_bar_parsed_cli_args(
-    instance: DagsterInstance, job_name: Optional[str] = None
+    instance: DagsterInstance, job_name: str | None = None
 ) -> Iterator[ParsedCliArgs]:
     with GrpcServerProcess(
         instance_ref=instance.get_ref(),

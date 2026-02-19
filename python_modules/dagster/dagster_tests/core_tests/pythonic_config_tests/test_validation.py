@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 import pytest
 from pydantic import ValidationError, validator
@@ -71,7 +69,7 @@ def test_validator_default_contract() -> None:
     # in particular that it does not validate default values
     # but does validate any explicit inputs matching the default
     class UserConfig(dg.Config):
-        name: Optional[str] = None
+        name: str | None = None
 
         @validator("name")
         def name_must_not_be_provided(cls, name):
@@ -87,7 +85,7 @@ def test_validator_default_contract() -> None:
 def test_validator_default_contract_nested() -> None:
     # as above, more complex case
     class InnerConfig(dg.Config):
-        name: Optional[str] = None
+        name: str | None = None
 
         @validator("name")
         def name_must_not_be_provided(cls, name):
@@ -95,7 +93,7 @@ def test_validator_default_contract_nested() -> None:
 
     class OuterConfig(dg.Config):
         inner: InnerConfig
-        name: Optional[str] = None
+        name: str | None = None
 
         @validator("name")
         def name_must_not_be_provided(cls, name):

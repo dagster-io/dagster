@@ -158,7 +158,7 @@ export const AssetNodeOverview = ({
         </Box>
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Check results</Subtitle2>
+            <Subtitle2>Latest check results</Subtitle2>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"

@@ -137,7 +137,7 @@ class DagsterDltResource(ConfigurableResource):
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
-        schema: Optional[str] = None
+        schema: str | None = None
         for load_package in load_info_dict.get("load_packages", []):
             for table in load_package.get("tables", []):
                 if table.get("name") == normalized_table_name:
@@ -146,7 +146,7 @@ class DagsterDltResource(ConfigurableResource):
             if schema:
                 break
 
-        destination_name: Optional[str] = base_metadata.get("destination_name")
+        destination_name: str | None = base_metadata.get("destination_name")
         table_name = None
         if destination_name and schema:
             table_name = ".".join([destination_name, schema, normalized_table_name])
@@ -177,9 +177,10 @@ class DagsterDltResource(ConfigurableResource):
     def run(
         self,
         context: OpExecutionContext | AssetExecutionContext,
-        dlt_source: Optional[DltSource] = None,
-        dlt_pipeline: Optional[Pipeline] = None,
-        dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
+        # Use Optional because the Dlt metaclass doesn't support __or__ (|operator)
+        dlt_source: Optional[DltSource] = None,  # noqa: UP045
+        dlt_pipeline: Optional[Pipeline] = None,  # noqa: UP045
+        dagster_dlt_translator: DagsterDltTranslator | None = None,
         **kwargs,
     ) -> DltEventIterator[DltEventType]:
         """Runs the dlt pipeline with subset support.

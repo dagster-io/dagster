@@ -2,7 +2,7 @@ import tempfile
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import PropertyMock, patch
 
 import dagster as dg
@@ -95,7 +95,7 @@ class TestPolytomicTranslation(TestTranslation):
         self,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[dg.AssetKey], dg.AssetKey]],
+        key_modifier: Callable[[dg.AssetKey], dg.AssetKey] | None,
     ) -> None:
         body = {
             "type": "dagster_polytomic.PolytomicComponent",

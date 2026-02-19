@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from dagster._record import record
 
@@ -27,4 +26,4 @@ class TemporalContext:
     """
 
     effective_dt: datetime
-    last_event_id: Optional[int]
+    last_event_id: int | None

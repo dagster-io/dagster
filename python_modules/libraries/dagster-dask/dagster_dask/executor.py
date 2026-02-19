@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import dask
 import dask.distributed
@@ -123,10 +123,10 @@ def query_on_dask_worker(
     dependencies: Any,
     recon_job: ReconstructableJob,
     dagster_run: DagsterRun,
-    run_config: Optional[Mapping[str, object]],
-    step_keys: Optional[Sequence[str]],
+    run_config: Mapping[str, object] | None,
+    step_keys: Sequence[str] | None,
     instance_ref: InstanceRef,
-    known_state: Optional[KnownExecutionState],
+    known_state: KnownExecutionState | None,
 ) -> Sequence[DagsterEvent]:
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.

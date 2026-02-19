@@ -1,6 +1,5 @@
 import sys
 from collections.abc import Mapping
-from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -146,9 +145,9 @@ class GrapheneRunIds(graphene.ObjectType):
 
     def __init__(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         super().__init__()
 

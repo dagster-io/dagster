@@ -7,7 +7,6 @@ from typing import (  # noqa: UP035
     Any,
     Callable,
     NamedTuple,
-    Optional,
     Union,
     cast,
     overload,
@@ -40,17 +39,17 @@ if TYPE_CHECKING:
 class _Op:
     def __init__(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        config_schema: Optional[Any | Mapping[str, Any]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        code_version: Optional[str] = None,
-        decorator_takes_context: Optional[bool] = True,
-        retry_policy: Optional[RetryPolicy] = None,
-        ins: Optional[Mapping[str, In]] = None,
-        out: Optional[Out | Mapping[str, Out]] = None,
-        pool: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        required_resource_keys: AbstractSet[str] | None = None,
+        config_schema: Any | Mapping[str, Any] | None = None,
+        tags: Mapping[str, Any] | None = None,
+        code_version: str | None = None,
+        decorator_takes_context: bool | None = True,
+        retry_policy: RetryPolicy | None = None,
+        ins: Mapping[str, In] | None = None,
+        out: Out | Mapping[str, Out] | None = None,
+        pool: str | None = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.decorator_takes_context = check.bool_param(
@@ -105,7 +104,7 @@ class _Op:
                 config_arg_type, config_arg_default
             )
 
-        outs: Optional[Mapping[str, Out]] = None
+        outs: Mapping[str, Out] | None = None
         if self.out is not None and isinstance(self.out, Out):
             outs = {DEFAULT_OUTPUT: self.out}
         elif self.out is not None:
@@ -145,17 +144,17 @@ def op(compute_fn: Callable[..., Any]) -> "OpDefinition": ...
 @overload
 def op(
     *,
-    name: Optional[str] = ...,
-    description: Optional[str] = ...,
-    ins: Optional[Mapping[str, In]] = ...,
-    out: Optional[Out | Mapping[str, Out]] = ...,
-    config_schema: Optional[UserConfigSchema] = ...,
-    required_resource_keys: Optional[AbstractSet[str]] = ...,
-    tags: Optional[Mapping[str, Any]] = ...,
-    version: Optional[str] = ...,
-    retry_policy: Optional[RetryPolicy] = ...,
-    code_version: Optional[str] = ...,
-    pool: Optional[str] = None,
+    name: str | None = ...,
+    description: str | None = ...,
+    ins: Mapping[str, In] | None = ...,
+    out: Out | Mapping[str, Out] | None = ...,
+    config_schema: UserConfigSchema | None = ...,
+    required_resource_keys: AbstractSet[str] | None = ...,
+    tags: Mapping[str, Any] | None = ...,
+    version: str | None = ...,
+    retry_policy: RetryPolicy | None = ...,
+    code_version: str | None = ...,
+    pool: str | None = None,
 ) -> _Op: ...
 
 
@@ -164,19 +163,19 @@ def op(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
 )
 def op(
-    compute_fn: Optional[Callable] = None,
+    compute_fn: Callable | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    ins: Optional[Mapping[str, In]] = None,
-    out: Optional[Out | Mapping[str, Out]] = None,
-    config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    tags: Optional[Mapping[str, Any]] = None,
-    version: Optional[str] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    code_version: Optional[str] = None,
-    pool: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    ins: Mapping[str, In] | None = None,
+    out: Out | Mapping[str, Out] | None = None,
+    config_schema: UserConfigSchema | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    tags: Mapping[str, Any] | None = None,
+    version: str | None = None,
+    retry_policy: RetryPolicy | None = None,
+    code_version: str | None = None,
+    pool: str | None = None,
 ) -> Union["OpDefinition", _Op]:
     """Create an op with the specified parameters from the decorated function.
 

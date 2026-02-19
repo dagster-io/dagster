@@ -3,7 +3,7 @@ import warnings
 from abc import ABC
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional, cast
+from typing import cast
 from unittest import mock
 
 from dagster import AssetCheckKey, AssetKey, BetaWarning, materialize
@@ -156,7 +156,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         return typename, backfill_id
 
     def graphql_get_job_permissions(
-        self, context, job_name: str, asset_selection: Optional[Sequence[AssetKey]] = None
+        self, context, job_name: str, asset_selection: Sequence[AssetKey] | None = None
     ):
         gql_asset_selection = (
             cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
@@ -305,8 +305,8 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         context,
         job_name: str,
         run_id: str,
-        asset_selection: Optional[list[AssetKey]] = None,
-        asset_check_selection: Optional[list[AssetCheckKey]] = None,
+        asset_selection: list[AssetKey] | None = None,
+        asset_check_selection: list[AssetCheckKey] | None = None,
     ):
         selector = infer_job_selector(
             context,

@@ -1,4 +1,4 @@
-from typing import AbstractSet, Optional  # noqa: UP035
+from typing import AbstractSet  # noqa: UP035
 
 from dagster._utils.cached_method import cached_method
 
@@ -76,7 +76,7 @@ class FakeGCSClient:
         self,
         bucket_or_name: FakeGCSBucket | str,
         *args,
-        prefix: Optional[str] = None,
+        prefix: str | None = None,
         **kwargs,
     ):
         self.mock_extras.list_blobs(*args, **kwargs)

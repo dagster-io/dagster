@@ -3,7 +3,6 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -41,7 +40,7 @@ def _inject_into_mcp_config_json(path: Path) -> None:
     path.write_text(json.dumps(contents, indent=2))
 
 
-def _find_claude() -> Optional[str]:
+def _find_claude() -> str | None:
     try:
         subprocess.run(["claude", "--version"], check=False)
         return "claude"

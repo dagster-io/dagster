@@ -3,7 +3,7 @@ import datetime
 import logging
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -35,8 +35,8 @@ class AutomationConditionEvaluator:
         cursor: AssetDaemonCursor,
         emit_backfills: bool,
         evaluation_id: int,
-        default_condition: Optional[AutomationCondition] = None,
-        evaluation_time: Optional[datetime.datetime] = None,
+        default_condition: AutomationCondition | None = None,
+        evaluation_time: datetime.datetime | None = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
         self.entity_keys = entity_keys
@@ -65,7 +65,7 @@ class AutomationConditionEvaluator:
         )
         self.emit_backfills = emit_backfills or _instance.da_request_backfills()
 
-        self.legacy_expected_data_time_by_key: dict[AssetKey, Optional[datetime.datetime]] = {}
+        self.legacy_expected_data_time_by_key: dict[AssetKey, datetime.datetime | None] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
         self.request_subsets_by_key: dict[EntityKey, EntitySubset] = {}

@@ -11,7 +11,6 @@ from typing import (  # noqa: UP035
     Callable,
     Generic,
     NamedTuple,
-    Optional,
     TypeVar,
     cast,
 )
@@ -62,7 +61,7 @@ if TYPE_CHECKING:
 
 
 def initialize_console_manager(
-    dagster_run: Optional[DagsterRun], instance: Optional[DagsterInstance] = None
+    dagster_run: DagsterRun | None, instance: DagsterInstance | None = None
 ) -> "DagsterLogManager":
     from dagster._core.log_manager import DagsterLogManager
 
@@ -99,7 +98,7 @@ class ContextCreationData(NamedTuple):
         return self.job.get_definition()
 
     @property
-    def repository_def(self) -> Optional[RepositoryDefinition]:
+    def repository_def(self) -> RepositoryDefinition | None:
         return self.job.get_repository_definition()
 
 
@@ -162,7 +161,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
     def __init__(
         self,
         event_generator: Iterator[DagsterEvent | TContextType],
-        raise_on_error: Optional[bool] = False,
+        raise_on_error: bool | None = False,
     ):
         self._manager = EventGenerationManager[TContextType](
             generator=event_generator, object_cls=self.context_type, require_object=raise_on_error
@@ -193,11 +192,10 @@ def execution_context_event_generator(
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: RetryMode,
-    scoped_resources_builder_cm: Optional[
-        Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
-    ] = None,
-    raise_on_error: Optional[bool] = False,
-    output_capture: Optional[dict["StepOutputHandle", Any]] = None,
+    scoped_resources_builder_cm: Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
+    | None = None,
+    raise_on_error: bool | None = False,
+    output_capture: dict["StepOutputHandle", Any] | None = None,
     step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
 ) -> Generator[DagsterEvent | PlanExecutionContext, None, None]:
     scoped_resources_builder_cm = cast(
@@ -289,9 +287,9 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
         instance: DagsterInstance,
-        raise_on_error: Optional[bool] = False,
-        output_capture: Optional[dict["StepOutputHandle", Any]] = None,
-        executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
+        raise_on_error: bool | None = False,
+        output_capture: dict["StepOutputHandle", Any] | None = None,
+        executor_defs: Sequence[ExecutorDefinition] | None = None,
         resume_from_failure=False,
     ):
         event_generator = context_event_generator(
@@ -319,8 +317,8 @@ def orchestration_context_event_generator(
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool,
-    executor_defs: Optional[Sequence[ExecutorDefinition]],
-    output_capture: Optional[dict["StepOutputHandle", Any]],
+    executor_defs: Sequence[ExecutorDefinition] | None,
+    output_capture: dict["StepOutputHandle", Any] | None,
     resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent | PlanOrchestrationContext]:
     check.invariant(executor_defs is None)
@@ -389,11 +387,10 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         dagster_run: DagsterRun,
         instance: DagsterInstance,
         retry_mode: RetryMode,
-        scoped_resources_builder_cm: Optional[
-            Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
-        ] = None,
-        raise_on_error: Optional[bool] = False,
-        output_capture: Optional[dict["StepOutputHandle", Any]] = None,
+        scoped_resources_builder_cm: Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
+        | None = None,
+        raise_on_error: bool | None = False,
+        output_capture: dict["StepOutputHandle", Any] | None = None,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         super().__init__(
@@ -444,7 +441,7 @@ def scoped_job_context(
     scoped_resources_builder_cm: Callable[
         ..., EventGenerationManager[ScopedResourcesBuilder]
     ] = resource_initialization_manager,
-    raise_on_error: Optional[bool] = False,
+    raise_on_error: bool | None = False,
 ) -> Generator[PlanExecutionContext, None, None]:
     """Utility context manager which acts as a very thin wrapper around
     `pipeline_initialization_manager`, iterating through all the setup/teardown events and

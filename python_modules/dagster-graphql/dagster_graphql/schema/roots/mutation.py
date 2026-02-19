@@ -1,6 +1,5 @@
 import json
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -531,8 +530,8 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     async def mutate(
         self,
         graphene_info: ResolveInfo,
-        executionParams: Optional[GrapheneExecutionParams] = None,
-        reexecutionParams: Optional[GrapheneReexecutionParams] = None,
+        executionParams: GrapheneExecutionParams | None = None,
+        reexecutionParams: GrapheneReexecutionParams | None = None,
     ):
         if bool(executionParams) == bool(reexecutionParams):
             raise DagsterInvariantViolationError(
@@ -597,7 +596,7 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runId: str,
-        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+        terminatePolicy: GrapheneTerminateRunPolicy | None = None,
     ):
         return terminate_pipeline_execution(
             graphene_info,
@@ -624,7 +623,7 @@ class GrapheneTerminateRunsMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runIds: Sequence[str],
-        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+        terminatePolicy: GrapheneTerminateRunPolicy | None = None,
     ):
         return terminate_pipeline_execution_for_runs(
             graphene_info,
@@ -1135,7 +1134,7 @@ class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
 
     @capture_error
     @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
-    def mutate(self, graphene_info, runId: str, stepKey: Optional[str] = None):
+    def mutate(self, graphene_info, runId: str, stepKey: str | None = None):
         event_log_storage = graphene_info.context.instance.event_log_storage
         if stepKey:
             event_log_storage.free_concurrency_slot_for_step(runId, stepKey)

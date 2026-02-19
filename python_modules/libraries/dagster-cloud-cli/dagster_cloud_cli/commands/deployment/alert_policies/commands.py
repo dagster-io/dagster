@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from typer import Option, Typer
@@ -17,7 +16,7 @@ app = Typer(help="Interact with your alert policies.")
 def list_command(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
 ):
     """List your alert policies, output in YAML format."""
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
@@ -31,7 +30,7 @@ def list_command(
 def sync_command(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     alert_policies_file: Path = Option(
         DEFAULT_ALERT_POLICIES_YAML_FILENAME,
         "--alert-policies",

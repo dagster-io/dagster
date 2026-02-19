@@ -8,7 +8,6 @@ from typing import (  # noqa: UP035
     Callable,
     Generic,
     NamedTuple,
-    Optional,
     TypeAlias,
     TypeGuard,
     TypeVar,
@@ -120,7 +119,7 @@ class ConfigurableResourceFactoryResourceDefinition(NestedResourcesResourceDefin
         configurable_resource_cls: type,
         resource_fn: ResourceFunction,
         config_schema: Any,
-        description: Optional[str],
+        description: str | None,
         nested_resources: Mapping[str, Any],
         nested_partial_resources: Mapping[str, Any],
         dagster_maintained: bool = False,
@@ -161,7 +160,7 @@ class ConfigurableResourceFactoryState(NamedTuple):
     config_schema: DefinitionConfigSchema
     schema: DagsterField
     nested_resources: dict[str, Any]
-    resource_context: Optional[InitResourceContext]
+    resource_context: InitResourceContext | None
 
 
 class ConfigurableResourceFactory(
@@ -327,7 +326,7 @@ class ConfigurableResourceFactory(
         return PartialResource(cls, data=kwargs)
 
     def _with_updated_values(
-        self, values: Optional[Mapping[str, Any]]
+        self, values: Mapping[str, Any] | None
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
@@ -537,7 +536,7 @@ class ConfigurableResourceFactory(
 
     @classmethod
     def from_resource_context(
-        cls, context: InitResourceContext, nested_resources: Optional[Mapping[str, Any]] = None
+        cls, context: InitResourceContext, nested_resources: Mapping[str, Any] | None = None
     ) -> TResValue:
         """Creates a new instance of this resource from a populated InitResourceContext.
         Useful when creating a resource from a function-based resource, for backwards
@@ -569,7 +568,7 @@ class ConfigurableResourceFactory(
     @classmethod
     @contextlib.contextmanager
     def from_resource_context_cm(
-        cls, context: InitResourceContext, nested_resources: Optional[Mapping[str, Any]] = None
+        cls, context: InitResourceContext, nested_resources: Mapping[str, Any] | None = None
     ) -> Generator[TResValue, None, None]:
         """Context which generates a new instance of this resource from a populated InitResourceContext.
         Useful when creating a resource from a function-based resource, for backwards
@@ -687,7 +686,7 @@ class PartialResourceState(NamedTuple):
     nested_partial_resources: dict[str, Any]
     config_schema: DagsterField
     resource_fn: Callable[[InitResourceContext], Any]
-    description: Optional[str]
+    description: str | None
     nested_resources: dict[str, Any]
 
 
@@ -777,7 +776,7 @@ class ResourceDependency(Generic[V]):
     def __get__(self, obj: "ConfigurableResourceFactory", owner: Any) -> V:
         return getattr(obj, self._name)
 
-    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
+    def __set__(self, obj: object | None, value: ResourceOrPartialOrValue[V]) -> None:
         setattr(obj, self._name, value)
 
 

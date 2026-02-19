@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from time import sleep
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 from typing_extensions import TypedDict
 
@@ -47,7 +47,7 @@ class ExternalSystem:
         self._db = _Database(storage_path)
 
     def materialize(
-        self, asset_spec: AssetInfo, provenance_spec: Optional[ProvenanceSpec]
+        self, asset_spec: AssetInfo, provenance_spec: ProvenanceSpec | None
     ) -> MaterializeResult:
         """Recompute an asset if its provenance is missing or stale.
 

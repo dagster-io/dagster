@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._annotations import deprecated
@@ -32,12 +32,12 @@ def _inode_from_url(url: str) -> str:
 
 
 class SigmaWorkbookMetadataSet(NamespacedMetadataSet):
-    web_url: Optional[UrlMetadataValue]
-    version: Optional[int]
-    created_at: Optional[TimestampMetadataValue]
-    properties: Optional[JsonMetadataValue]
-    lineage: Optional[JsonMetadataValue]
-    materialization_schedules: Optional[JsonMetadataValue] = None
+    web_url: UrlMetadataValue | None
+    version: int | None
+    created_at: TimestampMetadataValue | None
+    properties: JsonMetadataValue | None
+    lineage: JsonMetadataValue | None
+    materialization_schedules: JsonMetadataValue | None = None
     workbook_id: str
 
     @classmethod
@@ -58,8 +58,8 @@ class SigmaWorkbook:
     lineage: list[dict[str, Any]]
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
-    owner_email: Optional[str]
-    materialization_schedules: Optional[list[dict[str, Any]]]
+    owner_email: str | None
+    materialization_schedules: list[dict[str, Any]] | None
 
 
 @whitelist_for_serdes
@@ -114,11 +114,11 @@ class SigmaWorkbookTranslatorData:
         return self.workbook.direct_table_deps
 
     @property
-    def owner_email(self) -> Optional[str]:
+    def owner_email(self) -> str | None:
         return self.workbook.owner_email
 
     @property
-    def materialization_schedules(self) -> Optional[list[dict[str, Any]]]:
+    def materialization_schedules(self) -> list[dict[str, Any]] | None:
         return self.workbook.materialization_schedules
 
 

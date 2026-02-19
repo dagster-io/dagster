@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -17,7 +16,7 @@ class SSMResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     credentials: Boto3CredentialsComponent = Field(
         description="AWS credentials - inline configuration."
     )
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None, description="The key under which the resource will be bound in definitions."
     )
 
@@ -58,7 +57,7 @@ class ParameterStoreResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         default=False, description="Whether to decrypt secure string parameters."
     )
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the ParameterStore resource will be bound to the definitions.",
     )

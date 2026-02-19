@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from dagster import (
     AssetSpec,
@@ -50,7 +50,7 @@ class LookerFilter:
             will be fetched. If False, all explores will be fetched. Defaults to False.
     """
 
-    dashboard_folders: Optional[list[list[str]]] = None
+    dashboard_folders: list[list[str]] | None = None
     only_fetch_explores_used_in_dashboards: bool = False
 
 
@@ -88,9 +88,9 @@ class LookerResource(ConfigurableResource):
     def build_defs(
         self,
         *,
-        request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]] = None,
-        dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
-        looker_filter: Optional[LookerFilter] = None,
+        request_start_pdt_builds: Sequence[RequestStartPdtBuild] | None = None,
+        dagster_looker_translator: DagsterLookerApiTranslator | None = None,
+        looker_filter: LookerFilter | None = None,
     ) -> Definitions:
         """Returns a Definitions object which will load structures from the Looker instance
         and translate it into assets, using the provided translator.
@@ -125,10 +125,10 @@ class LookerResource(ConfigurableResource):
 @beta
 def load_looker_asset_specs(
     looker_resource: LookerResource,
-    dagster_looker_translator: Optional[
-        DagsterLookerApiTranslator | type[DagsterLookerApiTranslator]
-    ] = None,
-    looker_filter: Optional[LookerFilter] = None,
+    dagster_looker_translator: DagsterLookerApiTranslator
+    | type[DagsterLookerApiTranslator]
+    | None = None,
+    looker_filter: LookerFilter | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Looker structures.
 
@@ -318,7 +318,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 for model_name, explore_names in explores_for_model.items()
             }
 
-        def fetch_explore(model_name, explore_name) -> Optional[tuple[str, "LookmlModelExplore"]]:
+        def fetch_explore(model_name, explore_name) -> tuple[str, "LookmlModelExplore"] | None:
             try:
                 lookml_explore = sdk.lookml_model_explore(
                     lookml_model_name=model_name,

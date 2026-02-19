@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Annotated, Optional
+from typing import Annotated
 
 import dagster as dg
 from dagster import ResolutionContext
@@ -20,13 +20,13 @@ class InnerObject(BaseModel, dg.Resolvable):
             inject_before_resolve=False,
         ),
     ]
-    val2: Optional[str]
+    val2: str | None
 
 
 class TargetObject(BaseModel, dg.Resolvable):
     int_val: int
     str_val: str
-    inners: Optional[Sequence[InnerObject]]
+    inners: Sequence[InnerObject] | None
 
 
 def test_valid_resolution_simple() -> None:

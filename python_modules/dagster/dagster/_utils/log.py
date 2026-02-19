@@ -5,7 +5,7 @@ import sys
 import traceback
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
 
 import coloredlogs
 import dagster_shared.seven as seven
@@ -135,7 +135,7 @@ BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
 
 
 @public
-def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
+def get_dagster_logger(name: str | None = None) -> logging.Logger:
     """Creates a python logger whose output messages will be captured and converted into Dagster log
     messages. This means they will have structured information such as the step_key, run_id, etc.
     embedded into them, and will show up in the Dagster event log.

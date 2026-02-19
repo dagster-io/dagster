@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Optional
+from typing import Any
 
 from pydantic.fields import FieldInfo
 
@@ -23,7 +23,7 @@ class ResolvableFieldInfo(FieldInfo):  # pyright: ignore[reportGeneralTypeIssues
     def __init__(
         self,
         *,
-        required_scope: Optional[Set[str]] = None,
+        required_scope: Set[str] | None = None,
     ):
         super().__init__(
             json_schema_extra={JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY: list(required_scope or [])},

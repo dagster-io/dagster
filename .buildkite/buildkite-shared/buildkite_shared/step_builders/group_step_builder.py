@@ -1,4 +1,4 @@
-from typing import Optional, TypeAlias
+from typing import TypeAlias
 
 from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
@@ -17,8 +17,8 @@ class GroupStepConfiguration(TypedDict, total=False):
     group: str
     label: str
     steps: list[GroupLeafStepConfiguration]
-    key: Optional[str]
-    skip: Optional[str]
+    key: str | None
+    skip: str | None
 
 
 class GroupStepBuilder:

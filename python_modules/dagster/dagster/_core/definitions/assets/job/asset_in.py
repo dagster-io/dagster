@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import NamedTuple, Optional, TypeAlias
+from typing import NamedTuple, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -19,11 +19,11 @@ class AssetIn(
     NamedTuple(
         "_AssetIn",
         [
-            ("key", PublicAttr[Optional[AssetKey]]),
-            ("metadata", PublicAttr[Optional[ArbitraryMetadataMapping]]),
-            ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
-            ("input_manager_key", PublicAttr[Optional[str]]),
-            ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
+            ("key", PublicAttr[AssetKey | None]),
+            ("metadata", PublicAttr[ArbitraryMetadataMapping | None]),
+            ("key_prefix", PublicAttr[Sequence[str] | None]),
+            ("input_manager_key", PublicAttr[str | None]),
+            ("partition_mapping", PublicAttr[PartitionMapping | None]),
             ("dagster_type", PublicAttr[DagsterType | type[NoValueSentinel]]),
         ],
     )
@@ -50,11 +50,11 @@ class AssetIn(
 
     def __new__(
         cls,
-        key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        input_manager_key: Optional[str] = None,
-        partition_mapping: Optional[PartitionMapping] = None,
+        key: CoercibleToAssetKey | None = None,
+        metadata: ArbitraryMetadataMapping | None = None,
+        key_prefix: CoercibleToAssetKeyPrefix | None = None,
+        input_manager_key: str | None = None,
+        partition_mapping: PartitionMapping | None = None,
         dagster_type: DagsterType | type = NoValueSentinel,
     ):
         if isinstance(key_prefix, str):

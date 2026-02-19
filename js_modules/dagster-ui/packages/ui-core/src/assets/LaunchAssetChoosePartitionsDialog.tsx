@@ -295,7 +295,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return;
     }
 
-    const runConfigData = config.yaml || '';
+    const runConfigData = savedConfig?.runConfigYaml || config.yaml || '';
     let allTags = [...config.tags, ...tags];
 
     if (launchWithRangesAsTags) {

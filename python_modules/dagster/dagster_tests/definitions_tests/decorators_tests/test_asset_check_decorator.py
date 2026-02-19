@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import dagster as dg
 import pytest
@@ -27,7 +27,7 @@ def execute_assets_and_checks(
     raise_on_error: bool = True,
     resources=None,
     instance=None,
-    selection: Optional[dg.AssetSelection] = None,
+    selection: dg.AssetSelection | None = None,
 ) -> dg.ExecuteInProcessResult:
     defs = dg.Definitions(
         assets=assets,

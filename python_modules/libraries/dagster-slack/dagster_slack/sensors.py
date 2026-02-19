@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from dagster import DefaultSensorStatus
 from dagster._annotations import deprecated_param
@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 def _build_slack_blocks_and_text(
     context: RunFailureSensorContext,
     text_fn: Callable[[RunFailureSensorContext], str],
-    blocks_fn: Optional[Callable[[RunFailureSensorContext], list[dict[Any, Any]]]],
-    webserver_base_url: Optional[str],
+    blocks_fn: Callable[[RunFailureSensorContext], list[dict[Any, Any]]] | None,
+    webserver_base_url: str | None,
 ) -> tuple[list[dict[str, Any]], str]:
     main_body_text = text_fn(context)
     blocks: list[dict[Any, Any]] = []
@@ -92,37 +92,35 @@ def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
     text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message_text_fn,
-    blocks_fn: Optional[Callable[[RunFailureSensorContext], list[dict[Any, Any]]]] = None,
-    name: Optional[str] = None,
-    dagit_base_url: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    monitored_jobs: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    blocks_fn: Callable[[RunFailureSensorContext], list[dict[Any, Any]]] | None = None,
+    name: str | None = None,
+    dagit_base_url: str | None = None,
+    minimum_interval_seconds: int | None = None,
+    monitored_jobs: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
-    job_selection: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    ]
+    | None = None,
+    job_selection: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
+    ]
+    | None = None,
     monitor_all_code_locations: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    webserver_base_url: Optional[str] = None,
+    webserver_base_url: str | None = None,
     monitor_all_repositories: bool = False,
 ):
     """Create a sensor on job failures that will message the given Slack channel.

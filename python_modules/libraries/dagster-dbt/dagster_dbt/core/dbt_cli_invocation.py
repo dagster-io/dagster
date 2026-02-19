@@ -8,7 +8,7 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Final, Literal, NamedTuple, Optional, cast
+from typing import Any, Final, Literal, NamedTuple, cast
 
 import orjson
 from dagster import (
@@ -93,12 +93,12 @@ class DbtCliInvocation:
     target_path: Path
     raise_on_error: bool
     cli_version: version.Version
-    project: Optional[DbtProject] = field(default=None)
-    context: Optional[OpExecutionContext | AssetExecutionContext] = field(default=None, repr=False)
+    project: DbtProject | None = field(default=None)
+    context: OpExecutionContext | AssetExecutionContext | None = field(default=None, repr=False)
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
-    adapter: Optional[BaseAdapter] = field(default=None)
+    adapter: BaseAdapter | None = field(default=None)
     postprocessing_threadpool_num_threads: int = field(
         init=False, default=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
     )
@@ -144,10 +144,10 @@ class DbtCliInvocation:
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
-        context: Optional[OpExecutionContext | AssetExecutionContext],
-        adapter: Optional[BaseAdapter],
+        context: OpExecutionContext | AssetExecutionContext | None,
+        adapter: BaseAdapter | None,
         cli_version: version.Version,
-        dbt_project: Optional[DbtProject] = None,
+        dbt_project: DbtProject | None = None,
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -241,7 +241,7 @@ class DbtCliInvocation:
         return self.process.wait() == 0 and not self._error_messages
 
     @public
-    def get_error(self) -> Optional[Exception]:
+    def get_error(self) -> Exception | None:
         """Return an exception if the dbt CLI process failed.
 
         Returns:
@@ -343,7 +343,7 @@ class DbtCliInvocation:
                 sys.stdout.flush()
                 continue
 
-            unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
+            unique_id: str | None = raw_event["data"].get("node_info", {}).get("unique_id")
 
             if self.cli_version.major < 2:
                 event = DbtCoreCliEventMessage(raw_event=raw_event, event_history_metadata={})

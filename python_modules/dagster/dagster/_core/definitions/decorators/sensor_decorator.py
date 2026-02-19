@@ -2,7 +2,7 @@ import collections.abc
 import inspect
 from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import dagster._check as check
 from dagster._annotations import beta_param, public
@@ -37,27 +37,26 @@ if TYPE_CHECKING:
 @beta_param(param="owners")
 @public
 def sensor(
-    job_name: Optional[str] = None,
+    job_name: str | None = None,
     *,
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    job: Optional[ExecutableDefinition] = None,
-    jobs: Optional[Sequence[ExecutableDefinition]] = None,
+    name: str | None = None,
+    minimum_interval_seconds: int | None = None,
+    description: str | None = None,
+    job: ExecutableDefinition | None = None,
+    jobs: Sequence[ExecutableDefinition] | None = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    asset_selection: Optional[CoercibleToAssetSelection] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
-    target: Optional[
-        Union[
-            "CoercibleToAssetSelection",
-            "AssetsDefinition",
-            "JobDefinition",
-            "UnresolvedAssetJobDefinition",
-        ]
-    ] = None,
-    owners: Optional[Sequence[str]] = None,
+    asset_selection: CoercibleToAssetSelection | None = None,
+    required_resource_keys: set[str] | None = None,
+    tags: Mapping[str, str] | None = None,
+    metadata: RawMetadataMapping | None = None,
+    target: Union[
+        "CoercibleToAssetSelection",
+        "AssetsDefinition",
+        "JobDefinition",
+        "UnresolvedAssetJobDefinition",
+    ]
+    | None = None,
+    owners: Sequence[str] | None = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """Creates a sensor where the decorated function is used as the sensor's evaluation function.
 
@@ -131,16 +130,16 @@ def sensor(
 def asset_sensor(
     asset_key: AssetKey,
     *,
-    job_name: Optional[str] = None,
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    job: Optional[ExecutableDefinition] = None,
-    jobs: Optional[Sequence[ExecutableDefinition]] = None,
+    job_name: str | None = None,
+    name: str | None = None,
+    minimum_interval_seconds: int | None = None,
+    description: str | None = None,
+    job: ExecutableDefinition | None = None,
+    jobs: Sequence[ExecutableDefinition] | None = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    required_resource_keys: Optional[set[str]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    required_resource_keys: set[str] | None = None,
+    tags: Mapping[str, str] | None = None,
+    metadata: RawMetadataMapping | None = None,
 ) -> Callable[
     [
         AssetMaterializationFunction,
@@ -260,17 +259,17 @@ def asset_sensor(
 def multi_asset_sensor(
     monitored_assets: Sequence[AssetKey] | AssetSelection,
     *,
-    job_name: Optional[str] = None,
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    job: Optional[ExecutableDefinition] = None,
-    jobs: Optional[Sequence[ExecutableDefinition]] = None,
+    job_name: str | None = None,
+    name: str | None = None,
+    minimum_interval_seconds: int | None = None,
+    description: str | None = None,
+    job: ExecutableDefinition | None = None,
+    jobs: Sequence[ExecutableDefinition] | None = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_assets: Optional[AssetSelection] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    request_assets: AssetSelection | None = None,
+    required_resource_keys: set[str] | None = None,
+    tags: Mapping[str, str] | None = None,
+    metadata: RawMetadataMapping | None = None,
 ) -> Callable[
     [
         MultiAssetMaterializationFunction,

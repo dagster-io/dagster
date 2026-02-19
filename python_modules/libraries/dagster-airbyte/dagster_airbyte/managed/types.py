@@ -66,7 +66,7 @@ class AirbyteSyncMode(ABC):
     @classmethod
     def incremental_append(
         cls,
-        cursor_field: Optional[str] = None,
+        cursor_field: str | None = None,
     ) -> "AirbyteSyncMode":
         """Syncs only new records from the source, appending rows to the destination.
         May optionally specify the cursor field used to determine which records
@@ -88,8 +88,8 @@ class AirbyteSyncMode(ABC):
     @classmethod
     def incremental_append_dedup(
         cls,
-        cursor_field: Optional[str] = None,
-        primary_key: Optional[str | list[str]] = None,
+        cursor_field: str | None = None,
+        primary_key: str | list[str] | None = None,
     ) -> "AirbyteSyncMode":
         """Syncs new records from the source, appending to an append-only history
         table in the destination. Also generates a deduplicated view mirroring the
@@ -140,7 +140,7 @@ class AirbyteSource:
 class InitializedAirbyteSource:
     """User-defined Airbyte source bound to actual created Airbyte source."""
 
-    def __init__(self, source: AirbyteSource, source_id: str, source_definition_id: Optional[str]):
+    def __init__(self, source: AirbyteSource, source_id: str, source_definition_id: str | None):
         self.source = source
         self.source_id = source_id
         self.source_definition_id = source_definition_id
@@ -190,7 +190,7 @@ class InitializedAirbyteDestination:
         self,
         destination: AirbyteDestination,
         destination_id: str,
-        destination_definition_id: Optional[str],
+        destination_definition_id: str | None,
     ):
         self.destination = destination
         self.destination_id = destination_id
@@ -264,11 +264,11 @@ class AirbyteConnection:
         source: AirbyteSource,
         destination: AirbyteDestination,
         stream_config: Mapping[str, AirbyteSyncMode],
-        normalize_data: Optional[bool] = None,
-        destination_namespace: Optional[
-            AirbyteDestinationNamespace | str
-        ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
-        prefix: Optional[str] = None,
+        normalize_data: bool | None = None,
+        destination_namespace: AirbyteDestinationNamespace
+        | str
+        | None = AirbyteDestinationNamespace.SAME_AS_SOURCE,
+        prefix: str | None = None,
     ):
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)

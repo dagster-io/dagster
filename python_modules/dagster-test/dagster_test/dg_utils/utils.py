@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, Optional, TextIO, TypeAlias, Union
+from typing import Any, Literal, TextIO, TypeAlias, Union
 
 import click
 import psutil
@@ -88,7 +88,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
 
 @contextmanager
 def isolated_components_venv(
-    runner: Union[CliRunner, "ProxyRunner"], additional_packages: Optional[Sequence[str]] = None
+    runner: Union[CliRunner, "ProxyRunner"], additional_packages: Sequence[str] | None = None
 ) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
@@ -156,7 +156,7 @@ def install_editable_dg_dev_packages_to_venv(venv_path: Path) -> None:
 @contextmanager
 def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     create_venv: bool = False,
     use_editable_dagster: bool = True,
     workspace_config_file_type: ConfigFileType = "dg.toml",
@@ -364,7 +364,7 @@ def isolated_example_project_foo_bar(
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     library_name: str = "foo-bar",
-    components_module_name: Optional[str] = None,
+    components_module_name: str | None = None,
     uv_sync: bool = True,
     use_tempdir: bool = True,
 ) -> Iterator[None]:
@@ -462,7 +462,7 @@ def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: P
 
 
 def convert_dg_toml_to_pyproject_toml(
-    dg_toml_path: Path, pyproject_toml_path: Optional[Path] = None
+    dg_toml_path: Path, pyproject_toml_path: Path | None = None
 ) -> None:
     """Convert a dg.toml file to a pyproject.toml file."""
     dg_toml = tomlkit.parse(dg_toml_path.read_text()).unwrap()
@@ -686,7 +686,7 @@ def normalize_windows_path(path: str) -> str:
 @dataclass
 class ProxyRunner:
     original: CliRunner
-    append_args: Optional[Sequence[str]] = None
+    append_args: Sequence[str] | None = None
     console_width: int = DG_CLI_MAX_OUTPUT_WIDTH
 
     @classmethod
@@ -791,7 +791,7 @@ COMPONENT_INTEGRATION_TEST_DIR = (
 def create_project_from_components(
     runner: "ProxyRunner",
     *src_paths: str,
-    local_component_defn_to_inject: Optional[Path] = None,
+    local_component_defn_to_inject: Path | None = None,
     in_workspace: bool = True,
     uv_sync: bool = False,
 ) -> Iterator[Path]:
@@ -845,8 +845,8 @@ def modify_dg_toml_config_as_dict(path: Path) -> Iterator[dict[str, Any]]:
 def launch_dev_command(
     options: list[str],
     capture_output: bool = False,
-    stdout: Optional[TextIO] = None,
-    stderr: Optional[TextIO] = None,
+    stdout: TextIO | None = None,
+    stderr: TextIO | None = None,
 ) -> subprocess.Popen:
     # We start a new process instead of using the runner to avoid blocking the test. We need to
     # poll the webserver to know when it is ready.

@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dagster import AssetKey
@@ -177,7 +177,7 @@ def test_basic_component_load(
 )
 def test_translation(
     attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
+    assertion: Callable[[AssetSpec], bool] | None,
     should_error: bool,
     workspace_id: str,
     workspace_data_api_mocks,

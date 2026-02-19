@@ -95,7 +95,7 @@ class DataProvenance(
         [
             ("code_version", str),
             ("input_data_versions", Mapping["AssetKey", DataVersion]),
-            ("input_storage_ids", Mapping["AssetKey", Optional[int]]),
+            ("input_storage_ids", Mapping["AssetKey", int | None]),
             ("is_user_provided", bool),
         ],
     )
@@ -114,7 +114,7 @@ class DataProvenance(
         cls,
         code_version: str,
         input_data_versions: Mapping["AssetKey", DataVersion],
-        input_storage_ids: Mapping["AssetKey", Optional[int]],
+        input_storage_ids: Mapping["AssetKey", int | None],
         is_user_provided: bool,
     ):
         from dagster._core.definitions.events import AssetKey
@@ -192,7 +192,7 @@ DATA_VERSION_IS_USER_PROVIDED_TAG = "dagster/data_version_is_user_provided"
 
 def read_input_data_version_from_tags(
     tags: Mapping[str, str], input_key: "AssetKey"
-) -> Optional[DataVersion]:
+) -> DataVersion | None:
     value = tags.get(
         get_input_data_version_tag(input_key, prefix=INPUT_DATA_VERSION_TAG_PREFIX)
     ) or tags.get(get_input_data_version_tag(input_key, prefix=_OLD_INPUT_DATA_VERSION_TAG_PREFIX))
@@ -252,7 +252,7 @@ def compute_logical_data_version(
 
 def extract_data_version_from_entry(
     entry: "EventLogEntry",
-) -> Optional[DataVersion]:
+) -> DataVersion | None:
     tags = entry.tags or {}
     value = tags.get(DATA_VERSION_TAG) or tags.get(_OLD_DATA_VERSION_TAG)
     return None if value is None else DataVersion(value)
@@ -260,7 +260,7 @@ def extract_data_version_from_entry(
 
 def extract_data_provenance_from_entry(
     entry: "EventLogEntry",
-) -> Optional[DataProvenance]:
+) -> DataProvenance | None:
     tags = entry.tags or {}
     return DataProvenance.from_tags(tags)
 
@@ -296,7 +296,7 @@ class StaleCause(
             ("category", StaleCauseCategory),
             ("reason", str),
             ("dependency", Optional["AssetKeyPartitionKey"]),
-            ("children", Optional[Sequence["StaleCause"]]),
+            ("children", Sequence["StaleCause"] | None),
         ],
     )
 ):
@@ -305,8 +305,8 @@ class StaleCause(
         key: Union["AssetKey", "AssetKeyPartitionKey"],
         category: StaleCauseCategory,
         reason: str,
-        dependency: Optional[Union["AssetKey", "AssetKeyPartitionKey"]] = None,
-        children: Optional[Sequence["StaleCause"]] = None,
+        dependency: Union["AssetKey", "AssetKeyPartitionKey"] | None = None,
+        children: Sequence["StaleCause"] | None = None,
     ):
         from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
@@ -324,7 +324,7 @@ class StaleCause(
         return self.key.asset_key
 
     @property
-    def partition_key(self) -> Optional[str]:
+    def partition_key(self) -> str | None:
         return self.key.partition_key
 
     @property
@@ -332,7 +332,7 @@ class StaleCause(
         return self.dependency.asset_key if self.dependency else None
 
     @property
-    def dependency_partition_key(self) -> Optional[str]:
+    def dependency_partition_key(self) -> str | None:
         return self.dependency.partition_key if self.dependency else None
 
     @property
@@ -371,7 +371,7 @@ class CachingStaleStatusResolver:
     _instance: "DagsterInstance"
     _instance_queryer: Optional["CachingInstanceQueryer"]
     _asset_graph: Optional["BaseAssetGraph"]
-    _asset_graph_load_fn: Optional[Callable[[], "BaseAssetGraph"]]
+    _asset_graph_load_fn: Callable[[], "BaseAssetGraph"] | None
 
     def __init__(
         self,
@@ -402,14 +402,14 @@ class CachingStaleStatusResolver:
             self._asset_graph_load_fn = asset_graph
 
     @use_partition_loading_context
-    def get_status(self, key: "AssetKey", partition_key: Optional[str] = None) -> StaleStatus:
+    def get_status(self, key: "AssetKey", partition_key: str | None = None) -> StaleStatus:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
         return self._get_status(key=AssetKeyPartitionKey(key, partition_key))
 
     @use_partition_loading_context
     def get_stale_causes(
-        self, key: "AssetKey", partition_key: Optional[str] = None
+        self, key: "AssetKey", partition_key: str | None = None
     ) -> Sequence[StaleCause]:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
@@ -417,7 +417,7 @@ class CachingStaleStatusResolver:
 
     @use_partition_loading_context
     def get_stale_root_causes(
-        self, key: "AssetKey", partition_key: Optional[str] = None
+        self, key: "AssetKey", partition_key: str | None = None
     ) -> Sequence[StaleCause]:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
@@ -425,7 +425,7 @@ class CachingStaleStatusResolver:
 
     @use_partition_loading_context
     def get_current_data_version(
-        self, key: "AssetKey", partition_key: Optional[str] = None
+        self, key: "AssetKey", partition_key: str | None = None
     ) -> DataVersion:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
@@ -500,7 +500,7 @@ class CachingStaleStatusResolver:
                 return False
 
     def _data_versions_differ(
-        self, prev_data_version: Optional[DataVersion], curr_data_version: Optional[DataVersion]
+        self, prev_data_version: DataVersion | None, curr_data_version: DataVersion | None
     ) -> bool:
         # We special case this to handle a complex niche scenario:
         #
@@ -678,9 +678,7 @@ class CachingStaleStatusResolver:
             return provenance is not None and provenance.is_user_provided
 
     @cached_method
-    def _get_current_data_provenance(
-        self, *, key: "AssetKeyPartitionKey"
-    ) -> Optional[DataProvenance]:
+    def _get_current_data_provenance(self, *, key: "AssetKeyPartitionKey") -> DataProvenance | None:
         record = self._get_latest_data_version_record(key=key)
         if record is None:
             return None
@@ -703,7 +701,7 @@ class CachingStaleStatusResolver:
     @cached_method
     def _get_latest_data_version_event(
         self, *, key: "AssetKeyPartitionKey"
-    ) -> Optional[Union["AssetMaterialization", "AssetObservation"]]:
+    ) -> Union["AssetMaterialization", "AssetObservation"] | None:
         record = self._get_latest_data_version_record(key=key)
         if record:
             entry = record.event_log_entry

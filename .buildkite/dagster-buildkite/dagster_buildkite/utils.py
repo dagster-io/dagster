@@ -4,7 +4,6 @@ import os
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 import packaging.version
 import yaml
@@ -25,7 +24,7 @@ BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
 
 
 def buildkite_yaml_for_steps(
-    steps: Sequence[StepConfiguration], custom_slack_channel: Optional[str] = None
+    steps: Sequence[StepConfiguration], custom_slack_channel: str | None = None
 ) -> str:
     return yaml.dump(
         {
@@ -142,7 +141,7 @@ def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
-def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
+def skip_if_no_python_changes(overrides: Sequence[str] | None = None):
     if run_all_tests():
         return None
 
@@ -248,7 +247,7 @@ def has_storage_test_fixture_changes():
     )
 
 
-def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
+def skip_if_not_dagster_dbt_cloud_commit() -> str | None:
     """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
     return (
         None
@@ -262,7 +261,7 @@ def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
     )
 
 
-def skip_if_not_dagster_dbt_commit() -> Optional[str]:
+def skip_if_not_dagster_dbt_commit() -> str | None:
     """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
     return (
         None
