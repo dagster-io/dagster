@@ -21,7 +21,7 @@ dependencies = [
     "packaging>=20.9",
     "questionary",
     "requests",
-    "typer>=0.4.1",
+    "typer>=0.15.0",
     "click",
     "PyYAML>=5.1",
     "github3.py",
