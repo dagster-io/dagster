@@ -1,4 +1,5 @@
 """Soda Core component for running data quality scans and mapping SodaCL checks to Dagster asset checks."""
+
 import re
 from collections.abc import Iterator
 from pathlib import Path
