@@ -1,10 +1,10 @@
-import {memo, useCallback, useEffect, useRef, useState} from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import {gql, useQuery} from '../apollo-client';
-import {showSharedToaster} from '../app/DomUtils';
-import {RunStatus} from '../graphql/types';
-import {AnchorButton} from '../ui/AnchorButton';
-import {doneStatuses} from './RunStatuses';
+import { gql, useQuery } from '../apollo-client';
+import { showSharedToaster } from '../app/DomUtils';
+import { RunStatus } from '../graphql/types';
+import { AnchorButton } from '../ui/AnchorButton';
+import { doneStatuses } from './RunStatuses';
 
 const NOTIFY_RUN_IDS_KEY = 'dagster:notify-run-ids';
 export const NOTIFY_RUN_IDS_CHANGED = 'dagster:notify-run-ids-changed';
@@ -55,8 +55,8 @@ const RUN_STATUS_QUERY = gql`
 
 interface RunStatusQueryResult {
   pipelineRunOrError:
-    | {__typename: 'Run'; id: string; status: RunStatus; pipelineName: string}
-    | {__typename: string};
+  | { __typename: 'Run'; id: string; status: RunStatus; pipelineName: string }
+  | { __typename: string };
 }
 
 function showCompletionToast(runId: string, status: RunStatus, pipelineName: string) {
@@ -67,7 +67,7 @@ function showCompletionToast(runId: string, status: RunStatus, pipelineName: str
     type: 'custom' as const,
     element: <AnchorButton to={path}>View</AnchorButton>,
   };
-  const persistentToast = {timeout: Infinity, action: toastAction};
+  const persistentToast = { timeout: Infinity, action: toastAction };
 
   if (status === RunStatus.SUCCESS) {
     showSharedToaster({
@@ -95,9 +95,9 @@ interface SingleRunObserverProps {
   onComplete: (runId: string) => void;
 }
 
-const SingleRunCompletionObserver = memo(({runId, onComplete}: SingleRunObserverProps) => {
-  const {data} = useQuery<RunStatusQueryResult>(RUN_STATUS_QUERY, {
-    variables: {runId},
+const SingleRunCompletionObserver = memo(({ runId, onComplete }: SingleRunObserverProps) => {
+  const { data } = useQuery<RunStatusQueryResult>(RUN_STATUS_QUERY, {
+    variables: { runId },
     pollInterval: POLL_INTERVAL_MS,
     fetchPolicy: 'network-only',
   });
@@ -107,7 +107,7 @@ const SingleRunCompletionObserver = memo(({runId, onComplete}: SingleRunObserver
   useEffect(() => {
     const result = data?.pipelineRunOrError;
     if (result?.__typename !== 'Run' || notifiedRef.current) return;
-    const run = result as {id: string; status: RunStatus; pipelineName: string};
+    const run = result as { id: string; status: RunStatus; pipelineName: string };
     if (!doneStatuses.has(run.status)) return;
 
     notifiedRef.current = true;
@@ -132,15 +132,21 @@ export const RunCompletionNotificationObserver = () => {
 
   useEffect(() => {
     const handleRunLaunched = (e: Event) => {
-      const detail = (e as CustomEvent<{runIds?: string[]}>).detail;
+      const detail = (e as CustomEvent<{ runIds?: string[] }>).detail;
       const ids = detail?.runIds;
       if (!Array.isArray(ids) || ids.length === 0) return;
-      ids.forEach((id) => launchedIdsRef.current.add(id));
-      setRunIds((prev) => {
-        const nextSet = new Set(prev);
-        ids.forEach((id) => nextSet.add(id));
-        return Array.from(nextSet);
-      });
+
+      const subscribedIds = getNotifyRunIds();
+      const idsToAdd = ids.filter(id => subscribedIds.includes(id));
+
+      idsToAdd.forEach((id) => launchedIdsRef.current.add(id));
+      if (idsToAdd.length > 0) {
+        setRunIds((prev) => {
+          const nextSet = new Set(prev);
+          ids.forEach((id) => nextSet.add(id));
+          return Array.from(nextSet);
+        });
+      }
     };
 
     const handleStorageChange = () => {

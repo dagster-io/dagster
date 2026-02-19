@@ -1,30 +1,30 @@
-import {Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
-import {useContext, useState} from 'react';
-import {useHistory} from 'react-router-dom';
-import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
-import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
-import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
+import { Box, Button, Icon, Menu, MenuItem, Popover, Tooltip } from '@dagster-io/ui-components';
+import { useContext, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { AISummaryForRunMenuItem } from 'shared/runs/AISummaryForRunMenuItem.oss';
+import { RunAlertNotifications } from 'shared/runs/RunAlertNotifications.oss';
+import { RunMetricsDialog } from 'shared/runs/RunMetricsDialog.oss';
 
-import {DeletionDialog} from './DeletionDialog';
-import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
-import {RunConfigDialog} from './RunConfigDialog';
-import {RunPoolsDialog} from './RunPoolsDialog';
-import {doneStatuses} from './RunStatuses';
-import {RunsQueryRefetchContext} from './RunUtils';
-import {TerminationDialog} from './TerminationDialog';
-import {useMutation} from '../apollo-client';
-import {isExternalRun} from './externalRuns';
-import {RunFragment} from './types/RunFragments.types';
-import {AppContext} from '../app/AppContext';
-import {showSharedToaster} from '../app/DomUtils';
-import {RunStatus} from '../graphql/types';
-import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
+import { DeletionDialog } from './DeletionDialog';
+import { QueuedRunCriteriaDialog } from './QueuedRunCriteriaDialog';
+import { RunConfigDialog } from './RunConfigDialog';
+import { RunPoolsDialog } from './RunPoolsDialog';
+import { doneStatuses } from './RunStatuses';
+import { RunsQueryRefetchContext } from './RunUtils';
+import { TerminationDialog } from './TerminationDialog';
+import { useMutation } from '../apollo-client';
+import { isExternalRun } from './externalRuns';
+import { RunFragment } from './types/RunFragments.types';
+import { AppContext } from '../app/AppContext';
+import { showSharedToaster } from '../app/DomUtils';
+import { RunStatus } from '../graphql/types';
+import { FREE_CONCURRENCY_SLOTS_MUTATION } from '../instance/ConcurrencyQueries';
 import {
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
 } from '../instance/types/ConcurrencyQueries.types';
-import {AnchorButton} from '../ui/AnchorButton';
-import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
+import { AnchorButton } from '../ui/AnchorButton';
+import { workspacePipelineLinkForRun, workspacePipelinePath } from '../workspace/workspacePath';
 
 type VisibleDialog =
   | 'config'
@@ -36,13 +36,13 @@ type VisibleDialog =
   | 'pools'
   | null;
 
-export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
+export const RunHeaderActions = ({ run, isJob }: { run: RunFragment; isJob: boolean }) => {
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
 
-  const {rootServerURI} = useContext(AppContext);
-  const {refetch} = useContext(RunsQueryRefetchContext);
+  const { rootServerURI } = useContext(AppContext);
+  const { refetch } = useContext(RunsQueryRefetchContext);
 
   const history = useHistory();
 
@@ -52,7 +52,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   >(FREE_CONCURRENCY_SLOTS_MUTATION);
 
   const freeConcurrencySlots = async () => {
-    const resp = await freeSlots({variables: {runId: run.id}});
+    const resp = await freeSlots({ variables: { runId: run.id } });
     if (resp.data?.freeConcurrencySlots) {
       await showSharedToaster({
         intent: 'success',
@@ -71,8 +71,8 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   return (
     <div>
-      <Box flex={{direction: 'row', gap: 8}}>
-        {run.status !== RunStatus.SUCCESS && (
+      <Box flex={{ direction: 'row', gap: 8 }}>
+        {!doneStatuses.has(run.status) && (
           <RunAlertNotifications runId={run.id} runStatus={run.status} />
         )}
         {jobLink.disabledReason ? (
@@ -192,7 +192,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             }
           }}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{ [run.id]: run.canTerminate }}
         />
       ) : null}
       {run.hasTerminatePermission ? (
@@ -202,7 +202,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           onComplete={() => {
             refetch();
           }}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{ [run.id]: run.canTerminate }}
         />
       ) : null}
       {run.allPools && run.allPools.length ? (

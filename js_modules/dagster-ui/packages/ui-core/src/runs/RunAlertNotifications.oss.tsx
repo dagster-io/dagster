@@ -8,8 +8,7 @@ import {
   unobserveRunCompletion,
 } from './RunCompletionNotificationObserver';
 import {RunStatus} from '../graphql/types';
-
-const doneStatuses = new Set<RunStatus>([RunStatus.SUCCESS, RunStatus.FAILURE, RunStatus.CANCELED]);
+import {doneStatuses} from './RunStatuses';
 
 export const RunAlertNotifications = ({
   runId,
