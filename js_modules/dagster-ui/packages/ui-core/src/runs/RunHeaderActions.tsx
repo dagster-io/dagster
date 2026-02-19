@@ -41,8 +41,8 @@ export const RunHeaderActions = ({ run, isJob }: { run: RunFragment; isJob: bool
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
 
-  const { rootServerURI } = useContext(AppContext);
-  const { refetch } = useContext(RunsQueryRefetchContext);
+  const {rootServerURI} = useContext(AppContext);
+  const {refetch} = useContext(RunsQueryRefetchContext);
 
   const history = useHistory();
 
@@ -52,7 +52,7 @@ export const RunHeaderActions = ({ run, isJob }: { run: RunFragment; isJob: bool
   >(FREE_CONCURRENCY_SLOTS_MUTATION);
 
   const freeConcurrencySlots = async () => {
-    const resp = await freeSlots({ variables: { runId: run.id } });
+    const resp = await freeSlots({variables: {runId: run.id}});
     if (resp.data?.freeConcurrencySlots) {
       await showSharedToaster({
         intent: 'success',
@@ -192,7 +192,7 @@ export const RunHeaderActions = ({ run, isJob }: { run: RunFragment; isJob: bool
             }
           }}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{ [run.id]: run.canTerminate }}
+          selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
       {run.hasTerminatePermission ? (
@@ -202,7 +202,7 @@ export const RunHeaderActions = ({ run, isJob }: { run: RunFragment; isJob: bool
           onComplete={() => {
             refetch();
           }}
-          selectedRuns={{ [run.id]: run.canTerminate }}
+          selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
       {run.allPools && run.allPools.length ? (
