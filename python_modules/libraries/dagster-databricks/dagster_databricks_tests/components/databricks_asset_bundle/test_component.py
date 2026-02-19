@@ -1,6 +1,6 @@
 import os
 from collections.abc import Callable, Mapping
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
@@ -52,11 +52,9 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     ],
 )
 def test_component_asset_spec(
-    compute_config: Union[
-        ResolvedDatabricksNewClusterConfig,
-        ResolvedDatabricksExistingClusterConfig,
-        ResolvedDatabricksServerlessConfig,
-    ],
+    compute_config: ResolvedDatabricksNewClusterConfig
+    | ResolvedDatabricksExistingClusterConfig
+    | ResolvedDatabricksServerlessConfig,
 ):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
@@ -140,13 +138,11 @@ def test_component_asset_spec(
 )
 def test_load_component(
     compute_config: Mapping[str, Any],
-    expected_resolved_compute_config: Union[
-        ResolvedDatabricksNewClusterConfig,
-        ResolvedDatabricksExistingClusterConfig,
-        ResolvedDatabricksServerlessConfig,
-    ],
-    custom_op_name: Optional[str],
-    custom_asset_specs: Optional[dict[str, list[dict[str, Any]]]],
+    expected_resolved_compute_config: ResolvedDatabricksNewClusterConfig
+    | ResolvedDatabricksExistingClusterConfig
+    | ResolvedDatabricksServerlessConfig,
+    custom_op_name: str | None,
+    custom_asset_specs: dict[str, list[dict[str, Any]]] | None,
     expected_asset_spec_keys: set[AssetKey],
     databricks_config_path: str,
 ):
@@ -190,9 +186,9 @@ def test_load_component(
             databricks_assets = assets[0]
             assert isinstance(databricks_assets, AssetsDefinition)
 
-            test_component_defs_path_as_python_str = str(
-                os.path.relpath(sandbox.defs_folder_path, start=sandbox.project_root)
-            ).replace("/", "_")
+            test_component_defs_path_as_python_str = snake_case(
+                str(os.path.relpath(sandbox.defs_folder_path, start=sandbox.project_root))
+            )
             test_op_name = (
                 custom_op_name if custom_op_name else test_component_defs_path_as_python_str
             )
@@ -239,8 +235,8 @@ def test_invalid_compute_config(databricks_config_path: str):
         )
         with pytest.raises(ComponentTreeException, match="Error while loading component"):
             with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                component,
-                defs,
+                _component,
+                _defs,
             ):
                 pass
 

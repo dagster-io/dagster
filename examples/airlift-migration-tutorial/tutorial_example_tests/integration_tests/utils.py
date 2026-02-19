@@ -1,5 +1,5 @@
 import time
-from typing import Union, cast
+from typing import cast
 
 import dagster._check as check
 import requests
@@ -44,7 +44,7 @@ def start_run_and_wait_for_completion(dag_id: str) -> None:
 
 def poll_for_materialization(
     instance: DagsterInstance,
-    target: Union[AssetKey, list[AssetKey]],
+    target: AssetKey | list[AssetKey],
     timeout: int = 60,
     poll_interval: int = 3,
 ) -> dict[AssetKey, EventLogEntry]:

@@ -1,6 +1,7 @@
 ---
 title: Dagster & Sling (Component)
 sidebar_label: Sling
+sidebar_position: 1
 description: The dagster-sling library provides a SlingReplicationCollectionComponent, which can be used to represent a collection of Sling replications as assets in Dagster.
 tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling
@@ -12,7 +13,7 @@ canonicalUrl: '/integrations/libraries/sling'
 slug: '/integrations/libraries/sling'
 ---
 
-The [dagster-sling](/api/libraries/dagster-sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io) replications as assets in Dagster.
+The [dagster-sling](/integrations/libraries/sling/dagster-sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io) replications as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 
@@ -95,3 +96,49 @@ Properties of the assets emitted by each replication can be customized in the `d
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/12-list-defs.txt" />
 </WideContent>
+
+## Pre-installing the Sling binary
+
+The `dagster-sling` package includes the Sling Python CLI, but not the Sling binary. By default, the binary is downloaded at runtime, which may not work in environments where the download URL isn't on a network allowlist.
+
+To pre-install the binary, you can download it during your build step and set the `SLING_BINARY` environment variable:
+
+<Tabs>
+   <TabItem value="macos" label="MacOS">
+      ```shell
+      # Download and extract the binary
+      curl -LO 'https://github.com/slingdata-io/sling-cli/releases/latest/download/sling_darwin_amd64.tar.gz'
+      tar xf sling_darwin_amd64.tar.gz
+      chmod +x sling
+
+      # Point to the binary
+      export SLING_BINARY=$(pwd)/sling
+      ```
+
+   </TabItem>
+   <TabItem value="linux" label="Linux">
+      ```shell
+      # Download and extract the binary
+      curl -LO 'https://github.com/slingdata-io/sling-cli/releases/latest/download/sling_linux_amd64.tar.gz'
+      tar xf sling_linux_amd64.tar.gz
+      chmod +x sling
+
+      # Point to the binary
+      export SLING_BINARY=/path/to/sling
+      ```
+
+   </TabItem>
+   <TabItem value="windows" label="Windows">
+      ```shell
+      # Download and extract the binary
+      Invoke-WebRequest -Uri 'https://github.com/slingdata-io/sling-cli/releases/latest/download/sling_windows_amd64.zip' -OutFile sling.zip
+      Expand-Archive -Path sling.zip -DestinationPath .
+
+      # Point to the binary
+      $env:SLING_BINARY = "$PWD\sling.exe"
+      ```
+
+   </TabItem>
+</Tabs>
+
+Sling will use the specified binary instead of downloading it at runtime.

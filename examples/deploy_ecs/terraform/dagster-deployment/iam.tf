@@ -26,8 +26,8 @@ resource "aws_iam_policy" "task" {
     Statement = [
       # full access to specific s3 bucket
       {
-        Effect = "Allow",
-        Action = "s3:*",
+        Effect   = "Allow",
+        Action   = "s3:*",
         Resource = "*"
       },
       # actions for the ECS Run Launcher and ECS Executor

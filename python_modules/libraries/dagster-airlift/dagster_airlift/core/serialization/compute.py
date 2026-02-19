@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Callable  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec
 from dagster._record import record
@@ -145,7 +145,7 @@ class FetchedAirflowData:
 def fetch_all_airflow_data(
     airflow_instance: AirflowInstance,
     mapping_info: AirliftMetadataMappingInfo,
-    dag_selector_fn: Optional[DagSelectorFn],
+    dag_selector_fn: DagSelectorFn | None,
     automapping_enabled: bool,
     retrieval_filter: AirflowFilter,
 ) -> FetchedAirflowData:
@@ -184,7 +184,7 @@ def fetch_all_airflow_data(
 
 
 def infer_code_retrieval_enabled(
-    source_code_retrieval_enabled: Optional[bool], fetched_airflow_data: FetchedAirflowData
+    source_code_retrieval_enabled: bool | None, fetched_airflow_data: FetchedAirflowData
 ) -> bool:
     if source_code_retrieval_enabled is None:
         return len(fetched_airflow_data.dag_infos) < DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL
@@ -194,9 +194,9 @@ def infer_code_retrieval_enabled(
 def compute_serialized_data(
     airflow_instance: AirflowInstance,
     mapped_assets: Iterable["MappedAsset"],
-    dag_selector_fn: Optional[DagSelectorFn],
+    dag_selector_fn: DagSelectorFn | None,
     automapping_enabled: bool,
-    source_code_retrieval_enabled: Optional[bool],
+    source_code_retrieval_enabled: bool | None,
     retrieval_filter: AirflowFilter,
 ) -> "SerializedAirflowDefinitionsData":
     mapping_info = build_airlift_metadata_mapping_info(mapped_assets)

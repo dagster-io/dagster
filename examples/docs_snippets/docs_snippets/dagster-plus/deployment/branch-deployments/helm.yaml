@@ -1,9 +1,7 @@
 
 dagsterCloud:
-  # highlight-start
   branchDeployments: true
   workspace:
     serverTTL:
       enabled: true
       ttlSeconds: 7200
-  # highlight-end

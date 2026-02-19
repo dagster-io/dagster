@@ -5,7 +5,6 @@ Consider using `dg plus deploy configure [serverless|hybrid] --git-provider gith
 """
 
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -20,18 +19,19 @@ from dagster_dg_cli.cli.plus.deploy.configure.commands import (
     resolve_git_root,
     resolve_organization,
     resolve_python_version,
+    resolve_url,
 )
 from dagster_dg_cli.cli.plus.deploy.configure.configure_ci import configure_ci_impl
-from dagster_dg_cli.cli.plus.deploy.configure.utils import DeploymentScaffoldConfig, GitProvider
+from dagster_dg_cli.cli.plus.deploy.configure.utils import DgPlusDeployConfigureOptions, GitProvider
 from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def _resolve_config_for_github_actions(
-    git_root: Optional[Path],
+    git_root: Path | None,
     dg_context: DgContext,
     cli_config,
-) -> DeploymentScaffoldConfig:
+) -> DgPlusDeployConfigureOptions:
     """Resolve config for legacy github-actions command.
 
     This command prompts in the legacy order: org, deployment, agent type (no platform).
@@ -40,8 +40,9 @@ def _resolve_config_for_github_actions(
 
     plus_config = DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else None
 
-    # Prompt for org and deployment FIRST (legacy order)
+    # Prompt for org, URL, and deployment FIRST (legacy order)
     resolved_organization = resolve_organization(None, plus_config)
+    resolved_url = resolve_url(None, plus_config, resolved_organization)
     resolved_deployment = resolve_deployment(None, plus_config)
 
     # Try to detect agent type and platform from Plus config
@@ -69,13 +70,14 @@ def _resolve_config_for_github_actions(
     # Use default Python version
     resolved_python_version = resolve_python_version(None)
 
-    return DeploymentScaffoldConfig(
+    return DgPlusDeployConfigureOptions(
         dg_context=dg_context,
         cli_config=cli_config,
         plus_config=plus_config,
         agent_type=agent_type,
         agent_platform=agent_platform,  # May be None - legacy didn't require platform
         organization_name=resolved_organization,
+        cloud_url=resolved_url,
         deployment_name=resolved_deployment,
         git_root=resolved_git_root,
         python_version=resolved_python_version,
@@ -93,7 +95,7 @@ def _resolve_config_for_github_actions(
 @click.option("--git-root", type=Path, help="Path to the git root of the repository")
 @dg_global_options
 @cli_telemetry_wrapper
-def scaffold_github_actions_command(git_root: Optional[Path], **global_options: object) -> None:
+def scaffold_github_actions_command(git_root: Path | None, **global_options: object) -> None:
     """Scaffold a GitHub Actions workflow for a Dagster project.
 
     This command will create a GitHub Actions workflow in the `.github/workflows` directory.

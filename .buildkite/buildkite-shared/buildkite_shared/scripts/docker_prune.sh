@@ -2,6 +2,9 @@
 
 set -eu
 
+# Set Docker API version for compatibility with older daemons
+export DOCKER_API_VERSION=1.41
+
 if [ -n "${BUILDKITE:-}" ]; then
   if [ -n "${KUBERNETES_PORT-}" ]; then
     echo "don't docker prune, we're running in kubernetes"

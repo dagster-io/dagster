@@ -73,7 +73,7 @@ You can edit the `.env` file in your project root to specify environment variabl
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/14-dg-list-env.txt" />
 
-## [Optional] 3. Configure environment variables for components in Dagster+
+## 3. Configure environment variables for components in Dagster+ (Optional)
 
 If you are using Dagster+, you can also use the `dg` CLI to push environment variables to your deployment so that your code is ready to run in a production setting.
 

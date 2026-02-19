@@ -4,7 +4,7 @@ description: 'Learn to integrate Snowflake with Dagster using a Snowflake resour
 sidebar_position: 200
 ---
 
-This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using Dagster's <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/guides/build/external-resources) allows you to directly run SQL queries against tables within an asset's compute function.
+This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using Dagster's <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/guides/build/external-resources) allows you to directly run SQL queries against tables within an asset's compute function.
 
 By the end of the tutorial, you will:
 
@@ -44,7 +44,7 @@ To complete this tutorial, you'll need:
 
 ## Step 1: Configure the Snowflake resource
 
-To connect to Snowflake, we'll use the `dagster-snowflake` <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. The <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" /> requires some configuration:
+To connect to Snowflake, we'll use the `dagster-snowflake` <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" />. The <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" /> requires some configuration:
 
 - **The `account` and `user` values are required.**
 - **One method of authentication is required**, either by using a password or a private key.
@@ -56,9 +56,9 @@ To connect to Snowflake, we'll use the `dagster-snowflake` <PyObject section="li
   endBefore="end_config"
 />
 
-With this configuration, if you materialized an asset named `iris_dataset`, <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" /> would use the role `WRITER` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table using the `PLANTS` warehouse.
+With this configuration, if you materialized an asset named `iris_dataset`, <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" /> would use the role `WRITER` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table using the `PLANTS` warehouse.
 
-For more info about each of the configuration values, refer to the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake" object="SnowflakeResource" /> API documentation.
 
 ## Step 2: Create tables in Snowflake
 
@@ -105,7 +105,7 @@ To accomplish this, we defined a dependency on the `iris_dataset` asset using th
 
 ## Step 4: Definitions object
 
-The last step is to add the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" /> and the assets to the project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
+The last step is to add the <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" /> and the assets to the project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/snowflake/resource_tutorial/full_example.py"

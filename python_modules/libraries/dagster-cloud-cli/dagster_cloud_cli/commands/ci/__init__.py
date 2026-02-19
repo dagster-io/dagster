@@ -7,7 +7,7 @@ import shutil
 import sys
 from collections import Counter
 from enum import Enum
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, cast
 
 import click
 import typer
@@ -89,12 +89,12 @@ def load_github_info(project_dir: str) -> dict[str, Any]:
 )
 def branch_deployment(
     project_dir: str,
-    organization: Optional[str] = ORGANIZATION_OPTION,
-    dagster_env: Optional[str] = DAGSTER_ENV_OPTION,
+    organization: str | None = ORGANIZATION_OPTION,
+    dagster_env: str | None = DAGSTER_ENV_OPTION,
     mark_closed: bool = False,
     read_only: bool = False,
-    base_deployment_name: Optional[str] = None,
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition] = None,
+    base_deployment_name: str | None = None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None = None,
 ):
     try:
         if organization:
@@ -127,10 +127,10 @@ def create_or_update_deployment_from_context(
     url,
     project_dir: str,
     mark_closed: bool,
-    base_deployment_name: Optional[str],
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
+    base_deployment_name: str | None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None,
     require_branch_deployment: bool = False,
-) -> Optional[str]:
+) -> str | None:
     source = metrics.get_source()
     api_token = check.not_none(get_user_token())
     if source == CliEventTags.source.github:
@@ -197,7 +197,7 @@ def create_or_update_deployment_from_context(
         raise ValueError(f"unsupported for {source}")
 
 
-def get_branch_deployment_name_from_context(url, project_dir: str) -> Optional[str]:
+def get_branch_deployment_name_from_context(url, project_dir: str) -> str | None:
     source = metrics.get_source()
     api_token = check.not_none(get_user_token())
     if source == CliEventTags.source.github:
@@ -242,13 +242,18 @@ def get_branch_deployment_name_from_context(url, project_dir: str) -> Optional[s
 
 @app.command(name="check", help="Validate configuration")
 def check_command(
-    organization: Optional[str] = ORGANIZATION_OPTION,
-    dagster_env: Optional[str] = DAGSTER_ENV_OPTION,
+    organization: str | None = ORGANIZATION_OPTION,
+    dagster_env: str | None = DAGSTER_ENV_OPTION,
     project_dir: str = typer.Option("."),
     dagster_cloud_yaml_path: str = "dagster_cloud.yaml",
     dagster_cloud_yaml_check: checks.Check = typer.Option("error"),
     dagster_cloud_connect_check: checks.Check = typer.Option("error"),
 ):
+    ui.warn(
+        "The 'dagster-cloud ci check' command is deprecated and will be removed in a future release. "
+        "Use 'dg plus deploy start' instead, which validates configuration during deployment initialization."
+    )
+
     project_path = pathlib.Path(project_dir)
 
     verdicts = []
@@ -303,7 +308,7 @@ def template(
     dagster_cloud_yaml_path: str = typer.Option(
         "dagster_cloud.yaml", help="Path to the dagster cloud configuration file"
     ),
-    values_file: Optional[str] = typer.Option(default=None, help="Path to a values file"),
+    values_file: str | None = typer.Option(default=None, help="Path to a values file"),
     value: list[str] = typer.Option(
         [],
         help="Key value pairs to override in the yaml file, value can be a str or a valid json representation",
@@ -347,9 +352,7 @@ def template(
     ui.print(yaml.dump(config_as_dict))
 
 
-def _create_context_from_values(
-    values_list: list[str], values_file: Optional[str]
-) -> dict[str, Any]:
+def _create_context_from_values(values_list: list[str], values_file: str | None) -> dict[str, Any]:
     """Creates a collection of values by loading values from a file then
     overlaying a value list to extend or override those values.
     """
@@ -394,17 +397,17 @@ def _create_context_from_values(
 @dagster_cloud_options(allow_empty=False, allow_empty_deployment=True, requires_url=False)
 def init(
     organization: str,
-    deployment: Optional[str],
-    dagster_env: Optional[str] = DAGSTER_ENV_OPTION,
+    deployment: str | None,
+    dagster_env: str | None = DAGSTER_ENV_OPTION,
     project_dir: str = typer.Option("."),
     dagster_cloud_yaml_path: str = "dagster_cloud.yaml",
     statedir: str = STATEDIR_OPTION,
     clean_statedir: bool = typer.Option(True, help="Delete any existing files in statedir"),
     location_name: list[str] = typer.Option([]),
-    git_url: Optional[str] = None,
-    commit_hash: Optional[str] = None,
-    status_url: Optional[str] = None,
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition] = None,
+    git_url: str | None = None,
+    commit_hash: str | None = None,
+    status_url: str | None = None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None = None,
     require_branch_deployment: bool = typer.Option(
         None, help="Whether to require that a branch deployment be created"
     ),
@@ -428,17 +431,17 @@ def init(
 
 def init_impl(
     organization: str,
-    deployment: Optional[str],
-    dagster_env: Optional[str],
+    deployment: str | None,
+    dagster_env: str | None,
     project_dir: str,
     dagster_cloud_yaml_path: str,
     statedir: str,
     clean_statedir: bool,
     location_name: list[str],
-    git_url: Optional[str],
-    commit_hash: Optional[str],
-    status_url: Optional[str],
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
+    git_url: str | None,
+    commit_hash: str | None,
+    status_url: str | None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None,
     require_branch_deployment: bool,
 ):
     yaml_path = pathlib.Path(project_dir) / dagster_cloud_yaml_path
@@ -456,7 +459,12 @@ def init_impl(
         locations = [
             location for location in locations if location.location_name in selected_locations
         ]
-    url = get_org_url(organization, dagster_env)
+    # Check environment variable for URL first, fall back to constructing from org + env
+    env_url = os.getenv(URL_ENV_VAR_NAME)
+    if env_url:
+        url = env_url
+    else:
+        url = get_org_url(organization, dagster_env)
     # Deploy to the branch deployment for the current context. If there is no branch deployment
     # available (eg. if not in a PR) then we fallback to the --deployment flag.
 
@@ -626,7 +634,7 @@ class BuildStrategy(Enum):
 def build(
     statedir: str = STATEDIR_OPTION,
     location_name: list[str] = typer.Option([]),
-    build_directory: Optional[str] = typer.Option(
+    build_directory: str | None = typer.Option(
         None,
         help=(
             "Directory root for building this code location. Read from dagster_cloud.yaml by"
@@ -640,15 +648,15 @@ def build(
             " 'python-executable' builds a set of pex files."
         ),
     ),
-    docker_image_tag: Optional[str] = typer.Option(
+    docker_image_tag: str | None = typer.Option(
         None, help="Tag for built docker image. Auto-generated by default."
     ),
-    docker_base_image: Optional[str] = typer.Option(
+    docker_base_image: str | None = typer.Option(
         None,
         help="Base image used to build the docker image for --build-strategy=docker.",
     ),
     docker_env: list[str] = typer.Option([], help="Env vars for docker builds."),
-    dockerfile_path: Optional[str] = typer.Option(
+    dockerfile_path: str | None = typer.Option(
         None,
         help=(
             "Path to a Dockerfile to use for the docker build. If not provided, a default templated Dockerfile is used."
@@ -662,9 +670,9 @@ def build(
         ),
     ),
     pex_build_method: deps.BuildMethod = typer.Option("local"),
-    pex_deps_cache_from: Optional[str] = None,
-    pex_deps_cache_to: Optional[str] = None,
-    pex_base_image_tag: Optional[str] = typer.Option(
+    pex_deps_cache_from: str | None = None,
+    pex_deps_cache_to: str | None = None,
+    pex_base_image_tag: str | None = typer.Option(
         None,
         help="Base image used to run python executable for --build-strategy=python-executable.",
     ),
@@ -694,17 +702,17 @@ def build(
 def build_impl(
     statedir: str,
     location_name: list[str],
-    build_directory: Optional[str],
+    build_directory: str | None,
     build_strategy: BuildStrategy,
-    docker_image_tag: Optional[str],
-    docker_base_image: Optional[str],
+    docker_image_tag: str | None,
+    docker_base_image: str | None,
     docker_env: list[str],
-    dockerfile_path: Optional[str],
+    dockerfile_path: str | None,
     python_version: str,
     pex_build_method: deps.BuildMethod,
-    pex_deps_cache_from: Optional[str],
-    pex_deps_cache_to: Optional[str],
-    pex_base_image_tag: Optional[str],
+    pex_deps_cache_from: str | None,
+    pex_deps_cache_to: str | None,
+    pex_base_image_tag: str | None,
     use_editable_dagster: bool,
 ):
     if python_version:
@@ -813,11 +821,11 @@ def _build_docker(
     name: str,
     location_build_dir: str,
     python_version: str,
-    docker_base_image: Optional[str],
+    docker_base_image: str | None,
     docker_env: list[str],
     location_state: state.LocationState,
     use_editable_dagster: bool,
-    dockerfile_path: Optional[str] = None,
+    dockerfile_path: str | None = None,
 ) -> state.DockerBuildOutput:
     name = location_state.location_name
     docker_utils.verify_docker()
@@ -869,9 +877,9 @@ def _build_pex(
     location_build_dir: str,
     python_version: str,
     pex_build_method: deps.BuildMethod,
-    pex_deps_cache_from: Optional[str],
-    pex_deps_cache_to: Optional[str],
-    pex_base_image_tag: Optional[str],
+    pex_deps_cache_from: str | None,
+    pex_deps_cache_to: str | None,
+    pex_base_image_tag: str | None,
     location_state: state.LocationState,
 ) -> state.PexBuildOutput:
     pex_location = parse_workspace.Location(
@@ -971,7 +979,7 @@ def deploy_impl(
     statedir: str,
     location_name: list[str],
     location_load_timeout: int,
-    agent_heartbeat_timeout: Optional[int],
+    agent_heartbeat_timeout: int | None,
 ):
     state_store = state.FileStore(statedir=statedir)
     locations = _get_selected_locations(state_store, location_name)
@@ -1031,7 +1039,7 @@ def _deploy(
     api_token: str,
     built_locations: list[state.LocationState],
     location_load_timeout: int,
-    agent_heartbeat_timeout: Optional[int],
+    agent_heartbeat_timeout: int | None,
 ):
     locations_document = []
     for location_state in built_locations:
@@ -1120,13 +1128,13 @@ dagster_dbt_app.add_typer(project_app, name="project", no_args_is_help=True)
 def manage_state_command(
     statedir: str = STATEDIR_OPTION,
     file: Annotated[
-        Optional[pathlib.Path],
+        pathlib.Path | None,
         typer.Option(
             help="The file containing DbtProject definitions to prepare.",
         ),
     ] = None,
     components: Annotated[
-        Optional[pathlib.Path],
+        pathlib.Path | None,
         typer.Option(
             help="The path to a dg project directory containing DbtProjectComponents.",
         ),

@@ -10,11 +10,13 @@ In this guide, we'll walk you through setting environment variables for a Dagste
 
 There are two ways to set environment variables:
 
-- **On a per-code location basis**, which involves modifying the `dagster_cloud.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui). Values will pass through Dagster+.
+- **On a per-code location basis**, which involves modifying the `build.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui). Values will pass through Dagster+. Also note that if you have an older deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
 - **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster+ deployment. As values are pulled from the user cluster, values will bypass Dagster+ entirely.
 
 :::note
+
 Environment variables that have been set in the Dagster+ UI will take precedence over duplicates set in the agent's configuration.
+
 :::
 
 ## Prerequisites
@@ -35,11 +37,17 @@ If you're a Dagster **Editor** or **Admin**, you can only set environment variab
 
 :::
 
-You can set environment variables for specific code locations by adding them to your agent's configuration in your project's [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml.md). The `container_context` property in this file sets the variables in the agent's environment.
+You can set environment variables for specific code locations by adding them to your agent's configuration in your project's [`build.yaml` file](/deployment/dagster-plus/management/build-yaml). The `container_context` property in this file sets the variables in the agent's environment.
 
 This approach is functionally the same as [setting environment variables using the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui).
 
 How `container_context` is configured depends on the agent type. Click the tab for your agent type to view instructions.
+
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
 
 <Tabs>
   <TabItem value="Amazon ECS agents">
@@ -47,7 +55,7 @@ How `container_context` is configured depends on the agent type. Click the tab f
 Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -73,7 +81,7 @@ locations:
 | `container_context.ecs.secrets`      | Individual secrets using the [ECS API structure](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html).                                                |
 | `container_context.ecs.secrets_tags` | A list of tag names; secrets tagged with these in AWS Secrets Manager will be environment variables. The variable name is the secret name, the value is the secret's value. |
 
-After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
+After you've modified `build.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 !["Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
@@ -83,7 +91,7 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 Using the `container_context.docker.env_vars` property, you can include environment variables and secrets in the Docker container associated with a specific code location. For example:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -98,7 +106,7 @@ locations:
 
 The `container_context.docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the local environment.
 
-After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
+After you've modified `build.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 ![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
@@ -108,7 +116,7 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -128,7 +136,7 @@ locations:
 | `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                  |
 | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. For more information, see the [Kubernetes](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables). |
 
-After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
+After you've modified `build.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 ![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 

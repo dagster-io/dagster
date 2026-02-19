@@ -5,7 +5,7 @@ import re
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import dagster as dg
@@ -38,6 +38,7 @@ from dagster._core.storage.sqlite_storage import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    CODE_LOCATION_TAG,
     PARTITION_NAME_TAG,
 )
 from dagster._core.test_utils import (
@@ -226,7 +227,7 @@ def test_run_queue_key():
     with pytest.raises(
         dg.DagsterInvalidConfigError,
         match=(
-            "Found config for `run_queue` which is incompatible with `run_coordinator` config"
+            r"Found config for `run_queue` which is incompatible with `run_coordinator` config"
             " entry."
         ),
     ):
@@ -363,6 +364,40 @@ def test_submit_run():
 
             assert len(instance.run_coordinator.queue()) == 1  # pyright: ignore[reportAttributeAccessIssue]
             assert instance.run_coordinator.queue()[0].run_id == run.run_id  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_create_run_adds_code_location_tag():
+    """Test that CODE_LOCATION_TAG is automatically added when remote_job_origin is provided."""
+    with dg.instance_for_test() as instance:
+        with get_bar_workspace(instance) as workspace:
+            remote_job = (
+                workspace.get_code_location("bar_code_location")
+                .get_repository("bar_repo")
+                .get_full_job("foo")
+            )
+
+            run = create_run_for_test(
+                instance=instance,
+                job_name=remote_job.name,
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
+            )
+
+            # Verify CODE_LOCATION_TAG is automatically added
+            assert CODE_LOCATION_TAG in run.tags
+            assert run.tags[CODE_LOCATION_TAG] == "bar_code_location"
+
+
+def test_create_run_without_remote_job_origin_has_no_code_location_tag():
+    """Test that CODE_LOCATION_TAG is not added when remote_job_origin is not provided."""
+    with dg.instance_for_test() as instance:
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo_job",
+        )
+
+        # Verify CODE_LOCATION_TAG is not present
+        assert CODE_LOCATION_TAG not in run.tags
 
 
 def test_create_run_without_asset_execution_type_on_snapshot():
@@ -667,7 +702,7 @@ def test_get_required_daemon_types():
 
 
 class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         super().__init__()
 
@@ -1071,6 +1106,6 @@ def test_invalid_run_id():
     with dg.instance_for_test() as instance:
         with pytest.raises(
             CheckError,
-            match="run_id must be a valid UUID. Got invalid_run_id",
+            match=r"run_id must be a valid UUID. Got invalid_run_id",
         ):
             create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")

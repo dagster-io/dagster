@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
-from typing import Any, TypeAlias, TypeVar, Union
+from typing import Any, TypeAlias, TypeVar
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -29,18 +29,18 @@ from dagster._utils import iterate_with_context
 
 T = TypeVar("T")
 
-OpOutputUnion: TypeAlias = Union[
-    DynamicOutput[Any],
-    Output[Any],
-    AssetMaterialization,
-    ExpectationResult,
-    AssetObservation,
-    DagsterEvent,
-    AssetCheckEvaluation,
-    AssetCheckResult,
-    MaterializeResult,
-    ObserveResult,
-]
+OpOutputUnion: TypeAlias = (
+    DynamicOutput[Any]
+    | Output[Any]
+    | AssetMaterialization
+    | ExpectationResult
+    | AssetObservation
+    | DagsterEvent
+    | AssetCheckEvaluation
+    | AssetCheckResult
+    | MaterializeResult
+    | ObserveResult
+)
 
 
 def create_step_outputs(

@@ -71,7 +71,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 If you're new to Dagster, we recommend checking out the [docs](https://docs.dagster.io) or following the hands-on [tutorial](https://docs.dagster.io/etl-pipeline-tutorial/).
 
-Dagster is available on PyPI and officially supports Python 3.9 through Python 3.13.
+Dagster is available on PyPI and officially supports Python 3.9 through Python 3.14.
 
 ```bash
 pip install dagster dagster-webserver

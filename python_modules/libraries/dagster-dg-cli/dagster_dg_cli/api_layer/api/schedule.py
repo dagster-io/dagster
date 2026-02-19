@@ -1,7 +1,7 @@
 """Schedule API implementation."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.schedule import (
     get_schedule_via_graphql,
@@ -21,8 +21,8 @@ class DgApiScheduleApi:
 
     def list_schedules(
         self,
-        repository_location_name: Optional[str] = None,
-        repository_name: Optional[str] = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> "DgApiScheduleList":
         """List all schedules, optionally filtered by code location and name."""
         return list_schedules_via_graphql(

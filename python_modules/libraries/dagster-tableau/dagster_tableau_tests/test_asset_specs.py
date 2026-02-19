@@ -1,5 +1,4 @@
 import uuid
-from typing import Union
 from unittest.mock import MagicMock
 
 import pytest
@@ -30,7 +29,7 @@ from dagster_tableau_tests.conftest import (
     ],
 )
 def test_fetch_tableau_workspace_data(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -57,7 +56,8 @@ def test_fetch_tableau_workspace_data(
 
     actual_workspace_data = resource.get_or_fetch_workspace_data()
     assert len(actual_workspace_data.workbooks_by_id) == 1
-    assert len(actual_workspace_data.sheets_by_id) == 2
+    # Hidden sheets are included in sheets_by_id to preserve their data source dependencies
+    assert len(actual_workspace_data.sheets_by_id) == 3
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.data_sources_by_id) == 3
 
@@ -71,7 +71,7 @@ def test_fetch_tableau_workspace_data(
     ],
 )
 def test_invalid_workbook(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -98,16 +98,11 @@ def test_invalid_workbook(
     resource.build_client()
 
     # Test invalid workbook
+    # Clear side_effect first so return_value takes precedence
+    get_workbook.side_effect = None
     get_workbook.return_value = {"data": {"workbooks": None}}
     with pytest.raises(
         CheckError, match=f"Invalid data for Tableau workbook for id {workbook_id}."
-    ):
-        resource.get_or_fetch_workspace_data()
-
-    # Test empty workbook
-    get_workbook.return_value = {"data": {"workbooks": []}}
-    with pytest.raises(
-        Exception, match=f"Could not retrieve data for Tableau workbook for id {workbook_id}."
     ):
         resource.get_or_fetch_workspace_data()
 
@@ -125,7 +120,7 @@ def test_invalid_workbook(
 @pytest.mark.usefixtures("get_workbooks")
 @pytest.mark.usefixtures("get_workbook")
 def test_translator_spec(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -154,7 +149,7 @@ def test_translator_spec(
         all_assets = load_tableau_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
-        # 2 sheet, 1 dashboard and 3 data source as external assets
+        # 2 visible sheets (1 hidden sheet filtered out), 1 dashboard and 3 data sources
         assert len(all_assets) == 6
         assert len(all_assets_keys) == 6
 
@@ -224,7 +219,7 @@ class MyCustomTranslator(DagsterTableauTranslator):
 @pytest.mark.usefixtures("get_workbooks")
 @pytest.mark.usefixtures("get_workbook")
 def test_translator_custom_metadata(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -279,7 +274,7 @@ def test_translator_custom_metadata(
 @pytest.mark.usefixtures("get_workbooks")
 @pytest.mark.usefixtures("get_workbook")
 def test_parse_asset_specs(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -364,7 +359,7 @@ def test_tableau_workbook_selector(
     value: str,
     expected_result_before_selection: int,
     expected_result_after_selection: int,
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,

@@ -39,14 +39,15 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pandas_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
-        "pandas",
+        "pandas<3.0.0",
     ],
 )

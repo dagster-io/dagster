@@ -12,9 +12,10 @@ Asset definitions enable a declarative approach to data management, in which cod
 
 **Materializing** an asset is the act of running its function and saving the results to persistent storage. You can materialize assets from the Dagster UI or by invoking [Python APIs](/api/dagster).
 
-:::note Assets vs ops
+:::info Dagster+ credit consumption
 
-Behind the scenes, the Python function in an asset is an [op](/guides/build/ops). A crucial distinction between asset definitions and ops is that asset definitions know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a graph. You do not need to use ops to use Dagster.
+Asset materializations count toward your Dagster+ credit usage, while asset observations do not. We recommend using asset observations when reporting events from external systems in Dagster instead of asset materializations to avoid consuming credits.
 
-:::
+## Assets vs ops
 
+Behind the scenes, the Python function in an asset is an [op](/guides/build/ops). A crucial distinction between asset definitions and ops is that asset definitions know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a graph. You do not need to use ops directly to use Dagster.

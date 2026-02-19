@@ -27,6 +27,7 @@ export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
     pipelineName
     pipelineSnapshotId
     repositoryOrigin {
+      id
       repositoryName
       repositoryLocationName
     }

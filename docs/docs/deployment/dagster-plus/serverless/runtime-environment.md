@@ -190,7 +190,6 @@ dagster-cloud serverless deploy-python-executable \
 
     ```bash
     .
-    ├── dagster_cloud.yaml
     ├── pyproject.toml
     ├── tests
     │   ├── __init__.py

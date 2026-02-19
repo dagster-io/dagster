@@ -32,12 +32,13 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.14",  # dbt-core incompatible with Python 3.14
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
@@ -48,7 +49,7 @@ setup(
         "orjson",
         "requests",
         "rich",
-        "sqlglot[rs]",
+        "sqlglot[rs]<28.1.0",  # FW-731
         "typer>=0.9.0",
         "packaging",
     ],

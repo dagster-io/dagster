@@ -7,6 +7,7 @@ attributes:
     snapshot_path: "example_string"
     request_max_retries: 1
     request_retry_delay: 1.0
+    request_backoff_factor: 1.0
     disable_schedule_on_trigger: true
   connector_selector:
     by_name:

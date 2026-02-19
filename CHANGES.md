@@ -1,5 +1,199 @@
 # Changelog
 
+## 1.12.14 (core) / 0.28.14 (libraries)
+
+### New
+
+- `@asset_check` and `AssetCheckSpec` now support a `partitions_def` parameter, allowing checks to execute against specific partitions of their upstream asset rather than the entire contents. If set, the partition definition must match the definition of the targeted asset.
+- [ui] The "Select all" checkbox has been restored to the Automations list.
+
+### Bugfixes
+
+- Fixed performance issue where the partition selector would freeze for 30+ seconds when selecting "All" on assets with large (100k+) partition sets. (Thanks, [@ljodea](https://github.com/ljodea)!)
+- Fixed an issue with cron schedules using step patterns (like `*/10` or `*/30`) in the day-of-month field where invalid days weren't properly skipped.
+- [ui] Fixed an issue that could cause incorrect partition statuses to be displayed in the UI.
+- [ui] Partition percentages now round in a more intuitive way.
+- [ui] Row count metadata is now displayed even when set to zero.
+- [dagster-databricks] Fixed an issue where op name generation would occasionally lead to collisions.
+- [dagster-sigma] When building assets for Sigma workbooks that depend on tables unknown to Dagster, an error is logged instead of throwing an exception.
+- [dagster-k8s] Fixed an issue where `PipesK8sClient` would sometimes fail when containers in the `ignored_containers` list failed.
+- [dagster-github] Ensured compatibility with `pyjwt>=2.11.0`,which introduced breaking changes.
+
+### Documentation
+
+- Added an example of censoring PII in run logs.
+- Updated branch deployment docs to include single-agent setup.
+
+## 1.12.13 (core) / 0.28.13 (libraries)
+
+### New
+
+- [dagster-polytomic] `PolytomicComponent` has been added and can be used to represent your Polytomic bulk sync schemas as external assets in Dagster
+- [dagster-fivetran] Added warning log when no Fivetran groups are found to help users troubleshoot permission issues.
+
+## 1.12.12 (core) / 0.28.12 (libraries)
+
+### New
+
+- `dg plus deploy start` now validates deployment akin to `dagster-cloud ci check`.
+- [dagster-aws] Added a suite of new components that map to all existing resources in the library.
+- [dagster-k8s] Increased the maximum version of kubernetes to 35.x.x.
+- [ui] You can now unpin asset groups that no longer contain any assets.
+
+### Bugfixes
+
+- Fixed type errors reported by Pyright's strict mode when using `@asset`, `@multi_asset`, and `@graph_asset` decorators.
+- Running `dg launch --partition-range` for an asset without an explicitly defined single-run-backfill policy now provides a clean error message.
+- Fixed issue where the celery_executor `config_source` values were ignored. (Thanks, [@danielbitzer](https://github.com/danielbitzer)!)
+- Fixed issue with `dg plus deploy refresh-defs-state` URL construction for EU regions.
+- Fixed helm chart validation error when enabling `concurrency` config with default `queuedRunCoordinator` values.
+- `dg list defs` now correctly shows labels for automation conditions.
+- [dagster-dbt] Fixed issue with the `dagster-dbt project prepare-and-package` command where user files named `dbt.py` could shadow the `dbt` module. (Thanks, [@alexaustin007](https://github.com/alexaustin007)!)
+- [dagster-dbt] Fix errors raised when [dbt functions](https://docs.getdbt.com/docs/build/udfs) are present in dbt manifest. (Thanks, [@eso-xyme](https://github.com/eso-xyme)!)
+- [ui] Fixes a bug where creating an alert policy from your Favorites would crash the app.
+
+### Dagster Plus
+
+- Fixed an issue while using the 'isolated_agents' configuration parameter in Dagster+ where runs that were terminated due to exceeding a maximum runtime would sometimes fail to terminate the run worker process after the run was marked as failed.
+
+## 1.12.11 (core) / 0.28.11 (libraries)
+
+### New
+
+- The `dagster-cloud ci check` command is now marked as deprecated. Use `dg plus deploy start` instead, which now validates configuration during deployment initialization.
+- [dagster-fivetran] `FivetranWorkspace` now supports a `request_backoff_factor` parameter for enabling exponential backoff on request failures.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed an issue where the `exclude` parameter of `@dbt_assets` could be ignored if the selection was too large.
+- [ui] The Asset Partitions page and the launch Materializations modal now correctly handle asset partitions that contain JSON or irregular characters.
+- [ui] Fixed an issue where `dagster/row_count` metadata was sometimes not displayed on the Asset Overview page if it was being set by an asset observation rather than a materialization.
+
+### Dagster Plus
+
+- The ECS agent now waits for 10 minutes by default before timing out during a code location deploy instead of 5 minutes, to ensure that large images have enough time to be pulled by the agent. See https://docs.dagster.io/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#user_code_launcher-properties for more information on changing this default.
+- [ui] The Job Insights tab now shows a metric breakdown by job
+
+## 1.12.10 (core) / 0.28.10 (libraries)
+
+### Bugfixes
+
+- [ui] Fixed an issue introduced in 1.12.9 where the "Catalog" tab in the Dagster UI sometimes failed to display any assets.
+
+## 1.12.9 (core) / 0.28.9 (libraries)
+
+### New
+
+- The core `dagster` package (and most libraries) are now compatible with Python 3.14.
+- Added support for using python version 3.13 when running `dg plus deploy`.
+- `dg plus login` now supports a `region` flag for eu-based users: `dg plus login --region eu`.
+- Updated the `bulk_actions` table `body` column from `Text` to `LongText` for Mysql storage. To take advantage of this migration run `dagster instance migrate`. (Thanks, [@jenkoian](https://github.com/jenkoian)!)
+- Updated the `asset_keys` table `cached_status_data` column from `Text` to `LongText` for Mysql storage. To take advantage of this migration run `dagster instance migrate`. (Thanks, [@jenkoian](https://github.com/jenkoian)!)
+- Runs now automatically include a `dagster/code_location` tag when created with a `remote_job_origin`, enabling filtering and concurrency control by code location. (Thanks, [@ssup2](https://github.com/ssup2)!)
+- [ui] the Asset > Partitions page now shows historical "Failed to materialize" events for consistency with the Asset > Events page.
+- [helm] Added a `concurrency` setting to the helm chart to configure concurrency pools.
+- [dagster-azure] The `ADLS2PickleIOManager` now overwrites blob keys when the same asset is materialized twice, instead of deleting then writing the blob.
+- [dagster-aws] An `ecs/container_overrides` tag can now be set on jobs (or on runs in the launchpad) to customize container-level overrides (like GPU resource requirements) for runs using the `EcsRunLauncher`.
+- [dagster-dbt] `dagster-dbt` now supports dbt-core 1.11. (Thanks, [@nicoa](https://github.com/nicoa)!)
+- [dagster-dlt] update url in README (Thanks, [@Miesjell](https://github.com/Miesjell)!)
+- [dagster-databricks] Introduced `DatabricksWorkspaceComponent` to automatically discover Databricks jobs as Dagster assets.
+- [dagster-looker] Added option PDT asset support to `LookerComponent`.
+
+### Bugfixes
+
+- Fixed an issue where a transient issue caused a step health check to fail when using the `k8s_job_executor`.
+- Fixed an issue where a health check failure while using the `k8s_job_executor` could result in a step continuing to run after the run failed.
+- Invalid `TimeWindowPartitionsDefinitions` that contain multiple time windows that map to the same partition key (for example, an hourly partitions definition with a daily format key) will now raise an `Exception` during `dagster definitions validate`, instead of being allowed but causing undefined behavior.
+- [ui] Entering the asset launchpad by right-clicking on the asset graph no longer causes keyboard navigation issues.
+- [ui] Fixed an issue where removing an asset prevented rendering status information for backfills involving that asset in the Dagster UI.
+- [dagster-dbt] Fixed issue that could cause the `DbtCliEventMessage` iterator to error while parsing certain error messages produced by `dbt-core`.
+
+## 1.12.8 (core) / 0.28.8 (libraries)
+
+### New
+
+- `dg plus deploy` commands now support Python 3.13 and Python 3.14.
+
+### Bugfixes
+
+- Fixed an issue where the Dagster Helm chart and Dagster+ agent helm chart could no longer deploy using Helm without adding the `--skip-schema-validation` flag to the Helm deploy command. Thanks [@kang8](https://github.com/kang8)!
+
+## 1.12.7 (core) / 0.28.7 (libraries)
+
+### New
+
+- Optimized performance of calculating partition keys for time window partitions with exclusions.
+- `timedelta` and `datetime` are now available via the `datetime` context when rendering components (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- `FreshnessPolicy` is now available via the `dg` context when rendering components. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- Assets may now be annotated with up to 10 kinds (limit was previously 3).
+- Arbitrary resource parameters may now be hidden in the UI by setting `json_schema_extra={"dagster__is_secret": True}` on the corresponding `Field` definition in the resource class.
+- The `dg docs` cli group has been removed. The `integrations` subcommand has been moved to `dg utils integrations`.
+- Bumped the `gql` dependency in `dagster-graphql` to be inclusive of v4 for broader transitive dependency compatibility
+- [dagster-omni] Fix issue where retries would terminate while asynchronously gathering metadata.
+- [dagster-tableau] The value of resource parameter `TableauWorkspace.connected_app_secret_value` is now hidden in the UI.
+- [dagster-tableau] Updated extraction logic to handle hidden sheets. The materializable data sources connected to these sheets are now successfully detected and included as materializable data assets. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+
+### Bugfixes
+
+- Fix an AttributeError when calling `map_asset_specs` on assets defined using the `ins` parameter. (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- Fix an issue where backfill runs that incorrectly created unpartitioned materializations of a partitioned asset, or partitioned materializations of an unpartitioned asset due to incorrect asset business logic would move the backfill into an invalid state. Now, the backfill will detect this case and fail the backfill.
+- Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
+- [dagster-dbt] Fixed issue that could cause errors when emitting events for a dbt Cloud job run.
+
+### Dagster Plus
+
+- Dagster Plus Pro users can now create service users. Service users are accounts that can
+  authenticate API requests but that are not tied to any particular human user.
+
+## 1.12.6 (core) / 0.28.6 (libraries)
+
+### New
+
+- All CLI commands under `dagster project` have been removed. `create-dagster` should be used instead.
+- [ui] Added a new Partitions facet to the Asset Lineage Graph.
+- [ui] More details are now displayed for `SINCE` conditions in evaluation tables for automation conditions.
+- [dagster-dbt] Added dbt cloud logs to stdout after the run completes in dbt cloud.
+- [dagster-tableau] Improved resilience when fetching Tableau workspace data. The integration now skips individual workbooks that fail to return data and logs a warning, rather than failing the entire operation. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+
+### Bugfixes
+
+- Fixed an issue that would cause errors when attempting to create subclasses of `Resolved` that had fields using `default_factory` arguments.
+- Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
+- [ui] Fixed Snowflake connection by changing the private key encoding from PEM to DER format. Snowflake requires unencrypted RSA private keys to be in DER format as bytes.
+- [dagster-dbt] Updated `DbtCliResource` to use the `project_dir` attribute from the `DbtProject` instance rather than passing the entire `DbtProject` object.
+- [dagster-tableau][dagster-sigma] Fixed bug that would cause templated env vars to not be resolved when specified in yaml.
+
+## 1.12.5 (core) / 0.28.5 (libraries)
+
+### New
+
+- Increased the version of NextJS used by the Dagster webserver and the `dg docs serve` command to `15.5.7`. While these applications are unaffected by https://nextjs.org/blog/CVE-2025-66478 due to not using React 19, this upgrade ensures that dagster packages will not be flagged for that CVE by vulnerability scanners.
+
+## 1.12.4 (core) / 0.28.4 (libraries)
+
+### New
+
+- CI workflows for Gitlab projects can now be scaffolded using `dg plus deploy configure`.
+- "/" characters are now allowed in concurrency pool names.
+- Pod wait timeout for K8sPipeClient can now be specified (Thanks, [@abhinavDhulipala](https://github.com/abhinavDhulipala)!)
+- New `kind` tag icon for Zendesk (Thanks, [@kporter13](https://github.com/kporter13)!)
+- [dagster-tableau] Added `enable_embedded_datasource_refresh` and `enable_published_datsource_refresh` options to the `TableauComponent`, which allow creating materializable assets for the associated datasource types.
+
+### Bugfixes
+
+- Fixed an issue where passing in JSON serializable enums to JsonMetadataValue would sometimes result in an error.
+- Fixed an issue that would cause `SensorDefinition` subclasses (e.g. `AutomationConditionSensorDefinition`, `RunStatusSensorDefinition`) to be converted to having the wrong `sensor_type` property when produced from a `Component`.
+- Fixed an issue where the `Flower` config map was included in the Helm chart even when `Flower` was disabled (Thanks, [@LoHertel](https://github.com/LoHertel)!)
+- [dagster-dbt] Fixed a `FileExistsError` on Windows when reloading `dbt` project definitions by ensuring the local project directory creation handles pre-existing directories (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- [dagster-tableau] Fixed a KeyError that occurred when using `workbook_selector_fn` to filter assets. Now dependencies are only accessed if they exist in the workspace data. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+- [dagster-tableau] Fixed an issue where `workbook_selector_fn` was only applied to the first 100 workbooks.
+- [dagster-tableau] The workbook is now part of the asset key prefix to avoid naming collisions.
+- [dagster-tableau] Fixed an issue where workbook names with dots `.` were improperly handled.
+
+### Documentation
+
+- Updated `dagster-iceberg` docs to include recently-added features. (Thanks, [@zyd14](https://github.com/zyd14)!)
+
 ## 1.12.3 (core) / 0.28.3 (libraries)
 
 ### New

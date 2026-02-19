@@ -1,7 +1,12 @@
 import {Icon, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
+import {
+  escapePartitionKey,
+  partitionsToText,
+  serializeRange,
+  spanTextToSelectionsOrError,
+} from './SpanRepresentation';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {testId} from '../testing/testId';
 import {ClearButton} from '../ui/ClearButton';
@@ -88,8 +93,12 @@ function placeholderForPartitions(names: string[], isTimeseries: boolean) {
   if (names.length === 0) {
     return '';
   }
+  const first = names[0];
+  const second = names[1];
   if (names.length < 4 || !isTimeseries) {
-    return `ex: ${names[0]}, ${names[1]}`;
+    return `ex: ${escapePartitionKey(first ?? '')}, ${escapePartitionKey(second ?? '')}`;
   }
-  return `ex: ${names[0]}, ${names[1]}, [${names[2]}...${names[names.length - 1]}]`;
+  const third = names[2];
+  const last = names[names.length - 1];
+  return `ex: ${escapePartitionKey(first ?? '')}, ${escapePartitionKey(second ?? '')}, ${serializeRange(third ?? '', last ?? '')}`;
 }

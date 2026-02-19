@@ -26,17 +26,20 @@ import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {ConcurrencyTable} from './VirtualizedInstanceConcurrencyTable';
 import {gql, useMutation, useQuery} from '../apollo-client';
+import {SET_CONCURRENCY_LIMIT_MUTATION} from './ConcurrencyQueries';
 import {
   InstanceConcurrencyLimitsQuery,
   InstanceConcurrencyLimitsQueryVariables,
   RunQueueConfigFragment,
-  SetConcurrencyLimitMutation,
-  SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
 import {QueryRefreshState} from '../app/QueryRefresh';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {
+  SetConcurrencyLimitMutation,
+  SetConcurrencyLimitMutationVariables,
+} from './types/ConcurrencyQueries.types';
 
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
@@ -443,10 +446,4 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
   }
 
   ${RUN_QUEUE_CONFIG_FRAGMENT}
-`;
-
-const SET_CONCURRENCY_LIMIT_MUTATION = gql`
-  mutation SetConcurrencyLimit($concurrencyKey: String!, $limit: Int!) {
-    setConcurrencyLimit(concurrencyKey: $concurrencyKey, limit: $limit)
-  }
 `;

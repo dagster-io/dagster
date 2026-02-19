@@ -5,7 +5,7 @@ from abc import ABC
 from collections import namedtuple
 from collections.abc import Callable, Iterator, Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, overload
 
 from typing_extensions import Self, dataclass_transform
 
@@ -32,7 +32,7 @@ _NAMED_TUPLE_BASE_NEW_FIELD = "__nt_new__"
 _REMAPPING_FIELD = "__field_remap__"
 _ORIGINAL_CLASS_FIELD = "__original_class__"
 _KW_ONLY_FIELD = "__kw_only__"
-
+_REPLACE_NEW_FIELD = "__replace_new__"
 
 _sample_nt = namedtuple("_canary", "x")
 # use a sample to avoid direct private imports (_collections._tuplegetter)
@@ -106,7 +106,7 @@ def _namedtuple_record_transform(
     checked: bool,
     with_new: bool,
     decorator_frames: int,
-    field_to_new_mapping: Optional[Mapping[str, str]],
+    field_to_new_mapping: Mapping[str, str] | None,
     kw_only: bool,
 ) -> TType:
     """Transforms the input class in to one that inherits a generated NamedTuple base class
@@ -173,6 +173,7 @@ def _namedtuple_record_transform(
         _REMAPPING_FIELD: field_to_new_mapping or {},
         _ORIGINAL_CLASS_FIELD: cls,
         _KW_ONLY_FIELD: kw_only,
+        _REPLACE_NEW_FIELD: generated_new if generated_new else nt_new,
         "__reduce__": _reduce,
         # functools doesn't work, so manually update_wrapper
         "__module__": cls.__module__,
@@ -257,11 +258,11 @@ def record(
     frozen_default=True,
 )
 def record(
-    cls: Optional[TType] = None,
+    cls: TType | None = None,
     *,
     checked: bool = True,
     kw_only: bool = True,
-) -> Union[TType, Callable[[TType], TType]]:
+) -> TType | Callable[[TType], TType]:
     """A class decorator that will create an immutable record class based on the defined fields.
 
     Args:
@@ -318,16 +319,16 @@ def record_custom(
 def record_custom(
     *,
     checked: bool = True,
-    field_to_new_mapping: Optional[Mapping[str, str]] = None,
+    field_to_new_mapping: Mapping[str, str] | None = None,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
 def record_custom(
-    cls: Optional[TType] = None,
+    cls: TType | None = None,
     *,
     checked: bool = True,
-    field_to_new_mapping: Optional[Mapping[str, str]] = None,
-) -> Union[TType, Callable[[TType], TType]]:
+    field_to_new_mapping: Mapping[str, str] | None = None,
+) -> TType | Callable[[TType], TType]:
     """Variant of the record decorator to use when overriding __new__.
 
     Example:
@@ -489,13 +490,8 @@ def replace(obj: TVal, **kwargs) -> TVal:
     cls = obj.__class__
 
     # if we have runtime type checking, go through that to vet new field values
-    if hasattr(cls, _CHECKED_NEW):
-        target = _CHECKED_NEW
-    else:
-        target = _NAMED_TUPLE_BASE_NEW_FIELD
-
-    return getattr(cls, target)(
-        obj.__class__,
+    return getattr(cls, _REPLACE_NEW_FIELD)(
+        cls,
         **{**as_dict(obj), **kwargs},
     )
 
@@ -570,6 +566,7 @@ class JitCheckedNew:
         for c in cls.__mro__:
             if c.__new__ is self:
                 c.__new__ = compiled_fn
+        setattr(cls, _REPLACE_NEW_FIELD, compiled_fn)
 
         return compiled_fn(cls, *args, **kwargs)
 

@@ -61,4 +61,4 @@ We have a whole guide for switching from the `BashOperator` to the `dbt` integra
 
 #### Running S3 Sync or other AWS CLI commands
 
-Dagster has a rich set of integrations for AWS services. For example, you can use the <PyObject section="libraries" object="s3.S3Resource" module="dagster_aws"/> to interact with S3 directly.
+Dagster has a rich set of integrations for AWS services. For example, you can use the <PyObject section="libraries" integration="aws" object="s3.S3Resource" module="dagster_aws"/> to interact with S3 directly.

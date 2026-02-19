@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from dagster_shared.serdes import serialize_value
 
@@ -28,7 +28,7 @@ T_Defs = TypeVar("T_Defs", Definitions, RepositoryDefinition)
 @contextmanager
 def scoped_definitions_load_context(
     load_type: DefinitionsLoadType = DefinitionsLoadType.INITIALIZATION,
-    repository_load_data: Optional[RepositoryLoadData] = None,
+    repository_load_data: RepositoryLoadData | None = None,
 ) -> Iterator["DefinitionsLoadContext"]:
     context = DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
     curr_context = DefinitionsLoadContext.get()
@@ -41,7 +41,7 @@ def scoped_definitions_load_context(
 
 @contextmanager
 def scoped_reconstruction_serdes_objects(
-    state_objects: Optional[Mapping[str, Any]] = None,
+    state_objects: Mapping[str, Any] | None = None,
 ) -> Iterator[None]:
     """For test cases that involved state-backed definition objects. This context manager
     allows one to set backing state for a definitions object and test reconstruction
@@ -67,7 +67,7 @@ def scoped_reconstruction_serdes_objects(
 
 @contextmanager
 def scoped_reconstruction_metadata(
-    reconstruction_metadata: Optional[Mapping[str, Any]] = None,
+    reconstruction_metadata: Mapping[str, Any] | None = None,
 ) -> Iterator[None]:
     """For test cases that involved state-backed definition objects. This context manager
     allows one to set backing reconstruciton metaddata for a definitions object

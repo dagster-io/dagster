@@ -32,9 +32,10 @@ const ROW_HEIGHT = 44;
 
 interface Props {
   repoAddress: RepoAddress;
+  expandAllGroups?: boolean;
 }
 
-export const CodeLocationAssetsList = ({repoAddress}: Props) => {
+export const CodeLocationAssetsList = ({repoAddress, expandAllGroups = false}: Props) => {
   const [searchValue, setSearchValue] = useState('');
 
   const repoName = repoAddressAsHumanString(repoAddress);
@@ -58,6 +59,7 @@ export const CodeLocationAssetsList = ({repoAddress}: Props) => {
   const {flattened, expandedKeys, onToggle} = useFlattenedGroupedAssetList({
     repoAddress,
     assets: filteredBySearch,
+    expandAllGroups,
   });
 
   const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +127,7 @@ export const CodeLocationAssetsList = ({repoAddress}: Props) => {
               return (
                 <GroupNameRow
                   key={key}
+                  canToggle={!expandAllGroups}
                   height={size}
                   start={start}
                   expanded={expandedKeys.has(item.name)}
@@ -173,20 +176,22 @@ interface GroupNameRowProps {
   expanded: boolean;
   height: number;
   start: number;
+  canToggle: boolean;
   onToggle: (groupName: string) => void;
 }
 
 const GroupNameRow = (props: GroupNameRowProps) => {
-  const {groupName, assetCount, expanded, height, start, onToggle} = props;
+  const {groupName, assetCount, expanded, height, start, canToggle, onToggle} = props;
   return (
     <ClickableRow
+      $canToggle={canToggle}
       $height={height}
       $start={start}
-      onClick={() => onToggle(groupName)}
+      onClick={() => canToggle && onToggle(groupName)}
       $open={expanded}
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.code === 'Space' || e.code === 'Enter') {
+        if (canToggle && (e.code === 'Space' || e.code === 'Enter')) {
           e.preventDefault();
           onToggle(groupName);
         }
@@ -209,15 +214,15 @@ const GroupNameRow = (props: GroupNameRowProps) => {
         </Box>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
           <Tag>{assetCount === 1 ? '1 asset' : `${assetCount} assets`}</Tag>
-          <Icon name="arrow_drop_down" size={20} />
+          {canToggle && <Icon name="arrow_drop_down" size={20} />}
         </Box>
       </Box>
     </ClickableRow>
   );
 };
 
-const ClickableRow = styled(Row)<{$open: boolean}>`
-  cursor: pointer;
+const ClickableRow = styled(Row)<{$open: boolean; $canToggle: boolean}>`
+  cursor: ${({$canToggle}) => ($canToggle ? 'pointer' : 'default')};
 
   :focus,
   :active {

@@ -1,5 +1,4 @@
 from collections.abc import Mapping, Sequence
-from typing import Optional, Union
 
 from dagster_shared.record import IHaveNew, record, record_custom
 from dagster_shared.serdes import whitelist_for_serdes
@@ -17,7 +16,7 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 @whitelist_for_serdes
 @record(kw_only=False)
 class TableRecord:
-    data: PublicAttr[Mapping[str, Optional[Union[str, int, float, bool]]]]
+    data: PublicAttr[Mapping[str, str | int | float | bool | None]]
 
     """Represents one record in a table. Field keys are arbitrary strings-- field values must be
     strings, integers, floats, or bools.
@@ -75,7 +74,7 @@ class TableColumnConstraints(IHaveNew):
         cls,
         nullable: bool = True,
         unique: bool = False,
-        other: Optional[Sequence[str]] = None,
+        other: Sequence[str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -98,7 +97,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 class TableColumn(IHaveNew):
     name: PublicAttr[str]
     type: PublicAttr[str]
-    description: PublicAttr[Optional[str]]
+    description: PublicAttr[str | None]
     constraints: PublicAttr[TableColumnConstraints]
     tags: PublicAttr[Mapping[str, str]]
 
@@ -121,9 +120,9 @@ class TableColumn(IHaveNew):
         cls,
         name: str,
         type: str = "string",  # noqa: A002
-        description: Optional[str] = None,
-        constraints: Optional[TableColumnConstraints] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        description: str | None = None,
+        constraints: TableColumnConstraints | None = None,
+        tags: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -206,7 +205,7 @@ class TableSchema(IHaveNew):
     def __new__(
         cls,
         columns: Sequence[TableColumn],
-        constraints: Optional[TableConstraints] = None,
+        constraints: TableConstraints | None = None,
     ):
         return super().__new__(
             cls,

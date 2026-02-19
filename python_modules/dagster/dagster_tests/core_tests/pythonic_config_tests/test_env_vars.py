@@ -34,7 +34,7 @@ def test_direct_use_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            'Attempted to directly retrieve environment variable EnvVar\\("A_STR"\\). EnvVar defers'
+            r'Attempted to directly retrieve environment variable EnvVar\("A_STR"\). EnvVar defers'
             " resolution of the environment variable value until run time, and should only be used"
             " as input to Dagster config or resources.\n\n"
         ),
@@ -44,7 +44,7 @@ def test_direct_use_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            'Attempted to directly retrieve environment variable EnvVar\\("A_STR"\\). EnvVar defers'
+            r'Attempted to directly retrieve environment variable EnvVar\("A_STR"\). EnvVar defers'
             " resolution of the environment variable value until run time, and should only be used"
             " as input to Dagster config or resources.\n\n"
         ),
@@ -56,7 +56,7 @@ def test_direct_use_int_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            'Attempted to directly retrieve environment variable IntEnvVar\\("AN_INT"\\). IntEnvVar'
+            r'Attempted to directly retrieve environment variable IntEnvVar\("AN_INT"\). IntEnvVar'
             " defers resolution of the environment variable value until run time, and should only"
             " be used as input to Dagster config or resources."
         ),
@@ -66,7 +66,7 @@ def test_direct_use_int_env_var_err() -> None:
     with pytest.raises(
         RuntimeError,
         match=(
-            'Attempted to directly retrieve environment variable IntEnvVar\\("AN_INT"\\). IntEnvVar'
+            r'Attempted to directly retrieve environment variable IntEnvVar\("AN_INT"\). IntEnvVar'
             " defers resolution of the environment variable value until run time, and should only"
             " be used as input to Dagster config or resources."
         ),
@@ -180,9 +180,7 @@ def test_int_env_var_non_int_value() -> None:
     with environ({"AN_INT": "NOT_AN_INT"}):
         with pytest.raises(
             dg.DagsterInvalidConfigError,
-            match=(
-                'Value "NOT_AN_INT" stored in env variable "AN_INT" cannot be coerced into an int.'
-            ),
+            match=(r'Value stored in env variable "AN_INT" cannot be coerced into an int.'),
         ):
             defs.resolve_implicit_global_asset_job_def().execute_in_process(
                 run_config=dg.RunConfig(

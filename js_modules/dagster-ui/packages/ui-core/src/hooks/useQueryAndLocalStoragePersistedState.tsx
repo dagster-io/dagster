@@ -18,9 +18,11 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
 ): [T, (setterOrState: React.SetStateAction<T>) => void] => {
   const {localStorageKey, isEmptyState, decode, encode} = props;
 
+  const decoder = React.useCallback((json: any) => (decode ? decode(json ?? {}) : json), [decode]);
+
   const [valueFromLocalStorage, setValueFromLocalStorage] = useStateWithStorage(
     localStorageKey,
-    (json) => (decode ? decode(json ?? {}) : json),
+    decoder,
   );
 
   const [state, setter] = useQueryPersistedState(props);

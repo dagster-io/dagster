@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from dagster_shared.record import replace
 from dagster_shared.serdes import whitelist_for_serdes
@@ -32,18 +32,18 @@ class SinceConditionData:
     and reset conditions were true.
     """
 
-    trigger_evaluation_id: Optional[int]
-    trigger_timestamp: Optional[float]
-    reset_evaluation_id: Optional[int]
-    reset_timestamp: Optional[float]
+    trigger_evaluation_id: int | None
+    trigger_timestamp: float | None
+    reset_evaluation_id: int | None
+    reset_timestamp: float | None
 
     @staticmethod
-    def from_metadata(metadata: Optional[MetadataMapping]) -> "SinceConditionData":
-        def _get_int(key: str) -> Optional[int]:
+    def from_metadata(metadata: MetadataMapping | None) -> "SinceConditionData":
+        def _get_int(key: str) -> int | None:
             metadata_val = metadata.get(key, None) if metadata else None
             return metadata_val.value if isinstance(metadata_val, IntMetadataValue) else None
 
-        def _get_float(key: str) -> Optional[float]:
+        def _get_float(key: str) -> float | None:
             metadata_val = metadata.get(key, None) if metadata else None
             return metadata_val.value if isinstance(metadata_val, FloatMetadataValue) else None
 
@@ -54,7 +54,7 @@ class SinceConditionData:
             reset_timestamp=_get_float("reset_timestamp"),
         )
 
-    def to_metadata(self) -> Mapping[str, Union[IntMetadataValue, FloatMetadataValue]]:
+    def to_metadata(self) -> Mapping[str, IntMetadataValue | FloatMetadataValue]:
         return dict(
             trigger_evaluation_id=IntMetadataValue(self.trigger_evaluation_id),
             trigger_timestamp=FloatMetadataValue(self.trigger_timestamp),
@@ -96,9 +96,9 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     def get_node_unique_id(
         self,
         *,
-        parent_unique_id: Optional[str],
-        index: Optional[int],
-        target_key: Optional[EntityKey],
+        parent_unique_id: str | None,
+        index: int | None,
+        target_key: EntityKey | None,
     ) -> str:
         # since conditions should have stable cursoring logic regardless of where they
         # exist in the broader condition tree, as they're always evaluated over the entire
@@ -108,9 +108,9 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     def get_backcompat_node_unique_ids(
         self,
         *,
-        parent_unique_id: Optional[str] = None,
-        index: Optional[int] = None,
-        target_key: Optional[EntityKey] = None,
+        parent_unique_id: str | None = None,
+        index: int | None = None,
+        target_key: EntityKey | None = None,
     ) -> Sequence[str]:
         return [
             # get the standard globally-aware unique id for backcompat purposes
@@ -165,8 +165,8 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
 
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching

@@ -10,7 +10,6 @@ from typing import (  # noqa: UP035
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -64,7 +63,7 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
     @property
     @abstractmethod
-    def partitions_def(self) -> Optional[PartitionsDefinition]: ...
+    def partitions_def(self) -> PartitionsDefinition | None: ...
 
     @property
     @abstractmethod
@@ -84,7 +83,7 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
     @property
     @abstractmethod
-    def description(self) -> Optional[str]: ...
+    def description(self) -> str | None: ...
 
 
 class BaseAssetNode(BaseEntityNode[AssetKey]):
@@ -106,7 +105,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def description(self) -> Optional[str]: ...
+    def description(self) -> str | None: ...
 
     @property
     @abstractmethod
@@ -142,7 +141,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def pools(self) -> Optional[set[str]]: ...
+    def pools(self) -> set[str] | None: ...
 
     @property
     @abstractmethod
@@ -154,18 +153,18 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
+    def legacy_freshness_policy(self) -> LegacyFreshnessPolicy | None: ...
 
     @property
     @abstractmethod
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def freshness_policy(self) -> FreshnessPolicy | None:
         """WARNING: This field is not backwards compatible for policies created prior to 1.11.0.
         For backwards compatibility, use freshness_policy_or_from_metadata instead.
         """
         ...
 
     @property
-    def freshness_policy_or_from_metadata(self) -> Optional[FreshnessPolicy]:
+    def freshness_policy_or_from_metadata(self) -> FreshnessPolicy | None:
         """Prior to 1.11.0, freshness policy was stored in the node metadata. Freshness policy is a first-class attribute of the asset starting in 1.11.0.
 
         This field is backwards compatible since it checks for the policy in both the top-level attribute and the node metadata.
@@ -180,15 +179,15 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def auto_observe_interval_minutes(self) -> Optional[float]: ...
+    def auto_observe_interval_minutes(self) -> float | None: ...
 
     @property
     @abstractmethod
-    def backfill_policy(self) -> Optional[BackfillPolicy]: ...
+    def backfill_policy(self) -> BackfillPolicy | None: ...
 
     @property
     @abstractmethod
-    def code_version(self) -> Optional[str]: ...
+    def code_version(self) -> str | None: ...
 
     @property
     @abstractmethod
@@ -202,7 +201,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
     @abstractmethod
     def execution_set_entity_keys(
         self,
-    ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]: ...
+    ) -> AbstractSet[AssetKey | AssetCheckKey]: ...
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
@@ -214,9 +213,10 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         key: AssetCheckKey,
         additional_deps: Sequence[AssetKey],
         blocking: bool,
-        description: Optional[str],
+        description: str | None,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
         metadata: ArbitraryMetadataMapping,
+        partitions_def: PartitionsDefinition | None,
     ):
         self.key = key
         self.blocking = blocking
@@ -224,6 +224,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         self._additional_deps = additional_deps
         self._description = description
         self._metadata = metadata
+        self._partitions_def = partitions_def
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -234,9 +235,8 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return {self.key.asset_key}
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
-        # all checks are unpartitioned
-        return None
+    def partitions_def(self) -> PartitionsDefinition | None:
+        return self._partitions_def
 
     @property
     def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]:
@@ -247,7 +247,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return self._automation_condition
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._description
 
     @property
@@ -267,6 +267,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return self._asset_nodes_by_key.values()
 
     @property
+    def asset_check_nodes(self) -> Iterable[AssetCheckNode]:
+        return self._asset_check_nodes_by_key.values()
+
+    @property
     def nodes(self) -> Iterable[BaseEntityNode]:
         return [
             *self._asset_nodes_by_key.values(),
@@ -282,7 +286,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @overload
     def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
 
-    def get(self, key: EntityKey) -> Union[T_AssetNode, AssetCheckNode]:
+    def get(self, key: EntityKey) -> T_AssetNode | AssetCheckNode:
         if isinstance(key, AssetKey):
             return self._asset_nodes_by_key[key]
         else:
@@ -476,7 +480,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ]
 
     def get_children_partitions(
-        self, asset_key: AssetKey, partition_key: Optional[str] = None
+        self, asset_key: AssetKey, partition_key: str | None = None
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns every partition in every of the given asset's children that depends on the given
         partition of that asset.
@@ -494,7 +498,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     def get_child_partition_keys_of_parent(
         self,
-        parent_partition_key: Optional[str],
+        parent_partition_key: str | None,
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
     ) -> Sequence[str]:
@@ -538,7 +542,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return list(child_partitions_subset.get_partition_keys())
 
     def get_parents_partitions(
-        self, asset_key: AssetKey, partition_key: Optional[str] = None
+        self, asset_key: AssetKey, partition_key: str | None = None
     ) -> ParentsPartitionsResult:
         """Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
@@ -572,7 +576,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     def get_parent_partition_keys_for_child(
         self,
-        partition_key: Optional[str],
+        partition_key: str | None,
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
     ) -> UpstreamPartitionsResult:
@@ -638,10 +642,18 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             and not self.has_materializable_parents(key)
         }
 
-    def validate_partition_mappings(self):
+    def validate_partitions(self):
         for node in self.asset_nodes:
             if node.is_external:
                 continue
+
+            if node.partitions_def:
+                try:
+                    node.partitions_def.validate_partition_definition()
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition definition for {node.key.to_user_string()}"
+                    ) from e
 
             parents = self.get_parents(node)
             for parent in parents:
@@ -659,6 +671,28 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                     raise DagsterInvalidDefinitionError(
                         f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
                     ) from e
+
+        # Validate that asset checks have compatible partitions_def with their target asset
+        for node in self.asset_check_nodes:
+            if node.partitions_def is None:
+                continue
+
+            target_asset_key = node.key.asset_key
+            if not self.has(target_asset_key):
+                raise DagsterInvalidDefinitionError(
+                    f"Partitioned asset check '{node.key.to_user_string()}' targets "
+                    f"asset '{target_asset_key.to_user_string()}' "
+                    "but the asset does not exist in the graph."
+                )
+            # If the check is partitioned, it must have the same partitions_def as the asset
+            if node.partitions_def != self.get(target_asset_key).partitions_def:
+                raise DagsterInvalidDefinitionError(
+                    f"Asset check '{node.key.to_user_string()}' targets asset '{target_asset_key.to_user_string()}' "
+                    "but has a different partitions definition. "
+                    f"Asset check partitions_def: {node.partitions_def}, "
+                    f"Asset partitions_def: {self.get(target_asset_key).partitions_def}. "
+                    "Partitioned asset checks must have the same partitions definition as their target asset."
+                )
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
         """Iterates through all asset keys which are upstream of the given key."""
@@ -715,7 +749,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     def bfs_filter_subsets(
         self,
-        condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
+        condition_fn: Callable[[AssetKey, PartitionsSubset | None], bool],
         initial_subset: "AssetGraphSubset",
     ) -> "AssetGraphSubset":
         """Returns asset partitions within the graph that satisfy supplied criteria.
@@ -736,9 +770,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         initial_asset_key = next(iter(initial_subset.asset_keys))
         queue = deque([initial_asset_key])
 
-        queued_subsets_by_asset_key: dict[AssetKey, Optional[PartitionsSubset]] = {
+        queued_subsets_by_asset_key: dict[AssetKey, PartitionsSubset | None] = {
             initial_asset_key: (
-                initial_subset.get_partitions_subset(initial_asset_key, self)
+                (
+                    initial_subset.get_partitions_subset(initial_asset_key)
+                    if initial_asset_key in initial_subset.partitions_subsets_by_asset_key
+                    else check.not_none(self.get(initial_asset_key).partitions_def).empty_subset()
+                )
                 if self.get(initial_asset_key).is_partitioned
                 else None
             ),

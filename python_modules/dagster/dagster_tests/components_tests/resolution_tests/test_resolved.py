@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Annotated, Literal, NamedTuple, Optional, TypeAlias, Union
+from typing import Annotated, Literal, NamedTuple, TypeAlias
 
 import dagster as dg
 import pytest
@@ -59,7 +59,7 @@ def test_nested():
     class MyThing(dg.Resolvable):
         name: str
         other_thing: OtherThing
-        other_things: Optional[list[OtherThing]]
+        other_things: list[OtherThing] | None
 
     MyThing.resolve_from_yaml(
         """
@@ -255,7 +255,7 @@ def test_component_docs():
         asset_key: str = Field(
             ..., description="The asset key to test. Slashes are parsed into key parts."
         )
-        tests: list[Union[RangeTest, SumTest]]
+        tests: list[RangeTest | SumTest]
 
         def build_defs(self, context):
             return dg.Definitions()
@@ -311,14 +311,14 @@ def test_nested_from_model():
 
     @dataclass
     class Double(dg.Resolvable):
-        foo: Optional[list[Annotated[str, Resolver.from_model(_resolve_from_obj)]]]
+        foo: list[Annotated[str, Resolver.from_model(_resolve_from_obj)]] | None
 
     with pytest.raises(Exception):
         Double.model()
 
     @dataclass
     class Opt(dg.Resolvable):
-        foo: Optional[Annotated[str, Resolver.from_model(_resolve_from_obj)]]
+        foo: Annotated[str, Resolver.from_model(_resolve_from_obj)] | None
 
     with pytest.raises(Exception):
         Opt.model()
@@ -374,7 +374,7 @@ def test_inject():
     class Target(dg.Resolvable, dg.Model):
         spec: dg.ResolvedAssetSpec
         specs: list[dg.ResolvedAssetSpec]
-        maybe_specs: Optional[list[dg.ResolvedAssetSpec]] = None
+        maybe_specs: list[dg.ResolvedAssetSpec] | None = None
 
     boop = dg.AssetSpec("boop")
     scope = {"boop": boop, "blank": None}
@@ -531,8 +531,8 @@ def test_containers():
         li: list[ResolvedFoo]
         t: tuple[ResolvedFoo, ...]
         s: Sequence[ResolvedFoo]
-        mli: Optional[list[ResolvedFoo]]
-        uli: Union[list[ResolvedFoo], str]
+        mli: list[ResolvedFoo] | None
+        uli: list[ResolvedFoo] | str
 
     t = Target.resolve_from_yaml("""
 li:
@@ -604,7 +604,7 @@ def test_enums():
 def test_dicts():
     class Inner(dg.Resolvable, dg.Model):
         name: str
-        value: Optional[dg.ResolvedAssetSpec]
+        value: dg.ResolvedAssetSpec | None
 
     class HasDict(dg.Resolvable, dg.Model):
         thing: dict[str, Inner]
@@ -625,3 +625,28 @@ def test_dicts():
 
     with pytest.raises(ResolutionException, match="dict key type must be str"):
         BadHasDict.resolve_from_dict({"thing": {"a": {"name": "a", "value": {"key": "a"}}}})
+
+
+def test_default_factory():
+    @dataclass
+    class TargetDataclass(dg.Resolvable):
+        items: dict = field(default_factory=dict)
+
+    # empty yaml should produce an instance with the default dict
+    t = TargetDataclass.resolve_from_yaml("")
+    assert isinstance(t.items, dict)
+    assert t.items == {}
+    t = TargetDataclass.resolve_from_dict({"items": {"a": "b"}})
+    assert t.items == {"a": "b"}
+
+    class TargetModel(dg.Model, dg.Resolvable):
+        some_field: list[str] = Field(default_factory=list)
+
+    t = TargetModel.resolve_from_yaml("")
+    assert isinstance(t.some_field, list)
+    assert t.some_field == []
+    assert TargetModel.resolve_from_yaml("""
+some_field:
+  - a
+  - b
+""").some_field == ["a", "b"]

@@ -7,6 +7,8 @@ KIND_PREFIX = f"{SYSTEM_TAG_PREFIX}kind/"
 
 REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
+CODE_LOCATION_TAG = f"{SYSTEM_TAG_PREFIX}code_location"
+
 SCHEDULE_NAME_TAG = f"{SYSTEM_TAG_PREFIX}schedule_name"
 
 SENSOR_NAME_TAG = f"{SYSTEM_TAG_PREFIX}sensor_name"
@@ -18,8 +20,8 @@ BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}backfill"
 PARTITION_NAME_TAG = f"{SYSTEM_TAG_PREFIX}partition"
 
 MULTIDIMENSIONAL_PARTITION_PREFIX = f"{PARTITION_NAME_TAG}/"
-get_multidimensional_partition_tag = (
-    lambda dimension_name: f"{MULTIDIMENSIONAL_PARTITION_PREFIX}{dimension_name}"
+get_multidimensional_partition_tag = lambda dimension_name: (
+    f"{MULTIDIMENSIONAL_PARTITION_PREFIX}{dimension_name}"
 )
 get_dimension_from_partition_tag = lambda tag: tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
 

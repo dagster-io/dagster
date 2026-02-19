@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Group, Icon, NonIdealState, Tooltip} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, NonIdealState, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {gql} from '../apollo-client';
@@ -25,7 +25,7 @@ export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
     return null;
   }
   return (
-    <Group direction="column" spacing={16}>
+    <Box flex={{direction: 'column', gap: 16}}>
       <Box padding={12} border={{side: 'bottom', color: Colors.textLighter()}}>
         <Body>
           Targeted Runs
@@ -48,7 +48,7 @@ export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
           description="This sensor does not target a pipeline or job."
         />
       </Box>
-    </Group>
+    </Box>
   );
 };
 

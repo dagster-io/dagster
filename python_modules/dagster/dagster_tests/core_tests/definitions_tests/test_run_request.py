@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Union, cast
+from typing import cast
 
 import dagster as dg
 import pytest
@@ -19,7 +19,7 @@ import pytest
 def test_validate_dynamic_partitions(
     prior_partitions: Sequence[str],
     dynamic_partitions_requests: Sequence[
-        Union[dg.AddDynamicPartitionsRequest, dg.DeleteDynamicPartitionsRequest]
+        dg.AddDynamicPartitionsRequest | dg.DeleteDynamicPartitionsRequest
     ],
     expect_success: bool,
 ):
@@ -41,7 +41,7 @@ def test_validate_dynamic_partitions(
             )
         else:
             with pytest.raises(
-                dg.DagsterUnknownPartitionError, match="Could not find a partition with key `a`."
+                dg.DagsterUnknownPartitionError, match=r"Could not find a partition with key `a`."
             ):
                 run_request.with_resolved_tags_and_config(
                     target_definition=job1,

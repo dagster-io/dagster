@@ -17,7 +17,7 @@ For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes) deployed wit
 
 User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven't served requests recently and will spin them back up the next time they're needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
 
-TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
+TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
 
 To configure TTL:
 
@@ -96,8 +96,8 @@ compute_logs:
 
 ## Writing compute logs to AWS S3
 
-{/* /api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager */}
-You can write compute logs to an AWS S3 bucket by configuring the <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> module.
+{/* /integrations/libraries/aws/dagster-aws#dagster_aws.s3.S3ComputeLogManager */}
+You can write compute logs to an AWS S3 bucket by configuring the <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.S3ComputeLogManager" /> module.
 
 You are also able to stream partial compute log files by configuring the log upload interval (in seconds) using the `upload_interval` parameter.
 

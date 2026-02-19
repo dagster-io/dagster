@@ -1,6 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
 import {Box, Caption, Colors, Tag} from '@dagster-io/ui-components';
-import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {MaterializationTag} from './MaterializationTag';

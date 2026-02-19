@@ -77,6 +77,7 @@ module.exports = {
   moduleNameMapper: {
     '\\.(css|less)$': 'identity-obj-proxy',
     '^worker-loader(.*)/workers/(.*)$': '<rootDir>/jest/mocks/$2',
+    '^@koale/useworker$': '<rootDir>/jest/mocks/@koale/useworker',
     '^@dagster-io/ui-components$': '<rootDir>/../ui-components/src/index',
     '^@dagster-io/ui-components/editor$': '<rootDir>/../ui-components/src/editor',
     '^shared/(.*)$': '<rootDir>/src/$1',
@@ -98,7 +99,7 @@ module.exports = {
   // projects: undefined,
 
   // Use this configuration option to add custom reporters to Jest
-  reporters: ['default', 'buildkite-test-collector/jest/reporter'],
+  reporters: ['default'],
 
   // Automatically reset mock state between every test
   // resetMocks: false,
@@ -136,7 +137,7 @@ module.exports = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: './src/quarantine-test-utils/custom-jest-environment.ts',
+  testEnvironment: 'jest-environment-jsdom',
 
   // Options that will be passed to the testEnvironment
   // https://jestjs.io/docs/configuration#testenvironmentoptions-object
@@ -180,7 +181,8 @@ module.exports = {
   },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  transformIgnorePatterns: ['/node_modules/', '\\.pnp\\.[^\\/]+$'],
+  // Allow antlr4ng ESM package to be transformed by babel-jest
+  transformIgnorePatterns: ['/node_modules/(?!(antlr4ng)/)', '\\.pnp\\.[^\\/]+$'],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,

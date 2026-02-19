@@ -7,6 +7,7 @@ from dagster_shared.cli import workspace_options
 from dagster_shared.error import remove_system_frames_from_error
 
 from dagster import __version__ as dagster_version
+from dagster._annotations import superseded
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import WorkspaceOpts, get_workspace_from_cli_opts
 from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
@@ -63,6 +64,10 @@ def definitions_cli():
     This command should be run in a Python environment where the `dagster` package is installed.
     """,
 )
+@superseded(
+    additional_warn_text="Use 'dg check defs' instead.",
+    emit_runtime_warning=True,
+)
 def definitions_validate_command(
     log_level: str,
     log_format: str,
@@ -94,9 +99,8 @@ def definitions_validate_command_impl(
     logger = logging.getLogger("dagster")
     logging.captureWarnings(True)
 
-    removed_system_frame_hint = (
-        lambda is_first_hidden_frame,
-        i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
+    removed_system_frame_hint = lambda is_first_hidden_frame, i: (
+        f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
         if is_first_hidden_frame
         else f"  [{i} dagster system frames hidden]\n"
     )
@@ -134,7 +138,7 @@ def definitions_validate_command_impl(
                     logger.info(f"Validation successful for code location {code_location}.")
 
             try:
-                workspace.asset_graph.validate_partition_mappings()
+                workspace.asset_graph.validate_partitions()
             except Exception:
                 logger.error(
                     f"Asset graph contained an invalid partition mapping:\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"

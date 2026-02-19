@@ -1,8 +1,8 @@
 import {useState} from 'react';
 import styled from 'styled-components';
 
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {
   Suggestion,
   SuggestionProvider,
@@ -100,10 +100,10 @@ export const CustomSuggestionRenderer = () => {
       onChange={(values) => setValue(values)}
       suggestionProviders={suggestionProviders}
       suggestionRenderer={(suggestion) => (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <ColorSwatch $color={suggestion.text} />
           {suggestion.text}
-        </Group>
+        </Box>
       )}
     />
   );

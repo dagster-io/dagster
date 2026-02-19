@@ -1,6 +1,6 @@
 ---
 description: Data contracts define agreements about the structure, format, and quality of data using asset checks to ensure consistency and reliability across your data pipeline.
-sidebar_position: 600
+sidebar_position: 500
 title: Data contracts with asset checks
 ---
 

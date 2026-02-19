@@ -137,7 +137,7 @@ name = "invalid-toml"
     pyproject_path = Path(temp_dir) / "pyproject.toml"
     pyproject_path.write_text(invalid_toml)
 
-    with pytest.raises(ValueError, match="Error parsing pyproject.toml"):
+    with pytest.raises(ValueError, match=r"Error parsing pyproject.toml"):
         deps.get_pyproject_toml_deps(temp_dir)
 
 
@@ -180,7 +180,7 @@ version = "0.1.0"
     source._build_local_package(temp_dir, str(build_dir), "python")  # noqa: SLF001
 
     mock_run.assert_called_once()
-    args, kwargs = mock_run.call_args
+    args, _kwargs = mock_run.call_args
     command = args[0]
 
     expected_command = [
@@ -514,12 +514,12 @@ setup(
     )
 
     # Get deps for first location
-    local_packages1, deps_requirements1 = deps.get_deps_requirements(
+    _local_packages1, deps_requirements1 = deps.get_deps_requirements(
         str(location1_dir), python_version
     )
 
     # Get deps for second location - this should NOT fail with empty dependencies
-    local_packages2, deps_requirements2 = deps.get_deps_requirements(
+    _local_packages2, deps_requirements2 = deps.get_deps_requirements(
         str(location2_dir), python_version
     )
 
@@ -545,6 +545,153 @@ setup(
     )
     assert any("dagster" in dep for dep in deps2_lines), (
         f"Location 2 missing dagster: {deps2_lines}"
+    )
+
+
+def test_get_deps_requirements_uv_sources_path(tmp_path):
+    """Test get_deps_requirements handles [tool.uv.sources] with path (no workspace)."""
+    python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+    # Create main package
+    app_dir = tmp_path / "my-app"
+    app_dir.mkdir()
+    (app_dir / "my_app").mkdir()
+    (app_dir / "my_app" / "__init__.py").write_text("")
+    (app_dir / "pyproject.toml").write_text("""
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = [
+    "dagster>=1.0.0",
+    "dagster-cloud>=1.0.0",
+    "local-utils",
+]
+
+[tool.uv.sources]
+local-utils = { path = "../local-utils" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    # Create local-utils as a sibling package (not a workspace member)
+    local_utils_dir = tmp_path / "local-utils"
+    local_utils_dir.mkdir()
+    (local_utils_dir / "local_utils").mkdir()
+    (local_utils_dir / "local_utils" / "__init__.py").write_text("")
+    (local_utils_dir / "pyproject.toml").write_text("""
+[project]
+name = "local-utils"
+version = "0.1.0"
+dependencies = ["pydantic>=2.0.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    # Get deps from the app directory
+    local_packages, deps_requirements = deps.get_deps_requirements(str(app_dir), python_version)
+
+    deps_lines = [
+        line.strip()
+        for line in deps_requirements.requirements_txt.strip().split("\n")
+        if line.strip()
+    ]
+
+    # External deps should be in requirements
+    assert any("dagster>=" in dep for dep in deps_lines), f"dagster not found in {deps_lines}"
+
+    # local-utils should be detected as a local package via path source
+    assert str(local_utils_dir) in local_packages.local_package_paths, (
+        f"local-utils should be in local_package_paths: {local_packages.local_package_paths}"
+    )
+    assert not any("local-utils" in dep for dep in deps_lines), (
+        f"local-utils should NOT be in deps (it's a local package): {deps_lines}"
+    )
+
+
+def test_get_deps_requirements_uv_workspace(tmp_path):
+    """Test get_deps_requirements correctly handles uv workspace local dependencies.
+
+    When a uv workspace member has dependencies on other workspace members
+    (via [tool.uv.sources] with workspace = true), those should be detected
+    as local packages and included in local_package_paths.
+    """
+    python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+    # Create workspace root
+    workspace_root = tmp_path
+    (workspace_root / "pyproject.toml").write_text("""
+[project]
+name = "my-workspace"
+version = "0.1.0"
+
+[tool.uv.workspace]
+members = ["my-app", "shared-lib"]
+""")
+
+    # Create main app package
+    app_dir = workspace_root / "my-app"
+    app_dir.mkdir()
+    (app_dir / "my_app").mkdir()
+    (app_dir / "my_app" / "__init__.py").write_text("")
+    (app_dir / "pyproject.toml").write_text("""
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = [
+    "dagster>=1.0.0",
+    "dagster-cloud>=1.0.0",
+    "requests>=2.25.0",
+    "shared-lib",
+]
+
+[tool.uv.sources]
+shared-lib = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    # Create shared-lib workspace member
+    shared_lib_dir = workspace_root / "shared-lib"
+    shared_lib_dir.mkdir()
+    (shared_lib_dir / "shared_lib").mkdir()
+    (shared_lib_dir / "shared_lib" / "__init__.py").write_text("")
+    (shared_lib_dir / "pyproject.toml").write_text("""
+[project]
+name = "shared-lib"
+version = "0.1.0"
+dependencies = ["pydantic>=2.0.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    # Get deps from the app directory
+    local_packages, deps_requirements = deps.get_deps_requirements(str(app_dir), python_version)
+
+    deps_lines = [
+        line.strip()
+        for line in deps_requirements.requirements_txt.strip().split("\n")
+        if line.strip()
+    ]
+
+    # External deps should be in requirements
+    assert any("dagster>=" in dep for dep in deps_lines), f"dagster not found in {deps_lines}"
+    assert any("requests" in dep for dep in deps_lines), f"requests not found in {deps_lines}"
+
+    # shared-lib is a workspace dependency - it should be detected as a local package
+    # and NOT appear in the requirements (it would fail pip install)
+    assert str(shared_lib_dir) in local_packages.local_package_paths, (
+        f"shared-lib should be in local_package_paths: {local_packages.local_package_paths}"
+    )
+    assert not any("shared-lib" in dep for dep in deps_lines), (
+        f"shared-lib should NOT be in deps (it's a local package): {deps_lines}"
     )
 
 
@@ -580,7 +727,7 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             pyproject_content = """
         [project]
         name = "location1"
-        requires-python = ">=3.9,<3.14"
+        requires-python = ">=3.9,<3.15"
         version = "0.1.0"
         dependencies = [
             "dagster>=1.0.0",
@@ -598,7 +745,7 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             )
 
             # Get deps for first location
-            local_packages1, deps_requirements1 = deps.get_deps_requirements(
+            _local_packages1, deps_requirements1 = deps.get_deps_requirements(
                 str(location1_dir), python_version
             )
 
@@ -610,7 +757,7 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             )
 
             # Get deps for second location - this should NOT fail with empty dependencies
-            local_packages2, deps_requirements2 = deps.get_deps_requirements(
+            _local_packages2, deps_requirements2 = deps.get_deps_requirements(
                 str(location2_dir), python_version
             )
 

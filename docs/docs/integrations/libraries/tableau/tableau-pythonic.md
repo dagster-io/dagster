@@ -1,6 +1,7 @@
 ---
 title: Dagster & Tableau (Pythonic)
 sidebar_label: Tableau (Pythonic)
+sidebar_position: 2
 description: Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
@@ -52,21 +53,21 @@ To get started, you'll need to install the `dagster` and `dagster-tableau` Pytho
 
 ## Represent Tableau assets in the asset graph
 
-To load Tableau assets into the Dagster asset graph, you must first construct a Tableau resource, which allows Dagster to communicate with your Tableau workspace. The Tableau resource to create depends on your Tableau deployment type - use <PyObject section="libraries" module="dagster_tableau" object="TableauCloudWorkspace" /> if you are using Tableau Cloud or <PyObject section="libraries" module="dagster_tableau" object="TableauServerWorkspace" /> if you are using Tableau Server. To connect to the Tableau workspace, you'll need to [configure a connected app with direct trust](https://help.tableau.com/current/online/en-gb/connected_apps_direct.htm) in Tableau, then supply your Tableau site information and connected app credentials to the resource. The Tableau resource uses the JSON Web Token (JWT) authentication to connect to the Tableau workspace.
+To load Tableau assets into the Dagster asset graph, you must first construct a Tableau resource, which allows Dagster to communicate with your Tableau workspace. The Tableau resource to create depends on your Tableau deployment type - use <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="TableauCloudWorkspace" /> if you are using Tableau Cloud or <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="TableauServerWorkspace" /> if you are using Tableau Server. To connect to the Tableau workspace, you'll need to [configure a connected app with direct trust](https://help.tableau.com/current/online/en-gb/connected_apps_direct.htm) in Tableau, then supply your Tableau site information and connected app credentials to the resource. The Tableau resource uses the JSON Web Token (JWT) authentication to connect to the Tableau workspace.
 
-Dagster can automatically load all data sources, sheets, and dashboards from your Tableau workspace as asset specs. Call the <PyObject section="libraries" module="dagster_tableau" object="load_tableau_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Tableau assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
+Dagster can automatically load all data sources, sheets, and dashboards from your Tableau workspace as asset specs. Call the <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="load_tableau_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Tableau assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <Tabs>
 <TabItem value="Using Dagster with Tableau Cloud">
 
-Use <PyObject section="libraries" module="dagster_tableau" object="TableauCloudWorkspace" /> to interact with your Tableau Cloud workspace:
+Use <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="TableauCloudWorkspace" /> to interact with your Tableau Cloud workspace:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/representing-tableau-cloud-assets.py" />
 
 </TabItem>
 <TabItem value="Using Dagster with Tableau Server">
 
-Use <PyObject section="libraries" module="dagster_tableau" object="TableauServerWorkspace" /> to interact with your Tableau Server workspace:
+Use <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="TableauServerWorkspace" /> to interact with your Tableau Server workspace:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/representing-tableau-server-assets.py" />
 
@@ -75,7 +76,7 @@ Use <PyObject section="libraries" module="dagster_tableau" object="TableauServer
 
 ### Customize asset definition metadata for Tableau assets
 
-By default, Dagster will generate asset specs for each Tableau asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject section="libraries" module="dagster_tableau" object="load_tableau_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Tableau asset type.
+By default, Dagster will generate asset specs for each Tableau asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="load_tableau_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Tableau asset type.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/customize-tableau-asset-defs.py" />
 
@@ -104,7 +105,7 @@ When an upstream dependency of a Tableau asset fails to materialize or to pass t
 
 ### Customize upstream dependencies
 
-By default, Dagster sets upstream dependencies when generating asset specs for your Tableau assets. To do so, Dagster parses information about assets that are upstream of specific Tableau sheets and dashboards from the Tableau workspace itself. You can customize how upstream dependencies are set on your Tableau assets by passing an instance of the custom <PyObject section="libraries" module="dagster_tableau" object="DagsterTableauTranslator" /> to the <PyObject section="libraries" module="dagster_tableau" object="load_tableau_asset_specs" /> function.
+By default, Dagster sets upstream dependencies when generating asset specs for your Tableau assets. To do so, Dagster parses information about assets that are upstream of specific Tableau sheets and dashboards from the Tableau workspace itself. You can customize how upstream dependencies are set on your Tableau assets by passing an instance of the custom <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="DagsterTableauTranslator" /> to the <PyObject section="libraries" integration="tableau" module="dagster_tableau" object="load_tableau_asset_specs" /> function.
 
 The below example defines `my_upstream_asset` as an upstream dependency of `my_tableau_sheet`:
 
@@ -118,7 +119,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 ### Related
 
-- [`dagster-tableau` API reference](/api/libraries/dagster-tableau)
+- [`dagster-tableau` API reference](/integrations/libraries/tableau/dagster-tableau)
 - [Asset definitions](/guides/build/assets)
 - [Resources](/guides/build/external-resources)
 - [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

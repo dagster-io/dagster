@@ -170,11 +170,19 @@ def test_context_with_user_config(monkeypatch, user_config_file: str):
 # Temporary test until we switch src layout to the default.
 def test_context_with_root_layout():
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(
             runner, uv_sync=True, in_workspace=False, package_layout="root"
         ),
     ):
+        # Suppress venv mismatch warning since test runs from different venv
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml:
+            create_toml_node(
+                toml,
+                ("tool", "dg", "cli", "suppress_warnings"),
+                ["project_and_activated_venv_mismatch"],
+            )
+
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
         assert context.defs_path == Path.cwd() / "foo_bar" / "defs"

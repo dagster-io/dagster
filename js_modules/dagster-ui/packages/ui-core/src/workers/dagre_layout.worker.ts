@@ -1,5 +1,3 @@
-/* eslint-disable no-restricted-globals */
-
 import {createWorkerThread} from 'shared/workers/WorkerThread.oss';
 
 import {layoutAssetGraph} from '../asset-graph/layout';

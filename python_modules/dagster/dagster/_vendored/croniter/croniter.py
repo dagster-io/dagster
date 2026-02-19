@@ -743,10 +743,14 @@ class croniter(object):
         ( Currently, should only used for `year` field )
         """
         for i, d in enumerate(to_check):
-            if d == "l" and range_val is not None:
-                # if 'l' then it is the last day of month
-                # => its value of range_val
-                d = range_val
+            # CHANGED Patched https://github.com/pallets-eco/croniter/pull/178
+            if range_val is not None:
+                if d == "l":
+                    # if 'l' then it is the last day of month
+                    # => its value of range_val
+                    d = range_val
+                elif d > range_val:
+                    continue
             if d >= x:
                 return d - x
         # When range_val is None and x not exists in to_check,

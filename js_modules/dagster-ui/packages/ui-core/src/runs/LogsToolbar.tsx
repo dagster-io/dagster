@@ -192,7 +192,6 @@ export const ComputeLogToolbar = ({
                     onClick={(e) => itemProps.handleClick(e)}
                     text={text}
                     key={item}
-                    title={text}
                   />
                 );
               }}

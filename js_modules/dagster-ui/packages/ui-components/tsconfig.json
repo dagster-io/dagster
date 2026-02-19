@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "es2022",
     "target": "es2022",
-    "rootDir": "src",
+    "rootDir": ".",
     "strict": true,
     "noEmit": true,
     "sourceMap": true,

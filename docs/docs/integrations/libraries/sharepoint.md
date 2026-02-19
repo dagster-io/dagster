@@ -1,6 +1,7 @@
 ---
 title: Dagster & SharePoint
 sidebar_label: SharePoint
+sidebar_position: 1
 description: >
   The SharePoint integration provides a resource for interacting with SharePoint document libraries using the Microsoft Graph API. This integration enables file operations, folder management, and data extraction from SharePoint.
 tags: [community-supported]

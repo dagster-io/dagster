@@ -412,7 +412,7 @@ def test_incomplete_execution_plan():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Execution finished without completing the execution plan.",
+        match=r"Execution finished without completing the execution plan.",
     ):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
             steps = active_execution.get_steps_to_execute()

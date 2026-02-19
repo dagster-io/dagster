@@ -31,7 +31,7 @@ class BigQueryWriteMode(str, Enum):
 
 
 def build_bigquery_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: type | None = None
 ) -> IOManagerDefinition:
     """Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
@@ -292,14 +292,14 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     """
 
     project: str = Field(description="The GCP project to use.")
-    dataset: Optional[str] = Field(
+    dataset: str | None = Field(
         default=None,
         description=(
             "Name of the BigQuery dataset to use. If not provided, the last prefix before"
             " the asset name will be used."
         ),
     )
-    location: Optional[str] = Field(
+    location: str | None = Field(
         default=None,
         description=(
             "The GCP location. Note: When using PySpark DataFrames, the default"
@@ -307,7 +307,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " your SparkSession configuration."
         ),
     )
-    gcp_credentials: Optional[str] = Field(
+    gcp_credentials: str | None = Field(
         default=None,
         description=(
             "GCP authentication credentials. If provided, a temporary file will be created"
@@ -317,14 +317,14 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " command: ``cat $GOOGLE_AUTH_CREDENTIALS | base64``"
         ),
     )
-    temporary_gcs_bucket: Optional[str] = Field(
+    temporary_gcs_bucket: str | None = Field(
         default=None,
         description=(
             "When using PySpark DataFrames, optionally specify a temporary GCS bucket to"
             " store data. If not provided, data will be directly written to BigQuery."
         ),
     )
-    timeout: Optional[float] = Field(
+    timeout: float | None = Field(
         default=None,
         description=(
             "When using Pandas DataFrames, optionally specify a timeout for the BigQuery"
@@ -341,7 +341,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:

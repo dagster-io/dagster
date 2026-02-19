@@ -12,13 +12,20 @@ concurrency:
   group: ${{ github.ref }}/deploy
   cancel-in-progress: true
 env:
-  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
-  ENABLE_FAST_DEPLOYS: "true"
-  PYTHON_VERSION: "3.10"
-  DAGSTER_CLOUD_FILE: "dagster_cloud.yaml"
+  # The organization name in Dagster Cloud
   DAGSTER_CLOUD_ORGANIZATION: "TEMPLATE_ORGANIZATION_NAME"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # The Dagster Cloud URL
+  DAGSTER_CLOUD_URL: "TEMPLATE_DAGSTER_CLOUD_URL"
+  # The API token from https://dagster.cloud/ should be stored in Secrets
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  # Path to the root folder containing the dagster project
   DAGSTER_PROJECT_DIR: "TEMPLATE_PROJECT_DIR"
+  # Enable PEX-based fast deploys (set to "false" to use Docker builds instead)
+  ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
+  # Python version used to deploy the project
+  PYTHON_VERSION: "3.10"
+  # GitHub token for PR comments and branch deployments
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   dagster_cloud_default_deploy:
@@ -58,35 +65,38 @@ jobs:
         run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install uv
         shell: bash
 
-      # Refresh state for any StateBackedComponents in the project
-      - name: Refresh defs state
+      # Sync all projects (workspace or single project)
+      - name: Sync project dependencies
         if: steps.prerun.outputs.result != 'skip'
         run: |
           cd ${{ env.DAGSTER_PROJECT_DIR }}
-          ${{ steps.setup-python-version.outputs.python-path }} -m uv run dg plus deploy refresh-defs-state
+          for project in $(${{ steps.setup-python-version.outputs.python-path }} -m uv run dg list projects); do
+            (cd "$project" && ${{ steps.setup-python-version.outputs.python-path }} -m uv sync)
+          done
         shell: bash
 
-      # If using fast build, build the PEX
+      # Refresh state for any StateBackedComponents in the project
+      - name: Refresh defs state
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy refresh-defs-state --target-path=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # If using fast build, install setuptools for PEX builds
       - name: Install setuptools
         if: steps.prerun.outputs.result == 'pex-deploy'
         run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install setuptools
         shell: bash
 
-      - name: Run PEX build
-        id: run-pex-build
-        if: steps.prerun.outputs.result == 'pex-deploy'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
-        with:
-          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
-
-      # Otherwise, enable buildx for caching and build the Docker image
+      # Otherwise, enable buildx for caching Docker builds
       - name: Set up Docker Buildx
         if: steps.prerun.outputs.result == 'docker-deploy'
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Run Docker build
-        id: run-docker-build
-        if: steps.prerun.outputs.result == 'docker-deploy'
+      # Build and push (PEX or Docker based on project configuration)
+      - name: Build and push
+        id: build-and-push
+        if: steps.prerun.outputs.result == 'pex-deploy' || steps.prerun.outputs.result == 'docker-deploy'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"

@@ -3,19 +3,31 @@ import {Box, Checkbox} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
+import {AssetHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
+import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {KNOWN_TAGS} from '../../graph/OpTags';
-import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
-import {AssetNode, AssetNodeMinimal} from '../AssetNode';
-import {AssetNode2025} from '../AssetNode2025';
+import {
+  AssetKey,
+  StaleCause,
+  buildAssetKey,
+  buildAssetNode,
+  buildStaleCause,
+} from '../../graphql/types';
+import {
+  AssetNode,
+  AssetNodeMinimalWithHealth,
+  AssetNodeMinimalWithoutHealth,
+  AssetNodeWithLiveData,
+} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
 import {AssetNodeLink} from '../ForeignNode';
 import {tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
-import {getAssetNodeDimensions, getAssetNodeDimensions2025} from '../layout';
+import {getAssetNodeDimensions} from '../layout';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -23,11 +35,51 @@ export default {
   component: AssetNode,
 };
 
+interface AssetNodeScenario {
+  title: string;
+  liveData: any;
+  healthData?: AssetHealthFragment;
+  definition: any;
+  expectedText: string[];
+}
+
+function SetCacheEntry({
+  assetKey,
+  liveData,
+  healthData,
+}: {
+  assetKey: AssetKey;
+  liveData: any;
+  healthData?: AssetHealthFragment;
+}) {
+  const key = tokenForAssetKey(assetKey);
+
+  // // Set up live data cache if available
+  if (liveData) {
+    const entry = {[key]: liveData};
+    AssetBaseData.manager._updateCache(entry);
+
+    const staleEntry = {
+      [key]: buildAssetNode({
+        assetKey,
+        staleCauses: liveData.staleCauses.map((cause: StaleCause) => buildStaleCause(cause)),
+        staleStatus: liveData.staleStatus,
+      }),
+    };
+    AssetStaleStatusData.manager._updateCache(staleEntry);
+  }
+  if (healthData) {
+    const healthEntry = {[key]: {...healthData, key: assetKey}};
+    AssetHealthData.manager._updateCache(healthEntry);
+  }
+  return null;
+}
+
 export const LiveStates = () => {
-  const [newDesign, setNewDesign] = useState<boolean>(true);
+  const [assetHealthEnabled, setAssetHealthEnabled] = useState(true);
   const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
 
-  const caseWithLiveData = (scenario: (typeof Mocks.AssetNodeScenariosBase)[0]) => {
+  const caseWithLiveData = (scenario: AssetNodeScenario) => {
     const definitionCopy = {
       ...scenario.definition,
       assetKey: {
@@ -39,31 +91,15 @@ export const LiveStates = () => {
       ? [scenario.liveData.stepKey]
       : JSON.parse(scenario.definition.id);
 
-    const dimensions = newDesign
-      ? getAssetNodeDimensions2025(facets)
-      : getAssetNodeDimensions(definitionCopy);
-
-    function SetCacheEntry() {
-      if (!scenario.liveData) {
-        return null;
-      }
-      const entry = {[tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData};
-      const {staleStatus, staleCauses} = scenario.liveData;
-      const staleEntry = {
-        [tokenForAssetKey(definitionCopy.assetKey)]: buildAssetNode({
-          assetKey: definitionCopy.assetKey,
-          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
-          staleStatus,
-        }),
-      };
-      AssetStaleStatusData.manager._updateCache(staleEntry);
-      AssetBaseData.manager._updateCache(entry);
-      return null;
-    }
+    const dimensions = getAssetNodeDimensions(facets);
 
     return (
       <>
-        <SetCacheEntry />
+        <SetCacheEntry
+          healthData={scenario.healthData}
+          liveData={scenario.liveData}
+          assetKey={definitionCopy.assetKey}
+        />
         <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
           <code style={{marginTop: 20}}>
             <strong>{scenario.title}</strong>
@@ -77,11 +113,13 @@ export const LiveStates = () => {
               overflowY: 'hidden',
             }}
           >
-            {newDesign ? (
-              <AssetNode2025 definition={definitionCopy} selected={false} facets={facets} />
-            ) : (
-              <AssetNode definition={definitionCopy} selected={false} />
-            )}
+            <AssetNodeWithLiveData
+              liveData={scenario.liveData}
+              definition={definitionCopy}
+              selected={false}
+              facets={facets}
+              assetHealthEnabled={assetHealthEnabled}
+            />
           </div>
           <div
             style={{
@@ -92,12 +130,21 @@ export const LiveStates = () => {
             }}
           >
             <div style={{position: 'absolute', width: dimensions.width, transform: 'scale(0.4)'}}>
-              <AssetNodeMinimal
-                definition={definitionCopy}
-                selected={false}
-                height={82}
-                facets={newDesign ? facets : null}
-              />
+              {assetHealthEnabled ? (
+                <AssetNodeMinimalWithHealth
+                  definition={definitionCopy}
+                  selected={false}
+                  height={82}
+                  facets={facets}
+                />
+              ) : (
+                <AssetNodeMinimalWithoutHealth
+                  definition={definitionCopy}
+                  selected={false}
+                  height={82}
+                  facets={facets}
+                />
+              )}
             </div>
           </div>
         </Box>
@@ -109,11 +156,12 @@ export const LiveStates = () => {
     <MockedProvider>
       <AssetLiveDataProvider>
         <Checkbox
-          checked={newDesign}
-          label="New 2025 Design"
-          onChange={() => setNewDesign(!newDesign)}
+          checked={assetHealthEnabled}
+          label="Asset Health Available (Cloud)"
+          onChange={() => setAssetHealthEnabled(!assetHealthEnabled)}
         />
-        {newDesign ? <AssetNodeFacetsPicker value={facets} onChange={setFacets} /> : undefined}
+
+        <AssetNodeFacetsPicker value={facets} onChange={setFacets} />
         <h2>Base Assets</h2>
         <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
           {Mocks.AssetNodeScenariosBase.map(caseWithLiveData)}
@@ -147,30 +195,13 @@ export const PartnerTags = () => {
     const def = {...Mocks.AssetNodeFragmentBasic, kinds: [computeKind]};
     const liveData = Mocks.LiveDataForNodeMaterialized;
 
-    function SetCacheEntry() {
-      const assetKey = buildAssetKey({path: [liveData.stepKey]});
-      const key = tokenForAssetKey(assetKey);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const entry = {[key]: liveData!};
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const {staleStatus, staleCauses} = liveData!;
-      const staleEntry = {
-        [key]: buildAssetNode({
-          assetKey,
-          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
-          staleStatus,
-        }),
-      };
-      AssetStaleStatusData.manager._updateCache(staleEntry);
-      AssetBaseData.manager._updateCache(entry);
-      return null;
-    }
-
-    const dimensions = getAssetNodeDimensions(def);
+    const facets = new Set(AllAssetNodeFacets);
+    const dimensions = getAssetNodeDimensions(facets);
+    const assetKey = buildAssetKey({path: [liveData.stepKey]});
 
     return (
       <>
-        <SetCacheEntry />
+        <SetCacheEntry liveData={liveData} assetKey={assetKey} />
         <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
           <strong>{computeKind}</strong>
           <div
@@ -182,7 +213,13 @@ export const PartnerTags = () => {
               background: `linear-gradient(to bottom, transparent 49%, gray 50%, transparent 51%)`,
             }}
           >
-            <AssetNode definition={def} selected={false} />
+            <AssetNodeWithLiveData
+              liveData={liveData}
+              facets={facets}
+              definition={def}
+              selected={false}
+              assetHealthEnabled
+            />
           </div>
         </Box>
       </>

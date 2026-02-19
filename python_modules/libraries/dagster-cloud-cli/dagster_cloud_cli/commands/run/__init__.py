@@ -1,5 +1,3 @@
-from typing import Optional
-
 import typer
 from typer import Typer
 
@@ -14,7 +12,7 @@ app = Typer(help="Commands for working with Dagster Cloud runs.")
 def status(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     run_id: str = typer.Argument(None),
 ):
     """Check the status of a run."""

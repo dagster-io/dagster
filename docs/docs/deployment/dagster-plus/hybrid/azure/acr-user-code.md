@@ -11,7 +11,7 @@ This guide assumes you are using Dagster+ and that you already have an AKS agent
 
 ## Prerequisites
 
-This guide will use a Github repository to store the Dagster code, and GitHub Actions to deploy the code to Azure Container Registry. If you need to use another CI/CD provider, such as Azure DevOps, the steps here will need to be adapted. For more information on configuring CI/CD using the `dagster-cloud` CLI, see "[Configuring CI/CD for your project](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid#non-github).
+This guide will use a Github repository to store the Dagster code, and GitHub Actions to deploy the code to Azure Container Registry. If you need to use another CI/CD provider, such as Azure DevOps, the steps here will need to be adapted. For more information on configuring CI/CD using the `dg plus` CLI, see [Configuring CI/CD in Dagster+](/deployment/dagster-plus/deploying-code/configuring-ci-cd)
 
 - The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - A GitHub account, and the ability to run GitHub Actions workflows in a repository.
@@ -48,7 +48,7 @@ The project has the following structure:
 ├── .github
 │   └── workflows
 │       └── dagster-cloud-deploy.yml
-├── dagster_cloud.yaml
+├── build.yaml
 ├── Dockerfile
 ├── pyproject.toml
 ├── quickstart_etl_tests
@@ -142,12 +142,12 @@ Finally, update the tags in the "Build and upload Docker image" step to match th
     cache-to: type=gha,mode=max
 ```
 
-### Update the `dagster_cloud.yaml` build configuration to use the Azure Container Registry
+### Update the `build.yaml` build configuration to use the Azure Container Registry
 
-Edit the `dagster_cloud.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
+Edit the `build.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: quickstart_etl
     code_source:
@@ -156,6 +156,12 @@ locations:
       directory: ./
       registry: <your-acr-name>.azurecr.io/<image-name>
 ```
+
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
 
 ### Push and run the workflow
 

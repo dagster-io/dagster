@@ -15,7 +15,7 @@ def test_logger_invocation_arguments():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Logger initialization function has context argument, but no context argument was "
+            r"Logger initialization function has context argument, but no context argument was "
             "provided when invoking."
         ),
     ):
@@ -31,7 +31,7 @@ def test_logger_invocation_arguments():
     # Check that proper error is thrown when logger def is invoked with too many args
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Initialization of logger received multiple arguments.",
+        match=r"Initialization of logger received multiple arguments.",
     ):
         foo_logger(dg.build_init_logger_context(), 5)
 

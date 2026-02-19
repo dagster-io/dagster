@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, TypeAlias
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -53,7 +53,18 @@ class SigmaOrganizationArgs(Model, Resolvable):
     )
 
 
-SigmaTranslatorData: TypeAlias = Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+def resolve_sigma_organization(context: ResolutionContext, model) -> SigmaOrganization:
+    """Resolver function for SigmaOrganization that properly resolves templated strings."""
+    args = SigmaOrganizationArgs.resolve_from_model(context, model)
+    return SigmaOrganization(
+        base_url=args.base_url,
+        client_id=args.client_id,
+        client_secret=args.client_secret,
+        warn_on_lineage_fetch_error=args.warn_on_lineage_fetch_error,
+    )
+
+
+SigmaTranslatorData: TypeAlias = SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
 SigmaTranslationFn: TypeAlias = TranslationFn[SigmaTranslatorData]
 
 ResolvedTargetedSigmaTranslationFn = Annotated[
@@ -71,8 +82,8 @@ ResolvedTargetedKeyOnlySigmaTranslationFn = Annotated[
 
 @record
 class SigmaAssetArgs(AssetSpecUpdateKwargs, Resolvable):
-    for_workbook: Optional[ResolvedTargetedSigmaTranslationFn] = None
-    for_dataset: Optional[ResolvedTargetedSigmaTranslationFn] = None
+    for_workbook: ResolvedTargetedSigmaTranslationFn | None = None
+    for_dataset: ResolvedTargetedSigmaTranslationFn | None = None
 
 
 def resolve_multilayer_translation(context: ResolutionContext, model):
@@ -122,7 +133,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_multilayer_translation,
-        model_field_type=Union[str, SigmaAssetArgs.model()],
+        model_field_type=str | SigmaAssetArgs.model(),
     ),
 ]
 
@@ -130,14 +141,14 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
 class SigmaFilterArgs(Model, Resolvable):
     """Arguments for filtering which Sigma objects to load."""
 
-    workbook_folders: Optional[list[list[str]]] = Field(
+    workbook_folders: list[list[str]] | None = Field(
         default=None,
         description=(
             "A list of folder paths to fetch workbooks from. Each folder path is a list of folder names, "
             "starting from the root folder. All workbooks contained in the specified folders will be fetched."
         ),
     )
-    workbooks: Optional[list[list[str]]] = Field(
+    workbooks: list[list[str]] | None = Field(
         default=None,
         description=(
             "A list of fully qualified workbook paths to fetch. Each workbook path is a list of folder names, "
@@ -147,6 +158,18 @@ class SigmaFilterArgs(Model, Resolvable):
     include_unused_datasets: bool = Field(
         default=True,
         description="Whether to include datasets that are not used in any workbooks.",
+    )
+
+
+def resolve_sigma_filter(context: ResolutionContext, model) -> SigmaFilter | None:
+    """Resolver function for SigmaFilter that properly resolves templated strings."""
+    if model is None:
+        return None
+    args = SigmaFilterArgs.resolve_from_model(context, model)
+    return SigmaFilter(
+        workbook_folders=args.workbook_folders,
+        workbooks=args.workbooks,
+        include_unused_datasets=args.include_unused_datasets,
     )
 
 
@@ -176,7 +199,8 @@ class SigmaComponent(StateBackedComponent, Resolvable):
 
     organization: Annotated[
         SigmaOrganization,
-        Resolver.default(
+        Resolver(
+            resolve_sigma_organization,
             model_field_type=SigmaOrganizationArgs.model(),
             description="Configuration for connecting to the Sigma organization",
             examples=[
@@ -189,8 +213,9 @@ class SigmaComponent(StateBackedComponent, Resolvable):
         ),
     ]
     sigma_filter: Annotated[
-        Optional[SigmaFilter],
-        Resolver.default(
+        SigmaFilter | None,
+        Resolver(
+            resolve_sigma_filter,
             model_field_type=SigmaFilterArgs.model(),
             description="Optional filter for selecting which Sigma workbooks and datasets to load",
             examples=[
@@ -203,7 +228,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
     ] = None
     fetch_column_data: bool = True
     fetch_lineage_data: bool = True
-    translation: Optional[ResolvedMultilayerTranslationFn] = None
+    translation: ResolvedMultilayerTranslationFn | None = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -284,7 +309,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
         state_path.write_text(dg.serialize_value(state))
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

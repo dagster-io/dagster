@@ -2,7 +2,7 @@ import random
 import tempfile
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import IO, Optional
+from typing import IO
 
 import dagster as dg
 import dagster._check as check
@@ -40,7 +40,7 @@ class BrokenComputeLogManager(ComputeLogManager):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Generator[Optional[IO], None, None]:
+    ) -> Generator[IO | None, None, None]:
         yield None
 
     def is_capture_complete(self, log_key: Sequence[str]) -> bool:
@@ -51,20 +51,20 @@ class BrokenComputeLogManager(ComputeLogManager):
         log_key: Sequence[str],
         io_type: ComputeIOType,
         offset: int,
-        max_bytes: Optional[int],
-    ) -> tuple[Optional[bytes], int]:
+        max_bytes: int | None,
+    ) -> tuple[bytes | None, int]:
         return None, 0
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()
 
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self, log_key: Sequence[str] | None = None, prefix: Sequence[str] | None = None
     ):
         pass
 
     def subscribe(
-        self, log_key: Sequence[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: str | None = None
     ) -> CapturedLogSubscription:
         return CapturedLogSubscription(self, log_key, cursor)
 

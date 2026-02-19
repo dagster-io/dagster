@@ -1,0 +1,80 @@
+services:
+  # Kafka broker
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: ingestion-patterns-kafka
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      # KRaft mode settings
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Kafka UI for monitoring
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ingestion-patterns-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # Webhook receiver server
+  webhook-server:
+    image: python:3.12-slim
+    container_name: ingestion-patterns-webhook
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./scripts/webhook_server.py:/app/webhook_server.py:ro
+      - /tmp/webhook_storage:/tmp/webhook_storage  # Host mount for shared access with Dagster
+    environment:
+      WEBHOOK_STORAGE_DIR: /tmp/webhook_storage
+    command: >
+      sh -c "pip install flask werkzeug && python /app/webhook_server.py --host 0.0.0.0 --port 5050"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5050/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Sample data API server (for pull ingestion pattern)
+  api-server:
+    image: python:3.12-slim
+    container_name: ingestion-patterns-api
+    ports:
+      - "5051:5051"
+    volumes:
+      - ./scripts/api_server.py:/app/api_server.py:ro
+    command: >
+      sh -c "pip install flask && python /app/api_server.py --host 0.0.0.0 --port 5051"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5051/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+

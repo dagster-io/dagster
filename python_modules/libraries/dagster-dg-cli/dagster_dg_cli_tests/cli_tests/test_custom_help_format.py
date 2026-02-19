@@ -80,7 +80,6 @@ def test_root_help_message():
 
              Root group.
 
-
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --root-opt        TEXT  Root option.                                         │
             │ --help                  Show this message and exit.                          │
@@ -89,8 +88,8 @@ def test_root_help_message():
             │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Commands ───────────────────────────────────────────────────────────────────╮
-            │ sub-command   Sub-command.                                                   │
-            │ sub-group     Sub-group.                                                     │
+            │ sub-command  Sub-command.                                                    │
+            │ sub-group    Sub-group.                                                      │
             ╰──────────────────────────────────────────────────────────────────────────────╯
     """).strip(),
     )
@@ -108,7 +107,6 @@ def test_sub_group_with_option_help_message():
 
              Sub-group.
 
-
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-opt        TEXT  Sub-group option.                               │
             │ --help                       Show this message and exit.                     │
@@ -117,7 +115,7 @@ def test_sub_group_with_option_help_message():
             │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Commands ───────────────────────────────────────────────────────────────────╮
-            │ sub-group-command   Sub-group-command.                                       │
+            │ sub-group-command  Sub-group-command.                                        │
             ╰──────────────────────────────────────────────────────────────────────────────╯
         """).strip(),
     )
@@ -134,7 +132,6 @@ def test_sub_group_command_with_option_help_message():
              Usage: root sub-group sub-group-command [OPTIONS]
 
              Sub-group-command.
-
 
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-command-opt        TEXT  Sub-group-command option.               │
@@ -158,7 +155,6 @@ def test_sub_command_with_option_help_message():
              Usage: root sub-command [OPTIONS] COMMAND [ARGS]...
 
              Sub-command.
-
 
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-command-opt        TEXT  Sub-command option.                           │

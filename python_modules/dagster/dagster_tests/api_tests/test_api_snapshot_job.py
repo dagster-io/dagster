@@ -102,9 +102,7 @@ async def test_async_job_snapshot_api_grpc(instance):
         assert (
             code_location.get_job(subset_selector).job_snapshot
             == (
-                await code_location.gen_subset_job(
-                    subset_selector, lambda selector: code_location.get_job(selector)
-                )
+                await code_location.gen_subset_job(subset_selector, code_location.get_job)
             ).job_snapshot
         )
 

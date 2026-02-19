@@ -7,7 +7,6 @@ import textwrap
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -20,6 +19,7 @@ from dagster.components.core.package_entry import (
 )
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg_core.utils import get_venv_executable
+from dagster_shared import seven
 from dagster_shared.serdes.objects import EnvRegistryKey
 
 ensure_dagster_tests_import()
@@ -66,9 +66,10 @@ def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]
     return [component_type["key"] for component_type in component_type_list]
 
 
-def _find_repo_root():
+# Works from both standalone OSS and monorepo
+def _find_oss_root():
     current = Path(__file__).parent
-    while not (current / ".git").exists():
+    while not ((current / ".git").exists() or current.name == "dagster-oss"):
         if current == Path("/"):
             raise Exception("Could not find the repository root.")
         current = current.parent
@@ -85,7 +86,7 @@ def _generate_test_component_source(number: int) -> str:
     """)
 
 
-_repo_root = _find_repo_root()
+_repo_root = _find_oss_root()
 
 
 def _get_editable_package_root(pkg_name: str) -> str:
@@ -101,6 +102,9 @@ def _get_editable_package_root(pkg_name: str) -> str:
 # ########################
 
 
+@pytest.mark.skipif(
+    seven.IS_PYTHON_3_14, reason="uses dagster_dbt, but dbt-core doesn't support 3.14"
+)
 def test_components_from_dagster():
     common_deps: list[str] = []
     for pkg_name in [
@@ -179,7 +183,7 @@ from dagster_foo.lib.sub import TestComponent2
 @contextmanager
 def isolated_venv_with_component_lib_dagster_foo(
     entry_point_group: str,
-    pre_install_hook: Optional[Callable[[], None]] = None,
+    pre_install_hook: Callable[[], None] | None = None,
 ):
     with tempfile.TemporaryDirectory() as tmpdir:
         with pushd(tmpdir):

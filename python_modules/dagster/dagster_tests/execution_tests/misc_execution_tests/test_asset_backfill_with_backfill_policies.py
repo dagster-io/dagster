@@ -7,6 +7,7 @@ import pytest
 from dagster import BackfillPolicy, DagsterInstance
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
+from dagster._core.instance.types import DynamicPartitionsStore
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -54,7 +55,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy() -> None:
             unpartitioned_upstream_of_partitioned.key,
             upstream_daily_partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=get_current_timestamp(),
     )
@@ -118,7 +119,7 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
             upstream_daily_partitioned_asset.key,
             downstream_daily_partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )
@@ -169,7 +170,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy():
             downstream_daily_partitioned_asset.key,
             upstream_non_partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )
@@ -242,7 +243,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
             downstream_daily_partitioned_asset.key,
             has_different_backfill_policy.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=False,
         backfill_start_timestamp=time_now.timestamp(),
     )
@@ -280,7 +281,7 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
         asset_selection=[
             unpartitioned_upstream_of_partitioned.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=get_current_timestamp(),
     )
@@ -318,7 +319,7 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
         asset_selection=[
             upstream_daily_partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )
@@ -364,7 +365,7 @@ def test_asset_backfill_return_multiple_run_request_for_partitioned():
         asset_selection=[
             upstream_daily_partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )
@@ -433,15 +434,15 @@ def test_asset_backfill_status_count_with_backfill_policies():
             upstream_daily_partitioned_asset.key,
             downstream_weekly_partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )
 
     (
         completed_backfill_data,
-        requested_asset_partitions,
-        fail_and_downstream_asset_partitions,
+        _requested_asset_partitions,
+        _fail_and_downstream_asset_partitions,
     ) = run_backfill_to_completion(
         instance=instance,
         asset_graph=asset_graph,
@@ -520,7 +521,7 @@ def test_backfill_run_contains_more_than_one_asset():
             downstream_a.key,
             downstream_b.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )
@@ -697,7 +698,7 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
         ],
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
@@ -765,7 +766,7 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
         ],
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
@@ -835,7 +836,7 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
         ],
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
@@ -898,7 +899,7 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
         ],
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
@@ -957,7 +958,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
         ],
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
@@ -1020,7 +1021,7 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         ],
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
@@ -1069,7 +1070,7 @@ def test_run_request_partition_order():
             "2023-10-04",
         ],
         asset_selection=[foo.key, foo_child.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=False,
         backfill_start_timestamp=create_datetime(2023, 10, 7, 0, 0, 0).timestamp(),
     )
@@ -1102,7 +1103,7 @@ def test_max_partitions_per_range_1_sets_run_request_partition_key():
             "2023-10-06",
         ],
         asset_selection=[foo.key],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=False,
         backfill_start_timestamp=create_datetime(2023, 10, 7, 0, 0, 0).timestamp(),
     )
@@ -1146,7 +1147,7 @@ def test_single_run_backfill_full_execution(
         asset_selection=[
             partitioned_asset.key,
         ],
-        dynamic_partitions_store=MagicMock(),
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
         all_partitions=True,
         backfill_start_timestamp=time_now.timestamp(),
     )

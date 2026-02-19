@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-restricted-imports
-
+import {Box} from '../Box';
 import {Button} from '../Button';
-import {Group} from '../Group';
 import {showToast} from '../Toaster';
 
 // eslint-disable-next-line import/no-default-export
@@ -11,7 +9,7 @@ export default {
 
 export const Sizes = () => {
   return (
-    <Group direction="column" spacing={16}>
+    <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
       <Button
         onClick={async () =>
           await showToast({
@@ -84,6 +82,6 @@ export const Sizes = () => {
       >
         Toast with Action
       </Button>
-    </Group>
+    </Box>
   );
 };

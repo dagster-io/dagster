@@ -146,7 +146,7 @@ def test_single_required_string_field_config_type():
 
     with pytest.raises(
         AssertionError,
-        match='Missing required config entry "string_field" at the root.',
+        match=r'Missing required config entry "string_field" at the root.',
     ):
         _validate(_single_required_string_config_dict(), {})
 
@@ -167,7 +167,7 @@ def test_undefined_field_error():
     with pytest.raises(
         AssertionError,
         match=(
-            'Received unexpected config entry "extra" at the root. Expected: "{ string_field: '
+            r'Received unexpected config entry "extra" at the root. Expected: "{ string_field: '
             'String }".'
         ),
     ):
@@ -508,14 +508,14 @@ def test_single_nested_config():
 def test_single_nested_config_undefined_errors():
     with pytest.raises(
         AssertionError,
-        match='Value at path root:nested must be dict. Expected: "{ int_field: Int }".',
+        match=r'Value at path root:nested must be dict. Expected: "{ int_field: Int }".',
     ):
         _validate(_single_nested_config(), {"nested": "dkjfdk"})
 
     with pytest.raises(
         AssertionError,
         match=(
-            'Invalid scalar at path root:nested:int_field. Value "dkjfdk" of type .* is not valid'
+            r'Invalid scalar at path root:nested:int_field. Value "dkjfdk" of type .* is not valid'
             ' for expected type "Int".'
         ),
     ):
@@ -524,7 +524,7 @@ def test_single_nested_config_undefined_errors():
     with pytest.raises(
         AssertionError,
         match=(
-            'Received unexpected config entry "not_a_field" at path root:nested. Expected: '
+            r'Received unexpected config entry "not_a_field" at path root:nested. Expected: '
             '"{ int_field: Int }".'
         ),
     ):
@@ -533,7 +533,7 @@ def test_single_nested_config_undefined_errors():
     with pytest.raises(
         AssertionError,
         match=(
-            "Invalid scalar at path root:nested:int_field. Value \"{'too_nested': 'dkjfdk'}\" of"
+            r"Invalid scalar at path root:nested:int_field. Value \"{'too_nested': 'dkjfdk'}\" of"
             ' type .* is not valid for expected type "Int".'
         ),
     ):
@@ -1054,7 +1054,7 @@ def test_multilevel_good_error_handling_config_ops_name_ops():
 def test_invalid_default_values():
     with pytest.raises(
         dg.DagsterInvalidConfigError,
-        match='Value "3" of type .* is not valid for expected type "Int"',
+        match=r'Value "3" of type .* is not valid for expected type "Int"',
     ):
 
         @dg.op(config_schema=dg.Field(dg.Int, default_value="3"))
@@ -1101,7 +1101,7 @@ def test_typing_types_into_config():
             pass
 
     for ttype in [
-        typing.Optional[int],
+        int | None,
         typing.Set,
         typing.Set[int],
         typing.Dict,
@@ -1188,3 +1188,14 @@ def test_permissive_ordering():
     assert wrap_op_in_graph_and_execute(
         test_order, run_config={"ops": {"test_order": {"config": alphabet}}}
     ).success
+
+
+def test_field_is_secret_parameter():
+    """Test that Field accepts and stores is_secret parameter."""
+    # Non-secret field
+    regular_field = dg.Field(str, description="A regular field")
+    assert regular_field.is_secret is False
+
+    # Secret field
+    secret_field = dg.Field(str, description="A secret field", is_secret=True)
+    assert secret_field.is_secret is True

@@ -1,6 +1,7 @@
 ---
 title: Dagster & Meltano
 sidebar_label: Meltano
+sidebar_position: 1
 description: The Meltano library allows you to run Meltano using Dagster. Design and configure ingestion jobs using the popular Singer specification.
 tags: [community-supported, etl]
 source: https://github.com/quantile-development/dagster-meltano

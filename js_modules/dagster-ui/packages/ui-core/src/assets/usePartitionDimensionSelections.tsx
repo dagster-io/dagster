@@ -12,6 +12,7 @@ import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {
   allPartitionsRange,
   allPartitionsSpan,
+  escapePartitionKey,
   partitionsToText,
   spanTextToSelectionsOrError,
 } from '../partitions/SpanRepresentation';
@@ -22,13 +23,19 @@ export type DimensionQueryState = {
   isFromPartitionQueryStringParam: boolean;
 };
 
-export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
+export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'> | undefined) {
   const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
     defaults: {},
     encode: (state) => {
-      return Object.fromEntries(state.map((s) => [`${s.name}_range`, s.rangeText]));
+      // Note: The `qs` library used by useQueryPersistedState already URL-encodes values
+      // during stringify, so we should NOT call encodeURIComponent here to avoid double-encoding.
+      return Object.fromEntries(
+        state.map((s) => [`${s.name}_range`, s.rangeText ? s.rangeText : undefined]),
+      );
     },
     decode: (qs) => {
+      // Note: The `qs` library used by useQueryPersistedState already URL-decodes values,
+      // so we should NOT call decodeURIComponent here to avoid double-decoding.
       const results: Record<string, {text: string; isFromPartitionQueryStringParam: boolean}> = {};
       const {partition, ...remaining} = qs;
 
@@ -39,7 +46,10 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
         partitions.forEach((partitionText, i) => {
           const name = assetHealth?.dimensions[i]?.name;
           if (name) {
-            results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
+            results[name] = {
+              text: partitionText,
+              isFromPartitionQueryStringParam: true,
+            };
           }
         });
       }
@@ -50,7 +60,10 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
           const name = key.replace(/_range$/, '');
           const value = qs[key];
           if (typeof value === 'string') {
-            results[name] = {text: value, isFromPartitionQueryStringParam: false};
+            results[name] = {
+              text: value,
+              isFromPartitionQueryStringParam: false,
+            };
           }
         }
       }
@@ -73,7 +86,7 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
  * writes changes back to the query string using the compacted "spans" format.
  */
 export const usePartitionDimensionSelections = (opts: {
-  assetHealth: Pick<PartitionHealthData, 'dimensions'>;
+  assetHealth: Pick<PartitionHealthData, 'dimensions'> | undefined;
   modifyQueryString: boolean;
   defaultSelection?: 'empty' | 'all';
   knownDimensionNames?: string[]; // improves loading state if available
@@ -114,9 +127,15 @@ export const usePartitionDimensionSelections = (opts: {
         saved?.rangeText !== undefined &&
         (shouldReadPartitionQueryStringParam || !saved?.isFromPartitionQueryStringParam)
       ) {
+        // When the text comes from the `partition` query string param, it's a raw partition key
+        // (e.g., '{"region": "us-east"}'), not our serialized syntax. We need to escape it so
+        // special characters like commas, brackets, and quotes are treated as literal characters.
+        const textToParse = saved.isFromPartitionQueryStringParam
+          ? escapePartitionKey(saved.rangeText)
+          : saved.rangeText;
         const selections = spanTextToSelectionsOrError(
           dimension.partitionKeys,
-          saved.rangeText,
+          textToParse,
           skipPartitionKeyValidation,
         );
         if (selections instanceof Error) {

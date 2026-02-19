@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from dagster import (
     AssetExecutionContext,
@@ -21,7 +21,7 @@ from dagster_fivetran.utils import get_column_schema_for_columns, get_fivetran_c
 if TYPE_CHECKING:
     from dagster_fivetran.resources import FivetranWorkspace
 
-FivetranEventType = Union[AssetMaterialization, MaterializeResult]
+FivetranEventType: TypeAlias = AssetMaterialization | MaterializeResult
 T = TypeVar("T", bound=FivetranEventType)
 
 DEFAULT_MAX_THREADPOOL_WORKERS = 10
@@ -75,7 +75,7 @@ class FivetranEventIterator(Iterator[T]):
         self,
         events: Iterator[T],
         fivetran_workspace: "FivetranWorkspace",
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
     ) -> None:
         self._inner_iterator = events
         self._fivetran_workspace = fivetran_workspace

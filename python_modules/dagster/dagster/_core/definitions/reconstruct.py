@@ -63,10 +63,10 @@ class ReconstructableRepository(
         "_ReconstructableRepository",
         [
             ("pointer", CodePointer),
-            ("container_image", Optional[str]),
-            ("executable_path", Optional[str]),
+            ("container_image", str | None),
+            ("executable_path", str | None),
             ("entry_point", Sequence[str]),
-            ("container_context", Optional[Mapping[str, Any]]),
+            ("container_context", Mapping[str, Any] | None),
             ("repository_load_data", Optional["RepositoryLoadData"]),
         ],
     )
@@ -74,10 +74,10 @@ class ReconstructableRepository(
     def __new__(
         cls,
         pointer: CodePointer,
-        container_image: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        entry_point: Optional[Sequence[str]] = None,
-        container_context: Optional[Mapping[str, Any]] = None,
+        container_image: str | None = None,
+        executable_path: str | None = None,
+        entry_point: Sequence[str] | None = None,
+        container_context: Mapping[str, Any] | None = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -118,9 +118,9 @@ class ReconstructableRepository(
         cls,
         file: str,
         fn_name: str,
-        working_directory: Optional[str] = None,
-        container_image: Optional[str] = None,
-        container_context: Optional[Mapping[str, Any]] = None,
+        working_directory: str | None = None,
+        container_image: str | None = None,
+        container_context: Mapping[str, Any] | None = None,
     ) -> "ReconstructableRepository":
         if not working_directory:
             working_directory = os.getcwd()
@@ -135,9 +135,9 @@ class ReconstructableRepository(
         cls,
         module: str,
         fn_name: str,
-        working_directory: Optional[str] = None,
-        container_image: Optional[str] = None,
-        container_context: Optional[Mapping[str, Any]] = None,
+        working_directory: str | None = None,
+        container_image: str | None = None,
+        container_context: Mapping[str, Any] | None = None,
     ) -> "ReconstructableRepository":
         return cls(
             ModuleCodePointer(module, fn_name, working_directory),
@@ -196,9 +196,9 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
         [
             ("repository", ReconstructableRepository),
             ("job_name", str),
-            ("op_selection", Optional[AbstractSet[str]]),
-            ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
+            ("op_selection", AbstractSet[str] | None),
+            ("asset_selection", AbstractSet[AssetKey] | None),
+            ("asset_check_selection", AbstractSet[AssetCheckKey] | None),
         ],
     ),
     IJob,
@@ -220,9 +220,9 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
         cls,
         repository: ReconstructableRepository,
         job_name: str,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ):
         op_selection = set(op_selection) if op_selection else None
         return super().__new__(
@@ -264,9 +264,9 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
     def get_subset(
         self,
         *,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ) -> "ReconstructableJob":
         if op_selection and (asset_selection or asset_check_selection):
             check.failed(
@@ -310,7 +310,7 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
     def get_python_origin(self) -> JobPythonOrigin:
         return JobPythonOrigin(self.job_name, self.repository.get_python_origin())
 
-    def get_module(self) -> Optional[str]:
+    def get_module(self) -> str | None:
         """Return the module the job is found in, the origin is a module code pointer."""
         pointer = self.get_python_origin().get_repo_pointer()
         if isinstance(pointer, ModuleCodePointer):
@@ -392,7 +392,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
                 "``GraphDefinition.to_job``, you must wrap the ``to_job`` call in a function at "
                 "module scope, ie not within any other functions. "
                 "To learn more, check out the docs on ``reconstructable``: "
-                "https://docs.dagster.io/api/python-api/execution#dagster.reconstructable"
+                "https://docs.dagster.io/api/dagster/execution#dagster.reconstructable"
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
@@ -442,9 +442,9 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,
-    reconstructable_args: Optional[tuple[object]] = None,
-    reconstructable_kwargs: Optional[Mapping[str, object]] = None,
-    reconstructor_working_directory: Optional[str] = None,
+    reconstructable_args: tuple[object] | None = None,
+    reconstructable_kwargs: Mapping[str, object] | None = None,
+    reconstructor_working_directory: str | None = None,
 ) -> ReconstructableJob:
     """Create a :py:class:`dagster._core.definitions.reconstructable.ReconstructableJob`.
 
@@ -515,7 +515,7 @@ def build_reconstructable_job(
     _reconstructable_args: list[object] = list(
         check.opt_tuple_param(reconstructable_args, "reconstructable_args")
     )
-    _reconstructable_kwargs: list[list[Union[str, object]]] = list(
+    _reconstructable_kwargs: list[list[str | object]] = list(
         (
             [key, value]
             for key, value in check.opt_mapping_param(
@@ -555,7 +555,7 @@ LoadableDefinition: TypeAlias = Union[
     "JobDefinition",
     "RepositoryDefinition",
     "GraphDefinition",
-    "Sequence[Union[AssetsDefinition, SourceAsset]]",
+    "Sequence[AssetsDefinition | SourceAsset]",
 ]
 
 T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)
@@ -600,13 +600,13 @@ def _check_is_loadable(definition: object) -> LoadableDefinition:
 
 
 def load_def_in_module(
-    module_name: str, attribute: str, working_directory: Optional[str]
+    module_name: str, attribute: str, working_directory: str | None
 ) -> LoadableDefinition:
     return def_from_pointer(CodePointer.from_module(module_name, attribute, working_directory))
 
 
 def load_def_in_package(
-    package_name: str, attribute: str, working_directory: Optional[str]
+    package_name: str, attribute: str, working_directory: str | None
 ) -> LoadableDefinition:
     return def_from_pointer(
         CodePointer.from_python_package(package_name, attribute, working_directory)
@@ -614,7 +614,7 @@ def load_def_in_package(
 
 
 def load_def_in_python_file(
-    python_file: str, attribute: str, working_directory: Optional[str]
+    python_file: str, attribute: str, working_directory: str | None
 ) -> LoadableDefinition:
     return def_from_pointer(CodePointer.from_python_file(python_file, attribute, working_directory))
 

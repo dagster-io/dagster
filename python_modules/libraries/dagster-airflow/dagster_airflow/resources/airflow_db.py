@@ -1,6 +1,5 @@
 import datetime
 from collections.abc import Mapping
-from typing import Optional
 
 import pendulum
 from airflow.models.dag import DAG
@@ -24,13 +23,13 @@ else:
 class AirflowDatabase:
     """Airflow database Dagster resource."""
 
-    def __init__(self, dagster_run: DagsterRun, dag_run_config: Optional[dict] = None):
+    def __init__(self, dagster_run: DagsterRun, dag_run_config: dict | None = None):
         self.dagster_run = dagster_run
         self.dag_run_config = dag_run_config
 
     def _parse_execution_date_for_job(
         self, dag: DAG, run_tags: Mapping[str, str]
-    ) -> Optional[datetime.datetime]:
+    ) -> datetime.datetime | None:
         execution_date_str = run_tags.get(AIRFLOW_EXECUTION_DATE_STR)
         if not execution_date_str:
             raise DagsterInvariantViolationError(
@@ -54,7 +53,7 @@ class AirflowDatabase:
 
     def _parse_execution_date_for_asset(
         self, dag: DAG, run_tags: Mapping[str, str]
-    ) -> Optional[datetime.datetime]:
+    ) -> datetime.datetime | None:
         execution_date_str = run_tags.get("dagster/partition")
         if not execution_date_str:
             raise DagsterInvariantViolationError("dagster/partition is not set")

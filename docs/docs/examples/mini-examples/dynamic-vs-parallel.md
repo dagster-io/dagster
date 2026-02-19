@@ -15,7 +15,7 @@ Imagine you need to process a collection of items (in our example, letters a-z),
 
 The key question is: Should you use Dagster's dynamic outputs to create separate op executions for each item, or should you handle the parallelism within a single op using Python's multiprocessing capabilities?
 
-### Solution 1: Dagster dynamic outputs
+## Solution 1: Dagster dynamic outputs
 
 [Dynamic outputs](/api/dagster/dynamic#dagster.DynamicOutput) allow you to create separate op executions for each item. In this example, each letter (a-z) gets its own op execution. This approach provides maximum observability and leverages Dagster's built-in retry mechanisms, but comes with additional overhead for each item.
 
@@ -33,7 +33,7 @@ The key question is: Should you use Dagster's dynamic outputs to create separate
 | **Resource usage** | Each letter consumes a credit in Dagster Cloud       |
 | **Complexity**     | Simple dynamic pattern setup                         |
 
-### Solution 2: Python parallelism
+## Solution 2: Python parallelism
 
 The Python parallelism approach uses multiprocessing within a single op to process all letters concurrently. This provides better performance than Dagster's dynamic outputs approach by utilizing multiple CPU cores simultaneously, but requires manual implementation of error handling and retry logic.
 

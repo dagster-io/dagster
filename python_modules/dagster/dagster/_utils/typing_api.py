@@ -146,7 +146,7 @@ def flatten_unions(ttype: type | UnionType) -> typing.AbstractSet[type]:
 
 
 def _flatten_unions_inner(ttype: type | UnionType) -> typing.Iterable[type]:
-    if get_origin(ttype) is typing.Union:
+    if get_origin(ttype) in (typing.Union, UnionType):
         for arg in get_args(ttype):
             yield from flatten_unions(arg)
     else:

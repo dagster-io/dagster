@@ -1,10 +1,11 @@
 import dataclasses
+import json
 import re
 import string
 from collections import namedtuple
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 import dagster as dg
 import dagster._check as check
@@ -108,7 +109,7 @@ def test_forward_compat_serdes_new_field_with_default() -> None:
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", Optional[str])])):
+    class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", str | None)])):
         def __new__(cls, foo, bar, baz=None):
             return super().__new__(cls, foo, bar, baz=baz)
 
@@ -1042,7 +1043,7 @@ def test_record() -> None:
     class LegacyModel(IHaveNew):
         nums: list[int]
 
-        def __new__(cls, nums: Optional[list[int]] = None, old_nums: Optional[list[int]] = None):
+        def __new__(cls, nums: list[int] | None = None, old_nums: list[int] | None = None):
             return super().__new__(
                 cls,
                 nums=nums or old_nums,
@@ -1073,6 +1074,31 @@ def test_record_fwd_ref():
         # requires serdes to set contextual namespace
         return dg.deserialize_value(
             '{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}',
+            MyModel,
+            whitelist_map=test_env,
+        )
+
+    assert _out_of_scope()
+
+
+def test_record_fwd_ref_unpack():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class MyModel:
+        foos: list["Foo"]
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class Foo:
+        age: int
+
+    def _out_of_scope():
+        # cant find "Foo" in definition or callsite captured scopes
+        # requires serdes to set contextual namespace
+        return unpack_value(
+            json.loads('{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}'),
             MyModel,
             whitelist_map=test_env,
         )
@@ -1182,7 +1208,7 @@ def test_record_remap() -> None:
     class Record_T2(IHaveNew):
         foo_str: str
 
-        def __new__(cls, foo: Union[Complex, str]):
+        def __new__(cls, foo: Complex | str):
             if isinstance(foo, Complex):
                 foo = foo.s
 

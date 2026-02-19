@@ -4,6 +4,7 @@ import importlib
 import inspect
 import pkgutil
 from functools import cache
+from types import UnionType
 from typing import Union, get_args, get_origin
 
 from pydantic import BaseModel
@@ -47,7 +48,7 @@ def is_pydantic_model(type_hint) -> bool:
         return type_hint in get_pydantic_models_from_schemas()
 
     # Handle Optional types
-    if get_origin(type_hint) in (Union, type(Union)):
+    if get_origin(type_hint) in (Union, UnionType):
         # Check all args in the Union
         args = get_args(type_hint)
         # Filter out NoneType
@@ -63,7 +64,7 @@ def is_pydantic_model(type_hint) -> bool:
 def is_allowed_type(type_hint) -> bool:
     """Check if a type hint is allowed (primitive or Pydantic model)."""
     # Handle Optional types
-    if get_origin(type_hint) in (Union, type(Union)):
+    if get_origin(type_hint) in (Union, UnionType):
         args = get_args(type_hint)
         return all(is_allowed_type(arg) for arg in args)
 

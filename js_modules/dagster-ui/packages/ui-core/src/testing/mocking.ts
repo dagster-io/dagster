@@ -1,5 +1,5 @@
+import {Unmasked} from '@apollo/client/masking';
 import {MockedResponse} from '@apollo/client/testing';
-import deepmerge from 'deepmerge';
 import {GraphQLError} from 'graphql';
 
 import {DocumentNode, OperationVariables} from '../apollo-client';
@@ -29,7 +29,7 @@ export function buildQueryMock<
         ? ({
             __typename: 'Query',
             ...data,
-          } as TQuery)
+          } as Unmasked<TQuery>)
         : undefined,
       errors,
     },
@@ -62,7 +62,7 @@ export function buildMutationMock<
         ? ({
             __typename: 'Mutation',
             ...data,
-          } as TMutation)
+          } as Unmasked<TMutation>)
         : undefined,
       errors,
     },
@@ -84,82 +84,14 @@ export function getMockResultFn<T>(mock: MockedResponse<T>) {
   return mockFn;
 }
 
-/**
- * Merges result data for queries of the same type.
- * See mocking.test.ts for example usage
- */
-export function mergeMockQueries<T extends Record<string, any>>(
-  defaultData: MockedResponse<T>,
-  ...queries: Array<MockedResponse<T>>
-): MockedResponse<T> {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  let mergedResult = resultData(queries[0]!.result, queries[0]!.request.variables);
-  for (let i = 1; i < queries.length; i++) {
-    mergedResult = deepmerge(
-      mergedResult,
-      removeDefaultValues(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        resultData(defaultData.result!),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        resultData(queries[i]!.result!, queries[i]?.request.variables),
-      ),
-    );
-  }
-  return {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ...queries[0]!,
-    result: mergedResult,
-  };
-}
-
-function resultData<T>(result: MockedResponse<T>['result'], variables: Record<string, any> = {}) {
-  if (result instanceof Function) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return result(variables)!;
-  } else {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return result!;
-  }
-}
-
-function removeDefaultValues<T extends Record<string | number, any> | Array<any>>(
-  defaultData: T,
-  data: T,
-): T {
-  const dataWithoutDefaultValues: Partial<T> =
-    defaultData instanceof Array ? ([...(data as any)] as T) : {...data}; // Use a copy of 'data'
-
-  if (data instanceof Object) {
-    Object.keys(defaultData).forEach((key: any) => {
-      if (key in data && key in defaultData) {
-        if (data[key] === defaultData[key]) {
-          delete dataWithoutDefaultValues[key];
-        } else {
-          if (data[key] instanceof Object) {
-            const dataKey = key as keyof T; // Use a type assertion to narrow the type of key
-            const result = removeDefaultValues(defaultData[key], data[key]);
-            if (result) {
-              dataWithoutDefaultValues[dataKey] = result;
-            } else {
-              delete dataWithoutDefaultValues[dataKey];
-            }
-          } else {
-            dataWithoutDefaultValues[key] = data[key];
-          }
-        }
-      }
-    });
-  } else if (data === defaultData) {
-    return undefined as any; // Return 'undefined' with 'any' type for consistency
-  }
-
-  return dataWithoutDefaultValues as T; // Cast to the original type 'T'
-}
-
 let nativeGBRC: any;
+let nativeOffsetHeight: PropertyDescriptor | undefined;
+let nativeOffsetWidth: PropertyDescriptor | undefined;
 
-/* simulate getBoundingCLientRect returning a > 0x0 size, important for
-testing React trees that useVirtualized()
+/* simulate getBoundingClientRect returning a > 0x0 size, important for
+testing React trees that useVirtualized().
+Also mocks offsetHeight/offsetWidth which @tanstack/virtual-core v3 uses
+(via getRect()) to measure scroll containers.
 */
 export function mockViewportClientRect() {
   if (nativeGBRC) {
@@ -169,6 +101,21 @@ export function mockViewportClientRect() {
   window.Element.prototype.getBoundingClientRect = jest
     .fn()
     .mockReturnValue({height: 400, width: 400});
+
+  nativeOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+  nativeOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get() {
+      return 400;
+    },
+  });
+  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+    configurable: true,
+    get() {
+      return 400;
+    },
+  });
 }
 
 export function restoreViewportClientRect() {
@@ -177,4 +124,27 @@ export function restoreViewportClientRect() {
   }
   window.Element.prototype.getBoundingClientRect = nativeGBRC;
   nativeGBRC = null;
+
+  if (nativeOffsetHeight) {
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', nativeOffsetHeight);
+  } else {
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get() {
+        return 0;
+      },
+    });
+  }
+  if (nativeOffsetWidth) {
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', nativeOffsetWidth);
+  } else {
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get() {
+        return 0;
+      },
+    });
+  }
+  nativeOffsetHeight = undefined;
+  nativeOffsetWidth = undefined;
 }

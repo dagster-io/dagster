@@ -1,7 +1,7 @@
 import operator
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Optional, TypeAlias
 
 from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
 from typing_extensions import Self
@@ -20,9 +20,9 @@ from dagster._core.definitions.partitions.subset import (
 )
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 
-EntitySubsetValue = Union[bool, PartitionsSubset]
+EntitySubsetValue: TypeAlias = bool | PartitionsSubset
 
-CoercibleToAssetEntitySubsetValue = Union[str, Sequence[str], PartitionsSubset, None]
+CoercibleToAssetEntitySubsetValue: TypeAlias = str | Sequence[str] | PartitionsSubset | None
 
 
 class EntitySubsetSerializer(DataclassSerializer):
@@ -51,11 +51,17 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
     value: EntitySubsetValue
 
     @classmethod
+    def empty(
+        cls, key: T_EntityKey, partitions_def: PartitionsDefinition | None
+    ) -> "SerializableEntitySubset[T_EntityKey]":
+        return cls(key=key, value=partitions_def.empty_subset() if partitions_def else False)
+
+    @classmethod
     def from_coercible_value(
         cls,
         key: T_EntityKey,
         value: CoercibleToAssetEntitySubsetValue,
-        partitions_def: Optional[PartitionsDefinition],
+        partitions_def: PartitionsDefinition | None,
     ) -> "SerializableEntitySubset":
         """Creates a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
         to an EntitySubsetValue.
@@ -93,7 +99,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         cls,
         key: T_EntityKey,
         value: CoercibleToAssetEntitySubsetValue,
-        partitions_def: Optional[PartitionsDefinition],
+        partitions_def: PartitionsDefinition | None,
     ) -> Optional["SerializableEntitySubset"]:
         """Attempts to create a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
         and partitions definition to an EntitySubsetValue. Returns None if the coercion fails.
@@ -130,8 +136,12 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             return not self.bool_value
 
     def is_compatible_with_partitions_def(
-        self, partitions_def: Optional[PartitionsDefinition]
+        self, partitions_def: PartitionsDefinition | None
     ) -> bool:
+        from dagster._core.definitions.partitions.definition.time_window import (
+            TimeWindowPartitionsDefinition,
+        )
+
         if self.is_partitioned:
             # for some PartitionSubset types, we have access to the underlying partitions
             # definitions, so we can ensure those are identical
@@ -150,6 +160,11 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
                     and partitions_def.has_partition_key(r.end)
                     for r in self.value.key_ranges
                 )
+            elif isinstance(self.value, DefaultPartitionsSubset) and isinstance(
+                partitions_def, TimeWindowPartitionsDefinition
+            ):
+                return all(partitions_def.has_partition_key(k) for k in self.value.subset)
+
             else:
                 return partitions_def is not None
         else:

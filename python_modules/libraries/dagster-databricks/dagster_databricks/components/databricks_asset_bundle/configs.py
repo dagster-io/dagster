@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Union
 
 import yaml
 from dagster import (
@@ -12,11 +12,14 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import preview
+from dagster._serdes import whitelist_for_serdes
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
 
-DatabricksSdkTaskType = Union[
+# Union is required here because databricks SDK types use a metaclass that doesn't support the
+# `|` operator at runtime, causing TypeError during module import (e.g. in Sphinx doc builds).
+DatabricksSdkTaskType = Union[  # noqa: UP007
     jobs.NotebookTask,
     jobs.RunJobTask,
     jobs.PythonWheelTask,
@@ -41,7 +44,7 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
         return {}
 
 
-def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsOnConfig"]:
+def parse_depends_on(depends_on: list | None) -> list["DatabricksTaskDependsOnConfig"]:
     parsed_depends_on = []
     if depends_on:
         for dep in depends_on:
@@ -56,7 +59,7 @@ def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsO
     return parsed_depends_on
 
 
-def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.compute.Library]:
+def parse_libraries(libraries: list[Mapping[str, Any]] | None) -> list[jobs.compute.Library]:
     libraries_list = []
     for lib in libraries or []:
         if "whl" in lib:
@@ -107,14 +110,15 @@ def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.c
 @record
 class DatabricksTaskDependsOnConfig:
     task_key: str
-    outcome: Optional[str]
+    outcome: str | None
 
 
+@whitelist_for_serdes
 @record
 class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     task_key: str
     task_config: Mapping[str, Any]
-    task_parameters: Union[Mapping[str, Any], list[str]]
+    task_parameters: Mapping[str, Any] | list[str]
     depends_on: list[DatabricksTaskDependsOnConfig]
     job_name: str
     libraries: list[Mapping[str, Any]]
@@ -143,6 +147,7 @@ class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     def to_databricks_sdk_task(self) -> T_DatabricksSdkTask: ...
 
 
+@whitelist_for_serdes
 @record
 class DatabricksNotebookTask(DatabricksBaseTask[jobs.NotebookTask]):
     @property
@@ -186,6 +191,7 @@ class DatabricksNotebookTask(DatabricksBaseTask[jobs.NotebookTask]):
         )
 
 
+@whitelist_for_serdes
 @record
 class DatabricksConditionTask(DatabricksBaseTask[jobs.ConditionTask]):
     @property
@@ -236,6 +242,7 @@ class DatabricksConditionTask(DatabricksBaseTask[jobs.ConditionTask]):
         )
 
 
+@whitelist_for_serdes
 @record
 class DatabricksSparkPythonTask(DatabricksBaseTask[jobs.SparkPythonTask]):
     @property
@@ -282,6 +289,7 @@ class DatabricksSparkPythonTask(DatabricksBaseTask[jobs.SparkPythonTask]):
         )
 
 
+@whitelist_for_serdes
 @record
 class DatabricksPythonWheelTask(DatabricksBaseTask[jobs.PythonWheelTask]):
     @property
@@ -331,6 +339,7 @@ class DatabricksPythonWheelTask(DatabricksBaseTask[jobs.PythonWheelTask]):
         )
 
 
+@whitelist_for_serdes
 @record
 class DatabricksSparkJarTask(DatabricksBaseTask[jobs.SparkJarTask]):
     @property
@@ -376,6 +385,7 @@ class DatabricksSparkJarTask(DatabricksBaseTask[jobs.SparkJarTask]):
         )
 
 
+@whitelist_for_serdes
 @record
 class DatabricksJobTask(DatabricksBaseTask[jobs.RunJobTask]):
     @property
@@ -420,6 +430,7 @@ class DatabricksJobTask(DatabricksBaseTask[jobs.RunJobTask]):
         )
 
 
+@whitelist_for_serdes
 @record
 class DatabricksUnknownTask(DatabricksBaseTask):
     @property
@@ -464,7 +475,7 @@ class DatabricksConfig(IHaveNew):
 
     def __new__(
         cls,
-        databricks_config_path: Union[Path, str],
+        databricks_config_path: Path | str,
     ) -> "DatabricksConfig":
         databricks_config_path = Path(databricks_config_path)
         if not databricks_config_path.exists():
@@ -503,7 +514,7 @@ class DatabricksConfig(IHaveNew):
     @classmethod
     def _extract_tasks_from_resource(
         cls, resource_path: Path
-    ) -> tuple[list[Any], Optional[Mapping[str, Any]]]:
+    ) -> tuple[list[Any], Mapping[str, Any] | None]:
         """Extract Databricks tasks from a resource YAML file."""
         resource_config = load_yaml(resource_path)
         tasks = []
@@ -576,7 +587,7 @@ class DatabricksConfig(IHaveNew):
     @classmethod
     def _extract_job_level_parameters(
         cls, job_config: Mapping[str, Any]
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any] | None:
         """Extract job-level parameters from job configuration."""
         # Job-level parameters can be defined in several ways in Databricks bundle
         job_parameters = None
@@ -609,3 +620,13 @@ class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
 @preview
 class ResolvedDatabricksServerlessConfig(Resolvable, Model):
     is_serverless: bool = True
+
+
+@whitelist_for_serdes
+@record
+class DatabricksJob:
+    """Represents a Databricks Job structure for serialization."""
+
+    job_id: int
+    name: str
+    tasks: list[DatabricksBaseTask] | None = None

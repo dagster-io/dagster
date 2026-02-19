@@ -1,8 +1,14 @@
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 import path from 'path';
 
 const SELECTION_GRAMMAR_FILE_PATH = path.resolve('./src/selection/SelectionAutoComplete.g4');
-execSync(`antlr4ts -visitor -o ./src/selection/generated ${SELECTION_GRAMMAR_FILE_PATH}`);
+execFileSync('antlr4ng', [
+  '-Dlanguage=TypeScript',
+  '-visitor',
+  '-o',
+  './src/selection/generated',
+  SELECTION_GRAMMAR_FILE_PATH,
+]);
 
 const files = [
   'SelectionAutoCompleteLexer.ts',
@@ -12,5 +18,5 @@ const files = [
 ];
 
 files.forEach((file) => {
-  execSync(`yarn prettier ./src/selection/generated/${file} --write`);
+  execFileSync('yarn', ['prettier', `./src/selection/generated/${file}`, '--write']);
 });

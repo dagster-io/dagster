@@ -62,6 +62,7 @@ export type AssetAutomationQuery = {
 
 export type AssetAutomationFragment = {
   __typename: 'AssetNode';
+  id: string;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   automationCondition: {
     __typename: 'AutomationCondition';
@@ -149,4 +150,4 @@ export type AssetInstigatorFragment =
   | AssetInstigatorFragment_Schedule
   | AssetInstigatorFragment_Sensor;
 
-export const AssetAutomationQueryVersion = 'a7b9f9d72e79dd3cc60f094649f0e2f810feaa1563b886f7499be3087dc7cb65';
+export const AssetAutomationQueryVersion = 'ba290842b1e65f256ea3b1e95285e050da5a8ee50ecf34b6228299e7dd605425';

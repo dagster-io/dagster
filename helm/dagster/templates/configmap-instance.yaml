@@ -176,6 +176,11 @@ data:
       {{- end }}
     {{- end }}
 
+    {{- if .Values.concurrency.enabled }}
+    concurrency:
+      {{- include "dagsterYaml.concurrency" . | indent 6 }}
+    {{- end }}
+
     {{- if .Values.additionalInstanceConfig }}
     {{- .Values.additionalInstanceConfig | toYaml | nindent 4}}
     {{- end }}

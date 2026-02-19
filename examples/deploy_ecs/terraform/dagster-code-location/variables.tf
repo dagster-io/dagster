@@ -90,7 +90,7 @@ variable "postgres_user" {
 variable "postgres_password" {
   description = "PostgreSQL password for Dagster."
   type        = string
-  sensitive = true
+  sensitive   = true
 }
 
 variable "log_group" {

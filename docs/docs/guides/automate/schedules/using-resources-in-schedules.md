@@ -8,7 +8,7 @@ This example demonstrates how to use resources in schedules. To specify a resour
 
 :::note
 
-This article assumes familiarity with [resources](/guides/build/external-resources), [code locations and definitions](/deployment/code-locations), and [schedule testing](/guides/automate/schedules/testing-schedules).
+This article assumes familiarity with [resources](/guides/build/external-resources), [code locations and definitions](/guides/build/projects), and [schedule testing](/guides/automate/schedules/testing-schedules).
 
 :::
 

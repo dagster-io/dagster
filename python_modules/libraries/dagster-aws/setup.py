@@ -27,12 +27,13 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_aws_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         "boto3",
         f"dagster{pin}",
@@ -53,6 +54,11 @@ setup(
             "flaky",
             "pytest-cases",
             "s3fs",
+        ],
+    },
+    entry_points={
+        "dagster_dg_cli.registry_modules": [
+            "dagster_aws = dagster_aws.components",
         ],
     },
     zip_safe=False,

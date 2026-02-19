@@ -1,6 +1,7 @@
 ---
 title: Dagster & Hex
 sidebar_label: Hex
+sidebar_position: 1
 description: The community-supported Hex package provides an integration with Hex.
 tags: [community-supported, compute]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex

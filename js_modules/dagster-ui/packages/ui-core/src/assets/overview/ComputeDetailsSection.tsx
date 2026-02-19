@@ -1,5 +1,4 @@
 import {Box, ButtonLink, Colors, ConfigTypeSchema, Icon, Tag} from '@dagster-io/ui-components';
-import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {metadataForAssetNode} from '../AssetMetadata';

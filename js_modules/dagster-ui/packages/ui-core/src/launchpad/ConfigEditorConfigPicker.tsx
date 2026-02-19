@@ -340,7 +340,7 @@ const ConfigEditorConfigGeneratorPicker = React.memo(
                 renderedPresetItems.length > 0 && renderedPartitionSetItems.length > 0;
 
               return (
-                <Menu ulRef={itemsParentRef}>
+                <Menu ref={itemsParentRef}>
                   {bothTypesPresent && <MenuItem disabled={true} text="Presets" />}
                   {renderedPresetItems}
                   {bothTypesPresent && <MenuDivider />}

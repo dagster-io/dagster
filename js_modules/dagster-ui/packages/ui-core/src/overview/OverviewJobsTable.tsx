@@ -2,11 +2,9 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
-import {useFeatureFlags} from '../app/useFeatureFlags';
 import {Container, Inner, TABLE_HEADER_HEIGHT} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
-import {VirtualizedJobHeader, VirtualizedJobRow} from '../workspace/VirtualizedJobRow';
 import {VirtualizedObserveJobRow} from '../workspace/VirtualizedObserveJobRow';
 import {DynamicRepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -29,7 +27,6 @@ type RowType =
   | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
 
 export const OverviewJobsTable = ({repos}: Props) => {
-  const {flagUseNewObserveUIs} = useFeatureFlags();
   const parentRef = useRef<HTMLDivElement | null>(null);
   const allKeys = useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
@@ -73,7 +70,6 @@ export const OverviewJobsTable = ({repos}: Props) => {
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
-        {flagUseNewObserveUIs ? null : <VirtualizedJobHeader />}
         <Inner $totalHeight={totalHeight}>
           <div
             style={{
@@ -106,21 +102,8 @@ export const OverviewJobsTable = ({repos}: Props) => {
                 );
               }
 
-              if (flagUseNewObserveUIs) {
-                return (
-                  <VirtualizedObserveJobRow
-                    key={key}
-                    index={index}
-                    ref={rowVirtualizer.measureElement}
-                    name={row.name}
-                    isJob={row.isJob}
-                    repoAddress={row.repoAddress}
-                  />
-                );
-              }
-
               return (
-                <VirtualizedJobRow
+                <VirtualizedObserveJobRow
                   key={key}
                   index={index}
                   ref={rowVirtualizer.measureElement}

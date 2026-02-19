@@ -58,13 +58,21 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     numTrue
     uniqueId
     childUniqueIds
-    numTrue
     numCandidates
     entityKey {
       ...EntityKeyFragment
     }
   }
   ${ENTITY_KEY_FRAGMENT}
+`;
+
+const SINCE_METADATA_FRAGMENT = gql`
+  fragment SinceMetadataFragment on SinceConditionMetadata {
+    triggerEvaluationId
+    triggerTimestamp
+    resetEvaluationId
+    resetTimestamp
+  }
 `;
 
 const NEW_EVALUATION_NODE_FRAGMENT = gql`
@@ -82,8 +90,12 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     entityKey {
       ...EntityKeyFragment
     }
+    sinceMetadata {
+      ...SinceMetadataFragment
+    }
   }
   ${ENTITY_KEY_FRAGMENT}
+  ${SINCE_METADATA_FRAGMENT}
 `;
 
 export const ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT = gql`

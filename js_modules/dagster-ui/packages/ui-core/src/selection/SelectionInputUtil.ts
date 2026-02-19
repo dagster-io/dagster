@@ -1,4 +1,4 @@
-import {ParserRuleContext} from 'antlr4ts';
+import {ParserRuleContext} from 'antlr4ng';
 
 import {
   AttributeValueContext,
@@ -21,21 +21,21 @@ export const removeQuotesFromString = (value: string) => {
 
 export function getValueNodeValue(ctx: ParserRuleContext | null) {
   if (ctx instanceof DigitsValueContext || ctx instanceof UnquotedStringValueContext) {
-    return ctx.text;
+    return ctx.getText();
   }
   if (ctx instanceof IncompleteLeftQuotedStringValueContext) {
-    return ctx.text.slice(1);
+    return ctx.getText().slice(1);
   }
   if (ctx instanceof IncompleteRightQuotedStringValueContext) {
-    return ctx.text.slice(0, -1);
+    return ctx.getText().slice(0, -1);
   }
   if (ctx instanceof QuotedStringValueContext) {
-    return ctx.text.slice(1, -1);
+    return ctx.getText().slice(1, -1);
   }
   if (ctx instanceof AttributeValueContext) {
     return getValueNodeValue(ctx.value());
   }
-  return ctx?.text ?? '';
+  return ctx?.getText() ?? '';
 }
 
 export function isInsideExpressionlessParenthesizedExpression(

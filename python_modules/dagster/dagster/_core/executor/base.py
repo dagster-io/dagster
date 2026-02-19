@@ -79,12 +79,12 @@ class Executor(ABC):
         else:
             return original_event
 
-    def get_failure_or_retry_event_after_error(
+    def log_failure_or_retry_event_after_error(
         self,
         step_context: "IStepContext",
         err_info: SerializableErrorInfo,
         known_state: "KnownExecutionState",
-    ):
+    ) -> "DagsterEvent":
         from dagster._core.events import DagsterEvent
 
         # determine the retry policy for the step if needed

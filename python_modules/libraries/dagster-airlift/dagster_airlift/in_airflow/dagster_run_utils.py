@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 # These constants exist within the Dagster main package, but are duplicated here to avoid taking a dependency on Dagster within
 # the dagster-airlift[in-airflow] submodule.
@@ -28,7 +28,7 @@ class DagsterRunResult(NamedTuple):
         )
 
     @property
-    def retried_run_id(self) -> Optional[str]:
+    def retried_run_id(self) -> str | None:
         return self.tags.get(AUTO_RETRY_RUN_ID_TAG)
 
     @property
@@ -36,7 +36,7 @@ class DagsterRunResult(NamedTuple):
         return self.status == SUCCESS_STATUS
 
 
-def get_boolean_tag_value(tag_value: Optional[str], default_value: bool = False) -> bool:
+def get_boolean_tag_value(tag_value: str | None, default_value: bool = False) -> bool:
     if tag_value is None:
         return default_value
 

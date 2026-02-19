@@ -7,7 +7,6 @@ import time
 from collections.abc import Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Optional
 
 import click
 import yaml
@@ -20,7 +19,7 @@ from dagster_shared.ipc import (
 )
 from dagster_shared.serdes import serialize_value
 
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, superseded
 from dagster._cli.proxy_server_manager import ProxyServerManager
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
@@ -110,15 +109,19 @@ _CHECK_SUBPROCESS_INTERVAL = 5
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
+@superseded(
+    additional_warn_text="Use 'dg dev' instead.",
+    emit_runtime_warning=True,
+)
 def dev_command(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
-    port: Optional[str],
-    host: Optional[str],
-    live_data_poll_rate: Optional[str],
+    port: str | None,
+    host: str | None,
+    live_data_poll_rate: str | None,
     use_legacy_code_server_behavior: bool,
-    shutdown_pipe: Optional[int],
+    shutdown_pipe: int | None,
     verbose: bool,
     **other_opts: object,
 ) -> None:
@@ -143,13 +146,13 @@ def dev_command_impl(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
-    port: Optional[str],
-    host: Optional[str],
+    port: str | None,
+    host: str | None,
     use_legacy_code_server_behavior: bool,
-    shutdown_pipe: Optional[int],
+    shutdown_pipe: int | None,
     verbose: bool,
     workspace_opts: WorkspaceOpts,
-    live_data_poll_rate: Optional[str] = "2000",
+    live_data_poll_rate: str | None = "2000",
 ) -> None:
     # check if dagster-webserver installed, crash if not
     try:

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
@@ -49,8 +49,8 @@ def test_basic_singular_asset_with_callable() -> None:
 
 def assert_singular_component(
     component: FunctionComponent,
-    resources: Optional[Mapping[str, Any]] = None,
-    run_config: Optional[Mapping[str, Any]] = None,
+    resources: Mapping[str, Any] | None = None,
+    run_config: Mapping[str, Any] | None = None,
 ) -> None:
     defs = component.build_defs(ComponentTree.for_test().load_context)
     assets_def = defs.get_assets_def("asset")

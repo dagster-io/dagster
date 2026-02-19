@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -120,7 +120,7 @@ class InputManagerRequirement(ResourceKeyRequirement):
 @record
 class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
     key: str  # pyright: ignore[reportIncompatibleMethodOverride]
-    asset_key: Optional[str]
+    asset_key: str | None
 
     @property
     def expected_type(self) -> type:
@@ -138,7 +138,7 @@ class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
 @record
 class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
     key: str  # pyright: ignore[reportIncompatibleMethodOverride]
-    asset_key: Optional[str]
+    asset_key: str | None
 
     @property
     def expected_type(self) -> type:
@@ -175,7 +175,7 @@ class OutputManagerRequirement(ResourceKeyRequirement):
 @record
 class HookResourceRequirement(ResourceKeyRequirement):
     key: str  # pyright: ignore[reportIncompatibleMethodOverride]
-    attached_to: Optional[str]
+    attached_to: str | None
     hook_name: str
 
     def describe_requirement(self) -> str:
@@ -209,7 +209,7 @@ class TypeLoaderResourceRequirement(ResourceKeyRequirement):
 @record
 class ResourceDependencyRequirement(ResourceKeyRequirement):
     key: str  # pyright: ignore[reportIncompatibleMethodOverride]
-    source_key: Optional[str]
+    source_key: str | None
 
     def describe_requirement(self) -> str:
         source_descriptor = f" by resource with key '{self.source_key}'" if self.source_key else ""

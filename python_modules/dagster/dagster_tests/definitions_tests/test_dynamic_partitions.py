@@ -1,6 +1,5 @@
 from collections.abc import Callable, Sequence
 from datetime import datetime
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -17,7 +16,7 @@ from dagster._core.test_utils import get_paginated_partition_keys
     ],
 )
 def test_dynamic_partitions_partitions(
-    partition_fn: Callable[[Optional[datetime]], Sequence[dg.Partition]],
+    partition_fn: Callable[[datetime | None], Sequence[dg.Partition]],
 ):
     partitions = dg.DynamicPartitionsDefinition(partition_fn)
 
@@ -34,7 +33,7 @@ def test_dynamic_partitions_partitions(
         (lambda _current_time: [str(x) for x in range(10)],),
     ],
 )
-def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Sequence[str]]):
+def test_dynamic_partitions_keys(partition_fn: Callable[[datetime | None], Sequence[str]]):
     partitions = dg.DynamicPartitionsDefinition(partition_fn)
 
     all_keys = partition_fn(None)

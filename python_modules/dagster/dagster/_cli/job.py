@@ -3,7 +3,7 @@ import re
 import sys
 import textwrap
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 import click
 from dagster_shared.cli import python_pointer_options, workspace_options
@@ -12,6 +12,7 @@ from dagster_shared.yaml_utils import dump_run_config_yaml
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._annotations import superseded
 from dagster._check import checked
 from dagster._cli.config_scaffolder import scaffold_job_config
 from dagster._cli.utils import (
@@ -104,7 +105,7 @@ def job_list_command(**other_opts):
 def execute_list_command(
     *,
     workspace_opts: WorkspaceOpts,
-    repository_opts: Optional[RepositoryOpts] = None,
+    repository_opts: RepositoryOpts | None = None,
     print_fn: Callable[..., Any] = print,
 ) -> None:
     with (
@@ -166,7 +167,7 @@ def get_job_instructions(command_name: str) -> str:
 @job_name_option(name="job_name")
 @workspace_options
 @repository_options
-def job_print_command(verbose: bool, job_name: Optional[str], **other_opts: object):
+def job_print_command(verbose: bool, job_name: str | None, **other_opts: object):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -186,8 +187,8 @@ def execute_print_command(
     instance: DagsterInstance,
     verbose: bool,
     workspace_opts: WorkspaceOpts,
-    repository_opts: Optional[RepositoryOpts] = None,
-    job_name: Optional[str] = None,
+    repository_opts: RepositoryOpts | None = None,
+    job_name: str | None = None,
     print_fn: PrintFn = print,
 ) -> None:
     with get_job_from_cli_opts(
@@ -300,11 +301,15 @@ _OP_SELECTION_HELP = (
 @job_name_option(name="job_name")
 @run_config_option(name="config", command_name="execute")
 @python_pointer_options
+@superseded(
+    additional_warn_text="Use 'dg launch --job <job_name>' instead.",
+    emit_runtime_warning=True,
+)
 def job_execute_command(
-    tags: Optional[str],
-    op_selection: Optional[str],
-    repository: Optional[str],
-    job_name: Optional[str],
+    tags: str | None,
+    op_selection: str | None,
+    repository: str | None,
+    job_name: str | None,
     config: tuple[str, ...],
     **other_opts: object,
 ):
@@ -322,14 +327,14 @@ def job_execute_command(
 
 
 def job_execute_command_impl(
-    tags: Optional[str],
-    op_selection: Optional[str],
-    repository: Optional[str],
-    job_name: Optional[str],
+    tags: str | None,
+    op_selection: str | None,
+    repository: str | None,
+    job_name: str | None,
     config: tuple[str, ...],
-    config_json: Optional[str],
-    partition: Optional[str],
-    partition_range: Optional[str],
+    config_json: str | None,
+    partition: str | None,
+    partition_range: str | None,
     **other_opts: object,
 ) -> None:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -359,14 +364,14 @@ def execute_execute_command(
     *,
     python_pointer_opts: PythonPointerOpts,
     instance: DagsterInstance,
-    tags: Optional[str] = None,
-    op_selection: Optional[str] = None,
-    repository: Optional[str] = None,
-    job_name: Optional[str] = None,
+    tags: str | None = None,
+    op_selection: str | None = None,
+    repository: str | None = None,
+    job_name: str | None = None,
     config: tuple[str, ...] = (),
-    config_json: Optional[str] = None,
-    partition: Optional[str] = None,
-    partition_range: Optional[str] = None,
+    config_json: str | None = None,
+    partition: str | None = None,
+    partition_range: str | None = None,
 ) -> ExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -400,11 +405,16 @@ def execute_execute_command(
             for asset_key in job_def.asset_layer.executable_asset_keys:
                 backfill_policy = job_def.asset_layer.get(asset_key).backfill_policy
                 if (
-                    backfill_policy is not None
-                    and backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
+                    backfill_policy is None
+                    or backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
                 ):
                     check.failed(
-                        "Provided partition range, but not all assets have a single-run backfill policy."
+                        "Partition ranges with the CLI require all selected assets to have a "
+                        "BackfillPolicy.single_run() policy. This allows the partition range to be "
+                        "executed in a single run. Assets without this policy would require creating "
+                        "a backfill with separate runs per partition, which needs a running daemon "
+                        "process. Consider using the Dagster UI or a running daemon to execute "
+                        "partition ranges for assets without a single-run backfill policy."
                     )
             try:
                 job_def.validate_partition_key(
@@ -437,7 +447,7 @@ def execute_execute_command(
     return result
 
 
-def _normalize_cli_tags(tags: Optional[str]) -> Mapping[str, str]:
+def _normalize_cli_tags(tags: str | None) -> Mapping[str, str]:
     if tags is None:
         return {}
     try:
@@ -453,7 +463,7 @@ def _normalize_cli_tags(tags: Optional[str]) -> Mapping[str, str]:
 
 
 def _get_job_python_origin_from_cli_opts(
-    python_pointer_opts: PythonPointerOpts, repository_name: Optional[str], job_name: Optional[str]
+    python_pointer_opts: PythonPointerOpts, repository_name: str | None, job_name: str | None
 ) -> JobPythonOrigin:
     repository_origin = get_repository_python_origin_from_cli_opts(
         python_pointer_opts, repository_name
@@ -480,7 +490,7 @@ def _get_job_python_origin_from_cli_opts(
     return JobPythonOrigin(job_name, repository_origin=repository_origin)
 
 
-def _normalize_cli_op_selection(op_selection: Optional[str]) -> Optional[Sequence[str]]:
+def _normalize_cli_op_selection(op_selection: str | None) -> Sequence[str] | None:
     if not op_selection:
         return None
     return [ele.strip() for ele in op_selection.split(",")]
@@ -491,8 +501,8 @@ def do_execute_command(
     recon_job: ReconstructableJob,
     instance: DagsterInstance,
     run_config: Mapping[str, Any],
-    tags: Optional[Mapping[str, Any]] = None,
-    op_selection: Optional[Sequence[str]] = None,
+    tags: Mapping[str, Any] | None = None,
+    op_selection: Sequence[str] | None = None,
 ) -> ExecutionResult:
     with execute_job(
         recon_job,
@@ -527,11 +537,11 @@ def do_execute_command(
 @repository_options
 def job_launch_command(
     config: tuple[str, ...],
-    config_json: Optional[str],
-    tags: Optional[str],
-    run_id: Optional[str],
-    op_selection: Optional[str],
-    job_name: Optional[str],
+    config_json: str | None,
+    tags: str | None,
+    run_id: str | None,
+    op_selection: str | None,
+    job_name: str | None,
     **other_opts: object,
 ) -> DagsterRun:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -558,13 +568,13 @@ def execute_launch_command(
     *,
     instance: DagsterInstance,
     workspace_opts: WorkspaceOpts,
-    repository_opts: Optional[RepositoryOpts] = None,
+    repository_opts: RepositoryOpts | None = None,
     config: tuple[str, ...] = tuple(),
-    config_json: Optional[str] = None,
-    tags: Optional[str] = None,
-    run_id: Optional[str] = None,
-    op_selection: Optional[str] = None,
-    job_name: Optional[str] = None,
+    config_json: str | None = None,
+    tags: str | None = None,
+    run_id: str | None = None,
+    op_selection: str | None = None,
+    job_name: str | None = None,
 ) -> DagsterRun:
     run_config = get_run_config_from_cli_opts(config, config_json)
     normalized_op_selection = _normalize_cli_op_selection(op_selection)
@@ -608,9 +618,9 @@ def _create_run(
     remote_repo: RemoteRepository,
     remote_job: RemoteJob,
     run_config: Mapping[str, object],
-    tags: Optional[Mapping[str, str]],
-    op_selection: Optional[Sequence[str]],
-    run_id: Optional[str],
+    tags: Mapping[str, str] | None,
+    op_selection: Sequence[str] | None,
+    run_id: str | None,
 ) -> DagsterRun:
     run_config, tags, op_selection = _check_execute_remote_job_args(
         remote_job,
@@ -664,9 +674,9 @@ def _create_run(
 def _check_execute_remote_job_args(
     remote_job: RemoteJob,
     run_config: Mapping[str, object],
-    tags: Optional[Mapping[str, str]],
-    op_selection: Optional[Sequence[str]],
-) -> tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
+    tags: Mapping[str, str] | None,
+    op_selection: Sequence[str] | None,
+) -> tuple[Mapping[str, object], Mapping[str, str], Sequence[str] | None]:
     tags = merge_dicts(remote_job.tags, tags or {})
     return (
         run_config,
@@ -686,7 +696,7 @@ def _check_execute_remote_job_args(
 @job_name_option(name="job_name")
 @python_pointer_options
 def job_scaffold_command(
-    print_only_required: bool, repository: Optional[str], job_name: Optional[str], **other_opts
+    print_only_required: bool, repository: str | None, job_name: str | None, **other_opts
 ):
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -705,8 +715,8 @@ def execute_scaffold_command(
     python_pointer_opts: PythonPointerOpts,
     print_fn: PrintFn,
     print_only_required: bool = False,
-    repository: Optional[str] = None,
-    job_name: Optional[str] = None,
+    repository: str | None = None,
+    job_name: str | None = None,
 ) -> None:
     job_origin = _get_job_python_origin_from_cli_opts(python_pointer_opts, repository, job_name)
     job = recon_job_from_origin(job_origin)
@@ -770,13 +780,13 @@ def do_scaffold_command(
 @workspace_options
 @repository_options
 def job_backfill_command(
-    partitions: Optional[str],
+    partitions: str | None,
     all_partitions: bool,
-    start_partition: Optional[str],
-    end_partition: Optional[str],
-    tags: Optional[str],
+    start_partition: str | None,
+    end_partition: str | None,
+    tags: str | None,
     noprompt: bool,
-    job_name: Optional[str],
+    job_name: str | None,
     **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -801,14 +811,14 @@ def job_backfill_command(
 def execute_backfill_command(
     *,
     workspace_opts: WorkspaceOpts,
-    repository_opts: Optional[RepositoryOpts] = None,
-    partitions: Optional[str] = None,
+    repository_opts: RepositoryOpts | None = None,
+    partitions: str | None = None,
     all_partitions: bool = False,
-    start_partition: Optional[str] = None,
-    end_partition: Optional[str] = None,
-    tags: Optional[str] = None,
+    start_partition: str | None = None,
+    end_partition: str | None = None,
+    tags: str | None = None,
     noprompt: bool = False,
-    job_name: Optional[str] = None,
+    job_name: str | None = None,
     print_fn: PrintFn = print,
     instance: DagsterInstance,
 ) -> None:
@@ -929,9 +939,9 @@ def execute_backfill_command(
 def gen_partition_names_from_args(
     partition_names: Sequence[str],
     all_partitions: bool,
-    partitions: Optional[str],
-    start_partition: Optional[str],
-    end_partition: Optional[str],
+    partitions: str | None,
+    start_partition: str | None,
+    end_partition: str | None,
 ) -> Sequence[str]:
     partition_selector_args = [
         all_partitions,

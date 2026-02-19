@@ -339,7 +339,6 @@ export const SINGLE_SENSOR_QUERY = gql`
           }
         }
         minIntervalSeconds
-        description
         sensorState {
           id
           runningCount

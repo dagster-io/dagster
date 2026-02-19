@@ -287,7 +287,7 @@ def compute_group_metric(df: pd.DataFrame, metric: str) -> Optional[float]:
     elif metric_type == "stddev":
         return df[column].std()
     elif metric_type == "variance":
-        return df[column].var()  # type: ignore (probably a bug)
+        return df[column].var()
     elif metric_type == "range":
         return df[column].max() - df[column].min()
     elif metric_type == "distinct_count":

@@ -121,14 +121,12 @@ export const BackfillActionsMenu = ({
           <MenuDivider />
           <Tooltip
             position="left"
-            targetTagName="div"
             content={
               reexecutionDisabledState.message || 'Launch a new backfill for the same partitions'
             }
           >
             <MenuItem
               icon="refresh"
-              tagName="button"
               text="Re-execute"
               disabled={reexecutionDisabledState.disabled}
               onClick={() => reexecute(ReexecutionStrategy.ALL_STEPS)}
@@ -136,7 +134,6 @@ export const BackfillActionsMenu = ({
           </Tooltip>
           <Tooltip
             position="left"
-            targetTagName="div"
             content={
               reexecutionFromFailureDisabledState.message ||
               'Launch a new backfill for partitions that were not materialized successfully'
@@ -144,7 +141,6 @@ export const BackfillActionsMenu = ({
           >
             <MenuItem
               icon="refresh"
-              tagName="button"
               text="Re-execute from failure"
               disabled={reexecutionFromFailureDisabledState.disabled}
               onClick={() => reexecute(ReexecutionStrategy.FROM_FAILURE)}
@@ -152,7 +148,6 @@ export const BackfillActionsMenu = ({
           </Tooltip>
           <Tooltip
             position="left"
-            targetTagName="div"
             content={
               resumeDisabledState.message ||
               'Launch runs for remaining partitions in the backfill that do not have a corresponding run. Does not retry failed runs.'
@@ -167,7 +162,6 @@ export const BackfillActionsMenu = ({
           </Tooltip>
           <Tooltip
             position="left"
-            targetTagName="div"
             content={
               cancelDisabledState.message || 'Stop queueing runs and cancel unfinished runs.'
             }

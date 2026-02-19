@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -13,7 +13,6 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.execution.step_dependency_config import StepDependencyConfig
@@ -43,10 +42,10 @@ class StepDelegatingExecutor(Executor):
         self,
         step_handler: StepHandler,
         retries: RetryMode,
-        sleep_seconds: Optional[float] = None,
-        check_step_health_interval_seconds: Optional[int] = None,
-        max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
+        sleep_seconds: float | None = None,
+        check_step_health_interval_seconds: int | None = None,
+        max_concurrent: int | None = None,
+        tag_concurrency_limits: list[dict[str, Any]] | None = None,
         should_verify_step: bool = False,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
@@ -74,7 +73,7 @@ class StepDelegatingExecutor(Executor):
         )
         self._should_verify_step = should_verify_step
 
-        self._event_cursor: Optional[str] = None
+        self._event_cursor: str | None = None
 
         self._pop_events_limit = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_LIMIT", "1000"))
 
@@ -319,7 +318,7 @@ class StepDelegatingExecutor(Executor):
                                     assert isinstance(
                                         dagster_event.engine_event_data.error, SerializableErrorInfo
                                     )
-                                    self.get_failure_or_retry_event_after_error(
+                                    self.log_failure_or_retry_event_after_error(
                                         step_context,
                                         dagster_event.engine_event_data.error,
                                         active_execution.get_known_state(),
@@ -363,23 +362,20 @@ class StepDelegatingExecutor(Executor):
                                             cls_name=None,
                                         )
 
-                                        self.get_failure_or_retry_event_after_error(
+                                        self.log_failure_or_retry_event_after_error(
                                             step_context,
                                             health_check_error,
                                             active_execution.get_known_state(),
                                         )
 
                                 except Exception:
-                                    serializable_error = serializable_error_info_from_exc_info(
-                                        sys.exc_info()
-                                    )
-                                    # Log a step failure event if there was an error during the health
-                                    # check
-                                    DagsterEvent.step_failure_event(
-                                        step_context=plan_context.for_step(step),
-                                        step_failure_data=StepFailureData(
-                                            error=serializable_error,
-                                            user_failure_data=None,
+                                    DagsterEvent.engine_event(
+                                        step_context,
+                                        f"Error while checking health for step {step.key}",
+                                        EngineEventData(
+                                            error=serializable_error_info_from_exc_info(
+                                                sys.exc_info()
+                                            )
                                         ),
                                     )
 

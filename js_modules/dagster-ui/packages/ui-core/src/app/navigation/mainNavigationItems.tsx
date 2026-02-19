@@ -171,7 +171,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           },
           element: (
             <NavItemWithLink
-              icon={<Icon name="settings" />}
+              icon={<Icon name="deployment" />}
               label="Deployment"
               href="/deployment"
               isActive={deploymentPathMatcher}
@@ -284,7 +284,7 @@ const SettingsItem = () => {
   );
 };
 
-export const getBottomGroups = ({featureFlags}: NavigationGroupConfig): NavigationGroup[] => {
+export const getBottomGroups = (_config: NavigationGroupConfig): NavigationGroup[] => {
   const searchGroup = [
     {
       key: 'search',
@@ -318,21 +318,6 @@ export const getBottomGroups = ({featureFlags}: NavigationGroupConfig): Navigati
       },
     ],
   };
-
-  if (featureFlags.flagMarketplace) {
-    adminGroup.items.unshift({
-      key: 'marketplace',
-      label: 'Marketplace',
-      element: (
-        <NavItemWithLink
-          icon={<Icon name="compute_kind" />}
-          label="Integrations"
-          href="/integrations"
-          isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/integrations')}
-        />
-      ),
-    });
-  }
 
   return [...searchGroup, adminGroup];
 };

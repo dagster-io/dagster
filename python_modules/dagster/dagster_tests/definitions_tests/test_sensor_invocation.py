@@ -42,7 +42,7 @@ def test_sensor_invocation_args():
     # pass context as wrong kwarg
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Sensor invocation expected argument '_arbitrary_context'.",
+        match=r"Sensor invocation expected argument '_arbitrary_context'.",
     ):
         basic_sensor_with_context(bad_context=context)
 
@@ -50,7 +50,7 @@ def test_sensor_invocation_args():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Sensor evaluation function expected context argument, but no context argument was "
+            r"Sensor evaluation function expected context argument, but no context argument was "
             "provided when invoking."
         ),
     ):
@@ -60,7 +60,7 @@ def test_sensor_invocation_args():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Sensor invocation received multiple non-resource arguments. Only a first positional"
+            r"Sensor invocation received multiple non-resource arguments. Only a first positional"
             " context parameter should be provided when invoking."
         ),
     ):
@@ -79,7 +79,7 @@ def test_sensor_invocation_resources() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            r"Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
             " provided."
         ),
     ):
@@ -109,7 +109,7 @@ def test_sensor_invocation_resources_callable() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match=("Resource with key 'my_resource' required by sensor 'weird' was not provided."),
+        match=(r"Resource with key 'my_resource' required by sensor 'weird' was not provided."),
     ):
         weird_sensor()
 
@@ -132,7 +132,7 @@ def test_sensor_invocation_resources_direct() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            r"Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
             " provided."
         ),
     ):
@@ -155,7 +155,7 @@ def test_sensor_invocation_resources_direct() -> None:
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "If directly invoking a sensor, you may not provide resources as"
+            r"If directly invoking a sensor, you may not provide resources as"
             " positional"
             " arguments, only as keyword arguments."
         ),
@@ -494,7 +494,7 @@ def test_run_failure_sensor_invocation_resources() -> None:
 def test_instance_access_built_sensor():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Attempted to initialize dagster instance, but no instance reference was provided.",
+        match=r"Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
         dg.build_sensor_context().instance  # noqa: B018
 

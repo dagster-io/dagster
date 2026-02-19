@@ -72,7 +72,7 @@ def test_proxying_to_dagster() -> None:
 
 def test_proxying_to_dagster_no_dags() -> None:
     """Ensure that we error when no dags are found in the current context."""
-    with pytest.raises(Exception, match="No dags found in globals dictionary."):
+    with pytest.raises(Exception, match=r"No dags found in globals dictionary."):
         proxying_to_dagster(global_vars={}, proxied_state=AirflowProxiedState.from_dict({}))
 
 

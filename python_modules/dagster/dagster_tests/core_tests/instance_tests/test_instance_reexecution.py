@@ -304,7 +304,7 @@ def test_create_reexecuted_run_from_failure_all_steps_succeeded(
     failed_after_finish_run = success_run._replace(status=DagsterRunStatus.FAILURE)
 
     with pytest.raises(
-        DagsterInvalidSubsetError, match="No steps needed to be retried in the failed run."
+        DagsterInvalidSubsetError, match=r"No steps needed to be retried in the failed run."
     ):
         instance.create_reexecuted_run(
             parent_run=failed_after_finish_run,
@@ -496,7 +496,7 @@ def test_create_reexecuted_run_from_multi_asset_failure_after_all_assets_materia
     }
     with pytest.raises(
         DagsterInvalidSubsetError,
-        match="No assets or asset checks needed to be retried in the failed run.",
+        match=r"No assets or asset checks needed to be retried in the failed run.",
     ):
         instance.create_reexecuted_run(
             parent_run=failed_run,

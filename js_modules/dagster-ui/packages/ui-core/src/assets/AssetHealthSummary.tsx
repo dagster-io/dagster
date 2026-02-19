@@ -15,7 +15,7 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useAllAssetsNodes} from './useAllAssets';
@@ -41,7 +41,7 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!observeEnabled()) {
+    if (!assetHealthEnabled()) {
       return null;
     }
 
@@ -265,7 +265,7 @@ const Criteria = React.memo(
             </Body>
           );
         case 'AssetHealthMaterializationDegradedNotPartitionedMeta':
-          return (
+          const toReturn = metadata.failedRunId ? (
             <Body>
               <Link
                 to={`/runs/${metadata.failedRunId}`}
@@ -274,7 +274,8 @@ const Criteria = React.memo(
                 Materialization failed in run {metadata.failedRunId.split('-').shift()}
               </Link>
             </Body>
-          );
+          ) : null;
+          return toReturn;
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>

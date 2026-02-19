@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {AbstractParseTreeVisitor, ParseTree} from 'antlr4ng';
 import escapeRegExp from 'lodash/escapeRegExp';
 
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -33,33 +33,38 @@ export class AntlrJobSelectionVisitor<T extends Job>
     return new Set<T>();
   }
 
+  /** Helper to visit a nullable context and return defaultResult() if null */
+  private visitOrDefault(ctx: ParseTree | null): Set<T> {
+    return ctx ? (this.visit(ctx) ?? this.defaultResult()) : this.defaultResult();
+  }
+
   constructor(all_jobs: T[]) {
     super();
     this.all_jobs = new Set(all_jobs);
   }
 
   visitStart(ctx: StartContext) {
-    return this.visit(ctx.expr());
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    return this.visit(ctx.traversalAllowedExpr());
+    return this.visitOrDefault(ctx.traversalAllowedExpr());
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    const selection = this.visit(ctx.expr());
+    const selection = this.visitOrDefault(ctx.expr());
     return new Set([...this.all_jobs].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    const left = this.visit(ctx.expr(0));
-    const right = this.visit(ctx.expr(1));
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    const left = this.visit(ctx.expr(0));
-    const right = this.visit(ctx.expr(1));
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left, ...right]);
   }
 
@@ -68,22 +73,24 @@ export class AntlrJobSelectionVisitor<T extends Job>
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    return this.visit(ctx.attributeExpr());
+    return this.visitOrDefault(ctx.attributeExpr());
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    return this.visit(ctx.expr());
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    const value: string = getValue(ctx.keyValue());
+    const keyValue = ctx.keyValue();
+    const value = keyValue ? getValue(keyValue) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = [...this.all_jobs].filter((i) => regex.test(i.name));
     return new Set(selection);
   }
 
   visitCodeLocationExpr(ctx: CodeLocationExprContext) {
-    const value: string = getValue(ctx.value());
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = new Set<T>();
     for (const job of this.all_jobs) {

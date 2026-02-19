@@ -2,7 +2,7 @@ import datetime
 import logging
 import threading
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -78,13 +78,13 @@ class DagsterLogHandlerMetadata(TypedDict):
     instance.
     """
 
-    run_id: Optional[str]
-    job_name: Optional[str]
+    run_id: str | None
+    job_name: str | None
     job_tags: Mapping[str, str]
-    step_key: Optional[str]
-    op_name: Optional[str]
-    resource_name: Optional[str]
-    resource_fn_name: Optional[str]
+    step_key: str | None
+    op_name: str | None
+    resource_name: str | None
+    resource_fn_name: str | None
 
 
 class DagsterLogRecordMetadata(TypedDict):
@@ -93,13 +93,13 @@ class DagsterLogRecordMetadata(TypedDict):
     `DagsterEvent`, and some fields concerning the individual log message.
     """
 
-    run_id: Optional[str]
-    job_name: Optional[str]
+    run_id: str | None
+    job_name: str | None
     job_tags: Mapping[str, str]
-    step_key: Optional[str]
-    op_name: Optional[str]
-    resource_name: Optional[str]
-    resource_fn_name: Optional[str]
+    step_key: str | None
+    op_name: str | None
+    resource_name: str | None
+    resource_fn_name: str | None
     dagster_event: Optional["DagsterEvent"]
     dagster_event_batch_metadata: Optional["DagsterEventBatchMetadata"]
     orig_message: str
@@ -139,7 +139,7 @@ def construct_log_record_message(metadata: DagsterLogRecordMetadata) -> str:
     return " - ".join(message_parts) + (error_str or "")
 
 
-def _error_str_for_event(event: "DagsterEvent") -> Optional[str]:
+def _error_str_for_event(event: "DagsterEvent") -> str | None:
     data = event.event_specific_data
     if data:
         error = getattr(data, "error", None)
@@ -307,7 +307,7 @@ class DagsterLogManager(logging.Logger):
         self,
         dagster_handler: DagsterLogHandler,
         level: int = logging.NOTSET,
-        managed_loggers: Optional[Sequence[logging.Logger]] = None,
+        managed_loggers: Sequence[logging.Logger] | None = None,
     ):
         super().__init__(name="dagster", level=coerce_valid_log_level(level))
         self._managed_loggers = check.opt_sequence_param(
@@ -320,7 +320,7 @@ class DagsterLogManager(logging.Logger):
     def create(
         cls,
         loggers: Sequence[logging.Logger],
-        handlers: Optional[Sequence[logging.Handler]] = None,
+        handlers: Sequence[logging.Handler] | None = None,
         instance: Optional["DagsterInstance"] = None,
         dagster_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
@@ -378,7 +378,7 @@ class DagsterLogManager(logging.Logger):
 
     def log_dagster_event(
         self,
-        level: Union[str, int],
+        level: str | int,
         msg: str,
         dagster_event: "DagsterEvent",
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
@@ -404,7 +404,7 @@ class DagsterLogManager(logging.Logger):
 
     def log(
         self,
-        level: Union[str, int],
+        level: str | int,
         msg: object,
         *args: Any,
         **kwargs: Any,

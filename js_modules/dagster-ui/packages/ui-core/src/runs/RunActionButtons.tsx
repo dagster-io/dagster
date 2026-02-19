@@ -1,4 +1,4 @@
-import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Icon} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -258,7 +258,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   };
 
   return (
-    <Group direction="row" spacing={8}>
+    <Box flex={{direction: 'row', gap: 8}}>
       <Box flex={{direction: 'row'}}>
         <LaunchButtonDropdown
           runCount={1}
@@ -278,7 +278,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
       </Box>
       {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}
       {reexecute.launchpadElement}
-    </Group>
+    </Box>
   );
 };
 

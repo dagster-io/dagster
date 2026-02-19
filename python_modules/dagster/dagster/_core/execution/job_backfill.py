@@ -2,7 +2,7 @@ import logging
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
@@ -54,7 +54,7 @@ CHECKPOINT_COUNT = 25
 
 @record
 class BackfillRunRequest:
-    key_or_range: Union[str, PartitionKeyRange]
+    key_or_range: str | PartitionKeyRange
     run_tags: Mapping[str, str]
     run_config: Mapping[str, Any]
 
@@ -63,10 +63,10 @@ def execute_job_backfill_iteration(
     backfill: PartitionBackfill,
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
-    debug_crash_flags: Optional[Mapping[str, int]],
+    debug_crash_flags: Mapping[str, int] | None,
     instance: DagsterInstance,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> Optional[SerializableErrorInfo]:
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+) -> SerializableErrorInfo | None:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting job backfill for {backfill.backfill_id}")
     else:
@@ -117,7 +117,7 @@ def execute_job_backfill_iteration(
             list(
                 submit_backfill_runs(
                     instance,
-                    lambda: workspace_process_context.create_request_context(),
+                    workspace_process_context.create_request_context,
                     backfill,
                     chunk,
                     submit_threadpool_executor,
@@ -207,7 +207,7 @@ def _get_partition_set(
 def _subdivide_partition_key_range(
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
-    max_range_size: Optional[int],
+    max_range_size: int | None,
 ) -> Sequence[PartitionKeyRange]:
     """Take a partition key range and subdivide it into smaller ranges of size max_range_size. This
     is done to satisfy backfill policies that limit the maximum number of partitions that can be
@@ -227,7 +227,7 @@ def _get_partitions_chunk(
     backfill_job: PartitionBackfill,
     chunk_size: int,
     partition_set: RemotePartitionSet,
-) -> tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
+) -> tuple[Sequence[str | PartitionKeyRange], str, bool]:
     partition_names = cast("Sequence[str]", backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
     backfill_policy = partition_set.backfill_policy
@@ -326,9 +326,9 @@ def submit_backfill_runs(
     instance: DagsterInstance,
     create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
-    partition_names_or_ranges: Optional[Sequence[Union[str, PartitionKeyRange]]] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> Iterable[Optional[str]]:
+    partition_names_or_ranges: Sequence[str | PartitionKeyRange] | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+) -> Iterable[str | None]:
     """Returns the run IDs of the submitted runs."""
     origin = cast("RemotePartitionSetOrigin", backfill_job.partition_set_origin)
 
@@ -380,8 +380,8 @@ def submit_backfill_runs(
     # Partition-scoped run config is prohibited at the definitions level for a jobs that materialize
     # ranges, so we can assume that all partition data will have the same run config and tags as the
     # first partition.
-    tags_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, str]]
-    run_config_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, Any]]
+    tags_by_key_or_range: Mapping[str | PartitionKeyRange, Mapping[str, str]]
+    run_config_by_key_or_range: Mapping[str | PartitionKeyRange, Mapping[str, Any]]
     if isinstance(partition_names_or_ranges[0], PartitionKeyRange):
         partition_set_run_config = partition_set_execution_data.partition_data[0].run_config
 
@@ -416,7 +416,7 @@ def submit_backfill_runs(
             pd.name: pd.tags for pd in partition_set_execution_data.partition_data
         }
 
-    def create_and_submit_partition_run(backfill_run_request: BackfillRunRequest) -> Optional[str]:
+    def create_and_submit_partition_run(backfill_run_request: BackfillRunRequest) -> str | None:
         workspace = create_workspace()
         code_location = workspace.get_code_location(location_name)
 
@@ -465,10 +465,10 @@ def create_backfill_run(
     remote_job: RemoteJob,
     remote_partition_set: RemotePartitionSet,
     backfill_job: PartitionBackfill,
-    partition_key_or_range: Union[str, PartitionKeyRange],
+    partition_key_or_range: str | PartitionKeyRange,
     run_tags: Mapping[str, str],
     run_config: Mapping[str, Any],
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     log_action(
@@ -572,8 +572,8 @@ def create_backfill_run(
 def _fetch_last_run(
     instance: DagsterInstance,
     remote_partition_set: RemotePartitionSet,
-    partition_key_or_range: Union[str, PartitionKeyRange],
-) -> Optional[DagsterRun]:
+    partition_key_or_range: str | PartitionKeyRange,
+) -> DagsterRun | None:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(remote_partition_set, "remote_partition_set", RemotePartitionSet)
     check.str_param(partition_key_or_range, "partition_name")

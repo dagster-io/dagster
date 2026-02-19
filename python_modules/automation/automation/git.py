@@ -1,7 +1,6 @@
 import os
 import re
 import subprocess
-from typing import Optional
 
 from automation.utils import check_output
 
@@ -17,7 +16,7 @@ def git_user() -> str:
     return subprocess.check_output(["git", "config", "--get", "user.name"]).decode("utf-8").strip()
 
 
-def git_repo_root(path: Optional[str] = None) -> str:
+def git_repo_root(path: str | None = None) -> str:
     if not path:
         path = os.getcwd()
 
@@ -28,7 +27,7 @@ def git_repo_root(path: Optional[str] = None) -> str:
     )
 
 
-def git_push(tag: Optional[str] = None, dry_run: bool = True, cwd: Optional[str] = None):
+def git_push(tag: str | None = None, dry_run: bool = True, cwd: str | None = None):
     github_token = os.getenv("GITHUB_TOKEN")
     github_username = os.getenv("GITHUB_USERNAME")
     if github_token and github_username:
@@ -92,7 +91,7 @@ def get_most_recent_git_tag() -> str:
     return git_tag
 
 
-def get_git_repo_branch(cwd: Optional[str] = None) -> str:
+def get_git_repo_branch(cwd: str | None = None) -> str:
     git_branch = (
         subprocess.check_output(["git", "branch", "--show-current"], cwd=cwd)
         .decode("utf-8")

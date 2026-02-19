@@ -25,6 +25,13 @@ In this guide, you'll learn how to manage users and their permissions using the 
 - **If using Google for Single sign-on (SSO)**, users must be added in Dagster+ before they can log in.
 - **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/deployment/dagster-plus/authentication-and-access-control/sso) for setup instructions for each of our supported IdP solutions.
 
+:::note
+
+SCIM provisioning does not affect the ability to manage [service
+users](#service-users). Service users are always created and managed through the Dagster UI.
+
+:::
+
 By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).
 
 ## Adding users to Dagster+
@@ -65,7 +72,7 @@ In the **Roles** section, you can assign a [user role](/deployment/dagster-plus/
 1. Next to a deployment, click **Edit user role**.
 2. Select the user role for the deployment. This [user role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for all code locations in the deployment.
 3. Click **Save**.
-4. **Pro only**: To set permissions for individual [code locations](/deployment/code-locations) in a deployment:
+4. **Pro only**: To set permissions for individual [code locations](/guides/build/projects) in a deployment:
    1. Click the toggle to the left of the deployment to open a list of code locations.
    2. Next to a code location, click **Edit user role**.
    3. Select the user role for the code location.
@@ -88,6 +95,39 @@ Removing a user removes them from the organization. **Note**: If using a SAML-ba
 5. Click **Edit**.
 6. Click **Remove user**.
 7. When prompted, confirm the removal.
+
+## Service users
+
+:::note
+
+Service users are a Dagster+ Pro feature.
+
+:::
+
+Service users are non-human users that can be used to authenticate API
+requests, but cannot log in to the UI or be members of a team. Service users do
+not apply to an organization's seat cap. You can create as many as you need.
+
+Service users are added, removed, and edited with the same UI as for
+regular users. If your organization has access to service users, the "Add New
+User" button above the Users table will instead be a dropdown allowing you to select
+between adding a new human user or a new service user.
+
+![Screenshot of "Add users" dropdown](/images/dagster-plus/features/authentication-and-access-control/add-users-dropdown.png)
+
+The primary identifier for a service user is its `name`, which must be unique
+within the organization. A description may also optionally be provided:
+
+![Screenshot of "Add service user" form](/images/dagster-plus/features/authentication-and-access-control/add-service-user.png)
+
+Once the service user has been created, you will be presented with the same
+permissions management UI as for human users:
+
+![Screenshot of assigning roles to a service user](/images/dagster-plus/features/authentication-and-access-control/service-user-roles.png)
+
+You will typically want to immediately create a
+[token](/deployment/dagster-plus/management/tokens/user-tokens) for a service user
+after creating it, since service users cannot do anything without a token.
 
 ## Next steps
 

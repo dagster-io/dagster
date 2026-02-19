@@ -28,6 +28,7 @@ from dagster._cli.workspace.cli_target import get_repository_python_origin_from_
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.declarative_automation.serialized_objects import get_expanded_label
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
     DefinitionsLoadType,
@@ -53,7 +54,7 @@ from dagster.components.core.snapshot import get_package_entry_snap
 
 def list_plugins(
     entry_points: bool, extra_modules: Sequence[str]
-) -> Union[EnvRegistryManifest, SerializableErrorInfo]:
+) -> EnvRegistryManifest | SerializableErrorInfo:
     modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
     try:
         plugin_objects = _load_plugin_objects(entry_points, extra_modules)
@@ -83,15 +84,15 @@ def list_all_components_schema(
                     key.name,
                     type=(Literal[key_string], key_string),
                     attributes=(model_cls, None),
-                    requirements=(Optional[ComponentRequirementsModel], None),
+                    requirements=(Optional[ComponentRequirementsModel], None),  # noqa: UP045
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
-    union_type = Union[tuple(model_cls_list)]  # type: ignore
+    union_type = Union[tuple(model_cls_list)]  # type: ignore  # noqa: UP007
     return TypeAdapter(union_type).json_schema()
 
 
-def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> RepositoryDefinition:
+def _load_defs_at_path(dg_context: DgContext, path: Path | None) -> RepositoryDefinition:
     """Attempts to load the component tree from the context project root, falling back to
     resolving the entire repository and using the attached component tree.
     """
@@ -124,17 +125,16 @@ def _tag_filter(tag_key: str) -> bool:
 
 def list_definitions(
     dg_context: DgContext,
-    path: Optional[Path] = None,
-    asset_selection: Optional[str] = None,
+    path: Path | None = None,
+    asset_selection: str | None = None,
 ) -> DgDefinitionMetadata:
     with get_possibly_temporary_instance_for_cli() as instance:
         instance.inject_env_vars(dg_context.code_location_name)
 
         logger = logging.getLogger("dagster")
 
-        removed_system_frame_hint = (
-            lambda is_first_hidden_frame,
-            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
+        removed_system_frame_hint = lambda is_first_hidden_frame, i: (
+            f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
             if is_first_hidden_frame
             else f"  [{i} dagster system frames hidden]\n"
         )
@@ -177,7 +177,9 @@ def list_definitions(
                     group=node.group_name,
                     kinds=sorted(list(node.kinds)),
                     description=node.description,
-                    automation_condition=node.automation_condition.get_label()
+                    automation_condition=" ".join(
+                        get_expanded_label(node.automation_condition.get_snapshot())
+                    )
                     if node.automation_condition
                     else None,
                     tags=sorted(f'"{k}"="{v}"' for k, v in node.tags.items() if _tag_filter(k)),
@@ -285,7 +287,7 @@ def _load_component_types(
 def _get_source(
     metadata: ArbitraryMetadataMapping,
     dg_context: DgContext,
-) -> Optional[str]:
+) -> str | None:
     code_ref_metadata = check.opt_inst(
         metadata.get("dagster/code_references"), CodeReferencesMetadataValue
     )

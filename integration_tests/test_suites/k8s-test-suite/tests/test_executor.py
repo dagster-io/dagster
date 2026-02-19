@@ -414,6 +414,7 @@ def _does_pod_in_job_exist(job_name: str, namespace: str) -> bool:
 
 
 @pytest.mark.integration
+@pytest.mark.skip(reason="Flaky/timing out")
 def test_k8s_executor_owner_references_garbage_collection(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,

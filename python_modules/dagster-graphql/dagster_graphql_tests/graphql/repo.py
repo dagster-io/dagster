@@ -10,7 +10,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
-from typing import Literal, Optional, TypeVar, Union
+from typing import Literal, TypeVar
 
 from dagster import (
     Any,
@@ -592,10 +592,8 @@ def multer_resource(init_context):
 
 @resource(config_schema={"num_one": Field(Int), "num_two": Field(Int)})
 def double_adder_resource(init_context):
-    return (
-        lambda x: x
-        + init_context.resource_config["num_one"]
-        + init_context.resource_config["num_two"]
+    return lambda x: (
+        x + init_context.resource_config["num_one"] + init_context.resource_config["num_two"]
     )
 
 
@@ -996,7 +994,7 @@ def basic_job():
 
 
 def get_retry_multi_execution_params(
-    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
+    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: str | None = None
 ) -> Mapping[str, Any]:
     selector = infer_job_selector(graphql_context, "retry_multi_output_job")
     return {
@@ -1489,6 +1487,9 @@ executable_test_job = define_asset_job(name="executable_test_job", selection=[ex
 
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
+# Partitions definition for testing partitioned asset checks
+partitioned_asset_check_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
 
 @asset
 def not_included_asset(): ...
@@ -1521,6 +1522,29 @@ static_partitioned_assets_job = define_asset_job(
     "static_partitioned_assets_job",
     AssetSelection.assets(upstream_static_partitioned_asset).downstream(),
 )
+
+
+@asset(partitions_def=partitioned_asset_check_partitions)
+def partitioned_asset_for_checks(context: AssetExecutionContext):
+    """Asset with partitions for testing partitioned asset checks."""
+    partition_key = context.partition_key
+    return f"data_for_{partition_key}"
+
+
+@asset_check(
+    asset=partitioned_asset_for_checks,
+    description="Check for partitioned asset",
+    blocking=True,
+    partitions_def=partitioned_asset_check_partitions,
+)
+def partitioned_asset_check(partitioned_asset_for_checks):
+    """Asset check for the partitioned asset."""
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "check_type": "partitioned",
+        },
+    )
 
 
 @asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
@@ -2296,6 +2320,27 @@ def unowned_schedule():
     return {}
 
 
+# Assets for testing assetsForSameStorageAddress GraphQL field
+@asset(metadata={"dagster/table_name": "db.schema.shared_table"})
+def table_asset_1():
+    pass
+
+
+@asset(metadata={"dagster/table_name": "DB.SCHEMA.SHARED_TABLE"})  # case-insensitive match
+def table_asset_2():
+    pass
+
+
+@asset(metadata={"dagster/table_name": "db.schema.different_table"})
+def table_asset_3():
+    pass
+
+
+@asset  # no table_name
+def table_asset_4():
+    pass
+
+
 def define_assets():
     return [
         asset_one,
@@ -2374,6 +2419,11 @@ def define_assets():
         unowned_asset,
         owned_partitioned_asset,
         unowned_partitioned_asset,
+        table_asset_1,
+        table_asset_2,
+        table_asset_3,
+        table_asset_4,
+        partitioned_asset_for_checks,
     ]
 
 
@@ -2391,6 +2441,7 @@ def define_asset_checks():
         asset_3_other_check,
         owned_asset_check,
         unowned_asset_check,
+        partitioned_asset_check,
     ]
 
 
@@ -2413,7 +2464,7 @@ test_repo = Definitions(
 test_repo._name = "test_repo"  # noqa: SLF001
 
 
-def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
+def _targets_asset_job(instigator: ScheduleDefinition | SensorDefinition) -> bool:
     if isinstance(instigator, SensorDefinition) and instigator.sensor_type in (
         # these rely on asset selections, which are invalid with the repos constructed
         # using the legacy dictionary pattern

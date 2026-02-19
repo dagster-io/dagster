@@ -19,8 +19,9 @@ uv_install() {
 }
 
 uv_activate_venv() {
+  export UV_PYTHON_DOWNLOADS=automatic
   uv python install 3.11
-  uv venv
+  uv venv --python 3.11
   source .venv/bin/activate
   uv pip install tox
 }
@@ -36,9 +37,10 @@ if [ "$VERCEL" = "1" ]; then
   # Parallelize production sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-vercel
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/dagster docs/api
+  cp -rf sphinx/_build/mdx/sections/integrations/libraries docs/integrations
+  cp -rf sphinx/_build/mdx/sections/api/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/graphql docs/api
 
   # Parallelize production sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
@@ -48,11 +50,11 @@ else
   # Do not parallelize local sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-local
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/dagster docs/api
+  cp -rf sphinx/_build/mdx/sections/integrations/libraries docs/integrations
+  cp -rf sphinx/_build/mdx/sections/api/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/graphql docs/api
 
-  
   # Do not parallelize local sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
   tox -e sphinx-inv-local

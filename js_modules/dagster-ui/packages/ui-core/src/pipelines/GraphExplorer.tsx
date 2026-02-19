@@ -11,7 +11,13 @@ import qs from 'qs';
 import {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
-import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
+import {
+  CycleDetectedNotice,
+  EmptyDAGNotice,
+  EntirelyFilteredDAGNotice,
+  LargeDAGNotice,
+  LoadingNotice,
+} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
@@ -172,7 +178,13 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
   );
 
   const parentOp = parentHandle && parentHandle.solid;
-  const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
+
+  const [forceLargeGraph, setForceLargeGraph] = useState(false);
+  const {layout, loading, async, error} = useOpLayout(
+    queryResultOps.all,
+    parentOp,
+    forceLargeGraph,
+  );
 
   const breadcrumbs = useMemo(() => {
     const opNames = explorerPath.opNames;
@@ -257,11 +269,15 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
           ) : Object.keys(queryResultOps.all).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="op" />
+          ) : error === 'cycles' ? (
+            <CycleDetectedNotice />
+          ) : error === 'too-large' ? (
+            <LargeDAGNotice nodeType="op" setForceLargeGraph={setForceLargeGraph} />
           ) : undefined}
 
           {loading || !layout ? (
             <LoadingNotice async={async} nodeType="op" />
-          ) : (
+          ) : error ? null : (
             <OpGraph
               jobName={container.name}
               ops={queryResultOps.all}

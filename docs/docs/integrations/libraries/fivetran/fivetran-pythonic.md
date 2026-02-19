@@ -1,6 +1,7 @@
 ---
 title: Dagster & Fivetran (Pythonic)
 sidebar_label: Fivetran (Pythonic)
+sidebar_position: 2
 description: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran
@@ -51,9 +52,9 @@ To get started, you'll need to install the `dagster` and `dagster-fivetran` Pyth
 
 ## Represent Fivetran assets in the asset graph
 
-To load Fivetran assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" /> resource, which allows Dagster to communicate with your Fivetran workspace. You'll need to supply your account ID, API key and API secret. See [Getting Started](https://fivetran.com/docs/rest-api/getting-started) in the Fivetran REST API documentation for more information on how to create your API key and API secret.
+To load Fivetran assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranWorkspace" /> resource, which allows Dagster to communicate with your Fivetran workspace. You'll need to supply your account ID, API key and API secret. See [Getting Started](https://fivetran.com/docs/rest-api/getting-started) in the Fivetran REST API documentation for more information on how to create your API key and API secret.
 
-Dagster can automatically load all connector tables from your Fivetran workspace as asset specs. Call the <PyObject section="libraries" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function, which returns list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Fivetran assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
+Dagster can automatically load all connector tables from your Fivetran workspace as asset specs. Call the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function, which returns list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Fivetran assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/representing_fivetran_assets.py"
@@ -62,7 +63,7 @@ Dagster can automatically load all connector tables from your Fivetran workspace
 
 ### Sync and materialize Fivetran assets
 
-You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject section="libraries" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
+You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
 
 :::note
 
@@ -77,7 +78,7 @@ When syncing a Fivetran connector via Dagster, all Fivetran assets for this conn
 
 ### Customize the materialization of Fivetran assets
 
-If you want to customize the sync of your connectors, you can use the <PyObject section="libraries" module="dagster_fivetran" object="fivetran_assets" /> decorator to do so. This allows you to execute custom code before and after the call to the Fivetran sync.
+If you want to customize the sync of your connectors, you can use the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="fivetran_assets" /> decorator to do so. This allows you to execute custom code before and after the call to the Fivetran sync.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/customize_fivetran_asset_defs.py"
@@ -86,7 +87,7 @@ If you want to customize the sync of your connectors, you can use the <PyObject 
 
 ### Perform historical resyncs of Fivetran assets
 
-In addition to incremental syncs, you can perform full historical resyncs of your Fivetran connector tables using the <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" displayText="resync_and_poll()" /> method. This is useful when you need to backfill historical data or reload data after schema changes.
+In addition to incremental syncs, you can perform full historical resyncs of your Fivetran connector tables using the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranWorkspace" displayText="resync_and_poll()" /> method. This is useful when you need to backfill historical data or reload data after schema changes.
 
 You can resync specific tables by providing `resync_parameters`, or resync all tables in a connector by omitting this parameter:
 
@@ -109,7 +110,7 @@ Historical resyncs can be time-consuming and resource-intensive operations. Be m
 
 ### Customize asset definition metadata for Fivetran assets
 
-By default, Dagster will generate asset specs for each Fivetran asset and populate default metadata. You can further customize asset properties by passing an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function.
+By default, Dagster will generate asset specs for each Fivetran asset and populate default metadata. You can further customize asset properties by passing an instance of the custom <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/customize_fivetran_translator_asset_spec.py"
@@ -118,7 +119,7 @@ By default, Dagster will generate asset specs for each Fivetran asset and popula
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-You can pass an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="fivetran_assets" /> decorator or the <PyObject section="libraries" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory.
+You can pass an instance of the custom <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="fivetran_assets" /> decorator or the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory.
 
 ### Fetching column-level metadata for Fivetran assets
 
@@ -126,7 +127,7 @@ Dagster allows you to emit column-level metadata, like [column schema](/guides/b
 
 With this metadata, you can view documentation in Dagster for all columns in your Fivetran connector tables.
 
-To enable this feature, call <PyObject section="libraries" object="fivetran_event_iterator.FivetranEventIterator.fetch_column_metadata" module="dagster_fivetran" displayText="fetch_column_metadata()" /> on the <PyObject section="libraries" object="fivetran_event_iterator.FivetranEventIterator" module="dagster_fivetran" /> returned by the `sync_and_poll()` call on the <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" /> resource.
+To enable this feature, call <PyObject section="libraries" integration="fivetran" object="fivetran_event_iterator.FivetranEventIterator.fetch_column_metadata" module="dagster_fivetran" displayText="fetch_column_metadata()" /> on the <PyObject section="libraries" integration="fivetran" object="fivetran_event_iterator.FivetranEventIterator" module="dagster_fivetran" /> returned by the `sync_and_poll()` call on the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranWorkspace" /> resource.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/fetch_column_metadata_fivetran_assets.py"
@@ -135,7 +136,7 @@ To enable this feature, call <PyObject section="libraries" object="fivetran_even
 
 ### Load Fivetran assets for selected connectors
 
-To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions.
+To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/select_fivetran_connectors.py" language="python" />
 
@@ -181,7 +182,7 @@ Finally, jobs created for your Fivetran assets can be scheduled.
 
 ### Load Fivetran assets from multiple workspaces
 
-Definitions from multiple Fivetran workspaces can be combined by instantiating multiple <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" /> resources and merging their specs. This lets you view all your Fivetran assets in a single asset graph:
+Definitions from multiple Fivetran workspaces can be combined by instantiating multiple <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranWorkspace" /> resources and merging their specs. This lets you view all your Fivetran assets in a single asset graph:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/multiple_fivetran_workspaces.py"
@@ -190,7 +191,7 @@ Definitions from multiple Fivetran workspaces can be combined by instantiating m
 
 ### Define upstream dependencies
 
-By default, Dagster does not set upstream dependencies when generating asset specs for your Fivetran assets. You can set upstream dependencies on your Fivetran assets by passing an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function.
+By default, Dagster does not set upstream dependencies when generating asset specs for your Fivetran assets. You can set upstream dependencies on your Fivetran assets by passing an instance of the custom <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function.
 
 <CodeExample
   startAfter="start_upstream_asset"
@@ -200,11 +201,11 @@ By default, Dagster does not set upstream dependencies when generating asset spe
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-You can pass an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="fivetran_assets" /> decorator or the <PyObject section="libraries" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory.
+You can pass an instance of the custom <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="fivetran_assets" /> decorator or the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory.
 
 ### Define downstream dependencies
 
-Dagster allows you to define assets that are downstream of specific Fivetran tables using their asset keys. The asset key for a Fivetran table can be retrieved using the asset definitions created using the <PyObject section="libraries" module="dagster_fivetran" object="fivetran_assets" /> decorator. The below example defines `my_downstream_asset` as a downstream dependency of `my_fivetran_table`:
+Dagster allows you to define assets that are downstream of specific Fivetran tables using their asset keys. The asset key for a Fivetran table can be retrieved using the asset definitions created using the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="fivetran_assets" /> decorator. The below example defines `my_downstream_asset` as a downstream dependency of `my_fivetran_table`:
 
 <CodeExample
   startAfter="start_downstream_asset"

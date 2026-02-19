@@ -1,7 +1,8 @@
+import os
 import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, nullcontext
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -11,6 +12,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
+from dagster_shared.utils import environ
 from dagster_sigma import SigmaBaseUrl, SigmaComponent
 
 
@@ -47,14 +49,21 @@ def setup_sigma_component(
 def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> None:
     """Test basic component loading."""
     with (
+        environ(
+            {
+                "SIGMA_BASE_URL": SigmaBaseUrl.AWS_US.value,
+                "SIGMA_CLIENT_ID": uuid.uuid4().hex,
+                "SIGMA_CLIENT_SECRET": uuid.uuid4().hex,
+            }
+        ),
         setup_sigma_component(
             defs_yaml_contents={
                 "type": "dagster_sigma.SigmaComponent",
                 "attributes": {
                     "organization": {
-                        "base_url": SigmaBaseUrl.AWS_US.value,
-                        "client_id": uuid.uuid4().hex,
-                        "client_secret": uuid.uuid4().hex,
+                        "base_url": "{{ env.SIGMA_BASE_URL }}",
+                        "client_id": "{{ env.SIGMA_CLIENT_ID }}",
+                        "client_secret": "{{ env.SIGMA_CLIENT_SECRET }}",
                     },
                 },
             }
@@ -67,6 +76,9 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
         assert AssetKey("Sample_Workbook") in asset_keys
         assert AssetKey("Orders_Dataset") in asset_keys
+        assert component.organization.base_url == SigmaBaseUrl.AWS_US.value
+        assert component.organization.client_id == os.environ["SIGMA_CLIENT_ID"]
+        assert component.organization.client_secret == os.environ["SIGMA_CLIENT_SECRET"]
 
 
 @pytest.mark.parametrize(
@@ -86,9 +98,11 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
+            lambda asset_spec: (
+                "snowflake" in asset_spec.kinds
+                and "dbt" in asset_spec.kinds
+                and asset_spec.tags.get("foo") == "bar"
+            ),
             False,
         ),
         ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
@@ -104,8 +118,9 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"deps": ["customers"]},
-            lambda asset_spec: len(asset_spec.deps) == 1
-            and asset_spec.deps[0].asset_key == AssetKey("customers"),
+            lambda asset_spec: (
+                len(asset_spec.deps) == 1 and asset_spec.deps[0].asset_key == AssetKey("customers")
+            ),
             False,
         ),
         (
@@ -135,7 +150,7 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
 )
 def test_translation(
     attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
+    assertion: Callable[[AssetSpec], bool] | None,
     should_error: bool,
     sigma_sample_data: Any,
     sigma_auth_token: str,
@@ -156,7 +171,7 @@ def test_translation(
         with (
             setup_sigma_component(
                 defs_yaml_contents=body,
-            ) as (component, defs),
+            ) as (_component, defs),
         ):
             if "key_prefix" in attributes:
                 key = AssetKey(["cool_prefix", "Sample_Workbook"])
@@ -195,7 +210,7 @@ def test_per_content_type_translation(sigma_sample_data: Any, sigma_auth_token: 
         setup_sigma_component(
             defs_yaml_contents=body,
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):

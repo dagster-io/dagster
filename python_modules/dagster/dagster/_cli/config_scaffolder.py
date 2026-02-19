@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster import _check as check
 from dagster._config import ConfigType, ConfigTypeKind
 from dagster._core.definitions import JobDefinition
@@ -8,7 +6,7 @@ from dagster._core.definitions import JobDefinition
 def scaffold_job_config(
     job_def: JobDefinition,
     skip_non_required: bool = True,
-    mode: Optional[str] = None,
+    mode: str | None = None,
 ):
     check.inst_param(job_def, "job_def", JobDefinition)
     check.bool_param(skip_non_required, "skip_non_required")

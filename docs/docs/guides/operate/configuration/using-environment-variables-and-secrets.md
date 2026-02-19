@@ -163,7 +163,7 @@ For more information, see the [Handling secrets](#handling-secrets) and [Per-env
 
 :::note
 
-The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/clis/create-dagster). To create a Dagster project with this structure, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/clis/create-dagster). To create a Dagster project with this structure, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
 :::
 
@@ -218,7 +218,7 @@ This example is adapted from the [Transitioning data pipelines from development 
 
 Let's review what's happening here:
 
-- We've created a dictionary of resource definitions called `resources`, with sections for `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/libraries/dagster-snowflake-pandas).
+- We've created a dictionary of resource definitions called `resources`, with sections for `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/integrations/libraries/snowflake/dagster-snowflake-pandas).
 - For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration.
 - Following the `resources` dictionary, we define the `deployment_name` variable, which determines the current executing environment. This variable defaults to `local`, ensuring that `DAGSTER_DEPLOYMENT=PRODUCTION` must be set to use the `production` configuration.
 

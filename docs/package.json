@@ -87,7 +87,8 @@
     ]
   },
   "resolutions": {
-    "path-to-regexp@2.2.1": "3.3.0"
+    "path-to-regexp@2.2.1": "3.3.0",
+    "sitemap": "9.0.0"
   },
   "engines": {
     "node": "20.x"

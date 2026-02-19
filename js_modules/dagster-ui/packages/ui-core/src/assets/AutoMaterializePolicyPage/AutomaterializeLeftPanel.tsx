@@ -111,13 +111,15 @@ export const AutomaterializeLeftList = (props: ListProps) => {
           {evaluations.map((evaluation) => {
             const isSelected = selectedEvaluation?.id === evaluation.id;
 
-            const hasRequested = evaluation.numRequested > 0;
+            const hasRequested = evaluation.numRequested && evaluation.numRequested > 0;
 
             function status() {
               if (hasRequested) {
                 if (definition?.partitionDefinition) {
                   return (
-                    <Caption>{numberFormatter.format(evaluation.numRequested)} Requested</Caption>
+                    <Caption>
+                      {numberFormatter.format(evaluation.numRequested ?? 0)} Requested
+                    </Caption>
                   );
                 }
                 return <Caption>requested</Caption>;

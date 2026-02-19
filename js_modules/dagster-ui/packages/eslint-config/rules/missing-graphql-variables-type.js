@@ -1,4 +1,3 @@
-/* eslint-disable */
 const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);

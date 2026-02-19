@@ -29,6 +29,7 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -49,7 +50,7 @@ setup(
         "setuptools",  # Needed to parse setup.cfg
         "packaging",
         "python-dotenv",
-        "typer<0.17.0",
+        "typer>=0.15.1,<1.0",
         f"dagster-shared{pin}",
         f"dagster-cloud-cli{pin}",
     ],

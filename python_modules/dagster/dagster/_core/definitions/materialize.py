@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster._annotations import public
@@ -23,13 +23,13 @@ EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
 
 @public
 def materialize(
-    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
+    assets: Sequence[AssetsDefinition | AssetSpec | SourceAsset],
     run_config: Any = None,
-    instance: Optional[DagsterInstance] = None,
-    resources: Optional[Mapping[str, object]] = None,
-    partition_key: Optional[str] = None,
+    instance: DagsterInstance | None = None,
+    resources: Mapping[str, object] | None = None,
+    partition_key: str | None = None,
     raise_on_error: bool = True,
-    tags: Optional[Mapping[str, str]] = None,
+    tags: Mapping[str, str] | None = None,
     selection: Optional["CoercibleToAssetSelection"] = None,
 ) -> "ExecuteInProcessResult":
     """Executes a single-threaded, in-process run which materializes provided assets.
@@ -117,13 +117,13 @@ def materialize(
 
 @public
 def materialize_to_memory(
-    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
+    assets: Sequence[AssetsDefinition | AssetSpec | SourceAsset],
     run_config: Any = None,
-    instance: Optional[DagsterInstance] = None,
-    resources: Optional[Mapping[str, object]] = None,
-    partition_key: Optional[str] = None,
+    instance: DagsterInstance | None = None,
+    resources: Mapping[str, object] | None = None,
+    partition_key: str | None = None,
     raise_on_error: bool = True,
-    tags: Optional[Mapping[str, str]] = None,
+    tags: Mapping[str, str] | None = None,
     selection: Optional["CoercibleToAssetSelection"] = None,
 ) -> "ExecuteInProcessResult":
     """Executes a single-threaded, in-process run which materializes provided assets in memory.
@@ -210,7 +210,7 @@ def materialize_to_memory(
 
 
 def _get_required_io_manager_keys(
-    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
+    assets: Sequence[AssetsDefinition | AssetSpec | SourceAsset],
 ) -> set[str]:
     io_manager_keys = set()
     for asset in assets:

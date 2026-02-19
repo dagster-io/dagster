@@ -33,8 +33,8 @@ import {AssetCatalogV2VirtualizedTable} from '../catalog/AssetCatalogV2Virtualiz
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
-jest.mock('../../app/observeEnabled.oss', () => ({
-  observeEnabled: jest.fn(() => true),
+jest.mock('../../app/assetHealthEnabled.oss', () => ({
+  assetHealthEnabled: jest.fn(() => true),
 }));
 
 jest.mock('../../util/idb-lru-cache', () => {
@@ -204,16 +204,18 @@ describe('AssetCatalogTableV2', () => {
       expect(resultFn).toHaveBeenCalled();
     });
 
-    const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
-    const props = calls[calls.length - 1][0];
-    await waitFor(() =>
+    await waitFor(() => {
+      const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+      const props = calls[calls.length - 1][0];
       expect(props).toEqual(
         expect.objectContaining({
           healthDataLoading: false,
         }),
-      ),
-    );
+      );
+    });
 
+    const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+    const props = calls[calls.length - 1][0];
     expect(props).toEqual(
       expect.objectContaining({
         checkedDisplayKeys: new Set(),
@@ -271,9 +273,9 @@ describe('AssetCatalogTableV2', () => {
       expect(resultFn).toHaveBeenCalled();
     });
 
-    const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
-    const props = calls[calls.length - 1][0];
-    await waitFor(() =>
+    await waitFor(() => {
+      const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+      const props = calls[calls.length - 1][0];
       expect(props).toEqual(
         expect.objectContaining({
           checkedDisplayKeys: new Set(['asset1', 'asset2']),
@@ -288,7 +290,7 @@ describe('AssetCatalogTableV2', () => {
             }),
           }),
         }),
-      ),
-    );
+      );
+    });
   });
 });
