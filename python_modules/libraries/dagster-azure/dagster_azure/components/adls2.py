@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 import dagster as dg
 from dagster._annotations import preview, public

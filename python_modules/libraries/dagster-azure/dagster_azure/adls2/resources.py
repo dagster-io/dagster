@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import dagster as dg
 from azure.identity import DefaultAzureCredential
@@ -30,7 +30,7 @@ class ADLS2SASToken(dg.Resolvable, Config):
 
 class ADLS2Key(dg.Resolvable, Config):
     credential_type: Literal["key"] = "key"
-    key: str | None = None
+    key: Optional[str] = None  # noqa: UP045
 
 
 class ADLS2DefaultAzureCredential(dg.Resolvable, Config):
