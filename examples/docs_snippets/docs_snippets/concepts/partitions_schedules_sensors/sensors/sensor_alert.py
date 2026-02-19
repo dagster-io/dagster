@@ -96,6 +96,14 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 
 
 # start_email_marker
+from dagster import make_email_on_run_failure_sensor
+
+
+email_on_run_failure = make_email_on_run_failure_sensor(
+    email_from="no-reply@example.com",
+    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),  # type: ignore[arg-type]
+    email_to=["xxx@example.com", "xyz@example.com"],
+)
 
 # end_email_marker
 
