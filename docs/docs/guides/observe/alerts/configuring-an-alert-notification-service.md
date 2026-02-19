@@ -58,4 +58,12 @@ When setting up an alert, you can choose a Slack channel to send those alerts to
 To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app). If you are unable to do this, contact Dagster+ Support to disconnect it on your behalf.
 
   </TabItem>
+<TabItem value='webhook' label='Webhook'>
+    To send alerts to a generic webhook, choose **Webhook** as the notification service.
+
+    You will need to provide the **URL** of the webhook endpoint. Optionally, you can configure custom **Headers** and define the **Body** of the request.
+
+    For more details on configuring webhooks, available templating tokens, and customizing the payload, see the [Webhooks documentation](/integrations/libraries/webhooks).
+
+  </TabItem>
 </Tabs>
