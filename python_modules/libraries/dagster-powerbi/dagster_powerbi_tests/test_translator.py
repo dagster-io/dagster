@@ -170,22 +170,6 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
     assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
 
 
-def test_translator_data_source_spec(workspace_data: PowerBIWorkspaceData) -> None:
-    """Data source specs include dagster/table_name metadata."""
-    data_source = next(iter(workspace_data.data_sources_by_id.values()))
-
-    translator = DagsterPowerBITranslator()
-    asset_spec = translator.get_asset_spec(
-        PowerBITranslatorData(
-            content_data=data_source,
-            workspace_data=workspace_data,
-        )
-    )
-
-    assert "dagster/table_name" in asset_spec.metadata
-    assert asset_spec.metadata["dagster/table_name"] == asset_spec.key.path[0]
-
-
 def test_translator_report_spec_no_dataset(workspace_data: PowerBIWorkspaceData) -> None:
     report_no_dataset = PowerBIContentData(
         content_type=PowerBIContentType.REPORT,

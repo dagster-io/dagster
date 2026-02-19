@@ -1,12 +1,7 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
-from dagster_tableau.translator import (
-    TableauContentData,
-    TableauContentType,
-    TableauTranslatorData,
-    TableauWorkspaceData,
-)
+from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
 from dagster_tableau_tests.conftest import (
     TEST_DATA_SOURCE_ID,
@@ -89,16 +84,11 @@ def test_translator_data_source_spec(
     )
 
     assert asset_spec.key.path == ["superstore_datasource"]
-    assert "dagster/table_name" in asset_spec.metadata
-    assert asset_spec.metadata["dagster/table_name"] == "superstore_datasource"
     assert asset_spec.metadata == {
         "dagster-tableau/id": TEST_DATA_SOURCE_ID,
         "dagster-tableau/has_extracts": False,
         "dagster-tableau/is_published": True,
-        "dagster/table_name": "superstore_datasource",
     }
-    assert "dagster/storage_kind" in asset_spec.tags
-    assert asset_spec.tags["dagster/storage_kind"] == "tableau"
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
@@ -119,17 +109,12 @@ def test_translator_data_source_spec(
         "embedded_datasource",
         "embedded_superstore_datasource",
     ]
-    assert "dagster/table_name" in asset_spec.metadata
-    assert asset_spec.metadata["dagster/table_name"] == "embedded_superstore_datasource"
     assert asset_spec.metadata == {
         "dagster-tableau/id": TEST_EMBEDDED_DATA_SOURCE_ID,
         "dagster-tableau/has_extracts": True,
         "dagster-tableau/is_published": False,
         "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
-        "dagster/table_name": "embedded_superstore_datasource",
     }
-    assert "dagster/storage_kind" in asset_spec.tags
-    assert asset_spec.tags["dagster/storage_kind"] == "tableau"
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
@@ -139,28 +124,6 @@ def test_translator_data_source_spec(
     }
     deps = list(asset_spec.deps)
     assert len(deps) == 0
-
-
-def test_translator_data_source_spec_storage_kind_from_connection_type(
-    workspace_data: TableauWorkspaceData,
-) -> None:
-    """When data.properties has connectionType, dagster/storage_kind uses it (lowercase)."""
-    translator = DagsterTableauTranslator()
-    snowflake_datasource = TableauContentData(
-        content_type=TableauContentType.DATA_SOURCE,
-        properties={
-            **workspace_data.data_sources_by_id[TEST_DATA_SOURCE_ID].properties,
-            "connectionType": "Snowflake",
-        },
-    )
-    data = TableauTranslatorData(
-        content_data=snowflake_datasource,
-        workspace_data=workspace_data,
-    )
-    spec = translator.get_asset_spec(data)
-    assert "dagster/storage_kind" in spec.tags
-    assert spec.tags["dagster/storage_kind"] == "snowflake"
-    assert spec.metadata["dagster/table_name"] == "superstore_datasource"
 
 
 class MyCustomTranslator(DagsterTableauTranslator):
