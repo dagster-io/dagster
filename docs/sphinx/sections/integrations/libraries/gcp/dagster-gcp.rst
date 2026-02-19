@@ -86,6 +86,7 @@ File Manager
 
 GCS Compute Log Manager
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
 
 Dataproc
@@ -147,3 +148,19 @@ Legacy
 
 .. autoconfigurable:: dataproc_resource
   :annotation: ResourceDefinition
+
+Components
+----------
+
+Resource components for use with Dagster's component system.
+
+Resource Components
+^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_gcp.components.bigquery.BigQueryResourceComponent
+
+.. autoclass:: dagster_gcp.components.gcs.GCSResourceComponent
+
+.. autoclass:: dagster_gcp.components.gcs.GCSFileManagerResourceComponent
+
+.. autoclass:: dagster_gcp.components.dataproc.DataprocResourceComponent
