@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
-from typing import Optional, Union, cast
+from typing import cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -369,8 +369,8 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 class BigQueryClient(DbClient):
     def __init__(
         self,
-        write_mode: Union[BigQueryWriteMode, str] = BigQueryWriteMode.TRUNCATE,
-        gcp_credentials: Optional[str] = None,
+        write_mode: BigQueryWriteMode | str = BigQueryWriteMode.TRUNCATE,
+        gcp_credentials: str | None = None,
     ):
         if isinstance(write_mode, str):
             write_mode = BigQueryWriteMode(write_mode)
