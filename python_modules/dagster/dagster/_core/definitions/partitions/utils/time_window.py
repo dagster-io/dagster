@@ -68,6 +68,8 @@ class PartitionTimeWindowStatus:
             and self.status == other.status
         )
 
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
+
 
 @whitelist_for_serdes(
     storage_name="TimeWindow",  # For back-compat with existing serdes

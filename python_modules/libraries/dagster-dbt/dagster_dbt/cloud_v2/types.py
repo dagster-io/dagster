@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from dagster import Failure, MetadataValue
 from dagster._record import record
@@ -13,7 +13,7 @@ class DbtCloudAccount:
     """Represents a dbt Cloud Account, based on data as returned from the API."""
 
     id: int
-    name: Optional[str]
+    name: str | None
 
     @classmethod
     def from_account_details(cls, account_details: Mapping[str, Any]) -> "DbtCloudAccount":
@@ -28,7 +28,7 @@ class DbtCloudProject:
     """Represents a dbt Cloud Project, based on data as returned from the API."""
 
     id: int
-    name: Optional[str]
+    name: str | None
 
     @classmethod
     def from_project_details(cls, project_details: Mapping[str, Any]) -> "DbtCloudProject":
@@ -43,7 +43,7 @@ class DbtCloudEnvironment:
     """Represents a dbt Cloud Environment, based on data as returned from the API."""
 
     id: int
-    name: Optional[str]
+    name: str | None
 
     @classmethod
     def from_environment_details(
@@ -60,10 +60,10 @@ class DbtCloudJob:
     """Represents a dbt Cloud job, based on data as returned from the API."""
 
     id: int
-    account_id: Optional[int]
-    project_id: Optional[int]
-    environment_id: Optional[int]
-    name: Optional[str]
+    account_id: int | None
+    project_id: int | None
+    environment_id: int | None
+    name: str | None
 
     @classmethod
     def from_job_details(cls, job_details: Mapping[str, Any]) -> "DbtCloudJob":
@@ -92,13 +92,13 @@ class DbtCloudRun:
     """Represents a dbt Cloud run, based on data as returned from the API."""
 
     id: int
-    trigger_id: Optional[int]
-    account_id: Optional[int]
-    project_id: Optional[int]
-    environment_id: Optional[int]
-    job_definition_id: Optional[int]
-    status: Optional[DbtCloudJobRunStatusType]
-    url: Optional[str]
+    trigger_id: int | None
+    account_id: int | None
+    project_id: int | None
+    environment_id: int | None
+    job_definition_id: int | None
+    status: DbtCloudJobRunStatusType | None
+    url: str | None
 
     @classmethod
     def from_run_details(cls, run_details: Mapping[str, Any]) -> "DbtCloudRun":

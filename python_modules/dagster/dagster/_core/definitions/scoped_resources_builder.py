@@ -7,7 +7,7 @@
 
 from collections import namedtuple
 from collections.abc import Mapping
-from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.errors import DagsterUnknownResourceError
@@ -48,7 +48,7 @@ class ScopedResourcesBuilder(
 
     def __new__(
         cls,
-        resource_instance_dict: Optional[Mapping[str, object]] = None,
+        resource_instance_dict: Mapping[str, object] | None = None,
         contains_generator: bool = False,
     ):
         return super().__new__(
@@ -59,7 +59,7 @@ class ScopedResourcesBuilder(
             contains_generator=contains_generator,
         )
 
-    def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
+    def build(self, required_resource_keys: AbstractSet[str] | None) -> Resources:
         from dagster._config.pythonic_config import IAttachDifferentObjectToOpContext
 
         """We dynamically create a type that has the resource keys as properties, to enable dotting into

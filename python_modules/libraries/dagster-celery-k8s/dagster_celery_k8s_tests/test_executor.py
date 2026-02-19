@@ -82,7 +82,7 @@ def celery_mock():
             rv.get = lambda: serialized_events
             return rv
 
-    celery_mock.return_value.task.return_value = lambda f: SimpleQueueWrapper(f)
+    celery_mock.return_value.task.return_value = SimpleQueueWrapper
     return celery_mock
 
 

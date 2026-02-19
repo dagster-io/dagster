@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import closing, contextmanager
 from datetime import datetime
-from typing import Any, Optional, Union, cast
+from typing import Any, Union, cast
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -90,7 +90,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             )
     """
 
-    account: Optional[str] = Field(
+    account: str | None = Field(
         default=None,
         description=(
             "Your Snowflake account name. For more details, see the `Snowflake documentation."
@@ -100,9 +100,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
 
     user: str = Field(description="User login name.")
 
-    password: Optional[str] = Field(default=None, description="User password.")
+    password: str | None = Field(default=None, description="User password.")
 
-    database: Optional[str] = Field(
+    database: str | None = Field(
         default=None,
         description=(
             "Name of the default database to use. After login, you can use ``USE DATABASE`` "
@@ -110,7 +110,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    schema_: Optional[str] = Field(
+    schema_: str | None = Field(
         default=None,
         description=(
             "Name of the default schema to use. After login, you can use ``USE SCHEMA`` to "
@@ -119,7 +119,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         alias="schema",
     )  # schema is a reserved word for pydantic
 
-    role: Optional[str] = Field(
+    role: str | None = Field(
         default=None,
         description=(
             "Name of the default role to use. After login, you can use ``USE ROLE`` to change "
@@ -127,7 +127,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    warehouse: Optional[str] = Field(
+    warehouse: str | None = Field(
         default=None,
         description=(
             "Name of the default warehouse to use. After login, you can use ``USE WAREHOUSE`` "
@@ -135,7 +135,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    private_key: Optional[str] = Field(
+    private_key: str | None = Field(
         default=None,
         description=(
             "Raw private key to use. See the `Snowflake documentation"
@@ -146,7 +146,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    private_key_password: Optional[str] = Field(
+    private_key_password: str | None = Field(
         default=None,
         description=(
             "Raw private key password to use. See the `Snowflake documentation"
@@ -156,7 +156,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    private_key_path: Optional[str] = Field(
+    private_key_path: str | None = Field(
         default=None,
         description=(
             "Raw private key path to use. See the `Snowflake documentation"
@@ -165,7 +165,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    autocommit: Optional[bool] = Field(
+    autocommit: bool | None = Field(
         default=None,
         description=(
             "None by default, which honors the Snowflake parameter AUTOCOMMIT. Set to True "
@@ -173,7 +173,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    client_prefetch_threads: Optional[int] = Field(
+    client_prefetch_threads: int | None = Field(
         default=None,
         description=(
             "Number of threads used to download the results sets (4 by default). "
@@ -181,7 +181,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    client_session_keep_alive: Optional[bool] = Field(
+    client_session_keep_alive: bool | None = Field(
         default=None,
         description=(
             "False by default. Set this to True to keep the session active indefinitely, "
@@ -190,7 +190,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    login_timeout: Optional[int] = Field(
+    login_timeout: int | None = Field(
         default=None,
         description=(
             "Timeout in seconds for login. By default, 60 seconds. The login request gives "
@@ -198,7 +198,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    network_timeout: Optional[int] = Field(
+    network_timeout: int | None = Field(
         default=None,
         description=(
             "Timeout in seconds for all other operations. By default, none/infinite. A general"
@@ -206,7 +206,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    ocsp_response_cache_filename: Optional[str] = Field(
+    ocsp_response_cache_filename: str | None = Field(
         default=None,
         description=(
             "URI for the OCSP response cache file.  By default, the OCSP response cache "
@@ -214,7 +214,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    validate_default_parameters: Optional[bool] = Field(
+    validate_default_parameters: bool | None = Field(
         default=None,
         description=(
             "If True, raise an exception if the warehouse, database, or schema doesn't exist."
@@ -222,7 +222,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    paramstyle: Optional[str] = Field(
+    paramstyle: str | None = Field(
         default=None,
         description=(
             "pyformat by default for client side binding. Specify qmark or numeric to "
@@ -230,7 +230,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    timezone: Optional[str] = Field(
+    timezone: str | None = Field(
         default=None,
         description=(
             "None by default, which honors the Snowflake parameter TIMEZONE. Set to a "
@@ -238,7 +238,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    connector: Optional[str] = Field(
+    connector: str | None = Field(
         default=None,
         description=(
             "Indicate alternative database connection engine. Permissible option is "
@@ -247,7 +247,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         is_required=False,  # type: ignore
     )
 
-    cache_column_metadata: Optional[str] = Field(
+    cache_column_metadata: str | None = Field(
         default=None,
         description=(
             "Optional parameter when connector is set to sqlalchemy. Snowflake SQLAlchemy takes a"
@@ -256,7 +256,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    numpy: Optional[bool] = Field(
+    numpy: bool | None = Field(
         default=None,
         description=(
             "Optional parameter when connector is set to sqlalchemy. To enable fetching "
@@ -264,11 +264,11 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    authenticator: Optional[str] = Field(
+    authenticator: str | None = Field(
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
-    additional_snowflake_connection_args: Optional[dict[str, Any]] = Field(
+    additional_snowflake_connection_args: dict[str, Any] | None = Field(
         default=None,
         description=(
             "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
@@ -279,7 +279,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
     )
 
     @validator("paramstyle")
-    def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
+    def validate_paramstyle(cls, v: str | None) -> str | None:
         valid_config = ["pyformat", "qmark", "numeric"]
         if v is not None and v not in valid_config:
             raise ValueError(
@@ -289,7 +289,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         return v
 
     @validator("connector")
-    def validate_connector(cls, v: Optional[str]) -> Optional[str]:
+    def validate_connector(cls, v: str | None) -> str | None:
         if v is not None and v not in ["sqlalchemy", "adbc"]:
             raise ValueError(
                 "Snowflake Resource: 'connector' configuration value must be None, sqlalchemy or adbc."
@@ -520,8 +520,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
     @public
     @contextmanager
     def get_connection(
-        self, raw_conn: bool = True
-    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
+        self,
+        raw_conn: bool = True,
+        # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
+    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:  # noqa: UP007
         """Gets a connection to Snowflake as a context manager.
 
         If connector configuration is not set, SnowflakeResource.get_connection() will return a
@@ -880,8 +882,10 @@ class SnowflakeConnection:
     @public
     @contextmanager
     def get_connection(
-        self, raw_conn: bool = True
-    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
+        self,
+        raw_conn: bool = True,
+        # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
+    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:  # noqa: UP007
         """Gets a connection to Snowflake as a context manager.
 
         If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
@@ -912,7 +916,7 @@ class SnowflakeConnection:
     def execute_query(
         self,
         sql: str,
-        parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
+        parameters: Sequence[Any] | Mapping[Any, Any] | None = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
     ):
@@ -961,10 +965,10 @@ class SnowflakeConnection:
     def execute_queries(
         self,
         sql_queries: Sequence[str],
-        parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
+        parameters: Sequence[Any] | Mapping[Any, Any] | None = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
-    ) -> Optional[Sequence[Any]]:
+    ) -> Sequence[Any] | None:
         """Execute multiple queries in Snowflake.
 
         Args:
@@ -1104,11 +1108,12 @@ def snowflake_resource(context) -> SnowflakeConnection:
 
 def fetch_last_updated_timestamps(
     *,
-    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],
+    # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
+    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],  # noqa: UP007
     schema: str,
     tables: Sequence[str],
-    database: Optional[str] = None,
-    ignore_missing_tables: Optional[bool] = False,
+    database: str | None = None,
+    ignore_missing_tables: bool | None = False,
 ) -> Mapping[str, datetime]:
     """Fetch the last updated times of a list of tables in Snowflake.
 

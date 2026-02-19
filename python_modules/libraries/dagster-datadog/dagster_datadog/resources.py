@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster import ConfigurableResource, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
@@ -18,23 +16,23 @@ class DatadogClient:
 
     def __init__(
         self,
-        api_key: Optional[str],
-        app_key: Optional[str],
-        host_name: Optional[str] = None,
-        api_host: Optional[str] = None,
-        statsd_host: Optional[str] = None,
-        statsd_port: Optional[int] = None,
+        api_key: str | None,
+        app_key: str | None,
+        host_name: str | None = None,
+        api_host: str | None = None,
+        statsd_host: str | None = None,
+        statsd_port: int | None = None,
         statsd_disable_aggregation: bool = True,
         statsd_disable_buffering: bool = True,
         statsd_aggregation_flush_interval: float = 0.3,
         statsd_use_default_route: bool = False,
-        statsd_socket_path: Optional[str] = None,
-        statsd_namespace: Optional[str] = None,
-        statsd_max_samples_per_context: Optional[int] = 0,
-        statsd_constant_tags: Optional[list[str]] = None,
+        statsd_socket_path: str | None = None,
+        statsd_namespace: str | None = None,
+        statsd_max_samples_per_context: int | None = 0,
+        statsd_constant_tags: list[str] | None = None,
         return_raw_response: bool = False,
         hostname_from_config: bool = True,
-        cardinality: Optional[str] = None,
+        cardinality: str | None = None,
     ):
         self.api_key = api_key
         self.app_key = app_key
@@ -131,21 +129,21 @@ class DatadogResource(ConfigurableResource):
             " https://docs.datadoghq.com/account_management/api-app-keys/."
         )
     )
-    host_name: Optional[str] = None
-    api_host: Optional[str] = None
-    statsd_host: Optional[str] = None
-    statsd_port: Optional[int] = None
+    host_name: str | None = None
+    api_host: str | None = None
+    statsd_host: str | None = None
+    statsd_port: int | None = None
     statsd_disable_aggregation: bool = True
     statsd_disable_buffering: bool = True
     statsd_aggregation_flush_interval: float = 0.3
     statsd_use_default_route: bool = False
-    statsd_socket_path: Optional[str] = None
-    statsd_namespace: Optional[str] = None
-    statsd_max_samples_per_context: Optional[int] = 0
-    statsd_constant_tags: Optional[list[str]] = None
+    statsd_socket_path: str | None = None
+    statsd_namespace: str | None = None
+    statsd_max_samples_per_context: int | None = 0
+    statsd_constant_tags: list[str] | None = None
     return_raw_response: bool = False
     hostname_from_config: bool = True
-    cardinality: Optional[str] = None
+    cardinality: str | None = None
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:

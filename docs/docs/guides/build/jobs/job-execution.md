@@ -64,7 +64,7 @@ Dagster includes Python APIs for execution that are useful when writing tests or
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMainBlock={false} />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMain={false} />
 
 You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test).
 

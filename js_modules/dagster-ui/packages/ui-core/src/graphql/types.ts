@@ -265,6 +265,7 @@ export type AssetCheckExecution = {
   evaluation: Maybe<AssetCheckEvaluation>;
   id: Scalars['String']['output'];
   partition: Maybe<Scalars['String']['output']>;
+  run: Maybe<Run>;
   runId: Scalars['String']['output'];
   status: AssetCheckExecutionResolvedStatus;
   stepKey: Maybe<Scalars['String']['output']>;
@@ -1855,7 +1856,7 @@ export type ExecutionStepUpForRetryEvent = ErrorEvent &
     level: LogLevel;
     message: Scalars['String']['output'];
     runId: Scalars['String']['output'];
-    secondsToWait: Maybe<Scalars['Int']['output']>;
+    secondsToWait: Maybe<Scalars['Float']['output']>;
     solidHandleID: Maybe<Scalars['String']['output']>;
     stepKey: Maybe<Scalars['String']['output']>;
     timestamp: Scalars['String']['output'];
@@ -3063,6 +3064,7 @@ export type Mutation = {
   reexecutePartitionBackfill: LaunchBackfillResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
+  reportAssetCheckEvaluation: ReportAssetCheckEvaluationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   resetSchedule: ScheduleMutationResult;
   resetSensor: SensorOrError;
@@ -3160,6 +3162,10 @@ export type MutationReexecutePartitionBackfillArgs = {
 
 export type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars['String']['input'];
+};
+
+export type MutationReportAssetCheckEvaluationArgs = {
+  eventParams: ReportAssetCheckEvaluationParams;
 };
 
 export type MutationReportRunlessAssetEventsArgs = {
@@ -4635,6 +4641,25 @@ export type ReloadWorkspaceMutation = {
 };
 
 export type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace;
+
+export type ReportAssetCheckEvaluationParams = {
+  assetKey: AssetKeyInput;
+  checkName: Scalars['String']['input'];
+  partition?: InputMaybe<Scalars['String']['input']>;
+  passed: Scalars['Boolean']['input'];
+  serializedMetadata?: InputMaybe<Scalars['String']['input']>;
+  severity?: InputMaybe<AssetCheckSeverity>;
+};
+
+export type ReportAssetCheckEvaluationResult =
+  | PythonError
+  | ReportAssetCheckEvaluationSuccess
+  | UnauthorizedError;
+
+export type ReportAssetCheckEvaluationSuccess = {
+  __typename: 'ReportAssetCheckEvaluationSuccess';
+  assetKey: AssetKey;
+};
 
 export type ReportRunlessAssetEventsParams = {
   assetKey: AssetKeyInput;
@@ -6763,6 +6788,12 @@ export const buildAssetCheckExecution = (
           : buildAssetCheckEvaluation({}, relationshipsToOmit),
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'enim',
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+          ? ({} as Run)
+          : buildRun({}, relationshipsToOmit),
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
     status:
       overrides && overrides.hasOwnProperty('status')
@@ -9493,7 +9524,7 @@ export const buildExecutionStepUpForRetryEvent = (
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptas',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'maiores',
     secondsToWait:
-      overrides && overrides.hasOwnProperty('secondsToWait') ? overrides.secondsToWait! : 9376,
+      overrides && overrides.hasOwnProperty('secondsToWait') ? overrides.secondsToWait! : 9.38,
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'nostrum',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'sed',
@@ -11601,6 +11632,12 @@ export const buildMutation = (
     reloadWorkspace:
       overrides && overrides.hasOwnProperty('reloadWorkspace')
         ? overrides.reloadWorkspace!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    reportAssetCheckEvaluation:
+      overrides && overrides.hasOwnProperty('reportAssetCheckEvaluation')
+        ? overrides.reportAssetCheckEvaluation!
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
@@ -13939,6 +13976,50 @@ export const buildReloadWorkspaceMutation = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
+  };
+};
+
+export const buildReportAssetCheckEvaluationParams = (
+  overrides?: Partial<ReportAssetCheckEvaluationParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ReportAssetCheckEvaluationParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportAssetCheckEvaluationParams');
+  return {
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKeyInput')
+          ? ({} as AssetKeyInput)
+          : buildAssetKeyInput({}, relationshipsToOmit),
+    checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'aut',
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'rerum',
+    passed: overrides && overrides.hasOwnProperty('passed') ? overrides.passed! : false,
+    serializedMetadata:
+      overrides && overrides.hasOwnProperty('serializedMetadata')
+        ? overrides.serializedMetadata!
+        : 'nisi',
+    severity:
+      overrides && overrides.hasOwnProperty('severity')
+        ? overrides.severity!
+        : AssetCheckSeverity.ERROR,
+  };
+};
+
+export const buildReportAssetCheckEvaluationSuccess = (
+  overrides?: Partial<ReportAssetCheckEvaluationSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ReportAssetCheckEvaluationSuccess'} & ReportAssetCheckEvaluationSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportAssetCheckEvaluationSuccess');
+  return {
+    __typename: 'ReportAssetCheckEvaluationSuccess',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
   };
 };
 

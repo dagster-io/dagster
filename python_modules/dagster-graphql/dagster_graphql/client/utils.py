@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 
 class DagsterGraphQLClientError(Exception):
@@ -38,8 +38,8 @@ class ReloadRepositoryLocationInfo(NamedTuple):
     """
 
     status: ReloadRepositoryLocationStatus
-    failure_type: Optional[str] = None
-    message: Optional[str] = None
+    failure_type: str | None = None
+    message: str | None = None
 
 
 class ShutdownRepositoryLocationInfo(NamedTuple):
@@ -53,7 +53,7 @@ class ShutdownRepositoryLocationInfo(NamedTuple):
     """
 
     status: ShutdownRepositoryLocationStatus
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class JobInfo(NamedTuple):

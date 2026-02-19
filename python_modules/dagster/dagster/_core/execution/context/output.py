@@ -61,52 +61,52 @@ class OutputContext:
                     ...
     """
 
-    _step_key: Optional[str]
-    _name: Optional[str]
-    _job_name: Optional[str]
-    _run_id: Optional[str]
+    _step_key: str | None
+    _name: str | None
+    _job_name: str | None
+    _run_id: str | None
     _definition_metadata: ArbitraryMetadataMapping
     _output_metadata: ArbitraryMetadataMapping
     _user_generated_metadata: Mapping[str, MetadataValue]
-    _mapping_key: Optional[str]
+    _mapping_key: str | None
     _config: object
     _op_def: Optional["OpDefinition"]
     _dagster_type: Optional["DagsterType"]
     _log: Optional["DagsterLogManager"]
-    _version: Optional[str]
-    _resource_config: Optional[Mapping[str, object]]
+    _version: str | None
+    _resource_config: Mapping[str, object] | None
     _step_context: Optional["StepExecutionContext"]
-    _asset_key: Optional[AssetKey]
+    _asset_key: AssetKey | None
     _warn_on_step_context_use: bool
     _resources: Optional["Resources"]
-    _resources_cm: Optional[ContextManager["Resources"]]
-    _resources_contain_cm: Optional[bool]
-    _cm_scope_entered: Optional[bool]
+    _resources_cm: ContextManager["Resources"] | None
+    _resources_contain_cm: bool | None
+    _cm_scope_entered: bool | None
     _events: list["DagsterEvent"]
-    _user_events: list[Union[AssetMaterialization, AssetObservation]]
+    _user_events: list[AssetMaterialization | AssetObservation]
 
     def __init__(
         self,
-        step_key: Optional[str] = None,
-        name: Optional[str] = None,
-        job_name: Optional[str] = None,
-        run_id: Optional[str] = None,
-        definition_metadata: Optional[ArbitraryMetadataMapping] = None,
-        mapping_key: Optional[str] = None,
+        step_key: str | None = None,
+        name: str | None = None,
+        job_name: str | None = None,
+        run_id: str | None = None,
+        definition_metadata: ArbitraryMetadataMapping | None = None,
+        mapping_key: str | None = None,
         config: object = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
-        version: Optional[str] = None,
-        resource_config: Optional[Mapping[str, object]] = None,
-        resources: Optional[Union["Resources", Mapping[str, object]]] = None,
+        version: str | None = None,
+        resource_config: Mapping[str, object] | None = None,
+        resources: Union["Resources", Mapping[str, object]] | None = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
-        asset_key: Optional[AssetKey] = None,
+        asset_key: AssetKey | None = None,
         warn_on_step_context_use: bool = False,
-        partition_key: Optional[str] = None,
-        output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        partition_key: str | None = None,
+        output_metadata: Mapping[str, RawMetadataValue] | None = None,
         # deprecated
-        metadata: Optional[ArbitraryMetadataMapping] = None,
+        metadata: ArbitraryMetadataMapping | None = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -131,7 +131,7 @@ class OutputContext:
         self._asset_key = asset_key
         self._warn_on_step_context_use = warn_on_step_context_use
         if self._step_context and self._step_context.has_partition_key:
-            self._partition_key: Optional[str] = self._step_context.partition_key
+            self._partition_key: str | None = self._step_context.partition_key
         else:
             self._partition_key = partition_key
 
@@ -217,7 +217,7 @@ class OutputContext:
     @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
-    def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+    def metadata(self) -> ArbitraryMetadataMapping | None:
         """Deprecated: used definition_metadata instead."""
         return self._definition_metadata
 
@@ -246,7 +246,7 @@ class OutputContext:
 
     @public
     @property
-    def mapping_key(self) -> Optional[str]:
+    def mapping_key(self) -> str | None:
         """The key that identifies a unique mapped output. None for regular outputs."""
         return self._mapping_key
 
@@ -294,13 +294,13 @@ class OutputContext:
 
     @public
     @property
-    def version(self) -> Optional[str]:
+    def version(self) -> str | None:
         """The version of the output."""
         return self._version
 
     @public
     @property
-    def resource_config(self) -> Optional[Mapping[str, object]]:
+    def resource_config(self) -> Mapping[str, object] | None:
         """The config associated with the resource that initializes the InputManager."""
         return self._resource_config
 
@@ -623,7 +623,7 @@ class OutputContext:
         return self.get_asset_identifier()
 
     @public
-    def log_event(self, event: Union[AssetObservation, AssetMaterialization]) -> None:
+    def log_event(self, event: AssetObservation | AssetMaterialization) -> None:
         """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
         Events logged with this method will appear in the event log.
@@ -664,7 +664,7 @@ class OutputContext:
 
     def get_logged_events(
         self,
-    ) -> Sequence[Union[AssetMaterialization, AssetObservation]]:
+    ) -> Sequence[AssetMaterialization | AssetObservation]:
         """Retrieve the list of user-generated events that were logged via the context.
 
 
@@ -747,13 +747,13 @@ def get_output_context(
     job_def: "JobDefinition",
     resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
-    run_id: Optional[str],
+    run_id: str | None,
     log_manager: Optional["DagsterLogManager"],
     step_context: Optional["StepExecutionContext"],
     resources: Optional["Resources"],
-    version: Optional[str],
+    version: str | None,
     warn_on_step_context_use: bool = False,
-    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    output_metadata: Mapping[str, RawMetadataValue] | None = None,
 ) -> "OutputContext":
     """Args:
     run_id (str): The run ID of the run that produced the output, not necessarily the run that
@@ -821,22 +821,22 @@ def get_output_context(
     additional_warn_text="Use `definition_metadata` instead.",
 )
 def build_output_context(
-    step_key: Optional[str] = None,
-    name: Optional[str] = None,
-    definition_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    run_id: Optional[str] = None,
-    mapping_key: Optional[str] = None,
-    config: Optional[Any] = None,
+    step_key: str | None = None,
+    name: str | None = None,
+    definition_metadata: Mapping[str, RawMetadataValue] | None = None,
+    run_id: str | None = None,
+    mapping_key: str | None = None,
+    config: Any | None = None,
     dagster_type: Optional["DagsterType"] = None,
-    version: Optional[str] = None,
-    resource_config: Optional[Mapping[str, object]] = None,
-    resources: Optional[Mapping[str, object]] = None,
+    version: str | None = None,
+    resource_config: Mapping[str, object] | None = None,
+    resources: Mapping[str, object] | None = None,
     op_def: Optional["OpDefinition"] = None,
-    asset_key: Optional[CoercibleToAssetKey] = None,
-    partition_key: Optional[str] = None,
+    asset_key: CoercibleToAssetKey | None = None,
+    partition_key: str | None = None,
     # deprecated
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    metadata: Mapping[str, RawMetadataValue] | None = None,
+    output_metadata: Mapping[str, RawMetadataValue] | None = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 

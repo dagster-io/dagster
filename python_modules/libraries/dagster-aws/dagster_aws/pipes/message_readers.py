@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
 
 
-def _can_read_from_s3(client: "S3Client", bucket: Optional[str], key: Optional[str]):
+def _can_read_from_s3(client: "S3Client", bucket: str | None, key: str | None):
     if not bucket or not key:
         return False
     else:
@@ -61,10 +61,10 @@ class PipesS3LogReader(PipesChunkedLogReader):
         key: str,
         client: Optional["S3Client"] = None,
         interval: float = 10,
-        target_stream: Optional[IO[str]] = None,
+        target_stream: IO[str] | None = None,
         # TODO: maybe move this parameter to a different scope
-        decode_fn: Optional[Callable[[bytes], str]] = None,
-        debug_info: Optional[str] = None,
+        decode_fn: Callable[[bytes], str] | None = None,
+        debug_info: str | None = None,
     ):
         self.bucket = bucket
         self.key = key
@@ -90,7 +90,7 @@ class PipesS3LogReader(PipesChunkedLogReader):
             key=self.key,
         )
 
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
+    def download_log_chunk(self, params: PipesParams) -> str | None:
         text = self.decode_fn(
             self.client.get_object(Bucket=self.bucket, Key=self.key)["Body"].read()
         )
@@ -121,7 +121,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         interval: float = 10,
         bucket: str,
         client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
-        log_readers: Optional[Sequence[PipesLogReader]] = None,
+        log_readers: Sequence[PipesLogReader] | None = None,
         include_stdio_in_messages: bool = False,
     ):
         super().__init__(
@@ -154,7 +154,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         else:
             return False
 
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         key = f"{params['key_prefix']}/{index}.json"
         try:
             obj = self.client.get_object(Bucket=self.bucket, Key=key)
@@ -222,7 +222,7 @@ def get_log_events_delay_generator() -> Iterator[float]:
 
 def get_log_events(
     client: "CloudWatchLogsClient",
-    max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+    max_retries: int | None = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
     **log_params,
 ):
     max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
@@ -240,10 +240,10 @@ def tail_cloudwatch_events(
     client: "CloudWatchLogsClient",
     log_group: str,
     log_stream: str,
-    start_time: Optional[int] = None,
+    start_time: int | None = None,
     polling_wait_time: int = 5,
     logs_lines_per_call: int = 10,
-    max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+    max_retries: int | None = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
 ) -> Generator[list["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
     params: dict[str, Any] = {
@@ -282,12 +282,12 @@ class PipesCloudWatchLogReader(PipesLogReader):
     def __init__(
         self,
         client=None,
-        log_group: Optional[str] = None,
-        log_stream: Optional[str] = None,
-        target_stream: Optional[IO[str]] = None,
-        start_time: Optional[int] = None,
-        debug_info: Optional[str] = None,
-        max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+        log_group: str | None = None,
+        log_stream: str | None = None,
+        target_stream: IO[str] | None = None,
+        start_time: int | None = None,
+        debug_info: str | None = None,
+        max_retries: int | None = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
     ):
         self.client = client or boto3.client("logs")
         self.log_group = log_group
@@ -299,7 +299,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         self.max_retries = max_retries
 
     @property
-    def debug_info(self) -> Optional[str]:
+    def debug_info(self) -> str | None:
         return self._debug_info
 
     def target_is_readable(self, params: PipesParams) -> bool:
@@ -372,10 +372,10 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
     def __init__(
         self,
         client=None,
-        log_group: Optional[str] = None,
-        log_stream: Optional[str] = None,
-        log_readers: Optional[Sequence[PipesLogReader]] = None,
-        max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+        log_group: str | None = None,
+        log_stream: str | None = None,
+        log_readers: Sequence[PipesLogReader] | None = None,
+        max_retries: int | None = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
     ):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
@@ -421,8 +421,8 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
             return False
 
     def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, cursor: Optional[str], params: PipesParams
-    ) -> Optional[tuple[str, str]]:
+        self, cursor: str | None, params: PipesParams
+    ) -> tuple[str, str] | None:
         params = {
             "logGroupName": self.log_group,
             "logStreamName": self.log_stream,

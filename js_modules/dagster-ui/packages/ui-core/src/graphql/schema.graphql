@@ -181,7 +181,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent & ErrorEve
   solidHandleID: String
   eventType: DagsterEventType
   error: PythonError
-  secondsToWait: Int
+  secondsToWait: Float
 }
 
 type ExpectationResult implements DisplayableEvent {
@@ -1071,6 +1071,7 @@ type AssetCheckExecution {
   timestamp: Float!
   partition: String
   stepKey: String
+  run: Run
 }
 
 enum AssetCheckExecutionResolvedStatus {
@@ -4155,6 +4156,9 @@ type Mutation {
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
+  reportAssetCheckEvaluation(
+    eventParams: ReportAssetCheckEvaluationParams!
+  ): ReportAssetCheckEvaluationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
@@ -4234,6 +4238,24 @@ union ReportRunlessAssetEventsResult =
 
 type ReportRunlessAssetEventsSuccess {
   assetKey: AssetKey!
+}
+
+union ReportAssetCheckEvaluationResult =
+  | UnauthorizedError
+  | PythonError
+  | ReportAssetCheckEvaluationSuccess
+
+type ReportAssetCheckEvaluationSuccess {
+  assetKey: AssetKey!
+}
+
+input ReportAssetCheckEvaluationParams {
+  assetKey: AssetKeyInput!
+  checkName: String!
+  passed: Boolean!
+  severity: AssetCheckSeverity = null
+  serializedMetadata: String = null
+  partition: String = null
 }
 
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError

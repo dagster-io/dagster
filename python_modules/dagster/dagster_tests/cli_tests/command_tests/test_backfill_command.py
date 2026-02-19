@@ -1,6 +1,5 @@
 import string
 from contextlib import contextmanager, nullcontext
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -21,8 +20,8 @@ from dagster_tests.cli_tests.command_tests.test_cli_commands import (
 def run_test_backfill(
     parsed_cli_args: ParsedCliArgs,
     instance: DagsterInstance,
-    expected_count: Optional[int] = None,
-    error_message: Optional[str] = None,
+    expected_count: int | None = None,
+    error_message: str | None = None,
 ) -> None:
     with pytest.raises(Exception, match=error_message) if error_message else nullcontext():
         execute_backfill_command(**parsed_cli_args, print_fn=print, instance=instance)

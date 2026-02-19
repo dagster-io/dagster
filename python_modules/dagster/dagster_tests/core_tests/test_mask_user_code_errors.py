@@ -119,10 +119,10 @@ ERROR_ID_REGEX = r"[Ee]rror ID ([a-z0-9\-]+)"
 @pytest.mark.parametrize(
     "exc_name, expect_exc_name_in_error, build_exc",
     [
-        ("UserError", False, lambda: UserError()),
+        ("UserError", False, UserError),
         ("TypeError", False, lambda: TypeError("hunter2")),
-        ("KeyboardInterrupt", True, lambda: KeyboardInterrupt()),
-        ("DagsterExecutionInterruptedError", True, lambda: dg.DagsterExecutionInterruptedError()),
+        ("KeyboardInterrupt", True, KeyboardInterrupt),
+        ("DagsterExecutionInterruptedError", True, dg.DagsterExecutionInterruptedError),
         ("Failure", True, lambda: dg.Failure("asdf")),
     ],
 )

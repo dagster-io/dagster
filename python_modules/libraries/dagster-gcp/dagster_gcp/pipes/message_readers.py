@@ -5,7 +5,7 @@ import string
 import sys
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import IO, Optional
+from typing import IO
 
 import dagster._check as check
 from dagster._core.pipes.client import PipesParams
@@ -18,7 +18,7 @@ from dagster_pipes import PipesBlobStoreMessageWriter
 from google.cloud.storage import Client as GCSClient
 
 
-def _can_read_from_gcs(client: GCSClient, bucket: Optional[str], key: Optional[str]):
+def _can_read_from_gcs(client: GCSClient, bucket: str | None, key: str | None):
     if not bucket or not key:
         return False
     else:
@@ -43,12 +43,12 @@ class PipesGCSLogReader(PipesChunkedLogReader):
         *,
         bucket: str,
         key: str,
-        client: Optional[GCSClient] = None,
+        client: GCSClient | None = None,
         interval: float = 10,
-        target_stream: Optional[IO[str]] = None,
+        target_stream: IO[str] | None = None,
         # TODO: maybe move this parameter to a different scope
-        decode_fn: Optional[Callable[[bytes], str]] = None,
-        debug_info: Optional[str] = None,
+        decode_fn: Callable[[bytes], str] | None = None,
+        debug_info: str | None = None,
     ):
         self.bucket = bucket
         self.key = key
@@ -72,7 +72,7 @@ class PipesGCSLogReader(PipesChunkedLogReader):
             key=self.key,
         )
 
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
+    def download_log_chunk(self, params: PipesParams) -> str | None:
         text = self.decode_fn(
             self.client.get_bucket(self.bucket).blob(self.key).download_as_bytes()
         )
@@ -102,8 +102,8 @@ class PipesGCSMessageReader(PipesBlobStoreMessageReader):
         *,
         interval: float = 10,
         bucket: str,
-        client: Optional[GCSClient] = None,
-        log_readers: Optional[Sequence[PipesLogReader]] = None,
+        client: GCSClient | None = None,
+        log_readers: Sequence[PipesLogReader] | None = None,
         include_stdio_in_messages: bool = False,
     ):
         super().__init__(
@@ -137,7 +137,7 @@ class PipesGCSMessageReader(PipesBlobStoreMessageReader):
         else:
             return False
 
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         key = f"{params['key_prefix']}/{index}.json"
         try:
             obj = self.client.get_bucket(self.bucket).blob(key).download_as_bytes()

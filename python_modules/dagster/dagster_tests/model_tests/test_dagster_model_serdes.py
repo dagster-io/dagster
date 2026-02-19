@@ -64,13 +64,13 @@ def test_pydantic_serialization_alias():
     o = SomeDagsterModel(unaliased_id=5, name="fdsk")
     with pytest.raises(
         SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
+        match=r"Can't serialize pydantic models with serialization or validation aliases.",
     ):
         dg.serialize_value(o, whitelist_map=test_env)
 
     with pytest.raises(
         SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
+        match=r"Can't serialize pydantic models with serialization or validation aliases.",
     ):
         pack_value(o, whitelist_map=test_env)
 
@@ -86,12 +86,12 @@ def test_pydantic_validation_alias():
     o = SomeDagsterModel(id_alias=5, name="fdsk")  # pyright: ignore[reportCallIssue]
     with pytest.raises(
         SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
+        match=r"Can't serialize pydantic models with serialization or validation aliases.",
     ):
         dg.serialize_value(o, whitelist_map=test_env)
 
     with pytest.raises(
         SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
+        match=r"Can't serialize pydantic models with serialization or validation aliases.",
     ):
         pack_value(o, whitelist_map=test_env)

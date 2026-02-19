@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, RootModel
 
@@ -38,8 +38,8 @@ class PullPolicy(str, Enum):
 
 class Image(BaseModelWithNullableRequiredFields):
     repository: str
-    tag: Optional[Union[str, int]] = None
-    digest: Optional[str] = None
+    tag: str | int | None = None
+    digest: str | None = None
     pullPolicy: PullPolicy
 
     @property
@@ -60,9 +60,9 @@ class InitContainerImage(BaseModel):
     """Image specification for init containers, with all fields optional except repository."""
 
     repository: str
-    tag: Optional[Union[str, int]] = None
-    digest: Optional[str] = None
-    pullPolicy: Optional[PullPolicy] = None
+    tag: str | int | None = None
+    digest: str | None = None
+    pullPolicy: PullPolicy | None = None
 
     @property
     def name(self) -> str:
@@ -77,7 +77,7 @@ class InitContainerImage(BaseModel):
 class Service(BaseModel, extra="forbid"):
     type: str
     port: int
-    annotations: Optional[Annotations] = None
+    annotations: Annotations | None = None
 
 
 class NodeSelector(RootModel[dict[str, str]]):

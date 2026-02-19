@@ -5,7 +5,6 @@ import sys
 from collections.abc import Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
@@ -92,9 +91,9 @@ def build_and_tag_test_image(tag):
 
 def get_test_project_recon_job(
     job_name: str,
-    container_image: Optional[str] = None,
-    container_context: Optional[Mapping[str, object]] = None,
-    filename: Optional[str] = None,
+    container_image: str | None = None,
+    container_context: Mapping[str, object] | None = None,
+    filename: str | None = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
     return ReOriginatedReconstructableJobForTest(

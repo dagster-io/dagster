@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 from dagster import AssetSpec
 
@@ -17,11 +16,11 @@ from dagster_dbt.dbt_project import DbtProject
 def build_dbt_asset_specs(
     *,
     manifest: DbtManifestParam,
-    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
     select: str = DBT_DEFAULT_SELECT,
-    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
-    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
-    project: Optional[DbtProject] = None,
+    exclude: str | None = DBT_DEFAULT_EXCLUDE,
+    selector: str | None = DBT_DEFAULT_SELECTOR,
+    project: DbtProject | None = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of dbt resources selected from a dbt manifest.
 

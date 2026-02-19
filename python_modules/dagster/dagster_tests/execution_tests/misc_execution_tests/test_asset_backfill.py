@@ -1,7 +1,7 @@
 import datetime
 import logging
 from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, NamedTuple, cast  # noqa: UP035
 from unittest.mock import MagicMock, patch
 
 import dagster as dg
@@ -89,15 +89,15 @@ class AssetBackfillScenario(NamedTuple):
     evaluation_time: datetime.datetime
     # when backfilling "some" partitions, the subset of partitions of root assets in the backfill
     # to target:
-    target_root_partition_keys: Optional[Sequence[str]]
-    last_storage_id_cursor_offset: Optional[int]
+    target_root_partition_keys: Sequence[str] | None
+    last_storage_id_cursor_offset: int | None
 
 
 def scenario(
-    assets: Union[Mapping[str, Sequence[dg.AssetsDefinition]], Sequence[dg.AssetsDefinition]],
-    evaluation_time: Optional[datetime.datetime] = None,
-    target_root_partition_keys: Optional[Sequence[str]] = None,
-    last_storage_id_cursor_offset: Optional[int] = None,
+    assets: Mapping[str, Sequence[dg.AssetsDefinition]] | Sequence[dg.AssetsDefinition],
+    evaluation_time: datetime.datetime | None = None,
+    target_root_partition_keys: Sequence[str] | None = None,
+    last_storage_id_cursor_offset: int | None = None,
 ) -> AssetBackfillScenario:
     if isinstance(assets, list):
         assets_by_repo_name = {"repo": assets}
@@ -247,7 +247,7 @@ def test_from_asset_partitions_target_subset(
 def _get_asset_graph_view(
     instance: DagsterInstance,
     asset_graph: BaseAssetGraph,
-    evaluation_time: Optional[datetime.datetime] = None,
+    evaluation_time: datetime.datetime | None = None,
 ) -> AssetGraphView:
     return AssetGraphView(
         temporal_context=TemporalContext(
@@ -272,7 +272,7 @@ def _launch_runs(
     asset_graph: RemoteWorkspaceAssetGraph,
     instance,
     assets_by_repo_name,
-    fail_idxs: Optional[set[int]] = None,
+    fail_idxs: set[int] | None = None,
 ):
     for idx, run_request in enumerate(run_requests):
         asset_keys = run_request.asset_selection
@@ -305,7 +305,7 @@ def _single_backfill_iteration(
     asset_graph: RemoteWorkspaceAssetGraph,
     instance,
     assets_by_repo_name,
-    fail_idxs: Optional[set[int]] = None,
+    fail_idxs: set[int] | None = None,
 ) -> AssetBackfillData:
     result = execute_asset_backfill_iteration_consume_generator(
         backfill_id, backfill_data, asset_graph, instance
@@ -1529,11 +1529,9 @@ def make_random_subset(
 
     return bfs_filter_asset_graph_view(
         asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
+        condition_fn=lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
+            passed_asset_graph_subset=candidate_asset_graph_subset,
+            excluded_asset_graph_subsets_and_reasons=[],
         ),
         initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
             root_asset_partitions, asset_graph
@@ -1562,11 +1560,9 @@ def make_subset_from_partition_keys(
 
     return bfs_filter_asset_graph_view(
         asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
+        condition_fn=lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
+            passed_asset_graph_subset=candidate_asset_graph_subset,
+            excluded_asset_graph_subsets_and_reasons=[],
         ),
         initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
             root_asset_partitions, asset_graph
@@ -1989,8 +1985,8 @@ def test_asset_backfill_status_counts():
 
     (
         completed_backfill_data,
-        requested_asset_partitions,
-        fail_and_downstream_asset_partitions,
+        _requested_asset_partitions,
+        _fail_and_downstream_asset_partitions,
     ) = run_backfill_to_completion(
         instance=instance,
         asset_graph=asset_graph,

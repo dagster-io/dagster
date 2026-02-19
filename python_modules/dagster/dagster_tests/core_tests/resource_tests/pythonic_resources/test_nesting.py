@@ -3,7 +3,7 @@ import enum
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 import pytest
@@ -409,7 +409,7 @@ def test_nested_function_resource_runtime_config() -> None:
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Any partially configured, nested resources must be provided as a top level resource.",
+        match=r"Any partially configured, nested resources must be provided as a top level resource.",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions
@@ -796,7 +796,7 @@ def test_multiple_nested_optional_resources() -> None:
         inner: InnerResource
 
     class MainResource(dg.ConfigurableResource):
-        outer: Optional[OuterResource]
+        outer: OuterResource | None
 
     executed = {}
 
@@ -838,13 +838,13 @@ def test_multiple_nested_optional_resources_complex() -> None:
         a_string: str = "foo"
 
     class InnerResource(dg.ConfigurableResource):
-        innermost: Optional[InnermostResource]
+        innermost: InnermostResource | None
 
     class OuterResource(dg.ConfigurableResource):
-        inner: Optional[InnerResource]
+        inner: InnerResource | None
 
     class MainResource(dg.ConfigurableResource):
-        outer: Optional[OuterResource]
+        outer: OuterResource | None
 
     executed = {}
 

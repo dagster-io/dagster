@@ -4,11 +4,17 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import tomllib  # requires Python 3.11+
 from buildkite_shared.git import ChangedFiles, GitInfo
-from pkg_resources import Requirement, parse_requirements
+from packaging.requirements import Requirement
+
+
+def parse_requirements(lines: list[str]) -> list[Requirement]:
+    return [
+        Requirement(line) for line in lines if line.strip() and not line.strip().startswith("#")
+    ]
+
 
 changed_filetypes = [
     ".py",
@@ -115,7 +121,7 @@ class PythonPackages:
     with_changes: set[PythonPackage] = set()
 
     @classmethod
-    def get(cls, name: str) -> Optional[PythonPackage]:
+    def get(cls, name: str) -> PythonPackage | None:
         # We're inconsistent about whether we use dashes or undrescores and we
         # get away with it because pip converts all underscores to dashes. So
         # mimic that behavior.

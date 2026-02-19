@@ -41,7 +41,7 @@ def test_incorrect_cron_schedule_invocation():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Schedule evaluation function expected context argument, but no context argument was "
+            r"Schedule evaluation function expected context argument, but no context argument was "
             "provided when invoking."
         ),
     ):
@@ -49,7 +49,7 @@ def test_incorrect_cron_schedule_invocation():
 
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Schedule invocation expected argument '_'.",
+        match=r"Schedule invocation expected argument '_'.",
     ):
         basic_schedule(foo=None)
 
@@ -57,7 +57,7 @@ def test_incorrect_cron_schedule_invocation():
 def test_instance_access():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Attempted to initialize dagster instance, but no instance reference was provided.",
+        match=r"Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
         dg.build_schedule_context().instance  # noqa: B018
 
@@ -77,7 +77,7 @@ def test_schedule_invocation_resources() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'my_resource' required by schedule 'basic_schedule_resource_req' was"
+            r"Resource with key 'my_resource' required by schedule 'basic_schedule_resource_req' was"
             " not provided."
         ),
     ):
@@ -87,7 +87,7 @@ def test_schedule_invocation_resources() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'my_resource' required by schedule 'basic_schedule_resource_req' was"
+            r"Resource with key 'my_resource' required by schedule 'basic_schedule_resource_req' was"
             " not provided."
         ),
     ):
@@ -119,7 +119,7 @@ def test_schedule_invocation_resources_direct() -> None:
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'my_resource' required by schedule 'basic_schedule_resource_req' was"
+            r"Resource with key 'my_resource' required by schedule 'basic_schedule_resource_req' was"
             " not provided."
         ),
     ):
@@ -142,7 +142,7 @@ def test_schedule_invocation_resources_direct() -> None:
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "If directly invoking a schedule, you may not provide resources as"
+            r"If directly invoking a schedule, you may not provide resources as"
             " positional"
             " arguments, only as keyword arguments."
         ),

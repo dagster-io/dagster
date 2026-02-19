@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster_shared.serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
 
@@ -29,8 +29,8 @@ class DaemonHeartbeat(
         [
             ("timestamp", float),
             ("daemon_type", str),
-            ("daemon_id", Optional[str]),
-            ("errors", Optional[Sequence[SerializableErrorInfo]]),
+            ("daemon_id", str | None),
+            ("errors", Sequence[SerializableErrorInfo] | None),
         ],
     ),
 ):
@@ -38,8 +38,8 @@ class DaemonHeartbeat(
         cls,
         timestamp: float,
         daemon_type: str,
-        daemon_id: Optional[str],
-        errors: Optional[Sequence[SerializableErrorInfo]] = None,
+        daemon_id: str | None,
+        errors: Sequence[SerializableErrorInfo] | None = None,
     ):
         errors = check.opt_sequence_param(errors, "errors", of_type=SerializableErrorInfo)
 
@@ -58,8 +58,8 @@ class DaemonStatus(
         [
             ("daemon_type", str),
             ("required", bool),
-            ("healthy", Optional[bool]),
-            ("last_heartbeat", Optional[DaemonHeartbeat]),
+            ("healthy", bool | None),
+            ("last_heartbeat", DaemonHeartbeat | None),
         ],
     )
 ):
@@ -71,8 +71,8 @@ class DaemonStatus(
         cls,
         daemon_type: str,
         required: bool,
-        healthy: Optional[bool],
-        last_heartbeat: Optional[DaemonHeartbeat],
+        healthy: bool | None,
+        last_heartbeat: DaemonHeartbeat | None,
     ):
         return super().__new__(
             cls,

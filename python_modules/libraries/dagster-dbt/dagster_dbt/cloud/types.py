@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._annotations import beta
@@ -48,12 +48,12 @@ class DbtCloudOutput:
         return self.run_details["job_id"]
 
     @property
-    def job_name(self) -> Optional[str]:
+    def job_name(self) -> str | None:
         job = self.run_details["job"]
         return job.get("name") if job else None
 
     @property
-    def docs_url(self) -> Optional[str]:
+    def docs_url(self) -> str | None:
         job = self.run_details["job"]
         if not job or not job.get("generate_docs"):
             return None

@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
@@ -29,13 +29,11 @@ class CodeLocationEntry:
         "CodeLocationOrigin",
         ImportFrom("dagster._core.remote_origin"),
     ]
-    code_location: Optional[
-        Annotated[
-            "CodeLocation",
-            ImportFrom("dagster._core.remote_representation.code_location"),
-        ]
-    ]
-    load_error: Optional[SerializableErrorInfo]
+    code_location: (
+        Annotated["CodeLocation", ImportFrom("dagster._core.remote_representation.code_location")]
+        | None
+    )
+    load_error: SerializableErrorInfo | None
     load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float

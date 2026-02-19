@@ -1,15 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from types import FunctionType
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -212,14 +204,14 @@ class RepositoryData(ABC):
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
-    _all_jobs: Optional[Sequence[JobDefinition]]
-    _all_pipelines: Optional[Sequence[JobDefinition]]
+    _all_jobs: Sequence[JobDefinition] | None
+    _all_pipelines: Sequence[JobDefinition] | None
 
     def __init__(
         self,
-        jobs: Mapping[str, Union[JobDefinition, Resolvable[JobDefinition]]],
-        schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
-        sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
+        jobs: Mapping[str, JobDefinition | Resolvable[JobDefinition]],
+        schedules: Mapping[str, ScheduleDefinition | Resolvable[ScheduleDefinition]],
+        sensors: Mapping[str, SensorDefinition | Resolvable[SensorDefinition]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
         asset_checks_defs_by_key: Mapping[AssetCheckKey, "AssetsDefinition"],
@@ -368,9 +360,9 @@ class CachingRepositoryData(RepositoryData):
     def from_list(
         cls,
         repository_definitions: Sequence[RepositoryElementDefinition],
-        default_executor_def: Optional[ExecutorDefinition] = None,
-        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        default_executor_def: ExecutorDefinition | None = None,
+        default_logger_defs: Mapping[str, LoggerDefinition] | None = None,
+        top_level_resources: Mapping[str, ResourceDefinition] | None = None,
         component_tree: Optional["ComponentTree"] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.

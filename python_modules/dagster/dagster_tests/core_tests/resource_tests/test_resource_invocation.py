@@ -22,7 +22,7 @@ def test_resource_invocation_none_arg():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Resource initialization function has context argument, but no "
+            r"Resource initialization function has context argument, but no "
             "context was provided when invoking."
         ),
     ):
@@ -37,7 +37,7 @@ def test_resource_invocation_none_arg():
 
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Resource initialization expected argument 'arb_context'.",
+        match=r"Resource initialization expected argument 'arb_context'.",
     ):
         assert basic_resource_arb_context(wrong_context=None) == 5
 
@@ -49,7 +49,7 @@ def test_resource_invocation_with_resources():
 
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Resource has required resources, but no context was provided.",
+        match=r"Resource has required resources, but no context was provided.",
     ):
         resource_reqs_resources(None)
 
@@ -57,7 +57,7 @@ def test_resource_invocation_with_resources():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required was not provided.",
+        match=r"resource with key 'foo' required was not provided.",
     ):
         resource_reqs_resources(context)
 
@@ -92,7 +92,7 @@ def test_resource_invocation_with_config():
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
-        match="Resource has required config schema, but no context was provided.",
+        match=r"Resource has required config schema, but no context was provided.",
     ):
         resource_reqs_config(None)
 
@@ -219,7 +219,7 @@ def test_resource_dep_no_context():
     with pytest.raises(
         dg.DagsterInvalidInvocationError,
         match=(
-            "Attempted to invoke resource with argument, but underlying "
+            r"Attempted to invoke resource with argument, but underlying "
             "function has no context argument. Either specify a context argument on "
             "the resource function, or remove the passed-in argument."
         ),

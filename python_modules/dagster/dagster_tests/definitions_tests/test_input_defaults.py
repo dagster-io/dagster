@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 import pytest
 from dagster import DagsterEventType
@@ -15,7 +13,7 @@ def execute_in_graph(an_op, raise_on_error=True, run_config=None):
 
 
 def test_none():
-    @dg.op(ins={"x": dg.In(Optional[int], default_value=None)})
+    @dg.op(ins={"x": dg.In(int | None, default_value=None)})
     def none_x(x):
         return x
 
@@ -33,7 +31,7 @@ def test_none_infer():
 
 
 def test_int():
-    @dg.op(ins={"x": dg.In(Optional[int], default_value=1337)})
+    @dg.op(ins={"x": dg.In(int | None, default_value=1337)})
     def int_x(x):
         return x
 
@@ -72,7 +70,7 @@ def test_early_fail():
 
 # we can't catch bad default_values except for scalars until runtime since the type_check function depends on
 # a context that has access to resources etc.
-@dg.op(ins={"x": dg.In(Optional[int], default_value="number")})
+@dg.op(ins={"x": dg.In(int | None, default_value="number")})
 def bad_default(x):
     return x
 
@@ -119,7 +117,7 @@ def test_nothing():
 
 
 def test_composite_inner_default():
-    @dg.op(ins={"x": dg.In(Optional[int], default_value=1337)})
+    @dg.op(ins={"x": dg.In(int | None, default_value=1337)})
     def int_x(x):
         return x
 
@@ -137,7 +135,7 @@ def test_custom_type_default():
         pass
 
     @dg.op
-    def test_op(_inp: Optional[CustomType] = None):
+    def test_op(_inp: CustomType | None = None):
         return 1
 
     @dg.job

@@ -108,18 +108,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         task_definition=None,
         container_name: str = "run",
-        secrets: Optional[list[str]] = None,
+        secrets: list[str] | None = None,
         secrets_tag: str = "dagster",
-        env_vars: Optional[Sequence[str]] = None,
+        env_vars: Sequence[str] | None = None,
         include_sidecars: bool = False,
         use_current_ecs_task_config: bool = True,
-        run_task_kwargs: Optional[Mapping[str, Any]] = None,
-        run_resources: Optional[dict[str, Any]] = None,
-        run_ecs_tags: Optional[list[dict[str, Optional[str]]]] = None,
-        propagate_tags: Optional[dict[str, Any]] = None,
+        run_task_kwargs: Mapping[str, Any] | None = None,
+        run_resources: dict[str, Any] | None = None,
+        run_ecs_tags: list[dict[str, str | None]] | None = None,
+        propagate_tags: dict[str, Any] | None = None,
         task_definition_prefix: str = "run",
     ):
         self._inst_data = inst_data
@@ -251,49 +251,49 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self._inst_data
 
     @property
-    def task_role_arn(self) -> Optional[str]:
+    def task_role_arn(self) -> str | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("task_role_arn")
 
     @property
-    def execution_role_arn(self) -> Optional[str]:
+    def execution_role_arn(self) -> str | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("execution_role_arn")
 
     @property
-    def runtime_platform(self) -> Optional[Mapping[str, Any]]:
+    def runtime_platform(self) -> Mapping[str, Any] | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("runtime_platform")
 
     @property
-    def mount_points(self) -> Optional[Sequence[Mapping[str, Any]]]:
+    def mount_points(self) -> Sequence[Mapping[str, Any]] | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("mount_points")
 
     @property
-    def volumes(self) -> Optional[Sequence[Mapping[str, Any]]]:
+    def volumes(self) -> Sequence[Mapping[str, Any]] | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("volumes")
 
     @property
-    def repository_credentials(self) -> Optional[str]:
+    def repository_credentials(self) -> str | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("repository_credentials")
 
     @property
-    def run_sidecar_containers(self) -> Optional[Sequence[Mapping[str, Any]]]:
+    def run_sidecar_containers(self) -> Sequence[Mapping[str, Any]] | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("sidecar_containers")
 
     @property
-    def linux_parameters(self) -> Optional[Mapping[str, Any]]:
+    def linux_parameters(self) -> Mapping[str, Any] | None:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("linux_parameters")
@@ -477,7 +477,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
         return run_args.get_command_args()
 
-    def get_image_for_run(self, context: LaunchRunContext) -> Optional[str]:
+    def get_image_for_run(self, context: LaunchRunContext) -> str | None:
         """Child classes can override this method to determine the image to use for a run. This is considered a public API."""
         run = context.dagster_run
         return (
@@ -577,7 +577,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
-        self, run: DagsterRun, arn: Optional[str] = None, cluster: Optional[str] = None
+        self, run: DagsterRun, arn: str | None = None, cluster: str | None = None
     ):
         # Extracted method to allow for subclasses to customize the launch reporting behavior
 
@@ -693,7 +693,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return container_context.container_name or self.container_name
 
     def _run_task_kwargs(
-        self, run: DagsterRun, image: Optional[str], container_context: EcsContainerContext
+        self, run: DagsterRun, image: str | None, container_context: EcsContainerContext
     ) -> dict[str, Any]:
         """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.

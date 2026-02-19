@@ -1,6 +1,5 @@
 import abc
 from collections.abc import Mapping, Sequence
-from typing import Optional
 
 from dagster._annotations import public
 from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
@@ -32,10 +31,10 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abc.abstractmethod
     def all_instigator_state(
         self,
-        repository_origin_id: Optional[str] = None,
-        repository_selector_id: Optional[str] = None,
-        instigator_type: Optional[InstigatorType] = None,
-        instigator_statuses: Optional[set[InstigatorStatus]] = None,
+        repository_origin_id: str | None = None,
+        repository_selector_id: str | None = None,
+        instigator_type: InstigatorType | None = None,
+        instigator_statuses: set[InstigatorStatus] | None = None,
     ) -> Sequence[InstigatorState]:
         """Return all InstigationStates present in storage.
 
@@ -47,7 +46,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
-    def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional[InstigatorState]:
+    def get_instigator_state(self, origin_id: str, selector_id: str) -> InstigatorState | None:
         """Return the instigator state for the given id.
 
         Args:
@@ -87,8 +86,8 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_batch_ticks(
         self,
         selector_ids: Sequence[str],
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence[TickStatus]] = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
     ) -> Mapping[str, Sequence[InstigatorTick]]:
         raise NotImplementedError()
 
@@ -108,10 +107,10 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self,
         origin_id: str,
         selector_id: str,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence[TickStatus]] = None,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
     ) -> Sequence[InstigatorTick]:
         """Get the ticks for a given instigator.
 
@@ -142,7 +141,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[Sequence[TickStatus]] = None,
+        tick_statuses: Sequence[TickStatus] | None = None,
     ) -> None:
         """Wipe ticks for an instigator for a certain status and timestamp.
 
@@ -167,7 +166,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abc.abstractmethod
     def get_auto_materialize_asset_evaluations(
-        self, key: T_EntityKey, limit: int, cursor: Optional[int] = None
+        self, key: T_EntityKey, limit: int, cursor: int | None = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord[T_EntityKey]]:
         """Get the policy evaluations for a given asset.
 
@@ -199,10 +198,10 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def upgrade(self) -> None:
         """Perform any needed migrations."""
 
-    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any required data migrations."""
 
-    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def optimize(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
     def optimize_for_webserver(
@@ -210,7 +209,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
-    def alembic_version(self) -> Optional[AlembicVersion]:
+    def alembic_version(self) -> AlembicVersion | None:
         return None
 
     def dispose(self) -> None:

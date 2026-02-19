@@ -4,7 +4,7 @@ This module provides functionality to generate comprehensive YAML templates
 with schema documentation and example values for Dagster components.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 
 def _get_field_description(field_schema: dict[str, Any]) -> str:
@@ -22,7 +22,7 @@ def _resolve_ref(ref_path: str, full_schema: dict[str, Any]) -> dict[str, Any]:
 
 
 def _get_example_value(
-    field_schema: dict[str, Any], full_schema: Optional[dict[str, Any]] = None
+    field_schema: dict[str, Any], full_schema: dict[str, Any] | None = None
 ) -> Any:
     """Generate example values based on schema."""
     full_schema = full_schema or {}

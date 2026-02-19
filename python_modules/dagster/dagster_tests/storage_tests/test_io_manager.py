@@ -620,7 +620,7 @@ def test_get_output_context_with_resources():
     with pytest.raises(
         CheckError,
         match=(
-            "Expected either resources or step context to be set, but "
+            r"Expected either resources or step context to be set, but "
             "received both. If step context is provided, resources for IO manager will be "
             "retrieved off of that."
         ),
@@ -699,7 +699,7 @@ def test_output_identifier_dynamic_memoization():
     with pytest.raises(
         CheckError,
         match=(
-            "Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
+            r"Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
             "mapping is not supported when using versioning."
         ),
     ):
@@ -862,7 +862,7 @@ def test_context_logging_metadata():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "When handling output 'result' of op 'key_on_out', received a materialization with"
+            r"When handling output 'result' of op 'key_on_out', received a materialization with"
             " metadata, while context.add_output_metadata was used within the same call to"
             " handle_output. Due to potential conflicts, this is not allowed. Please specify"
             " metadata in one place within the `handle_output` function."

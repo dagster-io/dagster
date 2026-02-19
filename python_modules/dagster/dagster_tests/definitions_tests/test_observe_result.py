@@ -161,7 +161,7 @@ def test_yield_materialization_multi_asset():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "ObserveResult did not include asset_key and it can not be inferred. Specify which"
+            r"ObserveResult did not include asset_key and it can not be inferred. Specify which"
             " asset_key, options are:"
         ),
     ):
@@ -170,7 +170,7 @@ def test_yield_materialization_multi_asset():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "ObserveResult did not include asset_key and it can not be inferred. Specify which"
+            r"ObserveResult did not include asset_key and it can not be inferred. Specify which"
             " asset_key, options are:"
         ),
     ):
@@ -222,7 +222,7 @@ def test_yield_materialization_multi_asset():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "When using multiple outputs, either yield each output, or return a tuple containing a"
+            r"When using multiple outputs, either yield each output, or return a tuple containing a"
             " value for each output."
         ),
     ):
@@ -231,7 +231,7 @@ def test_yield_materialization_multi_asset():
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "When using multiple outputs, either yield each output, or return a tuple containing a"
+            r"When using multiple outputs, either yield each output, or return a tuple containing a"
             " value for each output."
         ),
     ):

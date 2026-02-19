@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
@@ -11,7 +11,7 @@ from pyspark.sql.types import StructType
 
 
 def _get_bigquery_write_options(
-    config: Optional[Mapping[str, Any]], table_slice: TableSlice
+    config: Mapping[str, Any] | None, table_slice: TableSlice
 ) -> Mapping[str, str]:
     conf = {
         "table": f"{table_slice.database}.{table_slice.schema}.{table_slice.table}",
@@ -297,5 +297,5 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
         return [BigQueryPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return DataFrame

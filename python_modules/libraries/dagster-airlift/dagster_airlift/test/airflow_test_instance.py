@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -39,9 +39,9 @@ class AirflowInstanceFake(AirflowInstance):
         dag_runs: list[DagRun],
         datasets: list[Dataset] = [],
         variables: list[dict[str, Any]] = [],
-        instance_name: Optional[str] = None,
-        max_runs_per_batch: Optional[int] = None,
-        logs: Optional[Mapping[str, Mapping[str, str]]] = None,
+        instance_name: str | None = None,
+        max_runs_per_batch: int | None = None,
+        logs: Mapping[str, Mapping[str, str]] | None = None,
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
@@ -71,7 +71,7 @@ class AirflowInstanceFake(AirflowInstance):
             name=DEFAULT_FAKE_INSTANCE_NAME if instance_name is None else instance_name,
         )
 
-    def list_dags(self, retrieval_filter: Optional[AirflowFilter] = None) -> list[DagInfo]:
+    def list_dags(self, retrieval_filter: AirflowFilter | None = None) -> list[DagInfo]:
         retrieval_filter = retrieval_filter or AirflowFilter()
         # Very basic filtering for testing purposes
         dags_to_retrieve = list(self._dag_infos_by_dag_id.values())
@@ -115,12 +115,12 @@ class AirflowInstanceFake(AirflowInstance):
     def get_dag_runs_batch(
         self,
         dag_ids: Sequence[str],
-        end_date_gte: Optional[datetime] = None,
-        end_date_lte: Optional[datetime] = None,
-        start_date_gte: Optional[datetime] = None,
-        start_date_lte: Optional[datetime] = None,
+        end_date_gte: datetime | None = None,
+        end_date_lte: datetime | None = None,
+        start_date_gte: datetime | None = None,
+        start_date_lte: datetime | None = None,
         offset: int = 0,
-        states: Optional[Sequence[str]] = None,
+        states: Sequence[str] | None = None,
     ) -> tuple[list[DagRun], int]:
         if end_date_gte and end_date_lte:
             runs = [
@@ -231,8 +231,8 @@ class AirflowInstanceFake(AirflowInstance):
         self,
         *,
         batch_size=100,
-        retrieval_filter: Optional[AirflowFilter] = None,
-        dag_ids: Optional[Sequence[str]] = None,
+        retrieval_filter: AirflowFilter | None = None,
+        dag_ids: Sequence[str] | None = None,
     ) -> Sequence[Dataset]:
         return_datasets = []
         retrieval_filter = retrieval_filter or AirflowFilter()
@@ -254,7 +254,7 @@ class AirflowInstanceFake(AirflowInstance):
 
 
 def make_dag_info(
-    instance_name: str, dag_id: str, file_token: Optional[str], dag_props: Mapping[str, Any]
+    instance_name: str, dag_id: str, file_token: str | None, dag_props: Mapping[str, Any]
 ) -> DagInfo:
     return DagInfo(
         webserver_url="http://dummy.domain",
@@ -264,7 +264,7 @@ def make_dag_info(
 
 
 def make_task_info(
-    dag_id: str, task_id: str, downstream_task_ids: Optional[list[str]] = None
+    dag_id: str, task_id: str, downstream_task_ids: list[str] | None = None
 ) -> TaskInfo:
     return TaskInfo(
         webserver_url="http://dummy.domain",
@@ -280,7 +280,7 @@ def make_task_instance(
     run_id: str,
     start_date: datetime,
     end_date: datetime,
-    logical_date: Optional[datetime] = None,
+    logical_date: datetime | None = None,
     try_number: int = 1,
 ) -> TaskInstance:
     return TaskInstance(
@@ -302,9 +302,9 @@ def make_dag_run(
     dag_id: str,
     run_id: str,
     start_date: datetime,
-    end_date: Optional[datetime],
-    logical_date: Optional[datetime] = None,
-    state: Optional[str] = None,
+    end_date: datetime | None,
+    logical_date: datetime | None = None,
+    state: str | None = None,
 ) -> DagRun:
     metadata = {
         "state": state or "success",
@@ -361,11 +361,11 @@ def make_instance(
     dataset_construction_info: Sequence[Mapping[str, Any]] = [],
     dag_runs: list[DagRun] = [],
     task_deps: dict[str, list[str]] = {},
-    instance_name: Optional[str] = None,
-    max_runs_per_batch: Optional[int] = None,
+    instance_name: str | None = None,
+    max_runs_per_batch: int | None = None,
     dag_props: dict[str, Any] = {},
-    task_instances: Optional[list[TaskInstance]] = None,
-    logs: Optional[Mapping[str, Mapping[str, str]]] = None,
+    task_instances: list[TaskInstance] | None = None,
+    logs: Mapping[str, Mapping[str, str]] | None = None,
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 

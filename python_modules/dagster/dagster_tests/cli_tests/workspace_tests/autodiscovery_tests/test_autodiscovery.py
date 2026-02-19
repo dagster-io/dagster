@@ -202,7 +202,7 @@ def test_double_defs_in_file() -> None:
     dagster_defs_path = dg.file_relative_path(__file__, "double_defs.py")
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: double_defs.defs, double_defs.double_defs",
+        match=r"Cannot have more than one Definitions object defined at module scope. Found Definitions objects: double_defs.defs, double_defs.double_defs",
     ):
         loadable_targets_from_python_file(dagster_defs_path)
 
@@ -221,7 +221,7 @@ def test_local_directory_module_multiple_defs() -> None:
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: autodiscover_in_module_multiple.defs, autodiscover_in_module_multiple.defs1, autodiscover_in_module_multiple.defs2",
+        match=r"Cannot have more than one Definitions object defined at module scope. Found Definitions objects: autodiscover_in_module_multiple.defs, autodiscover_in_module_multiple.defs1, autodiscover_in_module_multiple.defs2",
     ):
         loadable_targets_from_python_module(
             "autodiscover_in_module_multiple",

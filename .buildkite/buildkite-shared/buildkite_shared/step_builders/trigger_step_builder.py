@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 # use alt syntax because of `async` and `if` reserved words
 TriggerStepConfiguration = TypedDict(
@@ -6,12 +6,12 @@ TriggerStepConfiguration = TypedDict(
     {
         "trigger": str,
         "label": str,
-        "async": Optional[bool],
+        "async": bool | None,
         "build": dict[str, object],
-        "branches": Optional[str],
-        "if": Optional[str],
-        "key": Optional[str],
-        "depends_on": Optional[list[str]],
+        "branches": str | None,
+        "if": str | None,
+        "key": str | None,
+        "depends_on": list[str] | None,
         "soft_fail": bool,
     },
     total=False,
@@ -47,7 +47,7 @@ class TriggerStepBuilder:
         self._step["soft_fail"] = soft_fail
         return self
 
-    def with_branches(self, branches: Optional[list[str]]):
+    def with_branches(self, branches: list[str] | None):
         if branches:
             self._step["branches"] = " ".join(branches)
         return self

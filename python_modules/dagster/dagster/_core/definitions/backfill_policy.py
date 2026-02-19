@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._annotations import public
@@ -19,7 +19,7 @@ class BackfillPolicy(
     NamedTuple(
         "_BackfillPolicy",
         [
-            ("max_partitions_per_run", Optional[int]),
+            ("max_partitions_per_run", int | None),
         ],
     )
 ):
@@ -50,7 +50,7 @@ class BackfillPolicy(
     recommended APIs.
     """
 
-    def __new__(cls, max_partitions_per_run: Optional[int] = 1):
+    def __new__(cls, max_partitions_per_run: int | None = 1):
         return super().__new__(
             cls,
             max_partitions_per_run=max_partitions_per_run,
@@ -94,14 +94,14 @@ class BackfillPolicy(
 # In situations where multiple backfill policies are specified, call this to resolve a canonical
 # policy, which is the policy with the minimum max_partitions_per_run.
 def resolve_backfill_policy(
-    backfill_policies: Iterable[Optional[BackfillPolicy]],
+    backfill_policies: Iterable[BackfillPolicy | None],
 ) -> BackfillPolicy:
     policy = next(iter(sorted(backfill_policies, key=_backfill_policy_sort_key)), None)
     with disable_dagster_warnings():
         return policy or BackfillPolicy.multi_run(1)
 
 
-def _backfill_policy_sort_key(bp: Optional[BackfillPolicy]) -> float:
+def _backfill_policy_sort_key(bp: BackfillPolicy | None) -> float:
     if bp is None:  # equivalent to max_partitions_per_run=1
         return 1
     elif bp.max_partitions_per_run is None:

@@ -12,7 +12,6 @@ summarizing movie subtitles:
 """
 
 import logging
-from typing import Optional
 
 import tiktoken
 from openai import Client
@@ -47,7 +46,7 @@ def combine_chunks_with_no_minimum(
     chunks: list[str],
     max_tokens: int,
     chunk_delimiter="\n\n",
-    header: Optional[str] = None,
+    header: str | None = None,
     add_ellipsis_for_overflow=False,
 ) -> tuple[list[str], list[int], int]:
     dropped_chunk_count = 0
@@ -86,7 +85,7 @@ def summarize(
     text: str,
     detail: float = 0,
     model: str = "gpt-4-turbo",
-    additional_instructions: Optional[str] = None,
+    additional_instructions: str | None = None,
     minimum_chunk_size: int = 500,
     chunk_delimiter: str = ".",
     summarize_recursively=False,

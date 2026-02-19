@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     DagsterInstance,
@@ -116,12 +116,12 @@ class RepositoryScopedBatchLoader:
         self._data[data_type] = fetched
         self._limits[data_type] = limit
 
-    def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
+    def get_schedule_state(self, schedule_name: str) -> InstigatorState | None:
         check.invariant(self._repository.has_schedule(schedule_name))
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
 
-    def get_sensor_state(self, sensor_name: str) -> Optional[InstigatorState]:
+    def get_sensor_state(self, sensor_name: str) -> InstigatorState | None:
         check.invariant(self._repository.has_sensor(sensor_name))
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
         return states[0] if states else None

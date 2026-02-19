@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Callable, Sequence
 from types import ModuleType
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
@@ -19,7 +19,7 @@ class LoadableTarget(NamedTuple):
 
 
 def loadable_targets_from_python_file(
-    python_file: str, working_directory: Optional[str] = None
+    python_file: str, working_directory: str | None = None
 ) -> Sequence[LoadableTarget]:
     loaded_module = load_python_file(python_file, working_directory)
     return loadable_targets_from_loaded_module(loaded_module)
@@ -27,8 +27,8 @@ def loadable_targets_from_python_file(
 
 def loadable_targets_from_python_module(
     module_name: str,
-    working_directory: Optional[str],
-    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
+    working_directory: str | None,
+    remove_from_path_fn: Callable[[], Sequence[str]] | None = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         module_name,
@@ -40,8 +40,8 @@ def loadable_targets_from_python_module(
 
 def loadable_targets_from_python_package(
     package_name: str,
-    working_directory: Optional[str],
-    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
+    working_directory: str | None,
+    remove_from_path_fn: Callable[[], Sequence[str]] | None = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         package_name, working_directory, remove_from_path_fn=remove_from_path_fn
@@ -124,7 +124,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
 
 
 def _loadable_targets_of_type(
-    module: ModuleType, klass: Union[type, tuple[type, ...]]
+    module: ModuleType, klass: type | tuple[type, ...]
 ) -> Sequence[LoadableTarget]:
     loadable_targets = []
     for name, value in inspect.getmembers(module):
@@ -134,7 +134,7 @@ def _loadable_targets_of_type(
     return loadable_targets
 
 
-def autodefs_module_target(autoload_defs_module_name: str, working_directory: Optional[str]):
+def autodefs_module_target(autoload_defs_module_name: str, working_directory: str | None):
     from dagster.components import load_defs
 
     module = load_python_module(autoload_defs_module_name, working_directory)

@@ -100,9 +100,9 @@ def test_float_multiple() -> None:
     AnFloatConfig(a_float=1)
     AnFloatConfig(a_float=0.5)
     AnFloatConfig(a_float=0)
-    with pytest.raises(ValidationError, match=" a multiple of 0.5"):
+    with pytest.raises(ValidationError, match=r" a multiple of 0.5"):
         AnFloatConfig(a_float=0.25)
-    with pytest.raises(ValidationError, match=" a multiple of 0.5"):
+    with pytest.raises(ValidationError, match=r" a multiple of 0.5"):
         AnFloatConfig(a_float=-0.3)
 
 

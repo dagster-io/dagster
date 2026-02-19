@@ -5,7 +5,7 @@ import textwrap
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 from dagster_dg_core.config import DgRawCliConfig
@@ -29,24 +29,24 @@ class DgPlusDeployConfigureOptions:
 
     dg_context: DgContext
     cli_config: DgRawCliConfig
-    plus_config: Optional[DagsterPlusCliConfig]
+    plus_config: DagsterPlusCliConfig | None
     agent_type: DgPlusAgentType
-    agent_platform: Optional[DgPlusAgentPlatform]
-    organization_name: Optional[str]
-    cloud_url: Optional[str]
+    agent_platform: DgPlusAgentPlatform | None
+    organization_name: str | None
+    cloud_url: str | None
     deployment_name: str
-    git_root: Optional[Path]
+    git_root: Path | None
     skip_confirmation_prompt: bool
-    git_provider: Optional[GitProvider]
+    git_provider: GitProvider | None
     use_editable_dagster: bool
-    python_version: Optional[str]
-    pex_deploy: Optional[bool] = None  # Only used for serverless
-    registry_url: Optional[str] = None  # Only used for hybrid
+    python_version: str | None
+    pex_deploy: bool | None = None  # Only used for serverless
+    registry_url: str | None = None  # Only used for hybrid
 
 
 def detect_agent_type_and_platform(
-    plus_config: Optional[DagsterPlusCliConfig],
-) -> tuple[Optional[DgPlusAgentType], Optional[DgPlusAgentPlatform]]:
+    plus_config: DagsterPlusCliConfig | None,
+) -> tuple[DgPlusAgentType | None, DgPlusAgentPlatform | None]:
     """Attempt to detect agent type and platform from Dagster Plus deployment.
 
     Returns:
@@ -73,7 +73,7 @@ def get_cli_version_or_main() -> str:
     return "main" if cli_version.endswith("+dev") else f"v{cli_version}"
 
 
-def search_for_git_root(path: Path) -> Optional[Path]:
+def search_for_git_root(path: Path) -> Path | None:
     if path.joinpath(".git").exists():
         return path
     elif path.parent == path:
@@ -92,7 +92,7 @@ def get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> l
         return [dg_context]
 
 
-def get_git_web_url(git_root: Path) -> Optional[str]:
+def get_git_web_url(git_root: Path) -> str | None:
     from dagster_cloud_cli.core.pex_builder.code_location import get_local_repo_name
 
     try:
@@ -102,7 +102,7 @@ def get_git_web_url(git_root: Path) -> Optional[str]:
         return None
 
 
-def get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) -> Optional[str]:
+def get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) -> str | None:
     if agent_platform == DgPlusAgentPlatform.K8S:
         return textwrap.dedent(
             """
@@ -451,7 +451,7 @@ def _prompt_for_ghcr_details() -> str:
     return _build_ghcr_url(owner, image_name)
 
 
-def prompt_for_registry_url(skip_prompt: bool = False) -> Optional[str]:
+def prompt_for_registry_url(skip_prompt: bool = False) -> str | None:
     """Prompt user to configure container registry URL with interactive options.
 
     Args:
@@ -502,7 +502,7 @@ def prompt_for_registry_url(skip_prompt: bool = False) -> Optional[str]:
         return None
 
 
-def get_registry_info_for_url(registry_url: str) -> Optional[ContainerRegistryInfo]:
+def get_registry_info_for_url(registry_url: str) -> ContainerRegistryInfo | None:
     """Get the ContainerRegistryInfo for a given registry URL.
 
     Args:
@@ -518,7 +518,7 @@ def get_registry_info_for_url(registry_url: str) -> Optional[ContainerRegistryIn
 
 
 def display_registry_secrets_hints(
-    registry_url: Optional[str], git_provider: Optional[GitProvider]
+    registry_url: str | None, git_provider: GitProvider | None
 ) -> None:
     """Display required CI/CD secrets for the detected registry type.
 

@@ -1,6 +1,6 @@
 # type: ignore
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster as dg
 from atproto import Client
@@ -29,7 +29,7 @@ def get_all_feed_items(client: Client, actor: str) -> list["models.AppBskyFeedDe
         stop=tenacity.stop_after_attempt(5),
         wait=tenacity.wait_fixed(math.ceil(60 * 2.5)),
     )
-    def _get_feed_with_retries(client: Client, actor: str, cursor: Optional[str]):
+    def _get_feed_with_retries(client: Client, actor: str, cursor: str | None):
         return client.get_author_feed(actor=actor, cursor=cursor, limit=100)
 
     feed = []

@@ -45,7 +45,7 @@ def _guess_deployment_type(
 def _guess_and_prompt_deployment_type(
     project_dir: Path, full_deployment_name: str, skip_confirmation_prompt: bool
 ) -> DgPlusDeploymentType:
-    deployment_type, branch_name = _guess_deployment_type(project_dir, full_deployment_name)
+    deployment_type, _branch_name = _guess_deployment_type(project_dir, full_deployment_name)
 
     if not skip_confirmation_prompt and not click.confirm("Do you want to continue?"):
         click.echo("Deployment cancelled.")
@@ -61,7 +61,7 @@ def _build_hybrid_image(
     statedir: str,
     build_directory: str,
     merged_build_config: DgRawBuildConfig,
-    workspace_context: Optional[DgContext],
+    workspace_context: DgContext | None,
 ) -> None:
     registry = merged_build_config.get("registry")
 
@@ -121,14 +121,14 @@ def init_deploy_session(
     deployment: str,
     dg_context: DgContext,
     statedir: str,
-    input_deployment_type: Optional[DgPlusDeploymentType],
+    input_deployment_type: DgPlusDeploymentType | None,
     skip_confirmation_prompt: bool,
-    git_url: Optional[str],
-    commit_hash: Optional[str],
+    git_url: str | None,
+    commit_hash: str | None,
     location_names: tuple[str],
-    status_url: Optional[str],
+    status_url: str | None,
     snapshot_base_condition: Optional["SnapshotBaseDeploymentCondition"],
-    dagster_env: Optional[str],
+    dagster_env: str | None,
     skip_validation: bool = False,
 ):
     deployment_type = (
@@ -181,7 +181,7 @@ def build_artifact(
     pex_build_method: "BuildMethod",
     statedir: str,
     use_editable_dagster: bool,
-    python_version: Optional[str],
+    python_version: str | None,
     location_names: tuple[str],
 ):
     from dagster_cloud_cli.commands.ci import BuildStrategy
@@ -241,7 +241,7 @@ def _build_artifact_for_project(
     statedir: str,
     use_editable_dagster: bool,
     python_version: str,
-    workspace_context: Optional[DgContext],
+    workspace_context: DgContext | None,
 ):
     merged_build_config: DgRawBuildConfig = merge_build_configs(
         workspace_context.build_config if workspace_context else None,

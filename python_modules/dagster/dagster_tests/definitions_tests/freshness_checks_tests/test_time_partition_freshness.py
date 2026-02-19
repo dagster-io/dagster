@@ -121,7 +121,7 @@ def test_params() -> None:
     assert isinstance(check, dg.AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == set(my_multi_asset.keys)
 
-    with pytest.raises(Exception, match="Invalid cron string."):
+    with pytest.raises(Exception, match=r"Invalid cron string."):
         dg.build_time_partition_freshness_checks(
             assets=[my_multi_asset], deadline_cron="0 0 * * * *", timezone="UTC"
         )

@@ -102,7 +102,7 @@ def test_invalid_skip_reason_invocations():
         with pytest.raises(
             CheckError,
             match=(
-                "When a SensorResult is returned from a sensor, it must be the only object"
+                r"When a SensorResult is returned from a sensor, it must be the only object"
                 " returned."
             ),
         ):
@@ -111,7 +111,7 @@ def test_invalid_skip_reason_invocations():
         with pytest.raises(
             CheckError,
             match=(
-                "When a SensorResult is returned from a sensor, it must be the only object"
+                r"When a SensorResult is returned from a sensor, it must be the only object"
                 " returned."
             ),
         ):

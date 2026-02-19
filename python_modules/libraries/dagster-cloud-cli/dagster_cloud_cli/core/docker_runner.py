@@ -1,6 +1,5 @@
 import os
 import subprocess
-from typing import Optional
 
 from dagster_cloud_cli import ui
 
@@ -8,7 +7,7 @@ DAGSTER_CLOUD_BUILDER_IMAGE = "ghcr.io/dagster-io/dagster-manylinux-builder:many
 
 
 def run_dagster_cloud(
-    map_folders: dict[str, str], run_args: list[str], env: dict[str, Optional[str]]
+    map_folders: dict[str, str], run_args: list[str], env: dict[str, str | None]
 ) -> subprocess.CompletedProcess:
     proc = run_docker_image(
         image_name=os.getenv("DAGSTER_CLOUD_BUILDER_IMAGE", DAGSTER_CLOUD_BUILDER_IMAGE),
@@ -23,7 +22,7 @@ def run_dagster_cloud(
 def run_docker_image(
     image_name,
     map_folders: dict[str, str],
-    env: dict[str, Optional[str]],
+    env: dict[str, str | None],
     entrypoint: str,
     run_args: list[str],
 ) -> subprocess.CompletedProcess:

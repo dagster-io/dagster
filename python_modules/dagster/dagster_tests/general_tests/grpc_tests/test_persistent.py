@@ -86,7 +86,7 @@ def test_grpc_connection_error():
     client = DagsterGrpcClient(port=port, host="localhost")
     with pytest.raises(
         DagsterUserCodeUnreachableError,
-        match="Could not reach user code server. gRPC Error code: UNAVAILABLE",
+        match=r"Could not reach user code server. gRPC Error code: UNAVAILABLE",
     ):
         client.ping("foobar")
 

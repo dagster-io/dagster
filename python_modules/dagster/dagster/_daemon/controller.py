@@ -7,7 +7,6 @@ import uuid
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from types import TracebackType
-from typing import Optional
 
 from typing_extensions import Self
 
@@ -101,7 +100,7 @@ def daemon_controller_from_instance(
 ) -> Iterator["DagsterDaemonController"]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
-    grpc_server_registry: Optional[GrpcServerRegistry] = None
+    grpc_server_registry: GrpcServerRegistry | None = None
     with ExitStack() as stack:
         grpc_server_registry = stack.enter_context(
             create_daemon_grpc_server_registry(instance, code_server_log_level)
@@ -134,7 +133,7 @@ def daemon_controller_from_instance(
 class DagsterDaemonController(AbstractContextManager):
     _daemon_uuid: str
     _daemons: dict[str, DagsterDaemon]
-    _grpc_server_registry: Optional[GrpcServerRegistry]
+    _grpc_server_registry: GrpcServerRegistry | None
     _daemon_threads: dict[str, threading.Thread]
     _workspace_process_context: IWorkspaceProcessContext
     _instance: DagsterInstance
@@ -149,7 +148,7 @@ class DagsterDaemonController(AbstractContextManager):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         daemons: Sequence[DagsterDaemon],
-        grpc_server_registry: Optional[GrpcServerRegistry] = None,
+        grpc_server_registry: GrpcServerRegistry | None = None,
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -387,7 +386,7 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
 
 def all_daemons_healthy(
     instance: DagsterInstance,
-    curr_time_seconds: Optional[float] = None,
+    curr_time_seconds: float | None = None,
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
@@ -405,7 +404,7 @@ def all_daemons_healthy(
 
 def all_daemons_live(
     instance: DagsterInstance,
-    curr_time_seconds: Optional[float] = None,
+    curr_time_seconds: float | None = None,
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
@@ -425,7 +424,7 @@ def all_daemons_live(
 def get_daemon_statuses(
     instance: DagsterInstance,
     daemon_types: Iterable[str],
-    curr_time_seconds: Optional[float] = None,
+    curr_time_seconds: float | None = None,
     ignore_errors: bool = False,
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,

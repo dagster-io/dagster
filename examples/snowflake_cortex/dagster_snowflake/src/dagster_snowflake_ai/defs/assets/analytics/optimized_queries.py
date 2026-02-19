@@ -122,7 +122,7 @@ def query_cost_tracking(
     - Data scanned (bytes)
     - Query patterns for optimization
     """
-    with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
+    with get_snowflake_connection_with_schema(snowflake) as (connection, _schema):
         cursor = connection.cursor()  # type: ignore[attr-defined]
 
         # Query recent query history for cost tracking

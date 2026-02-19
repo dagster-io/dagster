@@ -51,7 +51,7 @@ def test_task_definition_config(instance_cm, task_definition):
 
     with pytest.raises(
         Exception,
-        match="You have attempted to fetch the environment variable FOO which is not set.",
+        match=r"You have attempted to fetch the environment variable FOO which is not set.",
     ):
         with instance_cm(
             config={"task_definition": {"env": "FOO"}, "container_name": "dagster"}

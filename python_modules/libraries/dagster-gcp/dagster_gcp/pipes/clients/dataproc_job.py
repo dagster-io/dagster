@@ -1,7 +1,7 @@
 import re
 import time
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, TypedDict
 
 import dagster._check as check
 from dagster import PipesClient
@@ -33,7 +33,7 @@ class SubmitJobParams(TypedDict):
     job: NotRequired[Job]
     retry: NotRequired[Retry]
     timeout: NotRequired[float]
-    metadata: NotRequired[Sequence[tuple[str, Union[str, bytes]]]]
+    metadata: NotRequired[Sequence[tuple[str, str | bytes]]]
 
 
 def _inject_pipes_args_into_list(args: Sequence[str], session: PipesSession) -> list[str]:
@@ -86,8 +86,8 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         message_reader: PipesMessageReader,
-        client: Optional[JobControllerClient] = None,
-        context_injector: Optional[PipesContextInjector] = None,
+        client: JobControllerClient | None = None,
+        context_injector: PipesContextInjector | None = None,
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
@@ -117,9 +117,9 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         submit_job_params: SubmitJobParams,
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run a job on GCP Dataproc, enriched with the pipes protocol.
 
@@ -169,7 +169,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
 
     def _enrich_submit_job_params(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         params: SubmitJobParams,
     ) -> SubmitJobParams:
@@ -200,7 +200,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
 
     def _start(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         params: SubmitJobParams,
     ) -> Job:
         job = self.client.submit_job(**params)
@@ -211,7 +211,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
 
     def _wait_for_completion(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         params: SubmitJobParams,
         job: Job,
     ) -> Job:
@@ -227,9 +227,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
         else:
             return job
 
-    def _get_project_id_and_region(
-        self, params: SubmitJobParams
-    ) -> tuple[Optional[str], Optional[str]]:
+    def _get_project_id_and_region(self, params: SubmitJobParams) -> tuple[str | None, str | None]:
         request_is_used = self._request_parameter_is_used(params)
 
         if request_is_used:
@@ -246,7 +244,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
 
     def _terminate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         params: SubmitJobParams,
         job: Job,
     ):

@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster import AssetKey
@@ -56,7 +56,7 @@ def gen_configured_stream_json(
     )
 
 
-def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> Optional[bool]:
+def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> bool | None:
     if is_key_secret(k):
         return dv == SECRET_MASK_VALUE
     return None
@@ -73,8 +73,8 @@ def _diff_configs(
 
 
 def diff_sources(
-    config_src: Optional[AirbyteSource],
-    curr_src: Optional[AirbyteSource],
+    config_src: AirbyteSource | None,
+    curr_src: AirbyteSource | None,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """Utility to diff two AirbyteSource objects."""
@@ -91,8 +91,8 @@ def diff_sources(
 
 
 def diff_destinations(
-    config_dst: Optional[AirbyteDestination],
-    curr_dst: Optional[AirbyteDestination],
+    config_dst: AirbyteDestination | None,
+    curr_dst: AirbyteDestination | None,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """Utility to diff two AirbyteDestination objects."""
@@ -108,7 +108,7 @@ def diff_destinations(
     return ManagedElementDiff()
 
 
-def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
+def conn_dict(conn: AirbyteConnection | None) -> Mapping[str, Any]:
     if not conn:
         return {}
     return {
@@ -137,7 +137,7 @@ def _compare_stream_values(k: str, cv: str, _dv: str):
 
 
 def diff_connections(
-    config_conn: Optional[AirbyteConnection], curr_conn: Optional[AirbyteConnection]
+    config_conn: AirbyteConnection | None, curr_conn: AirbyteConnection | None
 ) -> ManagedElementCheckResult:
     """Utility to diff two AirbyteConnection objects."""
     diff = diff_dicts(
@@ -411,11 +411,11 @@ def reconcile_config(
 
 def reconcile_normalization(
     res: AirbyteResource,
-    existing_connection_id: Optional[str],
+    existing_connection_id: str | None,
     destination: InitializedAirbyteDestination,
-    normalization_config: Optional[bool],
+    normalization_config: bool | None,
     workspace_id: str,
-) -> Optional[str]:
+) -> str | None:
     """Reconciles the normalization configuration for a connection.
 
     If normalization_config is None, then defaults to True on destinations that support normalization
@@ -641,7 +641,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
     @public
     def __init__(
         self,
-        airbyte: Union[AirbyteResource, ResourceDefinition],
+        airbyte: AirbyteResource | ResourceDefinition,
         connections: Iterable[AirbyteConnection],
         delete_unmentioned_resources: bool = False,
     ):
@@ -695,13 +695,14 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         airbyte_resource_def: AirbyteResource,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
+        connection_meta_to_group_fn: Callable[[AirbyteConnectionMetadata], str | None] | None,
         connections: Iterable[AirbyteConnection],
-        connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
-        connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
-        connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
-        ],
+        connection_to_io_manager_key_fn: Callable[[str], str | None] | None,
+        connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] | None,
+        connection_to_freshness_policy_fn: Callable[
+            [AirbyteConnectionMetadata], LegacyFreshnessPolicy | None
+        ]
+        | None,
     ):
         defined_conn_names = {conn.name for conn in connections}
         super().__init__(
@@ -732,22 +733,19 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
 @beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
-    airbyte: Union[AirbyteResource, ResourceDefinition],
+    airbyte: AirbyteResource | ResourceDefinition,
     connections: Iterable[AirbyteConnection],
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
-    connection_meta_to_group_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[str]]
-    ] = None,
-    io_manager_key: Optional[str] = None,
-    connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
-    connection_to_asset_key_fn: Optional[
-        Callable[[AirbyteConnectionMetadata, str], AssetKey]
-    ] = None,
-    connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
-    ] = None,
+    connection_to_group_fn: Callable[[str], str | None] | None = clean_name,
+    connection_meta_to_group_fn: Callable[[AirbyteConnectionMetadata], str | None] | None = None,
+    io_manager_key: str | None = None,
+    connection_to_io_manager_key_fn: Callable[[str], str | None] | None = None,
+    connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] | None = None,
+    connection_to_freshness_policy_fn: Callable[
+        [AirbyteConnectionMetadata], LegacyFreshnessPolicy | None
+    ]
+    | None = None,
 ) -> CacheableAssetsDefinition:
     """Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
     This method will raise an error on repo load if the passed AirbyteConnection objects are not in sync with the Airbyte instance.

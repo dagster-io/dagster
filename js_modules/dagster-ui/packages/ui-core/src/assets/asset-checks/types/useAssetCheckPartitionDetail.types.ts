@@ -17,6 +17,7 @@ export type AssetCheckPartitionDetailQuery = {
     status: Types.AssetCheckExecutionResolvedStatus;
     timestamp: number;
     stepKey: string | null;
+    run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
     evaluation: {
       __typename: 'AssetCheckEvaluation';
       timestamp: number;
@@ -186,4 +187,4 @@ export type AssetCheckPartitionDetailQuery = {
   }>;
 };
 
-export const AssetCheckPartitionDetailQueryVersion = 'd0a2b1000a7d3ea139c18bcf5df87b9dbd67741f18a5ec9eb89f6303c6e562ab';
+export const AssetCheckPartitionDetailQueryVersion = '33af9089ec1e4cf8c594b6f3da1f309ab8b0aabbd0d7caf9000eb92705df490f';

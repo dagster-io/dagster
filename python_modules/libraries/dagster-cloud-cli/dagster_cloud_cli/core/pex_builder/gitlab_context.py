@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from dagster_cloud_cli.core.pex_builder import git_context
 
@@ -15,7 +14,7 @@ class GitlabEvent:
         self.project_name = os.environ["CI_PROJECT_NAME"]
         self.project_url = os.environ["CI_PROJECT_URL"]
 
-        self.merge_request_iid: Optional[str] = os.environ.get("CI_MERGE_REQUEST_IID")
+        self.merge_request_iid: str | None = os.environ.get("CI_MERGE_REQUEST_IID")
 
         self.branch_url = f"{self.project_url}/-/tree/{self.branch_name}"
 
