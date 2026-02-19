@@ -86,15 +86,13 @@ def test_default_write_mode_in_factory(MockDbIOManager):
     context = build_init_resource_context(config={"project": "test-project"})
 
     manager_factory = TestBigQueryIOManager(project="test-project")
-    iterator = manager_factory.create_io_manager(context)
-    next(iterator)
+    with manager_factory.yield_for_execution(context) as _:
+        assert MockDbIOManager.called
+        _, kwargs = MockDbIOManager.call_args
+        client = kwargs.get("db_client")
 
-    assert MockDbIOManager.called
-    _, kwargs = MockDbIOManager.call_args
-    client = kwargs.get("db_client")
-
-    assert client is not None
-    assert client.write_mode == BigQueryWriteMode.TRUNCATE
+        assert client is not None
+        assert client.write_mode == BigQueryWriteMode.TRUNCATE
 
 
 @patch("dagster_gcp.bigquery.io_manager.DbIOManager")
@@ -107,14 +105,12 @@ def test_explicit_write_mode_in_factory(MockDbIOManager):
     manager_factory = TestBigQueryIOManager(
         project="test-project", write_mode=BigQueryWriteMode.APPEND
     )
-    iterator = manager_factory.create_io_manager(context)
-    next(iterator)
+    with manager_factory.yield_for_execution(context) as _:
+        _, kwargs = MockDbIOManager.call_args
+        client = kwargs.get("db_client")
 
-    _, kwargs = MockDbIOManager.call_args
-    client = kwargs.get("db_client")
-
-    assert client is not None
-    assert client.write_mode == BigQueryWriteMode.APPEND
+        assert client is not None
+        assert client.write_mode == BigQueryWriteMode.APPEND
 
 
 @patch("dagster_gcp.bigquery.io_manager.DbIOManager")
@@ -128,11 +124,9 @@ def test_gcp_credentials_propagation(MockDbIOManager):
     context = build_init_resource_context(config={"project": "test-project"})
 
     manager_factory = TestBigQueryIOManager(project="test-project", gcp_credentials=creds_value)
-    iterator = manager_factory.create_io_manager(context)
-    next(iterator)
+    with manager_factory.yield_for_execution(context) as _:
+        _, kwargs = MockDbIOManager.call_args
+        client = kwargs.get("db_client")
 
-    _, kwargs = MockDbIOManager.call_args
-    client = kwargs.get("db_client")
-
-    assert client is not None
-    assert client.gcp_credentials == creds_value
+        assert client is not None
+        assert client.gcp_credentials == creds_value

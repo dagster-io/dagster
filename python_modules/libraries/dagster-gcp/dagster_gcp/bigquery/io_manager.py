@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from collections.abc import Generator, Sequence
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
 from typing import Optional, Union, cast
@@ -344,8 +344,8 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[type]:
         return None
 
-    def create_io_manager(self, context) -> Generator:
-        mgr = DbIOManager(
+    def create_io_manager(self, context) -> DbIOManager:
+        return DbIOManager(
             db_client=BigQueryClient(
                 write_mode=self.write_mode, gcp_credentials=self.gcp_credentials
             ),
@@ -355,6 +355,10 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
         )
+
+    @contextmanager
+    def yield_for_execution(self, context) -> Iterator[DbIOManager]:
+        mgr = self.create_io_manager(context)
         if self.gcp_credentials:
             with setup_gcp_creds(self.gcp_credentials):
                 yield mgr
