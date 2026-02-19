@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Literal, Union
+from typing import Any, Literal, Optional, Union
 
 import dagster as dg
 from azure.identity import DefaultAzureCredential
@@ -22,7 +22,7 @@ class AzureBlobStorageKeyCredential(dg.Resolvable, Config):
     """Authentication using an azure shared-key."""
 
     credential_type: Literal["key"] = "key"
-    key: str
+    key: Optional[str] = None
     "an azure shared-key"
 
 
