@@ -19,6 +19,7 @@ class SimulatedTaskRun:
     log_stream: str
     created_at: datetime
     runtime_id: str
+    stop_code: str | None = None
     stopped_reason: str | None = None
     stopped: bool = False
     logs_uploaded: bool = False
@@ -115,6 +116,7 @@ class LocalECSMockClient:
             "awslogs-stream-prefix"
         ]
         container_name = task_definition["containerDefinitions"][0]["name"]
+        image = task_definition["containerDefinitions"][0]["image"]
         log_stream = f"{stream_prefix}/{container_name}/{task_arn.split('/')[-1]}"
 
         self._task_runs[task_arn] = SimulatedTaskRun(
@@ -126,6 +128,13 @@ class LocalECSMockClient:
             created_at=created_at,
             runtime_id=str(uuid.uuid4()),
         )
+
+        if "DOES_NOT_EXIST" in image:
+            self._task_runs[task_arn].stopped = True
+            self._task_runs[task_arn].stop_code = "TaskFailedToStart"
+            self._task_runs[
+                task_arn
+            ].stopped_reason = f"CannotPullContainerError: image '{image}' not found"
 
         self._create_cloudwatch_streams(task_arn)
 
@@ -167,6 +176,7 @@ class LocalECSMockClient:
                 if simulated_task.stopped:
                     task["lastStatus"] = "STOPPED"
                     task["stoppedReason"] = simulated_task.stopped_reason
+                    task["stopCode"] = simulated_task.stop_code
                     task["containers"][0]["exitCode"] = 1
                     self._upload_logs_to_cloudwatch(task["taskArn"])
                     return response
