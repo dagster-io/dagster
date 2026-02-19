@@ -42,7 +42,10 @@ class AzureBlobStorageResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         AzureBlobStorageKeyCredential,
         AzureBlobStorageDefaultCredential,
         AzureBlobStorageAnonymousCredential,
-    ] = Field(description="Azure credential configuration")
+    ] = Field(
+        discriminator="credential_type",
+        description="Azure credential configuration",
+    )
 
     resource_key: Optional[str] = Field(
         default=None, description="Resource key for binding to definitions"
