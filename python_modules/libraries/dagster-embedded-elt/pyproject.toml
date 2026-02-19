@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-embedded-elt"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for performing ETL/ELT tasks with Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -18,9 +22,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-sling==1!0+dev",
-    "dagster-dlt==1!0+dev",
+    "dagster==1.12.15rc0",
+    "dagster-sling==0.28.15rc0",
+    "dagster-dlt==0.28.15rc0",
 ]
 
 [project.urls]

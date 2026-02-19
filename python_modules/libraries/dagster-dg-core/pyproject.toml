@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dg-core"
-version = "1!0+dev"
+version = "1.12.15rc0"
 description = ""
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -18,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "Jinja2",
-    "tomlkit<0.13.3",  # bug in this version
+    "tomlkit<0.13.3",
     "click>=8,<9",
     "click-aliases",
     "typing_extensions>=4.4.0,<5",
@@ -29,12 +33,12 @@ dependencies = [
     "rich",
     "watchdog",
     "yaspin",
-    "setuptools",  # Needed to parse setup.cfg
+    "setuptools",
     "packaging",
     "python-dotenv",
     "typer>=0.15.1,<1.0",
-    "dagster-shared==1!0+dev",
-    "dagster-cloud-cli==1!0+dev",
+    "dagster-shared==1.12.15rc0",
+    "dagster-cloud-cli==1.12.15rc0",
 ]
 
 [project.urls]

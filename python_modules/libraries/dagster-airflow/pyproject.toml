@@ -1,19 +1,23 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-airflow"
-version = "1!0+dev"
+version = "1.12.15rc0"
 description = "Airflow plugin for Dagster"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
     "lazy_object_proxy",
     "setuptools<71.0.0",
     "pendulum",
@@ -21,15 +25,12 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster"
-# airflow will embed a link to this in the providers page UI
 "project-url/documentation" = "https://docs.dagster.io"
 
-# airflow 1.0/2.0 plugin format
 [project.entry-points."airflow.plugins"]
 dagster_airflow = "dagster_airflow.__init__:DagsterAirflowPlugin"
 
-# airflow 2.0 provider format
-[project.entry-points."apache_airflow_provider"]
+[project.entry-points.apache_airflow_provider]
 provider_info = "dagster_airflow.__init__:get_provider_info"
 
 [project.optional-dependencies]
@@ -38,33 +39,28 @@ kubernetes = [
     "cryptography>=2.0.0",
 ]
 test_airflow_2 = [
-    "apache-airflow>=2.0.0,<2.8",  # 2.8+ airflow breaks a bunch of tests
-    "pendulum<3.0.0",  # sub 2.8 blows up on pendulum 3
+    "apache-airflow>=2.0.0,<2.8",
+    "pendulum<3.0.0",
     "boto3>=1.26.7",
-    # Flask-session 0.6 is incompatible with certain airflow-provided test utilities.
     "flask-session<0.6.0",
     "kubernetes>=10.0.1",
     "apache-airflow-providers-docker>=3.2.0,<4",
     "apache-airflow-providers-apache-spark",
-    # Logging messages are set to debug starting 4.1.1
     "apache-airflow-providers-http<4.1.1",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+    "connexion<3.0.0",
 ]
 test_airflow_1 = [
     "apache-airflow>=1.0.0,<2.0.0",
     "boto3>=1.26.7",
     "kubernetes>=10.0.1",
-    # pinned based on certain incompatible versions of Jinja2, which is itself pinned
-    # by apache-airflow==1.10.10
     "markupsafe<=2.0.1",
-    # New WTForms release breaks the version of airflow used by tests
     "WTForms<3.0.0",
-    "sqlalchemy>=1.0,<1.4.0",  # https://github.com/dagster-io/dagster/issues/3858
+    "sqlalchemy>=1.0,<1.4.0",
     "marshmallow-sqlalchemy<0.26.0",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+    "connexion<3.0.0",
 ]
 test = [
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+    "connexion<3.0.0",
 ]
 
 [tool.setuptools]

@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-k8s"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "A Dagster integration for k8s"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -18,10 +22,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
     "kubernetes<36",
-    # exclude a google-auth release that added an overly restrictive urllib3 pin
-    # that confuses dependency resolvers
     "google-auth!=2.23.1",
 ]
 

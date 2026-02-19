@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dask"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for using Dask as Dagster's execution engine."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -19,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "bokeh",
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
     "dask[dataframe]>=1.2.2",
     "distributed>=1.28.1",
 ]
@@ -37,7 +41,6 @@ pbs = [
 kube = [
     "dask-kubernetes<=2022.9.0",
 ]
-# we need pyarrow for testing read/write parquet files.
 test = [
     "pyarrow",
 ]

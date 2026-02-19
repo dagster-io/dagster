@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-aws"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for AWS-specific Dagster framework solid and resource components."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -19,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "boto3",
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
     "packaging",
     "requests",
 ]
@@ -35,7 +39,7 @@ redshift = [
     "psycopg2-binary",
 ]
 pyspark = [
-    "dagster-pyspark",
+    "dagster-pyspark==0.28.15rc0",
 ]
 stubs = [
     "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr,emr-containers]",
@@ -44,7 +48,7 @@ test = [
     "botocore!=1.32.1",
     "moto[s3,server,glue,emrserverless,logs,emrcontainers]>=2.2.8,<5.0",
     "requests-mock",
-    "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
+    "xmltodict==0.12.0",
     "flaky",
     "pytest-cases",
     "s3fs",

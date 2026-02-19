@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-shared"
-version = "1!0+dev"
+version = "1.12.15rc0"
 description = "Shared code between dagster and dagster-dg-core."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -40,7 +44,15 @@ include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_shared_tests*"]
+exclude = [
+    "dagster_shared_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "pytest.ini", "CLAUDE.md", "dagster_shared_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "CLAUDE.md",
+    "dagster_shared_tests/**",
+]

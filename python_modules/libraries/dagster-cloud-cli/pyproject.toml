@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-cloud-cli"
-version = "1!0+dev"
+version = "1.12.15rc0"
 description = ""
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -17,7 +21,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-shared",
+    "dagster-shared==1.12.15rc0",
     "packaging>=20.9",
     "questionary",
     "requests",

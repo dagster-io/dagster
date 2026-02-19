@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dbt"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "A Dagster integration for dbt"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.14"
 classifiers = [
@@ -18,9 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
-    # Follow the version support constraints for dbt Core:
-    # https://docs.getdbt.com/docs/dbt-versions/core
+    "dagster==1.12.15rc0",
     "dbt-core>=1.7,<1.12",
     "gitpython",
     "Jinja2",
@@ -28,7 +30,7 @@ dependencies = [
     "orjson",
     "requests",
     "rich",
-    "sqlglot[rs]<28.1.0",  # FW-731
+    "sqlglot[rs]<28.1.0",
     "typer>=0.9.0",
     "packaging",
 ]
@@ -44,7 +46,6 @@ dagster-dbt = "dagster_dbt.cli.app:app"
 dagster_dbt = "dagster_dbt"
 
 [project.optional-dependencies]
-# used for dbtfusion tests that don't use adapters
 test-bare = [
     "pytest-rerunfailures",
     "pytest-order",
@@ -54,8 +55,8 @@ test = [
     "pytest-order",
     "dagster-duckdb",
     "dagster-duckdb-pandas",
-    "dbt-duckdb<1.9.2",  # concurrency issues
-    "duckdb<1.4.0",  # compat issues
+    "dbt-duckdb<1.9.2",
+    "duckdb<1.4.0",
 ]
 
 [tool.setuptools]

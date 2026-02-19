@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster"
-version = "1!0+dev"
+version = "1.12.15rc0"
 description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
@@ -26,11 +30,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    # cli
     "click>=5.0,<9.0",
     "coloredlogs>=6.1,<=14.0",
     "Jinja2",
-    # core
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
     "grpcio>=1.66.2; python_version>='3.13'",
     "grpcio>=1.44.0; python_version<'3.13'",
@@ -41,10 +43,6 @@ dependencies = [
     "python-dotenv",
     "pytz",
     "requests",
-    # setuptools <82 to provide pkg_resources for third-party deps that still
-    # import it at runtime (e.g. aws-msk-iam-sasl-signer, pyfilesystem2, flatdict).
-    # setuptools 82 removed pkg_resources entirely. Can be removed once all
-    # transitive deps have migrated away from pkg_resources.
     "setuptools<82",
     "six",
     "tabulate",
@@ -55,15 +53,15 @@ dependencies = [
     "sqlalchemy>=1.0,<3",
     "toposort>=1.0",
     "watchdog>=0.8.3,<7",
-    'psutil>=1.0; platform_system=="Windows"',
-    'pywin32!=226; platform_system=="Windows"',
+    "psutil>=1.0; platform_system==\"Windows\"",
+    "pywin32!=226; platform_system==\"Windows\"",
     "docstring-parser",
     "universal_pathlib; python_version<'3.12'",
     "universal_pathlib>=0.2.0; python_version>='3.12'",
     "rich",
     "filelock",
-    "dagster-pipes==1!0+dev",
-    "dagster-shared==1!0+dev",
+    "dagster-pipes==1.12.15rc0",
+    "dagster-shared==1.12.15rc0",
     "antlr4-python3-runtime",
 ]
 
@@ -87,7 +85,9 @@ dagster-daemon = "dagster.daemon.cli:main"
 dagster = "dagster"
 
 [project.optional-dependencies]
-docker = ["docker"]
+docker = [
+    "docker",
+]
 test = [
     "docker",
     "grpcio-tools>=1.66.2; python_version>='3.13'",
@@ -116,10 +116,11 @@ test-components = [
     "pandas<3.0.0",
     "duckdb",
 ]
-mypy = ["mypy==1.8.0"]
+mypy = [
+    "mypy==1.8.0",
+]
 pyright = [
     "pyright==1.1.379",
-    # Stub packages
     "pandas-stubs",
     "types-backports",
     "types-certifi",
@@ -147,7 +148,14 @@ include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_tests*"]
+exclude = [
+    "dagster_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "pytest.ini", "dagster_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_tests/**",
+]

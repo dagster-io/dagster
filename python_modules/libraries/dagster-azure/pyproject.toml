@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-azure"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for Azure-specific Dagster framework op and resource components."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -23,7 +27,7 @@ dependencies = [
     "azure-ai-ml<2.0.0,>=1.28.0",
     "azure-storage-blob<13.0.0,>=12.5.0",
     "azure-storage-file-datalake<13.0.0,>=12.5",
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
 ]
 
 [project.urls]

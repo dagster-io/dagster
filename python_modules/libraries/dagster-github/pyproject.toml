@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-github"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "A Github client resource for interacting with the github API with a github App"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -18,11 +22,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
-    # Using a Github app requires signing your own JWT :(
-    # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
+    "dagster==1.12.15rc0",
     "pyjwt[crypto]",
-    # No officially supported python sdk for github :(
     "requests",
 ]
 

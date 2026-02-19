@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-snowflake-pyspark"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for integrating Snowflake and PySpark with Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.14"
 classifiers = [
@@ -14,8 +18,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-snowflake==1!0+dev",
+    "dagster==1.12.15rc0",
+    "dagster-snowflake==0.28.15rc0",
     "pyspark<4",
     "requests",
     "sqlalchemy!=1.4.42",

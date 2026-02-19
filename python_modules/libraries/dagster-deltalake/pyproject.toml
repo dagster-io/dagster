@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-deltalake"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for Deltalake-specific Dagster framework op and resource components."
-authors = [{name = "Elementl", email = "hello@elementl.com"}]
+authors = [
+    { name = "Elementl", email = "hello@elementl.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -16,7 +20,7 @@ classifiers = [
 dependencies = [
     "deltalake>=1.0.0",
     "pyarrow",
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
 ]
 
 [project.urls]

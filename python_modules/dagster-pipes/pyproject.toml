@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-pipes"
-version = "1!0+dev"
+version = "1.12.15rc0"
 description = "Toolkit for Dagster integrations with transform logic outside of Dagster"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -31,7 +35,14 @@ include-package-data = true
 zip-safe = false
 
 [tool.setuptools.packages.find]
-exclude = ["dagster_pipes_tests*"]
+exclude = [
+    "dagster_pipes_tests*",
+]
 
 [tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "pytest.ini", "dagster_pipes_tests/**"]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_pipes_tests/**",
+]

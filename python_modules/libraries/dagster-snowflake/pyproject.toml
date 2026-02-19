@@ -1,12 +1,16 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = [
+    "setuptools>=69.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-snowflake"
-version = "1!0+dev"
+version = "0.28.15rc0"
 description = "Package for Snowflake Dagster framework components."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -18,12 +22,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc0",
     "snowflake-snowpark-python>=1.24.0",
     "snowflake-core>=1.8.0",
     "snowflake-connector-python>=3.4.0",
-    # Workaround for incorrect pin in the snowflake-connector-python package
-    # See https://github.com/snowflakedb/snowflake-connector-python/issues/2109
     "pyOpenSSL>=22.1.0",
 ]
 
@@ -35,7 +37,7 @@ dagster_snowflake = "dagster_snowflake"
 
 [project.optional-dependencies]
 "snowflake.sqlalchemy" = [
-    "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
+    "sqlalchemy!=1.4.42",
     "snowflake-sqlalchemy",
 ]
 pandas = [
