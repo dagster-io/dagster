@@ -66,6 +66,7 @@ function showCompletionToast(runId: string, status: RunStatus, pipelineName: str
   const toastAction = {
     type: 'custom' as const,
     element: <AnchorButton to={path}>View</AnchorButton>,
+    dismissOnClick: false,
   };
   const persistentToast = { timeout: Infinity, action: toastAction };
 

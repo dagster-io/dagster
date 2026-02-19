@@ -22,7 +22,7 @@ export type ToastConfig = {
         text: string;
         onClick: (e: MouseEvent<HTMLButtonElement>) => void;
       }
-    | {type: 'custom'; element: ReactNode};
+    | {type: 'custom'; element: ReactNode; dismissOnClick?: boolean};
 };
 
 export const showToast = async (config: ToastConfig, sonnerConfig: ExternalToast = {}) => {
@@ -59,9 +59,12 @@ const Toast = (props: ToastProps) => {
     }
 
     if (action.type === 'custom') {
-      return (
-        <span onClick={() => toast.dismiss(id)}>{action.element}</span>
-      );
+      if (action.dismissOnClick !== false) {
+        return (
+          <span onClick={() => toast.dismiss(id)}>{action.element}</span>
+        );
+      }
+      return <>{action.element}</>;
     }
 
     return (
