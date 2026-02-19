@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -37,13 +36,7 @@ class AzureBlobStorageResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     account_url: str | None = Field(default=None, description="The URL to the blob storage account")
 
-    credential: (
-        AzureBlobStorageSASTokenCredential
-        | AzureBlobStorageKeyCredential
-        | AzureBlobStorageDefaultCredential
-        | AzureBlobStorageAnonymousCredential
-        | None
-    ) = Field(default=None, description="Azure credential configuration")
+    credential: AzureBlobStorageSASTokenCredential | AzureBlobStorageKeyCredential | AzureBlobStorageDefaultCredential | AzureBlobStorageAnonymousCredential | None = Field(default=None, description="Azure credential configuration")
 
     resource_key: str | None = Field(
         default=None, description="Resource key for binding to definitions"
