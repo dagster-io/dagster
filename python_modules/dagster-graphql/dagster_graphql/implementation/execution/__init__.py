@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
@@ -22,7 +21,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
-from email_validator import EmailNotValidError, validate_email
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
@@ -450,45 +448,3 @@ def report_asset_check_evaluation(
     )
     instance.report_runless_asset_event(evaluation)
     return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)
-
-
-def subscribe_to_notifications(
-    graphene_info: "ResolveInfo",
-    run_id: str,
-    subscribe: bool,
-    email: str,
-):
-    from dagster_graphql.schema.errors import GrapheneInvalidEmailError, GrapheneRunNotFoundError
-    from dagster_graphql.schema.roots.mutation import GrapheneSubscribeToNotificationsSuccess
-
-    instance = graphene_info.context.instance
-
-    try:
-        validate_email(email)
-    except EmailNotValidError:
-        return GrapheneInvalidEmailError(email=email)
-
-    record = instance.get_run_record_by_id(run_id)
-    if not record:
-        return GrapheneRunNotFoundError(run_id)
-
-    key = f"run_notification_subscribers:{run_id}"
-    current_raw = instance.run_storage.get_cursor_values({key}).get(key)
-    subscribers = json.loads(current_raw) if current_raw else []
-
-    if subscribe:
-        if email not in subscribers:
-            subscribers.append(email)
-            instance.run_storage.set_cursor_values({key: json.dumps(subscribers)})
-    else:
-        if email in subscribers:
-            subscribers.remove(email)
-            if subscribers:
-                instance.run_storage.set_cursor_values({key: json.dumps(subscribers)})
-            else:
-                instance.run_storage.set_cursor_values({key: "[]"})
-
-    return GrapheneSubscribeToNotificationsSuccess(
-        runID=run_id,
-        subscribedToNotifications=subscribe,
-    )

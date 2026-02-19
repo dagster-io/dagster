@@ -35,12 +35,3 @@ check_job = dg.define_asset_job(
 # Job schedules
 asset_schedule = dg.ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 check_schedule = dg.ScheduleDefinition(job=check_job, cron_schedule="0 6 * * *")
-
-# Send email on failure
-check_sensor = dg.make_email_on_run_failure_sensor(
-    email_from="no-reply@example.com",
-    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
-    email_to=["xxx@example.com"],
-    monitored_jobs=[check_job],
-)
-# highlight-end

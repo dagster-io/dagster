@@ -642,9 +642,6 @@ from dagster._loggers import (
     json_console_logger as json_console_logger,
 )
 from dagster._utils import file_relative_path as file_relative_path
-from dagster._utils.alert import (
-    make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
-)
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
 from dagster._utils.warnings import (

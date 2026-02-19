@@ -2,7 +2,6 @@ from unittest import mock
 
 from dagster import Definitions, OpExecutionContext, build_sensor_context, job, op
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
-    email_on_run_failure,
     my_slack_on_run_failure,
     my_slack_on_run_success,
     slack_on_run_failure,

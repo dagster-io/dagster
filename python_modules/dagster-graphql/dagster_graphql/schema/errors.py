@@ -530,19 +530,6 @@ class GrapheneUnsupportedOperationError(graphene.ObjectType):
         self.message = check.str_param(message, "message") or "Unsupported operation."
 
 
-class GrapheneInvalidEmailError(graphene.ObjectType):
-    class Meta:
-        interfaces = (GrapheneError,)
-        name = "InvalidEmailError"
-
-    email = graphene.NonNull(graphene.String)
-
-    def __init__(self, email):
-        super().__init__()
-        self.email = check.str_param(email, "email")
-        self.message = f"Invalid email: {email}"
-
-
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -575,5 +562,4 @@ types = [
     GrapheneSensorNotFoundError,
     GrapheneUnsupportedOperationError,
     GrapheneDuplicateDynamicPartitionError,
-    GrapheneInvalidEmailError,
 ]
