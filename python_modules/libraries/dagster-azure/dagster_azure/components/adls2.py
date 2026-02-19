@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dagster as dg
 from dagster._annotations import preview, public
 from pydantic import Field
@@ -32,9 +34,10 @@ class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
               resource_key: adls2
     """
 
-    storage_account: str = Field(description="The storage account name")
+    storage_account: str | None = Field(default=None, description="The storage account name")
 
-    credential: ADLS2SASToken | ADLS2Key | ADLS2DefaultAzureCredential = Field(
+    credential: ADLS2SASToken | ADLS2Key | ADLS2DefaultAzureCredential | None = Field(
+        default=None,
         description="The credentials with which to authenticate",
     )
 
