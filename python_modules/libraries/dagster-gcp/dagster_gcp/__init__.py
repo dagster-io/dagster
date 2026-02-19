@@ -18,12 +18,6 @@ from dagster_gcp.bigquery.resources import (
     fetch_last_updated_timestamps as fetch_last_updated_timestamps,
 )
 from dagster_gcp.bigquery.types import BigQueryError as BigQueryError
-from dagster_gcp.components import (
-    BigQueryResourceComponent as BigQueryResourceComponent,
-    DataprocResourceComponent as DataprocResourceComponent,
-    GCSFileManagerResourceComponent as GCSFileManagerResourceComponent,
-    GCSResourceComponent as GCSResourceComponent,
-)
 from dagster_gcp.dataproc.ops import (
     DataprocOpConfig as DataprocOpConfig,
     configurable_dataproc_op as configurable_dataproc_op,
@@ -48,3 +42,33 @@ from dagster_gcp.gcs.io_manager import (
 from dagster_gcp.version import __version__
 
 DagsterLibraryRegistry.register("dagster-gcp", __version__)
+
+_COMPONENT_NAMES = {
+    "BigQueryResourceComponent",
+    "DataprocResourceComponent",
+    "GCSFileManagerResourceComponent",
+    "GCSResourceComponent",
+}
+
+
+def __getattr__(name: str):
+    """Lazy-import GCP resource components to avoid loading google.* at package import time.
+
+    This prevents DefaultCredentialsError during test collection when credentials
+    are not available (e.g. in dagster-gcp-pandas, dagster-gcp-pyspark).
+    """
+    if name in _COMPONENT_NAMES:
+        from dagster_gcp.components import (
+            BigQueryResourceComponent,
+            DataprocResourceComponent,
+            GCSFileManagerResourceComponent,
+            GCSResourceComponent,
+        )
+
+        return {
+            "BigQueryResourceComponent": BigQueryResourceComponent,
+            "DataprocResourceComponent": DataprocResourceComponent,
+            "GCSFileManagerResourceComponent": GCSFileManagerResourceComponent,
+            "GCSResourceComponent": GCSResourceComponent,
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
