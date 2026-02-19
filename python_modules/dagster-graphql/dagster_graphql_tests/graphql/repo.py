@@ -10,7 +10,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
-from typing import Literal, Optional, TypeVar, Union
+from typing import Literal, TypeVar
 
 from dagster import (
     Any,
@@ -592,10 +592,8 @@ def multer_resource(init_context):
 
 @resource(config_schema={"num_one": Field(Int), "num_two": Field(Int)})
 def double_adder_resource(init_context):
-    return (
-        lambda x: x
-        + init_context.resource_config["num_one"]
-        + init_context.resource_config["num_two"]
+    return lambda x: (
+        x + init_context.resource_config["num_one"] + init_context.resource_config["num_two"]
     )
 
 
@@ -996,7 +994,7 @@ def basic_job():
 
 
 def get_retry_multi_execution_params(
-    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
+    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: str | None = None
 ) -> Mapping[str, Any]:
     selector = infer_job_selector(graphql_context, "retry_multi_output_job")
     return {
@@ -2466,7 +2464,7 @@ test_repo = Definitions(
 test_repo._name = "test_repo"  # noqa: SLF001
 
 
-def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
+def _targets_asset_job(instigator: ScheduleDefinition | SensorDefinition) -> bool:
     if isinstance(instigator, SensorDefinition) and instigator.sensor_type in (
         # these rely on asset selections, which are invalid with the repos constructed
         # using the legacy dictionary pattern

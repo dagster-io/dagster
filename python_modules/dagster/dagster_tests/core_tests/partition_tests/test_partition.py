@@ -32,7 +32,7 @@ def test_static_partition_string_input() -> None:
 
 
 def test_invalid_partition_key():
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="'...'"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match=r"'...'"):
         dg.StaticPartitionsDefinition(["foo", "foo...bar"])
 
 

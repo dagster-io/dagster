@@ -1,8 +1,10 @@
 import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 from dagster_shared.serdes import NamedTupleSerializer
 
@@ -25,6 +27,23 @@ from dagster._serdes import whitelist_for_serdes
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
     from dagster._core.instance import DynamicPartitionsStore
+
+_skip_num_partitions_serialization: ContextVar[bool] = ContextVar(
+    "skip_num_partitions_serialization", default=False
+)
+
+
+@contextmanager
+def skip_num_partitions_serialization_ctx() -> Iterator[None]:
+    """Context manager that disables pre-computation of num_partitions during serialization.
+
+    Used in contexts where computing num_partitions is expensive and not needed immediately.
+    """
+    token = _skip_num_partitions_serialization.set(True)
+    try:
+        yield
+    finally:
+        _skip_num_partitions_serialization.reset(token)
 
 
 def _attempt_coerce_to_time_window_subset(subset: "PartitionsSubset") -> "PartitionsSubset":
@@ -55,6 +74,8 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
         # value.num_partitions will calculate the number of partitions if the field is None
         # We want to check if the field is None and replace the value with the calculated value
         # for serialization
+        if _skip_num_partitions_serialization.get():
+            return value
         if value._asdict()["num_partitions"] is None:
             return TimeWindowPartitionsSubset(
                 partitions_def=value.partitions_def,
@@ -79,7 +100,7 @@ class TimeWindowPartitionsSubset(
         "_TimeWindowPartitionsSubset",
         [
             ("partitions_def", TimeWindowPartitionsDefinition),
-            ("num_partitions", Optional[int]),
+            ("num_partitions", int | None),
             ("included_time_windows", Sequence[PersistedTimeWindow]),
         ],
     ),
@@ -95,8 +116,8 @@ class TimeWindowPartitionsSubset(
     def __new__(
         cls,
         partitions_def: TimeWindowPartitionsDefinition,
-        num_partitions: Optional[int],
-        included_time_windows: Sequence[Union[PersistedTimeWindow, TimeWindow]],
+        num_partitions: int | None,
+        included_time_windows: Sequence[PersistedTimeWindow | TimeWindow],
     ):
         included_time_windows = [
             PersistedTimeWindow.from_public_time_window(tw, partitions_def.timezone)
@@ -262,7 +283,7 @@ class TimeWindowPartitionsSubset(
     def get_partition_key_ranges(
         self,
         partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
         respect_bounds: bool = True,
     ) -> Sequence[PartitionKeyRange]:
@@ -383,7 +404,7 @@ class TimeWindowPartitionsSubset(
 
     @classmethod
     def create_empty_subset(
-        cls, partitions_def: Optional[PartitionsDefinition] = None
+        cls, partitions_def: PartitionsDefinition | None = None
     ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
@@ -538,7 +559,7 @@ class TimeWindowPartitionsSubset(
             included_time_windows=time_windows,
         )
 
-    def __contains__(self, partition_key: Optional[str]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __contains__(self, partition_key: str | None) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         if partition_key is None:
             return False
 
@@ -567,6 +588,8 @@ class TimeWindowPartitionsSubset(
             and self.partitions_def == other.partitions_def
             and self.included_time_windows == other.included_time_windows
         )
+
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
         from dagster._core.definitions.partitions.snap import TimeWindowPartitionsSnap
@@ -644,8 +667,8 @@ class TimeWindowPartitionsSubset(
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool:
         if serialized_partitions_def_unique_id:
             return (

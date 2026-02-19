@@ -132,7 +132,7 @@ def test_unexpected_check_name() -> None:
     with pytest.raises(
         dg.DagsterInvariantViolationError,
         match=(
-            "No checks currently being evaluated target asset 'asset1' and have name"
+            r"No checks currently being evaluated target asset 'asset1' and have name"
             " 'check2'. Checks being evaluated for this asset: {'check1'}"
         ),
     ):

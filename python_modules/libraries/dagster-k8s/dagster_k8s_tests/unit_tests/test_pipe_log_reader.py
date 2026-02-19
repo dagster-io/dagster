@@ -4,7 +4,7 @@ from unittest import mock
 
 import kubernetes
 import pytest
-from dagster_k8s.pipes import PipesK8sPodLogsMessageReader, _is_kube_timestamp
+from dagster_k8s.pipes import PipesK8sPodLogsMessageReader, _is_kube_timestamp, _process_log_stream
 
 
 def _noop(*args, **kwargs):
@@ -28,6 +28,20 @@ def flaky_log_stream():
 
 def working_log_stream():
     yield from LOG_LINES
+
+
+def test_process_log_stream_handles_utf8_char_split_across_chunks():
+    # The UTF-8 ellipsis character "…" is 3 bytes: e2 80 a6.
+    # This simulates a k8s log stream chunk boundary splitting the character mid-sequence.
+    def stream():
+        yield b"2024-03-22T02:17:29.885548Z hello " + b"\xe2"
+        yield b"\x80\xa6 world\n"
+
+    items = list(_process_log_stream(stream()))
+
+    assert len(items) == 1
+    assert items[0].timestamp == "2024-03-22T02:17:29.885548Z"
+    assert items[0].log == "hello \u2026 world"
 
 
 def test_stream_retry_and_succeed():

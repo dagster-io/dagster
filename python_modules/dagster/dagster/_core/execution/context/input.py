@@ -51,24 +51,24 @@ class InputContext:
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
-        job_name: Optional[str] = None,
+        name: str | None = None,
+        job_name: str | None = None,
         op_def: Optional["OpDefinition"] = None,
-        config: Optional[Any] = None,
-        definition_metadata: Optional[ArbitraryMetadataMapping] = None,
+        config: Any | None = None,
+        definition_metadata: ArbitraryMetadataMapping | None = None,
         upstream_output: Optional["OutputContext"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
-        resource_config: Optional[Mapping[str, Any]] = None,
-        resources: Optional[Union["Resources", Mapping[str, Any]]] = None,
+        resource_config: Mapping[str, Any] | None = None,
+        resources: Union["Resources", Mapping[str, Any]] | None = None,
         step_context: Optional["StepExecutionContext"] = None,
-        asset_key: Optional[AssetKey] = None,
-        partition_key: Optional[str] = None,
-        asset_partitions_subset: Optional[PartitionsSubset] = None,
+        asset_key: AssetKey | None = None,
+        partition_key: str | None = None,
+        asset_partitions_subset: PartitionsSubset | None = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance | None = None,
         # deprecated
-        metadata: Optional[ArbitraryMetadataMapping] = None,
+        metadata: ArbitraryMetadataMapping | None = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -91,7 +91,7 @@ class InputContext:
         self._step_context = step_context
         self._asset_key = asset_key
         if self._step_context and self._step_context.has_partition_key:
-            self._partition_key: Optional[str] = self._step_context.partition_key
+            self._partition_key: str | None = self._step_context.partition_key
         else:
             self._partition_key = partition_key
 
@@ -185,7 +185,7 @@ class InputContext:
     @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
-    def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+    def metadata(self) -> ArbitraryMetadataMapping | None:
         """Deprecated: Use definitiion_metadata instead."""
         return self._definition_metadata
 
@@ -237,7 +237,7 @@ class InputContext:
 
     @public
     @property
-    def resource_config(self) -> Optional[Mapping[str, Any]]:
+    def resource_config(self) -> Mapping[str, Any] | None:
         """The config associated with the resource that initializes the InputManager."""
         return self._resource_config
 
@@ -467,7 +467,7 @@ class InputContext:
     def add_input_metadata(
         self,
         metadata: Mapping[str, Any],
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> None:
         """Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
         If the input is an asset, metadata will be attached to an asset observation.
@@ -542,22 +542,22 @@ class InputContext:
     additional_warn_text="Use `definition_metadata` instead.",
 )
 def build_input_context(
-    name: Optional[str] = None,
-    config: Optional[Any] = None,
-    definition_metadata: Optional[ArbitraryMetadataMapping] = None,
+    name: str | None = None,
+    config: Any | None = None,
+    definition_metadata: ArbitraryMetadataMapping | None = None,
     upstream_output: Optional["OutputContext"] = None,
     dagster_type: Optional["DagsterType"] = None,
-    resource_config: Optional[Mapping[str, Any]] = None,
-    resources: Optional[Mapping[str, Any]] = None,
+    resource_config: Mapping[str, Any] | None = None,
+    resources: Mapping[str, Any] | None = None,
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
-    asset_key: Optional[CoercibleToAssetKey] = None,
-    partition_key: Optional[str] = None,
-    asset_partition_key_range: Optional[PartitionKeyRange] = None,
+    asset_key: CoercibleToAssetKey | None = None,
+    partition_key: str | None = None,
+    asset_partition_key_range: PartitionKeyRange | None = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
-    instance: Optional[DagsterInstance] = None,
+    instance: DagsterInstance | None = None,
     # deprecated
-    metadata: Optional[ArbitraryMetadataMapping] = None,
+    metadata: ArbitraryMetadataMapping | None = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -666,7 +666,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     ) -> Iterable[str]:
         raise NotImplementedError()
 
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+    def get_partition_keys(self, current_time: datetime | None = None) -> Iterable[str]:
         if self._key_range.start == self._key_range.end:
             return self._key_range.start
         else:
@@ -709,8 +709,8 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         cls,
         partitions_def: "PartitionsDefinition",
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool:
         raise NotImplementedError()
 

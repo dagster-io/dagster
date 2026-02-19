@@ -1,7 +1,6 @@
 from collections.abc import Mapping, Sequence
 from copy import copy
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -43,11 +42,11 @@ SINGLETON_REPOSITORY_NAME = "__repository__"
 @python_pointer_options
 @cli_telemetry_wrapper
 def launch_command(
-    assets: Optional[str],
-    job: Optional[str],
-    partition: Optional[str],
-    partition_range: Optional[str],
-    config_json: Optional[str],
+    assets: str | None,
+    job: str | None,
+    partition: str | None,
+    partition_range: str | None,
+    config_json: str | None,
     config: Sequence[str],
     target_path: Path,
     **other_options: Mapping[str, object],

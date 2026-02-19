@@ -2,7 +2,6 @@
 
 import ast
 import re
-from typing import Optional
 
 from automation.dagster_docs.docstring_rules.base import (
     ValidationContext,
@@ -85,7 +84,7 @@ def _extract_python_code_blocks(docstring: str) -> list[tuple[str, int]]:
     return code_blocks
 
 
-def _validate_python_syntax(code: str) -> Optional[str]:
+def _validate_python_syntax(code: str) -> str | None:
     """Validate Python code syntax using AST parsing.
 
     Returns:

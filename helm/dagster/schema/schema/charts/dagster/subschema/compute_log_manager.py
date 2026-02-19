@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict
 
@@ -19,50 +19,50 @@ class ComputeLogManagerType(str, Enum):
 class AzureBlobComputeLogManager(BaseModel):
     storageAccount: StringSource
     container: StringSource
-    secretCredential: Optional[dict] = None
-    defaultAzureCredential: Optional[dict] = None
-    accessKeyOrSasToken: Optional[StringSource] = None
-    localDir: Optional[StringSource] = None
-    prefix: Optional[StringSource] = None
-    uploadInterval: Optional[int] = None
-    showUrlOnly: Optional[bool] = None
+    secretCredential: dict | None = None
+    defaultAzureCredential: dict | None = None
+    accessKeyOrSasToken: StringSource | None = None
+    localDir: StringSource | None = None
+    prefix: StringSource | None = None
+    uploadInterval: int | None = None
+    showUrlOnly: bool | None = None
 
 
 class GCSComputeLogManager(BaseModel):
     bucket: StringSource
-    localDir: Optional[StringSource] = None
-    prefix: Optional[StringSource] = None
-    jsonCredentialsEnvvar: Optional[StringSource] = None
-    uploadInterval: Optional[int] = None
-    showUrlOnly: Optional[bool] = None
+    localDir: StringSource | None = None
+    prefix: StringSource | None = None
+    jsonCredentialsEnvvar: StringSource | None = None
+    uploadInterval: int | None = None
+    showUrlOnly: bool | None = None
 
 
 class S3ComputeLogManager(BaseModel):
     bucket: StringSource
-    localDir: Optional[StringSource] = None
-    prefix: Optional[StringSource] = None
-    useSsl: Optional[bool] = None
-    verify: Optional[bool] = None
-    verifyCertPath: Optional[StringSource] = None
-    endpointUrl: Optional[StringSource] = None
-    skipEmptyFiles: Optional[bool] = None
-    uploadInterval: Optional[int] = None
-    uploadExtraArgs: Optional[dict] = None
-    showUrlOnly: Optional[bool] = None
-    region: Optional[StringSource] = None
+    localDir: StringSource | None = None
+    prefix: StringSource | None = None
+    useSsl: bool | None = None
+    verify: bool | None = None
+    verifyCertPath: StringSource | None = None
+    endpointUrl: StringSource | None = None
+    skipEmptyFiles: bool | None = None
+    uploadInterval: int | None = None
+    uploadExtraArgs: dict | None = None
+    showUrlOnly: bool | None = None
+    region: StringSource | None = None
 
 
 class LocalComputeLogManager(BaseModel):
     baseDir: StringSource
-    pollingTimeout: Optional[int] = None
+    pollingTimeout: int | None = None
 
 
 class ComputeLogManagerConfig(BaseModel, extra="forbid"):
-    azureBlobComputeLogManager: Optional[AzureBlobComputeLogManager] = None
-    gcsComputeLogManager: Optional[GCSComputeLogManager] = None
-    s3ComputeLogManager: Optional[S3ComputeLogManager] = None
-    localComputeLogManager: Optional[LocalComputeLogManager] = None
-    customComputeLogManager: Optional[ConfigurableClass] = None
+    azureBlobComputeLogManager: AzureBlobComputeLogManager | None = None
+    gcsComputeLogManager: GCSComputeLogManager | None = None
+    s3ComputeLogManager: S3ComputeLogManager | None = None
+    localComputeLogManager: LocalComputeLogManager | None = None
+    customComputeLogManager: ConfigurableClass | None = None
 
 
 class ComputeLogManager(BaseModel):
@@ -71,7 +71,8 @@ class ComputeLogManager(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra=lambda schema, model: ComputeLogManager.json_schema_extra(schema, model),
+        # Lambda required: defers evaluation until class is fully defined
+        json_schema_extra=lambda schema, model: ComputeLogManager.json_schema_extra(schema, model),  # noqa: PLW0108
     )
 
     @staticmethod

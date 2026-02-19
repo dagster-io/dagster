@@ -34,10 +34,8 @@ def define_with_resources_job():
 
     @dg.resource(config_schema={"num_one": dg.Int, "num_two": dg.Int})
     def double_adder_resource(init_context):
-        return (
-            lambda x: x
-            + init_context.resource_config["num_one"]
-            + init_context.resource_config["num_two"]
+        return lambda x: (
+            x + init_context.resource_config["num_one"] + init_context.resource_config["num_two"]
         )
 
     @dg.op(required_resource_keys={"modifier"})

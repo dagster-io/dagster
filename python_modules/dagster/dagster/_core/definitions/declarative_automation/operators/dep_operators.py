@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import Self
@@ -72,8 +72,8 @@ class EntityMatchesCondition(
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching
@@ -95,8 +95,8 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition
 
     # Should be AssetSelection, but this causes circular reference issues
-    allow_selection: Optional[Any] = None
-    ignore_selection: Optional[Any] = None
+    allow_selection: Any | None = None
+    ignore_selection: Any | None = None
 
     @property
     @abstractmethod
@@ -126,9 +126,9 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     def get_node_unique_id(
         self,
         *,
-        parent_unique_id: Optional[str],
-        index: Optional[int],
-        target_key: Optional[EntityKey],
+        parent_unique_id: str | None,
+        index: int | None,
+        target_key: EntityKey | None,
     ) -> str:
         """Ignore allow_selection / ignore_selection for the cursor hash."""
         parts = [str(parent_unique_id), str(index), self.base_name]
@@ -137,9 +137,9 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     def get_backcompat_node_unique_ids(
         self,
         *,
-        parent_unique_id: Optional[str] = None,
-        index: Optional[int] = None,
-        target_key: Optional[EntityKey] = None,
+        parent_unique_id: str | None = None,
+        index: int | None = None,
+        target_key: EntityKey | None = None,
     ) -> Sequence[str]:
         # backcompat for previous cursors where the allow/ignore selection influenced the hash
         return [
@@ -186,8 +186,8 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
-    ) -> Union[Self, T_AutomationCondition]:
+        self, old: AutomationCondition | str, new: T_AutomationCondition
+    ) -> Self | T_AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label or name matching

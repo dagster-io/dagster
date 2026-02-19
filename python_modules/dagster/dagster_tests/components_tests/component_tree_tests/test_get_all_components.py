@@ -1,5 +1,4 @@
 import importlib
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -24,7 +23,7 @@ class BarComponent(dg.Component):
 class ErrorComponent(dg.Component):
     @classmethod
     def load(
-        cls, attributes: Optional[BaseModel], context: dg.ComponentLoadContext
+        cls, attributes: BaseModel | None, context: dg.ComponentLoadContext
     ) -> "ErrorComponent":
         raise Exception("Can't load this component!")
 

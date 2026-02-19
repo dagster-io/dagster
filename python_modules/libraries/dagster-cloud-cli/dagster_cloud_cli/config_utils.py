@@ -3,7 +3,7 @@ import functools
 import inspect
 import os
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import yaml
 from click import Context
@@ -65,7 +65,7 @@ def read_config() -> DagsterPlusCliConfig:
     return DagsterPlusCliConfig.get()
 
 
-def get_deployment(ctx: Optional[Context] = None) -> Optional[str]:
+def get_deployment(ctx: Context | None = None) -> str | None:
     """Gets the configured deployment to target.
     Highest precedence is a deployment argument, then `DAGSTER_CLOUD_DEPLOYMENT`
     env var, then `~/.dagster_cloud_cli/config` default.
@@ -75,7 +75,7 @@ def get_deployment(ctx: Optional[Context] = None) -> Optional[str]:
     return os.getenv(DEPLOYMENT_ENV_VAR_NAME, read_config().default_deployment)
 
 
-def get_organization(ctx: Optional[Context] = None) -> Optional[str]:
+def get_organization(ctx: Context | None = None) -> str | None:
     """Gets the configured organization to target.
     Highest precedence is an organization argument, then `DAGSTER_CLOUD_ORGANIZATION`
     env var, then `~/.dagster_cloud_cli/config` value.
@@ -101,7 +101,7 @@ def get_location_load_timeout() -> int:
     return int(cast("str", env_val)) if env_val is not None else default_timeout
 
 
-def get_agent_heartbeat_timeout(default_timeout: Optional[int]) -> Optional[int]:
+def get_agent_heartbeat_timeout(default_timeout: int | None) -> int | None:
     """Gets the configured agent timeout to target.
     Highest precedence is an agent-timeout argument, then `DAGSTER_CLOUD_AGENT_HEARTBEAT_TIMEOUT`
     env var.
@@ -111,7 +111,7 @@ def get_agent_heartbeat_timeout(default_timeout: Optional[int]) -> Optional[int]
     return int(cast("str", env_val)) if env_val is not None else None
 
 
-def get_user_token(ctx: Optional[Context] = None) -> Optional[str]:
+def get_user_token(ctx: Context | None = None) -> str | None:
     """Gets the configured user token to use.
     Highest precedence is an api-token argument, then `DAGSTER_CLOUD_API_TOKEN`
     env var, then `~/.dagster_cloud_cli/config` value.
@@ -137,14 +137,14 @@ def available_deployment_names(ctx, incomplete: str = "") -> list[str]:
         return []
 
 
-def get_url(ctx: Optional[Context] = None) -> Optional[str]:
+def get_url(ctx: Context | None = None) -> str | None:
     """Gets the url passed in or from the environment."""
     if ctx and ctx.params.get(URL_CLI_ARGUMENT):
         return ctx.params[URL_CLI_ARGUMENT]
     return os.getenv(URL_ENV_VAR_NAME)
 
 
-def get_org_url(organization: str, dagster_env: Optional[str]):
+def get_org_url(organization: str, dagster_env: str | None):
     if dagster_env:
         return f"https://{organization}.{dagster_env}.dagster.cloud"
     return f"https://{organization}.dagster.cloud"
@@ -203,7 +203,7 @@ LOCATION_LOAD_TIMEOUT_OPTION = Option(
 )
 
 
-def get_agent_heartbeat_timeout_option(default_timeout: Optional[int]):
+def get_agent_heartbeat_timeout_option(default_timeout: int | None):
     return Option(
         get_agent_heartbeat_timeout(default_timeout),
         f"--{AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT}",
@@ -433,7 +433,7 @@ DEPLOYMENT_CLI_OPTIONS = {
 }
 
 
-def get_location_document(name: Optional[str], kwargs: dict[str, Any]) -> dict[str, Any]:
+def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str, Any]:
     name = name or kwargs.get("location_name")
     location_file = kwargs.get("location_file")
     location_doc_from_file = {}

@@ -2,7 +2,6 @@ import random
 import string
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional
 
 import dagster._check as check
 from azure.storage.blob import BlobServiceClient
@@ -32,7 +31,7 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         interval: float = 10,
         container: str,
         client: BlobServiceClient,
-        log_readers: Optional[Sequence[PipesLogReader]] = None,
+        log_readers: Sequence[PipesLogReader] | None = None,
         include_stdio_in_messages: bool = False,
     ):
         super().__init__(
@@ -67,7 +66,7 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         else:
             return False
 
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         key = f"{params['key_prefix']}/{index}.json"
         try:
             with self.client.get_blob_client(self.bucket, key) as blob_client:

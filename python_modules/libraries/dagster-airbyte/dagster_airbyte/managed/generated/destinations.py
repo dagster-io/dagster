@@ -1,5 +1,5 @@
-# ruff: noqa: A001, A002
-from typing import Optional, Union
+# ruff: noqa: A002
+from typing import Union
 
 import dagster._check as check
 from dagster._annotations import public
@@ -16,7 +16,7 @@ class DynamodbDestination(GeneratedAirbyteDestination):
         dynamodb_region: str,
         access_key_id: str,
         secret_access_key: str,
-        dynamodb_endpoint: Optional[str] = None,
+        dynamodb_endpoint: str | None = None,
     ):
         """Airbyte Destination for Dynamodb.
 
@@ -62,7 +62,7 @@ class BigqueryDestination(GeneratedAirbyteDestination):
             credential: "BigqueryDestination.HMACKey",
             gcs_bucket_name: str,
             gcs_bucket_path: str,
-            keep_files_in_gcs_bucket: Optional[str] = None,
+            keep_files_in_gcs_bucket: str | None = None,
         ):
             self.method = "GCS Staging"
             self.credential = check.inst_param(
@@ -84,9 +84,9 @@ class BigqueryDestination(GeneratedAirbyteDestination):
         loading_method: Union[
             "BigqueryDestination.StandardInserts", "BigqueryDestination.GCSStaging"
         ],
-        credentials_json: Optional[str] = None,
-        transformation_priority: Optional[str] = None,
-        big_query_client_buffer_size_mb: Optional[int] = None,
+        credentials_json: str | None = None,
+        transformation_priority: str | None = None,
+        big_query_client_buffer_size_mb: int | None = None,
     ):
         """Airbyte Destination for Bigquery.
 
@@ -127,12 +127,12 @@ class RabbitmqDestination(GeneratedAirbyteDestination):
         name: str,
         host: str,
         routing_key: str,
-        ssl: Optional[bool] = None,
-        port: Optional[int] = None,
-        virtual_host: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        exchange: Optional[str] = None,
+        ssl: bool | None = None,
+        port: int | None = None,
+        virtual_host: str | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        exchange: str | None = None,
     ):
         """Airbyte Destination for Rabbitmq.
 
@@ -186,9 +186,9 @@ class ClickhouseDestination(GeneratedAirbyteDestination):
         port: int,
         database: str,
         username: str,
-        password: Optional[str] = None,
-        jdbc_url_params: Optional[str] = None,
-        ssl: Optional[bool] = None,
+        password: str | None = None,
+        jdbc_url_params: str | None = None,
+        ssl: bool | None = None,
     ):
         """Airbyte Destination for Clickhouse.
 
@@ -221,11 +221,11 @@ class AmazonSqsDestination(GeneratedAirbyteDestination):
         name: str,
         queue_url: str,
         region: str,
-        message_delay: Optional[int] = None,
-        access_key: Optional[str] = None,
-        secret_key: Optional[str] = None,
-        message_body_key: Optional[str] = None,
-        message_group_id: Optional[str] = None,
+        message_delay: int | None = None,
+        access_key: str | None = None,
+        secret_key: str | None = None,
+        message_body_key: str | None = None,
+        message_group_id: str | None = None,
     ):
         """Airbyte Destination for Amazon Sqs.
 
@@ -260,8 +260,8 @@ class MariadbColumnstoreDestination(GeneratedAirbyteDestination):
         port: int,
         database: str,
         username: str,
-        password: Optional[str] = None,
-        jdbc_url_params: Optional[str] = None,
+        password: str | None = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Mariadb Columnstore.
 
@@ -343,9 +343,9 @@ class AzureBlobStorageDestination(GeneratedAirbyteDestination):
             "AzureBlobStorageDestination.CSVCommaSeparatedValues",
             "AzureBlobStorageDestination.JSONLinesNewlineDelimitedJSON",
         ],
-        azure_blob_storage_endpoint_domain_name: Optional[str] = None,
-        azure_blob_storage_container_name: Optional[str] = None,
-        azure_blob_storage_output_buffer_size: Optional[int] = None,
+        azure_blob_storage_endpoint_domain_name: str | None = None,
+        azure_blob_storage_container_name: str | None = None,
+        azure_blob_storage_output_buffer_size: int | None = None,
     ):
         """Airbyte Destination for Azure Blob Storage.
 
@@ -434,9 +434,9 @@ class KafkaDestination(GeneratedAirbyteDestination):
         delivery_timeout_ms: int,
         send_buffer_bytes: int,
         receive_buffer_bytes: int,
-        test_topic: Optional[str] = None,
-        sync_producer: Optional[bool] = None,
-        client_id: Optional[str] = None,
+        test_topic: str | None = None,
+        sync_producer: bool | None = None,
+        client_id: str | None = None,
     ):
         """Airbyte Destination for Kafka.
 
@@ -536,7 +536,7 @@ class ElasticsearchDestination(GeneratedAirbyteDestination):
             "ElasticsearchDestination.ApiKeySecret",
             "ElasticsearchDestination.UsernamePassword",
         ],
-        upsert: Optional[bool] = None,
+        upsert: bool | None = None,
     ):
         r"""Airbyte Destination for Elasticsearch.
 
@@ -571,9 +571,9 @@ class MysqlDestination(GeneratedAirbyteDestination):
         port: int,
         database: str,
         username: str,
-        password: Optional[str] = None,
-        ssl: Optional[bool] = None,
-        jdbc_url_params: Optional[str] = None,
+        password: str | None = None,
+        ssl: bool | None = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Mysql.
 
@@ -608,7 +608,7 @@ class SftpJsonDestination(GeneratedAirbyteDestination):
         username: str,
         password: str,
         destination_path: str,
-        port: Optional[int] = None,
+        port: int | None = None,
     ):
         """Airbyte Destination for Sftp Json.
 
@@ -640,12 +640,12 @@ class GcsDestination(GeneratedAirbyteDestination):
 
     class NoCompression:
         @public
-        def __init__(self, compression_type: Optional[str] = None):
+        def __init__(self, compression_type: str | None = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
     class Deflate:
         @public
-        def __init__(self, codec: str, compression_level: Optional[int] = None):
+        def __init__(self, codec: str, compression_level: int | None = None):
             self.codec = check.str_param(codec, "codec")
             self.compression_level = check.opt_int_param(compression_level, "compression_level")
 
@@ -656,7 +656,7 @@ class GcsDestination(GeneratedAirbyteDestination):
 
     class Xz:
         @public
-        def __init__(self, codec: str, compression_level: Optional[int] = None):
+        def __init__(self, codec: str, compression_level: int | None = None):
             self.codec = check.str_param(codec, "codec")
             self.compression_level = check.opt_int_param(compression_level, "compression_level")
 
@@ -665,8 +665,8 @@ class GcsDestination(GeneratedAirbyteDestination):
         def __init__(
             self,
             codec: str,
-            compression_level: Optional[int] = None,
-            include_checksum: Optional[bool] = None,
+            compression_level: int | None = None,
+            include_checksum: bool | None = None,
         ):
             self.codec = check.str_param(codec, "codec")
             self.compression_level = check.opt_int_param(compression_level, "compression_level")
@@ -707,7 +707,7 @@ class GcsDestination(GeneratedAirbyteDestination):
 
     class GZIP:
         @public
-        def __init__(self, compression_type: Optional[str] = None):
+        def __init__(self, compression_type: str | None = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
     class CSVCommaSeparatedValues:
@@ -716,7 +716,7 @@ class GcsDestination(GeneratedAirbyteDestination):
             self,
             format_type: str,
             compression: Union["GcsDestination.NoCompression", "GcsDestination.GZIP"],
-            flattening: Optional[str] = None,
+            flattening: str | None = None,
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.flattening = check.opt_str_param(flattening, "flattening")
@@ -741,12 +741,12 @@ class GcsDestination(GeneratedAirbyteDestination):
         def __init__(
             self,
             format_type: str,
-            compression_codec: Optional[str] = None,
-            block_size_mb: Optional[int] = None,
-            max_padding_size_mb: Optional[int] = None,
-            page_size_kb: Optional[int] = None,
-            dictionary_page_size_kb: Optional[int] = None,
-            dictionary_encoding: Optional[bool] = None,
+            compression_codec: str | None = None,
+            block_size_mb: int | None = None,
+            max_padding_size_mb: int | None = None,
+            page_size_kb: int | None = None,
+            dictionary_page_size_kb: int | None = None,
+            dictionary_encoding: bool | None = None,
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.compression_codec = check.opt_str_param(compression_codec, "compression_codec")
@@ -775,7 +775,7 @@ class GcsDestination(GeneratedAirbyteDestination):
             "GcsDestination.JSONLinesNewlineDelimitedJSON",
             "GcsDestination.ParquetColumnarStorage",
         ],
-        gcs_bucket_region: Optional[str] = None,
+        gcs_bucket_region: str | None = None,
     ):
         """Airbyte Destination for Gcs.
 
@@ -816,8 +816,8 @@ class CassandraDestination(GeneratedAirbyteDestination):
         password: str,
         address: str,
         port: int,
-        datacenter: Optional[str] = None,
-        replication: Optional[int] = None,
+        datacenter: str | None = None,
+        replication: int | None = None,
     ):
         """Airbyte Destination for Cassandra.
 
@@ -870,9 +870,9 @@ class FireboltDestination(GeneratedAirbyteDestination):
         loading_method: Union[
             "FireboltDestination.SQLInserts", "FireboltDestination.ExternalTableViaS3"
         ],
-        account: Optional[str] = None,
-        host: Optional[str] = None,
-        engine: Optional[str] = None,
+        account: str | None = None,
+        host: str | None = None,
+        engine: str | None = None,
     ):
         """Airbyte Destination for Firebolt.
 
@@ -944,7 +944,7 @@ class DatabricksDestination(GeneratedAirbyteDestination):
             s3_bucket_region: str,
             s3_access_key_id: str,
             s3_secret_access_key: str,
-            file_name_pattern: Optional[str] = None,
+            file_name_pattern: str | None = None,
         ):
             self.data_source_type = check.str_param(data_source_type, "data_source_type")
             self.s3_bucket_name = check.str_param(s3_bucket_name, "s3_bucket_name")
@@ -964,7 +964,7 @@ class DatabricksDestination(GeneratedAirbyteDestination):
             azure_blob_storage_account_name: str,
             azure_blob_storage_container_name: str,
             azure_blob_storage_sas_token: str,
-            azure_blob_storage_endpoint_domain_name: Optional[str] = None,
+            azure_blob_storage_endpoint_domain_name: str | None = None,
         ):
             self.data_source_type = check.str_param(data_source_type, "data_source_type")
             self.azure_blob_storage_endpoint_domain_name = check.opt_str_param(
@@ -991,9 +991,9 @@ class DatabricksDestination(GeneratedAirbyteDestination):
         data_source: Union[
             "DatabricksDestination.AmazonS3", "DatabricksDestination.AzureBlobStorage"
         ],
-        databricks_port: Optional[str] = None,
-        database_schema: Optional[str] = None,
-        purge_staging_data: Optional[bool] = None,
+        databricks_port: str | None = None,
+        database_schema: str | None = None,
+        purge_staging_data: bool | None = None,
     ):
         """Airbyte Destination for Databricks.
 
@@ -1051,7 +1051,7 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
             credential: "BigqueryDenormalizedDestination.HMACKey",
             gcs_bucket_name: str,
             gcs_bucket_path: str,
-            keep_files_in_gcs_bucket: Optional[str] = None,
+            keep_files_in_gcs_bucket: str | None = None,
         ):
             self.method = "GCS Staging"
             self.credential = check.inst_param(
@@ -1073,9 +1073,9 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
             "BigqueryDenormalizedDestination.StandardInserts",
             "BigqueryDenormalizedDestination.GCSStaging",
         ],
-        credentials_json: Optional[str] = None,
-        dataset_location: Optional[str] = None,
-        big_query_client_buffer_size_mb: Optional[int] = None,
+        credentials_json: str | None = None,
+        dataset_location: str | None = None,
+        big_query_client_buffer_size_mb: int | None = None,
     ):
         """Airbyte Destination for Bigquery Denormalized.
 
@@ -1126,7 +1126,7 @@ class SqliteDestination(GeneratedAirbyteDestination):
 class MongodbDestination(GeneratedAirbyteDestination):
     class StandaloneMongoDbInstance:
         @public
-        def __init__(self, instance: str, host: str, port: int, tls: Optional[bool] = None):
+        def __init__(self, instance: str, host: str, port: int, tls: bool | None = None):
             self.instance = check.str_param(instance, "instance")
             self.host = check.str_param(host, "host")
             self.port = check.int_param(port, "port")
@@ -1134,7 +1134,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
 
     class ReplicaSet:
         @public
-        def __init__(self, instance: str, server_addresses: str, replica_set: Optional[str] = None):
+        def __init__(self, instance: str, server_addresses: str, replica_set: str | None = None):
             self.instance = check.str_param(instance, "instance")
             self.server_addresses = check.str_param(server_addresses, "server_addresses")
             self.replica_set = check.opt_str_param(replica_set, "replica_set")
@@ -1199,7 +1199,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
 
 class RocksetDestination(GeneratedAirbyteDestination):
     @public
-    def __init__(self, name: str, api_key: str, workspace: str, api_server: Optional[str] = None):
+    def __init__(self, name: str, api_key: str, workspace: str, api_server: str | None = None):
         """Airbyte Destination for Rockset.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/rockset
@@ -1226,7 +1226,7 @@ class OracleDestination(GeneratedAirbyteDestination):
 
     class NativeNetworkEncryptionNNE:
         @public
-        def __init__(self, encryption_algorithm: Optional[str] = None):
+        def __init__(self, encryption_algorithm: str | None = None):
             self.encryption_method = "client_nne"
             self.encryption_algorithm = check.opt_str_param(
                 encryption_algorithm, "encryption_algorithm"
@@ -1251,9 +1251,9 @@ class OracleDestination(GeneratedAirbyteDestination):
             "OracleDestination.NativeNetworkEncryptionNNE",
             "OracleDestination.TLSEncryptedVerifyCertificate",
         ],
-        password: Optional[str] = None,
-        jdbc_url_params: Optional[str] = None,
-        schema: Optional[str] = None,
+        password: str | None = None,
+        jdbc_url_params: str | None = None,
+        schema: str | None = None,
     ):
         """Airbyte Destination for Oracle.
 
@@ -1307,7 +1307,7 @@ class CsvDestination(GeneratedAirbyteDestination):
 class S3Destination(GeneratedAirbyteDestination):
     class NoCompression:
         @public
-        def __init__(self, compression_type: Optional[str] = None):
+        def __init__(self, compression_type: str | None = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
     class Deflate:
@@ -1330,7 +1330,7 @@ class S3Destination(GeneratedAirbyteDestination):
     class Zstandard:
         @public
         def __init__(
-            self, codec: str, compression_level: int, include_checksum: Optional[bool] = None
+            self, codec: str, compression_level: int, include_checksum: bool | None = None
         ):
             self.codec = check.str_param(codec, "codec")
             self.compression_level = check.int_param(compression_level, "compression_level")
@@ -1371,7 +1371,7 @@ class S3Destination(GeneratedAirbyteDestination):
 
     class GZIP:
         @public
-        def __init__(self, compression_type: Optional[str] = None):
+        def __init__(self, compression_type: str | None = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
     class CSVCommaSeparatedValues:
@@ -1405,12 +1405,12 @@ class S3Destination(GeneratedAirbyteDestination):
         def __init__(
             self,
             format_type: str,
-            compression_codec: Optional[str] = None,
-            block_size_mb: Optional[int] = None,
-            max_padding_size_mb: Optional[int] = None,
-            page_size_kb: Optional[int] = None,
-            dictionary_page_size_kb: Optional[int] = None,
-            dictionary_encoding: Optional[bool] = None,
+            compression_codec: str | None = None,
+            block_size_mb: int | None = None,
+            max_padding_size_mb: int | None = None,
+            page_size_kb: int | None = None,
+            dictionary_page_size_kb: int | None = None,
+            dictionary_encoding: bool | None = None,
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.compression_codec = check.opt_str_param(compression_codec, "compression_codec")
@@ -1439,11 +1439,11 @@ class S3Destination(GeneratedAirbyteDestination):
             "S3Destination.JSONLinesNewlineDelimitedJSON",
             "S3Destination.ParquetColumnarStorage",
         ],
-        access_key_id: Optional[str] = None,
-        secret_access_key: Optional[str] = None,
-        s3_endpoint: Optional[str] = None,
-        s3_path_format: Optional[str] = None,
-        file_name_pattern: Optional[str] = None,
+        access_key_id: str | None = None,
+        secret_access_key: str | None = None,
+        s3_endpoint: str | None = None,
+        s3_path_format: str | None = None,
+        file_name_pattern: str | None = None,
     ):
         """Airbyte Destination for S3.
 
@@ -1506,8 +1506,8 @@ class AwsDatalakeDestination(GeneratedAirbyteDestination):
         credentials: Union["AwsDatalakeDestination.IAMRole", "AwsDatalakeDestination.IAMUser"],
         bucket_name: str,
         bucket_prefix: str,
-        aws_account_id: Optional[str] = None,
-        lakeformation_database_name: Optional[str] = None,
+        aws_account_id: str | None = None,
+        lakeformation_database_name: str | None = None,
     ):
         """Airbyte Destination for Aws Datalake.
 
@@ -1554,7 +1554,7 @@ class MssqlDestination(GeneratedAirbyteDestination):
 
     class EncryptedVerifyCertificate:
         @public
-        def __init__(self, hostNameInCertificate: Optional[str] = None):
+        def __init__(self, hostNameInCertificate: str | None = None):
             self.ssl_method = "encrypted_verify_certificate"
             self.hostNameInCertificate = check.opt_str_param(
                 hostNameInCertificate, "hostNameInCertificate"
@@ -1574,8 +1574,8 @@ class MssqlDestination(GeneratedAirbyteDestination):
             "MssqlDestination.EncryptedTrustServerCertificate",
             "MssqlDestination.EncryptedVerifyCertificate",
         ],
-        password: Optional[str] = None,
-        jdbc_url_params: Optional[str] = None,
+        password: str | None = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Mssql.
 
@@ -1633,7 +1633,7 @@ class PubsubDestination(GeneratedAirbyteDestination):
 class R2Destination(GeneratedAirbyteDestination):
     class NoCompression:
         @public
-        def __init__(self, compression_type: Optional[str] = None):
+        def __init__(self, compression_type: str | None = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
     class Deflate:
@@ -1656,7 +1656,7 @@ class R2Destination(GeneratedAirbyteDestination):
     class Zstandard:
         @public
         def __init__(
-            self, codec: str, compression_level: int, include_checksum: Optional[bool] = None
+            self, codec: str, compression_level: int, include_checksum: bool | None = None
         ):
             self.codec = check.str_param(codec, "codec")
             self.compression_level = check.int_param(compression_level, "compression_level")
@@ -1697,7 +1697,7 @@ class R2Destination(GeneratedAirbyteDestination):
 
     class GZIP:
         @public
-        def __init__(self, compression_type: Optional[str] = None):
+        def __init__(self, compression_type: str | None = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
     class CSVCommaSeparatedValues:
@@ -1740,8 +1740,8 @@ class R2Destination(GeneratedAirbyteDestination):
             "R2Destination.CSVCommaSeparatedValues",
             "R2Destination.JSONLinesNewlineDelimitedJSON",
         ],
-        s3_path_format: Optional[str] = None,
-        file_name_pattern: Optional[str] = None,
+        s3_path_format: str | None = None,
+        file_name_pattern: str | None = None,
     ):
         """Airbyte Destination for R2.
 
@@ -1784,8 +1784,8 @@ class JdbcDestination(GeneratedAirbyteDestination):
         name: str,
         username: str,
         jdbc_url: str,
-        password: Optional[str] = None,
-        schema: Optional[str] = None,
+        password: str | None = None,
+        schema: str | None = None,
     ):
         """Airbyte Destination for Jdbc.
 
@@ -1808,7 +1808,7 @@ class JdbcDestination(GeneratedAirbyteDestination):
 class KeenDestination(GeneratedAirbyteDestination):
     @public
     def __init__(
-        self, name: str, project_id: str, api_key: str, infer_timestamp: Optional[bool] = None
+        self, name: str, project_id: str, api_key: str, infer_timestamp: bool | None = None
     ):
         """Airbyte Destination for Keen.
 
@@ -1835,9 +1835,9 @@ class TidbDestination(GeneratedAirbyteDestination):
         port: int,
         database: str,
         username: str,
-        password: Optional[str] = None,
-        ssl: Optional[bool] = None,
-        jdbc_url_params: Optional[str] = None,
+        password: str | None = None,
+        ssl: bool | None = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Tidb.
 
@@ -1865,7 +1865,7 @@ class TidbDestination(GeneratedAirbyteDestination):
 
 class FirestoreDestination(GeneratedAirbyteDestination):
     @public
-    def __init__(self, name: str, project_id: str, credentials_json: Optional[str] = None):
+    def __init__(self, name: str, project_id: str, credentials_json: str | None = None):
         """Airbyte Destination for Firestore.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/firestore
@@ -1890,7 +1890,7 @@ class ScyllaDestination(GeneratedAirbyteDestination):
         password: str,
         address: str,
         port: int,
-        replication: Optional[int] = None,
+        replication: int | None = None,
     ):
         """Airbyte Destination for Scylla.
 
@@ -1954,10 +1954,10 @@ class MqttDestination(GeneratedAirbyteDestination):
         clean_session: bool,
         message_retained: bool,
         message_qos: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        topic_test: Optional[str] = None,
-        client: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        topic_test: str | None = None,
+        client: str | None = None,
     ):
         """Airbyte Destination for Mqtt.
 
@@ -2014,7 +2014,7 @@ class RedshiftDestination(GeneratedAirbyteDestination):
 
     class AESCBCEnvelopeEncryption:
         @public
-        def __init__(self, key_encrypting_key: Optional[str] = None):
+        def __init__(self, key_encrypting_key: str | None = None):
             self.encryption_type = "aes_cbc_envelope"
             self.key_encrypting_key = check.opt_str_param(key_encrypting_key, "key_encrypting_key")
 
@@ -2029,9 +2029,9 @@ class RedshiftDestination(GeneratedAirbyteDestination):
             encryption: Union[
                 "RedshiftDestination.NoEncryption", "RedshiftDestination.AESCBCEnvelopeEncryption"
             ],
-            s3_bucket_path: Optional[str] = None,
-            file_name_pattern: Optional[str] = None,
-            purge_staging_data: Optional[bool] = None,
+            s3_bucket_path: str | None = None,
+            file_name_pattern: str | None = None,
+            purge_staging_data: bool | None = None,
         ):
             self.method = "S3 Staging"
             self.s3_bucket_name = check.str_param(s3_bucket_name, "s3_bucket_name")
@@ -2058,7 +2058,7 @@ class RedshiftDestination(GeneratedAirbyteDestination):
         database: str,
         schema: str,
         uploading_method: Union["RedshiftDestination.Standard", "RedshiftDestination.S3Staging"],
-        jdbc_url_params: Optional[str] = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Redshift.
 
@@ -2109,9 +2109,9 @@ class PulsarDestination(GeneratedAirbyteDestination):
         batching_max_messages: int,
         batching_max_publish_delay: int,
         block_if_queue_full: bool,
-        topic_test: Optional[str] = None,
-        producer_name: Optional[str] = None,
-        producer_sync: Optional[bool] = None,
+        topic_test: str | None = None,
+        producer_name: str | None = None,
+        producer_sync: bool | None = None,
     ):
         """Airbyte Destination for Pulsar.
 
@@ -2168,9 +2168,9 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             self,
             access_token: str,
             refresh_token: str,
-            auth_type: Optional[str] = None,
-            client_id: Optional[str] = None,
-            client_secret: Optional[str] = None,
+            auth_type: str | None = None,
+            client_id: str | None = None,
+            client_secret: str | None = None,
         ):
             self.auth_type = check.opt_str_param(auth_type, "auth_type")
             self.client_id = check.opt_str_param(client_id, "client_id")
@@ -2183,8 +2183,8 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
         def __init__(
             self,
             private_key: str,
-            auth_type: Optional[str] = None,
-            private_key_password: Optional[str] = None,
+            auth_type: str | None = None,
+            private_key_password: str | None = None,
         ):
             self.auth_type = check.opt_str_param(auth_type, "auth_type")
             self.private_key = check.str_param(private_key, "private_key")
@@ -2216,7 +2216,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
 
     class AESCBCEnvelopeEncryption:
         @public
-        def __init__(self, key_encrypting_key: Optional[str] = None):
+        def __init__(self, key_encrypting_key: str | None = None):
             self.encryption_type = "aes_cbc_envelope"
             self.key_encrypting_key = check.opt_str_param(key_encrypting_key, "key_encrypting_key")
 
@@ -2231,9 +2231,9 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             encryption: Union[
                 "SnowflakeDestination.NoEncryption", "SnowflakeDestination.AESCBCEnvelopeEncryption"
             ],
-            s3_bucket_region: Optional[str] = None,
-            purge_staging_data: Optional[bool] = None,
-            file_name_pattern: Optional[str] = None,
+            s3_bucket_region: str | None = None,
+            purge_staging_data: bool | None = None,
+            file_name_pattern: str | None = None,
         ):
             self.method = check.str_param(method, "method")
             self.s3_bucket_name = check.str_param(s3_bucket_name, "s3_bucket_name")
@@ -2264,7 +2264,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             azure_blob_storage_account_name: str,
             azure_blob_storage_container_name: str,
             azure_blob_storage_sas_token: str,
-            azure_blob_storage_endpoint_domain_name: Optional[str] = None,
+            azure_blob_storage_endpoint_domain_name: str | None = None,
         ):
             self.method = check.str_param(method, "method")
             self.azure_blob_storage_endpoint_domain_name = check.opt_str_param(
@@ -2302,7 +2302,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             "SnowflakeDestination.GoogleCloudStorageStaging",
             "SnowflakeDestination.AzureBlobStorageStaging",
         ],
-        jdbc_url_params: Optional[str] = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Snowflake.
 
@@ -2380,7 +2380,7 @@ class PostgresDestination(GeneratedAirbyteDestination):
 
     class VerifyCa:
         @public
-        def __init__(self, ca_certificate: str, client_key_password: Optional[str] = None):
+        def __init__(self, ca_certificate: str, client_key_password: str | None = None):
             self.mode = "verify-ca"
             self.ca_certificate = check.str_param(ca_certificate, "ca_certificate")
             self.client_key_password = check.opt_str_param(
@@ -2394,7 +2394,7 @@ class PostgresDestination(GeneratedAirbyteDestination):
             ca_certificate: str,
             client_certificate: str,
             client_key: str,
-            client_key_password: Optional[str] = None,
+            client_key_password: str | None = None,
         ):
             self.mode = "verify-full"
             self.ca_certificate = check.str_param(ca_certificate, "ca_certificate")
@@ -2421,9 +2421,9 @@ class PostgresDestination(GeneratedAirbyteDestination):
             "PostgresDestination.VerifyCa",
             "PostgresDestination.VerifyFull",
         ],
-        password: Optional[str] = None,
-        ssl: Optional[bool] = None,
-        jdbc_url_params: Optional[str] = None,
+        password: str | None = None,
+        ssl: bool | None = None,
+        jdbc_url_params: str | None = None,
     ):
         """Airbyte Destination for Postgres.
 
@@ -2466,7 +2466,7 @@ class PostgresDestination(GeneratedAirbyteDestination):
 
 class ScaffoldDestinationPythonDestination(GeneratedAirbyteDestination):
     @public
-    def __init__(self, name: str, TODO: Optional[str] = None):
+    def __init__(self, name: str, TODO: str | None = None):
         """Airbyte Destination for Scaffold Destination Python.
 
         Documentation for this source is no longer available.
@@ -2496,7 +2496,7 @@ class LocalJsonDestination(GeneratedAirbyteDestination):
 
 class MeilisearchDestination(GeneratedAirbyteDestination):
     @public
-    def __init__(self, name: str, host: str, api_key: Optional[str] = None):
+    def __init__(self, name: str, host: str, api_key: str | None = None):
         """Airbyte Destination for Meilisearch.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/meilisearch

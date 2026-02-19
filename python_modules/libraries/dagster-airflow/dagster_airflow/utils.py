@@ -3,7 +3,6 @@ import os
 import sys
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager
-from typing import Optional
 
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
@@ -70,7 +69,7 @@ def replace_airflow_logger_handlers() -> Generator[None, None, None]:
         logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
-def serialize_connections(connections: list[Connection] = []) -> list[Mapping[str, Optional[str]]]:
+def serialize_connections(connections: list[Connection] = []) -> list[Mapping[str, str | None]]:
     serialized_connections = []
     for c in connections:
         serialized_connection = {

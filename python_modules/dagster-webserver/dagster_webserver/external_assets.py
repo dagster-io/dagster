@@ -195,6 +195,8 @@ async def handle_report_asset_check_request(
                 status_code=400,
             )
 
+    partition = _value_from_body_or_params(ReportAssetCheckEvalParam.partition, request, json_body)
+
     try:
         evaluation = AssetCheckEvaluation(
             check_name=check_name,
@@ -202,6 +204,7 @@ async def handle_report_asset_check_request(
             asset_key=asset_key,
             metadata=metadata,
             severity=AssetCheckSeverity(severity),
+            partition=partition,
         )
     except Exception as exc:
         return JSONResponse(
@@ -319,6 +322,7 @@ class ReportAssetCheckEvalParam:
     metadata = "metadata"
     severity = "severity"
     passed = "passed"
+    partition = "partition"
 
 
 class ReportAssetObsParam:

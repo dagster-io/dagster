@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 from collections.abc import Sequence
-from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
+from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import EntityKey
@@ -30,7 +30,7 @@ class RunRequestExecutionData(NamedTuple):
 
 def _get_implicit_job_name_for_assets(
     asset_graph: RemoteWorkspaceAssetGraph, asset_keys: Sequence[AssetKey]
-) -> Optional[str]:
+) -> str | None:
     job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
         job_names &= set(asset_graph.get_materialization_job_names(asset_key))
@@ -111,7 +111,7 @@ async def get_job_execution_data_from_run_request(
 
 
 async def _create_asset_run(
-    run_id: Optional[str],
+    run_id: str | None,
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
@@ -238,7 +238,7 @@ async def _create_asset_run(
 
 
 async def submit_asset_run(
-    run_id: Optional[str],
+    run_id: str | None,
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,

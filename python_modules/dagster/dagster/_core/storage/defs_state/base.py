@@ -42,7 +42,7 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     that is loading definitions.
     """
 
-    def get_latest_version(self, key: str) -> Optional[str]:
+    def get_latest_version(self, key: str) -> str | None:
         """Returns the saved state version for the given defs key, if it exists.
 
         Args:
@@ -55,7 +55,7 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return info.get_version(key) if info else None
 
     @abstractmethod
-    def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
+    def get_latest_defs_state_info(self) -> DefsStateInfo | None:
         """Returns the saved state version for all defs keys.
 
         Returns:

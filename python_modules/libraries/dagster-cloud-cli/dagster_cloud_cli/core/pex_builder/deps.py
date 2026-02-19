@@ -12,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
-from typing import Optional
 
 import click
 from dagster_shared.utils import find_uv_workspace_root
@@ -62,7 +61,7 @@ class LocalPackages:
     local_package_paths: list[str]
 
 
-def local_path_for(line: str, relative_to: str) -> Optional[str]:
+def local_path_for(line: str, relative_to: str) -> str | None:
     # Return the abspath for a local package, iff this line points to a local package,
     # otherwise return None.
     # This handles relative or absolute paths specified in requirements.txt,
@@ -389,7 +388,7 @@ def get_setup_py_deps(code_directory: str, python_interpreter: str) -> list[str]
     return lines
 
 
-def _resolve_uv_workspace_dep(dep_name: str, code_directory: str) -> Optional[str]:
+def _resolve_uv_workspace_dep(dep_name: str, code_directory: str) -> str | None:
     """Find the relative path to a uv workspace member by package name.
 
     Returns a relative path like "../shared-lib" or None if not found.
@@ -487,7 +486,7 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
 @click.argument("build_output_dir", type=click.Path(exists=False))
 @util.python_version_option()
 def deps_main(project_dir, build_output_dir, python_version):
-    deps_pex_path, dagster_version = build_deps_pex(
+    _deps_pex_path, _dagster_version = build_deps_pex(
         project_dir, build_output_dir, util.parse_python_version(python_version)
     )
 

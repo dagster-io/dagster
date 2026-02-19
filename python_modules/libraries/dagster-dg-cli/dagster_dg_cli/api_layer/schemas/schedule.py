@@ -1,7 +1,6 @@
 """Schedule metadata schema definitions."""
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -21,10 +20,10 @@ class DgApiSchedule(BaseModel):
     status: DgApiScheduleStatus
     cron_schedule: str
     pipeline_name: str
-    description: Optional[str] = None
-    execution_timezone: Optional[str] = None
-    code_location_origin: Optional[str] = None
-    next_tick_timestamp: Optional[float] = None  # Unix timestamp
+    description: str | None = None
+    execution_timezone: str | None = None
+    code_location_origin: str | None = None
+    next_tick_timestamp: float | None = None  # Unix timestamp
 
     class Config:
         from_attributes = True

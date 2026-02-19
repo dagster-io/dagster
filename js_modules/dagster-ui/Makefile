@@ -1,5 +1,5 @@
 dev_webapp:
-	NEXT_PUBLIC_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn start
+	NEXT_PUBLIC_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn workspace @dagster-io/app-oss start
 
 generate-graphql:
 	yarn workspace @dagster-io/ui-core generate-graphql

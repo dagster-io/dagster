@@ -13,7 +13,6 @@ to demonstrate data quality validation across all 7 dimensions:
 
 import random
 from datetime import datetime, timedelta
-from typing import Optional
 
 import pandas as pd
 
@@ -21,7 +20,7 @@ import pandas as pd
 def generate_customers(
     n: int = 100,
     failure_rate: float = 0.15,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> pd.DataFrame:
     """Generate customer data with random quality issues.
 
@@ -133,9 +132,9 @@ def generate_customers(
 
 def generate_orders(
     n: int = 200,
-    customer_ids: Optional[list[str]] = None,
+    customer_ids: list[str] | None = None,
     failure_rate: float = 0.15,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> pd.DataFrame:
     """Generate order data with random quality issues.
 
@@ -209,7 +208,7 @@ def generate_orders(
 def generate_products(
     n: int = 50,
     failure_rate: float = 0.10,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> pd.DataFrame:
     """Generate product data with random quality issues.
 

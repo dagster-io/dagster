@@ -3,7 +3,6 @@ import argparse
 import itertools
 import subprocess
 import sys
-from typing import Optional
 
 # We allow extra packages to be passed in via the command line because pip's version resolution
 # requires everything to be installed at the same time.
@@ -27,8 +26,8 @@ parser.add_argument(
 def main(
     quiet: bool,
     extra_packages: list[str],
-    include_prebuilt_grpcio_wheel: Optional[bool],
-    system: Optional[bool],
+    include_prebuilt_grpcio_wheel: bool | None,
+    system: bool | None,
 ) -> None:
     """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -113,10 +112,9 @@ def main(
         "python_modules/libraries/dagstermill",
     ]
 
-    if sys.version_info >= (3, 10):
-        editable_target_paths += [
-            "python_modules/libraries/dagster-ge",
-        ]
+    editable_target_paths += [
+        "python_modules/libraries/dagster-ge",
+    ]
 
     if sys.version_info <= (3, 12):
         editable_target_paths += [

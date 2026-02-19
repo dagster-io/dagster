@@ -29,12 +29,12 @@ InProgressRuns: TypeAlias = Mapping[str, SerializableEntitySubset[AssetCheckKey]
 
 @whitelist_for_serdes
 @record
-class AssetCheckState(LoadableBy[tuple[AssetCheckKey, Optional[PartitionsDefinition]]]):
+class AssetCheckState(LoadableBy[tuple[AssetCheckKey, PartitionsDefinition | None]]):
     latest_storage_id: int
     subsets: StatusSubsets
     in_progress_runs: InProgressRuns
 
-    def compatible_with(self, partitions_def: Optional[PartitionsDefinition]) -> bool:
+    def compatible_with(self, partitions_def: PartitionsDefinition | None) -> bool:
         subset = next(iter(self.subsets.values()), None)
         if subset is None:
             return True
@@ -47,7 +47,7 @@ class AssetCheckState(LoadableBy[tuple[AssetCheckKey, Optional[PartitionsDefinit
     @classmethod
     def _blocking_batch_load(
         cls,
-        keys: Iterable[tuple[AssetCheckKey, Optional[PartitionsDefinition]]],
+        keys: Iterable[tuple[AssetCheckKey, PartitionsDefinition | None]],
         context: LoadingContext,
     ) -> Iterable[Optional["AssetCheckState"]]:
         keys = list(keys)
@@ -57,7 +57,7 @@ class AssetCheckState(LoadableBy[tuple[AssetCheckKey, Optional[PartitionsDefinit
     def with_updates(
         self,
         key: AssetCheckKey,
-        partitions_def: Optional[PartitionsDefinition],
+        partitions_def: PartitionsDefinition | None,
         partition_records: Sequence[AssetCheckPartitionInfo],
         run_statuses: Mapping[str, DagsterRunStatus],
     ) -> "AssetCheckState":
@@ -92,7 +92,7 @@ class AssetCheckState(LoadableBy[tuple[AssetCheckKey, Optional[PartitionsDefinit
 
 def bulk_update_asset_check_state(
     instance: "DagsterInstance",
-    keys: Sequence[tuple[AssetCheckKey, Optional[PartitionsDefinition]]],
+    keys: Sequence[tuple[AssetCheckKey, PartitionsDefinition | None]],
     initial_states: Mapping[AssetCheckKey, "AssetCheckState"],
 ) -> Mapping[AssetCheckKey, "AssetCheckState"]:
     check_keys = [key for key, _ in keys]
@@ -133,7 +133,7 @@ def bulk_update_asset_check_state(
 
 
 def _valid_partition_key(
-    partition_key: Optional[str], partitions_def: Optional[PartitionsDefinition]
+    partition_key: str | None, partitions_def: PartitionsDefinition | None
 ) -> bool:
     if partitions_def is None:
         return partition_key is None
@@ -143,7 +143,7 @@ def _valid_partition_key(
 
 def _process_partition_records(
     key: AssetCheckKey,
-    partitions_def: Optional[PartitionsDefinition],
+    partitions_def: PartitionsDefinition | None,
     subsets: StatusSubsets,
     in_progress_runs: InProgressRuns,
     partition_infos: Sequence[AssetCheckPartitionInfo],
@@ -192,7 +192,7 @@ def _process_partition_records(
 
 def _process_run_statuses(
     key: AssetCheckKey,
-    partitions_def: Optional[PartitionsDefinition],
+    partitions_def: PartitionsDefinition | None,
     subsets: StatusSubsets,
     in_progress_runs: InProgressRuns,
     run_statuses: Mapping[str, DagsterRunStatus],
@@ -233,7 +233,7 @@ def _process_run_statuses(
 
 def _resolve_in_progress_subsets(
     key: AssetCheckKey,
-    partitions_def: Optional[PartitionsDefinition],
+    partitions_def: PartitionsDefinition | None,
     in_progress_runs: InProgressRuns,
     run_statuses: Mapping[str, DagsterRunStatus],
 ) -> tuple[

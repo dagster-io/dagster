@@ -18,7 +18,7 @@ def test_jobs_attr():
     sensor = dg.SensorDefinition(evaluation_fn=eval_fn, asset_selection=["foo"])
     for attr in ["job", "job_name"]:
         with pytest.raises(
-            dg.DagsterInvalidDefinitionError, match="No job was provided to SensorDefinition."
+            dg.DagsterInvalidDefinitionError, match=r"No job was provided to SensorDefinition."
         ):
             getattr(sensor, attr)
 
@@ -30,7 +30,7 @@ def test_jobs_attr():
     for attr in ["job", "job_name"]:
         with pytest.raises(
             dg.DagsterInvalidDefinitionError,
-            match="property not available when SensorDefinition has multiple jobs.",
+            match=r"property not available when SensorDefinition has multiple jobs.",
         ):
             getattr(sensor, attr)
 
@@ -38,7 +38,7 @@ def test_jobs_attr():
 def test_direct_sensor_definition_instantiation():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Must provide evaluation_fn to SensorDefinition.",
+        match=r"Must provide evaluation_fn to SensorDefinition.",
     ):
         dg.SensorDefinition()
 

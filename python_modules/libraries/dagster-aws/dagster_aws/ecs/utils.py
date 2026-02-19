@@ -29,7 +29,14 @@ class RetryableEcsException(Exception): ...
 
 
 def run_ecs_task(ecs, run_task_kwargs) -> Mapping[str, Any]:
-    response = ecs.run_task(**run_task_kwargs)
+    try:
+        response = ecs.run_task(**run_task_kwargs)
+    except ecs.exceptions.InvalidParameterException as e:
+        # ECS sometimes raises transient throttling errors in the underlying EC2 services
+        # as InvalidParameterExceptions
+        if "Throttling" in e.response.get("Error", {}).get("Message", ""):
+            raise RetryableEcsException(str(e)) from e
+        raise
 
     tasks = response["tasks"]
 

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, get_args
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict, get_args
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -16,9 +16,9 @@ from dagster._core.definitions.metadata.table import (
 if TYPE_CHECKING:
     from dagster._core.definitions.metadata import MetadataValue
 
-InferrableExternalMetadataValue = Union[
-    int, float, str, Mapping[str, Any], Sequence[Any], bool, None
-]
+InferrableExternalMetadataValue: TypeAlias = (
+    int | float | str | Mapping[str, Any] | Sequence[Any] | bool | None
+)
 
 
 class ExternalMetadataValue(TypedDict):

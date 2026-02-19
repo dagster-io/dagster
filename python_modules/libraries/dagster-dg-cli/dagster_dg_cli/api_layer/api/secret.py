@@ -1,7 +1,7 @@
 """Secret endpoints - REST-like interface."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.secret import (
     get_secret_via_graphql,
@@ -21,9 +21,9 @@ class DgApiSecretApi:
 
     def list_secrets(
         self,
-        location_name: Optional[str] = None,
-        scope: Optional[str] = None,
-        limit: Optional[int] = None,
+        location_name: str | None = None,
+        scope: str | None = None,
+        limit: int | None = None,
     ) -> "DgApiSecretList":
         """List secrets with optional filtering.
 
@@ -50,7 +50,7 @@ class DgApiSecretApi:
     def get_secret(
         self,
         secret_name: str,
-        location_name: Optional[str] = None,
+        location_name: str | None = None,
         include_value: bool = False,
     ) -> "DgApiSecret":
         """Get a specific secret.

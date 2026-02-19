@@ -1,6 +1,5 @@
 from collections.abc import Iterable, Sequence
 from datetime import datetime
-from typing import Optional
 
 import dagster._check as check
 from dagster._core.definitions.partitions.context import (
@@ -34,7 +33,7 @@ class AllPartitionsSubset(PartitionsSubset):
         return False
 
     @use_partition_loading_context
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
+    def get_partition_keys(self, current_time: datetime | None = None) -> Sequence[str]:
         check.param_invariant(current_time is None, "current_time")
         return self.partitions_def.get_partition_keys()
 
@@ -60,6 +59,8 @@ class AllPartitionsSubset(PartitionsSubset):
         return (
             isinstance(other, AllPartitionsSubset) and other.partitions_def == self.partitions_def
         )
+
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         return other
@@ -98,8 +99,8 @@ class AllPartitionsSubset(PartitionsSubset):
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool:
         return False
 
@@ -117,7 +118,7 @@ class AllPartitionsSubset(PartitionsSubset):
 
     @classmethod
     def create_empty_subset(
-        cls, partitions_def: Optional[PartitionsDefinition] = None
+        cls, partitions_def: PartitionsDefinition | None = None
     ) -> PartitionsSubset:
         return check.not_none(partitions_def).empty_subset()
 

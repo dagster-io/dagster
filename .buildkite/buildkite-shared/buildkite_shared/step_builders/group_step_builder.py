@@ -1,4 +1,4 @@
-from typing import Optional, TypeAlias, Union
+from typing import TypeAlias
 
 from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
@@ -8,17 +8,17 @@ from buildkite_shared.step_builders.trigger_step_builder import TriggerStepConfi
 from buildkite_shared.step_builders.wait_step_builder import WaitStepConfiguration
 from typing_extensions import TypedDict
 
-GroupLeafStepConfiguration: TypeAlias = Union[
-    CommandStepConfiguration, TriggerStepConfiguration, WaitStepConfiguration
-]
+GroupLeafStepConfiguration: TypeAlias = (
+    CommandStepConfiguration | TriggerStepConfiguration | WaitStepConfiguration
+)
 
 
 class GroupStepConfiguration(TypedDict, total=False):
     group: str
     label: str
     steps: list[GroupLeafStepConfiguration]
-    key: Optional[str]
-    skip: Optional[str]
+    key: str | None
+    skip: str | None
 
 
 class GroupStepBuilder:

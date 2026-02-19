@@ -98,7 +98,7 @@ def test_materialize_conflicting_resources():
         with pytest.raises(
             dg.DagsterInvalidDefinitionError,
             match=(
-                "Conflicting versions of resource with key 'foo' were provided to different assets."
+                r"Conflicting versions of resource with key 'foo' were provided to different assets."
             ),
         ):
             dg.materialize([first, second], instance=instance)
@@ -187,7 +187,7 @@ def test_materialize_source_asset_conflicts():
         with pytest.raises(
             dg.DagsterInvalidDefinitionError,
             match=(
-                "Conflicting versions of resource with key 'foo' were provided to different assets."
+                r"Conflicting versions of resource with key 'foo' were provided to different assets."
             ),
         ):
             dg.materialize([the_asset, the_source], instance=instance)

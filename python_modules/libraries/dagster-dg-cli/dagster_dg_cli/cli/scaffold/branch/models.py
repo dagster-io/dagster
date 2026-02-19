@@ -1,6 +1,6 @@
 """Data models for scaffold branch command and diagnostics."""
 
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared.record import record
 
@@ -22,7 +22,7 @@ class Session:
     # the commit hash of the branch base. Used to identify the state of the target repo.
     branch_base_sha: str
     # the commit hash of the generated first pass commit, if done.
-    first_pass_sha: Optional[str]
+    first_pass_sha: str | None
     # collection of input information
     input: dict[str, Any]
     # collection of generated output
@@ -49,7 +49,7 @@ class AIInteraction:
     timestamp: str
     prompt: str
     response: str
-    token_count: Optional[int]
+    token_count: int | None
     allowed_tools: list[str]
     duration_ms: float
 

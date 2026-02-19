@@ -3,7 +3,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
@@ -23,7 +23,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     WARNING: The Dagster UI and other core functionality will not work if this is used on a real DagsterInstance
     """
 
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None, preload=None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None, preload=None):
         self._inst_data = inst_data
         self._engine = create_engine(
             create_in_memory_conn_string(f"events-{uuid.uuid4()}"),

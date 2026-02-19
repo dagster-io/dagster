@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 import typer
@@ -21,7 +21,7 @@ SINGLETON_REPOSITORY_NAME = "__repository__"
 def launch(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     location: str = typer.Option(..., "-l", "--location", help="Location name in the deployment."),
     job: str = typer.Option(..., "-j", "--job", help="Job name to run."),
     repository: str = typer.Option(
@@ -37,7 +37,7 @@ def launch(
     config: str = typer.Option(
         None, "--config-json", help="JSON string of run config to use for this job run"
     ),
-    asset_keys: Optional[list[str]] = typer.Option(
+    asset_keys: list[str] | None = typer.Option(
         None,
         "--asset-key",
         help=(

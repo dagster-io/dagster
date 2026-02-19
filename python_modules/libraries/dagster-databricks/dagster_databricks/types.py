@@ -46,7 +46,7 @@ class DatabricksRunState(NamedTuple):
 
     life_cycle_state: Optional["DatabricksRunLifeCycleState"]
     result_state: Optional["DatabricksRunResultState"]
-    state_message: Optional[str]
+    state_message: str | None
 
     def has_terminated(self) -> bool:
         """Has the job terminated?"""

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 import dagster
 import dagster as dg
@@ -558,7 +557,7 @@ def test_int_source_default():
 
 def test_optional_string_source_default() -> None:
     class RawStringConfigSchema(dg.Config):
-        a_str: Optional[str]
+        a_str: str | None
 
     assert print_config_type_to_string(
         {"a_str": dagster.Field(dg.Noneable(dg.StringSource))}
@@ -571,7 +570,7 @@ def test_optional_string_source_default() -> None:
 
 def test_optional_string_source_with_default_none() -> None:
     class RawStringConfigSchema(dg.Config):
-        a_str: Optional[str] = None
+        a_str: str | None = None
 
     assert print_config_type_to_string(
         {"a_str": dagster.Field(dg.Noneable(dg.StringSource))}
@@ -585,7 +584,7 @@ def test_optional_string_source_with_default_none() -> None:
 
 def test_optional_bool_source_default() -> None:
     class RawBoolConfigSchema(dg.Config):
-        a_bool: Optional[bool]
+        a_bool: bool | None
 
     assert print_config_type_to_string(
         {"a_bool": dagster.Field(dg.Noneable(dg.BoolSource))}
@@ -596,7 +595,7 @@ def test_optional_bool_source_default() -> None:
 
 def test_optional_int_source_default() -> None:
     class OptionalInt(dg.Config):
-        an_int: Optional[int]
+        an_int: int | None
 
     assert print_config_type_to_string(
         {"an_int": dagster.Field(dg.Noneable(dg.IntSource))}
@@ -698,8 +697,8 @@ def test_structured_run_config_ops():
 
 def test_structured_run_config_optional() -> None:
     class ANewConfigOpConfig(dg.Config):
-        a_string: Optional[str]
-        an_int: Optional[int] = None
+        a_string: str | None
+        an_int: int | None = None
         a_float: float = PyField(None)  # type: ignore
 
     executed = {}
@@ -799,7 +798,7 @@ def test_structured_run_config_assets():
 def test_structured_run_config_assets_optional() -> None:
     class AnAssetConfig(dg.Config):
         a_string: str = PyField(None)  # type: ignore
-        an_int: Optional[int] = None
+        an_int: int | None = None
 
     executed = {}
 
@@ -1055,10 +1054,10 @@ def test_to_config_dict() -> None:
 
     class MyConfig(dg.Config):
         num: int = 1
-        opt_str: Optional[str] = None
+        opt_str: str | None = None
         enum: Color = Color.RED
         arr: list[int] = []
-        opt_arr: Optional[list[int]] = None
+        opt_arr: list[int] | None = None
 
     config_dict = dg.RunConfig({"my_asset_job": MyConfig()}).to_config_dict()
     assert config_dict["ops"]["my_asset_job"]["config"] == {"num": 1, "enum": "RED", "arr": []}

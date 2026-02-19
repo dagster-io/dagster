@@ -268,7 +268,7 @@ def test_get_stats_from_remote_repo_partitions():
 
 
 def test_get_stats_from_remote_repo_multi_partitions(enabled_telemetry: Telemetry):
-    instance, _ = enabled_telemetry
+    _instance, _ = enabled_telemetry
 
     @dg.asset(
         partitions_def=dg.MultiPartitionsDefinition(

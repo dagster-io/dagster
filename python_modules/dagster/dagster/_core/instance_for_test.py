@@ -3,7 +3,7 @@ import sys
 import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack, contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -17,9 +17,9 @@ from dagster._utils.merger import merge_dicts
 @public
 @contextmanager
 def instance_for_test(
-    overrides: Optional[Mapping[str, Any]] = None,
+    overrides: Mapping[str, Any] | None = None,
     set_dagster_home: bool = True,
-    temp_dir: Optional[str] = None,
+    temp_dir: str | None = None,
     synchronous_run_coordinator: bool = False,
     synchronous_run_launcher: bool = False,
 ) -> Iterator[DagsterInstance]:

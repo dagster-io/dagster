@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 # Unfortunately mypy doesn't support recursive types, which would be used to properly define the
 # List/Dict elements of this union: `Dict[str, ConfigSchema]`, `List[ConfigSchema]`.
 UserConfigSchema: TypeAlias = Union[
-    type[Union[bool, float, int, str]],
-    type[Union[dict[Any, Any], list[Any]]],
+    type[bool | float | int | str],
+    type[dict[Any, Any] | list[Any]],
     "ConfigType",
     "Field",
     Mapping[str, Any],

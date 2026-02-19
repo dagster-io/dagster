@@ -82,7 +82,7 @@ def test_defs_sandbox_legacy() -> None:
                     ],
                 },
             },
-        ) as (component, defs):
+        ) as (component, _defs):
             assert isinstance(component, dg.FunctionComponent)
             assert isinstance(component.execution, FunctionSpec)
             assert component.execution.name == "nested_component"

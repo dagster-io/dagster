@@ -43,7 +43,7 @@ def test_jobs_attr():
     schedule = dg.ScheduleDefinition(job_name="my_pipeline", cron_schedule="0 0 * * *")
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="No job was provided to ScheduleDefinition.",
+        match=r"No job was provided to ScheduleDefinition.",
     ):
         schedule.job  # noqa: B018
 

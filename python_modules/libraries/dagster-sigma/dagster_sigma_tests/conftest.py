@@ -1,7 +1,7 @@
 import json
 import uuid
 from collections.abc import Iterator
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses as request_responses
@@ -31,7 +31,7 @@ def sigma_auth_fixture() -> str:
 
 
 def _build_paginated_response(
-    items: list[dict[str, Any]], slice_start: Optional[int] = None, slice_end: Optional[int] = None
+    items: list[dict[str, Any]], slice_start: int | None = None, slice_end: int | None = None
 ) -> dict[str, Any]:
     has_more = False
     next_page = None

@@ -1,4 +1,3 @@
-from typing import Optional
 from unittest import mock
 
 from dagster import AssetKey, AssetOut, Definitions, asset, multi_asset
@@ -384,7 +383,7 @@ def test_launch_asset_backfill_all_partitions():
                 },
             )
 
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -416,7 +415,7 @@ def test_launch_asset_backfill_all_partitions_asset_selection():
                 },
             )
 
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -461,7 +460,7 @@ def test_launch_asset_backfill_partitions_by_asset():
                 },
             )
 
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -504,7 +503,7 @@ def test_launch_asset_backfill_partitions_by_asset_multiple_ranges():
                 },
             )
 
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -540,7 +539,7 @@ def test_launch_asset_backfill_all_partitions_root_assets_different_partitions()
                 },
             )
 
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -897,7 +896,7 @@ def test_launch_asset_backfill_with_non_partitioned_asset():
                     }
                 },
             )
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -1004,7 +1003,7 @@ def test_launch_asset_backfill_with_two_anchor_assets():
                     }
                 },
             )
-            backfill_id, asset_backfill_data = _get_backfill_data(
+            _backfill_id, asset_backfill_data = _get_backfill_data(
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
@@ -1374,7 +1373,7 @@ def _get_backfill_data(
     return backfill_id, backfill.asset_backfill_data
 
 
-def _get_error_message(launch_backfill_result: GqlResult) -> Optional[str]:
+def _get_error_message(launch_backfill_result: GqlResult) -> str | None:
     return (
         (
             "".join(launch_backfill_result.data["launchPartitionBackfill"]["stack"])

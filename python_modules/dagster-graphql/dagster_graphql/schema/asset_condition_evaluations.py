@@ -1,6 +1,5 @@
 import enum
 from collections.abc import Sequence
-from typing import Optional
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -89,7 +88,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
-    numTrue = graphene.NonNull(graphene.Int)
+    numTrue = graphene.Field(graphene.Int)
     numCandidates = graphene.Field(graphene.Int)
 
     childUniqueIds = non_null_list(graphene.String)
@@ -98,19 +97,26 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         name = "PartitionedAssetConditionEvaluationNode"
 
     def __init__(self, evaluation: AutomationConditionEvaluation):
+        self._evaluation = evaluation
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
             entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
-            numTrue=evaluation.true_subset.size,
-            numCandidates=evaluation.candidate_subset.size
-            if isinstance(evaluation.candidate_subset, SerializableEntitySubset)
-            else None,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
+        )
+
+    def resolve_numTrue(self, graphene_info: ResolveInfo) -> int | None:
+        return self._evaluation.true_subset.size
+
+    def resolve_numCandidates(self, graphene_info: ResolveInfo) -> int | None:
+        return (
+            self._evaluation.candidate_subset.size
+            if isinstance(self._evaluation.candidate_subset, SerializableEntitySubset)
+            else None
         )
 
 
@@ -192,7 +198,7 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
     def __init__(
         self,
         root_evaluation: AutomationConditionEvaluation,
-        partition_key: Optional[str] = None,
+        partition_key: str | None = None,
     ):
         all_evaluations = _flatten_evaluation(root_evaluation)
         if root_evaluation.true_subset.is_partitioned:
@@ -246,7 +252,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
-    numTrue = graphene.NonNull(graphene.Int)
+    numTrue = graphene.Field(graphene.Int)
     numCandidates = graphene.Field(graphene.Int)
 
     isPartitioned = graphene.NonNull(graphene.Boolean)
@@ -267,10 +273,6 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
-            numTrue=evaluation.true_subset.size,
-            numCandidates=evaluation.candidate_subset.size
-            if isinstance(evaluation.candidate_subset, SerializableEntitySubset)
-            else None,
             isPartitioned=evaluation.true_subset.is_partitioned,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
@@ -278,9 +280,19 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             operatorType=evaluation.condition_snapshot.operator_type,
         )
 
+    def resolve_numTrue(self, graphene_info: ResolveInfo) -> int | None:
+        return self._evaluation.true_subset.size
+
+    def resolve_numCandidates(self, graphene_info: ResolveInfo) -> int | None:
+        return (
+            self._evaluation.candidate_subset.size
+            if isinstance(self._evaluation.candidate_subset, SerializableEntitySubset)
+            else None
+        )
+
     def resolve_sinceMetadata(
         self, graphene_info: ResolveInfo
-    ) -> Optional[GrapheneSinceConditionMetadata]:
+    ) -> GrapheneSinceConditionMetadata | None:
         if self._evaluation.condition_snapshot.class_name != "SinceCondition":
             return None
 
@@ -298,7 +310,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     assetKey = graphene.Field(GrapheneAssetKey)
 
     entityKey = graphene.NonNull(GrapheneEntityKey)
-    numRequested = graphene.NonNull(graphene.Int)
+    numRequested = graphene.Field(graphene.Int)
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
@@ -322,6 +334,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
 
         flattened_evaluations = _flatten_evaluation(evaluation_with_run_ids.evaluation)
         self._record = record
+        self._root_evaluation = root_evaluation
 
         super().__init__(
             id=record.id,
@@ -332,7 +345,6 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
             if isinstance(record.key, AssetKey)
             else None,
             entityKey=GrapheneEntityKey.from_entity_key(record.key),
-            numRequested=root_evaluation.true_subset.size,
             startTimestamp=root_evaluation.start_timestamp,
             endTimestamp=root_evaluation.end_timestamp,
             isLegacy=any(
@@ -348,6 +360,9 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
                 GrapheneAutomationConditionEvaluationNode(node) for node in flattened_evaluations
             ],
         )
+
+    def resolve_numRequested(self, graphene_info: ResolveInfo) -> int | None:
+        return self._root_evaluation.true_subset.size
 
 
 class GrapheneAssetConditionEvaluationRecords(graphene.ObjectType):

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -57,7 +57,7 @@ def resolve_looker_resource(context, model) -> LookerResource:
 class LookerFilterArgs(Model, Resolvable):
     """Arguments for filtering which Looker content to load."""
 
-    dashboard_folders: Optional[list[list[str]]] = Field(
+    dashboard_folders: list[list[str]] | None = Field(
         default=None,
         description=(
             "A list of folder paths to load dashboards from. Each folder path is a list of "
@@ -71,7 +71,7 @@ class LookerFilterArgs(Model, Resolvable):
     )
 
 
-def resolve_looker_filter(context, model) -> Optional[LookerFilter]:
+def resolve_looker_filter(context, model) -> LookerFilter | None:
     """Resolver function for LookerFilter that properly resolves templated strings."""
     if model is None:
         return None
@@ -123,7 +123,7 @@ class LookerComponent(StateBackedComponent, Resolvable):
     ]
 
     looker_filter: Annotated[
-        Optional[LookerFilter],
+        LookerFilter | None,
         Resolver(
             resolve_looker_filter,
             model_field_type=LookerFilterArgs.model(),
@@ -137,10 +137,10 @@ class LookerComponent(StateBackedComponent, Resolvable):
         ),
     ] = None
 
-    translation: Optional[ResolvedMultilayerTranslationFn] = None
+    translation: ResolvedMultilayerTranslationFn | None = None
 
     pdt_builds: Annotated[
-        Optional[list[RequestStartPdtBuild]],
+        list[RequestStartPdtBuild] | None,
         Resolver.default(
             description=(
                 "A list of PDT build requests. Each request defined here will be converted "
@@ -284,7 +284,7 @@ class LookerComponent(StateBackedComponent, Resolvable):
         return pdt_asset
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         """Builds Dagster definitions from the cached Looker instance state."""
         if state_path is None:

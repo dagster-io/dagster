@@ -85,10 +85,10 @@ class RequestStartPdtBuild(Model, Resolvable):
 
     model_name: str
     view_name: str
-    force_rebuild: Optional[str] = None
-    force_full_incremental: Optional[str] = None
-    workspace: Optional[str] = None
-    source: Optional[str] = None
+    force_rebuild: str | None = None
+    force_full_incremental: str | None = None
+    workspace: str | None = None
+    source: str | None = None
 
 
 class LookerStructureType(Enum):
@@ -100,14 +100,16 @@ class LookerStructureType(Enum):
 @record
 class LookmlView:
     view_name: str
-    sql_table_name: Optional[str]
+    sql_table_name: str | None
 
 
+# Union is required here because looker SDK types use a metaclass that doesn't support the
+# `|` operator at runtime, causing TypeError during module import (e.g. in Sphinx doc builds).
 @record
 class LookerStructureData:
     structure_type: LookerStructureType
-    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]
-    base_url: Optional[str] = None
+    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]  # noqa: UP007
+    base_url: Optional[str] = None  # noqa: UP045
 
 
 @record
@@ -117,18 +119,18 @@ class LookerApiTranslatorStructureData:
     """
 
     structure_data: "LookerStructureData"
-    instance_data: Optional["LookerInstanceData"]
+    instance_data: LookerInstanceData | None
 
     @property
     def structure_type(self) -> LookerStructureType:
         return self.structure_data.structure_type
 
     @property
-    def data(self) -> Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]:
+    def data(self) -> Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]:  # noqa: UP007
         return self.structure_data.data
 
     @property
-    def base_url(self) -> Optional[str]:
+    def base_url(self) -> str | None:
         return self.structure_data.base_url
 
 

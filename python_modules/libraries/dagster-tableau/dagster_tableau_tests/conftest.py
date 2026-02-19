@@ -1,5 +1,3 @@
-# ruff: noqa: SLF001
-
 import uuid
 from unittest.mock import MagicMock, PropertyMock, patch
 
@@ -20,6 +18,10 @@ TEST_DATA_SOURCE_HIDDEN_SHEET_ID = "test_data_source_hidden_sheet_id"
 TEST_WORKBOOK_ID = "b75fc023-a7ca-4115-857b-4342028640d0"
 TEST_PROJECT_NAME = "test_project_name"
 TEST_PROJECT_ID = "test_project_id"
+
+TEST_SECOND_WORKBOOK_ID = "c85fc023-b8cb-5226-968c-5453139751e1"
+TEST_SECOND_PROJECT_NAME = "test_second_project_name"
+TEST_SECOND_PROJECT_ID = "test_second_project_id"
 
 
 SAMPLE_DATA_SOURCE = {
@@ -136,6 +138,80 @@ SAMPLE_WORKBOOK = {
 
 SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": TEST_WORKBOOK_ID}]}}
 
+# Second workbook samples
+SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE = {
+    "id": "2f5660c7-4c05-6ff0-90ce-5299226956c7",
+    "name": "Embedded Sales Datasource",
+    "hasExtracts": True,
+    "isPublished": False,
+    "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
+}
+
+SAMPLE_SECOND_WORKBOOK_SHEET_1 = {
+    "luid": "df9b6g38-9c3g-55f0-cfd4-95gf7d749g5g",
+    "id": "sample_second_workbook_sheet_1_metadata_id",
+    "name": "Revenue",
+    "createdAt": "2024-10-01T10:20:30Z",
+    "updatedAt": "2024-10-15T12:30:45Z",
+    "path": "SecondWorkbook/Revenue",
+    "parentEmbeddedDatasources": [
+        {
+            **SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE,
+            "parentPublishedDatasources": [],
+        }
+    ],
+    "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
+}
+
+SAMPLE_SECOND_WORKBOOK_SHEET_2 = {
+    "luid": "eg0c7h49-0d4h-66g1-dgf5-06hg8e850h6h",
+    "id": "sample_second_workbook_sheet_2_metadata_id",
+    "name": "Profit",
+    "createdAt": "2024-10-02T11:25:35Z",
+    "updatedAt": "2024-10-16T13:40:50Z",
+    "path": "SecondWorkbook/Profit",
+    "parentEmbeddedDatasources": [
+        {
+            **SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE,
+            "parentPublishedDatasources": [],
+        }
+    ],
+    "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
+}
+
+SECOND_WORKBOOK_SHEET_LIST = [SAMPLE_SECOND_WORKBOOK_SHEET_1, SAMPLE_SECOND_WORKBOOK_SHEET_2]
+
+SAMPLE_SECOND_WORKBOOK_DASHBOARD = {
+    "luid": "fh1d8i50-1e5i-77h2-eig6-17ih9f961i7i",
+    "name": "Dashboard_Revenue",
+    "createdAt": "2024-10-03T08:15:20Z",
+    "updatedAt": "2024-10-17T14:25:30Z",
+    "path": "SecondWorkbook/Dashboard_Revenue",
+    "sheets": [
+        {
+            "luid": "df9b6g38-9c3g-55f0-cfd4-95gf7d749g5g",
+            "id": "sample_second_workbook_sheet_1_metadata_id",
+        }
+    ],
+    "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
+}
+
+SAMPLE_SECOND_WORKBOOK = {
+    "luid": TEST_SECOND_WORKBOOK_ID,
+    "name": "Second Workbook",
+    "createdAt": "2024-10-01T10:00:00Z",
+    "updatedAt": "2024-10-17T14:30:00Z",
+    "uri": "sites/49445/workbooks/690497",
+    "projectName": TEST_SECOND_PROJECT_NAME,
+    "projectLuid": TEST_SECOND_PROJECT_ID,
+    "sheets": SECOND_WORKBOOK_SHEET_LIST,
+    "dashboards": [
+        {
+            **SAMPLE_SECOND_WORKBOOK_DASHBOARD,
+        }
+    ],
+}
+
 SAMPLE_VIEW_SHEET = {
     "view": {
         "workbook": {"id": TEST_WORKBOOK_ID},
@@ -225,10 +301,43 @@ def get_workbooks_fixture(build_workbook_item):
         yield mocked_function
 
 
+@pytest.fixture(name="get_workbooks_two_workbooks")
+def get_workbooks_two_workbooks_fixture():
+    """Fixture that returns two workbooks for tests that need multiple workbooks."""
+    with patch("dagster_tableau.resources.BaseTableauClient.get_workbooks") as mocked_function:
+        # Create first workbook mock
+        mock_wb1 = MagicMock()
+        type(mock_wb1).id = PropertyMock(
+            return_value=SAMPLE_WORKBOOKS["workbooks"]["workbook"][0]["id"]
+        )
+        type(mock_wb1).name = PropertyMock(return_value="Test Workbook")
+        type(mock_wb1).project_name = PropertyMock(return_value=TEST_PROJECT_NAME)
+        type(mock_wb1).project_id = PropertyMock(return_value=TEST_PROJECT_ID)
+
+        # Create second workbook mock
+        mock_wb2 = MagicMock()
+        type(mock_wb2).id = PropertyMock(return_value=TEST_SECOND_WORKBOOK_ID)
+        type(mock_wb2).name = PropertyMock(return_value="Second Workbook")
+        type(mock_wb2).project_name = PropertyMock(return_value=TEST_SECOND_PROJECT_NAME)
+        type(mock_wb2).project_id = PropertyMock(return_value=TEST_SECOND_PROJECT_ID)
+
+        mocked_function.return_value = [mock_wb1, mock_wb2]
+        yield mocked_function
+
+
 @pytest.fixture(name="get_workbook", autouse=True)
 def get_workbook_fixture():
     with patch("dagster_tableau.resources.BaseTableauClient.get_workbook") as mocked_function:
-        mocked_function.return_value = {"data": {"workbooks": [SAMPLE_WORKBOOK]}}
+
+        def get_workbook_by_id(workbook_id):
+            if workbook_id == TEST_WORKBOOK_ID:
+                return {"data": {"workbooks": [SAMPLE_WORKBOOK]}}
+            elif workbook_id == TEST_SECOND_WORKBOOK_ID:
+                return {"data": {"workbooks": [SAMPLE_SECOND_WORKBOOK]}}
+            else:
+                return {"data": {"workbooks": []}}
+
+        mocked_function.side_effect = get_workbook_by_id
         yield mocked_function
 
 
@@ -296,9 +405,14 @@ def cancel_job_fixture():
 @pytest.fixture(name="build_workbook_item", autouse=True)
 def build_workbook_item_fixture():
     with patch("dagster_tableau.resources.TSC.WorkbookItem") as mocked_class:
-        type(mocked_class.return_value).id = PropertyMock(
+        mock_workbook = MagicMock()
+        type(mock_workbook).id = PropertyMock(
             return_value=SAMPLE_WORKBOOKS["workbooks"]["workbook"][0]["id"]
         )
+        type(mock_workbook).name = PropertyMock(return_value="Test Workbook")
+        type(mock_workbook).project_name = PropertyMock(return_value=TEST_PROJECT_NAME)
+        type(mock_workbook).project_id = PropertyMock(return_value=TEST_PROJECT_ID)
+        mocked_class.return_value = mock_workbook
         yield mocked_class
 
 
@@ -376,6 +490,8 @@ def build_data_sources_item_fixture():
     type(mock_data_source_1).created_at = PropertyMock(return_value=None)
     type(mock_data_source_1).updated_at = PropertyMock(return_value=None)
     type(mock_data_source_1).has_extracts = PropertyMock(return_value=False)
+    type(mock_data_source_1).project_id = PropertyMock(return_value=TEST_PROJECT_ID)
+    type(mock_data_source_1).project_name = PropertyMock(return_value=TEST_PROJECT_NAME)
 
     mock_data_source_2 = MagicMock()
     type(mock_data_source_2).id = PropertyMock(return_value=SAMPLE_DATA_SOURCE_HIDDEN_SHEET["luid"])
@@ -386,7 +502,9 @@ def build_data_sources_item_fixture():
     type(mock_data_source_2).content_url = PropertyMock(return_value=None)
     type(mock_data_source_2).created_at = PropertyMock(return_value=None)
     type(mock_data_source_2).updated_at = PropertyMock(return_value=None)
-    type(mock_data_source_1).has_extracts = PropertyMock(return_value=True)
+    type(mock_data_source_2).has_extracts = PropertyMock(return_value=True)
+    type(mock_data_source_2).project_id = PropertyMock(return_value=TEST_PROJECT_ID)
+    type(mock_data_source_2).project_name = PropertyMock(return_value=TEST_PROJECT_NAME)
 
     yield [mock_data_source_1, mock_data_source_2]
 
@@ -417,6 +535,7 @@ def add_data_quality_warning_fixture():
     name="workspace_data",
 )
 def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
+    """Fixture with single workbook for most tests."""
     SAMPLE_EMBEDDED_DATA_SOURCE["luid"] = SAMPLE_EMBEDDED_DATA_SOURCE["id"]
     return TableauWorkspaceData(
         site_name=site_name,
@@ -444,6 +563,61 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
             ),
             SAMPLE_EMBEDDED_DATA_SOURCE["luid"]: TableauContentData(
                 content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_EMBEDDED_DATA_SOURCE
+            ),
+        },
+    )
+
+
+@pytest.fixture(name="workspace_data_two_workbooks")
+def workspace_data_two_workbooks_fixture(site_name: str) -> TableauWorkspaceData:
+    """Fixture with two workbooks for tests that need multiple workbooks."""
+    SAMPLE_EMBEDDED_DATA_SOURCE["luid"] = SAMPLE_EMBEDDED_DATA_SOURCE["id"]
+    SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE["luid"] = (
+        SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE["id"]
+    )
+    return TableauWorkspaceData(
+        site_name=site_name,
+        workbooks_by_id={
+            SAMPLE_WORKBOOK["luid"]: TableauContentData(
+                content_type=TableauContentType.WORKBOOK, properties=SAMPLE_WORKBOOK
+            ),
+            SAMPLE_SECOND_WORKBOOK["luid"]: TableauContentData(
+                content_type=TableauContentType.WORKBOOK, properties=SAMPLE_SECOND_WORKBOOK
+            ),
+        },
+        sheets_by_id={
+            SAMPLE_SHEET["luid"]: TableauContentData(
+                content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET
+            ),
+            SAMPLE_SHEET_2["luid"]: TableauContentData(
+                content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET_2
+            ),
+            SAMPLE_SECOND_WORKBOOK_SHEET_1["luid"]: TableauContentData(
+                content_type=TableauContentType.SHEET, properties=SAMPLE_SECOND_WORKBOOK_SHEET_1
+            ),
+            SAMPLE_SECOND_WORKBOOK_SHEET_2["luid"]: TableauContentData(
+                content_type=TableauContentType.SHEET, properties=SAMPLE_SECOND_WORKBOOK_SHEET_2
+            ),
+        },
+        dashboards_by_id={
+            SAMPLE_DASHBOARD["luid"]: TableauContentData(
+                content_type=TableauContentType.DASHBOARD, properties=SAMPLE_DASHBOARD
+            ),
+            SAMPLE_SECOND_WORKBOOK_DASHBOARD["luid"]: TableauContentData(
+                content_type=TableauContentType.DASHBOARD,
+                properties=SAMPLE_SECOND_WORKBOOK_DASHBOARD,
+            ),
+        },
+        data_sources_by_id={
+            SAMPLE_DATA_SOURCE["luid"]: TableauContentData(
+                content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_DATA_SOURCE
+            ),
+            SAMPLE_EMBEDDED_DATA_SOURCE["luid"]: TableauContentData(
+                content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_EMBEDDED_DATA_SOURCE
+            ),
+            SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE["luid"]: TableauContentData(
+                content_type=TableauContentType.DATA_SOURCE,
+                properties=SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE,
             ),
         },
     )

@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import (
     ComponentFeatureData,
@@ -22,7 +21,7 @@ def _clean_docstring(docstring: str) -> str:
         return f"{first_line}\n{rest}"
 
 
-def _get_summary_and_description(obj: object) -> tuple[Optional[str], Optional[str]]:
+def _get_summary_and_description(obj: object) -> tuple[str | None, str | None]:
     docstring = obj.__doc__
     clean_docstring = _clean_docstring(docstring) if docstring else None
     summary = clean_docstring.split("\n\n")[0] if clean_docstring else None

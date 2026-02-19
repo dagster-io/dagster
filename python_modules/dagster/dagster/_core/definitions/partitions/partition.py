@@ -1,4 +1,4 @@
-from typing import Any, Generic, Optional
+from typing import Any, Generic
 
 from typing_extensions import TypeVar
 
@@ -19,7 +19,7 @@ class Partition(Generic[T_cov]):
         name (str): Name for this partition
     """
 
-    def __init__(self, value: Any, name: Optional[str] = None):
+    def __init__(self, value: Any, name: str | None = None):
         self._value = value
         self._name = check.str_param(name or str(value), "name")
 
@@ -36,3 +36,5 @@ class Partition(Generic[T_cov]):
             return False
         else:
             return self.value == other.value and self.name == other.name
+
+    __hash__ = None  # pyright: ignore[reportAssignmentType]

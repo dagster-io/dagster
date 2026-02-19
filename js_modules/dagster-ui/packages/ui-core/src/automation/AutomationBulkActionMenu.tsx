@@ -1,8 +1,7 @@
 import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {AutomationInfo, AutomationStateChangeDialog} from './AutomationStateChangeDialog';
-import {instigationStateSummary} from '../instigation/instigationStateSummary';
 import {OpenWithIntent} from '../instigation/useInstigationStateReducer';
 
 interface Props {
@@ -15,10 +14,6 @@ export const AutomationBulkActionMenu = (props: Props) => {
 
   const [openWithIntent, setOpenWithIntent] = useState<OpenWithIntent>('not-open');
 
-  const {anyOff, anyOn} = useMemo(() => {
-    return instigationStateSummary(automations.map(({instigationState}) => instigationState));
-  }, [automations]);
-
   return (
     <>
       <Popover
@@ -26,8 +21,6 @@ export const AutomationBulkActionMenu = (props: Props) => {
           <Menu>
             <MenuItem
               text={`Start ${count === 1 ? '1 automation' : `${count} automations`}`}
-              disabled={!anyOff}
-              aria-disabled={!anyOff}
               icon="toggle_on"
               onClick={() => {
                 setOpenWithIntent('start');
@@ -35,8 +28,6 @@ export const AutomationBulkActionMenu = (props: Props) => {
             />
             <MenuItem
               text={`Stop ${count === 1 ? '1 automation' : `${count} automations`}`}
-              disabled={!anyOn}
-              aria-disabled={!anyOn}
               icon="toggle_off"
               onClick={() => {
                 setOpenWithIntent('stop');

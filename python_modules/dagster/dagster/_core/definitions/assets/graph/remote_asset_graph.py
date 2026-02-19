@@ -4,15 +4,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Annotated,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Generic, Optional, TypeVar  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -78,7 +70,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return {k for k in self.execution_set_entity_keys if isinstance(k, AssetKey)}
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.description
 
     @property
@@ -97,7 +89,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.execution_type
 
     @property
-    def pools(self) -> Optional[set[str]]:
+    def pools(self) -> set[str] | None:
         return self.resolve_to_singular_repo_scoped_node().pools
 
     @property
@@ -113,22 +105,22 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.partitions is not None
 
     @cached_property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def partitions_def(self) -> PartitionsDefinition | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         partitions_snap = self.resolve_to_singular_repo_scoped_node().asset_node_snap.partitions
         return partitions_snap.get_partitions_definition() if partitions_snap else None
 
     @property
-    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
+    def legacy_freshness_policy(self) -> LegacyFreshnessPolicy | None:
         # It is currently not possible to access the freshness policy for an observation definition
         # if a materialization definition also exists. This needs to be fixed.
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def freshness_policy(self) -> FreshnessPolicy | None:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.freshness_policy
 
     @property
-    def code_version(self) -> Optional[str]:
+    def code_version(self) -> str | None:
         # It is currently not possible to access the code version for an observation definition if a
         # materialization definition also exists. This needs to be fixed.
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.code_version
@@ -205,23 +197,23 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         }
 
     @property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
+    def backfill_policy(self) -> BackfillPolicy | None:
         return self.asset_node_snap.backfill_policy
 
     @property
-    def automation_condition(self) -> Optional[AutomationCondition]:
+    def automation_condition(self) -> AutomationCondition | None:
         return self.asset_node_snap.automation_condition
 
     @property
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+    def auto_materialize_policy(self) -> AutoMaterializePolicy | None:
         return self.asset_node_snap.auto_materialize_policy
 
     @property
-    def auto_observe_interval_minutes(self) -> Optional[float]:
+    def auto_observe_interval_minutes(self) -> float | None:
         return self.asset_node_snap.auto_observe_interval_minutes
 
     @property
-    def pools(self) -> Optional[set[str]]:
+    def pools(self) -> set[str] | None:
         return self.asset_node_snap.pools
 
 
@@ -287,7 +279,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def execution_set_entity_keys(
         self,
-    ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]:
+    ) -> AbstractSet[AssetKey | AssetCheckKey]:
         return self.resolve_to_singular_repo_scoped_node().execution_set_entity_keys
 
     @cached_property
@@ -307,7 +299,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return any(node.asset_node.is_executable for node in self.repo_scoped_asset_infos)
 
     @cached_property
-    def pools(self) -> Optional[set[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def pools(self) -> set[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         pools = set()
         for info in self.repo_scoped_asset_infos:
             pools.update(info.asset_node.pools or set())
@@ -325,7 +317,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
             return {}
 
     @property
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+    def auto_materialize_policy(self) -> AutoMaterializePolicy | None:
         return (
             self._materializable_node_snap.auto_materialize_policy
             if self.is_materializable
@@ -333,7 +325,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         )
 
     @property
-    def automation_condition(self) -> Optional[AutomationCondition]:
+    def automation_condition(self) -> AutomationCondition | None:
         if self.is_materializable:
             return self._materializable_node_snap.automation_condition
         elif self.is_observable:
@@ -342,13 +334,13 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
             return None
 
     @property
-    def auto_observe_interval_minutes(self) -> Optional[float]:
+    def auto_observe_interval_minutes(self) -> float | None:
         return (
             self._observable_node_snap.auto_observe_interval_minutes if self.is_observable else None
         )
 
     @property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
+    def backfill_policy(self) -> BackfillPolicy | None:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
 
     def resolve_to_repo_scoped_node(
@@ -602,8 +594,8 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
     def get_implicit_job_name_for_assets(
         self,
         asset_keys: Iterable[AssetKey],
-        remote_repo: Optional[RemoteRepository],
-    ) -> Optional[str]:
+        remote_repo: RemoteRepository | None,
+    ) -> str | None:
         """Returns the name of the asset base job that contains all the given assets, or None if there is no such
         job.
 
@@ -746,7 +738,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
 
     def get_repo_scoped_node(
         self, key: EntityKey, repository_selector: "RepositorySelector"
-    ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
+    ) -> RemoteRepositoryAssetNode | RemoteAssetCheckNode | None:
         if not self.has(key):
             return None
         node = self.get(key)

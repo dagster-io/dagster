@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
@@ -22,7 +22,7 @@ def dag_asset_metadata(dag_info: DagInfo) -> dict[str, Any]:
     }
 
 
-def peered_dag_asset_metadata(dag_info: DagInfo, source_code: Optional[str]) -> Mapping[str, Any]:
+def peered_dag_asset_metadata(dag_info: DagInfo, source_code: str | None) -> Mapping[str, Any]:
     metadata = dag_asset_metadata(dag_info)
     metadata[PEERED_DAG_MAPPING_METADATA_KEY] = [{"dag_id": dag_info.dag_id}]
     if source_code:
