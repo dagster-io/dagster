@@ -5,6 +5,7 @@ import {useDocById, findFirstSidebarItemLink} from '@docusaurus/plugin-content-d
 import {usePluralForm} from '@docusaurus/theme-common';
 import isInternalUrl from '@docusaurus/isInternalUrl';
 import {translate} from '@docusaurus/Translate';
+import {useLocation} from '@docusaurus/router';
 
 import type {Props} from '@theme/DocCard';
 import Heading from '@theme/Heading';
@@ -81,6 +82,55 @@ function CardLayout({
   }
 
   const LinkComponent = Link as any; //Type assertion to bypass linting error
+  const {pathname} = useLocation();
+  const hrefString = typeof href === 'string' ? href : '';
+  const isExamplesPage = pathname.startsWith('/examples');
+  const isExamplesCard = isExamplesPage || hrefString.startsWith('/examples');
+  const isMiniExampleCard = hrefString.includes('/mini-examples/');
+  const examplePill = hrefString.includes('/mini-examples/')
+    ? 'Mini example'
+    : hrefString.includes('/full-pipelines/')
+      ? 'Full pipeline'
+      : hrefString.includes('/reference-architectures/')
+        ? 'Reference architecture'
+        : hrefString === '/examples'
+          ? 'Overview'
+          : 'Example';
+  const hasInternalHref = hrefString.length > 0 && isInternalUrl(hrefString);
+
+  if (isExamplesCard) {
+    return (
+      <LinkComponent href={href} className={clsx('card', styles.cardContainer, styles.examplesCard, className)}>
+        <div className={styles.examplesBody}>
+          {logo && !isMiniExampleCard && <img className={styles.cardLogo} src={logoUrl} />}
+          <div>
+            <div className={styles.examplesMetaRow}>
+              <span className={styles.examplesPill}>{examplePill}</span>
+            </div>
+            <div className={styles.cardTitleWrapper}>
+              <Heading as="h2" className={styles.cardTitle} title={label}>
+                {label}
+              </Heading>
+              {!hasInternalHref && <ExternalLinkIcon />}
+              {community && <span className={styles.cardTags}>Community</span>}
+            </div>
+            {description && (
+              <p className={styles.cardDescription} title={description}>
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className={styles.examplesFooter} aria-hidden="true">
+          <hr className={styles.examplesDivider} />
+          <div className={styles.examplesFooterRow}>
+            <span className={styles.examplesFooterText}>Explore</span>
+            <span className={styles.examplesArrow}>↗</span>
+          </div>
+        </div>
+      </LinkComponent>
+    );
+  }
 
   return (
     <LinkComponent href={href} className={clsx('card', styles.cardContainer, className)}>
@@ -90,7 +140,7 @@ function CardLayout({
           <Heading as="h2" className={styles.cardTitle} title={label}>
             {label}
           </Heading>
-          {!isInternalUrl(href) && <ExternalLinkIcon />}
+          {!hasInternalHref && <ExternalLinkIcon />}
           {community && <span className={styles.cardTags}>Community</span>}
         </div>
         {description && (

@@ -22,7 +22,7 @@ dependencies = [
     "graphene>=3,<4",
     "gql[requests]>=3,<5",
     "requests",
-    "starlette",
+    "starlette",  # used for run_in_threadpool utility fn
 ]
 
 [project.urls]

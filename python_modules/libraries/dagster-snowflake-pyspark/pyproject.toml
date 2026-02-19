@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-snowflake-pyspark"
+version = "1!0+dev"
+description = "Package for integrating Snowflake and PySpark with Dagster."
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.14"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    "dagster-snowflake==1!0+dev",
+    "pyspark<4",
+    "requests",
+    "sqlalchemy!=1.4.42",
+    "snowflake-sqlalchemy>=1.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake-pyspark"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_snowflake_pyspark_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_snowflake_pyspark_tests/**",
+]

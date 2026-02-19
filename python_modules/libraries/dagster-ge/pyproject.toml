@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-ge"
+version = "1!0+dev"
+description = "Package for GE-specific Dagster framework op and resource components."
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.14"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster==1!0+dev",
+    "dagster-pandas==1!0+dev",
+    "pandas<3.0.0",
+    "great_expectations>=0.17.15,<1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge"
+
+[project.optional-dependencies]
+test = [
+    "great-expectations>=0.18.22",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_ge_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_ge_tests/**",
+    "dagster_ge/examples/**",
+    "basic.csv",
+]

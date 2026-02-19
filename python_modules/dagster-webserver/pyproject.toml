@@ -22,7 +22,7 @@ dependencies = [
     "click>=7.0,<9.0",
     "dagster==1!0+dev",
     "dagster-graphql==1!0+dev",
-    "starlette!=0.36.0",
+    "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
     "uvicorn[standard]",
 ]
 
@@ -34,8 +34,8 @@ dagster-webserver = "dagster_webserver.cli:main"
 dagster-webserver-debug = "dagster_webserver.debug:main"
 
 [project.optional-dependencies]
-notebook = ["nbconvert"]
-test = ["starlette[full]"]
+notebook = ["nbconvert"]  # notebooks support
+test = ["starlette[full]"]  # TestClient deps in full
 
 [tool.setuptools]
 include-package-data = true

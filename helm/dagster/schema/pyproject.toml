@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-helm"
+version = "0.0.1"
+description = "Tools for Dagster Helm schema"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "click",
+    "pydantic>=2",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/helm/dagster/schema"
+
+[project.scripts]
+dagster-helm = "schema.cli:main"
+
+[project.optional-dependencies]
+test = [
+    # remove pin once minimum supported kubernetes version is 1.19
+    "kubernetes<22.6.0",
+    "dagster",
+    "dagster-aws",
+    "dagster-azure",
+    "dagster-gcp",
+    "dagster-k8s",
+]
+
+[tool.setuptools.packages.find]
+exclude = [
+    "schema_tests",
+]

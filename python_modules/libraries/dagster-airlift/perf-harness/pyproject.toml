@@ -1,6 +1,31 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "perf-harness"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-airlift[core,in-airflow]",
+    "dbt-duckdb",
+    "pandas<3.0.0",
+]
+
+[project.scripts]
+perf-harness = "perf_harness.cli:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["perf_harness_tests*"]
 
 [tool.dagster]
 module_name = "perf_harness.dagster_defs"
