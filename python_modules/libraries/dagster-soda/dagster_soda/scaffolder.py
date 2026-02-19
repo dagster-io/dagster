@@ -23,6 +23,11 @@ class SodaScanComponentScaffolder(Scaffolder):
     """Scaffolder that generates defs.yaml and template checks.yml for SodaScanComponent."""
 
     def scaffold(self, request: ScaffoldRequest) -> None:
+        """Scaffolds a SodaScanComponent by writing defs.yaml and a template checks.yml.
+
+        Writes component configuration to defs.yaml and a SodaCL template to
+        checks.yml in the target path, using relative paths from the project root.
+        """
         # Compute relative path for checks.yml from project root
         checks_relative_path = "checks.yml"
         if request.project_root and request.target_path.is_relative_to(request.project_root):

@@ -1,3 +1,4 @@
+"""Soda Core component for running data quality scans and mapping SodaCL checks to Dagster asset checks."""
 import re
 from collections.abc import Iterator
 from pathlib import Path
@@ -236,6 +237,18 @@ class SodaScanComponent(Component, Model, Resolvable):
         return AssetKey.from_user_string(soda_dataset)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        """Builds Dagster Definitions containing asset checks from SodaCL configuration.
+
+        For each dataset defined in the check files (and optionally filtered by
+        ``asset_key_map``), creates a multi-asset check that runs the Soda scan
+        and maps SodaCL check results to Dagster asset check results.
+
+        Args:
+            context: The component load context providing project root and paths.
+
+        Returns:
+            Definitions containing one asset check per configured dataset.
+        """
         project_root = context.project_root
         asset_key_map = self.asset_key_map or {}
         check_defs: list[AssetChecksDefinition] = []
