@@ -28,11 +28,21 @@ const config = {
   viteFinal: async (config) => {
     return {
       ...config,
+      logLevel: 'warn',
       plugins: [...(config.plugins || []), graphql()],
       build: {
         ...config.build,
         // Disable asset inlining - Icon component uses CSS masks which require file paths
         assetsInlineLimit: 0,
+        rollupOptions: {
+          ...config.build?.rollupOptions,
+          onwarn(warning, warn) {
+            if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('"use client"')) {
+              return;
+            }
+            warn(warning);
+          },
+        },
       },
       resolve: {
         ...config.resolve,
@@ -40,7 +50,7 @@ const config = {
           ...config.resolve?.alias,
           '@dagster-io/ui-components': path.resolve('../ui-components/src'),
           '@dagster-io/dg-docs-components': path.resolve('../dg-docs-components/src'),
-          shared: path.resolve('../ui-core/src'),
+          '@shared': path.resolve('./src/shared'),
         },
       },
     };
