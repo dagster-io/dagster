@@ -14,14 +14,14 @@ This guide shows how to send custom notifications to a Discord channel using [Di
 
 1.  In Discord, go to **Server Settings > Integrations > Webhooks**.
 2.  Create a new Webhook and copy the **Webhook URL**.
-3. [Recommended] Save the tokens at the end of the generated URL as a Dagster+ environment variable (e.g. `DISCORD_WEBHOOK_TOKEN`).
-4. Set the URL in the Alert Policy Webhook configuration (e.g. `https://discord.com/api/webhooks/{env.DISCORD_WEBHOOK_TOKEN}`)
+3.  [Recommended] Save the tokens at the end of the generated URL as a Dagster+ environment variable (e.g. `DISCORD_WEBHOOK_TOKEN`).
+4.  Set the URL in the Alert Policy Webhook configuration (e.g. `https://discord.com/api/webhooks/{env.DISCORD_WEBHOOK_TOKEN}`)
 
 ## Step 2: Configure your webhook payload
 
 This example utilizes Discord "Embeds" for rich formatting.
 
-````json
+```json
 {
   "username": "Dagster+ Alerts",
   "embeds": [
@@ -30,14 +30,12 @@ This example utilizes Discord "Embeds" for rich formatting.
       "url": "{{deployment_url}}",
       "description": "\n{{alert_content}}",
       "color": 15158332,
-      "fields": [
-        {"name": "Deployment", "value": "{{deployment_name}}", "inline": true}
-      ],
+      "fields": [{"name": "Deployment", "value": "{{deployment_name}}", "inline": true}],
       "footer": {"text": "Alert policy: {{alert_policy_name}}"}
     }
   ]
 }
-````
+```
 
 ## Official References
 

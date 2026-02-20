@@ -1,5 +1,6 @@
 ---
 title: Webhook alert notifications
+sidebar_label: Webhooks
 description: Configure generic HTTP requests triggered by Dagster alerts to integrate with any third-party service.
 canonicalUrl: '/guides/labs/webhook-alerts'
 slug: '/guides/labs/webhook-alerts'
@@ -8,8 +9,6 @@ slug: '/guides/labs/webhook-alerts'
 import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
 
 <EarlyAccess />
-
-# Webhooks
 
 Dagster+ alerts can be configured to send HTTP requests to any endpoint when an alert is triggered, enabling deep integration with chat clients, task management tools, incident management software, or custom internal systems.
 
@@ -31,8 +30,8 @@ During the Early Access period, we are limiting outgoing webhooks to a whitelist
 
 Use these guides to get started using webhooks with these common services:
 
-- [Jira](webhooks-jira)
-- [Discord](webhooks-discord)
+- [Jira](/guides/labs/webhook-alerts/webhooks-jira)
+- [Discord](/guides/labs/webhook-alerts/webhooks-discord)
 
 ---
 

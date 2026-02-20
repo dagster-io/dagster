@@ -24,8 +24,8 @@ echo -n 'your_email@domain.com:your_api_token' | base64
 
 Save the resulting Base64 string as an Environment Variable in Dagster+ (e.g. `ATLASSIAN_CREDENTIALS`).
 
-
 ## Step 2: Configure your alert notification
+
 **Webhook Header**: In the Webhook configuration, set the following header:
 
 - **Key**: `Authorization`
@@ -34,6 +34,7 @@ Save the resulting Base64 string as an Environment Variable in Dagster+ (e.g. `A
 **Webhook URL**: Use `https://<your-domain>.atlassian.net/rest/api/3/issue` as the URL for your alert webhook.
 
 **Webhook Body**: Build the issue body using [Atlassian Document Format (ADF)](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/):
+
 ```json
 {
   "fields": {
