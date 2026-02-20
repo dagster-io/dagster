@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-pandera"
-version = "0.28.15rc4"
+version = "0.28.15"
 description = "Integration layer for dagster and pandera."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc4",
+    "dagster==1.12.15",
     "pandas<3.0.0",
     "pandera>=0.24.0",
 ]

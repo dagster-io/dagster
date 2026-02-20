@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-snowflake-polars"
-version = "0.28.15rc4"
+version = "0.28.15"
 description = "Package for integrating Snowflake and Polars with Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -20,8 +20,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc4",
-    "dagster-snowflake==0.28.15rc4",
+    "dagster==1.12.15",
+    "dagster-snowflake==0.28.15",
     "polars>=1.0.0",
     "requests",
     "adbc-driver-snowflake>=1.6.0",

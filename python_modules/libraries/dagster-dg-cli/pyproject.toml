@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dg-cli"
-version = "1.12.15rc4"
+version = "1.12.15"
 description = ""
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -21,9 +21,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-dg-core==1.12.15rc4",
-    "dagster==1.12.15rc4",
-    "dagster-cloud-cli==1.12.15rc4",
+    "dagster-dg-core==1.12.15",
+    "dagster==1.12.15",
+    "dagster-cloud-cli==1.12.15",
     "typer",
 ]
 

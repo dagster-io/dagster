@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-aws"
-version = "0.28.15rc4"
+version = "0.28.15"
 description = "Package for AWS-specific Dagster framework solid and resource components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "boto3",
-    "dagster==1.12.15rc4",
+    "dagster==1.12.15",
     "packaging",
     "requests",
 ]
@@ -39,7 +39,7 @@ redshift = [
     "psycopg2-binary",
 ]
 pyspark = [
-    "dagster-pyspark==0.28.15rc4",
+    "dagster-pyspark==0.28.15",
 ]
 stubs = [
     "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr,emr-containers]",

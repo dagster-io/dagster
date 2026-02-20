@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-airflow"
-version = "1.12.15rc4"
+version = "1.12.15"
 description = "Airflow plugin for Dagster"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -17,7 +17,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc4",
+    "dagster==1.12.15",
     "lazy_object_proxy",
     "setuptools<71.0.0",
     "pendulum",

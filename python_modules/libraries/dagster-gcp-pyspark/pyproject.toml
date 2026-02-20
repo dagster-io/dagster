@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-gcp-pyspark"
-version = "0.28.15rc4"
+version = "0.28.15"
 description = "Package for storing PySpark DataFrames in GCP"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,8 +18,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc4",
-    "dagster-gcp==0.28.15rc4",
+    "dagster==1.12.15",
+    "dagster-gcp==0.28.15",
     "pyspark>=4.1; python_version>='3.14'",
     "pyspark>=3.5,<4; python_version<'3.14'",
 ]

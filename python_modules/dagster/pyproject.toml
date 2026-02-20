@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster"
-version = "1.12.15rc4"
+version = "1.12.15"
 description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -60,8 +60,8 @@ dependencies = [
     "universal_pathlib>=0.2.0; python_version>='3.12'",
     "rich",
     "filelock",
-    "dagster-pipes==1.12.15rc4",
-    "dagster-shared==1.12.15rc4",
+    "dagster-pipes==1.12.15",
+    "dagster-shared==1.12.15",
     "antlr4-python3-runtime",
 ]
 
