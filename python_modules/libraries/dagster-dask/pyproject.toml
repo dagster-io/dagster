@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dask"
-version = "0.28.15rc2"
+version = "0.28.15rc3"
 description = "Package for using Dask as Dagster's execution engine."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "bokeh",
-    "dagster==1.12.15rc2",
+    "dagster==1.12.15rc3",
     "dask[dataframe]>=1.2.2",
     "distributed>=1.28.1",
 ]

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-graphql"
-version = "1.12.15rc2"
+version = "1.12.15rc3"
 description = "The GraphQL API for Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc2",
+    "dagster==1.12.15rc3",
     "graphene>=3,<4",
     "gql[requests]>=3,<5",
     "requests",

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-duckdb-polars"
-version = "0.28.15rc2"
+version = "0.28.15rc3"
 description = "Package for storing Polars DataFrames in DuckDB."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,8 +19,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc2",
-    "dagster-duckdb==0.28.15rc2",
+    "dagster==1.12.15rc3",
+    "dagster-duckdb==0.28.15rc3",
     "polars[pyarrow]",
 ]
 

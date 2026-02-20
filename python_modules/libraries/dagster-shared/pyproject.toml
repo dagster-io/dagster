@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-shared"
-version = "1.12.15rc2"
+version = "1.12.15rc3"
 description = "Shared code between dagster and dagster-dg-core."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
