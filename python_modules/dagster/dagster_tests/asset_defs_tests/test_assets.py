@@ -2428,6 +2428,18 @@ def test_construct_assets_definition_without_node_def_with_bad_param_combo() -> 
         dg.AssetsDefinition(specs=[spec], can_subset=True)
 
 
+def test_multiple_partition_defs_allowed_without_node_def() -> None:
+    spec1 = dg.AssetSpec(
+        "asset1", partitions_def=dg.StaticPartitionsDefinition(["a", "b"]), group_name="default"
+    )
+    spec2 = dg.AssetSpec(
+        "asset2", partitions_def=dg.StaticPartitionsDefinition(["x", "y"]), group_name="default"
+    )
+    assets_def = dg.AssetsDefinition(specs=[spec1, spec2])
+    assert not assets_def.is_executable
+    assert list(assets_def.specs) == [spec1, spec2]
+
+
 def test_multiple_keys_per_output_name():
     @dg.op(out={"out1": dg.Out(), "out2": dg.Out()})
     def op1():
