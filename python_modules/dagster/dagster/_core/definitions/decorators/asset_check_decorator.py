@@ -244,7 +244,7 @@ def asset_check(
             op_def_resource_defs=resource_defs_for_execution,
             assets_def_resource_defs=resource_defs_for_execution,
             upstream_asset_deps=[],
-            # unsupported capabiltiies in asset checks
+            # unsupported capabilities in asset checks
             partitions_def=None,
             code_version=None,
             backfill_policy=None,

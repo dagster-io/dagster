@@ -22,7 +22,7 @@ CRON_RANGES = ((0, 59), (0, 23), (1, 31), (1, 12), (0, 7), (0, 59))
 CRON_STEP_SEARCH_REGEX = re.compile(r"^([^-]+)-([^-/]+)(/(\d+))?$")
 INT_REGEX = re.compile(r"^\d+$")
 
-# hours in which it is possible that a time might be ambigious or not exist due to daylight savings time
+# hours in which it is possible that a time might be ambiguous or not exist due to daylight savings time
 DAYLIGHT_SAVINGS_HOURS = {1, 2, 3}
 
 
@@ -96,8 +96,8 @@ def _apply_fold(date: datetime.datetime) -> datetime.datetime:
     transition when there are two possibilities - match behavior described in the docs:
     https://docs.dagster.io/guides/automate/schedules/customizing-execution-timezone#execution-times-and-daylight-savings-time)
 
-    Never call this with datetimes that could be non-existant. datetime_ambiguous will return true
-    but folding them will leave them non-existant.
+    Never call this with datetimes that could be non-existent. datetime_ambiguous will return true
+    but folding them will leave them non-existent.
     """  # noqa: D415
     if date.fold == 0 and date.hour in DAYLIGHT_SAVINGS_HOURS and datetime_ambiguous(date):
         return date.replace(fold=1)
@@ -108,7 +108,7 @@ def apply_post_transition(
     date: datetime.datetime,
 ) -> datetime.datetime:
     if date.hour in DAYLIGHT_SAVINGS_HOURS and not datetime_exists(date):
-        # If we fall on a non-existant time (e.g. between 2 and 3AM during a DST transition)
+        # If we fall on a non-existent time (e.g. between 2 and 3AM during a DST transition)
         # advance to the end of the window, which does exist - match behavior described in the docs:
         # https://docs.dagster.io/guides/automate/schedules/customizing-execution-timezone#execution-times-and-daylight-savings-time)
 
@@ -436,9 +436,9 @@ def _get_dates_to_consider_after_ambigious_time(
     ascending: bool,
 ):
     # Return a list of all times that need to be considered when the next date returned by
-    # croniter is ambigious (e.g. 2:30 AM during a fall DST transition). This is tricky because
+    # croniter is ambiguous (e.g. 2:30 AM during a fall DST transition). This is tricky because
     # we need to make sure that we are emitting times in the correct order, so we return a sorted
-    # contiguous sequence of times that include all potentially ambigious times.
+    # contiguous sequence of times that include all potentially ambiguous times.
     post_transition_time = next_date.replace(fold=1)
 
     # Most schedules only need to consider the POST_TRANSITION time and can return here.
@@ -447,7 +447,7 @@ def _get_dates_to_consider_after_ambigious_time(
 
     # hourly schedules are more complicated - they'll continue firing once an hour no
     # matter what, including both PRE_TRANSITION and POST_TRANSITION times. So we need
-    # to make sure that every time in the ambigious timerange has both its PRE_TRANSITION
+    # to make sure that every time in the ambiguous timerange has both its PRE_TRANSITION
     # and POST_TRANSITION times considered and returned.
     pre_transition_time = next_date.replace(fold=0)
     dates_to_consider = [post_transition_time, pre_transition_time]
@@ -535,7 +535,7 @@ def _timezone_aware_cron_iter(
 
     # hourly schedules handle DST transitions differently: they skip times that don't exist
     # entirely and just move on to the next matching time (instead of returning
-    # the end time of the non-existant interval), and when there are two times that match the cron
+    # the end time of the non-existent interval), and when there are two times that match the cron
     # string, they return both instead of picking the latter time.
     repeats_every_hour = cron_string_repeats_every_hour(cron_string)
 

@@ -3779,7 +3779,7 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
     assert backfill.status == BulkActionStatus.REQUESTED
 
-    # automatic retries wont get automatically run in test environment, so we run the function manually
+    # automatic retries won't get automatically run in test environment, so we run the function manually
     runs = instance.get_run_records()
     list(
         consume_new_runs_for_automatic_reexecution(
@@ -4059,7 +4059,7 @@ def test_run_retry_not_part_of_completed_backfill(
     for tag in BACKFILL_TAGS:
         assert tag not in retried_run.tags.keys()
 
-    # Since the backfill is alerady complete, it should not be processed by the backfill daemon and
+    # Since the backfill is already complete, it should not be processed by the backfill daemon and
     # should remain in a completed state
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)

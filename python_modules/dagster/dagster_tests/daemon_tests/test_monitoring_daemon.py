@@ -323,7 +323,7 @@ def test_monitor_started(
     assert run_launcher.launch_run_calls == 0
     assert run_launcher.resume_run_calls == 3
 
-    # exausted the 3 attempts
+    # exhausted the 3 attempts
     monitor_started_run(instance, workspace, run_record, logger)
     run = instance.get_run_by_id(run.run_id)
     assert run

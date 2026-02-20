@@ -380,7 +380,7 @@ describe('weakMapMemoize with TTL', () => {
     expect(memoizedFn(1)).toBe(2);
     expect(spy).toHaveBeenCalledTimes(4);
 
-    // Advance time by 2 seonds, TTL expires
+    // Advance time by 2 seconds, TTL expires
     jest.advanceTimersByTime(2000);
 
     // All cache entries should have expired

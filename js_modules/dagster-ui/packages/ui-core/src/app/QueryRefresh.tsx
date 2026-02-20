@@ -181,7 +181,7 @@ export function useRefreshAtInterval<T = any>({
     };
   }, [loading, intervalMs, enabled, refreshFn]);
 
-  // Expose the next fire time both as a unix timstamp and as a "seconds" interval
+  // Expose the next fire time both as a unix timestamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
   const nextFireDelay = useMemo(() => (nextFireMs ? nextFireMs - Date.now() : -1), [nextFireMs]);
 

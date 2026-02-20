@@ -26,7 +26,7 @@ We use the term _node_ to refer to both ops and graphs, because both ops and gra
 
 ### A job without nesting
 
-As a baseline, here's a job that does not use nesting. It starts with an op that returns a number, then uses two ops to convert it from Celsius to Fahrenheight, then logs the result:
+As a baseline, here's a job that does not use nesting. It starts with an op that returns a number, then uses two ops to convert it from Celsius to Fahrenheit, then logs the result:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/unnested_ops.py" title="src/<project_name>/defs/ops.py" />
 

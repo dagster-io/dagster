@@ -38,7 +38,7 @@ def _grpc_server_backfill_context():
         yield {**cli_args, "noprompt": True}, instance
 
 
-# This iterates over a list of contextmanagers that can be used to contruct
+# This iterates over a list of contextmanagers that can be used to construct
 # (cli_args, instance) tuples for backfill calls
 def _backfill_contexts():
     repo_args = {

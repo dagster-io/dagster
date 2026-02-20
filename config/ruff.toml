@@ -70,7 +70,7 @@ ignore = [
   # (try-except-in-loop) we use this pattern in many places and the performance impact is negligible
   "PERF203",
 
-  # (no concatenation) Existing codebase has many concatentations, no reason to disallow them.
+  # (no concatenation) Existing codebase has many concatenations, no reason to disallow them.
   "RUF005",
 
   # (use ClassVar for attr declarations with defaults) This is a good rule for vanilla Python, but

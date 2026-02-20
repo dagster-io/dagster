@@ -174,7 +174,7 @@ def get_timestamp_out_of_metadata_if_set(metadata: Mapping, key: str) -> float |
     value = check.inst(
         metadata[key],
         TimestampMetadataValue,
-        f"Expected {key} in asset metadat to be a TimestampMetadataValue.",
+        f"Expected {key} in asset metadata to be a TimestampMetadataValue.",
     )
     return value.value
 

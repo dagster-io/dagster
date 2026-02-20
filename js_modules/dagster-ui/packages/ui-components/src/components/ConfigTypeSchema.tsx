@@ -19,7 +19,7 @@ interface ConfigTypeSchemaProps {
 
 // Either type is guaranteed not to be undefined or if its possibly undefined
 // then pass in the type name. This is a union to avoid called of ConfigEditorHelp from needing to pass a type name
-// which doens't make sense at the root
+// which doesn't make sense at the root
 type renderTypeRecursiveType = ((
   type: TypeData,
   typeLookup: {[typeName: string]: TypeData},
@@ -235,7 +235,7 @@ const HoveredDictEntryContext = React.createContext<{
 
 /**
  * Very cheap way to make sure only 1 dict entry is hovered at a time.
- * We simply record the unhover function for thast hovered dict entry and call it whenever
+ * We simply record the unhover function for that hovered dict entry and call it whenever
  * a new dict entry is hovered. This is cheaper than updating every dict entry via context
  * because we don't cause every dict entry to re-render. Only the two being hovered/unhovered.
  */

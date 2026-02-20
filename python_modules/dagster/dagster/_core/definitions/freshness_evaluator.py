@@ -99,7 +99,7 @@ class CronFreshnessPolicyEvaluator(FreshnessPolicyEvaluator):
         If there is a materialization AFTER the lower bound of the window, asset is fresh, otherwise it is stale.
 
         Examples:
-        asset is expected to materialize beteween 8:45 - 9am every day
+        asset is expected to materialize between 8:45 - 9am every day
         deadline_cron = "0 9 * * *"
         lower_bound_delta = 15 minutes
 

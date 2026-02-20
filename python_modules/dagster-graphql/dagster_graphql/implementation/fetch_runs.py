@@ -391,7 +391,7 @@ class RunsFeedCursor:
     made for 10 Runs Feed entries, the first 10 runs will be returned. At this time, the run_cursor will be an id,
     and the backfill_cursor will be None. Then a backfill is created. If a second query is made for 10 Runs Feed entries
     the newly created backfill will get included in the list, even though it should be included on the first page by time
-    order. To prevent this, the timestamp is used to ensure that all returned entires are older than the entries on the
+    order. To prevent this, the timestamp is used to ensure that all returned entries are older than the entries on the
     previous page.
     """
 

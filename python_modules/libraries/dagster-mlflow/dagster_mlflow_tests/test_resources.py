@@ -180,7 +180,7 @@ def test_start_run(mock_start_run, context):
     # Then mlflow start_run is called
     mock_start_run.assert_called_once_with(run_id=run_id_1)
 
-    # And when start run is called with the same run_id no excpetion is raised
+    # And when start run is called with the same run_id no exception is raised
     mlf._start_run(run_id=run_id_1)  # noqa: SLF001
 
 

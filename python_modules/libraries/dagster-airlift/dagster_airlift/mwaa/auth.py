@@ -22,7 +22,7 @@ def get_session_info(mwaa: Any, env_name: str) -> tuple[str, str]:
     # Make a POST request to the MWAA login url using the login payload
     response = requests.post(login_url, data=login_payload, timeout=10)
 
-    # Check if login was succesfull
+    # Check if login was successful
     if response.status_code == 200:
         # Return the hostname and the session cookie
         return (web_server_host_name, response.cookies["session"])

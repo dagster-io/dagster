@@ -258,7 +258,7 @@ class StepDelegatingExecutor(Executor):
                 last_check_step_health_time = get_current_datetime()
 
                 try:
-                    # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
+                    # Order of events is important here. During an iteration, we call handle_event, then get_steps_to_execute,
                     # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
                     # is_complete can return true when we're just between steps.
                     while not active_execution.is_complete:

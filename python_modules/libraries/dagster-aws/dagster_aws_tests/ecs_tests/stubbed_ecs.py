@@ -252,7 +252,7 @@ class StubbedEcs:
             tasks = [
                 task
                 for task in tasks
-                # family isn't part of task response can be infered from the arn
+                # family isn't part of task response can be inferred from the arn
                 if task["taskDefinitionArn"].split("/")[-1].split(":")[0] == family
             ]
 

@@ -570,7 +570,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
                 process.
 
         Yields:
-            PipesMessageWriterChannel: Channel for writing messagse back to Dagster.
+            PipesMessageWriterChannel: Channel for writing messages back to Dagster.
         """
 
     @final
@@ -585,7 +585,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
         return {"extras": self.get_opened_extras()}
 
     def get_opened_extras(self) -> PipesExtras:
-        """Return arbitary reader-specific information to be passed back to the orchestration
+        """Return arbitrary reader-specific information to be passed back to the orchestration
         process under the `extras` key of the initialization payload.
 
         Returns:

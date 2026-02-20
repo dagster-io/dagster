@@ -1679,7 +1679,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
         patch.object(dg.DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
     ):
         evaluate_sensors(workspace_context, executor)
-        # did not need to get ticks on this call, as the preivous tick evaluated successfully
+        # did not need to get ticks on this call, as the previous tick evaluated successfully
         assert mock_get_ticks.call_count == 0
 
         assert instance.get_runs_count() == 1

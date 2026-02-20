@@ -1142,7 +1142,7 @@ dagsterDaemon:
         # Whether to dequeue runs using an asynchronous thread pool, allowing multiple runs
         # to be dequeued in parallel.
         dequeueUseThreads: true
-        # The max number of worker threads to use when dequeing runs. Can be tuned
+        # The max number of worker threads to use when dequeuing runs. Can be tuned
         # to allow more runs to be dequeued in parallel, but may require allocating more
         # resources to the daemon.
         dequeueNumWorkers: 4

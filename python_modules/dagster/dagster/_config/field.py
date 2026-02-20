@@ -308,7 +308,7 @@ class Field:
                 raise DagsterInvalidDefinitionError(
                     "You have passed into a python enum value as the default value "
                     f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
-                    "string represention as the default value. "
+                    "string representation as the default value. "
                     f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
                 )
 

@@ -235,7 +235,7 @@ def _flatten(
                 )
                 high_pri_idx += 1
 
-    # combine the high pri windwos with the filtered low pri windows
+    # combine the high pri windows with the filtered low pri windows
     flattened_time_windows = high_pri_time_windows
     flattened_time_windows.extend(filtered_low_pri)
     flattened_time_windows.sort(key=lambda t: t.time_window.start)

@@ -650,7 +650,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         instance = graphql_context.instance
 
         def new_materialization() -> EventLogRecord:
-            """Stores a materialization in a new run, and asserts that latest execustion is null."""
+            """Stores a materialization in a new run, and asserts that latest execution is null."""
             run = create_run_for_test(instance)
             instance.event_log_storage.store_event(
                 _materialization_event(run.run_id, AssetKey(["asset_1"]))

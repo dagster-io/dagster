@@ -217,7 +217,7 @@ class SlingResource(ConfigurableResource):
     def _query_metadata(
         self, metadata_string: str, start_time: float, base_metadata: list | None = None
     ):
-        """Metadata quering using regular expression from standard sling log.
+        """Metadata querying using regular expression from standard sling log.
 
         Args:
             metadata_string (str): raw log string containing log/metadata from sling cli run
@@ -286,7 +286,7 @@ class SlingResource(ConfigurableResource):
         return line
 
     def _clean_timestamp_log(self, line: str):
-        """Remove timestamp from log gather from sling cli to reduce redundency in dagster log.
+        """Remove timestamp from log gather from sling cli to reduce redundancy in dagster log.
 
         Args:
             line (str): line of log gather from cli to be cleaned

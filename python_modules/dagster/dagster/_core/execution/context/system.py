@@ -1166,7 +1166,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def asset_partitions_time_window_for_output(self, output_name: str) -> TimeWindow:
-        """The time window for the partitions of the asset correponding to the given output.
+        """The time window for the partitions of the asset corresponding to the given output.
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
@@ -1183,7 +1183,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if not has_one_dimension_time_window_partitioning(partitions_def):
             raise ValueError(
-                f"Tried to get asset partitions for an output '{output_name}' that correponds to a partitioned "
+                f"Tried to get asset partitions for an output '{output_name}' that corresponds to a partitioned "
                 "asset that is not time-partitioned."
             )
 
@@ -1231,7 +1231,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
-        """The time window for the partitions of the asset correponding to the given input.
+        """The time window for the partitions of the asset corresponding to the given input.
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
@@ -1254,7 +1254,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if not has_one_dimension_time_window_partitioning(upstream_asset_partitions_def):
             raise ValueError(
-                f"Tried to get asset partitions for an input '{input_name}' that correponds to a partitioned "
+                f"Tried to get asset partitions for an input '{input_name}' that corresponds to a partitioned "
                 "asset that is not time-partitioned."
             )
 

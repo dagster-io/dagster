@@ -28,7 +28,7 @@ partitions_def = MultiPartitionsDefinition(
     },
 )
 def create_my_multi_partitioned_asset(context: AssetExecutionContext):
-    """Example writing an Artifact with mutli partitions and custom metadata."""
+    """Example writing an Artifact with multi partitions and custom metadata."""
     partition_key = context.partition_key
     context.log.info(f"Creating partitioned asset for {partition_key}")
     if partition_key == "red|2023-01-02":

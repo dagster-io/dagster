@@ -446,7 +446,7 @@ def test_materialize_asset_checks_disabled(
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
     assert len(result.get_asset_check_evaluations()) == 0
-    # observations above, plus observations for the check resuls. One extra because one test is a
+    # observations above, plus observations for the check results. One extra because one test is a
     # relationship test
     assert len(result.get_asset_observation_events()) == 11
 
@@ -463,7 +463,7 @@ def test_materialize_asset_no_checks(
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
     assert len(result.get_asset_check_evaluations()) == 0
-    # since checks are exclued, we don't run the singular or relationship tests
+    # since checks are excluded, we don't run the singular or relationship tests
     assert len(result.get_asset_observation_events()) == 0
 
 

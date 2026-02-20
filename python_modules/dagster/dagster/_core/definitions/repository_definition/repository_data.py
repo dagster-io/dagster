@@ -246,7 +246,7 @@ class CachingRepositoryData(RepositoryData):
             asset_checks_defs_by_key (Mapping[AssetKey, AssetChecksDefinition]): The asset checks definitions
                 belonging to a repository.
             top_level_resources (Mapping[str, ResourceDefinition]): A dict of top-level
-                resource keys to defintions, for resources which should be displayed in the UI.
+                resource keys to definitions, for resources which should be displayed in the UI.
         """
         from dagster._core.definitions import AssetsDefinition
 
@@ -371,7 +371,7 @@ class CachingRepositoryData(RepositoryData):
             repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, GraphDefinition]]):
                 Use this constructor when you have no need to lazy load jobs or other definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
-                resource keys to defintions, for resources which should be displayed in the UI.
+                resource keys to definitions, for resources which should be displayed in the UI.
         """
         from dagster._core.definitions.repository_definition.repository_data_builder import (
             build_caching_repository_data_from_list,

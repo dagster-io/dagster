@@ -26,3 +26,9 @@ repos:
     language: system
     pass_filenames: false
     types: [python]
+
+- repo: https://github.com/codespell-project/codespell
+  # Configuration for codespell is in .pre-commit-config.yaml
+  rev: v2.4.1
+  hooks:
+  - id: codespell

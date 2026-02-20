@@ -155,7 +155,7 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
         # test that we got back a S3FileManager
         assert context.resources.file_manager == MockS3FileManager.return_value
 
-        # make sure the file manager was initalized with the config we are supplying
+        # make sure the file manager was initialized with the config we are supplying
         MockS3FileManager.assert_called_once_with(
             s3_session=mock_s3_session,
             s3_bucket=resource_config["s3_bucket"],

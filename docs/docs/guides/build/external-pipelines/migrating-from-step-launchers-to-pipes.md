@@ -12,7 +12,7 @@ While step launchers were intended to support various runtime environments, in p
 
 When deciding to migrate from step launchers to Dagster Pipes, consider the following:
 
-- **Step launchers** are superceded by Dagster Pipes. While they are still available (and there are no plans for their removal), they are no longer the recommended method for launching external code from Dagster ops and assets. They won't be receiving new features or be under active development.
+- **Step launchers** are superseded by Dagster Pipes. While they are still available (and there are no plans for their removal), they are no longer the recommended method for launching external code from Dagster ops and assets. They won't be receiving new features or be under active development.
 - **Dagster Pipes** is a more lightweight and flexible framework, but it does come with a few drawbacks:
 * Spark runtime and the code executed will no longer be managed by Dagster for you.
 * Dagster Pipes are not compatible with Resources and IO Managers. If you are heavily relying on these features, you might want to keep using step launchers.

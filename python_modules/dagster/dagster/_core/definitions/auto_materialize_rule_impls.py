@@ -485,7 +485,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 else context.legacy_context.candidate_subset
             )
         else:
-            # to avoid causing potential perf issues, we are maintaing the previous behavior of
+            # to avoid causing potential perf issues, we are maintaining the previous behavior of
             # only marking a non-root asset as missing if at least one of its parents has updated
             # since the previous tick.
             # on top of this, we also check the latest time partition of the asset to see if it's
@@ -795,7 +795,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             # first tick of evaluating this condition
             context.legacy_context.node_cursor is None
             or context.legacy_context.previous_evaluation_timestamp is None
-            # This additional check is neccessary as it is possible for this cursor to be None
+            # This additional check is necessary as it is possible for this cursor to be None
             # even if the previous state is not None in the case that this asset and none of its
             # parents have been detected as materialized at any point. While in theory this should
             # not cause issues, in past versions we were not properly capturing materializations

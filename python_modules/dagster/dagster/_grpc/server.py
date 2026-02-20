@@ -407,7 +407,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._server_id = check.opt_str_param(fixed_server_id, "fixed_server_id", str(uuid.uuid4()))
 
         # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
-        # hearbeat, at which point this event is set. The cleanup thread will then set the server
+        # heartbeat, at which point this event is set. The cleanup thread will then set the server
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
 

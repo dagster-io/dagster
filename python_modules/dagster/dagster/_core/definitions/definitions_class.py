@@ -84,7 +84,7 @@ def create_repository_using_definitions_args(
     """Create a named repository using the same arguments as :py:class:`Definitions`. In older
     versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
     and jobs. There could be many repositories per code location. This was a complicated ontology but
-    gave users a way to organize code locations that contained large numbers of heterogenous definitions.
+    gave users a way to organize code locations that contained large numbers of heterogeneous definitions.
 
     As a stopgap for those who both want to 1) use the new :py:class:`Definitions` API and 2) but still
     want multiple logical groups of assets in the same code location, we have introduced this function.
@@ -370,7 +370,7 @@ class Definitions(IHaveNew):
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
             Default loggers for jobs. Individual jobs
-            can define their own loggers by setting them explictly.
+            can define their own loggers by setting them explicitly.
 
         metadata (Optional[MetadataMapping]):
             Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on

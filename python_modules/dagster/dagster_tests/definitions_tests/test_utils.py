@@ -49,7 +49,7 @@ def test_is_valid_title():
     assert is_valid_title("this is a valid title")
     assert is_valid_title("This is ALSO a valid title 12345")
     assert not is_valid_title("no astricks *")
-    assert not is_valid_title("no precentage symbols %")
+    assert not is_valid_title("no percentage symbols %")
     assert not is_valid_title('no " quotes')
     assert is_valid_title("other symbols are ok @$#!?&|")
 

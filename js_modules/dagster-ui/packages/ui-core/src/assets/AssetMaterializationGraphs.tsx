@@ -96,10 +96,10 @@ export const AssetMaterializationGraphs = (props: {
 
 /**
  * Helper function that iterates over the asset materializations and assembles time series data
- * and stats for all numeric metadata entries. This function makes the following guaruntees:
+ * and stats for all numeric metadata entries. This function makes the following guarantees:
  *
  * - If a metadata entry is sparsely emitted, points are still included for missing x values
- *   with y = NaN. (For compatiblity with react-chartjs-2)
+ *   with y = NaN. (For compatibility with react-chartjs-2)
  * - If a metadata entry is generated many times for the same partition, and xAxis = partition,
  *   the MAX value emitted is used as the data point.
  *

@@ -719,7 +719,7 @@ class MdxTranslator(SphinxTranslator):
     def depart_desc_sig_space(self, node: Element) -> None:
         pass
 
-    # High-level structure in signaturs
+    # High-level structure in signatures
     #################
 
     # desc_name: main object name, e.g. MyModule.MyClass, the main name is MyClass.

@@ -467,7 +467,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
             ),
             dg.AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_no_assets",
-                target=AssetSelection.groups("nonexistant"),
+                target=AssetSelection.groups("nonexistent"),
                 default_status=DefaultSensorStatus.STOPPED,
                 minimum_interval_seconds=15,
             ),

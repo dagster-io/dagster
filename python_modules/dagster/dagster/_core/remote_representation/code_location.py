@@ -963,7 +963,7 @@ class GrpcServerCodeLocation(CodeLocation):
             asset_selection=selector.asset_selection,
             asset_check_selection=selector.asset_check_selection,
         )
-        # Omit the parent job snapshot for __ASSET_JOB, since it is potentialy very large
+        # Omit the parent job snapshot for __ASSET_JOB, since it is potentially very large
         # and unlikely to be useful (unlike subset selections of other jobs)
         if subset.job_data_snap and not is_implicit_asset_job_name(selector.job_name):
             full_job = get_full_job(selector)

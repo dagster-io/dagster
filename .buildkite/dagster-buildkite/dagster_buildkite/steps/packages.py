@@ -536,7 +536,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             AvailablePythonVersion.V3_14,
         ],
     ),
-    # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
+    # The 6 tutorials referenced in cloud onboarding can't test "source" due to dagster-cloud dep
     PackageSpec(
         "examples/assets_modern_data_stack",
         pytest_tox_factors=[ToxFactor("pypi")],

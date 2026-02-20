@@ -155,7 +155,7 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
         # test that we got back a ADLS2FileManager
         assert context.resources.file_manager == MockADLS2FileManager.return_value
 
-        # make sure the file manager was initalized with the config we are supplying
+        # make sure the file manager was initialized with the config we are supplying
         MockADLS2FileManager.assert_called_once_with(
             adls2_client=MockADLS2Resource.return_value.adls2_client,
             file_system=resource_config["adls2_file_system"],
@@ -195,7 +195,7 @@ def test_adls_file_manager_resource_defaultazurecredential(
         # test that we got back a ADLS2FileManager
         assert context.resources.file_manager == MockADLS2FileManager.return_value
 
-        # make sure the file manager was initalized with the config we are supplying
+        # make sure the file manager was initialized with the config we are supplying
         MockADLS2FileManager.assert_called_once_with(
             adls2_client=MockADLS2Resource.return_value.adls2_client,
             file_system=resource_config["adls2_file_system"],

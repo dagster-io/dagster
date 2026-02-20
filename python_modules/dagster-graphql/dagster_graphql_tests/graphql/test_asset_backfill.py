@@ -1389,7 +1389,7 @@ def test_backfill_logs():
     all_asset_keys = repo.asset_graph.materializable_asset_keys
 
     with instance_for_test() as instance:
-        # need to override this method on the instance since it defaults ot False in OSS. When we enable this
+        # need to override this method on the instance since it defaults to False in OSS. When we enable this
         # feature in OSS we can remove this override
         def override_backfill_storage_setting(self):
             return True

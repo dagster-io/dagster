@@ -53,7 +53,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
     def _get_executor(self, max_workers) -> ThreadPoolExecutor:
         if self._executor is None:
-            # assumes max_workers wont change
+            # assumes max_workers won't change
             self._executor = self._exit_stack.enter_context(
                 InheritContextThreadPoolExecutor(
                     max_workers=max_workers,
@@ -369,7 +369,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         fixed_iteration_time: float | None,
     ) -> bool:
         assert concurrency_config.run_queue_config
-        # double check that the run is still queued before dequeing
+        # double check that the run is still queued before dequeuing
         run = check.not_none(instance.get_run_by_id(run.run_id))
         with self._global_concurrency_blocked_runs_lock:
             if run.run_id in self._global_concurrency_blocked_runs:
@@ -385,7 +385,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
             return False
 
-        # Very old (pre 0.10.0) runs and programatically submitted runs may not have an
+        # Very old (pre 0.10.0) runs and programmatically submitted runs may not have an
         # attached code location name
         location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
 

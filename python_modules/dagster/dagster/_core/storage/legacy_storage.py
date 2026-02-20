@@ -75,7 +75,7 @@ if TYPE_CHECKING:
 
 
 class CompositeStorage(DagsterStorage, ConfigurableClass):
-    """Utiltity class for combining the individually configured run, event_log, schedule storages
+    """Utility class for combining the individually configured run, event_log, schedule storages
     into the single dagster storage.
     """
 

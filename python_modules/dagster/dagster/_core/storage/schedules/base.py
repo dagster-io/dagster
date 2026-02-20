@@ -22,7 +22,7 @@ from dagster._utils import PrintFn
 
 @public
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
-    """Abstract class for managing persistance of scheduler artifacts."""
+    """Abstract class for managing persistence of scheduler artifacts."""
 
     @abc.abstractmethod
     def wipe(self) -> None:

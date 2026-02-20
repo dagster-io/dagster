@@ -569,7 +569,7 @@ class SqlEventLogStorage(EventLogStorage):
         #    a single query, using pure SQL (e.g. start_time, end_time, status, attempt counts).
         # 2) one query which fetched all the raw events for a specific event type and then inspected
         #    the deserialized event object to aggregate stats derived from sequences of events.
-        #    (e.g. marker events, materializations, expectations resuls, attempts timing, etc.)
+        #    (e.g. marker events, materializations, expectations results, attempts timing, etc.)
         #
         # For simplicity, we now just do the second type of query and derive the stats in Python
         # from the raw events.  This has the benefit of being easier to read and also the benefit of

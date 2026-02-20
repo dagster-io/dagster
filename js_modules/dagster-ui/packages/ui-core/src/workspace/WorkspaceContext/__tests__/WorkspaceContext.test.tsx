@@ -687,7 +687,7 @@ describe('WorkspaceContext', () => {
     });
   });
 
-  it('refetches code location status when refetchAll is called but doesnt refetch location queries if they are up to date', async () => {
+  it('refetches code location status when refetchAll is called but doesn't refetch location queries if they are up to date', async () => {
     const {location1, location2, location3, caches} = getLocationMocks(0);
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
     caches.location1.has.mockResolvedValue(false);

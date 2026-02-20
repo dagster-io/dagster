@@ -103,7 +103,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
     const queryResultOps = filterByQuery(ops, nextQuery).all;
 
     // If all ops are returned, we set the subset to null rather than sending
-    // a comma separated list of evey solid to the API
+    // a comma separated list of every solid to the API
     if (queryResultOps.length === ops.length) {
       onChange(null, nextQuery);
     } else {

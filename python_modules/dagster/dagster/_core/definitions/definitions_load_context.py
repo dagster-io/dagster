@@ -46,7 +46,7 @@ class DefinitionsLoadType(Enum):
     2. `RECONSTRUCTION`: You are reconstructing a set of definitions that were previously defined.
 
     This distinction is important when the source of truth for a Dagster definition is state
-    (for example in a hosted ingestion or BI tool accessable via an API). The state should
+    (for example in a hosted ingestion or BI tool accessible via an API). The state should
     only be accessed when defining definitions, whereas when reconstructing definitions that
     state should be retrieved from Dagster's metastore.
     """
@@ -301,8 +301,8 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
     @abstractmethod
     def defs_from_state(self, state: TState) -> Definitions:
         """Subclasses must implement this method. It is invoked whenever the code location
-        is loading, whether it be initializaton or reconstruction. In the case of
-        intialization, it takes the result of fetch_backing state that just happened.
+        is loading, whether it be initialization or reconstruction. In the case of
+        initialization, it takes the result of fetch_backing state that just happened.
         When reconstructing, it takes the state that was previously fetched and attached
         as metadata.
 

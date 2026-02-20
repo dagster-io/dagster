@@ -232,7 +232,7 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
         return self
 
     def prime(self: DataLoaderT, key: KeyT, value: ReturnT) -> DataLoaderT:
-        """Adds the provied key and value to the cache. If the key already exists, no
+        """Adds the provided key and value to the cache. If the key already exists, no
         change is made. Returns itself for method chaining.
         """
         cache_key = self.get_cache_key(key)

@@ -81,7 +81,7 @@ export const toGraphQueryItems = (
           let upstreamKeys = [];
           if (step.kind === StepKind.UNRESOLVED_COLLECT) {
             // If we are a collect, there may be N runtime keys fanning in to this input,
-            // fetch the keys if they exist or fall back to the sigle upstream step case.
+            // fetch the keys if they exist or fall back to the single upstream step case.
             upstreamKeys = keyExpansionMap[upstream.key] || [upstream.key];
           } else {
             // If the input was coming from an unresolved mapped step and WE are not a collector,

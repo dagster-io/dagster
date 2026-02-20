@@ -476,7 +476,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 compose the assets.
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
                 keys for this asset to partition keys of upstream assets. Each key in the dictionary
-                correponds to one of the input assets, and each value is a PartitionMapping.
+                corresponds to one of the input assets, and each value is a PartitionMapping.
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
@@ -590,7 +590,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 compose the assets.
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
                 keys for this asset to partition keys of upstream assets. Each key in the dictionary
-                correponds to one of the input assets, and each value is a PartitionMapping.
+                corresponds to one of the input assets, and each value is a PartitionMapping.
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
@@ -606,7 +606,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
             tags_by_output_name (Optional[Mapping[str, Optional[Mapping[str, str]]]]): Defines
-                tags to be associated with each othe output assets for this node. Keys are the names
+                tags to be associated with each other output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
             legacy_freshness_policies_by_output_name (Optional[Mapping[str, Optional[LegacyFreshnessPolicy]]]): Defines a

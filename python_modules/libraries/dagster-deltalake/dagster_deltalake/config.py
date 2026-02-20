@@ -113,7 +113,7 @@ class S3Config(Config):
     """
 
     copy_if_not_exists: str | None = None
-    """Specifiy additional headers passed to strage backend, that enable 'if_not_exists' semantics.
+    """Specify additional headers passed to storage backend, that enable 'if_not_exists' semantics.
 
     https://docs.rs/object_store/0.7.0/object_store/aws/enum.S3CopyIfNotExists.html#variant.Header
     """

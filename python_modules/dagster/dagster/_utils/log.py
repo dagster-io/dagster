@@ -32,7 +32,7 @@ class JsonFileHandler(logging.Handler):
         try:
             log_dict = copy.copy(record.__dict__)
 
-            # This horrific monstrosity is to maintain backwards compatability
+            # This horrific monstrosity is to maintain backwards compatibility
             # with the old behavior of the JsonFileHandler, which the clarify
             # project has a dependency on. It relied on the dagster-defined
             # properties smashing all the properties of the LogRecord object

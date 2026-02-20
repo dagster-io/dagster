@@ -24,7 +24,7 @@ SYNC_RUN_STATUSES = {"completed", "failed", "queued", "skipped", "working"}
 
 
 class CensusResource(ConfigurableResource):
-    """This resource allows users to programatically interface with the Census REST API to launch
+    """This resource allows users to programmatically interface with the Census REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
 

@@ -78,7 +78,7 @@ def validate_dagster_block_for_module_name_or_modules(dagster_block):
 
 
 def is_valid_modules_list(modules: list[dict[str, str]]) -> bool:
-    # Could be skipped theorectically, but double check maybe useful, if this functions finds it's way elsewhere
+    # Could be skipped theoretically, but double check maybe useful, if this functions finds it's way elsewhere
     if not isinstance(modules, list):
         raise ValueError("Modules should be a list.")
 

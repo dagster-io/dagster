@@ -9,7 +9,7 @@ class AirflowFilter:
 
     Args:
         dag_id_ilike (Optional[str]): A pattern used to match the set of dag_ids to retrieve. Uses the sql ILIKE operator Airflow-side.
-        airflow_tags (Optional[Sequence[str]]): Filters down to the set of Airflow DAGs whcih contain the particular tags provided.
+        airflow_tags (Optional[Sequence[str]]): Filters down to the set of Airflow DAGs which contain the particular tags provided.
         retrieve_datasets (bool): Whether to retrieve datasets from Airflow. Defaults to True.
         dataset_uri_ilike (Optional[str]): A pattern used to match the set of datasets to retrieve. Uses the sql ILIKE operator Airflow-side.
     """

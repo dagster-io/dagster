@@ -16,7 +16,7 @@ from automation.graphql.python_client.utils import (
 @click.group(
     name="query",
     help="""This cli is used for commands related to the Dagster GraphQL client's queries.
-        In particular, it contains commands that pertain to checking backwards compatability.""",
+        In particular, it contains commands that pertain to checking backwards compatibility.""",
 )
 def query():
     pass
@@ -76,7 +76,7 @@ def check():
 def snapshot():
     """This command dehydrates the GraphQL queries used by the Dagster Python GraphQL client.
 
-    It stores the queries as `<DAGSTER-GRAPHQL_VERSION>.<DATE>.graphql` files so that backwards compatability
+    It stores the queries as `<DAGSTER-GRAPHQL_VERSION>.<DATE>.graphql` files so that backwards compatibility
     tests can be performed on the current iteration of the GraphQL queries in use.
     """
     DATE_FORMAT_STRING = "%Y_%m_%d"

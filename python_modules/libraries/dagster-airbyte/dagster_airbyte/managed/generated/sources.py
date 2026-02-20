@@ -1624,7 +1624,7 @@ class AmazonSqsSource(GeneratedAirbyteSource):
             delete_messages (bool): If Enabled, messages will be deleted from the SQS Queue after being read. If Disabled, messages are left in the queue and can be read more than once. WARNING: Enabling this option can result in data loss in cases of failure, use with caution, see documentation for more detail.
             max_batch_size (Optional[int]): Max amount of messages to get in one batch (10 max)
             max_wait_time (Optional[int]): Max amount of time in seconds to wait for messages in a single poll (20 max)
-            attributes_to_return (Optional[str]): Comma separated list of Mesage Attribute names to return
+            attributes_to_return (Optional[str]): Comma separated list of Message Attribute names to return
             visibility_timeout (Optional[int]): Modify the Visibility Timeout of the individual message from the Queue's default (seconds).
             access_key (Optional[str]): The Access Key ID of the AWS IAM Role to use for pulling messages
             secret_key (Optional[str]): The Secret Key of the AWS IAM Role to use for pulling messages
@@ -5006,7 +5006,7 @@ class ZuoraSource(GeneratedAirbyteSource):
         Args:
             name (str): The name of the destination.
             start_date (str): Start Date in format: YYYY-MM-DD
-            window_in_days (Optional[str]): The amount of days for each data-chunk begining from start_date. Bigger the value - faster the fetch. (0.1 - as for couple of hours, 1 - as for a Day; 364 - as for a Year).
+            window_in_days (Optional[str]): The amount of days for each data-chunk beginning from start_date. Bigger the value - faster the fetch. (0.1 - as for couple of hours, 1 - as for a Day; 364 - as for a Year).
             tenant_endpoint (str): Please choose the right endpoint where your Tenant is located. More info by this Link
             data_query (str): Choose between `Live`, or `Unlimited` - the optimized, replicated database at 12 hours freshness for high volume extraction Link
             client_id (str): Your OAuth user Client ID

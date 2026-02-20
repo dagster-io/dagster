@@ -95,7 +95,7 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
     def get_partition_key(
         self, context: Context, partitioning_info: PartitioningInformation
     ) -> str:
-        """Overrideable method to determine the partition key to use to trigger the dagster run.
+        """Overridable method to determine the partition key to use to trigger the dagster run.
 
         This method will only be called if the underlying asset is partitioned.
         """

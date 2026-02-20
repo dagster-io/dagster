@@ -231,7 +231,7 @@ class SqlRunStorage(RunStorage):
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
         # writes (e.g.  handle_run_event and add_tags) can cause the status in the body to be out of
-        # overriden with an old value.
+        # overridden with an old value.
         return run.with_status(status)
 
     def _rows_to_runs(self, rows: Iterable[dict]) -> Sequence[DagsterRun]:

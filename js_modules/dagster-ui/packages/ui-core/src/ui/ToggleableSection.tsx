@@ -24,9 +24,9 @@ export const ToggleableSection = ({
         padding={{vertical: 12, right: 20, left: 16}}
         style={{cursor: 'pointer'}}
       >
-        <Rotateable $rotate={!isOpen}>
+        <Rotatable $rotate={!isOpen}>
           <Icon name="arrow_drop_down" />
-        </Rotateable>
+        </Rotatable>
         <div style={{flex: 1}}>{title}</div>
       </Box>
       {isOpen && <Box>{children}</Box>}
@@ -34,6 +34,6 @@ export const ToggleableSection = ({
   );
 };
 
-const Rotateable = styled.span<{$rotate: boolean}>`
+const Rotatable = styled.span<{$rotate: boolean}>`
   ${({$rotate}) => ($rotate ? 'transform: rotate(-90deg);' : '')}
 `;

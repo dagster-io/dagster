@@ -967,7 +967,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
 
-            # No runs, but the job state is updated to set a checkpoing
+            # No runs, but the job state is updated to set a checkpoint
             assert instance.get_runs_count() == 0
 
             assert len(instance.all_instigator_state()) == 1
@@ -3033,7 +3033,7 @@ class TestSchedulerRun:
 
         dg.materialize([asset1, asset2], instance=scheduler_instance)
 
-        # assets previously materialized so we expect empy set
+        # assets previously materialized so we expect empty set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
@@ -3059,7 +3059,7 @@ class TestSchedulerRun:
 
         dg.materialize([asset1], instance=scheduler_instance)
 
-        # assets previously materialized so we expect empy set
+        # assets previously materialized so we expect empty set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())

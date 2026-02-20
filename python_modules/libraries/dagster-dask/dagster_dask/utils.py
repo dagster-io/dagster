@@ -55,7 +55,7 @@ DataFrameUtilities = {
                     "errors": Field(
                         String,
                         is_required=False,
-                        description='If "ignore", supress errors.',
+                        description='If "ignore", suppress errors.',
                     ),
                 }
             ),

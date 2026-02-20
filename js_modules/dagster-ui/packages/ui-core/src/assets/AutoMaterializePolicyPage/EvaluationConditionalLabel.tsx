@@ -80,7 +80,7 @@ export const EvaluationSinceLabel = ({
         detailLabel={
           resetTime
             ? `${resetLabel} last occurred ${resetTime}`
-            : `${resetLabel} has not yet occured.`
+            : `${resetLabel} has not yet occurred.`
         }
         evaluationId={sinceMetadata.resetEvaluationId}
         timestamp={sinceMetadata.resetTimestamp}

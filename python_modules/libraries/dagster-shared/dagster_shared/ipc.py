@@ -63,7 +63,7 @@ def get_default_interrupt_signal() -> int:
 
 def send_interrupt() -> None:
     if IS_WINDOWS:
-        # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
+        # This will raise a KeyboardInterrupt in python land - meaning this won't be able to
         # interrupt things like sleep()
         thread.interrupt_main()
     else:

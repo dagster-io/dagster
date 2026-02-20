@@ -324,7 +324,7 @@ describe('AssetLiveDataProvider', () => {
     const fetch1Keys = [assetKeys[0], assetKeys[2]] as AssetKey[];
 
     // Next we fetch all of the keys after waiting SUBSCRIPTION_IDLE_POLL_RATE
-    // which would have made the previously fetched keys elgible for fetching again
+    // which would have made the previously fetched keys eligible for fetching again
     const firstPrioritizedFetchKeys = assetKeys
       .filter((key) => fetch1Keys.indexOf(key) === -1)
       .slice(0, BATCH_SIZE);

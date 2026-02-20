@@ -290,7 +290,7 @@ def repository(
         metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository. Not
             displayed in the UI but accessible on RepositoryDefinition at runtime.
         top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
-            resource keys to defintions, for resources which should be displayed in the UI.
+            resource keys to definitions, for resources which should be displayed in the UI.
 
     Example:
         .. code-block:: python

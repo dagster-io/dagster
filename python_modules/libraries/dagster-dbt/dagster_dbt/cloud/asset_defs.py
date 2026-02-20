@@ -458,7 +458,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
                 dbt_options.append(f"--vars '{json.dumps(partition_var)}'")
 
-            # Prepare the materialization step to be overriden with the selection filter
+            # Prepare the materialization step to be overridden with the selection filter
             materialization_command = job_commands[job_materialization_command_step]
 
             # Map the selected outputs to dbt models that should be materialized.

@@ -710,7 +710,7 @@ class BaseAirbyteWorkspace(ConfigurableResource):
 
 @beta
 class AirbyteWorkspace(BaseAirbyteWorkspace):
-    """This resource allows users to programatically interface with the Airbyte REST API to launch
+    """This resource allows users to programmatically interface with the Airbyte REST API to launch
     syncs and monitor their progress for a given Airbyte workspace.
 
     **Examples:**
@@ -830,7 +830,7 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
 
 @beta
 class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
-    """This resource allows users to programatically interface with the Airbyte Cloud REST API to launch
+    """This resource allows users to programmatically interface with the Airbyte Cloud REST API to launch
     syncs and monitor their progress for a given Airbyte Cloud workspace.
 
     **Examples:**

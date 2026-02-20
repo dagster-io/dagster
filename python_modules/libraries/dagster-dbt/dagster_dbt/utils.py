@@ -34,7 +34,7 @@ def select_unique_ids(
     project: Optional["DbtProject"],
     manifest_json: Mapping[str, Any],
 ) -> AbstractSet[str]:
-    """Given dbt selection paramters, return the unique ids of all resources that match that selection."""
+    """Given dbt selection parameters, return the unique ids of all resources that match that selection."""
     manifest_version = version.parse(manifest_json.get("metadata", {}).get("dbt_version", "0.0.0"))
     # using dbt Fusion, efficient to invoke the CLI for selection
     if manifest_version.major >= 2 and project is not None:

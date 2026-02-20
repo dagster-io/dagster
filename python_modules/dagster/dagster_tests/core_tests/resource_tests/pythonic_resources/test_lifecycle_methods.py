@@ -226,7 +226,7 @@ def test_teardown_after_execution_with_error() -> None:
     result = hello_world_job.execute_in_process()
 
     # Ensure we record that the teardown errored in the event log
-    # this doesnt cause the run to fail
+    # this doesn't cause the run to fail
     assert any(
         re.search(r"Teardown of resources \[.*\] failed", event.message or "")
         for event in result.all_events
@@ -300,7 +300,7 @@ def test_yield_for_execution_with_error_after_yield() -> None:
     result = hello_world_job.execute_in_process()
 
     # Ensure we record that the teardown errored in the event log
-    # this doesnt cause the run to fail
+    # this doesn't cause the run to fail
     assert any(
         re.search(r"Teardown of resources \[.*\] failed", event.message or "")
         for event in result.all_events

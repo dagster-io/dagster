@@ -547,7 +547,7 @@ class DgContext:
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
-        # defered imports for perf
+        # deferred imports for perf
         import tomlkit
         import tomlkit.items
 

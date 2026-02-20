@@ -52,7 +52,7 @@ def test_gcs_file_manger_resource(MockGCSFileManager, mock_storage_client_Client
         # test that we got back a GCSFileManager
         assert context.resources.file_manager == MockGCSFileManager.return_value
 
-        # make sure the file manager was initalized with the config we are supplying
+        # make sure the file manager was initialized with the config we are supplying
         MockGCSFileManager.assert_called_once_with(
             client=mock_storage_client_Client.return_value,
             gcs_bucket=resource_config["gcs_bucket"],

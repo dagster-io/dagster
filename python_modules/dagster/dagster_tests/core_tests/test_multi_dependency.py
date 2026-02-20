@@ -6,7 +6,7 @@ from dagster._core.definitions.composition import MappedInputPlaceholder
 def test_simple_values():
     @dg.op(ins={"numbers": dg.In(dg.List[dg.Int])})
     def sum_num(_context, numbers):
-        # cant guarantee order
+        # can't guarantee order
         assert set(numbers) == set([1, 2, 3])
         return sum(numbers)
 

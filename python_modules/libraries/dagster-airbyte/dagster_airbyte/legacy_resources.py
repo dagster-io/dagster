@@ -262,7 +262,7 @@ class BaseAirbyteResource(ConfigurableResource):
     )
 )
 class AirbyteResource(BaseAirbyteResource):
-    """This resource allows users to programatically interface with the Airbyte REST API to launch
+    """This resource allows users to programmatically interface with the Airbyte REST API to launch
     syncs and monitor their progress.
 
     **Examples:**
@@ -775,7 +775,7 @@ class AirbyteCloudResource(BaseAirbyteResource):
 @dagster_maintained_resource
 @resource(config_schema=infer_schema_from_config_class(AirbyteCloudResource))
 def airbyte_cloud_resource(context) -> AirbyteCloudResource:
-    """This resource allows users to programatically interface with the Airbyte Cloud REST API to launch
+    """This resource allows users to programmatically interface with the Airbyte Cloud REST API to launch
     syncs and monitor their progress. Currently, this resource may only be used with the more basic
     `dagster-airbyte` APIs, including the ops and assets.
 
@@ -791,7 +791,7 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 @dagster_maintained_resource
 @resource(config_schema=AirbyteResource.to_config_schema())
 def airbyte_resource(context) -> AirbyteResource:
-    """This resource allows users to programatically interface with the Airbyte REST API to launch
+    """This resource allows users to programmatically interface with the Airbyte REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
 

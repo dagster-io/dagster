@@ -117,7 +117,7 @@ def test_execution_failed_unpartitioned() -> None:
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 2
 
-    # now add a materialization event to the failed run for A, this shouls mean that A is no longer counted as failed
+    # now add a materialization event to the failed run for A, this should mean that A is no longer counted as failed
     _add_event_to_run(instance, run_id, _materialization_event(dg.AssetKey("A"), job_name))
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1

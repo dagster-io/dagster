@@ -1081,7 +1081,7 @@ class AssetNodeSnap(IHaveNew):
         if not op_names:
             op_names = list(filter(None, [op_name]))
 
-        # backcompat logic to handle AssetNodeSnaps serialzied without is_source
+        # backcompat logic to handle AssetNodeSnaps serialized without is_source
         if is_source is None:
             # prior to this field being added, all non-source assets must be part of at least one
             # job, and no source assets could be part of any job

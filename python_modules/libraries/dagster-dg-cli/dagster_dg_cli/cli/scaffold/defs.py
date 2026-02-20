@@ -139,12 +139,12 @@ class ScaffoldDefsGroup(DgClickGroup):
             # are defined.
             json_scaffolder_params = other_opts.pop("json_params", None)
 
-            # format option is only present if we are dealing with a component. Otherewise we
+            # format option is only present if we are dealing with a component. Otherwise we
             # default to python for decorator scaffolding. Default is YAML (set by option) for
             # components.
             scaffolder_format = cast("ScaffoldFormatOptions", other_opts.pop("format", "python"))
 
-            # Remanining options are scaffolder params
+            # Remaining options are scaffolder params
             key_value_scaffolder_params = other_opts
 
             check.invariant(

@@ -848,7 +848,7 @@ class HookExecutionResult(
 
     Args:
         hook_name (str): The name of the hook.
-        is_skipped (bool): ``False`` if the hook_fn is executed, ``True`` otheriwse.
+        is_skipped (bool): ``False`` if the hook_fn is executed, ``True`` otherwise.
     """
 
     def __new__(cls, hook_name: str, is_skipped: bool | None = None):

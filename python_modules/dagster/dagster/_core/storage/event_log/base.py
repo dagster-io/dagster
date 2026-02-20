@@ -260,7 +260,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
-        """Get a summary of events that have ocurred in a run."""
+        """Get a summary of events that have occurred in a run."""
         return build_run_stats_from_events(
             run_id, self.get_logs_for_run(run_id, of_type=RUN_STATS_EVENT_TYPES)
         )
@@ -776,7 +776,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return values
 
     def get_pool_config(self) -> PoolConfig:
-        # Base implementation of fetching pool config.  To be overriden for remote storage
+        # Base implementation of fetching pool config.  To be overridden for remote storage
         # implementations where the local instance might not match the remote instance.
         return self._instance.get_concurrency_config().pool_config
 

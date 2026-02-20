@@ -789,7 +789,7 @@ class MultiDependencyDefinition(
     def get_dependencies_and_mappings(
         self,
     ) -> Sequence[DependencyDefinition | type["MappedInputPlaceholder"]]:
-        """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
+        """Return the combined list of dependencies contained by this object, including of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
 
 

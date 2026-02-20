@@ -203,7 +203,7 @@ def k8s_api_retry_creation_mutation(
             # Only catch whitelisted ApiExceptions
             status = e.status
 
-            # 409 (Conflict) here indicates that hte object actually was created
+            # 409 (Conflict) here indicates that the object actually was created
             # during a previous attempt, despite logging a failure
             if retry_count > 1 and status == 409:
                 return
@@ -892,7 +892,7 @@ class DagsterKubernetesClient:
         return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
 
     def _has_container_logs(self, container_status):
-        # Logs are availalbe if either the container is running or terminated, or it's waiting
+        # Logs are available if either the container is running or terminated, or it's waiting
         # but previously ran or terminated
         if container_status.state:
             if container_status.state.running or container_status.state.terminated:

@@ -100,7 +100,7 @@ def split_silences(
 ) -> Iterator[tuple[float, float]]:
     """Split audio file into contiguous chunks using the ffmpeg `silencedetect` filter.
 
-    Retuns:
+    Returns:
         Generator of tuples (start, end) of each chunk in seconds.
 
     """

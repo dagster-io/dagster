@@ -488,10 +488,10 @@ def test_override_default_value_in_ctor() -> None:
     assert (
         defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
-            run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
+            run_config={"resources": {"my_resource": {"config": {"str_field": "overridden"}}}}
         )
         .output_for_node("my_asset")
-        == "overriden"
+        == "overridden"
     )
 
     assert executed["yes"]
@@ -526,10 +526,10 @@ def test_override_default_field_value_in_resources() -> None:
     assert (
         defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
-            run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
+            run_config={"resources": {"my_resource": {"config": {"str_field": "overridden"}}}}
         )
         .output_for_node("my_asset")
-        == "overriden"
+        == "overridden"
     )
 
     assert executed["yes"]
@@ -566,10 +566,10 @@ def test_override_default_field_value_in_resources_using_configure_at_launch() -
     assert (
         defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
-            run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
+            run_config={"resources": {"my_resource": {"config": {"str_field": "overridden"}}}}
         )
         .output_for_node("my_asset")
-        == "overriden"
+        == "overridden"
     )
 
     assert executed["yes"]

@@ -216,7 +216,7 @@ def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw) -> str:
 
 class LongText(db.Text):
     """Allows customization of certain fields to map to LONGTEXT in MySQL.  For Postgres, all text
-    fields are mapped to TEXT, which is unbounded in length, so the distinction is not neccessary.
+    fields are mapped to TEXT, which is unbounded in length, so the distinction is not necessary.
     In MySQL, however, TEXT is limited to 64KB, so LONGTEXT (4GB) is required for certain fields.
     """
 

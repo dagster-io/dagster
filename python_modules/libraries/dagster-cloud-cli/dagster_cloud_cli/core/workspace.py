@@ -20,7 +20,7 @@ class GitMetadata:
 @whitelist_for_serdes
 @record(kw_only=False)
 class PexMetadata:
-    # pex_tag is a string like 'deps-234y4384.pex:source-39y3474.pex' that idenfies
+    # pex_tag is a string like 'deps-234y4384.pex:source-39y3474.pex' that identifies
     # the pex files to execute
     pex_tag: str
     # python_version determines which pex base docker image to use

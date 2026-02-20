@@ -205,7 +205,7 @@ Last 25 log lines for container 'execformaterror':
         assert "exec /usr/local/bin/dagster: exec format error" in pod_debug_info
         assert "No warning events for pod." in pod_debug_info
 
-        # Test case where a non-existant secret is used
+        # Test case where a non-existent secret is used
         bad_secret_config = [
             kubernetes.client.V1EnvFromSource(
                 secret_ref=kubernetes.client.V1SecretEnvSource(name="missing-secret")

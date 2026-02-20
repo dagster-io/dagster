@@ -1070,7 +1070,7 @@ def test_record_fwd_ref():
         age: int
 
     def _out_of_scope():
-        # cant find "Foo" in definition or callsite captured scopes
+        # can't find "Foo" in definition or callsite captured scopes
         # requires serdes to set contextual namespace
         return dg.deserialize_value(
             '{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}',
@@ -1095,7 +1095,7 @@ def test_record_fwd_ref_unpack():
         age: int
 
     def _out_of_scope():
-        # cant find "Foo" in definition or callsite captured scopes
+        # can't find "Foo" in definition or callsite captured scopes
         # requires serdes to set contextual namespace
         return unpack_value(
             json.loads('{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}'),

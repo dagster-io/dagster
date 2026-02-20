@@ -677,7 +677,7 @@ def test_multi_asset_resources_execution():
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
     def my_asset(context):
-        # Required io manager keys are available on the context, same behavoir as ops
+        # Required io manager keys are available on the context, same behavior as ops
         assert hasattr(context.resources, "foo")
         assert hasattr(context.resources, "bar")
         yield dg.Output(1, "key1")
@@ -744,7 +744,7 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
     def my_asset(context):
-        # Required io manager keys are available on the context, same behavoir as ops
+        # Required io manager keys are available on the context, same behavior as ops
         assert hasattr(context.resources, "foo")
         assert hasattr(context.resources, "bar")
         yield dg.Output(1, "key1")
@@ -3430,7 +3430,7 @@ def test_metadata_update():
     assert updated.metadata_by_key[updated.key]["foo"] == "baz"
     assert updated.metadata_by_key[updated.key]["four"] == 4
 
-    # cant blank out metadata for this condition
+    # can't blank out metadata for this condition
     # * @asset creates an OpDefinition with the metadata set on the output
     # * The AssetsDefinition constructor merges the output metadata with the spec metadata
     tried_to_blank = single.with_attributes(metadata_by_key={single.key: {}})

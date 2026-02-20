@@ -376,7 +376,7 @@ def test_some_inputs_failed(require_upstream_step_success: bool, executor: str) 
         ) as reexecution_result:
             assert reexecution_result.success
             # NOTE: regardless of step execution mode, re-execution includes any step
-            # that failed or is downstream of a failed step. this is debatable (techincally,
+            # that failed or is downstream of a failed step. this is debatable (technically,
             # this results in re-executing steps that were already completely successful in the
             # AFTER_UPSTREAM_OUTPUTS mode), but it is the most consistent and predictable thing
             # to do.

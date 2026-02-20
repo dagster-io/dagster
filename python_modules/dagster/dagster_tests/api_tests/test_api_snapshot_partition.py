@@ -361,7 +361,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         )
         assert isinstance(data, PartitionSetExecutionParamSnap)
 
-        # non existant partitions can still return snapshots
+        # non existent partitions can still return snapshots
         assert len(data.partition_data) == 1
 
 

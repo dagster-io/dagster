@@ -2,7 +2,7 @@ from typing import Any
 
 
 class AdaptiveCard:
-    """Class to contruct a MS Teams adaptive card for posting Dagster messages."""
+    """Class to construct a MS Teams adaptive card for posting Dagster messages."""
 
     def __init__(self, adaptive_card_version: str = "1.5"):
         """Constructs an adaptive card with the given version.

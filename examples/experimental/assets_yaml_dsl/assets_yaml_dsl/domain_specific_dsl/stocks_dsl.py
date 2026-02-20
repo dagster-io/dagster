@@ -102,7 +102,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> list[AssetsDefin
         for ticker in tickers:
             stored_ticker_data[ticker] = fetch_data_for_ticker(ticker)
 
-        # do someting with stored_ticker_data
+        # do something with stored_ticker_data
 
     @asset(deps=fetch_the_tickers.keys, group_name=group_name)
     def forecast() -> None:

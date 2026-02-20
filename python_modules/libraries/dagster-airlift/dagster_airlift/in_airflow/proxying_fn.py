@@ -181,7 +181,7 @@ def proxying_to_dagster(
 
     for dag in dag_level_proxying_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as proxied.")
-        dag.tags = [*dag.tags, "Dag overriden to Dagster"]
+        dag.tags = [*dag.tags, "Dag overridden to Dagster"]
         dag.task_dict = {}
         dag.task_group.children = {}
         override_task = build_from_dag_fn(dag)

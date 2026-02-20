@@ -73,7 +73,7 @@ def schedule(
     3. Return a :py:class:`~dagster.SkipReason` object, providing a descriptive message of why no runs were requested.
     4. Return nothing (skipping without providing a reason)
     5. Return a run config dictionary.
-    6. Yield a :py:class:`~dagster.SkipReason` or yield one ore more :py:class:`~dagster.RunRequest` objects.
+    6. Yield a :py:class:`~dagster.SkipReason` or yield one or more :py:class:`~dagster.RunRequest` objects.
 
     Returns a :py:class:`~dagster.ScheduleDefinition`.
 

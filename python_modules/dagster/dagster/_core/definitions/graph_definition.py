@@ -141,7 +141,7 @@ class GraphDefinition(NodeDefinition):
       (DAG) of compute.
 
     End users should prefer the :func:`@graph <graph>` decorator. GraphDefinition is generally
-    intended to be used by framework authors or for programatically generated graphs.
+    intended to be used by framework authors or for programmatically generated graphs.
 
     Args:
         name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`

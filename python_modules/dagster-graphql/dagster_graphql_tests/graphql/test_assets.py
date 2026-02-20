@@ -3561,7 +3561,7 @@ class TestAssetWipe(ExecutingGraphQLContextTestMatrix):
         assert result.data["wipeAssets"]["__typename"] == "UnsupportedOperationError"
         assert "Partitioned asset wipe is not supported yet" in result.data["wipeAssets"]["message"]
 
-        # wipe for non-existant asset
+        # wipe for non-existent asset
         result = execute_dagster_graphql(
             graphql_context,
             WIPE_ASSETS,
@@ -3971,7 +3971,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
             assert len(assets_live_info) == 3
 
-            # Second run is shown as unstarted since it is the most recently creatd run (the
+            # Second run is shown as unstarted since it is the most recently created run (the
             # in progress run is not returned in inProgressRunIds since it is not the most
             # recently created run)
             assert assets_live_info[0]["assetKey"]["path"] == ["first_asset"]

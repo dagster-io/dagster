@@ -15,7 +15,7 @@ type ContainerRef = {
 
 /**
  * useViewport is a React hook that exposes a viewport (top/left/width/height)
- * representing the currently visible region of a scrolling contaienr <div>.
+ * representing the currently visible region of a scrolling container <div>.
  * It uses a ResizeObserver and an onScroll handler to monitor the viewport of the
  * container. To use, spread the returned `containerProps` onto the container div.
  */

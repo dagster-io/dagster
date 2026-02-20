@@ -611,7 +611,7 @@ class PipesChunkedLogReader(PipesLogReader):
 
     Args:
         interval (float): interval in seconds between attempts to download a chunk.
-        target_stream (IO[str]): The stream to which to write the logs. Typcially `sys.stdout` or `sys.stderr`.
+        target_stream (IO[str]): The stream to which to write the logs. Typically `sys.stdout` or `sys.stderr`.
         debug_info (Optional[str]): An optional message containing debug information about the log reader.
     """
 

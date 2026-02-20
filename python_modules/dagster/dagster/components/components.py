@@ -3,7 +3,7 @@ from dagster.components.lib.definitions_component import (
     DefinitionsComponent as DefinitionsComponent,
 )
 
-# These just modify the exsiting Dagster decorators
+# These just modify the existing Dagster decorators
 from dagster.components.lib.shim_components.asset import asset as asset
 from dagster.components.lib.shim_components.asset_check import asset_check as asset_check
 from dagster.components.lib.shim_components.job import job as job

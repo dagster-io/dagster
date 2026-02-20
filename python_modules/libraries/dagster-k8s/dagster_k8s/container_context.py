@@ -265,7 +265,7 @@ class K8sContainerContext(
         other: "K8sContainerContext",
     ) -> "K8sContainerContext":
         # Lists of attributes that can be combined are combined, scalar values are replaced
-        # prefering the passed in container context
+        # preferring the passed in container context
         return K8sContainerContext(
             server_k8s_config=self._merge_k8s_config(
                 self.server_k8s_config, other.server_k8s_config

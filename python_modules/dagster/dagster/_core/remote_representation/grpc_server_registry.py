@@ -128,7 +128,7 @@ class GrpcServerRegistry(AbstractContextManager):
         return True
 
     def clear_all_grpc_endpoints(self):
-        # Free the map entry for all origins so that subsequent calls to _get_grpc_endpoint wil
+        # Free the map entry for all origins so that subsequent calls to _get_grpc_endpoint will
         # create a new process
         with self._lock:
             self._active_entries.clear()

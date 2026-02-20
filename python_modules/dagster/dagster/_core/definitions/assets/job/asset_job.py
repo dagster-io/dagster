@@ -369,7 +369,7 @@ def _infer_and_validate_common_partitions_def(
             if required_partitions_def is not None and partitions_def != required_partitions_def:
                 raise DagsterInvalidDefinitionError(
                     f"Executable asset {key} has a different partitions definition than"
-                    f" the one specified for the job. Specifed partitions definition: {required_partitions_def}."
+                    f" the one specified for the job. Specified partitions definition: {required_partitions_def}."
                     f" Asset partitions definition: {partitions_def}."
                 )
             keys_by_partitions_def[partitions_def].add(key)

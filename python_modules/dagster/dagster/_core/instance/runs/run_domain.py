@@ -797,7 +797,7 @@ class RunDomain:
 
         # the asset graph may be workspace-scoped (to take better advantage of request context
         # caching) or repository-scoped. In most cases it will be a remote asset graph, but in
-        # tests or programatically creating runs from python codes it may be a regular asset graph.
+        # tests or programmatically creating runs from python codes it may be a regular asset graph.
         # in all cases, return the BaseAssetNode for the supplied asset key if it exists.
         if isinstance(asset_graph, RemoteWorkspaceAssetGraph):
             return cast(

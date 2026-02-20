@@ -63,7 +63,7 @@ class AssetGraphComputation(IHaveNew):
             selected_asset_check_keys=selected_asset_check_keys,
             execution_type=execution_type,
         )
-        result.output_names_by_key  # eagerly compute this to catch any errors at contruction time  # noqa: B018
+        result.output_names_by_key  # eagerly compute this to catch any errors at construction time  # noqa: B018
         return result
 
     @cached_property

@@ -625,7 +625,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `to_job` on a non-graph.  Only graphs "
+                "Attempted to call `to_job` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -662,7 +662,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a non-graph.  Only graphs "
+                "Attempted to call `execute_in_process` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 

@@ -341,7 +341,7 @@ def _resume_run_command_body(
 def get_step_stats_by_key(
     instance: DagsterInstance, dagster_run: DagsterRun, step_keys_to_execute: Sequence[str]
 ) -> Mapping[str, RunStepKeyStatsSnapshot]:
-    # When using the k8s executor, there whould only ever be one step key
+    # When using the k8s executor, there would only ever be one step key
     step_stats = instance.get_run_step_stats(dagster_run.run_id, step_keys=step_keys_to_execute)
     step_stats_by_key = {step_stat.step_key: step_stat for step_stat in step_stats}
     return step_stats_by_key

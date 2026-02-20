@@ -212,7 +212,7 @@ class InputContext:
         Dagster types do not propagate from an upstream output to downstream inputs,
         and this property only captures type information for the input that is either
         passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
-        infered from type hints. For an asset input, the Dagster type from the upstream
+        inferred from type hints. For an asset input, the Dagster type from the upstream
         asset definition is ignored.
         """
         if self._dagster_type is None:

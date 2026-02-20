@@ -1054,7 +1054,7 @@ def _port_forward_dagster_webserver(namespace):
             except Exception:
                 time.sleep(1)
 
-        print("Port forwarding in the backgound. Trying to connect to dagster-webserver...")
+        print("Port forwarding in the background. Trying to connect to dagster-webserver...")
 
         start_time = time.time()
 

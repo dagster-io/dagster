@@ -169,7 +169,7 @@ class WhitelistMap(NamedTuple):
         Args:
             name: The class name of the namedtuple to register
             object_class: The object class to register.
-                Can be None to gracefull load previously serialized objects as None.
+                Can be None to graceful load previously serialized objects as None.
             serializer: The class to use when serializing and deserializing
         """
         serializer = serializer_class(

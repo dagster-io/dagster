@@ -220,7 +220,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
           // Maintain a queue of messages as they arrive, and call the throttled setter.
           queue.current.push(logs);
           // Wait until end of animation frame to call throttled set nodes
-          // otherwise we wont end up batching anything if rendering takes
+          // otherwise we won't end up batching anything if rendering takes
           // longer than the BATCH_INTERVAL
           requestAnimationFrame(throttledSetNodes);
         }}
