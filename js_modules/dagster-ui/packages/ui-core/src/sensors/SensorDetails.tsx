@@ -9,9 +9,9 @@ import {
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {SensorAlertDetails} from '@shared/sensors/SensorAlertDetails';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
-import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';

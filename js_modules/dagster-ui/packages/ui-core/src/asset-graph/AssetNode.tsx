@@ -1,10 +1,10 @@
 import {Box, ButtonLink, Colors, FontFamily, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
+import {UserDisplay} from '@shared/runs/UserDisplay';
 import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {gql} from '../apollo-client';

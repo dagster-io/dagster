@@ -1,6 +1,6 @@
+import {useAssetGraphSupplementaryData} from '@shared/asset-graph/useAssetGraphSupplementaryData';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useState} from 'react';
-import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
 import {computeGraphData} from './ComputeGraphData';
 import {GraphData, buildGraphData, tokenForAssetKey} from './Utils';

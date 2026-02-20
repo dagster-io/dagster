@@ -1,5 +1,5 @@
+import {PipelineExplorerSnapshotRoot} from '@shared/pipelines/PipelineExplorerRoot';
 import {Switch, useParams} from 'react-router-dom';
-import {PipelineExplorerSnapshotRoot} from 'shared/pipelines/PipelineExplorerRoot.oss';
 
 import {SnapshotNav} from './SnapshotNav';
 import {Route} from '../app/Route';

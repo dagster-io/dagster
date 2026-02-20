@@ -1,5 +1,5 @@
+import {useAssetLiveDataProviderChangeSignal} from '@shared/asset-data/_useAssetLiveDataProviderChangeSignal';
 import React, {useCallback, useMemo} from 'react';
-import {useAssetLiveDataProviderChangeSignal} from 'shared/asset-data/_useAssetLiveDataProviderChangeSignal.oss';
 
 import {
   AssetAutomationData,

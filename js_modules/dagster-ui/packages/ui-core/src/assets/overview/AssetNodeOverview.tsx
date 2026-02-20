@@ -7,9 +7,9 @@ import {
   Subtitle2,
   Tag,
 } from '@dagster-io/ui-components';
+import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 
 import {FreshnessPolicySection} from './FreshnessPolicySection';
 import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';

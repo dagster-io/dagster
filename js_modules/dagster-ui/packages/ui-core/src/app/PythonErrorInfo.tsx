@@ -1,7 +1,7 @@
 import {Box, Button, Icon} from '@dagster-io/ui-components';
+import {PythonErrorInfoHeader} from '@shared/app/PythonErrorInfoHeader';
 import clsx from 'clsx';
 import {ComponentProps, Fragment, forwardRef, useRef} from 'react';
-import {PythonErrorInfoHeader} from 'shared/app/PythonErrorInfoHeader.oss';
 
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';

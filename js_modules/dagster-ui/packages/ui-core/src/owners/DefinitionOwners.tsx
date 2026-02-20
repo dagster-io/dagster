@@ -1,5 +1,5 @@
 import {Box, Tag} from '@dagster-io/ui-components';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
+import {UserDisplay} from '@shared/runs/UserDisplay';
 
 import styles from './css/DefinitionOwners.module.css';
 

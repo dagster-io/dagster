@@ -1,6 +1,6 @@
+import {AssetSelectionInput} from '@shared/asset-selection/input/AssetSelectionInput';
+import {useAssetSelectionState} from '@shared/asset-selection/useAssetSelectionState';
 import {useMemo} from 'react';
-import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
-import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
 
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {FilterableAssetDefinition, useAssetSelectionFiltering} from '../useAssetSelectionFiltering';

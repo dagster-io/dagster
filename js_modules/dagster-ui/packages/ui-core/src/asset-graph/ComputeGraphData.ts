@@ -1,5 +1,5 @@
+import {filterAssetSelectionByQuery} from '@shared/asset-selection/filterAssetSelectionByQuery';
 import groupBy from 'lodash/groupBy';
-import {filterAssetSelectionByQuery} from 'shared/asset-selection/filterAssetSelectionByQuery.oss';
 
 import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData, toGraphId} from './Utils';

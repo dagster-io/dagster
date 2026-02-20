@@ -1,6 +1,6 @@
 import {Icon} from '@dagster-io/ui-components';
+import {useVisibleFeatureFlagRows} from '@shared/app/useVisibleFeatureFlagRows';
 import {useState} from 'react';
-import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
 
 import {TopNavButton} from './TopNavButton';
 import {UserSettingsDialog} from './UserSettingsDialog/UserSettingsDialog';

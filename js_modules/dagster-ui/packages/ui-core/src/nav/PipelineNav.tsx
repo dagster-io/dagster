@@ -1,7 +1,7 @@
 import {Box, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {buildJobTabs} from '@shared/pipelines/buildJobTabs';
 import {useMemo} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
-import {buildJobTabs} from 'shared/pipelines/buildJobTabs.oss';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';

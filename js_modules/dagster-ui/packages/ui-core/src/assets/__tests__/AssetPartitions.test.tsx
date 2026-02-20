@@ -6,6 +6,7 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {Route} from '../../app/Route';
 import {AssetKeyInput} from '../../graphql/types';
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {AssetPartitionListProps} from '../AssetPartitionList';
 import {AssetPartitionStatus} from '../AssetPartitionStatus';
 import {AssetPartitions} from '../AssetPartitions';
@@ -72,6 +73,14 @@ const SingleDimensionAssetPartitions = ({
 };
 
 describe('AssetPartitions', () => {
+  beforeAll(() => {
+    mockViewportClientRect();
+  });
+
+  afterAll(() => {
+    restoreViewportClientRect();
+  });
+
   it('should support filtering a time-partitioned asset to a time range using the top bar', async () => {
     render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
 

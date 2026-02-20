@@ -1,4 +1,4 @@
-import {useUserSettingDefaults} from 'shared/app/UserSettingsDialog/useUserSettingDefaults.oss';
+import {useUserSettingDefaults} from '@shared/app/UserSettingsDialog/useUserSettingDefaults';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 

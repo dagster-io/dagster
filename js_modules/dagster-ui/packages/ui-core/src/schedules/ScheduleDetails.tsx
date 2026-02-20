@@ -1,6 +1,6 @@
 import {Box, Code, MetadataTableWIP, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {ScheduleAlertDetails} from '@shared/schedules/ScheduleAlertDetails';
 import {Link} from 'react-router-dom';
-import {ScheduleAlertDetails} from 'shared/schedules/ScheduleAlertDetails.oss';
 import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';

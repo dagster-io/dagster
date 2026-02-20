@@ -10,8 +10,8 @@ import {
   Tooltip,
   ifPlural,
 } from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import React, {useContext} from 'react';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';

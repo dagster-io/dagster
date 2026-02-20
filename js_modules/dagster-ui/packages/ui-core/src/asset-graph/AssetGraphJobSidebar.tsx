@@ -1,5 +1,5 @@
 import {Box, ErrorBoundary, Tab, Tabs} from '@dagster-io/ui-components';
-import {useJobSidebarAlertsTabConfig} from 'shared/pipelines/useJobSidebarAlertsTabConfig.oss';
+import {useJobSidebarAlertsTabConfig} from '@shared/pipelines/useJobSidebarAlertsTabConfig';
 
 import {gql, useQuery} from '../apollo-client';
 import {

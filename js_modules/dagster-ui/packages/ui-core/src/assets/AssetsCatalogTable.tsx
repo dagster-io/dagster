@@ -1,10 +1,10 @@
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
+import {CreateCatalogViewButton} from '@shared/assets/CreateCatalogViewButton';
+import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';

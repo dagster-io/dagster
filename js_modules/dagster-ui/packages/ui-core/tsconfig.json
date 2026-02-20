@@ -4,7 +4,7 @@
       "@dagster-io/ui-components": ["../ui-components/src"],
       "@dagster-io/ui-components/editor": ["../ui-components/src/editor"],
       "@dagster-io/dg-docs-components/*": ["../dg-docs-components/src/*"],
-      "shared/*": ["./src/*"]
+      "@shared/*": ["./src/shared/*"]
     },
     "module": "es2022",
     "target": "es2022",

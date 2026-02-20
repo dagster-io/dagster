@@ -1,6 +1,6 @@
+import {Worker} from '@shared/workers/Worker';
 import Fuse from 'fuse.js';
 import memoize from 'lodash/memoize';
-import {Worker} from 'shared/workers/Worker.oss';
 
 import {ResultResponse, SearchResult} from './types';
 

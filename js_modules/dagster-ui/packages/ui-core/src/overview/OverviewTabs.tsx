@@ -1,6 +1,6 @@
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
+import {observeEnabled} from '@shared/app/observeEnabled';
 import {useContext} from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {QueryResult} from '../apollo-client';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';

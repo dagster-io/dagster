@@ -1,6 +1,6 @@
 import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
+import {AssetWipeDialog} from '@shared/assets/AssetWipeDialog';
 import {useContext, useState} from 'react';
-import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 
 import {useAssetPermissions} from './useAssetPermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';

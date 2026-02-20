@@ -1,7 +1,7 @@
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {AppTopNavRightOfLogo} from '@shared/app/AppTopNav/AppTopNavRightOfLogo';
 import * as React from 'react';
 import {NavLink} from 'react-router-dom';
-import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.oss';
 import styled from 'styled-components';
 
 import {useFullScreen} from './AppTopNavContext';
