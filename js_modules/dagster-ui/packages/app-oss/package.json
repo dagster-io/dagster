@@ -55,7 +55,7 @@
   },
   "scripts": {
     "start": "next dev",
-    "build": "next build",
+    "build": "./build.sh",
     "replace-asset-prefix": "node ./replace-asset-prefix.js",
     "lint": "eslint src/ --fix",
     "lint:ci": "eslint src/",
