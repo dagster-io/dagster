@@ -235,6 +235,10 @@ class PackageSpec:
                                 retries=self.retries,
                                 skip_reason=self.skip_reason,
                                 pytest_args=pytest_args,
+                                concurrency=other_factor.concurrency if other_factor else None,
+                                concurrency_group=(
+                                    other_factor.concurrency_group if other_factor else None
+                                ),
                             )
                         )
 
@@ -755,7 +759,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-dbt/",
         skip_if=skip_if_not_dagster_dbt_commit,
         name="dagster-dbt-fusion",
-        pytest_tox_factors=[ToxFactor("dbtfusion-snowflake")],
+        pytest_tox_factors=[
+            ToxFactor(
+                "dbtfusion-snowflake",
+                concurrency=1,
+                concurrency_group="dagster-dbt-fusion-snowflake",
+            )
+        ],
         env_vars=[
             "SNOWFLAKE_ACCOUNT",
             "SNOWFLAKE_USER",
