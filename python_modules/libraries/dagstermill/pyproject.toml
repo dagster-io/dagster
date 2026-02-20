@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagstermill"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "run notebooks using the Dagster tools"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,7 +19,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
+    "dagster==1.12.15rc4",
     "ipykernel>=4.9.0,!=5.4.0,!=5.4.1",
     "ipython_genutils>=0.2.0",
     "packaging>=20.9",

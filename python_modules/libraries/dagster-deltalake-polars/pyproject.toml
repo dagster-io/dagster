@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-deltalake-polars"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "Package for storing Polars DataFrames in Delta tables."
 authors = [
     { name = "Elementl", email = "hello@elementl.com" },
@@ -22,8 +22,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
-    "dagster-deltalake==0.28.15rc3",
+    "dagster==1.12.15rc4",
+    "dagster-deltalake==0.28.15rc4",
     "polars[pyarrow]",
 ]
 

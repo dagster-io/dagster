@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-pyspark"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "Package for PySpark Dagster framework components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -20,8 +20,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
-    "dagster_spark==1!0+dev",
+    "dagster==1.12.15rc4",
+    "dagster-spark==0.28.15rc4",
     "pyspark>=3,<5",
 ]
 

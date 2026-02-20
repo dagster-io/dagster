@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dg-core"
-version = "1.12.15rc3"
+version = "1.12.15rc4"
 description = ""
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -37,8 +37,8 @@ dependencies = [
     "packaging",
     "python-dotenv",
     "typer>=0.15.1,<1.0",
-    "dagster-shared==1.12.15rc3",
-    "dagster-cloud-cli==1.12.15rc3",
+    "dagster-shared==1.12.15rc4",
+    "dagster-cloud-cli==1.12.15rc4",
 ]
 
 [project.urls]
@@ -47,13 +47,13 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 [project.optional-dependencies]
 test = [
     "click",
-    "dagster==1!0+dev",
+    "dagster==1.12.15rc4",
     "freezegun",
     "psutil",
     "pydantic",
     "pytest",
-    "dagster-graphql==1!0+dev",
-    "create-dagster==1!0+dev",
+    "dagster-graphql==1.12.15rc4",
+    "create-dagster==1.12.15rc4",
 ]
 
 [tool.setuptools]

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-deltalake"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "Package for Deltalake-specific Dagster framework op and resource components."
 authors = [
     { name = "Elementl", email = "hello@elementl.com" },
@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
     "deltalake>=1.0.0",
     "pyarrow",
-    "dagster==1.12.15rc3",
+    "dagster==1.12.15rc4",
 ]
 
 [project.urls]

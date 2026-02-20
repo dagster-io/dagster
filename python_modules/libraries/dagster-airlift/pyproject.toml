@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-airlift"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "A toolkit for observing integration and migration between Apache Airflow and Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -30,7 +30,7 @@ dagster-airlift = "dagster_airlift.cli:cli"
 
 [project.optional-dependencies]
 core = [
-    "dagster==1.12.15rc3",
+    "dagster==1.12.15rc4",
     "click",
     "structlog",
 ]
@@ -39,7 +39,7 @@ in-airflow = [
     "structlog",
 ]
 tutorial = [
-    "dagster-webserver==1.12.15rc3",
+    "dagster-webserver==1.12.15rc4",
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
@@ -57,10 +57,10 @@ mwaa = [
 ]
 test = [
     "pytest",
-    "dagster-dbt==1!0+dev",
+    "dagster-dbt==0.28.15rc4",
     "dbt-duckdb",
     "boto3",
-    "dagster-webserver==1!0+dev",
+    "dagster-webserver==1.12.15rc4",
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",

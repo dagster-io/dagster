@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-pipes"
-version = "1.12.15rc3"
+version = "1.12.15rc4"
 description = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },

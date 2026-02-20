@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-ge"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "Package for GE-specific Dagster framework op and resource components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,8 +18,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
-    "dagster-pandas==0.28.15rc3",
+    "dagster==1.12.15rc4",
+    "dagster-pandas==0.28.15rc4",
     "pandas<3.0.0",
     "great_expectations>=0.17.15,<1.0.0",
 ]

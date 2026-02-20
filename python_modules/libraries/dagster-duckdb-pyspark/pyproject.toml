@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-duckdb-pyspark"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "Package for storing PySpark DataFrames in DuckDB."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,8 +18,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
-    "dagster-duckdb==0.28.15rc3",
+    "dagster==1.12.15rc4",
+    "dagster-duckdb==0.28.15rc4",
     "pyspark>=4.1; python_version>='3.14'",
     "pyspark>=3.5,<4; python_version<'3.14'",
     "pandas<3.0.0",

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagit"
-version = "1.12.15rc3"
+version = "1.12.15rc4"
 description = "Web UI for dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -23,7 +23,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-webserver==1.12.15rc3",
+    "dagster-webserver==1.12.15rc4",
 ]
 
 [project.urls]
@@ -35,10 +35,10 @@ dagit-debug = "dagster_webserver.debug:main"
 
 [project.optional-dependencies]
 notebook = [
-    "dagster-webserver[notebook]==1!0+dev",
+    "dagster-webserver[notebook]==1.12.15rc4",
 ]
 test = [
-    "dagster-webserver[test]==1!0+dev",
+    "dagster-webserver[test]==1.12.15rc4",
 ]
 
 [tool.setuptools]

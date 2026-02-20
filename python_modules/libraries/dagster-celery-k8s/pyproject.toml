@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-celery-k8s"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "A Dagster integration for celery-k8s-executor"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,9 +18,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
-    "dagster-k8s==0.28.15rc3",
-    "dagster-celery==0.28.15rc3",
+    "dagster==1.12.15rc4",
+    "dagster-k8s==0.28.15rc4",
+    "dagster-celery==0.28.15rc4",
 ]
 
 [project.urls]

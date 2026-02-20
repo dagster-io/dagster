@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-dlt"
-version = "0.28.15rc3"
+version = "0.28.15rc4"
 description = "Package for performing ETL/ELT tasks with dlt in Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc3",
+    "dagster==1.12.15rc4",
     "dlt>=0.4",
 ]
 
@@ -35,7 +35,7 @@ dagster_dlt = "dagster_dlt"
 [project.optional-dependencies]
 test = [
     "duckdb",
-    "dagster-dg-cli",
+    "dagster-dg-cli==1.12.15rc4",
 ]
 
 [tool.setuptools]
