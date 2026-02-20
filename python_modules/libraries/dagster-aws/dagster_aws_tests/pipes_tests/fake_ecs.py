@@ -177,7 +177,8 @@ class LocalECSMockClient:
                     task["lastStatus"] = "STOPPED"
                     task["stoppedReason"] = simulated_task.stopped_reason
                     task["stopCode"] = simulated_task.stop_code
-                    task["containers"][0]["exitCode"] = 1
+                    if simulated_task.stop_code != "TaskFailedToStart":
+                        task["containers"][0]["exitCode"] = 1
                     self._upload_logs_to_cloudwatch(task["taskArn"])
                     return response
 
