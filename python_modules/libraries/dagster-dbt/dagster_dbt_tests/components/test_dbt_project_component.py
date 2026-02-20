@@ -20,6 +20,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
 from dagster._utils.env import environ
@@ -165,6 +166,65 @@ def test_python_params(dbt_path: Path, backfill_policy: str | None) -> None:
         assert isinstance(assets_def.backfill_policy, BackfillPolicy)
         assert assets_def.backfill_policy.policy_type == BackfillPolicyType.MULTI_RUN
         assert assets_def.backfill_policy.max_partitions_per_run == 3
+
+
+@pytest.mark.parametrize(
+    "retry_policy_config",
+    [None, "basic", "with_delay", "with_backoff_and_jitter"],
+)
+def test_retry_policy_params(
+    dbt_path: Path, retry_policy_config: Optional[str]
+) -> None:
+    """Test that retry_policy configuration is properly applied to dbt assets."""
+    retry_policy_arg = {}
+    if retry_policy_config == "basic":
+        retry_policy_arg["retry_policy"] = {"max_retries": 3}
+    elif retry_policy_config == "with_delay":
+        retry_policy_arg["retry_policy"] = {"max_retries": 2, "delay": 5}
+    elif retry_policy_config == "with_backoff_and_jitter":
+        retry_policy_arg["retry_policy"] = {
+            "max_retries": 2,
+            "delay": 10,
+            "backoff": "LINEAR",
+            "jitter": "FULL",
+        }
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "project": str(dbt_path),
+            "op": {
+                "name": "retry_test_op",
+                "tags": {"test": "retry"},
+                **retry_policy_arg,
+            },
+        },
+    )
+
+    for asset in defs.assets or []:
+        if isinstance(asset, dg.AssetsDefinition):
+            assert asset.op.name == "retry_test_op"
+            assert asset.op.tags["test"] == "retry"
+
+            if retry_policy_config is None:
+                assert asset.op.retry_policy is None
+            elif retry_policy_config == "basic":
+                assert isinstance(asset.op.retry_policy, RetryPolicy)
+                assert asset.op.retry_policy.max_retries == 3
+                assert asset.op.retry_policy.delay is None
+                assert asset.op.retry_policy.backoff is None
+                assert asset.op.retry_policy.jitter is None
+            elif retry_policy_config == "with_delay":
+                assert isinstance(asset.op.retry_policy, RetryPolicy)
+                assert asset.op.retry_policy.max_retries == 2
+                assert asset.op.retry_policy.delay == 5
+                assert asset.op.retry_policy.backoff is None
+                assert asset.op.retry_policy.jitter is None
+            elif retry_policy_config == "with_backoff_and_jitter":
+                assert isinstance(asset.op.retry_policy, RetryPolicy)
+                assert asset.op.retry_policy.max_retries == 2
+                assert asset.op.retry_policy.delay == 10
+                assert asset.op.retry_policy.backoff == Backoff.LINEAR
+                assert asset.op.retry_policy.jitter == Jitter.FULL
 
 
 def test_load_from_path(dbt_path: Path) -> None:
