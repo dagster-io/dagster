@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-slack"
-version = "0.28.15rc1"
+version = "0.28.15rc2"
 description = "A Slack client resource for posting to Slack"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc1",
+    "dagster==1.12.15rc2",
     "slack_sdk",
 ]
 

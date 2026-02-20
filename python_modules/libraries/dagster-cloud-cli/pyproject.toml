@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-cloud-cli"
-version = "1.12.15rc1"
+version = "1.12.15rc2"
 description = ""
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -21,7 +21,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-shared==1.12.15rc1",
+    "dagster-shared==1.12.15rc2",
     "packaging>=20.9",
     "questionary",
     "requests",

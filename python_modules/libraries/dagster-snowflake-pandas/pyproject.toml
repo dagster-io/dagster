@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-snowflake-pandas"
-version = "0.28.15rc1"
+version = "0.28.15rc2"
 description = "Package for integrating Snowflake and Pandas with Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,8 +22,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc1",
-    "dagster-snowflake==0.28.15rc1",
+    "dagster==1.12.15rc2",
+    "dagster-snowflake==0.28.15rc2",
     "pandas<3.0.0",
     "requests",
     "snowflake-connector-python[pandas]>=3.4.0",

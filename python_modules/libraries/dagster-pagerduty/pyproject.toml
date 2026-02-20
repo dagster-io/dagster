@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-pagerduty"
-version = "0.28.15rc1"
+version = "0.28.15rc2"
 description = "Package for pagerduty Dagster framework components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc1",
+    "dagster==1.12.15rc2",
     "pypd",
 ]
 

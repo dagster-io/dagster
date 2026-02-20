@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-fivetran"
-version = "0.28.15rc1"
+version = "0.28.15rc2"
 description = "Package for integrating Fivetran with Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc1",
+    "dagster==1.12.15rc2",
 ]
 
 [project.urls]
@@ -36,7 +36,7 @@ dagster_fivetran = "dagster_fivetran"
 
 [project.optional-dependencies]
 managed = [
-    "dagster-managed-elements==0.28.15rc1",
+    "dagster-managed-elements==0.28.15rc2",
 ]
 test = [
     "pytest-order",

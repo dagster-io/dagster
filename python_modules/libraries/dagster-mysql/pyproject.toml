@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dagster-mysql"
-version = "0.28.15rc1"
+version = "0.28.15rc2"
 description = "A Dagster integration for MySQL"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.15rc1",
+    "dagster==1.12.15rc2",
     "mysql-connector-python",
 ]
 
