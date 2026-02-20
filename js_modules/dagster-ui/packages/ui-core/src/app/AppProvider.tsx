@@ -33,6 +33,7 @@ import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
+import {RunCompletionNotificationObserver} from '../runs/RunCompletionNotificationObserver';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 import './blueprint.css';
 
@@ -200,6 +201,7 @@ export const AppProvider = (props: AppProviderProps) => {
                           <CustomTooltipProvider />
                           <CustomAlertProvider />
                           <AssetRunLogObserver />
+                          <RunCompletionNotificationObserver />
                         </DeploymentStatusProvider>
                       </AssetLiveDataProvider>
                     </WorkspaceProvider>
