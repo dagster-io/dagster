@@ -27,6 +27,7 @@ import dagster_shared.check as check
 import pytest
 from dagster_shared.check import (
     CheckError,
+    CheckInvariantError,
     ElementCheckError,
     EvalContext,
     ImportFrom,
@@ -1496,15 +1497,15 @@ def test_param_invariant():
 def test_invariant():
     assert check.invariant(True)
 
-    with pytest.raises(CheckError):
+    with pytest.raises(CheckInvariantError):
         check.invariant(False)
 
-    with pytest.raises(CheckError, match="Some Unique String"):
+    with pytest.raises(CheckInvariantError, match="Some Unique String"):
         check.invariant(False, "Some Unique String")
 
     empty_list = []
 
-    with pytest.raises(CheckError, match="Invariant failed"):
+    with pytest.raises(CheckInvariantError, match="Invariant failed"):
         check.invariant(empty_list)
 
 
