@@ -56,6 +56,7 @@ class CodeLocationStatusEntry:
 @record
 class CurrentWorkspace:
     code_location_entries: Mapping[str, CodeLocationEntry]
+    instance: "DagsterInstance"
 
     @cached_property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
@@ -63,10 +64,13 @@ class CurrentWorkspace:
             RemoteWorkspaceAssetGraph,
         )
 
-        return RemoteWorkspaceAssetGraph.build(self)
+        return RemoteWorkspaceAssetGraph.build(self, self.instance)
 
     def with_code_location(self, name: str, entry: CodeLocationEntry) -> "CurrentWorkspace":
-        return CurrentWorkspace(code_location_entries={**self.code_location_entries, name: entry})
+        return CurrentWorkspace(
+            code_location_entries={**self.code_location_entries, name: entry},
+            instance=self.instance,
+        )
 
 
 def location_status_from_location_entry(

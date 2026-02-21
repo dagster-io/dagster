@@ -968,7 +968,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                 )
             )
 
-        self._current_workspace: CurrentWorkspace = CurrentWorkspace(code_location_entries={})
+        self._current_workspace: CurrentWorkspace = CurrentWorkspace(
+            code_location_entries={}, instance=self._instance
+        )
         self._update_workspace(
             {
                 origin.location_name: self._load_location(origin, reload=False)
@@ -1208,7 +1210,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             self._watch_threads = {}
 
             previous_locations = self._current_workspace.code_location_entries
-            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
+            self._current_workspace = CurrentWorkspace(
+                code_location_entries=new_locations, instance=self._instance
+            )
 
             # start monitoring for new locations
             for entry in new_locations.values():
