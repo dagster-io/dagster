@@ -982,7 +982,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
     @property
     def _origins(self) -> Sequence[CodeLocationOrigin]:
-        return self._workspace_load_target.create_origins() if self._workspace_load_target else []
+        origins = (
+            self._workspace_load_target.create_origins() if self._workspace_load_target else []
+        )
+        from dagster._core.remote_representation.code_location import SnowflakeConnectionOrigin
+
+        origins.append(SnowflakeConnectionOrigin())
+
+        return origins
 
     def get_code_server_specs(self) -> Sequence[Mapping[str, Mapping[str, Any]]]:
         result = []
@@ -1084,6 +1091,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
         location_name = origin.location_name
         location = None
         error = None
+
         try:
             if isinstance(origin, ManagedGrpcPythonEnvCodeLocationOrigin):
                 endpoint = (
