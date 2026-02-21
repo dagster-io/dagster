@@ -21,6 +21,10 @@ from automation.dagster_docs.docstring_rules.sphinx_filter_rule import (
     create_sphinx_filter_validator,
     filter_sphinx_warnings,
 )
+from automation.dagster_docs.docstring_rules.yaml_syntax_rule import (
+    create_yaml_syntax_validator,
+    validate_yaml_code_blocks,
+)
 
 __all__ = [
     "ValidationContext",
@@ -30,8 +34,10 @@ __all__ = [
     "create_rst_syntax_validator",
     "create_section_header_validator",
     "create_sphinx_filter_validator",
+    "create_yaml_syntax_validator",
     "filter_sphinx_warnings",
     "validate_python_code_blocks",
     "validate_rst_syntax",
     "validate_section_headers",
+    "validate_yaml_code_blocks",
 ]
