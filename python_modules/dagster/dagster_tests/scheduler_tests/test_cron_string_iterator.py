@@ -2,6 +2,7 @@ import calendar
 import datetime
 
 import pytest
+from dagster import HourlyPartitionsDefinition
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.schedules import (
     _croniter_string_iterator,
@@ -671,6 +672,44 @@ def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
     )
     for expected_time in reversed(expected_times):
         assert next(reverse_iter) == expected_time
+
+
+@pytest.mark.parametrize(
+    "execution_timezone",
+    [
+        "Asia/Kolkata",
+        "Asia/Kathmandu",
+        "Australia/Adelaide",
+        "America/St_Johns",
+        "Pacific/Chatham",
+    ],
+)
+@pytest.mark.parametrize("cron_minute", [0, 30])
+def test_hourly_cron_non_hour_offset_timezone_minute_fidelity(
+    execution_timezone: str, cron_minute: int
+):
+    cron_string = f"{cron_minute} * * * *"
+    start_timestamp = create_datetime(2026, 2, 16, 0, 0, 0, tz=execution_timezone).timestamp()
+
+    fast_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+    raw_iter = _croniter_string_iterator(start_timestamp, cron_string, execution_timezone)
+
+    fast_times = [next(fast_iter) for _ in range(6)]
+    raw_times = [next(raw_iter) for _ in range(6)]
+
+    for fast_time, raw_time in zip(fast_times, raw_times):
+        assert fast_time == raw_time
+        assert fast_time.minute == cron_minute
+
+    if cron_minute == 0:
+        hourly_partitions = HourlyPartitionsDefinition(
+            start_date="2026-02-16-00:00",
+            timezone=execution_timezone,
+        )
+
+        for tick_time in fast_times:
+            partition_key = hourly_partitions.get_partition_key_for_timestamp(tick_time.timestamp())
+            assert partition_key == tick_time.strftime("%Y-%m-%d-%H:%M")
 
 
 def test_last_day_of_month_cron_schedule():
