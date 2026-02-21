@@ -248,13 +248,23 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     response, cluster=cluster, waiter_config=waiter_config
                 )
 
-                # check for failed containers
+                # check for failed tasks and containers
+                failed_tasks = {}
                 failed_containers = {}
 
                 for task in response["tasks"]:
+                    if task.get("stopCode") == "TaskFailedToStart":
+                        failed_tasks[task["taskArn"]] = task.get("stoppedReason")  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                        continue
                     for container in task["containers"]:  # pyright: ignore (reportTypedDictNotRequiredAccess)
                         if container.get("exitCode") not in (0, None):
                             failed_containers[container["runtimeId"]] = container.get("exitCode")  # pyright: ignore (reportTypedDictNotRequiredAccess)
+
+                if failed_tasks:
+                    details = "\n".join(
+                        f"  {arn}: {reason}" for arn, reason in failed_tasks.items()
+                    )
+                    raise RuntimeError(f"Some ECS tasks failed to start:\n{details}")
 
                 if failed_containers:
                     raise RuntimeError(
