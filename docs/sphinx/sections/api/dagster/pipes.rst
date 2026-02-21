@@ -1,35 +1,24 @@
-Dagster Pipes
-=============
+dagster-pipes library
+=====================
 
-.. currentmodule:: dagster
+.. currentmodule:: dagster_pipes
 
-`Dagster Pipes <https://docs.dagster.io/guides/build/external-pipelines>`_  is a toolkit for building integrations between Dagster and external execution environments. This reference outlines the APIs included with the ``dagster`` library, which should be used in the orchestration environment.
+The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/guides/build/external-pipelines>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
 For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__.
 
-**Looking to write code in an external process?** Refer to the API reference for the separately-installed `dagster-pipes <https://docs.dagster.io/api/libraries/dagster-pipes>`_ library. 
+**Looking to set up a Pipes client in Dagster?** See the `Dagster Pipes API reference <https://docs.dagster.io/api/dagster/dagster-pipes-toolkit>`_.
+
+**Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes>`_.
 
 ----
 
-Sessions
---------
-
-.. autoclass:: PipesSession
-
-.. autofunction:: open_pipes_session
-
-.. currentmodule:: dagster._core.pipes.subprocess
-
-----
-
-Clients
+Context
 -------
 
-.. currentmodule:: dagster
+.. autofunction:: open_dagster_pipes
 
-.. autoclass:: PipesClient
-
-.. autoclass:: PipesSubprocessClient
+.. autoclass:: PipesContext
 
 ----
 
@@ -40,32 +29,91 @@ Most Pipes users won't need to use the APIs in the following sections unless the
 
 Refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__ for more information.
 
-Context injectors
-^^^^^^^^^^^^^^^^^
+Context loaders
+^^^^^^^^^^^^^^^
 
-Context injectors write context payloads to an externally accessible location and yield a set of parameters encoding the location for inclusion in the bootstrap payload.
+Context loaders load the context payload from the location specified in the bootstrap payload.
 
-.. autoclass:: PipesContextInjector
+.. autoclass:: PipesContextLoader
 
-.. autoclass:: PipesEnvContextInjector
+.. autoclass:: PipesDefaultContextLoader
 
-.. autoclass:: PipesFileContextInjector
+.. autoclass:: PipesS3ContextLoader
 
-.. autoclass:: PipesTempFileContextInjector
+.. autoclass:: PipesGCSContextLoader
+
+.. autoclass:: PipesDbfsContextLoader
+
+.. autoclass:: PipesAzureBlobStorageContextLoader
 
 ----
 
-Message readers
+Params loaders
+^^^^^^^^^^^^^^
+
+Params loaders load the bootstrap payload from some globally accessible key-value store.
+
+.. autoclass:: PipesParamsLoader
+
+.. autoclass:: PipesEnvVarParamsLoader
+
+.. autoclass:: PipesCliArgsParamsLoader
+
+.. autoclass:: PipesMappingParamsLoader
+
+----
+
+Message writers
 ^^^^^^^^^^^^^^^
 
-Message readers read messages (and optionally log files) from an externally accessible location and yield a set of parameters encoding the location in the bootstrap payload. 
+Message writers write messages to the location specified in the bootstrap payload.
 
-.. autoclass:: PipesMessageReader
+.. autoclass:: PipesMessageWriter
 
-.. autoclass:: PipesBlobStoreMessageReader
+.. autoclass:: PipesDefaultMessageWriter
 
-.. autoclass:: PipesFileMessageReader
+.. autoclass:: PipesBlobStoreMessageWriter
 
-.. autoclass:: PipesTempFileMessageReader
+.. autoclass:: PipesS3MessageWriter
 
-.. autoclass:: PipesMessageHandler
+.. autoclass:: PipesGCSMessageWriter
+
+.. autoclass:: PipesDbfsMessageWriter
+
+.. autoclass:: PipesAzureBlobStorageMessageWriter
+
+----
+
+Message writer channels
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Message writer channels are objects that write messages back to the Dagster orchestration process.
+
+.. autoclass:: PipesMessageWriterChannel
+
+.. autoclass:: PipesBlobStoreMessageWriterChannel
+
+.. autoclass:: PipesBufferedFilesystemMessageWriterChannel
+
+.. autoclass:: PipesFileMessageWriterChannel
+
+.. autoclass:: PipesStreamMessageWriterChannel
+
+.. autoclass:: PipesS3MessageWriterChannel
+
+.. autoclass:: PipesGCSMessageWriterChannel
+
+.. autoclass:: PipesAzureBlobStorageMessageWriterChannel
+
+----
+
+Utilities
+^^^^^^^^^
+
+.. autofunction:: encode_env_var
+
+.. autofunction:: decode_env_var
+
+.. autoclass:: DagsterPipesError
+
+.. autoclass:: DagsterPipesWarning
