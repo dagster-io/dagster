@@ -641,6 +641,38 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
             start_timestamp = start_timestamp - timestamp_interval
 
 
+@pytest.mark.parametrize(
+    "execution_timezone",
+    [
+        "Asia/Kolkata",
+        "Asia/Kathmandu",
+        "Australia/Adelaide",
+        "America/St_Johns",
+        "Pacific/Chatham",
+    ],
+)
+def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
+    cron_string = "0 * * * *"
+    expected_times = [
+        create_datetime(2026, 2, 16, hour, 0, 0, tz=execution_timezone) for hour in range(6)
+    ]
+
+    forward_iter = _croniter_string_iterator(
+        expected_times[0].timestamp(), cron_string, execution_timezone
+    )
+    for expected_time in expected_times:
+        assert next(forward_iter) == expected_time
+
+    reverse_iter = _croniter_string_iterator(
+        expected_times[-1].timestamp(),
+        cron_string,
+        execution_timezone,
+        ascending=False,
+    )
+    for expected_time in reversed(expected_times):
+        assert next(reverse_iter) == expected_time
+
+
 def test_last_day_of_month_cron_schedule():
     # L means last day of month
     execution_timezone = "Europe/Berlin"
