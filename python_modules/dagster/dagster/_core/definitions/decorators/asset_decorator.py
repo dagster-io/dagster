@@ -542,7 +542,8 @@ def create_assets_def_from_fn_and_decorator_args(
             specs=[],
             # no internal asset deps
             asset_deps={},
-            can_subset=False,
+            # Allow AssetCheckResults to be optional when asset materializations are optional
+            can_subset=not args.output_required,
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
             pool=args.pool,
