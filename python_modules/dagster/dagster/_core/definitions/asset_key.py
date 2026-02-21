@@ -144,6 +144,10 @@ class AssetKey(IHaveNew):
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
+            if ASSET_KEY_DELIMITER in arg:
+                return AssetKey(arg.split(ASSET_KEY_DELIMITER))
+            elif "." in arg:
+                return AssetKey(arg.split("."))
             return AssetKey([arg])
         elif isinstance(arg, list):
             check.list_param(arg, "arg", of_type=str)
