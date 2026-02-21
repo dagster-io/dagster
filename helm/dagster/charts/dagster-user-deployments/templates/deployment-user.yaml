@@ -51,7 +51,7 @@ spec:
         {{- end }}
       {{- end }}
       containers:
-        - name: {{ $.Chart.Name }}
+        - name: {{ $deployment.containerName | default $.Chart.Name }}
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
