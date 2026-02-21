@@ -1,5 +1,5 @@
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import {useMemo} from 'react';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';

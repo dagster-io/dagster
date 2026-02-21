@@ -1,6 +1,7 @@
-import os
+import json
 import re
 import readline
+import subprocess
 import sys
 import termios
 import tty
@@ -10,7 +11,6 @@ from dataclasses import dataclass, replace
 from functools import cached_property
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import click
 import git
@@ -25,11 +25,19 @@ from rich.text import Text
 
 console = Console()
 
+# Repository Configuration
+# =======================
+# After merging the separate dagster (OSS) and internal repositories:
+# - dagster-oss is now a subdirectory of the internal repository
+# - Both OSS and internal code live in the same git repository
+# - Commits are classified as "dagster" (OSS) or "internal" based on which files they touch
+#   (dagster-oss/* paths = "dagster", other paths = "internal")
 GITHUB_URL = "https://github.com/dagster-io"
-OSS_ROOT = Path(__file__).parent.parent
-OSS_REPO = git.Repo(OSS_ROOT)
+OSS_ROOT = Path(__file__).parent.parent  # Points to dagster-oss directory
+REPO = git.Repo(OSS_ROOT.parent)  # Git root is one level up (internal repo root)
+OSS_REPO = REPO
+INTERNAL_REPO = REPO
 CHANGELOG_PATH = OSS_ROOT / "CHANGES.md"
-INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
 INTERNAL_DEFAULT_STR = "If a changelog entry is required"
 
 CHANGELOG_HEADER = "## Changelog"
@@ -50,6 +58,7 @@ INTERNAL_AUTHOR_NAMES = [
     "Ben Gotow",
     "Isaac Hellendag",
     "Sean Mackesey",
+    "Dennis Hume",
 ]
 
 
@@ -63,10 +72,25 @@ class Author:
 
     @property
     def is_external(self) -> bool:
-        return (
-            not any(domain in self.email for domain in ["elementl.com", "dagsterlabs.com"])
-            and self.name not in INTERNAL_AUTHOR_NAMES
-        )
+        # Check if email is from internal domain
+        if any(domain in self.email for domain in ["elementl.com", "dagsterlabs.com"]):
+            return False
+
+        # Check if name is in internal authors list
+        if self.name in INTERNAL_AUTHOR_NAMES:
+            return False
+
+        # Check if GitHub username (extracted from noreply email) is in internal authors list
+        if self.email and "@users.noreply.github.com" in self.email:
+            email_part = self.email.split("@")[0]
+            if "+" in email_part:
+                github_username = email_part.split("+")[1]
+            else:
+                github_username = email_part
+            if github_username in INTERNAL_AUTHOR_NAMES:
+                return False
+
+        return True
 
 
 @dataclass
@@ -74,16 +98,21 @@ class ParsedCommit:
     issue_number: str
     is_community_contribution: bool
     changelog_category: str
-    changelog_entry: Optional[str]
+    changelog_entry: str | None
     title: str
     authors: list[Author]
     repo_name: str
-    prefix: Optional[str]  # Library prefix like [dagster-dbt], [ui], etc.
+    prefix: str | None  # Library prefix like [dagster-dbt], [ui], etc.
     ignore: bool
+    commit_hash: str = ""  # Git commit SHA
+    synced_from_oss: bool = False  # True if commit was synced from dagster-io/dagster
 
     @property
     def pr_url(self) -> str:
-        return f"{GITHUB_URL}/{self.repo_name}/pull/{self.issue_number}"
+        # Synced OSS commits should link to the original dagster repo
+        if self.synced_from_oss:
+            return f"{GITHUB_URL}/dagster/pull/{self.issue_number}"
+        return f"{GITHUB_URL}/internal/pull/{self.issue_number}"
 
     @property
     def documented(self) -> bool:
@@ -96,14 +125,14 @@ class ParsedCommit:
         return self.first_external_author or self.authors[0]
 
     @cached_property
-    def first_external_author(self) -> Optional[Author]:
+    def first_external_author(self) -> Author | None:
         for author in self.authors:
             if author.is_external:
                 return author
         return None
 
     @cached_property
-    def github_pr_author_username(self) -> Optional[str]:
+    def github_pr_author_username(self) -> str | None:
         """Extract GitHub username from commit author email, name, or PR webpage."""
         # Check if email is a GitHub noreply email
         if self.primary_author.email and "@users.noreply.github.com" in self.primary_author.email:
@@ -142,7 +171,19 @@ def _clean_changelog_entry(text: str) -> str:
     return text
 
 
-def _extract_prefix_from_text(text: str) -> tuple[Optional[str], str]:
+def _needs_period_fix(entry: str | None) -> bool:
+    """Check if changelog entry needs a period added at the end."""
+    if not entry or entry == "<UNDOCUMENTED>":
+        return False
+    # Strip trailing whitespace and check if it ends with common punctuation
+    stripped = entry.rstrip()
+    if not stripped:
+        return False
+    # Allow period, exclamation, question mark, or closing paren/bracket as valid endings
+    return stripped[-1] not in ".!?)]"
+
+
+def _extract_prefix_from_text(text: str) -> tuple[str | None, str]:
     """Extract library prefix from changelog text and return (prefix, cleaned_text).
 
     Examples:
@@ -163,7 +204,7 @@ def _extract_prefix_from_text(text: str) -> tuple[Optional[str], str]:
     return None, text
 
 
-def _is_valid_prefix(prefix: Optional[str]) -> bool:
+def _is_valid_prefix(prefix: str | None) -> bool:
     """Check if prefix is valid: None, 'ui', or 'dagster-*'."""
     if prefix is None:
         return True
@@ -174,7 +215,7 @@ def _is_valid_prefix(prefix: Optional[str]) -> bool:
     return False
 
 
-def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
+def _fetch_github_username_from_pr(pr_url: str) -> str | None:
     """Fetch GitHub username from PR using GitHub API."""
     try:
         # Parse PR URL to extract owner, repo, and PR number
@@ -210,6 +251,38 @@ def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
     return None
 
 
+def _fetch_pr_body(pr_url: str) -> str | None:
+    """Fetch PR body/description from GitHub API."""
+    try:
+        if not re.match(r"https?://(?:www\.)?github\.com/", pr_url):
+            return None
+        url_parts = pr_url.split("/")
+        if len(url_parts) >= 6:
+            owner = url_parts[-4]
+            repo = url_parts[-3]
+            pr_number = url_parts[-1]
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}"
+            sleep(0.1)
+
+            response = requests.get(api_url, timeout=10)
+            response.raise_for_status()
+
+            pr_data = response.json()
+            body = pr_data.get("body", "")
+
+            # Truncate very long bodies to avoid token limits
+            if body and len(body) > 3000:
+                body = body[:3000] + "\n... (truncated)"
+
+            return body
+
+    except Exception:
+        pass
+
+    return None
+
+
 def _get_previous_version(new_version: str) -> str:
     split = new_version.split(".")
     previous_patch = int(split[-1]) - 1
@@ -223,39 +296,52 @@ def _get_libraries_version(new_version: str) -> str:
     return ".".join(["0", str(new_minor), split[2]])
 
 
-def _get_repo_name(git_dir: str) -> str:
-    if (
-        "DAGSTER_GIT_REPO_DIR" not in os.environ
-        or "DAGSTER_INTERNAL_GIT_REPO_DIR" not in os.environ
-    ):
-        raise ValueError(
-            "Required environment variables DAGSTER_GIT_REPO_DIR and/or DAGSTER_INTERNAL_GIT_REPO_DIR not set"
-        )
+def _get_repo_name(commit: git.Commit) -> str:
+    """Determine if commit belongs to OSS (dagster) or internal repo for categorization.
 
-    if git_dir.startswith(os.environ["DAGSTER_GIT_REPO_DIR"]):
-        return "dagster"
-    elif git_dir.startswith(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"]):
-        return "internal"
-    else:
-        raise ValueError("Could not determine repository name from git directory.")
+    After repo merge, we determine this by checking which files the commit touched.
+    If any file is under dagster-oss/, it's considered an OSS commit.
+
+    Note: This is used for changelog categorization (e.g., Dagster Plus category),
+    not for PR URLs - all PR URLs now point to the internal repo.
+    """
+    # Check files touched by this commit
+    for file_path in commit.stats.files.keys():
+        if str(file_path).startswith("dagster-oss/"):
+            return "dagster"
+
+    # If no dagster-oss files were touched, it's an internal commit
+    return "internal"
 
 
 def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     """Extracts a set of useful information from the raw commit message."""
-    title = str(commit.message).splitlines()[0].strip()
+    commit_message = str(commit.message)
+    title = commit_message.splitlines()[0].strip()
     # me avoiding regex -- titles are formatted as "Lorem ipsum ... (#12345)" so we can just search
     # for the last octothorpe and chop off the closing paren
-    repo_name = _get_repo_name(str(commit.repo.git_dir))
+    repo_name = _get_repo_name(commit)
     issue_number = title.split("#")[-1][:-1]
+
+    # Check if this commit was synced from the OSS dagster repo
+    synced_from_oss = "Synced-From-Dagster" in commit_message
+
+    # Extract original author if this is a synced commit
+    original_author: Author | None = None
+    if synced_from_oss:
+        # Look for ORIGINAL_AUTHOR=Name <email> pattern
+        match = re.search(r"ORIGINAL_AUTHOR=(.+?) <(.+?)>", commit_message)
+        if match:
+            original_author = Author(name=match.group(1), email=match.group(2))
 
     # find the first line that has `CHANGELOG` in the first few characters, then take the next
     # non-empty line
     found_start = False
     ignore = False
     raw_changelog_entry_lines: list[str] = []
-    has_testing_section = "## How I Tested These Changes" in str(commit.message)
+    has_testing_section = "## How I Tested These Changes" in commit_message
 
-    for line in str(commit.message).split("\n"):
+    for line in commit_message.split("\n"):
         if found_start and line.strip():
             if line.startswith(IGNORE_TOKEN):
                 ignore = True
@@ -264,8 +350,12 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
                 # ignore changelog entry if it has not been updated
                 raw_changelog_entry_lines = []
                 break
+            # Stop collecting when we hit sync metadata from OSS repo
+            if line.startswith(("ORIGINAL_AUTHOR=", "Synced-From-Dagster", "GitOrigin-RevId:")):
+                break
             # Just collect the changelog entry text, ignore category checkboxes
-            if not line.lower().startswith("- ["):
+            # Match only actual checkboxes like "- [x]", "- [X]", "- [ ]", not prefixes like "- [dagster]"
+            if not re.match(r"^- \[[xX ]\]", line):
                 raw_changelog_entry_lines.append(line.strip())
         if line.startswith(CHANGELOG_HEADER):
             found_start = True
@@ -295,13 +385,17 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         ):
             detected_prefix = "ui"
 
-    authors = [
-        Author(
-            name=str(author.name),
-            email=str(author.email),
-        )
-        for author in [commit.author, *commit.co_authors]
-    ]
+    # For synced commits, use the original author if available
+    if synced_from_oss and original_author:
+        authors = [original_author]
+    else:
+        authors = [
+            Author(
+                name=str(author.name),
+                email=str(author.email),
+            )
+            for author in [commit.author, *commit.co_authors]
+        ]
 
     # Create the commit object first
     parsed_commit = ParsedCommit(
@@ -314,6 +408,8 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         repo_name=repo_name,
         prefix=detected_prefix,
         ignore=ignore,
+        commit_hash=commit.hexsha,
+        synced_from_oss=synced_from_oss,
     )
 
     # Use guessing logic to determine category
@@ -352,9 +448,15 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
 def _get_commits(
     repos: Sequence[git.Repo], new_version: str, prev_version: str
 ) -> Iterator[ParsedCommit]:
+    # After repo merge, OSS and INTERNAL repos are the same
+    # Use a set to track seen commits and avoid duplicates
+    seen_commits = set()
     for repo in repos:
         for commit in repo.iter_commits(rev=f"release-{prev_version}..release-{new_version}"):
-            yield _get_parsed_commit(commit)
+            commit_sha = commit.hexsha
+            if commit_sha not in seen_commits:
+                seen_commits.add(commit_sha)
+                yield _get_parsed_commit(commit)
 
 
 def _colored(text: str, color: str) -> str:
@@ -448,9 +550,10 @@ def _create_commit_display(
             )
         if should_thank:
             username = commit.github_pr_author_username
-            display_entry += (
-                f" [magenta](Thanks, \\[@{username}](https://github.com/{username})!)[/magenta]"
-            )
+            if username:
+                display_entry += (
+                    f" [magenta](Thanks, \\[@{username}](https://github.com/{username})!)[/magenta]"
+                )
 
         proposed_content = (
             f"[green]ADD TO CHANGELOG:[/green]\n\n{colored_category}\n\n- {display_entry}"
@@ -483,6 +586,8 @@ def _create_commit_display(
     controls.append(" Edit prefix  ")
     controls.append("[e]", style="bold green")
     controls.append(" Edit text  ")
+    controls.append("[g]", style="bold bright_blue")
+    controls.append(" AI generate  ")
     controls.append("[o]", style="bold blue")
     controls.append(" Open PR  ")
     controls.append("[t]", style="bold magenta")
@@ -540,7 +645,7 @@ def _cycle_category(current_category: str, is_internal_repo: bool = False) -> st
         return categories[0]
 
 
-def _get_edited_entry_interactive(current_entry: str) -> Optional[str]:
+def _get_edited_entry_interactive(current_entry: str) -> str | None:
     """Get user's edited changelog entry with simple prompt."""
 
     def pre_input_hook():
@@ -566,7 +671,7 @@ def _update_display_and_refresh(
     live.refresh()
 
 
-def _get_edited_prefix_interactive(current_prefix: Optional[str]) -> Optional[str]:
+def _get_edited_prefix_interactive(current_prefix: str | None) -> str | None:
     """Get user's edited prefix with simple prompt."""
     current_text = current_prefix or ""
 
@@ -595,12 +700,175 @@ def _guess_category(commit: ParsedCommit) -> str:
         return "Bugfixes"
 
     # Check for Dagster Plus (internal repo only)
-    internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
-    if commit.repo_name == internal_repo_name:
+    if commit.repo_name == "internal":
         return "Dagster Plus"
 
     # Default to New
     return "New"
+
+
+@dataclass
+class AIChangelogSuggestion:
+    """AI-generated suggestion for changelog entry fields."""
+
+    description: str
+    category: str  # "New", "Bugfixes", "Documentation", "Dagster Plus"
+    prefix: str | None  # e.g., "dagster-dbt", "ui", or None
+    should_thank: bool
+    should_skip: bool
+    reasoning: str
+
+
+def _get_commit_diff(commit_hash: str, max_lines: int = 200) -> str:
+    """Get the git diff for a commit, truncated to max_lines."""
+    try:
+        result = subprocess.run(
+            ["git", "show", "--stat", "--patch", commit_hash],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=OSS_ROOT.parent,  # Run from repo root
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout:
+            lines = result.stdout.split("\n")
+            if len(lines) > max_lines:
+                return (
+                    "\n".join(lines[:max_lines])
+                    + f"\n... (truncated, {len(lines) - max_lines} more lines)"
+                )
+            return result.stdout
+    except Exception:
+        pass
+    return "(could not fetch diff)"
+
+
+def _generate_changelog_with_ai(commit: ParsedCommit) -> AIChangelogSuggestion | None:
+    """Use Claude CLI to generate changelog entry fields for a commit."""
+    # Fetch PR body from GitHub
+    pr_body = _fetch_pr_body(commit.pr_url) or "(could not fetch)"
+
+    # Get git diff for the commit
+    git_diff = _get_commit_diff(commit.commit_hash)
+
+    # Build the prompt with commit information
+    prompt = f"""You are helping generate a changelog entry for a software release. Analyze this commit and suggest the appropriate changelog fields.
+
+## Commit Information
+- **PR Title:** {commit.title}
+- **PR URL:** {commit.pr_url}
+- **Commit Hash:** {commit.commit_hash}
+- **Author:** {commit.primary_author.name} ({commit.primary_author.email})
+- **Is External Contributor:** {commit.is_community_contribution}
+- **Current Entry (if any):** {commit.changelog_entry or "(none)"}
+- **Repository Type:** {commit.repo_name} (dagster = open source, internal = Dagster Plus)
+
+## PR Description
+{pr_body}
+
+## Code Changes (git diff)
+```
+{git_diff}
+```
+
+## Guidelines
+1. **Description**: Write a concise, user-focused changelog entry (1-2 sentences). Start with a verb (Added, Fixed, Improved, etc.). End with a period. Focus on what changed for users, not implementation details.
+
+2. **Category**: Choose exactly one:
+   - "New" - New features or capabilities
+   - "Bugfixes" - Bug fixes
+   - "Documentation" - Documentation changes
+   - "Dagster Plus" - Changes specific to Dagster Plus (only for internal repo commits)
+
+3. **Prefix**: If the change is specific to a library or component, include a prefix:
+   - Use "ui" for frontend/UI changes
+   - Use "dagster-XXX" for library-specific changes (e.g., "dagster-dbt", "dagster-aws")
+   - Use null/None if the change is general
+
+4. **should_thank**: Set to true if this is a community contribution (external contributor) that deserves thanks in the changelog.
+
+5. **should_skip**: Set to true ONLY if this commit should NOT appear in the changelog (e.g., internal refactoring, CI changes, or changes with no user-facing impact).
+
+## Response Format
+Respond with ONLY a JSON object (no markdown, no explanation outside the JSON):
+{{
+  "description": "The changelog entry text ending with a period.",
+  "category": "New|Bugfixes|Documentation|Dagster Plus",
+  "prefix": "dagster-xxx" or "ui" or null,
+  "should_thank": true|false,
+  "should_skip": true|false,
+  "reasoning": "Brief explanation of your choices"
+}}"""
+
+    result = None
+    try:
+        # Call Claude CLI
+        result = subprocess.run(
+            [
+                "claude",
+                "-p",
+                prompt,
+                "--output-format",
+                "json",
+                "--model",
+                "claude-3-5-haiku-latest",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            return None
+
+        # Check for empty output
+        if not result.stdout or not result.stdout.strip():
+            return None
+
+        # Parse the JSON response - claude outputs a JSON object with a "result" field
+        response = json.loads(result.stdout)
+
+        # Extract the actual content from Claude's response
+        content = response.get("result", result.stdout)
+
+        # Try to parse the content as JSON (Claude should return raw JSON)
+        # Sometimes it might be wrapped in markdown code blocks or have text before/after
+        if isinstance(content, str):
+            content = content.strip()
+            # First try: extract JSON from markdown code block
+            code_block_match = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n```", content)
+            if code_block_match:
+                content = code_block_match.group(1).strip()
+            else:
+                # Second try: find inline JSON object (text before/after the {})
+                json_match = re.search(r"\{[\s\S]*\}", content)
+                if json_match:
+                    content = json_match.group(0)
+            suggestion_data = json.loads(content)
+        else:
+            suggestion_data = content
+
+        return AIChangelogSuggestion(
+            description=suggestion_data.get("description", ""),
+            category=suggestion_data.get("category", "New"),
+            prefix=suggestion_data.get("prefix"),
+            should_thank=suggestion_data.get("should_thank", False),
+            should_skip=suggestion_data.get("should_skip", False),
+            reasoning=suggestion_data.get("reasoning", ""),
+        )
+
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, KeyError, FileNotFoundError) as e:
+        console.print(f"[red]AI generation failed: {e}[/red]")
+        if result is not None:
+            console.print(f"[dim]Claude returncode: {result.returncode}[/dim]")
+            console.print(
+                f"[dim]Claude stdout: {result.stdout[:500] if result.stdout else '(empty)'}[/dim]"
+            )
+            console.print(
+                f"[dim]Claude stderr: {result.stderr[:500] if result.stderr else '(empty)'}[/dim]"
+            )
+        return None
 
 
 def _interactive_changelog_generation(new_version: str, prev_version: str) -> str:
@@ -609,12 +877,10 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
     all_commits: list[ParsedCommit] = []
     documented_internal = []
 
-    internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
-
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.ignore:
             continue
-        elif commit.repo_name == internal_repo_name and commit.documented:
+        elif commit.repo_name == "internal" and commit.documented:
             documented_internal.append(commit)
         else:
             # Only include undocumented commits from OSS repo (dagster), not internal
@@ -669,7 +935,12 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                 # Setup commit state
                 should_thank = commit.is_community_contribution
                 is_discarded = not commit.changelog_entry
-                feedback_message = ""
+                # Suggest AI generation for undocumented commits
+                feedback_message = (
+                    "💡 Press [g] to generate changelog entry with AI"
+                    if not commit.changelog_entry
+                    else ""
+                )
 
                 # Update display for current commit
                 _update_display_and_refresh(
@@ -723,12 +994,46 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                                 )
                                 # Continue loop to show same commit
                             elif not is_discarded:
+                                # Check if entry needs period fix
+                                if _needs_period_fix(commit.changelog_entry):
+                                    feedback_message = (
+                                        "⚠️  Entry doesn't end with a period. Add one? [y/n]"
+                                    )
+                                    _update_display_and_refresh(
+                                        live,
+                                        commit,
+                                        i,
+                                        len(processed_commits),
+                                        should_thank,
+                                        is_discarded,
+                                        feedback_message,
+                                    )
+                                    # Get y/n response
+                                    old_settings = termios.tcgetattr(sys.stdin)
+                                    try:
+                                        tty.setraw(sys.stdin.fileno())
+                                        fix_response = sys.stdin.read(1).lower()
+                                    finally:
+                                        termios.tcsetattr(
+                                            sys.stdin, termios.TCSADRAIN, old_settings
+                                        )
+                                    if fix_response == "y":
+                                        # Auto-fix by adding period
+                                        assert commit.changelog_entry is not None
+                                        fixed_entry = commit.changelog_entry.rstrip() + "."
+                                        commit = replace(commit, changelog_entry=fixed_entry)
+                                        processed_commits[i - 1] = commit
+                                        feedback_message = "✅ Added period, adding to changelog"
+                                    else:
+                                        feedback_message = "✅ Added to changelog (without period)"
+
                                 # Add to changelog
                                 final_commit = replace(
                                     commit, ignore=not should_thank
                                 )  # Use ignore field to track thanks
                                 final_commits.append(final_commit)
-                                feedback_message = "✅ Added to changelog"
+                                if not feedback_message.startswith("✅"):
+                                    feedback_message = "✅ Added to changelog"
                                 _update_display_and_refresh(
                                     live,
                                     commit,
@@ -757,8 +1062,7 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
 
                         elif action == "c":
                             # Cycle category
-                            internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
-                            is_internal = commit.repo_name == internal_repo_name
+                            is_internal = commit.repo_name == "internal"
                             new_category = _cycle_category(commit.changelog_category, is_internal)
 
                             commit = replace(commit, changelog_category=new_category, ignore=False)
@@ -864,6 +1168,47 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                             )
                             live.update(display_panel)
                             live.refresh()
+
+                        elif action == "g":
+                            # AI generate changelog entry
+                            feedback_message = "🤖 Generating with AI..."
+                            _update_display_and_refresh(
+                                live,
+                                commit,
+                                i,
+                                len(processed_commits),
+                                should_thank,
+                                is_discarded,
+                                feedback_message,
+                            )
+
+                            suggestion = _generate_changelog_with_ai(commit)
+                            if suggestion:
+                                # Apply the AI suggestions
+                                commit = replace(
+                                    commit,
+                                    changelog_entry=suggestion.description,
+                                    changelog_category=suggestion.category,
+                                    prefix=suggestion.prefix,
+                                    ignore=False,
+                                )
+                                processed_commits[i - 1] = commit
+                                should_thank = suggestion.should_thank
+                                is_discarded = suggestion.should_skip
+
+                                feedback_message = f"🤖 AI suggestion applied. Reasoning: {suggestion.reasoning[:80]}..."
+                            else:
+                                feedback_message = "❌ AI generation failed"
+
+                            _update_display_and_refresh(
+                                live,
+                                commit,
+                                i,
+                                len(processed_commits),
+                                should_thank,
+                                is_discarded,
+                                feedback_message,
+                            )
 
                         elif action == "o":
                             # Open PR link in browser
@@ -1025,53 +1370,64 @@ def _get_documented_section_with_thanks(documented: Sequence[ParsedCommit]) -> s
 @click.command()
 @click.argument("new_version", type=str, required=True)
 @click.argument("prev_version", type=str, required=False)
-def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
+def generate_changelog(new_version: str, prev_version: str | None = None) -> None:
     if prev_version is None:
         prev_version = _get_previous_version(new_version)
 
-    # Show loading indicator during setup
-    loading_text = Text("Setting up branches and parsing commits...", style="bold blue")
-    with Live(loading_text, auto_refresh=True, refresh_per_second=4, console=console) as live:
-        # ensure that the release branches are available locally
-        for repo in [OSS_REPO, INTERNAL_REPO]:
+    # Save the original branch to restore it later
+    original_branch = REPO.active_branch.name
+
+    try:
+        # Show loading indicator during setup
+        loading_text = Text("Setting up branches and parsing commits...", style="bold blue")
+        with Live(loading_text, auto_refresh=True, refresh_per_second=4, console=console) as live:
+            # After repo merge, only need to set up branches once
             live.update(
                 Text(
-                    f"Checking out branches for {str(repo.git_dir).split('/')[-2]}...",
+                    "Checking out branches for merged repository...",
                     style="bold blue",
                 )
             )
-            repo.git.checkout("master")
-            repo.git.pull()
-            repo.git.checkout(f"release-{prev_version}")
-            repo.git.pull()
-            repo.git.checkout(f"release-{new_version}")
-            repo.git.pull()
-            repo.git.checkout("master")
+            REPO.git.checkout("master")
+            REPO.git.pull()
+            REPO.git.checkout(f"release-{prev_version}")
+            REPO.git.pull()
+            REPO.git.checkout(f"release-{new_version}")
+            REPO.git.pull()
+            REPO.git.checkout("master")
 
-        live.update(Text("Parsing commits and preparing interactive review...", style="bold blue"))
+            live.update(
+                Text("Parsing commits and preparing interactive review...", style="bold blue")
+            )
 
-    # Generate changelog in interactive mode
-    try:
-        new_text = _interactive_changelog_generation(new_version, prev_version)
+        # Generate changelog in interactive mode
+        try:
+            new_text = _interactive_changelog_generation(new_version, prev_version)
 
-        # Only write if generation was successful (not cancelled)
-        if new_text and not new_text.startswith("No changelog generated"):
-            with open(CHANGELOG_PATH) as f:
-                current_changelog = f.read()
+            # Only write if generation was successful (not cancelled)
+            if new_text and not new_text.startswith("No changelog generated"):
+                with open(CHANGELOG_PATH) as f:
+                    current_changelog = f.read()
 
-            new_changelog = new_text + current_changelog[1:]
+                new_changelog = new_text + current_changelog[1:]
 
-            with open(CHANGELOG_PATH, "w") as f:
-                f.write(new_changelog)
+                with open(CHANGELOG_PATH, "w") as f:
+                    f.write(new_changelog)
 
-            console.print("\n🎉 Interactive changelog generation complete!", style="bold green")
-            console.print(f"📝 Changelog updated in {CHANGELOG_PATH}")
-        else:
-            console.print("\n⚠️  Changelog generation cancelled - no changes made.", style="yellow")
-    except KeyboardInterrupt:
-        console.print(
-            "\n\n⚠️  Operation cancelled by user - no changes made to changelog.", style="yellow"
-        )
+                console.print("\n🎉 Interactive changelog generation complete!", style="bold green")
+                console.print(f"📝 Changelog updated in {CHANGELOG_PATH}")
+            else:
+                console.print(
+                    "\n⚠️  Changelog generation cancelled - no changes made.", style="yellow"
+                )
+        except KeyboardInterrupt:
+            console.print(
+                "\n\n⚠️  Operation cancelled by user - no changes made to changelog.", style="yellow"
+            )
+    finally:
+        # Always restore the original branch
+        console.print(f"\n↩️  Restoring original branch: {original_branch}", style="dim")
+        REPO.git.checkout(original_branch)
 
 
 if __name__ == "__main__":

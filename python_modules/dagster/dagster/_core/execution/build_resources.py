@@ -1,7 +1,7 @@
 from asyncio import AbstractEventLoop
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -44,11 +44,11 @@ def get_mapped_resource_config(
 @contextmanager
 def build_resources(
     resources: Mapping[str, Any],
-    instance: Optional[DagsterInstance] = None,
-    resource_config: Optional[Mapping[str, Any]] = None,
-    dagster_run: Optional[DagsterRun] = None,
-    log_manager: Optional[DagsterLogManager] = None,
-    event_loop: Optional[AbstractEventLoop] = None,
+    instance: DagsterInstance | None = None,
+    resource_config: Mapping[str, Any] | None = None,
+    dagster_run: DagsterRun | None = None,
+    log_manager: DagsterLogManager | None = None,
+    event_loop: AbstractEventLoop | None = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
@@ -120,7 +120,7 @@ def build_resources(
 
 
 def wrap_resources_for_execution(
-    resources: Optional[Mapping[str, Any]] = None,
+    resources: Mapping[str, Any] | None = None,
 ) -> dict[str, ResourceDefinition]:
     return (
         {

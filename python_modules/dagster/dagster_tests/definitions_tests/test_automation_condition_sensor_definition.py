@@ -34,7 +34,7 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
     if not user_code:
         with pytest.raises(
             NotImplementedError,
-            match="Automation condition sensors cannot be evaluated like regular user-space sensors.",
+            match=r"Automation condition sensors cannot be evaluated like regular user-space sensors.",
         ):
             automation_sensor(dg.build_sensor_context())
 

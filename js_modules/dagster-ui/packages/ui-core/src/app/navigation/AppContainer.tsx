@@ -1,6 +1,6 @@
+import {MainNavigation} from '@shared/app/navigation/MainNavigation';
 import clsx from 'clsx';
 import {ReactNode, useContext} from 'react';
-import {MainNavigation} from 'shared/app/navigation/MainNavigation.oss';
 
 import {NavCollapseContext} from './NavCollapseProvider';
 import styles from './css/AppContainer.module.css';

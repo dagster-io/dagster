@@ -1,17 +1,46 @@
+import {Worker} from '@shared/workers/Worker';
 import memoize from 'lodash/memoize';
 import {useEffect, useLayoutEffect, useMemo, useReducer, useRef} from 'react';
-import {Worker} from 'shared/workers/Worker.oss';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
-import {GraphData} from '../asset-graph/Utils';
+import {PreflightCheckResult, runPreflightChecks} from '../asset-graph/PreflightChecks';
+import {GraphData, buildGraphDataFromOps} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 
-const ASYNC_LAYOUT_SOLID_COUNT = 50;
+/**
+ * Determines if an asset graph is too large to render without an explicit query.
+ * Returns true if the graph exceeds node, edge, or path length thresholds.
+ */
+export function renderingModeForGraph(
+  analysis: PreflightCheckResult,
+  forceLargeGraph?: boolean,
+): {error: 'cycles' | 'too-large' | null; async: boolean} {
+  if (analysis.hasCycles) {
+    return {error: 'cycles', async: false};
+  }
+
+  if (!forceLargeGraph) {
+    if (analysis.nodeCount >= 10_000) {
+      console.warn(`Graph contains ${analysis.nodeCount} nodes, more than 10,000 suggested limit.`);
+      return {error: 'too-large', async: false};
+    }
+    if (analysis.edgeCount >= 18_000) {
+      console.warn(`Graph contains ${analysis.edgeCount} edges, more than 18,000 suggested limit.`);
+      return {error: 'too-large', async: false};
+    }
+    if (analysis.longestPath >= 300) {
+      console.warn(`Graph has depth ${analysis.longestPath}, more than 300 suggested limit.`);
+      return {error: 'too-large', async: false};
+    }
+  }
+
+  return {error: null, async: analysis.nodeCount >= 50};
+}
 
 // If you're working on the layout logic, set to false so hot-reloading re-computes the layout
 const CACHING_ENABLED = true;
@@ -39,11 +68,10 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 const _assetLayoutCacheKey = weakMapMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
-    return hashObject({
-      opts,
-      graphData,
-      version: 6,
-    });
+    // IMPORTANT: hashObject internally uses weakmapMemoize to avoid re-calculating
+    // the hash for the same object twice. Hashing individual objects and joining the
+    // strings allows this Weakmap to re-use `graphData` hashes.
+    return hashObject(graphData) + hashObject(opts) + 'version:6';
   },
 );
 
@@ -171,15 +199,25 @@ const initialState: State = {
  * functions take different args and a generic solution loses the types.
  */
 
-export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
+export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp, forceLargeGraph?: boolean) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const cacheKey = _opLayoutCacheKey(ops, {parentOp});
-  const runAsync = ops.length >= ASYNC_LAYOUT_SOLID_COUNT;
+
+  const preflightChecks = useMemo(() => {
+    const graph = buildGraphDataFromOps(ops);
+    return runPreflightChecks(graph);
+  }, [ops]);
+
+  const {error, async} = renderingModeForGraph(preflightChecks, forceLargeGraph);
 
   const requestId = useRef(0);
   const lastRenderedRequestIdRef = useRef(-1);
 
   useEffect(() => {
+    if (error) {
+      // Graph is too large to render without an explicit query
+      return;
+    }
     if (state.cacheKey === cacheKey) {
       // Already have a layout for this cache key, so we can skip re-running the layout.
       return;
@@ -205,15 +243,15 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
       });
     }
 
-    if (!runAsync || typeof window.Worker === 'undefined') {
+    if (!async || typeof window.Worker === 'undefined') {
       const layout = getFullOpLayout(ops, {parentOp});
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, ops, parentOp, runAsync, state.cacheKey, state.loadingCacheKey]);
+  }, [cacheKey, ops, parentOp, async, error, state.cacheKey, state.loadingCacheKey]);
 
-  const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
+  const loading = !error && (state.loading || !state.layout || state.cacheKey !== cacheKey);
 
   // Add a UID to create a new dependency whenever the layout inputs change
   useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
@@ -221,8 +259,9 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   });
 
   return {
-    loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
-    async: runAsync,
+    loading,
+    async,
+    error,
     layout: state.layout as OpGraphLayout | null,
   };
 }
@@ -239,14 +278,20 @@ export function useAssetLayout(
 
   const cacheKey = useMemo(() => _assetLayoutCacheKey(graphData, opts), [graphData, opts]);
 
-  const nodeCount = Object.keys(graphData.nodes).length;
-  const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
+  const preflightChecks = useMemo(
+    () => runPreflightChecks(graphData, expandedGroups),
+    [graphData, expandedGroups],
+  );
+  const {error, async} = renderingModeForGraph(preflightChecks, opts.forceLargeGraph);
 
   const requestId = useRef(0);
 
   const lastRenderedRequestIdRef = useRef(-1);
 
   useLayoutEffect(() => {
+    if (error) {
+      return;
+    }
     if (dataLoading) {
       // Data is still loading, so we can't run the layout.
       return;
@@ -275,15 +320,15 @@ export function useAssetLayout(
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
 
-    if (!runAsync) {
+    if (!async) {
       const layout = getFullAssetLayout(graphData, opts);
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, opts, dataLoading, state.cacheKey, state.loadingCacheKey]);
+  }, [cacheKey, graphData, opts, dataLoading, error, async, state.cacheKey, state.loadingCacheKey]);
 
-  const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
+  const loading = !error && (state.loading || !state.layout || state.cacheKey !== cacheKey);
 
   // Add a UID to create a new dependency whenever the layout inputs change
   useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
@@ -292,7 +337,8 @@ export function useAssetLayout(
 
   return {
     loading,
-    async: runAsync,
+    error,
+    async,
     layout: state.layout as AssetGraphLayout | null,
   };
 }

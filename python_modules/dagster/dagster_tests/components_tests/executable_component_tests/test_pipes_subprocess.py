@@ -105,7 +105,7 @@ def test_pipes_subprocess_script_with_name_override() -> None:
             },
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-            component,
+            _component,
             defs,
         ):
             assert defs.get_assets_def("asset").op.name == "op_name_override"

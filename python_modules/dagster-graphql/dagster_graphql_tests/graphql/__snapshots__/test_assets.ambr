@@ -531,6 +531,14 @@
           }),
         }),
         dict({
+          'id': '["partitioned_asset_for_checks"]',
+          'key': dict({
+            'path': list([
+              'partitioned_asset_for_checks',
+            ]),
+          }),
+        }),
+        dict({
           'id': '["second_kinds_key"]',
           'key': dict({
             'path': list([
@@ -551,6 +559,38 @@
           'key': dict({
             'path': list([
               'str_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["table_asset_1"]',
+          'key': dict({
+            'path': list([
+              'table_asset_1',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["table_asset_2"]',
+          'key': dict({
+            'path': list([
+              'table_asset_2',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["table_asset_3"]',
+          'key': dict({
+            'path': list([
+              'table_asset_3',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["table_asset_4"]',
+          'key': dict({
+            'path': list([
+              'table_asset_4',
             ]),
           }),
         }),
@@ -1030,6 +1070,11 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["partitioned_asset_for_checks"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test_location.test_repo.["second_kinds_key"]',
       }),
       dict({
@@ -1041,6 +1086,26 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test_location.test_repo.["str_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["table_asset_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["table_asset_2"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["table_asset_3"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["table_asset_4"]',
       }),
       dict({
         'freshnessInfo': None,

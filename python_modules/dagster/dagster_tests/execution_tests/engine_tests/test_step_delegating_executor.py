@@ -41,6 +41,10 @@ class TestStepHandler(StepHandler):
     check_step_health_count = 0
     terminate_step_count = 0
     verify_step_count = 0
+    # Configurable health check behavior for testing
+    should_raise_on_health_check = False
+    should_return_unhealthy = False
+    unhealthy_reason = "Test unhealthy reason"
 
     @property
     def name(self):
@@ -62,6 +66,10 @@ class TestStepHandler(StepHandler):
 
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
         TestStepHandler.check_step_health_count += 1
+        if TestStepHandler.should_raise_on_health_check:
+            raise Exception("Test exception during health check")
+        if TestStepHandler.should_return_unhealthy:
+            return CheckStepHealthResult.unhealthy(TestStepHandler.unhealthy_reason)
         return CheckStepHealthResult.healthy()
 
     def terminate_step(self, step_handler_context):
@@ -75,6 +83,9 @@ class TestStepHandler(StepHandler):
         cls.check_step_health_count = 0
         cls.terminate_step_count = 0
         cls.verify_step_count = 0
+        cls.should_raise_on_health_check = False
+        cls.should_return_unhealthy = False
+        cls.unhealthy_reason = "Test unhealthy reason"
 
     @classmethod
     def wait_for_processes(cls):
@@ -590,3 +601,56 @@ def test_blocked_concurrency_limits_legacy_keys():
                 # second that the steps are blocked, in addition to the processing of any step
                 # events
                 assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_check_step_health_exception_fails_open():
+    """Test that exceptions during health checks log a warning but don't fail the run."""
+    TestStepHandler.reset()
+    TestStepHandler.should_raise_on_health_check = True
+
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(three_op_job),
+            instance=instance,
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+    # Run should succeed despite exceptions during health checks
+    assert result.success
+    # Health checks should have been called (and raised exceptions)
+    assert TestStepHandler.check_step_health_count > 0
+    # Should have logged engine events with the error message
+    engine_events = [
+        event
+        for event in result.all_events
+        if event.event_type == DagsterEventType.ENGINE_EVENT
+        and event.message
+        and "Error while checking health" in event.message
+    ]
+    assert len(engine_events) > 0, "Expected engine events logging health check errors"
+
+
+def test_check_step_health_unhealthy_fails_step():
+    """Test that returning unhealthy from check_step_health still fails the step."""
+    TestStepHandler.reset()
+    TestStepHandler.should_return_unhealthy = True
+    TestStepHandler.unhealthy_reason = "Step is unhealthy for test"
+
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(three_op_job),
+            instance=instance,
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+    # Run should fail because health check returned unhealthy
+    assert not result.success
+    # Health checks should have been called
+    assert TestStepHandler.check_step_health_count > 0
+    # Should have step failure events mentioning the health check
+    failure_events = [
+        event for event in result.all_events if event.event_type == DagsterEventType.STEP_FAILURE
+    ]
+    assert len(failure_events) > 0, "Expected step failure events"

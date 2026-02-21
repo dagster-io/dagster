@@ -14,6 +14,18 @@ const ASSET_CHECK_KEY_FRAGMENT = gql`
   }
 `;
 
+export const ASSET_CHECK_PARTITION_FRAGMENT = gql`
+  fragment AssetCheckPartitionFragment on AssetCheck {
+    partitionDefinition {
+      description
+      dimensionTypes {
+        type
+        dynamicPartitionsDefinitionName
+      }
+    }
+  }
+`;
+
 export const ASSET_CHECKS_QUERY = gql`
   query AssetChecksQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
@@ -30,6 +42,7 @@ export const ASSET_CHECKS_QUERY = gql`
               ...AssetCheckKeyFragment
               ...ExecuteChecksButtonCheckFragment
               ...AssetCheckTableFragment
+              ...AssetCheckPartitionFragment
             }
           }
         }
@@ -41,4 +54,5 @@ export const ASSET_CHECKS_QUERY = gql`
   ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
   ${ASSET_CHECK_TABLE_FRAGMENT}
   ${ASSET_CHECK_KEY_FRAGMENT}
+  ${ASSET_CHECK_PARTITION_FRAGMENT}
 `;

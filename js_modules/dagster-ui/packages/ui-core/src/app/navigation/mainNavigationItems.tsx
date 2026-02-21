@@ -1,14 +1,14 @@
 import {Icon, Popover, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
-import {useContext, useState} from 'react';
+import {FeatureFlag} from '@shared/FeatureFlags';
 import {
   assetsPathMatcher,
   automationPathMatcher,
   deploymentPathMatcher,
   jobsPathMatcher,
   lineagePathMatcher,
-} from 'shared/app/AppTopNav/activePathMatchers.oss';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
+} from '@shared/app/AppTopNav/activePathMatchers';
+import {useVisibleFeatureFlagRows} from '@shared/app/useVisibleFeatureFlagRows';
+import {useContext, useState} from 'react';
 
 import {ShortcutHandler} from '../ShortcutHandler';
 import styles from './css/MainNavigation.module.css';
@@ -171,7 +171,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           },
           element: (
             <NavItemWithLink
-              icon={<Icon name="settings" />}
+              icon={<Icon name="deployment" />}
               label="Deployment"
               href="/deployment"
               isActive={deploymentPathMatcher}

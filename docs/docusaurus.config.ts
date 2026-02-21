@@ -69,7 +69,7 @@ const config: Config = {
       additionalLanguages: ['diff', 'json', 'bash', 'docker'],
     },
     zoom: {
-      selector: '.markdown > img, .tabs-container img ',
+      selector: '.theme-doc-markdown :not(a) > img, .tabs-container img',
       config: {
         // options you can specify via https://github.com/francoischalifour/medium-zoom#usage
         background: {
@@ -198,6 +198,7 @@ const config: Config = {
             <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
             <a href='https://www.dagster.io/security/'>Security</a>
             <a href='https://github.com/dagster-io/dagster/discussions/27332'>Feedback</a>
+            <a onClick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Cookie Preferences</a>
           </div>
 
           <div class='footer__items--right'>
@@ -214,6 +215,8 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
 
   presets: [
+    // Ensure Osano loads before classic preset (and its plugins like gtag)
+    [require.resolve('./src/presets/osano'), {}],
     [
       '@docusaurus/preset-classic',
       {
@@ -224,7 +227,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.12.7)',
+              label: 'Latest (1.12.8)',
               path: '/',
             },
           },
@@ -238,6 +241,9 @@ const config: Config = {
             require.resolve('./node_modules/modern-normalize/modern-normalize.css'),
             require.resolve('./src/styles/custom.scss'),
           ],
+        },
+        googleTagManager: {
+          containerId: 'GTM-T3P7KMM4',
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
@@ -253,12 +259,6 @@ const config: Config = {
             return items;
           },
         },
-        ...(process.env.GOOGLE_ANALYTICS_TRACKING_ID && {
-          gtag: {
-            trackingID: process.env.GOOGLE_ANALYTICS_TRACKING_ID,
-            anonymizeIP: true,
-          },
-        }),
       } satisfies Preset.Options,
     ],
   ],

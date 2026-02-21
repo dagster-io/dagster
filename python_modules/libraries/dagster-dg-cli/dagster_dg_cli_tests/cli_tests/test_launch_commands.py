@@ -11,13 +11,14 @@ from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_fo
 
 
 def _sample_defs():
-    from dagster import DailyPartitionsDefinition, asset, schedule, sensor
+    from dagster import BackfillPolicy, DailyPartitionsDefinition, asset, schedule, sensor
 
     @asset
     def my_asset_1(): ...
 
     @asset(
         partitions_def=DailyPartitionsDefinition(start_date="2024-01-01"),
+        backfill_policy=BackfillPolicy.single_run(),
     )
     def my_asset_2(): ...
 

@@ -622,7 +622,7 @@ def test_resource_not_input_manager():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "input manager with key 'not_manager' required by input '_input' of op"
+            r"input manager with key 'not_manager' required by input '_input' of op"
             " 'op_requires_manager', but received <class"
             " 'dagster._core.definitions.resource_definition.ResourceDefinition'>"
         ),

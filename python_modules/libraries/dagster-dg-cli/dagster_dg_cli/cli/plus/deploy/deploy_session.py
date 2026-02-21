@@ -7,10 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import click
-
-if TYPE_CHECKING:
-    from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-
 import dagster_shared.check as check
 
 # Expensive imports moved to lazy loading inside functions to improve CLI startup performance
@@ -21,6 +17,11 @@ from dagster_dg_core.utils.git import get_local_branch_name
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg_cli.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
+
+if TYPE_CHECKING:
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+    from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
+    from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
 
 def _guess_deployment_type(
@@ -44,7 +45,7 @@ def _guess_deployment_type(
 def _guess_and_prompt_deployment_type(
     project_dir: Path, full_deployment_name: str, skip_confirmation_prompt: bool
 ) -> DgPlusDeploymentType:
-    deployment_type, branch_name = _guess_deployment_type(project_dir, full_deployment_name)
+    deployment_type, _branch_name = _guess_deployment_type(project_dir, full_deployment_name)
 
     if not skip_confirmation_prompt and not click.confirm("Do you want to continue?"):
         click.echo("Deployment cancelled.")
@@ -60,7 +61,7 @@ def _build_hybrid_image(
     statedir: str,
     build_directory: str,
     merged_build_config: DgRawBuildConfig,
-    workspace_context: Optional[DgContext],
+    workspace_context: DgContext | None,
 ) -> None:
     registry = merged_build_config.get("registry")
 
@@ -120,13 +121,15 @@ def init_deploy_session(
     deployment: str,
     dg_context: DgContext,
     statedir: str,
-    input_deployment_type: Optional[DgPlusDeploymentType],
+    input_deployment_type: DgPlusDeploymentType | None,
     skip_confirmation_prompt: bool,
-    git_url: Optional[str],
-    commit_hash: Optional[str],
+    git_url: str | None,
+    commit_hash: str | None,
     location_names: tuple[str],
-    status_url: Optional[str],
+    status_url: str | None,
     snapshot_base_condition: Optional["SnapshotBaseDeploymentCondition"],
+    dagster_env: str | None,
+    skip_validation: bool = False,
 ):
     deployment_type = (
         input_deployment_type
@@ -144,7 +147,14 @@ def init_deploy_session(
 
     dagster_cloud_yaml_file = create_temp_dagster_cloud_yaml_file(dg_context, statedir)
 
-    # Lazy import for test mocking and performance
+    from dagster_dg_cli.cli.plus.deploy.validation import validate_deploy_configuration
+
+    if not skip_validation:
+        validate_deploy_configuration(
+            dagster_cloud_yaml_path=dagster_cloud_yaml_file,
+            organization=organization,
+        )
+
     from dagster_cloud_cli.commands.ci import init_impl
 
     init_impl(
@@ -156,7 +166,7 @@ def init_deploy_session(
         require_branch_deployment=deployment_type == DgPlusDeploymentType.BRANCH_DEPLOYMENT,
         git_url=git_url,
         commit_hash=commit_hash,
-        dagster_env=None,
+        dagster_env=dagster_env,
         status_url=status_url,
         snapshot_base_condition=snapshot_base_condition,
         clean_statedir=False,
@@ -167,13 +177,24 @@ def init_deploy_session(
 def build_artifact(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
+    build_strategy: "BuildStrategy",
+    pex_build_method: "BuildMethod",
     statedir: str,
     use_editable_dagster: bool,
-    python_version: Optional[str],
+    python_version: str | None,
     location_names: tuple[str],
 ):
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+
     if not python_version:
         python_version = f"3.{sys.version_info.minor}"
+
+    # Validate build strategy compatibility with agent type
+    if agent_type == DgPlusAgentType.HYBRID and build_strategy == BuildStrategy.pex:
+        raise click.UsageError(
+            "Build strategy 'python-executable' is not supported for Hybrid agents. "
+            "Hybrid agents require 'docker' build strategy."
+        )
 
     requested_location_names = set(location_names)
 
@@ -181,6 +202,8 @@ def build_artifact(
         _build_artifact_for_project(
             dg_context,
             agent_type,
+            build_strategy,
+            pex_build_method,
             statedir,
             use_editable_dagster,
             python_version,
@@ -201,6 +224,8 @@ def build_artifact(
             _build_artifact_for_project(
                 project_context,
                 agent_type,
+                build_strategy,
+                pex_build_method,
                 statedir,
                 use_editable_dagster,
                 python_version,
@@ -211,10 +236,12 @@ def build_artifact(
 def _build_artifact_for_project(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
+    build_strategy: "BuildStrategy",
+    pex_build_method: "BuildMethod",
     statedir: str,
     use_editable_dagster: bool,
     python_version: str,
-    workspace_context: Optional[DgContext],
+    workspace_context: DgContext | None,
 ):
     merged_build_config: DgRawBuildConfig = merge_build_configs(
         workspace_context.build_config if workspace_context else None,
@@ -247,10 +274,9 @@ def _build_artifact_for_project(
         )
 
     else:
-        # Import BuildStrategy and deps locally since they're not needed for tests
+        # Import deps locally since they're not needed for tests
         # Lazy import for test mocking and performance
-        from dagster_cloud_cli.commands.ci import BuildStrategy, build_impl
-        from dagster_cloud_cli.core.pex_builder import deps
+        from dagster_cloud_cli.commands.ci import build_impl
 
         build_impl(
             statedir=str(statedir),
@@ -258,12 +284,12 @@ def _build_artifact_for_project(
             use_editable_dagster=use_editable_dagster,
             location_name=[dg_context.code_location_name],
             build_directory=str(build_directory),
-            build_strategy=BuildStrategy.docker,
+            build_strategy=build_strategy,
             docker_image_tag=None,
             docker_base_image=None,
             docker_env=[],
             python_version=python_version,
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=pex_build_method,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,

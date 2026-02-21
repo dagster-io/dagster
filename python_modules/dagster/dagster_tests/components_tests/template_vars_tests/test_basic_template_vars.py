@@ -30,7 +30,7 @@ class ComponentWithAdditionalScope(dg.Component, dg.Resolvable, dg.Model):
 
 
 def test_basic_additional_scope_hardcoded_value():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithAdditionalScope, {"value": "a_value"}
     )
 
@@ -41,7 +41,7 @@ def test_basic_additional_scope_hardcoded_value():
     sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
 )
 def test_basic_additional_scope_scope_var():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithAdditionalScope, {"value": "{{ foo }}"}
     )
 
@@ -52,7 +52,7 @@ def test_basic_additional_scope_scope_var():
     sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
 )
 def test_basic_additional_scope_scope_udf_no_args():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithAdditionalScope, {"value": "{{ a_udf() }}"}
     )
 
@@ -63,7 +63,7 @@ def test_basic_additional_scope_scope_udf_no_args():
     sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
 )
 def test_basic_additional_scope_scope_udf_with_args():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithAdditionalScope, {"value": "{{ a_udf_with_args('1') }}"}
     )
 
@@ -77,7 +77,7 @@ class ComponentWithInjectedScope(dg.Component, dg.Resolvable, dg.Model):
 
 
 def test_basic_injected_scope_var():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithInjectedScope,
         {"value": "{{ foo }}"},
         template_vars_module="dagster_tests.components_tests.template_vars_tests.template_vars",
@@ -87,7 +87,7 @@ def test_basic_injected_scope_var():
 
 
 def test_basic_scope_udf_no_args():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithInjectedScope,
         {"value": "{{ a_udf() }}"},
         template_vars_module="dagster_tests.components_tests.template_vars_tests.template_vars",
@@ -97,7 +97,7 @@ def test_basic_scope_udf_no_args():
 
 
 def test_basic_scope_udf_with_args():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithInjectedScope,
         {"value": "{{ a_udf_with_args('1') }}"},
         template_vars_module="dagster_tests.components_tests.template_vars_tests.template_vars",
@@ -131,7 +131,7 @@ class ComponentWithContextTemplateVars(dg.Component, dg.Resolvable, dg.Model):
     sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
 )
 def test_static_template_var_with_context():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithContextTemplateVars, {"value": "{{ context_var }}"}
     )
 
@@ -142,7 +142,7 @@ def test_static_template_var_with_context():
     sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
 )
 def test_static_template_var_mixed_context():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithContextTemplateVars, {"value": "{{ no_context_var }}"}
     )
 
@@ -153,7 +153,7 @@ def test_static_template_var_mixed_context():
     sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
 )
 def test_static_template_udf_with_context():
-    load_context, component = load_context_and_component_for_test(
+    _load_context, component = load_context_and_component_for_test(
         ComponentWithContextTemplateVars, {"value": "{{ context_udf('test') }}"}
     )
 

@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from dagster._annotations import beta, deprecated
 from dagster._core.definitions.asset_key import AssetKey
@@ -38,17 +38,17 @@ class AirbyteState:
 @record
 class AirbyteConnectionTableProps:
     table_name: str
-    stream_prefix: Optional[str]
+    stream_prefix: str | None
     stream_name: str
     json_schema: Mapping[str, Any]
     connection_id: str
     connection_name: str
-    destination_type: Optional[str]
-    database: Optional[str]
-    schema: Optional[str]
+    destination_type: str | None
+    database: str | None
+    schema: str | None
 
     @property
-    def fully_qualified_table_name(self) -> Optional[str]:
+    def fully_qualified_table_name(self) -> str | None:
         return (
             f"{self.database}.{self.schema}.{self.stream_name}"
             if self.database and self.schema
@@ -63,7 +63,7 @@ class AirbyteConnection:
 
     id: str
     name: str
-    stream_prefix: Optional[str]
+    stream_prefix: str | None
     streams: Mapping[str, "AirbyteStream"]
     destination_id: str
 
@@ -93,8 +93,8 @@ class AirbyteDestination:
 
     id: str
     type: str
-    database: Optional[str]
-    schema: Optional[str]
+    database: str | None
+    schema: str | None
 
     @classmethod
     def from_destination_details(
@@ -214,7 +214,7 @@ class AirbyteWorkspaceData:
 class AirbyteMetadataSet(NamespacedMetadataSet):
     connection_id: str
     connection_name: str
-    stream_prefix: Optional[str] = None
+    stream_prefix: str | None = None
 
     @classmethod
     def namespace(cls) -> str:

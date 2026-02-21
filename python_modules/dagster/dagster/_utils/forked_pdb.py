@@ -1,7 +1,6 @@
 import pdb
 import sys
 import types
-from typing import Optional
 
 from dagster._annotations import public
 
@@ -31,8 +30,8 @@ class ForkedPdb(pdb.Pdb):
 
     def interaction(
         self,
-        frame: Optional[types.FrameType],
-        traceback: Optional[types.TracebackType],
+        frame: types.FrameType | None,
+        traceback: types.TracebackType | None,
     ):
         _stdin = sys.stdin
         try:

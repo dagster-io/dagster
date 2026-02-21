@@ -12,10 +12,10 @@ import {
   Tabs,
   UnstyledButton,
 } from '@dagster-io/ui-components';
+import {CreateCatalogViewButton} from '@shared/assets/CreateCatalogViewButton';
+import {useCatalogViews} from '@shared/assets/catalog/useCatalogViews';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useMemo, useRef} from 'react';
-import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
 import {
   AssetSelectionSummaryListItem,

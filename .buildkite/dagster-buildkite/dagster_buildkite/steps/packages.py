@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import Optional, TypeAlias, Union
+from typing import TypeAlias
 
 from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -69,14 +69,12 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
 }
 
 PytestExtraCommandsFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, Optional[ToxFactor]], list[str]
+    [AvailablePythonVersion, ToxFactor | None], list[str]
 ]
 PytestDependenciesFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, Optional[ToxFactor]], list[str]
+    [AvailablePythonVersion, ToxFactor | None], list[str]
 ]
-UnsupportedVersionsFunction: TypeAlias = Callable[
-    [Optional[ToxFactor]], list[AvailablePythonVersion]
-]
+UnsupportedVersionsFunction: TypeAlias = Callable[[ToxFactor | None], list[AvailablePythonVersion]]
 
 
 @dataclass
@@ -125,23 +123,23 @@ class PackageSpec:
     """
 
     directory: str
-    name: Optional[str] = None
-    package_type: Optional[str] = None
-    unsupported_python_versions: Optional[
-        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
-    ] = None
-    pytest_extra_cmds: Optional[Union[list[str], PytestExtraCommandsFunction]] = None
-    pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = None
-    pytest_tox_factors: Optional[list[ToxFactor]] = None
-    env_vars: Optional[list[str]] = None
-    tox_file: Optional[str] = None
-    retries: Optional[int] = None
-    timeout_in_minutes: Optional[int] = None
-    queue: Optional[BuildkiteQueue] = None
+    name: str | None = None
+    package_type: str | None = None
+    unsupported_python_versions: (
+        list[AvailablePythonVersion] | UnsupportedVersionsFunction | None
+    ) = None
+    pytest_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
+    pytest_step_dependencies: list[str] | PytestDependenciesFunction | None = None
+    pytest_tox_factors: list[ToxFactor] | None = None
+    env_vars: list[str] | None = None
+    tox_file: str | None = None
+    retries: int | None = None
+    timeout_in_minutes: int | None = None
+    queue: BuildkiteQueue | None = None
     run_pytest: bool = True
     splits: int = 1
-    always_run_if: Optional[Callable[[], bool]] = None
-    skip_if: Optional[Callable[[], Optional[str]]] = None
+    always_run_if: Callable[[], bool] | None = None
+    skip_if: Callable[[], str | None] | None = None
 
     def __post_init__(self):
         if not self.name:
@@ -160,7 +158,7 @@ class PackageSpec:
         if self.run_pytest:
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
 
-            tox_factors: Sequence[Optional[ToxFactor]] = (
+            tox_factors: Sequence[ToxFactor | None] = (
                 self.pytest_tox_factors if self.pytest_tox_factors else [None]
             )
 
@@ -237,6 +235,10 @@ class PackageSpec:
                                 retries=self.retries,
                                 skip_reason=self.skip_reason,
                                 pytest_args=pytest_args,
+                                concurrency=other_factor.concurrency if other_factor else None,
+                                concurrency_group=(
+                                    other_factor.concurrency_group if other_factor else None
+                                ),
                             )
                         )
 
@@ -258,7 +260,7 @@ class PackageSpec:
             return []
 
     @property
-    def skip_reason(self) -> Optional[str]:
+    def skip_reason(self) -> str | None:
         """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
         We actually use this to determine whether or not to run the package.
 
@@ -274,7 +276,9 @@ class PackageSpec:
                 )
             return self._skip_reason
 
-        self._skip_reason = skip_reason(self.directory, self.name, self.always_run_if, self.skip_if)
+        self._skip_reason = skip_reason(
+            self.directory, self.name, self.always_run_if, self.skip_if, is_oss=True
+        )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
 
@@ -339,7 +343,9 @@ def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: list[str]) -> list[
         os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
     return [
-        p for p in all_files_in_root if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
+        p
+        for p in all_files_in_root
+        if p not in custom_pkg_roots and os.path.exists(os.path.join(GIT_REPO_ROOT, p, "tox.ini"))
     ]
 
 
@@ -370,7 +376,7 @@ airline_demo_extra_cmds = [
 ]
 
 
-def dagster_graphql_extra_cmds(_, tox_factor: Optional[ToxFactor]) -> list[str]:
+def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
     if tox_factor and tox_factor.factor.startswith("postgres"):
         return [
             "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
@@ -476,10 +482,16 @@ gcp_creds_extra_cmds = (
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/assets_smoke_test",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
+        ],
     ),
     PackageSpec(
         "examples/deploy_docker",
         pytest_extra_cmds=deploy_docker_example_extra_cmds,
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
+        ],
     ),
     PackageSpec(
         "examples/docs_snippets",
@@ -505,6 +517,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "examples/with_great_expectations",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # great_expectations incompatible
+        ],
     ),
     PackageSpec(
         "examples/with_pyspark",
@@ -525,6 +540,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/assets_modern_data_stack",
         pytest_tox_factors=[ToxFactor("pypi")],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
+        ],
     ),
     PackageSpec(
         "examples/assets_dbt_python",
@@ -546,6 +564,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/quickstart_etl",
         pytest_tox_factors=[ToxFactor("pypi")],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
+        ],
     ),
     PackageSpec(
         "examples/use_case_repository",
@@ -579,7 +600,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
 
 
 def _unsupported_dagster_python_versions(
-    tox_factor: Optional[ToxFactor],
+    tox_factor: ToxFactor | None,
 ) -> list[AvailablePythonVersion]:
     if tox_factor and tox_factor.factor == "general_tests_old_protobuf":
         return [
@@ -675,24 +696,34 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("gql_v3"),
             ToxFactor("gql_v3_5"),
         ],
-        unsupported_python_versions=(
-            lambda tox_factor: (
+        unsupported_python_versions=lambda tox_factor: (
+            # test suites particularly likely to crash and/or hang
+            # due to https://github.com/grpc/grpc/issues/31885
+            (
                 [AvailablePythonVersion.V3_11]
-                if (
-                    tox_factor
-                    and tox_factor.factor
-                    in {
-                        # test suites particularly likely to crash and/or hang
-                        # due to https://github.com/grpc/grpc/issues/31885
-                        "sqlite_instance_managed_grpc_env",
-                        "sqlite_instance_deployed_grpc_env",
-                        "sqlite_instance_code_server_cli_grpc_env",
-                        "sqlite_instance_multi_location",
-                        "postgres-instance_multi_location",
-                        "postgres-instance_managed_grpc_env",
-                        "postgres-instance_deployed_grpc_env",
-                    }
-                )
+                if tox_factor
+                and tox_factor.factor
+                in {
+                    "sqlite_instance_managed_grpc_env",
+                    "sqlite_instance_deployed_grpc_env",
+                    "sqlite_instance_code_server_cli_grpc_env",
+                    "sqlite_instance_multi_location",
+                    "postgres-instance_multi_location",
+                    "postgres-instance_managed_grpc_env",
+                }
+                else []
+            )
+            # postgres grpc tests hit "too many clients" on 3.14,
+            # likely due to gRPC subprocess connection cleanup issues
+            + (
+                [AvailablePythonVersion.V3_14]
+                if tox_factor
+                and tox_factor.factor
+                in {
+                    "postgres-instance_deployed_grpc_env",
+                    "postgres-instance_managed_grpc_env",
+                    "postgres-instance_multi_location",
+                }
                 else []
             )
         ),
@@ -711,25 +742,37 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
-            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
+            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
+        # dbt-core is incompatible with Python 3.14
         unsupported_python_versions=(
-            lambda tox_factor: [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
-            if tox_factor and tox_factor.factor.startswith("dbt17")
-            else []
+            lambda tox_factor: (
+                [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
+                if tox_factor and tox_factor.factor.startswith("dbt17")
+                else [AvailablePythonVersion.V3_14]
+            )
         ),
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt/",
         skip_if=skip_if_not_dagster_dbt_commit,
         name="dagster-dbt-fusion",
-        pytest_tox_factors=[ToxFactor("dbtfusion-snowflake")],
+        pytest_tox_factors=[
+            ToxFactor(
+                "dbtfusion-snowflake",
+                concurrency=1,
+                concurrency_group="dagster-dbt-fusion-snowflake",
+            )
+        ],
         env_vars=[
             "SNOWFLAKE_ACCOUNT",
             "SNOWFLAKE_USER",
             "SNOWFLAKE_BUILDKITE_PASSWORD",
+        ],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
         ],
     ),
     PackageSpec(
@@ -791,6 +834,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         ],
         env_vars=["SHELL"],
         always_run_if=has_dg_or_component_integration_changes,
+        # general tests depend on dagster-dbt which does not support Python 3.14
+        unsupported_python_versions=(
+            lambda tox_factor: (
+                [AvailablePythonVersion.V3_14]
+                if (tox_factor and tox_factor.factor == "general")
+                else []
+            )
+        ),
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
@@ -896,9 +947,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "GCP_PROJECT_ID",
         ],
         pytest_extra_cmds=gcp_creds_extra_cmds,
+        # spark-bigquery connector not yet compatible with Spark 4.x (required for PySpark on 3.14)
+        unsupported_python_versions=[AvailablePythonVersion.V3_14],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # great_expectations incompatible
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",
@@ -924,6 +980,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("storage_tests", splits=2),
             ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
         ],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
+        ],
         always_run_if=has_storage_test_fixture_changes,
     ),
     PackageSpec(
@@ -933,6 +992,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-pyspark",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # pyspark<4 not available
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-polars",
@@ -1010,6 +1072,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "KS_DBT_CLOUD_TOKEN",
             "KS_DBT_CLOUD_PROJECT_ID",
             "KS_DBT_CLOUD_ENVIRONMENT_ID",
+        ],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
         ],
     ),
     PackageSpec(

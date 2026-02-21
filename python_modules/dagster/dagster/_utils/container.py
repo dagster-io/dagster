@@ -1,7 +1,7 @@
 import logging
 import os
 from enum import Enum
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from dagster._time import get_current_timestamp
 
@@ -105,22 +105,22 @@ class CGroupVersion(Enum):
 
 
 class ContainerUtilizationMetrics(TypedDict):
-    num_allocated_cores: Optional[int]
-    cpu_usage: Optional[float]  # CPU usage in seconds
-    cpu_cfs_quota_us: Optional[float]  # CPU quota per period in microseconds
-    cpu_cfs_period_us: Optional[float]  # CPU period in microseconds
-    memory_usage: Optional[float]  # Memory usage in bytes
-    memory_limit: Optional[int]  # Memory limit in bytes
-    measurement_timestamp: Optional[float]
-    previous_cpu_usage: Optional[float]
-    previous_measurement_timestamp: Optional[float]
-    cgroup_version: Optional[str]
+    num_allocated_cores: int | None
+    cpu_usage: float | None  # CPU usage in seconds
+    cpu_cfs_quota_us: float | None  # CPU quota per period in microseconds
+    cpu_cfs_period_us: float | None  # CPU period in microseconds
+    memory_usage: float | None  # Memory usage in bytes
+    memory_limit: int | None  # Memory limit in bytes
+    measurement_timestamp: float | None
+    previous_cpu_usage: float | None
+    previous_measurement_timestamp: float | None
+    cgroup_version: str | None
 
 
 def retrieve_containerized_utilization_metrics(
-    logger: Optional[logging.Logger],
-    previous_measurement_timestamp: Optional[float] = None,
-    previous_cpu_usage: Optional[float] = None,
+    logger: logging.Logger | None,
+    previous_measurement_timestamp: float | None = None,
+    previous_cpu_usage: float | None = None,
 ) -> ContainerUtilizationMetrics:
     """Retrieve the CPU and memory utilization metrics from cgroup and proc files."""
     cgroup_version = _retrieve_cgroup_version(logger)
@@ -138,7 +138,7 @@ def retrieve_containerized_utilization_metrics(
     }
 
 
-def _retrieve_cgroup_version(logger: Optional[logging.Logger]) -> Optional[CGroupVersion]:
+def _retrieve_cgroup_version(logger: logging.Logger | None) -> CGroupVersion | None:
     try:
         # Run the stat command in a subprocess and read the result.
         status = os.popen("stat -fc %T /sys/fs/cgroup/").read().strip()
@@ -155,8 +155,8 @@ def _retrieve_cgroup_version(logger: Optional[logging.Logger]) -> Optional[CGrou
 
 
 def _retrieve_containerized_cpu_usage(
-    logger: Optional[logging.Logger], cgroup_version: Optional[CGroupVersion]
-) -> Optional[float]:
+    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+) -> float | None:
     """Retrieve the CPU time in seconds from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_cpu_usage_v1(logger)
@@ -166,7 +166,7 @@ def _retrieve_containerized_cpu_usage(
         return None
 
 
-def _retrieve_containerized_cpu_usage_v1(logger: Optional[logging.Logger]) -> Optional[float]:
+def _retrieve_containerized_cpu_usage_v1(logger: logging.Logger | None) -> float | None:
     try:
         with open(cpu_usage_path_cgroup_v1()) as f:
             return float(f.read()) / 1e9  # Cpuacct.usage is in nanoseconds
@@ -176,7 +176,7 @@ def _retrieve_containerized_cpu_usage_v1(logger: Optional[logging.Logger]) -> Op
         return None
 
 
-def _retrieve_containerized_cpu_usage_v2(logger: Optional[logging.Logger]) -> Optional[float]:
+def _retrieve_containerized_cpu_usage_v2(logger: logging.Logger | None) -> float | None:
     try:
         with open(cpu_stat_path_cgroup_v2()) as f:
             lines = f.readlines()
@@ -190,7 +190,7 @@ def _retrieve_containerized_cpu_usage_v2(logger: Optional[logging.Logger]) -> Op
         return None
 
 
-def _retrieve_containerized_num_allocated_cores(logger: Optional[logging.Logger]) -> Optional[int]:
+def _retrieve_containerized_num_allocated_cores(logger: logging.Logger | None) -> int | None:
     """Retrieve the number of cores from the /proc/cpuinfo file."""
     try:
         with open(cpu_info_path()) as f:
@@ -202,8 +202,8 @@ def _retrieve_containerized_num_allocated_cores(logger: Optional[logging.Logger]
 
 
 def _retrieve_containerized_memory_usage(
-    logger: Optional[logging.Logger], cgroup_version: Optional[CGroupVersion]
-) -> Optional[int]:
+    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+) -> int | None:
     """Retrieve the memory usage in bytes from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_memory_usage_v1(logger)
@@ -213,7 +213,7 @@ def _retrieve_containerized_memory_usage(
         return None
 
 
-def _retrieve_containerized_memory_usage_v1(logger: Optional[logging.Logger]) -> Optional[int]:
+def _retrieve_containerized_memory_usage_v1(logger: logging.Logger | None) -> int | None:
     try:
         with open(memory_usage_path_cgroup_v1()) as f:
             return int(f.read())
@@ -223,7 +223,7 @@ def _retrieve_containerized_memory_usage_v1(logger: Optional[logging.Logger]) ->
         return None
 
 
-def _retrieve_containerized_memory_usage_v2(logger: Optional[logging.Logger]) -> Optional[int]:
+def _retrieve_containerized_memory_usage_v2(logger: logging.Logger | None) -> int | None:
     try:
         with open(memory_usage_path_cgroup_v2()) as f:
             return int(f.read())
@@ -234,8 +234,8 @@ def _retrieve_containerized_memory_usage_v2(logger: Optional[logging.Logger]) ->
 
 
 def _retrieve_containerized_memory_limit(
-    logger: Optional[logging.Logger], cgroup_version: Optional[CGroupVersion]
-) -> Optional[int]:
+    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+) -> int | None:
     """Retrieve the memory limit in bytes from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_memory_limit_v1(logger)
@@ -245,7 +245,7 @@ def _retrieve_containerized_memory_limit(
         return None
 
 
-def _retrieve_containerized_memory_limit_v1(logger: Optional[logging.Logger]) -> Optional[int]:
+def _retrieve_containerized_memory_limit_v1(logger: logging.Logger | None) -> int | None:
     try:
         with open(memory_limit_path_cgroup_v1()) as f:
             return int(f.read())
@@ -255,7 +255,7 @@ def _retrieve_containerized_memory_limit_v1(logger: Optional[logging.Logger]) ->
         return None
 
 
-def _retrieve_containerized_memory_limit_v2(logger: Optional[logging.Logger]) -> Optional[int]:
+def _retrieve_containerized_memory_limit_v2(logger: logging.Logger | None) -> int | None:
     try:
         with open(memory_limit_path_cgroup_v2()) as f:
             return int(f.read())
@@ -268,8 +268,8 @@ def _retrieve_containerized_memory_limit_v2(logger: Optional[logging.Logger]) ->
 
 
 def _retrieve_containerized_cpu_cfs_period_us(
-    logger: Optional[logging.Logger], cgroup_version: Optional[CGroupVersion]
-) -> Optional[float]:
+    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+) -> float | None:
     """Retrieve the CPU period in microseconds from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_cpu_cfs_period_us_v1(logger)
@@ -280,8 +280,8 @@ def _retrieve_containerized_cpu_cfs_period_us(
 
 
 def _retrieve_containerized_cpu_cfs_period_us_v1(
-    logger: Optional[logging.Logger],
-) -> Optional[float]:
+    logger: logging.Logger | None,
+) -> float | None:
     try:
         with open(cpu_cfs_period_us_path()) as f:
             return float(f.read())
@@ -292,8 +292,8 @@ def _retrieve_containerized_cpu_cfs_period_us_v1(
 
 
 def _retrieve_containerized_cpu_cfs_period_us_v2(
-    logger: Optional[logging.Logger],
-) -> Optional[float]:
+    logger: logging.Logger | None,
+) -> float | None:
     # We can retrieve period information from the cpu.max file. The file is in the format $MAX $PERIOD and is only one line.
     try:
         with open(cpu_max_path_cgroup_v2()) as f:
@@ -306,8 +306,8 @@ def _retrieve_containerized_cpu_cfs_period_us_v2(
 
 
 def _retrieve_containerized_cpu_cfs_quota_us(
-    logger: Optional[logging.Logger], cgroup_version: Optional[CGroupVersion]
-) -> Optional[float]:
+    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+) -> float | None:
     """Retrieve the CPU quota in microseconds from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_cpu_cfs_quota_us_v1(logger)
@@ -318,8 +318,8 @@ def _retrieve_containerized_cpu_cfs_quota_us(
 
 
 def _retrieve_containerized_cpu_cfs_quota_us_v1(
-    logger: Optional[logging.Logger],
-) -> Optional[float]:
+    logger: logging.Logger | None,
+) -> float | None:
     try:
         with open(cpu_cfs_quota_us_path()) as f:
             return float(f.read())
@@ -330,8 +330,8 @@ def _retrieve_containerized_cpu_cfs_quota_us_v1(
 
 
 def _retrieve_containerized_cpu_cfs_quota_us_v2(
-    logger: Optional[logging.Logger],
-) -> Optional[float]:
+    logger: logging.Logger | None,
+) -> float | None:
     # We can retrieve quota information from the cpu.max file. The file is in the format $MAX $PERIOD .
     try:
         with open(cpu_max_path_cgroup_v2()) as f:

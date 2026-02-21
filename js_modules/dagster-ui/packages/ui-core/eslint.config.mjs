@@ -39,6 +39,6 @@ export default [
     },
   },
   {
-    ignores: ['src/graphql/**', 'src/**/types/*.types.ts'],
+    ignores: ['src/graphql/**', 'src/**/types/*.types.ts', 'src/**/generated/**'],
   },
 ];

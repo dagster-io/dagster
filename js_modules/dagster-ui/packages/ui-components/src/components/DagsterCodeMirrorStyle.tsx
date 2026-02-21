@@ -79,6 +79,10 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
       color: ${Colors.textYellow()};
     }
 
+    .cm-property {
+      color: ${Colors.textBlue()};
+    }
+
     .CodeMirror-selected {
       background-color: ${Colors.backgroundBlueHover()};
     }
@@ -86,6 +90,14 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
     .CodeMirror-gutters {
       background-color: ${Colors.backgroundDefault()};
       opacity: 0.6;
+    }
+
+    .CodeMirror-matchingbracket {
+      color: ${Colors.textCyan()};
+    }
+
+    .CodeMirror-nonmatchingbracket {
+      color: ${Colors.textRed()};
     }
 
     .cm-indent {

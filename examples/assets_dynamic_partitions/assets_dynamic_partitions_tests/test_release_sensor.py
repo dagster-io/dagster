@@ -2,9 +2,8 @@ import json
 import os
 from unittest.mock import MagicMock, patch
 
-from dagster import DagsterInstance, SkipReason, build_sensor_context
-
 from assets_dynamic_partitions.release_sensor import release_sensor
+from dagster import DagsterInstance, SkipReason, build_sensor_context
 
 
 def test_release_sensor_no_new_releases():

@@ -9,12 +9,12 @@ import {
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
+import {observeEnabled} from '@shared/app/observeEnabled';
+import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {
@@ -276,7 +276,7 @@ export const LaunchAssetExecutionButton = ({
   ) {
     // If all options are disabled, just show the button with no dropdown.
     return (
-      <Tooltip content={firstOption.disabledReason} position="bottom-right">
+      <Tooltip content={firstOption.disabledReason} position="bottom-end">
         <Button
           intent={primary ? 'primary' : undefined}
           icon={firstOption.icon}
@@ -307,7 +307,6 @@ export const LaunchAssetExecutionButton = ({
               : 'Shift+click to add configuration'
           }
           placement="left"
-          useDisabledButtonTooltipFix
         >
           {iconOnly ? (
             <UnstyledButton
@@ -351,7 +350,6 @@ export const LaunchAssetExecutionButton = ({
                 <Tooltip
                   canShow={!!secondOption.disabledReason}
                   content={secondOption.disabledReason || ''}
-                  useDisabledButtonTooltipFix
                   position="left"
                 >
                   <MenuItem

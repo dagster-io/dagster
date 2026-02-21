@@ -1,5 +1,5 @@
+import {JobFallthroughRoot} from '@shared/pipelines/JobFallthroughRoot';
 import {Redirect, Switch} from 'react-router-dom';
-import {JobFallthroughRoot} from 'shared/pipelines/JobFallthroughRoot.oss';
 
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
 import {PipelineRunsFeedRoot} from './PipelineRunsFeedRoot';

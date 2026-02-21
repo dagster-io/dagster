@@ -1,9 +1,9 @@
-import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {RunAlertNotifications} from '@shared/runs/RunAlertNotifications';
+import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
-import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
-import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
-import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
@@ -71,10 +71,10 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   return (
     <div>
-      <Group direction="row" spacing={8}>
+      <Box flex={{direction: 'row', gap: 8}}>
         <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
-          <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
+          <Tooltip content={jobLink.disabledReason}>
             <Button icon={<Icon name={jobLink.icon} />} disabled>
               {jobLink.label}
             </Button>
@@ -88,7 +88,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           View tags and config
         </Button>
         {run.allPools && run.allPools.length ? (
-          <Tooltip content="View pools" position="top" targetTagName="div">
+          <Tooltip content="View pools" position="top">
             <Button icon={<Icon name="concurrency" />} onClick={() => setVisibleDialog('pools')} />
           </Tooltip>
         ) : null}
@@ -100,11 +100,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 {!isExternalRun(run) ? (
                   <>
                     <AISummaryForRunMenuItem run={run} />
-                    <Tooltip
-                      content="Loadable in dagster-webserver-debug"
-                      position="left"
-                      targetTagName="div"
-                    >
+                    <Tooltip content="Loadable in dagster-webserver-debug" position="left">
                       <MenuItem
                         text="Download debug file"
                         icon="download_for_offline"
@@ -114,7 +110,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                     </Tooltip>
                     {run.status === RunStatus.QUEUED ? (
                       <MenuItem
-                        tagName="button"
                         icon="history_toggle_off"
                         text="View queue criteria"
                         intent="none"
@@ -123,7 +118,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                     ) : null}
                     {runMetricsEnabled && RunMetricsDialog ? (
                       <MenuItem
-                        tagName="button"
                         icon="asset_plot"
                         text="View container metrics"
                         intent="none"
@@ -153,7 +147,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             <Button icon={<Icon name="expand_more" />} />
           </Popover>
         ) : null}
-      </Group>
+      </Box>
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={() => setVisibleDialog(null)}

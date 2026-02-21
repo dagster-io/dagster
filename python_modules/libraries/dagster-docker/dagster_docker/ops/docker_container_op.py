@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import docker
 import docker.errors
@@ -57,8 +57,8 @@ def _create_container(
     client,
     container_context: DockerContainerContext,
     image: str,
-    entrypoint: Optional[Sequence[str]],
-    command: Optional[Sequence[str]],
+    entrypoint: Sequence[str] | None,
+    command: Sequence[str] | None,
 ):
     env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
     return client.containers.create(
@@ -77,12 +77,12 @@ def _create_container(
 def execute_docker_container(
     context: OpExecutionContext,
     image: str,
-    entrypoint: Optional[Sequence[str]] = None,
-    command: Optional[Sequence[str]] = None,
-    networks: Optional[Sequence[str]] = None,
-    registry: Optional[Mapping[str, str]] = None,
-    env_vars: Optional[Sequence[str]] = None,
-    container_kwargs: Optional[Mapping[str, Any]] = None,
+    entrypoint: Sequence[str] | None = None,
+    command: Sequence[str] | None = None,
+    networks: Sequence[str] | None = None,
+    registry: Mapping[str, str] | None = None,
+    env_vars: Sequence[str] | None = None,
+    container_kwargs: Mapping[str, Any] | None = None,
 ):
     """This function is a utility for executing a Docker container from within a Dagster op.
 

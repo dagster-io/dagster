@@ -13,6 +13,24 @@ export const hashObject = weakMapMemoize((obj: any): string => {
   const c1: number = 0xcc9e2d51;
   const c2: number = 0x1b873593;
 
+  // Fast single-byte hash for structural characters (no loop overhead)
+  function hashByte(b: number): void {
+    let k1 = b * c1;
+    k1 = (k1 << 15) | (k1 >>> 17);
+    k1 *= c2;
+    h1 ^= k1;
+    h1 = (h1 << 13) | (h1 >>> 19);
+    h1 = h1 * 5 + 0xe6546b64;
+  }
+
+  // Structural character codes
+  const LBRACE = 123; // {
+  const RBRACE = 125; // }
+  const LBRACKET = 91; // [
+  const RBRACKET = 93; // ]
+  const COLON = 58; // :
+  const COMMA = 44; // ,
+
   // Faster hash update function (based on MurmurHash3)
   function hashChunk(str: string): void {
     let k1: number;
@@ -66,8 +84,10 @@ export const hashObject = weakMapMemoize((obj: any): string => {
     },
   ];
 
-  // Small string buffer to avoid creating too many strings
-  const smallBuffer = ['{', '}', '[', ']', ':', ',', 'null', 'true', 'false'] as const;
+  // Small string constants for multi-char primitives
+  const NULL_STR = 'null';
+  const TRUE_STR = 'true';
+  const FALSE_STR = 'false';
 
   // Process the object iteratively
   while (stack.length > 0) {
@@ -81,9 +101,9 @@ export const hashObject = weakMapMemoize((obj: any): string => {
       // Process based on type
       if (current.type === TYPE_PRIMITIVE) {
         if (current.value === null) {
-          hashChunk(smallBuffer[6]); // 'null'
+          hashChunk(NULL_STR);
         } else if (typeof current.value === 'boolean') {
-          hashChunk(current.value ? smallBuffer[7] : smallBuffer[8]); // 'true' or 'false'
+          hashChunk(current.value ? TRUE_STR : FALSE_STR);
         } else if (typeof current.value === 'number') {
           // Use a consistent string representation for numbers
           hashChunk(current.value.toString());
@@ -92,20 +112,20 @@ export const hashObject = weakMapMemoize((obj: any): string => {
         }
         current.state = 2; // Mark as done
       } else if (current.type === TYPE_ARRAY) {
-        hashChunk(smallBuffer[2]); // '['
+        hashByte(LBRACKET);
 
         if (current.value.length === 0) {
-          hashChunk(smallBuffer[3]); // ']'
+          hashByte(RBRACKET);
           current.state = 2; // Mark as done
         }
       } else if (current.type === TYPE_OBJECT) {
-        hashChunk(smallBuffer[0]); // '{'
+        hashByte(LBRACE);
 
         // Sort keys once and cache them
         current.keys = Object.keys(current.value).sort();
 
         if (current.keys.length === 0) {
-          hashChunk(smallBuffer[1]); // '}'
+          hashByte(RBRACE);
           current.state = 2; // Mark as done
         }
       }
@@ -116,7 +136,7 @@ export const hashObject = weakMapMemoize((obj: any): string => {
         const arr = current.value;
 
         if (current.index > 0) {
-          hashChunk(smallBuffer[5]); // ','
+          hashByte(COMMA);
         }
 
         if (current.index < arr.length) {
@@ -137,7 +157,7 @@ export const hashObject = weakMapMemoize((obj: any): string => {
           });
         } else {
           // Finished processing array
-          hashChunk(smallBuffer[3]); // ']'
+          hashByte(RBRACKET);
           current.state = 2;
         }
       } else if (current.type === TYPE_OBJECT) {
@@ -145,14 +165,14 @@ export const hashObject = weakMapMemoize((obj: any): string => {
         const keys = current.keys!;
 
         if (current.index > 0) {
-          hashChunk(smallBuffer[5]); // ','
+          hashByte(COMMA);
         }
 
         if (current.index < keys.length) {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const key = keys[current.index++]!;
           hashChunk(key);
-          hashChunk(smallBuffer[4]); // ':'
+          hashByte(COLON);
 
           const item = current.value[key];
           const itemType =
@@ -171,7 +191,7 @@ export const hashObject = weakMapMemoize((obj: any): string => {
           });
         } else {
           // Finished processing object
-          hashChunk(smallBuffer[1]); // '}'
+          hashByte(RBRACE);
           current.state = 2;
         }
       }

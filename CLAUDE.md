@@ -4,6 +4,7 @@
 
 - **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths. **ALWAYS check this file first when looking for package locations.**
 - **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Documentation of developer workflows in the Dagster OSS repo.
+- **UI Workflow**: [.claude/ui_workflow.md](./.claude/ui_workflow.md) - UI/TypeScript development workflows and verification commands. **ALWAYS check after UI edits.**
 - **Coding Conventions**: [.claude/coding_conventions.md](./.claude/coding_conventions.md) - Type annotations and code style conventions. **ALWAYS check this before writing data structures - use @record instead of @dataclass.**
 - **CRITICAL**: After ANY Python code changes, ALWAYS run `make ruff` - this is mandatory and must never be skipped.
 
@@ -27,6 +28,14 @@ make quick_pyright          # Type check only changed files
 pytest path/to/tests/       # Run specific tests
 pytest python_modules/dagster/dagster_tests/  # Run core tests
 tox -e py39-pytest          # Test in isolated environment
+
+# UI Verification (run from js_modules/dagster-ui/ when done with edits)
+cd js_modules/dagster-ui
+make generate-graphql       # Regenerate GraphQL types (if schema changed; must run before tsgo/lint)
+yarn tsgo                   # TypeScript checking
+yarn lint                   # ESLint checking
+yarn jest                   # Jest tests
+yarn build                  # Verify production build (ui-components changes only)
 
 # Development
 make rebuild_ui             # Rebuild React UI after changes

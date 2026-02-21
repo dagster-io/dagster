@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
 
@@ -18,6 +18,6 @@ describe('Act warnings', () => {
     render(<Counter />);
     const button = await screen.findByRole('button');
     await user.click(button);
-    await waitFor(() => expect(screen.getByText(/count: 1/i)).toBeVisible());
+    expect(await screen.findByText(/count: 1/i)).toBeVisible();
   });
 });

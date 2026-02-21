@@ -8,6 +8,7 @@ import {PartitionHealthData, PartitionHealthDimension} from './usePartitionHealt
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {PartitionStatus} from '../partitions/PartitionStatus';
+import {escapePartitionKey, serializeRange} from '../partitions/SpanRepresentation';
 
 interface Props {
   assetKey: AssetKey;
@@ -36,14 +37,14 @@ export const PartitionHealthSummary = memo((props: Props) => {
       let queryParams: AssetViewParams;
 
       if (selectedPartitions.length === 1) {
-        defaultRange = firstPartition;
+        defaultRange = escapePartitionKey(firstPartition);
         queryParams = {
           view: 'partitions',
           partition: firstPartition,
           default_range: defaultRange,
         };
       } else {
-        defaultRange = `[${firstPartition}...${lastPartition}]`;
+        defaultRange = serializeRange(firstPartition, lastPartition);
         queryParams = {
           view: 'partitions',
           ...(dimension && isTimeBasedPartition(dimension) ? {partition: lastPartition} : {}),

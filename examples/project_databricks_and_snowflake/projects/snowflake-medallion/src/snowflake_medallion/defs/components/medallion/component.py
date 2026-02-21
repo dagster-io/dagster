@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetSpec, Component, Definitions, Model, Resolvable
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
@@ -15,7 +15,7 @@ class SnowflakeKindTranslator(DagsterDbtTranslator):
         self,
         manifest: Mapping[str, Any],
         unique_id: str,
-        project: Optional[Any],
+        project: Any | None,
     ) -> AssetSpec:
         spec = super().get_asset_spec(manifest, unique_id, project)
         return spec.replace_attributes(kinds={"snowflake", "dbt"})

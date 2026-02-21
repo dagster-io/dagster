@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sphinx-click"
+version = "0.0.1"
+description = "Sphinx extension that automatically documents click applications"
+authors = [{name = "Stephen Finucane", email = "stephen@that.guru"}]
+license = "MIT"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Framework :: Sphinx :: Extension",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Documentation",
+    "Topic :: Documentation :: Sphinx",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/click-contrib/sphinx-click"
+"Bug Tracker" = "https://github.com/click-contrib/sphinx-click/issues"
+"Documentation" = "https://sphinx-click.readthedocs.io/en/latest"
+"Source Code" = "https://github.com/click-contrib/sphinx-click"

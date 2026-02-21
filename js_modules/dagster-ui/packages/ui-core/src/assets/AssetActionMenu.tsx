@@ -3,13 +3,14 @@ import {
   HoverButton,
   Icon,
   Menu,
+  MenuDivider,
   MenuItem,
   Popover,
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {AddToFavoritesMenuItem} from '@shared/assets/AddToFavoritesMenuItem';
 import {memo, useContext, useMemo} from 'react';
-import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -24,6 +25,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
+
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
@@ -70,6 +72,9 @@ export const AssetActionMenu = memo((props: Props) => {
         }
       : null,
   );
+
+  const additionalMenuItems = [...wipe.dropdownOptions, ...deletePartitions.dropdownOptions];
+
   return (
     <>
       {launchpadElement}
@@ -89,7 +94,6 @@ export const AssetActionMenu = memo((props: Props) => {
           <Menu>
             {executeItem}
             <AddToFavoritesMenuItem assetKey={{path}} />
-
             <MenuLink
               text="Show in group"
               to={
@@ -134,8 +138,12 @@ export const AssetActionMenu = memo((props: Props) => {
                   />
                 ))
               : undefined}
-            {wipe.dropdownOptions}
-            {deletePartitions.dropdownOptions}
+            {additionalMenuItems.length && (
+              <>
+                <MenuDivider />
+                {additionalMenuItems}
+              </>
+            )}
           </Menu>
         }
       >
@@ -193,7 +201,6 @@ export const useExecuteAssetMenuItem = (
         content={disabledMessage || 'Shift+click to add configuration'}
         placement="left"
         display="block"
-        useDisabledButtonTooltipFix
       >
         <MenuItem
           text={option.label}

@@ -48,9 +48,9 @@ export const buildWorkspaceMocks = (
       entries.map((entry) =>
         buildWorkspaceLocationStatusEntry({
           ...entry,
+          __typename: 'WorkspaceLocationStatusEntry',
           updateTimestamp: entry.updatedTimestamp,
           versionKey: '' + entry.updatedTimestamp,
-          __typename: 'WorkspaceLocationStatusEntry',
         }),
       ),
       options,

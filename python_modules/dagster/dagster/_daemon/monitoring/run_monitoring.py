@@ -2,7 +2,6 @@ import logging
 import sys
 import time
 from collections.abc import Iterator
-from typing import Optional
 
 from dagster import (
     DagsterInstance,
@@ -175,8 +174,8 @@ def monitor_started_run(
 def execute_run_monitoring_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    _debug_crash_flags: Optional[DebugCrashFlags] = None,
-) -> Iterator[Optional[SerializableErrorInfo]]:
+    _debug_crash_flags: DebugCrashFlags | None = None,
+) -> Iterator[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
 
     # TODO: consider limiting number of runs to fetch
@@ -235,7 +234,11 @@ def check_run_timeout(
         MAX_RUNTIME_SECONDS_TAG, run_record.dagster_run.tags.get("dagster/max_runtime_seconds")
     )
     if max_time_str:
-        max_time = float(max_time_str)
+        try:
+            max_time = float(max_time_str)
+        except ValueError:
+            logger.warning(f"Invalid max runtime value: {max_time_str}")
+            max_time = None
     else:
         max_time = default_timeout_seconds
 

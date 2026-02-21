@@ -1,7 +1,6 @@
 import importlib
 import importlib.metadata
 import inspect
-import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
@@ -30,10 +29,7 @@ class ComponentsEntryPointLoadError(DagsterError):
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
-    if sys.version_info >= (3, 10):
-        return importlib.metadata.entry_points(group=group)
-    else:
-        return importlib.metadata.entry_points().get(group, [])
+    return importlib.metadata.entry_points(group=group)
 
 
 def get_plugin_entry_points() -> Sequence[importlib.metadata.EntryPoint]:

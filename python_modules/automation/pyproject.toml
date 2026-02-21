@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "automation"
+version = "0.0.1"
+description = "Tools for infrastructure automation"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "autoflake",
+    "boto3",
+    "click",
+    "packaging>=20.9",
+    "pandas<3.0.0",
+    "pathspec",
+    "pytablereader",
+    "pydantic",
+    "pyyaml",
+    "requests",
+    "rich",
+    "twine>=1.15.0",
+    "sphinx",
+    "virtualenv>=20.27.0",
+    "urllib3",
+    "watchdog",
+    "deepeval>=3.0,!=3.6.5,!=3.6.8,!=3.6.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/automation"
+
+[project.scripts]
+dagster-image = "automation.docker.cli:main"
+dagster-graphql-client = "automation.graphql.python_client.cli:main"
+dagster-docs = "automation.dagster_docs:main"
+dagster-eval = "automation.eval.cli:main"
+dagster-dev = "automation.dagster_dev.cli:main"
+
+[project.optional-dependencies]
+buildkite = [
+    "dagster",
+]
+
+[tool.setuptools.packages.find]
+exclude = [
+    "automation_tests*",
+]

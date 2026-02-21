@@ -41,7 +41,7 @@ class DefsKeyStateInfo(DagsterModel):
 class DefsStateInfo(DagsterModel):
     """All of the information about the state version that will be used to load a given code location."""
 
-    info_mapping: Mapping[str, Optional[DefsKeyStateInfo]]
+    info_mapping: Mapping[str, DefsKeyStateInfo | None]
 
     @staticmethod
     def empty() -> "DefsStateInfo":
@@ -51,8 +51,8 @@ class DefsStateInfo(DagsterModel):
     def add_version(
         current_info: Optional["DefsStateInfo"],
         key: str,
-        version: Optional[str],
-        create_timestamp: Optional[float] = None,
+        version: str | None,
+        create_timestamp: float | None = None,
     ) -> "DefsStateInfo":
         new_info = (
             DefsKeyStateInfo(version=version, create_timestamp=create_timestamp or time.time())
@@ -64,7 +64,7 @@ class DefsStateInfo(DagsterModel):
         else:
             return DefsStateInfo(info_mapping={**current_info.info_mapping, key: new_info})
 
-    def get_version(self, key: str) -> Optional[str]:
+    def get_version(self, key: str) -> str | None:
         info = self.info_mapping.get(key)
         return info.version if info else None
 

@@ -1,25 +1,25 @@
+import {AntlrAssetSelectionVisitor} from '@shared/asset-selection/AntlrAssetSelectionVisitor';
 import {
-  ANTLRErrorListener,
-  CharStreams,
+  BaseErrorListener,
+  CharStream,
   CommonTokenStream,
   RecognitionException,
-  Recognizer,
-} from 'antlr4ts';
-import {AntlrAssetSelectionVisitor} from 'shared/asset-selection/AntlrAssetSelectionVisitor.oss';
+  Token,
+} from 'antlr4ng';
 
 import {SupplementaryInformation} from './types';
 import {AssetGraphQueryItem} from '../asset-graph/types';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser} from './generated/AssetSelectionParser';
 
-export class AntlrInputErrorListener implements ANTLRErrorListener<any> {
-  syntaxError(
-    recognizer: Recognizer<any, any>,
-    offendingSymbol: any,
-    line: number,
+export class AntlrInputErrorListener extends BaseErrorListener {
+  override syntaxError(
+    _recognizer: unknown,
+    offendingSymbol: Token | null,
+    _line: number,
     charPositionInLine: number,
     msg: string,
-    _e: RecognitionException | undefined,
+    _e: RecognitionException | null,
   ): void {
     if (offendingSymbol) {
       throw new Error(`Syntax error caused by "${offendingSymbol.text}": ${msg}`);
@@ -39,11 +39,12 @@ export const parseAssetSelectionQuery = (
   supplementaryData?: SupplementaryInformation,
 ): AssetSelectionQueryResult | Error => {
   try {
-    const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
+    const lexer = new AssetSelectionLexer(CharStream.fromString(query));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new AssetSelectionParser(tokenStream);
     parser.removeErrorListeners();
@@ -53,7 +54,7 @@ export const parseAssetSelectionQuery = (
 
     const visitor = new AntlrAssetSelectionVisitor(all_assets, supplementaryData);
 
-    const all_selection = visitor.visit(tree);
+    const all_selection = visitor.visit(tree) ?? new Set<AssetGraphQueryItem>();
     const focus_selection = visitor.focus_assets;
 
     return {

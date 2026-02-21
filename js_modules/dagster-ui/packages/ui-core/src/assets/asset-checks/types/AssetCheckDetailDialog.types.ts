@@ -15,11 +15,13 @@ export type AssetCheckExecutionFragment = {
   status: Types.AssetCheckExecutionResolvedStatus;
   stepKey: string | null;
   timestamp: number;
+  run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
   evaluation: {
     __typename: 'AssetCheckEvaluation';
     severity: Types.AssetCheckSeverity;
     timestamp: number;
     description: string | null;
+    partition: string | null;
     targetMaterialization: {
       __typename: 'AssetCheckEvaluationTargetMaterializationData';
       timestamp: number;
@@ -197,11 +199,13 @@ export type AssetCheckDetailsQuery = {
     status: Types.AssetCheckExecutionResolvedStatus;
     stepKey: string | null;
     timestamp: number;
+    run: {__typename: 'Run'; id: string; status: Types.RunStatus} | null;
     evaluation: {
       __typename: 'AssetCheckEvaluation';
       severity: Types.AssetCheckSeverity;
       timestamp: number;
       description: string | null;
+      partition: string | null;
       targetMaterialization: {
         __typename: 'AssetCheckEvaluationTargetMaterializationData';
         timestamp: number;
@@ -364,4 +368,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = 'dafb023319ef2c8aa8075c43686b318d3206f5781b8b87cf21130db3172a9f71';
+export const AssetCheckDetailsQueryVersion = '2172a2770272c14ef142e0a0da4dcf6cd83c69167db6c962735172058b50f31b';

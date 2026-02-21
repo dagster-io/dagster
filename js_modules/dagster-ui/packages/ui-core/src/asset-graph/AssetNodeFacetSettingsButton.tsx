@@ -1,6 +1,6 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import {useState} from 'react';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetNodeWithLiveData} from './AssetNode';
 import {AssetNodeFacetDefaults} from './AssetNodeFacets';
@@ -37,6 +37,8 @@ const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
         severity: AssetCheckSeverity.WARN,
       },
     },
+    partitionDefinition: null,
+    partitionStatuses: null,
   },
   {
     __typename: 'AssetCheck',
@@ -54,6 +56,8 @@ const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
         severity: AssetCheckSeverity.WARN,
       },
     },
+    partitionDefinition: null,
+    partitionStatuses: null,
   },
 ];
 

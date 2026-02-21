@@ -47,6 +47,35 @@ describe('usePartitionDimensionSelections', () => {
       });
     });
 
+    it('should encode special characters without URL-encoding (qs library handles URL encoding)', () => {
+      // The qs library used by useQueryPersistedState automatically URL-encodes values
+      // during stringify, so the encode function should return raw text values.
+      // This prevents double-encoding issues like `:` becoming `%253A` instead of `%3A`.
+      const state: DimensionQueryState[] = [
+        {
+          name: 'default',
+          rangeText: '2024-06-25-00:00',
+          isFromPartitionQueryStringParam: false,
+        },
+        {
+          name: 'quoted',
+          rangeText: '"key,with,commas"',
+          isFromPartitionQueryStringParam: false,
+        },
+      ];
+
+      const {encode} = buildSerializer({dimensions: []});
+      if (!encode) {
+        throw new Error('encode is undefined');
+      }
+
+      // Values should NOT be URL-encoded - qs.stringify handles that
+      expect(encode(state)).toEqual({
+        default_range: '2024-06-25-00:00',
+        quoted_range: '"key,with,commas"',
+      });
+    });
+
     it('should decode one dimension, just range', () => {
       const dimensions = [
         {
@@ -145,6 +174,29 @@ describe('usePartitionDimensionSelections', () => {
       expect(decode({partition: '2025-11-12|2025-11-14'})).toEqual([
         {name: 'default', rangeText: '2025-11-12', isFromPartitionQueryStringParam: true},
         {name: 'secondary', rangeText: '2025-11-14', isFromPartitionQueryStringParam: true},
+      ]);
+    });
+
+    it('should decode JSON-formatted partition key from partition param', () => {
+      // JSON partition keys contain special characters (commas, quotes, braces)
+      // that have meaning in our partition selection syntax. The decode function
+      // should preserve the raw key; escaping happens later in the hook.
+      const jsonKey = '{"region": "us-east", "tier": "premium", "version": 1}';
+      const dimensions = [
+        {
+          name: 'default',
+          type: PartitionDefinitionType.STATIC,
+          partitionKeys: [jsonKey, '{"region": "us-west"}'],
+        },
+      ];
+
+      const {decode} = buildSerializer({dimensions});
+      if (!decode) {
+        throw new Error('decode is undefined');
+      }
+
+      expect(decode({partition: jsonKey})).toEqual([
+        {name: 'default', rangeText: jsonKey, isFromPartitionQueryStringParam: true},
       ]);
     });
   });

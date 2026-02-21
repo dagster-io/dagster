@@ -1,3 +1,7 @@
+# 1.4.1 (February 15, 2026)
+
+- Fix CSS modules not being processed in Rollup build, causing class name mappings to be lost
+
 # 1.4.0 (December 23, 2025)
 
 - Upgrade to Eslint 9

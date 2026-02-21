@@ -6,7 +6,7 @@ building up to complex union types and advanced patterns.
 """
 
 import datetime
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 import dagster as dg
 import yaml
@@ -75,7 +75,7 @@ class TestResolvableYamlTemplates:
         class SimpleStringModel(dg.Resolvable, dg.Model):
             name: str
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             SimpleStringModel,
             expected_schema_contains=["name: <string>  # Required:"],
             expected_example_contains=['name: "example_string"'],
@@ -90,7 +90,7 @@ class TestResolvableYamlTemplates:
             price: float
             enabled: bool
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             BasicTypesModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
@@ -111,9 +111,9 @@ class TestResolvableYamlTemplates:
 
         class OptionalFieldsModel(dg.Resolvable, dg.Model):
             name: str  # Required
-            description: Optional[str] = None  # Optional
+            description: str | None = None  # Optional
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             OptionalFieldsModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
@@ -135,7 +135,7 @@ class TestResolvableYamlTemplates:
             numbers: list[int]
             metadata: dict[str, str]
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             SimpleListModel,
             expected_schema_contains=[
                 "names: <one of: array of string, string>  # Required:",
@@ -160,7 +160,7 @@ class TestResolvableYamlTemplates:
             name: str
             config: ConfigModel
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             ParentModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
@@ -182,7 +182,7 @@ class TestResolvableYamlTemplates:
         class ResolverModel(dg.Resolvable, dg.Model):
             name: Annotated[str, dg.Resolver(custom_resolver)]
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             ResolverModel, expected_schema_contains=["name: <string>  # Required:"]
         )
 
@@ -193,7 +193,7 @@ class TestResolvableYamlTemplates:
             name: str
             template_value: dg.Injected[str]  # String that can be templated
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             InjectedModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
@@ -209,7 +209,7 @@ class TestResolvableYamlTemplates:
                 datetime.datetime, dg.Resolver(resolve_timestamp, model_field_type=str)
             ]
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             TypeOverrideModel,
             expected_schema_contains=["timestamp: <string>  # Required:"],
             expected_example_contains=['timestamp: "example_string"'],
@@ -221,9 +221,9 @@ class TestResolvableYamlTemplates:
         """Test basic Union[str, int] patterns."""
 
         class SimpleUnionModel(dg.Resolvable, dg.Model):
-            value: Union[str, int]
+            value: str | int
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             SimpleUnionModel,
             expected_schema_contains=["value: <one of: string, integer>  # Required:"],
             expected_example_contains=["value: 1"],  # Picks integer (non-string takes priority)
@@ -241,9 +241,9 @@ class TestResolvableYamlTemplates:
             field_b: int
 
         class UnionResolvableModel(dg.Resolvable, dg.Model):
-            choice: Union[OptionA, OptionB]
+            choice: OptionA | OptionB
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             UnionResolvableModel,
             expected_schema_contains=[
                 "choice:  # Required:",
@@ -261,15 +261,14 @@ class TestResolvableYamlTemplates:
         """Test real partition definition union type."""
 
         class ComplexUnionModel(dg.Resolvable, dg.Model):
-            partitions_def: Optional[
-                Union[
-                    HourlyPartitionsDefinitionModel,
-                    DailyPartitionsDefinitionModel,
-                    StaticPartitionsDefinitionModel,
-                ]
-            ] = None
+            partitions_def: (
+                HourlyPartitionsDefinitionModel
+                | DailyPartitionsDefinitionModel
+                | StaticPartitionsDefinitionModel
+                | None
+            ) = None
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             ComplexUnionModel,
             expected_schema_contains=[
                 "partitions_def:  # Optional:",
@@ -296,9 +295,9 @@ class TestResolvableYamlTemplates:
             value: int
 
         class ListOfUnionsModel(dg.Resolvable, dg.Model):
-            items: list[Union[OptionA, OptionB]]
+            items: list[OptionA | OptionB]
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             ListOfUnionsModel,
             expected_schema_contains=[
                 "items:  # Required:",
@@ -314,7 +313,7 @@ class TestResolvableYamlTemplates:
                 list[str], dg.Resolver.default(description="List of processed values")
             ]
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             NestedResolverModel,
             expected_schema_contains=[
                 "values: <one of: array of string, string>  # Required: List of processed values"
@@ -326,16 +325,13 @@ class TestResolvableYamlTemplates:
 
         class RealWorldModel(dg.Resolvable, dg.Model):
             name: str
-            deps: Optional[list[str]] = None
-            partitions_def: Optional[
-                Union[
-                    HourlyPartitionsDefinitionModel,
-                    StaticPartitionsDefinitionModel,
-                ]
-            ] = None
+            deps: list[str] | None = None
+            partitions_def: (
+                HourlyPartitionsDefinitionModel | StaticPartitionsDefinitionModel | None
+            ) = None
             metadata: dict[str, Any] = {}
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             RealWorldModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
@@ -355,7 +351,7 @@ class TestResolvableYamlTemplates:
         class EmptyModel(dg.Resolvable, dg.Model):
             pass
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             EmptyModel,
             expected_schema_contains=["attributes:  # Optional: Attributes details"],
             expected_example_contains=["attributes: {}"],
@@ -368,11 +364,11 @@ class TestResolvableYamlTemplates:
             name: str
             count: int = 42
             enabled: bool = True
-            description: Optional[str] = None
+            description: str | None = None
             tags: list[str] = []
             metadata: dict[str, str] = {}
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             DefaultsModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
@@ -406,7 +402,7 @@ class TestResolvableYamlTemplates:
         class DeepModel(dg.Resolvable, dg.Model):
             level1: Level1
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             DeepModel,
             expected_schema_contains=[
                 "level1:  # Required:",
@@ -430,12 +426,12 @@ class TestResolvableYamlTemplates:
         class ConfigB(dg.Resolvable, dg.Model):
             type: Literal["config_b"] = "config_b"
             path: str
-            timeout: Optional[int] = None
+            timeout: int | None = None
 
         class UnionOptionalModel(dg.Resolvable, dg.Model):
-            config: Union[ConfigA, ConfigB]
+            config: ConfigA | ConfigB
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             UnionOptionalModel,
             expected_schema_contains=[
                 "config:  # Required:",
@@ -462,7 +458,7 @@ class TestResolvableYamlTemplates:
             bucket: str
             region: str
             access_keys: list[str]
-            encryption: Optional[dict[str, str]] = None
+            encryption: dict[str, str] | None = None
 
         class FileSystemConfig(dg.Resolvable, dg.Model):
             base_path: str
@@ -471,9 +467,9 @@ class TestResolvableYamlTemplates:
 
         class StorageBackend(dg.Resolvable, dg.Model):
             type: Literal["storage"] = "storage"
-            config: Union[DatabaseConfig, S3Config, FileSystemConfig]
+            config: DatabaseConfig | S3Config | FileSystemConfig
             retry_policy: dict[str, Any] = {"max_retries": 3}
-            monitoring: Optional[list[str]] = None
+            monitoring: list[str] | None = None
 
         class CacheBackend(dg.Resolvable, dg.Model):
             type: Literal["cache"] = "cache"
@@ -483,11 +479,11 @@ class TestResolvableYamlTemplates:
 
         class ComplexNestedUnionModel(dg.Resolvable, dg.Model):
             name: str
-            primary_backend: Union[StorageBackend, CacheBackend]
-            fallback_backends: Optional[list[Union[StorageBackend, CacheBackend]]] = None
+            primary_backend: StorageBackend | CacheBackend
+            fallback_backends: list[StorageBackend | CacheBackend] | None = None
             global_config: dict[str, Any] = {}
 
-        schema_result, example_result = self._test_schema_and_examples_for_model(
+        _schema_result, _example_result = self._test_schema_and_examples_for_model(
             ComplexNestedUnionModel,
             expected_schema_contains=[
                 # Test top-level union type

@@ -48,10 +48,11 @@ function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolve
 
 describe('SensorDryRunTest', () => {
   it('submits sensorDryRun mutation with cursor variable and renders successful result and persists cursor', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[Mocks.SensorDryRunMutationRunRequests, Mocks.PersistCursorValueMock]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
-    await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/3\srun requests/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -60,10 +61,11 @@ describe('SensorDryRunTest', () => {
   });
 
   it('renders errors', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
-    await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -71,31 +73,34 @@ describe('SensorDryRunTest', () => {
   });
 
   it('renders skip reason', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[Mocks.SensorDryRunMutationSkipped]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
-    await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
     });
   });
 
   it('allows you to test again', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
-    await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
     });
-    await userEvent.click(screen.getByTestId('try-again'));
+    await user.click(screen.getByTestId('try-again'));
     expect(screen.queryByText('Failed')).toBe(null);
     expect(screen.queryByText('Skipped')).toBe(null);
     expect(screen.getByTestId('cursor-input')).toBeVisible();
   });
 
   it('launches all runs with well defined job names', async () => {
+    const user = userEvent.setup();
     const pushSpy = jest.fn();
     const createHrefSpy = jest.fn();
 
@@ -118,8 +123,8 @@ describe('SensorDryRunTest', () => {
       </MemoryRouter>,
     );
     const cursorInput = await screen.findByTestId('cursor-input');
-    await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/3\srun requests/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -130,7 +135,7 @@ describe('SensorDryRunTest', () => {
       expect(screen.getByTestId('launch-all')).not.toBeDisabled();
     });
 
-    userEvent.click(screen.getByTestId('launch-all'));
+    user.click(screen.getByTestId('launch-all'));
 
     await waitFor(() => {
       expect(screen.getByText(/Launching runs/i)).toBeVisible();
@@ -142,6 +147,7 @@ describe('SensorDryRunTest', () => {
   });
 
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
+    const user = userEvent.setup();
     const pushSpy = jest.fn();
     const createHrefSpy = jest.fn();
 
@@ -164,8 +170,8 @@ describe('SensorDryRunTest', () => {
       </MemoryRouter>,
     );
     const cursorInput = await screen.findByTestId('cursor-input');
-    await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/1\srun requests/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -176,7 +182,7 @@ describe('SensorDryRunTest', () => {
       expect(screen.getByTestId('launch-all')).not.toBeDisabled();
     });
 
-    userEvent.click(screen.getByTestId('launch-all'));
+    user.click(screen.getByTestId('launch-all'));
 
     await waitFor(() => {
       expect(screen.getByText(/Launching runs/i)).toBeVisible();

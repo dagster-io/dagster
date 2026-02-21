@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -75,8 +75,8 @@ async def launch_reexecution_from_parent_run(
     graphene_info: "ResolveInfo",
     parent_run_id: str,
     strategy: str,
-    extra_tags: Optional[Mapping[str, Any]] = None,
-    use_parent_run_tags: Optional[bool] = None,
+    extra_tags: Mapping[str, Any] | None = None,
+    use_parent_run_tags: bool | None = None,
 ) -> "GrapheneLaunchRunSuccess":
     """Launch a re-execution by referencing the parent run id."""
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun

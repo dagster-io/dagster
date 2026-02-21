@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any
 
 from dagster import (
     ConfigurableIOManager,
@@ -59,7 +59,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def _config(self):
         return self.dict()
 
-    def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
+    def handle_output(self, context: OutputContext, obj: PandasDataFrame | SparkDataFrame):
         schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
@@ -153,7 +153,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
         }
 
     def _get_cleanup_statement(
-        self, table: str, schema: str, time_window: Optional[tuple[datetime, datetime]]
+        self, table: str, schema: str, time_window: tuple[datetime, datetime] | None
     ) -> str:
         """Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
@@ -183,8 +183,8 @@ class SnowflakeIOManager(ConfigurableIOManager):
         self,
         table: str,
         schema: str,
-        columns: Optional[Sequence[str]],
-        time_window: Optional[tuple[datetime, datetime]],
+        columns: Sequence[str] | None,
+        time_window: tuple[datetime, datetime] | None,
     ):
         col_str = ", ".join(columns) if columns else "*"
         if time_window:

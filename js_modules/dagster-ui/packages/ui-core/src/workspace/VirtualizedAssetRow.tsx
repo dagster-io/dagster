@@ -1,7 +1,7 @@
 import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
+import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';

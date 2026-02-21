@@ -86,7 +86,7 @@ import compute_kind from '../icon-svgs/compute_kind.svg';
 import concept_book from '../icon-svgs/concept_book.svg';
 import concurrency from '../icon-svgs/concurrency.svg';
 import config from '../icon-svgs/config.svg';
-import console from '../icon-svgs/console.svg';
+import consoleIcon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import control_flow from '../icon-svgs/control_flow.svg';
 import controller from '../icon-svgs/controller.svg';
@@ -515,7 +515,7 @@ export const Icons = {
   concept_book,
   concurrency,
   config,
-  console,
+  console: consoleIcon,
   content_copy,
   control_flow,
   controller,

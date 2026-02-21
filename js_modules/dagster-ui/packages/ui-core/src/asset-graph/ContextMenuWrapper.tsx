@@ -96,6 +96,18 @@ export const ContextMenuWrapper = ({
                 zIndex: 10,
                 borderRadius: '4px',
               }}
+              onKeyDown={(e) => {
+                /**
+                 * React's synthetic event system is designed to treat events from portals as
+                 * if they originated from their logical location within the React component tree,
+                 * not their physical location in the DOM. This means that onKeyDown handlers in the
+                 * parent code could receive key events that happened within the menu.
+                 */
+                e.stopPropagation();
+              }}
+              onKeyUp={(e) => {
+                e.stopPropagation();
+              }}
               onClick={(e) => {
                 e.stopPropagation();
               }}

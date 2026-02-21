@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, TypeAlias, Union
 
 import graphene
 from dagster._config.snap import ConfigTypeSnap
@@ -29,8 +29,8 @@ GrapheneDagsterTypeUnion: TypeAlias = Union[
 
 def config_type_for_schema(
     get_config_type: Callable[[str], ConfigTypeSnap],
-    schema_key: Optional[str],
-) -> Optional[GrapheneConfigTypeUnion]:
+    schema_key: str | None,
+) -> GrapheneConfigTypeUnion | None:
     return to_config_type(get_config_type, schema_key) if schema_key else None
 
 

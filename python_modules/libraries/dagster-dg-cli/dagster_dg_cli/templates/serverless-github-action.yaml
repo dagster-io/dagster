@@ -14,6 +14,8 @@ concurrency:
 env:
   # The organization name in Dagster Cloud
   DAGSTER_CLOUD_ORGANIZATION: "TEMPLATE_ORGANIZATION_NAME"
+  # The Dagster Cloud URL
+  DAGSTER_CLOUD_URL: "TEMPLATE_DAGSTER_CLOUD_URL"
   # The API token from https://dagster.cloud/ should be stored in Secrets
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
   # Path to the root folder containing the dagster project
@@ -78,7 +80,7 @@ jobs:
         if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus deploy refresh-defs-state"
+          command: "plus deploy refresh-defs-state --target-path=${{ env.DAGSTER_PROJECT_DIR }}"
 
       # If using fast build, install setuptools for PEX builds
       - name: Install setuptools
@@ -89,7 +91,7 @@ jobs:
       # Otherwise, enable buildx for caching Docker builds
       - name: Set up Docker Buildx
         if: steps.prerun.outputs.result == 'docker-deploy'
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       # Build and push (PEX or Docker based on project configuration)
       - name: Build and push

@@ -13,7 +13,7 @@ import {
   BackfillPartitionsDialogContentQuery,
   BackfillPartitionsDialogContentQueryVariables,
 } from './types/BackfillPartitionsRequestedDialog.types';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {TruncatedTextWithFullTextOnHover} from '../../ui/TruncatedTextWithFullTextOnHover';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});

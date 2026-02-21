@@ -1,8 +1,8 @@
 import {Box} from '@dagster-io/ui-components';
+import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
+import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useContext} from 'react';
 import {Redirect} from 'react-router-dom';
-import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
-import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 
 import {CodeLocationDefinitionsMain} from './CodeLocationDefinitionsMain';
 import {CodeLocationDefinitionsNav} from './CodeLocationDefinitionsNav';

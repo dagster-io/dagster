@@ -118,9 +118,9 @@ describe('launchAssetChoosePartitionsDialog', () => {
       expect(assetBQueryMockResult).toHaveBeenCalled();
     });
 
-    const link = await waitFor(() => screen.getByTestId('add-partition-link'));
+    const link = await screen.findByTestId('add-partition-link');
     userEvent.click(link);
-    const partitionInput = await waitFor(() => screen.getByTestId('partition-input'));
+    const partitionInput = await screen.findByTestId('partition-input');
     await userEvent.type(partitionInput, 'test2');
     expect(assetASecondQueryMockResult).not.toHaveBeenCalled();
     expect(assetBSecondQueryMockResult).not.toHaveBeenCalled();

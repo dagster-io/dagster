@@ -7,7 +7,6 @@ import {
   Colors,
   Dialog,
   DialogFooter,
-  Group,
   Icon,
   SplitPanelContainer,
   SplitPanelContainerHandle,
@@ -20,9 +19,9 @@ import {
   NewConfigEditor,
   isHelpContextEqual,
 } from '@dagster-io/ui-components/editor';
+import {LaunchRootExecutionButton} from '@shared/launchpad/LaunchRootExecutionButton';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
-import {LaunchRootExecutionButton} from 'shared/launchpad/LaunchRootExecutionButton.oss';
 import styled from 'styled-components';
 import * as yaml from 'yaml';
 
@@ -776,7 +775,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           <Button onClick={() => setShowChecks(null)}>Close</Button>
         </DialogFooter>
       </Dialog>
-
       <SplitPanelContainer
         axis="vertical"
         identifier="execution"
@@ -814,7 +812,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 padding={{vertical: 8, horizontal: 12}}
                 border={{side: 'bottom', color: Colors.borderDefault()}}
               >
-                <Group direction="row" spacing={8} alignItems="center">
+                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <Icon name="warning" color={Colors.accentYellow()} />
                   <div>
                     {repoAddressAsHumanString(repoAddress)} has been manually refreshed, and this
@@ -828,7 +826,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                     Refresh config
                   </Button>
                   <Button onClick={onDismissRefreshWarning}>Dismiss</Button>
-                </Group>
+                </Box>
               </Box>
             ) : null}
             <SplitPanelContainer
@@ -882,7 +880,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           </>
         }
       />
-
       <LaunchButtonContainer launchpadType={launchpadType}>
         {submitActionButton()}
       </LaunchButtonContainer>

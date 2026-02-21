@@ -1,13 +1,9 @@
-from typing import Union
-
 import dagster as dg
 import pytest
 from dagster import IOManagerDefinition
 
 
-def make_io_manager(
-    asset: Union[dg.SourceAsset, dg.AssetSpec], input_value=5, expected_metadata={}
-):
+def make_io_manager(asset: dg.SourceAsset | dg.AssetSpec, input_value=5, expected_metadata={}):
     class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj): ...
 

@@ -296,12 +296,12 @@ const NewPolicyEvaluationTable = ({
                         userLabel ||
                         (numTrue === 1
                           ? '1 partition'
-                          : `${numberFormatter.format(numTrue)} partitions`)
+                          : `${numberFormatter.format(numTrue ?? 0)} partitions`)
                       }
                       assetKeyPath={rootAssetKeyPath}
                       evaluationId={evaluationId}
                       nodeUniqueId={evaluation.uniqueId}
-                      numTrue={numTrue}
+                      numTrue={numTrue ?? 0}
                     />
                   </Box>
                 </td>
@@ -550,7 +550,7 @@ export const PartitionedPolicyEvaluationTable = ({
                     <PartitionSegmentWithPopover
                       description={description}
                       assetKeyPath={assetKeyPath}
-                      numTrue={numTrue}
+                      numTrue={numTrue ?? 0}
                       evaluationId={evaluationId}
                       nodeUniqueId={rootUniqueId}
                       selectPartition={selectPartition}

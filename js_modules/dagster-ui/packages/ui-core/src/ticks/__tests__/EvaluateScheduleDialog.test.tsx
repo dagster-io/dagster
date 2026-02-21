@@ -55,32 +55,34 @@ function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolve
 
 describe('EvaluateScheduleTest', () => {
   it('submits evaluateSchedule mutation with cursor variable and renders successful result and persists cursor', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationRunRequests]} />);
     const selectButton = await screen.findByTestId('tick-selection');
-    await userEvent.click(selectButton);
+    await user.click(selectButton);
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.click(screen.getByTestId('tick-5'));
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/1\s+run request/i)).toBeVisible();
     });
   });
 
   it('renders errors', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationError]} />);
     const tickSelection = await screen.findByTestId('tick-selection');
     expect(tickSelection).toBeVisible();
-    await userEvent.click(tickSelection);
+    await user.click(tickSelection);
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('tick-5'));
+    await user.click(screen.getByTestId('tick-5'));
     await waitFor(() => {
       expect(screen.getByTestId('continue')).not.toBeDisabled();
     });
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -88,37 +90,40 @@ describe('EvaluateScheduleTest', () => {
   });
 
   it('renders skip reason', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationSkipped]} />);
     const selectButton = await screen.findByTestId('tick-selection');
-    await userEvent.click(selectButton);
+    await user.click(selectButton);
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.click(screen.getByTestId('tick-5'));
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
     });
   });
 
   it('allows you to test again', async () => {
+    const user = userEvent.setup();
     render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationSkipped]} />);
     const selectButton = await screen.findByTestId('tick-selection');
-    await userEvent.click(selectButton);
+    await user.click(selectButton);
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.click(screen.getByTestId('tick-5'));
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('try-again'));
+    await user.click(screen.getByTestId('try-again'));
     expect(screen.queryByText('Failed')).toBe(null);
     expect(screen.queryByText('Skipped')).toBe(null);
   });
 
   it('launches all runs', async () => {
+    const user = userEvent.setup();
     const pushSpy = jest.fn();
     const createHrefSpy = jest.fn();
 
@@ -141,18 +146,18 @@ describe('EvaluateScheduleTest', () => {
       </MemoryRouter>,
     );
     const selectButton = await screen.findByTestId('tick-selection');
-    await userEvent.click(selectButton);
+    await user.click(selectButton);
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.click(screen.getByTestId('tick-5'));
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/1\s+run request/i)).toBeVisible();
       expect(screen.getByTestId('launch-all')).not.toBeDisabled();
     });
 
-    userEvent.click(screen.getByTestId('launch-all'));
+    user.click(screen.getByTestId('launch-all'));
 
     await waitFor(() => {
       expect(screen.getByText(/Launching runs/i)).toBeVisible();
@@ -164,6 +169,7 @@ describe('EvaluateScheduleTest', () => {
   });
 
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
+    const user = userEvent.setup();
     const pushSpy = jest.fn();
     const createHrefSpy = jest.fn();
 
@@ -186,18 +192,18 @@ describe('EvaluateScheduleTest', () => {
       </MemoryRouter>,
     );
     const selectButton = await screen.findByTestId('tick-selection');
-    await userEvent.click(selectButton);
+    await user.click(selectButton);
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('continue'));
+    await user.click(screen.getByTestId('tick-5'));
+    await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/1\s+run request/i)).toBeVisible();
       expect(screen.getByTestId('launch-all')).not.toBeDisabled();
     });
 
-    userEvent.click(screen.getByTestId('launch-all'));
+    user.click(screen.getByTestId('launch-all'));
 
     await waitFor(() => {
       expect(screen.getByText(/Launching runs/i)).toBeVisible();

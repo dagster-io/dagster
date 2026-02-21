@@ -1,12 +1,12 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
+import {observeEnabled} from '@shared/app/observeEnabled';
+import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
+import {AssetPageHeader} from '@shared/assets/AssetPageHeader';
 import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
-import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';

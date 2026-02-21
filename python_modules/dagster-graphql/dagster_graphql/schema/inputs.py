@@ -6,6 +6,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp
 from dagster._utils import check
 
+from dagster_graphql.schema.asset_checks import GrapheneAssetCheckSeverity
 from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 from dagster_graphql.schema.runs import GrapheneRunConfigData
 from dagster_graphql.schema.util import non_null_list
@@ -239,6 +240,18 @@ class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
 
     class Meta:
         name = "ReportRunlessAssetEventsParams"
+
+
+class GrapheneReportAssetCheckEvaluationParams(graphene.InputObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    checkName = graphene.NonNull(graphene.String)
+    passed = graphene.NonNull(graphene.Boolean)
+    severity = graphene.InputField(GrapheneAssetCheckSeverity)
+    serializedMetadata = graphene.InputField(graphene.String)
+    partition = graphene.InputField(graphene.String)
+
+    class Meta:
+        name = "ReportAssetCheckEvaluationParams"
 
 
 class GrapheneSensorSelector(graphene.InputObjectType):

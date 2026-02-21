@@ -1,4 +1,4 @@
-import {createWorkerThread} from 'shared/workers/WorkerThread.oss';
+import {createWorkerThread} from '@shared/workers/WorkerThread';
 
 import {layoutAssetGraph} from '../asset-graph/layout';
 import {layoutOpGraph} from '../graph/layout';

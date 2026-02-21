@@ -1,5 +1,5 @@
 import {IconName} from '@dagster-io/ui-components';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/types';

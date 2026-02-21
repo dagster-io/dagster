@@ -7,9 +7,9 @@ import {
   Subtitle2,
   Tag,
 } from '@dagster-io/ui-components';
+import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 
 import {FreshnessPolicySection} from './FreshnessPolicySection';
 import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
@@ -100,9 +100,21 @@ export const AssetNodeOverview = ({
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
 
-  const rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find(
-    (entry) => isCanonicalRowCountMetadataEntry(entry),
+  let rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find((entry) =>
+    isCanonicalRowCountMetadataEntry(entry),
   ) as IntMetadataEntry | undefined;
+
+  if (!rowCountMeta && observation) {
+    rowCountMeta = observation.metadataEntries.find((entry) =>
+      isCanonicalRowCountMetadataEntry(entry),
+    ) as IntMetadataEntry | undefined;
+  }
+
+  if (!rowCountMeta) {
+    rowCountMeta = assetNode?.metadataEntries.find((entry) =>
+      isCanonicalRowCountMetadataEntry(entry),
+    ) as IntMetadataEntry | undefined;
+  }
 
   // The live data does not include a partition, but the timestamp on the live data triggers
   // an update of `observation` and `materialization`, so they should be in sync. To make sure
@@ -118,7 +130,7 @@ export const AssetNodeOverview = ({
     1,
     liveData?.assetChecks.length,
     internalFreshnessPolicy,
-    rowCountMeta?.intValue,
+    rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null,
   ].filter(Boolean).length;
 
   const renderStatusSection = () => (
@@ -146,7 +158,7 @@ export const AssetNodeOverview = ({
         </Box>
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Check results</Subtitle2>
+            <Subtitle2>Latest check results</Subtitle2>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
@@ -160,11 +172,11 @@ export const AssetNodeOverview = ({
             freshnessPolicy={internalFreshnessPolicy}
           />
         ) : undefined}
-        {rowCountMeta?.intValue ? (
+        {rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null ? (
           <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
             <Box>
-              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
+              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue ?? 0)}</Tag>
             </Box>
           </Box>
         ) : undefined}

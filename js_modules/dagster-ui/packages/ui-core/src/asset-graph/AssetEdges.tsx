@@ -164,12 +164,13 @@ export const AssetEdges = ({
         isRunning.current = true;
         while (needsUpdate.current) {
           needsUpdate.current = false;
-          const edgesToShow = await new Promise<EdgeState>((res) => {
-            getEdgesToShowWorker(currentStateRef.current).then((edgesToShow) => {
-              res(edgesToShow);
-            });
-          });
-          setEdges(edgesToShow);
+          try {
+            const edgesToShow = await getEdgesToShowWorker(currentStateRef.current);
+            setEdges(edgesToShow);
+          } catch {
+            // Worker was aborted (component unmounted or deps changed) — expected, stop the loop
+            break;
+          }
         }
         isRunning.current = false;
       })();

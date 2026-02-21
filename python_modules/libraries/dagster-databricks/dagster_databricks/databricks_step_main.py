@@ -22,7 +22,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from queue import Empty, Queue
 from threading import Thread
-from typing import Any, Optional
+from typing import Any
 
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -82,7 +82,7 @@ def main(
         step_run_dir = os.path.dirname(step_run_ref_filepath)
         stdout_filepath = os.path.join(step_run_dir, "stdout")
         stderr_filepath = os.path.join(step_run_dir, "stderr")
-        event_writing_thread: Optional[Thread] = None
+        event_writing_thread: Thread | None = None
         try:
             # Extract any zip files to a temporary directory and add that temporary directory
             # to the site path so the contained files can be imported.

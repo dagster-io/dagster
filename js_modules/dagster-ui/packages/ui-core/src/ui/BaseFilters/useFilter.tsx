@@ -3,8 +3,8 @@ import * as React from 'react';
 import {useMemo} from 'react';
 import styled from 'styled-components';
 
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {testId} from '../../testing/testId';
+import {TruncatedTextWithFullTextOnHover} from '../TruncatedTextWithFullTextOnHover';
 
 export type FilterObject<T = any> = {
   isActive: boolean;

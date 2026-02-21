@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "buildkite-shared"
+version = "0.0.1"
+description = "Shared tools for buildkite automation"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "packaging",
+    "typing_extensions>=4.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/.buildkite/buildkite-shared"
+
+[tool.setuptools.packages.find]
+exclude = [
+    "test",
+]

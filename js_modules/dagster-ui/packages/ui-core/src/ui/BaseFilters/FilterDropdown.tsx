@@ -413,7 +413,7 @@ type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
   index: number;
 };
 const FilterDropdownMenuItem = React.memo(
-  ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
+  ({menuKey, index, ref: _ref, ...rest}: FilterDropdownMenuItemProps) => {
     const divRef = React.useRef<HTMLDivElement | null>(null);
     React.useLayoutEffect(() => {
       if (rest.active) {

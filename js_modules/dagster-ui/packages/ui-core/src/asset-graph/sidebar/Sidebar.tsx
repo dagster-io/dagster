@@ -1,6 +1,5 @@
 import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import invariant from 'invariant';
 import * as React from 'react';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
@@ -11,6 +10,7 @@ import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
+import {invariant} from '../../util/invariant';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
@@ -39,8 +39,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
-    expandedGroups: string[];
-    setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
     viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;

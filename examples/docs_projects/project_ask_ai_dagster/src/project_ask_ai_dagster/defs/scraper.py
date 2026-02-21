@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 import requests
 from bs4 import BeautifulSoup
@@ -24,7 +22,7 @@ class SitemapScraper(dg.ConfigurableResource):
     # end_sitemap
 
     # start_scrape
-    def scrape_page(self, url: str) -> Optional[Document]:
+    def scrape_page(self, url: str) -> Document | None:
         log = dg.get_dagster_logger()
         try:
             response = requests.get(url, headers=self.headers)

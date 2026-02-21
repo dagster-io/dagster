@@ -15,7 +15,7 @@ def test_execute_fn_with_ok() -> None:
 def test_execute_fn_no_annotations() -> None:
     def execute_fn(context, no_annotation): ...
 
-    with pytest.raises(CheckError, match="Found extra arguments in execute_fn: {'no_annotation'}"):
+    with pytest.raises(CheckError, match=r"Found extra arguments in execute_fn: {'no_annotation'}"):
         ExecuteFnMetadata(execute_fn)
 
 

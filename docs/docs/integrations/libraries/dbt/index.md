@@ -48,6 +48,9 @@ Then, add the `dagster-dbt` library to the project, along with a duckdb adapter:
 
 ## 2. Set up a dbt project
 
+<Tabs groupId="dbt-project-location">
+<TabItem value="colocate" label="Colocate with Dagster">
+
 For this tutorial, we'll use the jaffle shop dbt project as an example. Clone it into your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/3-jaffle-clone.txt" />
@@ -60,7 +63,23 @@ We will create a `profiles.yml` file in the `dbt` directory to configure the pro
   language="yaml"
 />
 
+</TabItem>
+<TabItem value="external" label="External Git repository">
+
+If your dbt project lives in a separate Git repository, you don't need to clone it locally. For this tutorial, we'll use the [Jaffle Platform](https://github.com/dagster-io/jaffle-platform) example repository, which already has a `profiles.yml` configured.
+
+:::info
+
+When using an external Git repository, Dagster manages the project as part of [component state](/guides/build/components/state-backed-components). For details on how state is managed, see [Configuring state-backed components](/guides/build/components/state-backed-components/configuring-state-backed-components).
+:::
+
+</TabItem>
+</Tabs>
+
 ## 3. Scaffold a dbt component definition
+
+<Tabs groupId="dbt-project-location">
+<TabItem value="colocate" label="Colocate with Dagster">
 
 Now that you have a Dagster project with a dbt project, you can scaffold a dbt component definition. You'll need to provide the path to your dbt project:
 
@@ -77,6 +96,46 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
+
+</TabItem>
+<TabItem value="external" label="External Git Repository">
+
+Now that you have a Dagster project, you can scaffold a dbt component definition that points to an external Git repository. You'll need to provide the Git URL and the path to the dbt project within the repository:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-1-scaffold-dbt-component.txt" />
+
+The `dg scaffold defs` call will generate a `defs.yaml` file in your project structure:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-2-tree.txt" />
+
+In its scaffolded form, the `defs.yaml` file contains the configuration for your remote dbt project:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-3-component.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+:::tip Private repositories
+
+In some cases, you may need to provide an authentication token for private Git repositories. You can do this by adding the `token` field to your `defs.yaml` file:
+
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    repo_url: https://some-host.com/your-org/your-dbt-project.git
+    repo_relative_path: path/to/dbt
+    token: '{{ env.GIT_TOKEN }}'
+```
+
+For Github-based repositories, this is typically unnecessary, as your credentials will be available locally as well as in the Github Actions that require access to the repository.
+
+:::
+
+</TabItem>
+</Tabs>
 
 This is sufficient to load your dbt models as assets. You can use `dg list defs` to see the asset representation:
 
@@ -116,6 +175,8 @@ You can control which dbt models are included in your component using the `selec
 
 ## 6. Customize dbt assets
 
+### Customize dbt asset metadata
+
 You can customize the properties of the assets emitted by each dbt model using the `translation` key in your `defs.yaml` file. This allows you to modify asset metadata such as group names, descriptions, and other properties:
 
 <CodeExample
@@ -128,7 +189,71 @@ You can customize the properties of the assets emitted by each dbt model using t
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/13-list-defs.txt" />
 </WideContent>
 
-## 7. Depending on dbt assets in other components
+### Assign asset groups based on dbt model directory
+
+A common pattern is to assign different asset group names based on the dbt model's directory structure (e.g., `staging`, `intermediate`, `marts`). You can achieve this using a [template variable](/guides/build/components/building-pipelines-with-components/using-template-variables) that inspects the model's `fqn` (fully qualified name).
+
+The `node` object available in the `translation` key includes properties from the dbt manifest, including:
+
+- `node.name` - the model name
+- `node.fqn` - the fully qualified name as a list (for example, `["jaffle_shop", "staging", "stg_customers"]`)
+- `node.original_file_path` - the path to the model file
+- `node.tags` - tags defined in dbt
+- `node.config` - model configuration
+
+#### 1. Create a template variable
+
+First, create a template variable that extracts the group name from the `fqn`:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/group-template-vars.py"
+  title="my_project/defs/dbt_ingest/template_vars.py"
+  language="python"
+/>
+
+#### 2. Reference the template variable in defs.yaml
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/group-defs.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+With this configuration, models in `models/staging/` will be assigned to the `staging` group, models in `models/marts/` to the `marts` group, and so on.
+
+## 7. Connect upstream assets to dbt sources
+
+If your dbt models depend on data produced by other Dagster assets (e.g., data ingested by Sling, Fivetran, or custom Python assets), you can connect them using dbt sources with Dagster metadata.
+
+### 7.1 Define dbt sources with Dagster asset keys
+
+In your dbt project, create a `sources.yml` file that maps dbt sources to Dagster asset keys using the `meta.dagster.asset_key` configuration:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/upstream-source.yml"
+  title="dbt/models/sources.yml"
+  language="yaml"
+/>
+
+### 7.2 Create upstream assets
+
+Next, create Dagster assets that produce the source data. The asset key must match the `asset_key` defined in your dbt sources (see step 7.1):
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/upstream-asset.py"
+  title="my_project/defs/ingest/assets.py"
+  language="python"
+/>
+
+Dagster creates these connections by reading your dbt models. Whenever a dbt model references a source via `source()`, Dagster links the corresponding upstream asset to that model. In the asset graph UI, you'll see each upstream asset connected to the dbt models that reference it.
+
+:::tip
+
+This pattern works with any ingestion tool. For example, if you're using [Sling](/integrations/libraries/sling) or [Fivetran](/integrations/libraries/fivetran), configure the `asset_key` in your dbt sources to match the keys produced by those components.
+
+:::
+
+## 8. Add dbt asset dependencies in other components
 
 If you want to refer to assets built by the dbt component elsewhere in your Dagster project, you can use the `asset_key_for_model` method on the dbt component.
 This lets you refer to an asset by the model name without having to know how that model is translated to an asset key.
@@ -151,7 +276,7 @@ You can refer to the `customers` asset in this component by using the `asset_key
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/17-list-defs.txt" />
 </WideContent>
 
-## 8. Handling incremental models
+## 9. Handle incremental models
 
 If you have incremental models in your dbt project, you can model these as partitioned assets, and update the command that is used to run the dbt models to pass in `--vars` based on the range of partitions that are being processed.
 
@@ -191,7 +316,7 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
 
 If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
 
-## 9. Advanced configuration (subclassing)
+## 10. Advanced configuration (subclassing)
 
 For more complex use cases that cannot easily be handled with templated yaml, you can create a custom subclass of `DbtProjectComponent` to add custom behavior. This allows you to:
 

@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 import threading
-from typing import Optional
 
 import click
 import dagster_shared.seven as seven
@@ -190,24 +189,24 @@ def code_server_cli():
 )
 @python_pointer_options
 def start_command(
-    port: Optional[int],
-    socket: Optional[str],
+    port: int | None,
+    socket: str | None,
     host: str,
-    max_workers: Optional[int],
+    max_workers: int | None,
     use_python_environment_entry_point: bool,
-    fixed_server_id: Optional[str],
+    fixed_server_id: str | None,
     log_level: str,
     log_format: str,
-    container_image: Optional[str],
-    container_context: Optional[str],
+    container_image: str | None,
+    container_context: str | None,
     inject_env_vars_from_instance: bool,
-    location_name: Optional[str],
+    location_name: str | None,
     startup_timeout: int,
     heartbeat: bool,
     heartbeat_timeout: int,
     heartbeat_ttl: int,
-    instance_ref: Optional[str],
-    defs_state_info: Optional[str],
+    instance_ref: str | None,
+    defs_state_info: str | None,
     **other_opts,
 ):
     # deferring for import perf

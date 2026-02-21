@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import pytest
 from dagster import (
@@ -483,7 +483,7 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
 def test_column_lineage_real_warehouse(
     request: pytest.FixtureRequest,
     target: str,
-    excluded_models: Optional[list[str]],
+    excluded_models: list[str] | None,
     fetch_row_counts: bool,
     manifest_fixture_name: str,
     monkeypatch: pytest.MonkeyPatch,
@@ -591,7 +591,7 @@ def test_column_lineage_real_warehouse(
 def test_column_lineage(
     sql_dialect: str,
     test_metadata_manifest: dict[str, Any],
-    asset_key_selection: Optional[AssetKey],
+    asset_key_selection: AssetKey | None,
     use_async_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockFixture,

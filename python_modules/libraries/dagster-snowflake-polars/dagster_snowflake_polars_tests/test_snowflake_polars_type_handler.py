@@ -53,6 +53,10 @@ resource_config = {
 }
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+HAS_BUILDKITE_SNOWFLAKE_CREDS = bool(os.getenv("SNOWFLAKE_ACCOUNT")) and bool(
+    os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD")
+)
+RUN_BUILDKITE_SNOWFLAKE_TESTS = IS_BUILDKITE and HAS_BUILDKITE_SNOWFLAKE_CREDS
 
 
 SHARED_BUILDKITE_SNOWFLAKE_CONF: Mapping[str, Any] = {
@@ -163,7 +167,10 @@ def test_build_snowflake_polars_io_manager():
     assert isinstance(snowflake_polars_io_manager, IOManagerDefinition)
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )
@@ -195,7 +202,10 @@ def test_io_manager_with_snowflake_polars(io_manager):
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.integration
 def test_io_manager_asset_metadata() -> None:
     with temporary_snowflake_table(
@@ -223,7 +233,10 @@ def test_io_manager_asset_metadata() -> None:
         )
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(snowflake_polars_io_manager), (SnowflakePolarsIOManager.configure_at_launch())]
 )
@@ -272,7 +285,10 @@ def test_io_manager_with_snowflake_polars_timestamp_data(io_manager):
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )
@@ -368,7 +384,10 @@ def test_time_window_partitioned_asset(io_manager):
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )
@@ -454,7 +473,10 @@ def test_static_partitioned_asset(io_manager):
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )
@@ -559,7 +581,10 @@ def test_multi_partitioned_asset(io_manager):
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )
@@ -665,7 +690,10 @@ def test_dynamic_partitions(io_manager):
                 assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )
@@ -755,7 +783,10 @@ def test_self_dependent_asset(io_manager):
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(
+    not RUN_BUILDKITE_SNOWFLAKE_TESTS,
+    reason="Requires Buildkite Snowflake credentials",
+)
 @pytest.mark.parametrize(
     "io_manager", [(pythonic_snowflake_io_manager), (old_snowflake_io_manager)]
 )

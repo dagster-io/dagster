@@ -137,7 +137,7 @@ name = "invalid-toml"
     pyproject_path = Path(temp_dir) / "pyproject.toml"
     pyproject_path.write_text(invalid_toml)
 
-    with pytest.raises(ValueError, match="Error parsing pyproject.toml"):
+    with pytest.raises(ValueError, match=r"Error parsing pyproject.toml"):
         deps.get_pyproject_toml_deps(temp_dir)
 
 
@@ -180,7 +180,7 @@ version = "0.1.0"
     source._build_local_package(temp_dir, str(build_dir), "python")  # noqa: SLF001
 
     mock_run.assert_called_once()
-    args, kwargs = mock_run.call_args
+    args, _kwargs = mock_run.call_args
     command = args[0]
 
     expected_command = [
@@ -514,12 +514,12 @@ setup(
     )
 
     # Get deps for first location
-    local_packages1, deps_requirements1 = deps.get_deps_requirements(
+    _local_packages1, deps_requirements1 = deps.get_deps_requirements(
         str(location1_dir), python_version
     )
 
     # Get deps for second location - this should NOT fail with empty dependencies
-    local_packages2, deps_requirements2 = deps.get_deps_requirements(
+    _local_packages2, deps_requirements2 = deps.get_deps_requirements(
         str(location2_dir), python_version
     )
 
@@ -745,7 +745,7 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             )
 
             # Get deps for first location
-            local_packages1, deps_requirements1 = deps.get_deps_requirements(
+            _local_packages1, deps_requirements1 = deps.get_deps_requirements(
                 str(location1_dir), python_version
             )
 
@@ -757,7 +757,7 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             )
 
             # Get deps for second location - this should NOT fail with empty dependencies
-            local_packages2, deps_requirements2 = deps.get_deps_requirements(
+            _local_packages2, deps_requirements2 = deps.get_deps_requirements(
                 str(location2_dir), python_version
             )
 

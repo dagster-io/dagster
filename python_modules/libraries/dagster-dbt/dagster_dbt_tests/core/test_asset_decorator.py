@@ -3,7 +3,7 @@ import os
 from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dagster import (
@@ -53,6 +53,7 @@ from packaging import version
 
 from dagster_dbt_tests.dbt_projects import (
     test_dbt_alias_path,
+    test_dbt_functions_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
@@ -216,8 +217,8 @@ def test_manifest_argument(
 )
 def test_selections(
     test_jaffle_shop_manifest: dict[str, Any],
-    select: Optional[str],
-    exclude: Optional[str],
+    select: str | None,
+    exclude: str | None,
     expected_dbt_resource_names: set[str],
 ) -> None:
     select = select or DBT_DEFAULT_SELECT
@@ -270,7 +271,7 @@ def test_snapshot_id(
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
-def test_with_custom_name(test_jaffle_shop_manifest: dict[str, Any], name: Optional[str]) -> None:
+def test_with_custom_name(test_jaffle_shop_manifest: dict[str, Any], name: str | None) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, name=name)
     def my_dbt_assets(): ...
 
@@ -283,7 +284,7 @@ def test_with_custom_name(test_jaffle_shop_manifest: dict[str, Any], name: Optio
     "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
 )
 def test_partitions_def(
-    test_jaffle_shop_manifest: dict[str, Any], partitions_def: Optional[PartitionsDefinition]
+    test_jaffle_shop_manifest: dict[str, Any], partitions_def: PartitionsDefinition | None
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, partitions_def=partitions_def)
     def my_dbt_assets(): ...
@@ -293,7 +294,7 @@ def test_partitions_def(
 
 @pytest.mark.parametrize("io_manager_key", [None, "my_io_manager_key"])
 def test_io_manager_key(
-    test_jaffle_shop_manifest: dict[str, Any], io_manager_key: Optional[str]
+    test_jaffle_shop_manifest: dict[str, Any], io_manager_key: str | None
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, io_manager_key=io_manager_key)
     def my_dbt_assets(): ...
@@ -371,7 +372,7 @@ def test_backfill_policy(
 )
 def test_retry_policy(
     test_jaffle_shop_manifest: dict[str, Any],
-    retry_policy: Optional[RetryPolicy],
+    retry_policy: RetryPolicy | None,
 ) -> None:
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
@@ -521,7 +522,7 @@ def test_with_asset_key_replacements(test_jaffle_shop_manifest: dict[str, Any]) 
     ],
 )
 def test_with_partition_mappings(
-    test_meta_config_manifest: dict[str, Any], partition_mapping: Optional[PartitionMapping]
+    test_meta_config_manifest: dict[str, Any], partition_mapping: PartitionMapping | None
 ) -> None:
     expected_self_dependency_partition_mapping = TimeWindowPartitionMapping(
         start_offset=-8, end_offset=-9
@@ -532,7 +533,7 @@ def test_with_partition_mappings(
             self,
             dbt_resource_props: Mapping[str, Any],
             dbt_parent_resource_props: Mapping[str, Any],
-        ) -> Optional[PartitionMapping]:
+        ) -> PartitionMapping | None:
             is_self_dependency = dbt_resource_props == dbt_parent_resource_props
             if is_self_dependency:
                 return expected_self_dependency_partition_mapping
@@ -675,7 +676,7 @@ def test_with_owner_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_owners(self, _: Mapping[str, Any]) -> Optional[Sequence[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_owners(self, _: Mapping[str, Any]) -> Sequence[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_owners
 
     expected_specs_by_key = {
@@ -700,7 +701,7 @@ def test_with_group_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_group = "customized_group"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_group_name(self, _: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_group_name(self, _: Mapping[str, Any]) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_group
 
     expected_specs_by_key = {
@@ -726,7 +727,7 @@ def test_with_code_version_replacements(test_jaffle_shop_manifest: dict[str, Any
     expected_code_version = "customized_code_version"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_code_version(self, _: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_code_version(self, _: Mapping[str, Any]) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_code_version
 
     @dbt_assets(
@@ -758,7 +759,7 @@ def test_with_auto_materialize_policy_replacements(
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_auto_materialize_policy(  # pyright: ignore[reportIncompatibleMethodOverride]
             self, _: Mapping[str, Any]
-        ) -> Optional[AutoMaterializePolicy]:
+        ) -> AutoMaterializePolicy | None:
             return expected_auto_materialize_policy
 
     expected_specs_by_key = {
@@ -789,7 +790,7 @@ def test_with_automation_condition_replacements(test_jaffle_shop_manifest: dict[
     expected_automation_condition = AutomationCondition.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_automation_condition(self, _: Mapping[str, Any]) -> Optional[AutomationCondition]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_automation_condition(self, _: Mapping[str, Any]) -> AutomationCondition | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_automation_condition
 
     expected_specs_by_key = {
@@ -819,7 +820,7 @@ def test_with_varying_partitions_defs(test_jaffle_shop_manifest: dict[str, Any])
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_partitions_def(
             self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[PartitionsDefinition]:
+        ) -> PartitionsDefinition | None:
             asset_key = super().get_asset_key(dbt_resource_props)
             if asset_key in override_keys:
                 return daily_partitions
@@ -1176,6 +1177,30 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: dict[str, Any], selec
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_unit_tests_path))},
+    )
+    assert result.success
+
+
+@pytest.mark.skipif(
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.11.0"),
+    reason="dbt udf support is only available in `dbt-core>=1.11.0`",
+)
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+def test_dbt_with_functions(test_dbt_functions_manifest: dict[str, Any], select: str) -> None:
+    @dbt_assets(
+        manifest=test_dbt_functions_manifest,
+        select=select,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        # duckdb does not support building functions, so we exclude them here
+        # we only want to test a manifest with function nodes works
+        yield from dbt.cli(
+            ["build", "--exclude", "resource_type:function"], context=context
+        ).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_functions_path))},
     )
     assert result.success
 

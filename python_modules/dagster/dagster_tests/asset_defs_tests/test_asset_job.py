@@ -899,7 +899,7 @@ def test_basic_graph():
     def thing():
         da = get_string()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)
+        o1, _o2 = combine_strings_and_split(da, db)
         return o1
 
     @dg.asset
@@ -986,7 +986,7 @@ def test_nested_graph():
     def thing():
         da = inside_thing()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)
+        o1, _o2 = combine_strings_and_split(da, db)
         return o1
 
     thing_asset = dg.AssetsDefinition(
@@ -1799,7 +1799,7 @@ def test_other_asset_provides_req():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
+        match=r"resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
     ):
         create_test_asset_job(assets=[asset_reqs_foo, asset_provides_foo])
 
@@ -1816,7 +1816,7 @@ def test_transitive_deps_not_provided():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by resource with key 'unused' was not provided.",
+        match=r"resource with key 'foo' required by resource with key 'unused' was not provided.",
     ):
         create_test_asset_job(assets=[the_asset])
 
@@ -1856,7 +1856,7 @@ def test_transitive_io_manager_dep_not_provided():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
+            r"resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
             " was not provided."
         ),
     ):

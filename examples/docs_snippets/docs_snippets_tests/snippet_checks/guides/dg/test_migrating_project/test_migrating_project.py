@@ -74,8 +74,8 @@ def test_migrating_project(
 
             venv_snip_no = context.get_next_snip_number()
             get_letter = make_letter_iterator()
-            get_venv_snip_path = (
-                lambda: _SNIPPETS_DIR
+            get_venv_snip_path = lambda: (
+                _SNIPPETS_DIR
                 / f"{venv_snip_no}-{get_letter()}-{package_manager}-venv.txt"
             )
             if package_manager == "uv":

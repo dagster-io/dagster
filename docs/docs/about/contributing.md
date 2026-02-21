@@ -4,9 +4,11 @@ sidebar_position: 20
 title: Contributing
 ---
 
-We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
+We love to see our community members get involved! We're particularly looking for bugfix and [integration library](https://docs.dagster.io/integrations/libraries) contributions. There are more constraints on core feature additions, so we encourage you to open an [issue](https://github.com/dagster-io/dagster/issues) to discuss any core feature idea with maintainers before investing time.
 
 ## Environment setup
+
+If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
 You can develop for Dagster using macOS, Linux, or Windows. If using Windows, you will need to install and use [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
 
@@ -32,7 +34,18 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
    Dagster supports Python 3.10 through 3.12.
 
-4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) (20.X and above) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en) installed. Once you have node installed, you can use `npm` to install yarn.
+4. Install Node.js (20.X and above). We recommend using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) to manage Node.js versions. It allows you to switch between different Node versions:
+
+   ```bash
+   # Install and use Node 20.x
+   nvm install 20
+   nvm use 20
+
+   # Verify Node installation
+   node -v
+   ```
+
+   Once you have Node installed, install [yarn](https://yarnpkg.com/lang/en)
 
    ```bash
    npm install --global yarn
@@ -53,11 +66,11 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
  </details>
 
-6. Verify `dagster` and `dagster-webserver` are installed and editable
+6. Verify your local setup is correct
 
    ```bash
-   $ dagster --version
-   dagster, version 1!0+dev
+   $ dg --version
+   dg, version 1!0+dev
 
    $ dagster-webserver --version
    dagster-webserver, version 1!0+dev
@@ -118,16 +131,19 @@ To run the Dagster documentation website locally, run the following commands:
 
 ```bash
 cd docs
+yarn install
 ```
 
-```bash
-yarn install && yarn start
-```
-
-API documentation is built separately using Sphinx&mdash;if you change any `.rst` files, be sure to run the following command in the `docs` directory:
+API documentation is built separately using Sphinx. Before starting the dev server for the first time, you need to build the API docs. If you change any `.rst` files, be sure to re-run the following command in the docs directory:
 
 ```bash
 yarn build-api-docs
+```
+
+Then start the local development server:
+
+```bash
+yarn start
 ```
 
 For the full guidelines for writing and debugging documentation, please refer to the [docs/README.md](https://github.com/dagster-io/dagster/blob/master/docs/README.md) and [docs/CONTRIBUTING.md](https://github.com/dagster-io/dagster/blob/master/docs/CONTRIBUTING.md) documents.

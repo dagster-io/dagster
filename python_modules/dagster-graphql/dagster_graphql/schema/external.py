@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import graphene
 from dagster import _check as check
@@ -91,7 +91,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     class Meta:
         name = "RepositoryLocation"
 
-    def __init__(self, name: str, location: Optional[CodeLocation] = None):
+    def __init__(self, name: str, location: CodeLocation | None = None):
         self._location = location
         super().__init__(
             name=name,
@@ -355,7 +355,7 @@ class GrapheneRepository(graphene.ObjectType):
             key=lambda schedule: schedule.name,
         )
 
-    def resolve_sensors(self, graphene_info: ResolveInfo, sensorType: Optional[SensorType] = None):
+    def resolve_sensors(self, graphene_info: ResolveInfo, sensorType: SensorType | None = None):
         batch_loader = self.get_batch_loader(graphene_info)
         repository = self.get_repository(graphene_info)
         return [
@@ -381,8 +381,10 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_jobs(self, graphene_info: ResolveInfo):
+        batch_loader = self.get_batch_loader(graphene_info)
+
         return [
-            GrapheneJob(pipeline)
+            GrapheneJob(pipeline, batch_loader)
             for pipeline in sorted(
                 self.get_repository(graphene_info).get_all_jobs(),
                 key=lambda pipeline: pipeline.name,

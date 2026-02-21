@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster as dg
 import pytest
@@ -114,7 +114,7 @@ the_repo = dg.Definitions(
 )
 
 
-def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY_NAME):
+def create_workspace_load_target(attribute: str | None = SINGLETON_REPOSITORY_NAME):
     return ModuleTarget(
         module_name="dagster_tests.scheduler_tests.test_pythonic_resources",
         attribute=None,

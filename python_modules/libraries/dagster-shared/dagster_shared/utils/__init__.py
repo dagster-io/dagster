@@ -5,7 +5,7 @@ import socket
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from types import GenericAlias
-from typing import Optional, TypeGuard, TypeVar
+from typing import TypeGuard, TypeVar
 
 try:
     import tomllib  # pyright: ignore[reportMissingImports]
@@ -97,7 +97,7 @@ def safe_is_subclass(obj, cls: type[T]) -> TypeGuard[type[T]]:
     )
 
 
-def _read_pyproject_toml(directory: Path | str) -> Optional[dict]:
+def _read_pyproject_toml(directory: Path | str) -> dict | None:
     """Read and parse pyproject.toml from a directory. Returns None if not found."""
     if isinstance(directory, str):
         directory = Path(directory)
@@ -108,7 +108,7 @@ def _read_pyproject_toml(directory: Path | str) -> Optional[dict]:
         return tomllib.load(f)
 
 
-def find_uv_workspace_root(start_path: Path | str) -> Optional[tuple[Path, dict]]:
+def find_uv_workspace_root(start_path: Path | str) -> tuple[Path, dict] | None:
     """Walk up directories to find a uv workspace root.
 
     Returns (workspace_root_path, workspace_config) or None if not found.

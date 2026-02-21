@@ -1,11 +1,11 @@
 import {Box, Icon} from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import React, {useCallback, useMemo} from 'react';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetKey} from './types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
+import {TruncatedTextWithFullTextOnHover} from '../ui/TruncatedTextWithFullTextOnHover';
 import {usePartitionsForAssetKey} from './AutoMaterializePolicyPage/usePartitionsForAssetKey';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';

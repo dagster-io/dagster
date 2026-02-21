@@ -1,6 +1,6 @@
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
+import {AddToFavoritesButton} from '@shared/asset-graph/AddToFavoritesButton';
 import {Link} from 'react-router-dom';
-import {AddToFavoritesButton} from 'shared/asset-graph/AddToFavoritesButton.oss';
 
 import {AutomationConditionEvaluationLink} from './AssetNode';
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';

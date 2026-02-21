@@ -33,7 +33,7 @@ import {AssetCatalogV2VirtualizedTable} from '../catalog/AssetCatalogV2Virtualiz
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
-jest.mock('../../app/assetHealthEnabled.oss', () => ({
+jest.mock('@shared/app/assetHealthEnabled', () => ({
   assetHealthEnabled: jest.fn(() => true),
 }));
 
@@ -95,14 +95,14 @@ const assetsMock = createMock({
 });
 
 let mockFavorites: undefined | Set<string> = undefined;
-jest.mock('shared/assets/useFavoriteAssets.oss', () => ({
+jest.mock('@shared/assets/useFavoriteAssets', () => ({
   useFavoriteAssets: jest.fn(() => ({
     favorites: mockFavorites,
     loading: false,
   })),
 }));
 
-jest.mock('shared/asset-selection/input/useAssetSelectionInput', () => {
+jest.mock('../../asset-selection/input/useAssetSelectionInput', () => {
   const mock: typeof useAssetSelectionInput = ({
     assets,
     assetsLoading,

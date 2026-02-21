@@ -224,6 +224,7 @@ module.exports = [
     },
     rules: {
       'prettier/prettier': 'error',
+      curly: 'error',
     },
   },
 ];

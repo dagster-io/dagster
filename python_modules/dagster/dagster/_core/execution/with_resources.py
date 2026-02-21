@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from dagster import _check as check
 from dagster._config import Shape
@@ -15,7 +15,7 @@ T = TypeVar("T", bound=ResourceAddable)
 def with_resources(
     definitions: Iterable[T],
     resource_defs: Mapping[str, object],
-    resource_config_by_key: Optional[Mapping[str, Any]] = None,
+    resource_config_by_key: Mapping[str, Any] | None = None,
 ) -> Sequence[T]:
     """Adds dagster resources to copies of resource-requiring dagster definitions.
 

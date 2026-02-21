@@ -14,7 +14,7 @@ import {ValueContext as RunSelectionValueContext} from '../run-selection/generat
 export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
   const digits = ctx.DIGITS();
   if (digits) {
-    return parseInt(ctx.text);
+    return parseInt(ctx.getText());
   }
   return Number.MAX_SAFE_INTEGER;
 }
@@ -33,13 +33,13 @@ export function getValue(
   ctx: ValueContext | KeyValueContext | OpSelectionValueContext | RunSelectionValueContext,
 ): string {
   if (ctx.QUOTED_STRING()) {
-    return ctx.text.slice(1, -1);
+    return ctx.getText().slice(1, -1);
   }
   if (ctx.UNQUOTED_STRING()) {
-    return ctx.text;
+    return ctx.getText();
   }
   if ('UNQUOTED_WILDCARD_STRING' in ctx && ctx.UNQUOTED_WILDCARD_STRING()) {
-    return ctx.text;
+    return ctx.getText();
   }
   if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
     return '';

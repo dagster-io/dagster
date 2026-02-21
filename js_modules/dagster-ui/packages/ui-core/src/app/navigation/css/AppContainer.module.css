@@ -20,7 +20,6 @@
 
 .main {
   height: 100%;
-  z-index: 1;
   display: flex;
   flex-direction: column;
   width: calc(100% - var(--nav-width));

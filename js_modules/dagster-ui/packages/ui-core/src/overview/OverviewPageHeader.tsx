@@ -1,8 +1,8 @@
 import {Box, PageHeader} from '@dagster-io/ui-components';
+import {observeEnabled} from '@shared/app/observeEnabled';
 import React from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {ObserveRolloutBanner} from 'shared/overview/ObserveRolloutBanner.oss';
 
+import {ObserveRolloutBanner} from './ObserveRolloutBanner';
 import {OverviewTabs} from './OverviewTabs';
 
 export const OverviewPageHeader = ({

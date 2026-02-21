@@ -1,4 +1,4 @@
-import {Box, Spinner} from '@dagster-io/ui-components';
+import {Body2, Box, Button, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import React, {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
@@ -55,19 +55,21 @@ const AssetNodeLineageGraphInner = ({
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
+  const [forceLargeGraph, setForceLargeGraph] = useState(false);
 
   const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
-  const {layout, loading} = useAssetLayout(
+  const {layout, loading, error} = useAssetLayout(
     assetGraphData,
     allGroups,
     useMemo(
       () => ({
         direction,
         flagAssetGraphGroupsPerCodeLocation,
+        forceLargeGraph,
         facets: Array.from(facets),
       }),
-      [direction, facets, flagAssetGraphGroupsPerCodeLocation],
+      [direction, facets, forceLargeGraph, flagAssetGraphGroupsPerCodeLocation],
     ),
   );
   const viewportEl = useRef<SVGViewportRef>();
@@ -87,6 +89,38 @@ const AssetNodeLineageGraphInner = ({
   };
 
   useLastSavedZoomLevel(viewportEl, layout, assetGraphId);
+
+  if (error === 'cycles') {
+    return (
+      <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <NonIdealState
+          icon="error"
+          title="Cycle detected"
+          description="This graph contains a cycle and cannot be displayed. Check your asset dependencies for circular references."
+        />
+      </Box>
+    );
+  }
+
+  if (error === 'too-large') {
+    return (
+      <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <NonIdealState
+          icon="graph_horizontal"
+          title="Lineage graph too large"
+          description={
+            <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
+              <Body2>
+                This asset has too many upstream or downstream dependencies to render. Try reducing
+                the lineage depth or click below to render anyway.
+              </Body2>
+              <Button onClick={() => setForceLargeGraph(true)}>Show Lineage Graph</Button>
+            </Box>
+          }
+        />
+      </Box>
+    );
+  }
 
   if (!layout || loading) {
     return (

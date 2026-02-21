@@ -154,7 +154,7 @@ def test_construct_dagster_k8s_job_with_mounts():
     assert len(foo_volumes) == 1
     assert foo_volumes[0]["secret"]["secret_name"] == "settings-secret"
 
-    with pytest.raises(Exception, match="Unexpected keys in model class V1Volume: {'invalidKey'}"):
+    with pytest.raises(Exception, match=r"Unexpected keys in model class V1Volume: {'invalidKey'}"):
         DagsterK8sJobConfig(
             job_image="test/foo:latest",
             dagster_home="/opt/dagster/dagster_home",
@@ -672,7 +672,7 @@ def test_construct_dagster_k8s_job_with_sidecar_container():
 
 def test_construct_dagster_k8s_job_with_invalid_key_raises_error():
     with pytest.raises(
-        Exception, match="Unexpected keys in model class V1JobSpec: {'nonExistantKey'}"
+        Exception, match=r"Unexpected keys in model class V1JobSpec: {'nonExistantKey'}"
     ):
         UserDefinedDagsterK8sConfig(
             job_spec_config={"nonExistantKey": "nonExistantValue"},

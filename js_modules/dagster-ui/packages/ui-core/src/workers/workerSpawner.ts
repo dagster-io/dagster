@@ -1,4 +1,4 @@
-import {Worker} from 'shared/workers/Worker.oss';
+import {Worker} from '@shared/workers/Worker';
 
 export function workerSpawner(createWorker: () => Worker) {
   function _createWorker() {

@@ -3,7 +3,7 @@ import warnings
 from abc import ABC
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional, Union, cast
+from typing import cast
 from unittest import mock
 
 from dagster import AssetCheckKey, AssetKey, BetaWarning, materialize
@@ -87,7 +87,7 @@ BaseTestSuite = make_graphql_context_test_suite(
 
 
 class BaseDefinitionOwnerPermissionsTestSuite(ABC):
-    def get_owned_definitions(self) -> set[Union[str, AssetKey]]:
+    def get_owned_definitions(self) -> set[str | AssetKey]:
         return set(
             [
                 AssetKey(["owned_asset"]),
@@ -99,7 +99,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             ]
         )
 
-    def get_unowned_definitions(self) -> set[Union[str, AssetKey]]:
+    def get_unowned_definitions(self) -> set[str | AssetKey]:
         return set(
             [
                 AssetKey(["unowned_asset"]),
@@ -112,8 +112,8 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
 
     def _get_selector(
-        self, context, def_type: type[RemoteDefinition], def_handle: Union[str, AssetKey]
-    ) -> Union[AssetKey, JobSelector, ScheduleSelector, SensorSelector]:
+        self, context, def_type: type[RemoteDefinition], def_handle: str | AssetKey
+    ) -> AssetKey | JobSelector | ScheduleSelector | SensorSelector:
         if isinstance(def_handle, AssetKey):
             return def_handle
 
@@ -155,8 +155,16 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         return typename, backfill_id
 
-    def graphql_get_job_permissions(self, context, job_name: str):
-        selector = infer_job_selector(context, job_name)
+    def graphql_get_job_permissions(
+        self, context, job_name: str, asset_selection: Sequence[AssetKey] | None = None
+    ):
+        gql_asset_selection = (
+            cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
+            if asset_selection
+            else None
+        )
+
+        selector = infer_job_selector(context, job_name, asset_selection=gql_asset_selection)
         result = execute_dagster_graphql(
             context,
             GET_JOB_PERMISSIONS_QUERY,
@@ -297,8 +305,8 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         context,
         job_name: str,
         run_id: str,
-        asset_selection: Optional[list[AssetKey]] = None,
-        asset_check_selection: Optional[list[AssetCheckKey]] = None,
+        asset_selection: list[AssetKey] | None = None,
+        asset_check_selection: list[AssetCheckKey] | None = None,
     ):
         selector = infer_job_selector(
             context,
@@ -529,7 +537,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         context.instance.add_backfill(backfill)
         return backfill_id
 
-    def _get_type_for_handle(self, def_handle: Union[str, AssetKey]) -> type[RemoteDefinition]:
+    def _get_type_for_handle(self, def_handle: str | AssetKey) -> type[RemoteDefinition]:
         if isinstance(def_handle, AssetKey):
             return RemoteAssetNode
         if def_handle.endswith("_job"):
@@ -578,6 +586,76 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             assert not graphql_context.has_permission_for_selector(
                 Permissions.LAUNCH_PIPELINE_EXECUTION, selector
             )
+
+    def test_get_owners_for_nonexistent_definitions(self, graphql_context: WorkspaceRequestContext):
+        """get_owners_for_selector should return [] for selectors referencing
+        definitions that don't exist in the workspace, rather than erroring.
+        """
+        # Get a valid location/repo name from the context
+        code_location = graphql_context.code_locations[0]
+        repository = next(iter(code_location.get_repositories().values()))
+        location_name = code_location.name
+        repository_name = repository.name
+
+        # Non-existent asset key
+        assert graphql_context.get_owners_for_selector(AssetKey(["does_not_exist"])) == []
+
+        # Non-existent asset check key (asset doesn't exist)
+        assert (
+            graphql_context.get_owners_for_selector(
+                AssetCheckKey(AssetKey(["does_not_exist"]), "some_check")
+            )
+            == []
+        )
+
+        # Non-existent job
+        assert (
+            graphql_context.get_owners_for_selector(
+                JobSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    job_name="nonexistent_job",
+                )
+            )
+            == []
+        )
+
+        # Implicit asset job name (should return [] even if it exists, since ownership
+        # is determined by the assets, not the implicit job)
+        assert (
+            graphql_context.get_owners_for_selector(
+                JobSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    job_name=IMPLICIT_ASSET_JOB_NAME,
+                )
+            )
+            == []
+        )
+
+        # Non-existent schedule
+        assert (
+            graphql_context.get_owners_for_selector(
+                ScheduleSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    schedule_name="nonexistent_schedule",
+                )
+            )
+            == []
+        )
+
+        # Non-existent sensor
+        assert (
+            graphql_context.get_owners_for_selector(
+                SensorSelector(
+                    location_name=location_name,
+                    repository_name=repository_name,
+                    sensor_name="nonexistent_sensor",
+                )
+            )
+            == []
+        )
 
     def test_asset_backfill_launch_permissions(self, graphql_context: WorkspaceRequestContext):
         typename, _ = self.graphql_launch_asset_backfill(
@@ -636,6 +714,27 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         can_launch, _ = self.graphql_get_job_permissions(graphql_context, "unowned_job")
         assert not can_launch
         typename, _ = self.graphql_launch_job_run(graphql_context, "unowned_job")
+        assert typename == "UnauthorizedError"
+
+    def test_implicit_asset_job_run_launch_permissions(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        can_launch, _ = self.graphql_get_job_permissions(
+            graphql_context, "__ASSET_JOB", asset_selection=[AssetKey(["owned_asset"])]
+        )
+        assert can_launch
+        typename = self.graphql_launch_asset_run(
+            graphql_context, asset_selection=[AssetKey(["owned_asset"])]
+        )
+        assert typename == "LaunchRunSuccess"
+
+        can_launch, _ = self.graphql_get_job_permissions(
+            graphql_context, "__ASSET_JOB", asset_selection=[AssetKey(["unowned_asset"])]
+        )
+        assert not can_launch
+        typename = self.graphql_launch_asset_run(
+            graphql_context, asset_selection=[AssetKey(["unowned_asset"])]
+        )
         assert typename == "UnauthorizedError"
 
     def test_job_reexecution_permissions(self, graphql_context: WorkspaceRequestContext):
@@ -891,7 +990,7 @@ class TestDefinitionOwnerPermissions(
 
         def _mock_selector_ownership(
             permission: str,
-            selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey, AssetCheckKey],
+            selector: JobSelector | ScheduleSelector | SensorSelector | AssetKey | AssetCheckKey,
         ) -> bool:
             owned_defs = self.get_owned_definitions()
             _did_check[permission] = True

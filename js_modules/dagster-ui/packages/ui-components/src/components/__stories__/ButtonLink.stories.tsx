@@ -1,5 +1,3 @@
-import {StoryFn} from '@storybook/nextjs';
-
 import {ButtonLink} from '../ButtonLink';
 import {Colors} from '../Color';
 
@@ -9,30 +7,30 @@ export default {
   component: ButtonLink,
 };
 
-type Props = React.ComponentProps<typeof ButtonLink>;
-const Template: StoryFn<Props> = (props) => <ButtonLink {...props} />;
-
-export const ColorString = Template.bind({});
-ColorString.args = {
-  children: 'Hello world',
-  color: Colors.linkDefault(),
+export const ColorString = () => {
+  return <ButtonLink color={Colors.linkDefault()}>Hello world</ButtonLink>;
 };
 
-export const ColorMap = Template.bind({});
-ColorMap.args = {
-  children: 'Hello world',
-  color: {
-    link: Colors.linkDefault(),
-    hover: Colors.linkHover(),
-    active: Colors.accentGreen(),
-  },
+export const ColorMap = () => {
+  return (
+    <ButtonLink
+      color={{
+        link: Colors.linkDefault(),
+        hover: Colors.linkHover(),
+        active: Colors.accentGreen(),
+      }}
+    >
+      Hello world
+    </ButtonLink>
+  );
 };
 
-export const HoverUnderline = Template.bind({});
-HoverUnderline.args = {
-  children: 'Hello world',
-  color: Colors.linkDefault(),
-  underline: 'hover',
+export const HoverUnderline = () => {
+  return (
+    <ButtonLink color={Colors.linkDefault()} underline="hover">
+      Hello world
+    </ButtonLink>
+  );
 };
 
 export const WithinText = () => {

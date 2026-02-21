@@ -1,7 +1,7 @@
 import os
+import uuid
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import DgWorkspaceScaffoldProjectOptions, modify_dg_toml_config
@@ -51,7 +51,7 @@ def scaffold_workspace(
 
 def get_dependencies_template_params(
     use_editable_dagster: bool,
-    scaffold_project_options: Optional[DgWorkspaceScaffoldProjectOptions],
+    scaffold_project_options: DgWorkspaceScaffoldProjectOptions | None,
     *,
     editable_deps: list[str],
     editable_dev_deps: list[str],
@@ -129,6 +129,7 @@ def scaffold_project(
             os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
         ),
         excludes=project_excludes,
+        project_id=str(uuid.uuid4()),
         **get_dependencies_template_params(
             use_editable_dagster,
             scaffold_project_options,
@@ -239,11 +240,15 @@ def _get_pyproject_toml_uv_sources(lib_paths: list[Path]) -> str:
 
 
 def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
-    return [
-        p.parent
-        for p in (
-            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
-            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
-            *editable_dagster_root.glob("python_modules/libraries/create-dagster/setup.py"),
-        )
-    ]
+    package_dirs = set()
+    for pattern in [
+        "python_modules/dagster*/setup.py",
+        "python_modules/dagster*/pyproject.toml",
+        "python_modules/libraries/dagster*/setup.py",
+        "python_modules/libraries/dagster*/pyproject.toml",
+        "python_modules/libraries/create-dagster/setup.py",
+        "python_modules/libraries/create-dagster/pyproject.toml",
+    ]:
+        for p in editable_dagster_root.glob(pattern):
+            package_dirs.add(p.parent)
+    return sorted(package_dirs)

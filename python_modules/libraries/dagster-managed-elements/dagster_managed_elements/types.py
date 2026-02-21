@@ -2,7 +2,7 @@ import enum
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Sequence
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, TypeAlias
 
 import click
 import dagster._check as check
@@ -82,9 +82,9 @@ class ManagedElementDiff(
 
     def __new__(
         cls,
-        additions: Optional[Sequence[DiffData]] = None,
-        deletions: Optional[Sequence[DiffData]] = None,
-        modifications: Optional[Sequence[ModifiedDiffData]] = None,
+        additions: Sequence[DiffData] | None = None,
+        deletions: Sequence[DiffData] | None = None,
+        modifications: Sequence[ModifiedDiffData] | None = None,
     ):
         additions = check.opt_sequence_param(additions, "additions", of_type=DiffData)
         deletions = check.opt_sequence_param(deletions, "deletions", of_type=DiffData)
@@ -169,6 +169,8 @@ class ManagedElementDiff(
             == sorted(list(other.nested.items()), key=lambda x: x[0])
         )
 
+    __hash__ = None  # pyright: ignore[reportAssignmentType]
+
     def get_diff_display_entries(
         self, indent: int = 0
     ) -> tuple[Sequence[str], Sequence[str], Sequence[str]]:
@@ -231,7 +233,7 @@ class ManagedElementDiff(
 # Union type representing the status of a managed element - can either
 # return the (potentially empty) diff between the configured and deployed
 # stack, or an error.
-ManagedElementCheckResult = Union[ManagedElementDiff, ManagedElementError]
+ManagedElementCheckResult: TypeAlias = ManagedElementDiff | ManagedElementError
 
 
 class ManagedElementReconciler(ABC):

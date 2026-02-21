@@ -14,11 +14,11 @@ import {
   Popover,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
-import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';
@@ -125,7 +125,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
             <Menu>
               <AISummaryForRunMenuItem run={run} />
               <MenuItem
-                tagName="button"
                 style={{minWidth: 200}}
                 text={loading ? 'Loading configuration...' : 'View configuration...'}
                 disabled={!runConfigYaml}
@@ -133,7 +132,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 onClick={() => setVisibleDialog('config')}
               />
               <MenuItem
-                tagName="button"
                 text={
                   <div style={{display: 'contents'}}>
                     View all tags
@@ -158,7 +156,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                   to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
                 >
                   <MenuItem
-                    tagName="button"
                     icon="history"
                     text="View snapshot"
                     onClick={() => setVisibleDialog('tags')}
@@ -170,8 +167,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 <Tooltip
                   content={jobLink.disabledReason || OPEN_LAUNCHPAD_UNKNOWN}
                   position="left"
-                  disabled={infoReady && !jobLink.disabledReason}
-                  targetTagName="div"
+                  canShow={!infoReady || !!jobLink.disabledReason}
                 >
                   <MenuLink
                     text={jobLink.label}
@@ -183,10 +179,8 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 <Tooltip
                   content={reexecutionDisabledState.message || 'Shift-click to adjust tags.'}
                   position="left"
-                  targetTagName="div"
                 >
                   <MenuItem
-                    tagName="button"
                     text="Re-execute"
                     disabled={reexecutionDisabledState.disabled}
                     icon="refresh"
@@ -197,7 +191,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 </Tooltip>
                 {isFinished || !run.hasTerminatePermission ? null : (
                   <MenuItem
-                    tagName="button"
                     icon="cancel"
                     text="Terminate"
                     onClick={() => setVisibleDialog('terminate')}
@@ -213,7 +206,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
               />
               {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
-                  tagName="button"
                   icon="asset_plot"
                   text="View container metrics"
                   intent="none"
@@ -222,7 +214,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
               ) : null}
               {run.hasDeletePermission ? (
                 <MenuItem
-                  tagName="button"
                   icon="delete"
                   text="Delete"
                   intent="danger"

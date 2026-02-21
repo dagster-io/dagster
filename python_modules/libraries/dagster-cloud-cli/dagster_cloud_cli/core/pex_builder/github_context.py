@@ -4,7 +4,6 @@ import os
 import pathlib
 import subprocess
 from contextlib import contextmanager
-from typing import Optional
 
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.core.pex_builder import util
@@ -35,11 +34,11 @@ class GithubEvent:
         self.action = event.get("action")
         self.repo_name = event["repository"]["full_name"]
 
-        self.branch_name: Optional[str] = None
-        self.branch_url: Optional[str] = None
-        self.pull_request_url: Optional[str] = None
-        self.pull_request_id: Optional[str] = None
-        self.pull_request_status: Optional[str] = None
+        self.branch_name: str | None = None
+        self.branch_url: str | None = None
+        self.pull_request_url: str | None = None
+        self.pull_request_id: str | None = None
+        self.pull_request_status: str | None = None
 
         if "pull_request" in self.event:
             pull_request = self.event["pull_request"]
@@ -71,7 +70,7 @@ class GithubEvent:
         repo_owner, repo_name = self.github_repository.split("/", 1)
         return gh.repository(repo_owner, repo_name)
 
-    def get_github_avatar_url(self) -> Optional[str]:
+    def get_github_avatar_url(self) -> str | None:
         repo = self.get_github_repo()
         if not repo:
             return
@@ -79,7 +78,7 @@ class GithubEvent:
         return commit.author.get("avatar_url") if commit.author else None
 
     def update_pr_comment(
-        self, body: str, orig_author: Optional[str] = None, orig_text: Optional[str] = None
+        self, body: str, orig_author: str | None = None, orig_text: str | None = None
     ):
         # orig_author and orig_text are used to identify an existing comment which is updated.
         # if not provided, or not found, a new comment is created

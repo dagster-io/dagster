@@ -47,7 +47,7 @@ This approach creates a sub-pipeline for each input record:
 | Record-level     | Parallel        | 1 sub-pipeline per record      |
 | Unit-level       | Sequential      | 10-30 units processed in order |
 
-### Solution 2: Parallel processing within sub-pipelines
+## Solution 2: Parallel processing within sub-pipelines
 
 The second approach adds a second layer of parallelization by processing units within each sub-pipeline in parallel using multiprocessing.
 

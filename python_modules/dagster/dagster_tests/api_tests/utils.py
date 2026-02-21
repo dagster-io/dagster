@@ -1,7 +1,6 @@
 import sys
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Optional
 
 import dagster as dg
 from dagster._core.instance import DagsterInstance
@@ -11,6 +10,7 @@ from dagster._core.remote_representation.handle import JobHandle, RepositoryHand
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
+from dagster_shared.record import as_dict
 
 
 @contextmanager
@@ -31,7 +31,7 @@ def get_bar_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCon
 def get_workspace(
     instance: DagsterInstance,
     python_file: str,
-    attribute: Optional[str],
+    attribute: str | None,
     location_name: str,
 ) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
@@ -48,7 +48,7 @@ def get_workspace(
 
 @contextmanager
 def get_bar_repo_code_location(
-    instance: Optional[dg.DagsterInstance] = None,
+    instance: dg.DagsterInstance | None = None,
 ) -> Iterator[GrpcServerCodeLocation]:
     with ExitStack() as stack:
         if not instance:
@@ -72,7 +72,7 @@ def get_code_location(
     python_file: str,
     attribute: str,
     location_name: str,
-    instance: Optional[dg.DagsterInstance] = None,
+    instance: dg.DagsterInstance | None = None,
 ) -> Iterator[GrpcServerCodeLocation]:
     with ExitStack() as stack:
         if not instance:
@@ -91,7 +91,7 @@ def get_code_location(
 
 @contextmanager
 def get_bar_repo_handle(
-    instance: Optional[dg.DagsterInstance] = None,
+    instance: dg.DagsterInstance | None = None,
 ) -> Iterator[RepositoryHandle]:
     with ExitStack() as stack:
         if not instance:
@@ -102,10 +102,18 @@ def get_bar_repo_handle(
 
 
 @contextmanager
-def get_foo_job_handle(instance: Optional[dg.DagsterInstance] = None) -> Iterator[JobHandle]:
+def get_foo_job_handle(instance: dg.DagsterInstance | None = None) -> Iterator[JobHandle]:
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(dg.instance_for_test())
 
         with get_bar_repo_handle(instance) as repo_handle:
             yield JobHandle("foo", repo_handle)
+
+
+def with_invalid_origin(args):
+    """Bypass record type checking to create an invalid object for testing deserialization errors."""
+    return args.__class__.__nt_new__(
+        args.__class__,
+        **{**as_dict(args), "repository_origin": "INVALID"},
+    )

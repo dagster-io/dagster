@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._annotations import deprecated
@@ -11,11 +11,14 @@ from dagster._core.definitions.metadata.metadata_value import (
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
+from dagster._utils.log import get_dagster_logger
 from dagster._utils.names import clean_name
 from dagster._vendored.dateutil.parser import isoparse
 from dagster_shared.serdes import whitelist_for_serdes
 
 _coerce_input_to_valid_name = clean_name
+
+logger = get_dagster_logger("dagster_sigma")
 
 
 def asset_key_from_table_name(table_name: str) -> AssetKey:
@@ -29,12 +32,12 @@ def _inode_from_url(url: str) -> str:
 
 
 class SigmaWorkbookMetadataSet(NamespacedMetadataSet):
-    web_url: Optional[UrlMetadataValue]
-    version: Optional[int]
-    created_at: Optional[TimestampMetadataValue]
-    properties: Optional[JsonMetadataValue]
-    lineage: Optional[JsonMetadataValue]
-    materialization_schedules: Optional[JsonMetadataValue] = None
+    web_url: UrlMetadataValue | None
+    version: int | None
+    created_at: TimestampMetadataValue | None
+    properties: JsonMetadataValue | None
+    lineage: JsonMetadataValue | None
+    materialization_schedules: JsonMetadataValue | None = None
     workbook_id: str
 
     @classmethod
@@ -55,8 +58,8 @@ class SigmaWorkbook:
     lineage: list[dict[str, Any]]
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
-    owner_email: Optional[str]
-    materialization_schedules: Optional[list[dict[str, Any]]]
+    owner_email: str | None
+    materialization_schedules: list[dict[str, Any]] | None
 
 
 @whitelist_for_serdes
@@ -111,11 +114,11 @@ class SigmaWorkbookTranslatorData:
         return self.workbook.direct_table_deps
 
     @property
-    def owner_email(self) -> Optional[str]:
+    def owner_email(self) -> str | None:
         return self.workbook.owner_email
 
     @property
-    def materialization_schedules(self) -> Optional[list[dict[str, Any]]]:
+    def materialization_schedules(self) -> list[dict[str, Any]] | None:
         return self.workbook.materialization_schedules
 
 
@@ -165,13 +168,13 @@ class DagsterSigmaTranslator:
         additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
     )
     def get_asset_key(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return self.get_asset_spec(data).key
 
     def get_asset_spec(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetSpec:
         """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
         if isinstance(data, SigmaWorkbookTranslatorData):
@@ -197,10 +200,17 @@ class DagsterSigmaTranslator:
             datasets = [
                 data.organization_data.get_datasets_by_inode()[inode] for inode in data.datasets
             ]
-            tables = [
-                data.organization_data.get_tables_by_inode()[inode]
-                for inode in data.direct_table_deps
-            ]
+            tables = []
+            tables_by_inode = data.organization_data.get_tables_by_inode()
+            for inode in data.direct_table_deps:
+                table = tables_by_inode.get(inode)
+                if table is not None:
+                    tables.append(table)
+                else:
+                    logger.warning(
+                        f"Table with inode {inode} not found in organization data for workbook"
+                        f" {data.properties['name']}"
+                    )
 
             return AssetSpec(
                 key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),

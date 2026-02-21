@@ -1,0 +1,6 @@
+success_get_events:
+  command: "dg api run-events get a34cd75c-cfa9-4e99-8f0a-955492b89afd --json"
+
+error_run_not_found:
+  command: "dg api run-events get nonexistent-run-id"
+  has_recording: false

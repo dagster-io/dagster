@@ -107,6 +107,27 @@ The preceding example uses both a `run_key` and a cursor, which means that if th
 If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunRequest`s.
 :::
 
+## Accessing tags from upstream job runs
+
+When working with sensors in Dagster, you might need to access tags from upstream job runs. For example, you may want to retrieve the partition key from an upstream job's tags in order to trigger downstream jobs with specific partition keys:
+
+```python
+from dagster import sensor, AssetKey, RunRequest
+
+@sensor(asset_key=AssetKey("my_asset"))
+def my_asset_sensor(context, asset_event):
+    # Retrieve the partition key from the upstream job's tags
+    partition_key = asset_event.dagster_event.logging_tags.get("dagster/partition")
+
+    if partition_key:
+        # Trigger the downstream job with the partition key
+        return RunRequest(
+            run_key=partition_key,
+            tags={"dagster/partition": partition_key},
+        )
+    return None
+```
+
 ## Next steps
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.

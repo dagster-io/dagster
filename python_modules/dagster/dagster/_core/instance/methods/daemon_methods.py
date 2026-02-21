@@ -100,7 +100,7 @@ class DaemonMethods:
         return daemons
 
     def get_daemon_statuses(
-        self, daemon_types: Optional[Sequence[str]] = None
+        self, daemon_types: Sequence[str] | None = None
     ) -> Mapping[str, "DaemonStatus"]:
         """Get the current status of the daemons. If daemon_types aren't provided, defaults to all
         required types. Returns a dict of daemon type to status.

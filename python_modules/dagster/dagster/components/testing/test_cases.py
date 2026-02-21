@@ -8,7 +8,7 @@ from dagster._core.definitions.partitions.definition import StaticPartitionsDefi
 
 """Testing utilities for components."""
 
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 # Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
 # implementation if pytest is not installed.
@@ -29,7 +29,7 @@ class TranslationTestCase(NamedTuple):
     name: str
     attributes: dict[str, Any]
     assertion: Callable[[AssetSpec], bool]
-    key_modifier: Optional[Callable[[AssetKey], AssetKey]] = None
+    key_modifier: Callable[[AssetKey], AssetKey] | None = None
 
 
 test_cases = [
@@ -56,9 +56,11 @@ test_cases = [
     TranslationTestCase(
         name="tags-and-kinds",
         attributes={"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-        assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
-        and "dbt" in asset_spec.kinds
-        and asset_spec.tags.get("foo") == "bar",
+        assertion=lambda asset_spec: (
+            "snowflake" in asset_spec.kinds
+            and "dbt" in asset_spec.kinds
+            and asset_spec.tags.get("foo") == "bar"
+        ),
     ),
     TranslationTestCase(
         name="code-version",
@@ -78,8 +80,9 @@ test_cases = [
     TranslationTestCase(
         name="deps",
         attributes={"deps": ["nonexistent"]},
-        assertion=lambda asset_spec: len(asset_spec.deps) == 1
-        and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
+        assertion=lambda asset_spec: (
+            len(asset_spec.deps) == 1 and asset_spec.deps[0].asset_key == AssetKey("nonexistent")
+        ),
     ),
     TranslationTestCase(
         name="automation_condition",

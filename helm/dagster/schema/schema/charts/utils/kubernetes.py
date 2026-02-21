@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, RootModel
 
@@ -38,8 +38,8 @@ class PullPolicy(str, Enum):
 
 class Image(BaseModelWithNullableRequiredFields):
     repository: str
-    tag: Optional[Union[str, int]] = None
-    digest: Optional[str] = None
+    tag: str | int | None = None
+    digest: str | None = None
     pullPolicy: PullPolicy
 
     @property
@@ -56,10 +56,28 @@ class ExternalImage(Image):
     tag: str
 
 
+class InitContainerImage(BaseModel):
+    """Image specification for init containers, with all fields optional except repository."""
+
+    repository: str
+    tag: str | int | None = None
+    digest: str | None = None
+    pullPolicy: PullPolicy | None = None
+
+    @property
+    def name(self) -> str:
+        if self.digest:
+            return f"{self.repository}@{self.digest}"
+        elif self.tag:
+            return f"{self.repository}:{self.tag}"
+        else:
+            return self.repository
+
+
 class Service(BaseModel, extra="forbid"):
     type: str
     port: int
-    annotations: Optional[Annotations] = None
+    annotations: Annotations | None = None
 
 
 class NodeSelector(RootModel[dict[str, str]]):
@@ -116,6 +134,17 @@ class InitContainer(BaseModel):
     model_config = {
         "extra": "allow",
         "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")},
+    }
+
+
+class InitContainerWithStructuredImage(BaseModel):
+    """Init container with structured image specification (repository/tag/digest)."""
+
+    name: str
+    image: InitContainerImage
+
+    model_config = {
+        "extra": "allow",
     }
 
 

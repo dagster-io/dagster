@@ -1,5 +1,5 @@
 import {IconName} from '@dagster-io/ui-components';
-import {NO_LAUNCH_PERMISSION_MESSAGE} from 'shared/launchpad/LaunchRootExecutionButton.oss';
+import {NO_LAUNCH_PERMISSION_MESSAGE} from '@shared/launchpad/LaunchRootExecutionButton';
 
 import {buildRepoPathForURL} from './buildRepoAddress';
 import {RepoAddress} from './types';

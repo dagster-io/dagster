@@ -9,7 +9,7 @@ import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Final, NamedTuple, Optional, TypeAlias, Union, cast
+from typing import Any, Final, NamedTuple, TypeAlias, cast
 
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.serdes.serdes import (
@@ -127,17 +127,17 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 class PresetSnap(IHaveNew):
     name: str
     run_config: Mapping[str, object]
-    op_selection: Optional[Sequence[str]]
+    op_selection: Sequence[str] | None
     mode: str
     tags: Mapping[str, str]
 
     def __new__(
         cls,
         name: str,
-        run_config: Optional[Mapping[str, object]],
-        op_selection: Optional[Sequence[str]],
+        run_config: Mapping[str, object] | None,
+        op_selection: Sequence[str] | None,
         mode: str,
-        tags: Optional[Mapping[str, str]],
+        tags: Mapping[str, str] | None,
     ):
         return super().__new__(
             cls,
@@ -168,7 +168,7 @@ class JobDataSnap:
     name: str
     job: JobSnap
     active_presets: Sequence["PresetSnap"]
-    parent_job: Optional[JobSnap]
+    parent_job: JobSnap | None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition, include_parent_snapshot: bool) -> Self:
@@ -187,9 +187,9 @@ class JobDataSnap:
 @record
 class RemoteJobSubsetResult:
     success: bool
-    error: Optional[SerializableErrorInfo] = None
-    job_data_snap: Optional[JobDataSnap] = None
-    repository_python_origin: Optional[RepositoryPythonOrigin] = None
+    error: SerializableErrorInfo | None = None
+    job_data_snap: JobDataSnap | None = None
+    repository_python_origin: RepositoryPythonOrigin | None = None
 
 
 @whitelist_for_serdes
@@ -221,9 +221,9 @@ class JobRefSnap:
     name: str
     snapshot_id: str
     active_presets: Sequence["PresetSnap"]
-    parent_snapshot_id: Optional[str]
-    preview_tags: Optional[Mapping[str, str]] = None
-    owners: Optional[Sequence[str]] = None
+    parent_snapshot_id: str | None
+    preview_tags: Mapping[str, str] | None = None
+    owners: Sequence[str] | None = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
@@ -250,36 +250,36 @@ class JobRefSnap:
 @record_custom
 class ScheduleSnap(IHaveNew):
     name: str
-    cron_schedule: Union[str, Sequence[str]]
+    cron_schedule: str | Sequence[str]
     job_name: str
-    op_selection: Optional[Sequence[str]]
-    mode: Optional[str]
+    op_selection: Sequence[str] | None
+    mode: str | None
     environment_vars: Mapping[str, str]
-    partition_set_name: Optional[str]
-    execution_timezone: Optional[str]
-    description: Optional[str]
-    default_status: Optional[DefaultScheduleStatus]
-    asset_selection: Optional[AssetSelection]
+    partition_set_name: str | None
+    execution_timezone: str | None
+    description: str | None
+    default_status: DefaultScheduleStatus | None
+    asset_selection: AssetSelection | None
     tags: Mapping[str, str]
     metadata: Mapping[str, MetadataValue]
-    owners: Optional[Sequence[str]]
+    owners: Sequence[str] | None
 
     def __new__(
         cls,
         name: str,
-        cron_schedule: Union[str, Sequence[str]],
+        cron_schedule: str | Sequence[str],
         job_name: str,
-        op_selection: Optional[Sequence[str]],
-        mode: Optional[str],
-        environment_vars: Optional[Mapping[str, str]],
-        partition_set_name: Optional[str],
-        execution_timezone: Optional[str],
-        description: Optional[str] = None,
-        default_status: Optional[DefaultScheduleStatus] = None,
-        asset_selection: Optional[AssetSelection] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
-        owners: Optional[Sequence[str]] = None,
+        op_selection: Sequence[str] | None,
+        mode: str | None,
+        environment_vars: Mapping[str, str] | None,
+        partition_set_name: str | None,
+        execution_timezone: str | None,
+        description: str | None = None,
+        default_status: DefaultScheduleStatus | None = None,
+        asset_selection: AssetSelection | None = None,
+        tags: Mapping[str, str] | None = None,
+        metadata: Mapping[str, MetadataValue] | None = None,
+        owners: Sequence[str] | None = None,
     ):
         if asset_selection is not None:
             check.invariant(
@@ -347,7 +347,7 @@ class ScheduleSnap(IHaveNew):
 @whitelist_for_serdes(storage_name="ExternalScheduleExecutionErrorData")
 @record
 class ScheduleExecutionErrorSnap:
-    error: Optional[SerializableErrorInfo]
+    error: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes(
@@ -358,7 +358,7 @@ class ScheduleExecutionErrorSnap:
 class TargetSnap:
     job_name: str
     mode: str
-    op_selection: Optional[Sequence[str]]
+    op_selection: Sequence[str] | None
 
 
 @whitelist_for_serdes(storage_name="ExternalSensorMetadata")
@@ -372,8 +372,8 @@ class SensorMetadataSnap:
     `standard_metadata`.
     """
 
-    asset_keys: Optional[Sequence[AssetKey]]
-    standard_metadata: Optional[Mapping[str, MetadataValue]] = None
+    asset_keys: Sequence[AssetKey] | None
+    standard_metadata: Mapping[str, MetadataValue] | None = None
 
 
 @whitelist_for_serdes(
@@ -384,36 +384,36 @@ class SensorMetadataSnap:
 @record_custom
 class SensorSnap(IHaveNew):
     name: str
-    job_name: Optional[str]
-    op_selection: Optional[Sequence[str]]
-    mode: Optional[str]
-    min_interval: Optional[int]
-    description: Optional[str]
+    job_name: str | None
+    op_selection: Sequence[str] | None
+    mode: str | None
+    min_interval: int | None
+    description: str | None
     target_dict: Mapping[str, TargetSnap]
-    metadata: Optional[SensorMetadataSnap]
-    default_status: Optional[DefaultSensorStatus]
-    sensor_type: Optional[SensorType]
-    asset_selection: Optional[AssetSelection]
+    metadata: SensorMetadataSnap | None
+    default_status: DefaultSensorStatus | None
+    sensor_type: SensorType | None
+    asset_selection: AssetSelection | None
     tags: Mapping[str, str]
     run_tags: Mapping[str, str]
-    owners: Optional[Sequence[str]]
+    owners: Sequence[str] | None
 
     def __new__(
         cls,
         name: str,
-        job_name: Optional[str] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        mode: Optional[str] = None,
-        min_interval: Optional[int] = None,
-        description: Optional[str] = None,
-        target_dict: Optional[Mapping[str, TargetSnap]] = None,
-        metadata: Optional[SensorMetadataSnap] = None,
-        default_status: Optional[DefaultSensorStatus] = None,
-        sensor_type: Optional[SensorType] = None,
-        asset_selection: Optional[AssetSelection] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        run_tags: Optional[Mapping[str, str]] = None,
-        owners: Optional[Sequence[str]] = None,
+        job_name: str | None = None,
+        op_selection: Sequence[str] | None = None,
+        mode: str | None = None,
+        min_interval: int | None = None,
+        description: str | None = None,
+        target_dict: Mapping[str, TargetSnap] | None = None,
+        metadata: SensorMetadataSnap | None = None,
+        default_status: DefaultSensorStatus | None = None,
+        sensor_type: SensorType | None = None,
+        asset_selection: AssetSelection | None = None,
+        tags: Mapping[str, str] | None = None,
+        run_tags: Mapping[str, str] | None = None,
+        owners: Sequence[str] | None = None,
     ):
         if job_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -527,13 +527,13 @@ class SensorSnap(IHaveNew):
 @whitelist_for_serdes(storage_name="ExternalRepositoryErrorData")
 @record
 class RepositoryErrorSnap:
-    error: Optional[SerializableErrorInfo]
+    error: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes(storage_name="ExternalSensorExecutionErrorData")
 @record
 class SensorExecutionErrorSnap:
-    error: Optional[SerializableErrorInfo]
+    error: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes(storage_name="ExternalExecutionParamsData")
@@ -544,8 +544,8 @@ class ExecutionParamsSnap(IHaveNew):
 
     def __new__(
         cls,
-        run_config: Optional[Mapping[str, object]] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        run_config: Mapping[str, object] | None = None,
+        tags: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -557,7 +557,7 @@ class ExecutionParamsSnap(IHaveNew):
 @whitelist_for_serdes(storage_name="ExternalExecutionParamsErrorData")
 @record
 class ExecutionParamsErrorSnap:
-    error: Optional[SerializableErrorInfo]
+    error: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes(
@@ -572,17 +572,17 @@ class ExecutionParamsErrorSnap:
 class PartitionSetSnap:
     name: str
     job_name: str
-    op_selection: Optional[Sequence[str]]
-    mode: Optional[str]
-    partitions: Optional[PartitionsSnap] = None
-    backfill_policy: Optional[BackfillPolicy] = None
+    op_selection: Sequence[str] | None
+    mode: str | None
+    partitions: PartitionsSnap | None = None
+    backfill_policy: BackfillPolicy | None = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
         check.inst_param(job_def, "job_def", JobDefinition)
         partitions_def = check.not_none(job_def.partitions_def)
 
-        partitions_snap: Optional[PartitionsSnap] = None
+        partitions_snap: PartitionsSnap | None = None
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
             partitions_snap = TimeWindowPartitionsSnap.from_def(partitions_def)
         elif isinstance(partitions_def, StaticPartitionsDefinition):
@@ -612,7 +612,7 @@ class PartitionSetSnap:
 class PartitionNamesSnap(IHaveNew):
     partition_names: Sequence[str]
 
-    def __new__(cls, partition_names: Optional[Sequence[str]] = None):
+    def __new__(cls, partition_names: Sequence[str] | None = None):
         return super().__new__(
             cls,
             partition_names=partition_names or [],
@@ -625,7 +625,7 @@ class PartitionConfigSnap(IHaveNew):
     name: str
     run_config: Mapping[str, object]
 
-    def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
+    def __new__(cls, name: str, run_config: Mapping[str, object] | None = None):
         return super().__new__(
             cls,
             name=name,
@@ -639,7 +639,7 @@ class PartitionTagsSnap(IHaveNew):
     name: str
     tags: Mapping[str, object]
 
-    def __new__(cls, name: str, tags: Optional[Mapping[str, str]] = None):
+    def __new__(cls, name: str, tags: Mapping[str, str] | None = None):
         return super().__new__(
             cls,
             name=name,
@@ -664,7 +664,7 @@ class PartitionSetExecutionParamSnap:
 @whitelist_for_serdes(storage_name="ExternalPartitionExecutionErrorData")
 @record
 class PartitionExecutionErrorSnap:
-    error: Optional[SerializableErrorInfo]
+    error: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes(
@@ -680,9 +680,9 @@ class AssetParentEdgeSnap:
     """
 
     parent_asset_key: AssetKey
-    input_name: Optional[str] = None
-    output_name: Optional[str] = None
-    partition_mapping: Optional[PartitionMapping] = None
+    input_name: str | None = None
+    output_name: str | None = None
+    partition_mapping: PartitionMapping | None = None
 
 
 @whitelist_for_serdes(
@@ -698,8 +698,8 @@ class AssetChildEdgeSnap:
     """
 
     child_asset_key: AssetKey
-    input_name: Optional[str] = None
-    output_name: Optional[str] = None
+    input_name: str | None = None
+    output_name: str | None = None
 
 
 @whitelist_for_serdes(storage_name="ExternalResourceConfigEnvVar")
@@ -708,7 +708,7 @@ class ResourceConfigEnvVarSnap:
     name: str
 
 
-ResourceValueSnap: TypeAlias = Union[str, ResourceConfigEnvVarSnap]
+ResourceValueSnap: TypeAlias = str | ResourceConfigEnvVarSnap
 
 
 UNKNOWN_RESOURCE_TYPE = "Unknown"
@@ -753,15 +753,15 @@ class ResourceSnap(IHaveNew):
         configured_values: Mapping[str, ResourceValueSnap],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
-        nested_resources: Optional[Mapping[str, NestedResource]] = None,
-        parent_resources: Optional[Mapping[str, str]] = None,
+        nested_resources: Mapping[str, NestedResource] | None = None,
+        parent_resources: Mapping[str, str] | None = None,
         resource_type: str = UNKNOWN_RESOURCE_TYPE,
         is_top_level: bool = True,
-        asset_keys_using: Optional[Sequence[AssetKey]] = None,
-        job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
+        asset_keys_using: Sequence[AssetKey] | None = None,
+        job_ops_using: Sequence[ResourceJobUsageEntry] | None = None,
         dagster_maintained: bool = False,
-        schedules_using: Optional[Sequence[str]] = None,
-        sensors_using: Optional[Sequence[str]] = None,
+        schedules_using: Sequence[str] | None = None,
+        sensors_using: Sequence[str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -892,25 +892,27 @@ class AssetCheckNodeSnap(IHaveNew):
 
     name: str
     asset_key: AssetKey
-    description: Optional[str]
-    execution_set_identifier: Optional[str]
+    description: str | None
+    execution_set_identifier: str | None
     job_names: Sequence[str]
     blocking: bool
     additional_asset_keys: Sequence[AssetKey]
-    automation_condition: Optional[AutomationCondition]
-    automation_condition_snapshot: Optional[AutomationConditionSnapshot]
+    automation_condition: AutomationCondition | None
+    automation_condition_snapshot: AutomationConditionSnapshot | None
+    partitions_def_snapshot: PartitionsSnap | None
 
     def __new__(
         cls,
         name: str,
         asset_key: AssetKey,
-        description: Optional[str],
-        execution_set_identifier: Optional[str] = None,
-        job_names: Optional[Sequence[str]] = None,
+        description: str | None,
+        execution_set_identifier: str | None = None,
+        job_names: Sequence[str] | None = None,
         blocking: bool = False,
-        additional_asset_keys: Optional[Sequence[AssetKey]] = None,
-        automation_condition: Optional[AutomationCondition] = None,
-        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
+        additional_asset_keys: Sequence[AssetKey] | None = None,
+        automation_condition: AutomationCondition | None = None,
+        automation_condition_snapshot: AutomationConditionSnapshot | None = None,
+        partitions_def_snapshot: PartitionsSnap | None = None,
     ):
         return super().__new__(
             cls,
@@ -923,6 +925,7 @@ class AssetCheckNodeSnap(IHaveNew):
             additional_asset_keys=additional_asset_keys or [],
             automation_condition=automation_condition,
             automation_condition_snapshot=automation_condition_snapshot,
+            partitions_def_snapshot=partitions_def_snapshot,
         )
 
     @property
@@ -979,65 +982,65 @@ class AssetNodeSnap(IHaveNew):
     child_edges: Sequence[AssetChildEdgeSnap]
     execution_type: AssetExecutionType
     pools: set[str]
-    compute_kind: Optional[str]
-    op_name: Optional[str]
+    compute_kind: str | None
+    op_name: str | None
     op_names: Sequence[str]
-    code_version: Optional[str]
-    node_definition_name: Optional[str]
-    graph_name: Optional[str]
-    description: Optional[str]
+    code_version: str | None
+    node_definition_name: str | None
+    graph_name: str | None
+    description: str | None
     job_names: Sequence[str]
-    partitions: Optional[PartitionsSnap]
-    output_name: Optional[str]
+    partitions: PartitionsSnap | None
+    output_name: str | None
     metadata: Mapping[str, MetadataValue]
-    tags: Optional[Mapping[str, str]]
+    tags: Mapping[str, str] | None
     group_name: str
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
-    freshness_policy: Optional[FreshnessPolicy]
+    legacy_freshness_policy: LegacyFreshnessPolicy | None
+    freshness_policy: FreshnessPolicy | None
     is_source: bool
     is_observable: bool
     # If a set of assets can't be materialized independently from each other, they will all
     # have the same execution_set_identifier. This ID should be stable across reloads and
     # unique deployment-wide.
-    execution_set_identifier: Optional[str]
-    required_top_level_resources: Optional[Sequence[str]]
-    auto_materialize_policy: Optional[AutoMaterializePolicy]
-    automation_condition_snapshot: Optional[AutomationConditionSnapshot]
-    backfill_policy: Optional[BackfillPolicy]
-    auto_observe_interval_minutes: Optional[Union[float, int]]
-    owners: Optional[Sequence[str]]
+    execution_set_identifier: str | None
+    required_top_level_resources: Sequence[str] | None
+    auto_materialize_policy: AutoMaterializePolicy | None
+    automation_condition_snapshot: AutomationConditionSnapshot | None
+    backfill_policy: BackfillPolicy | None
+    auto_observe_interval_minutes: float | int | None
+    owners: Sequence[str] | None
 
     def __new__(
         cls,
         asset_key: AssetKey,
         parent_edges: Sequence[AssetParentEdgeSnap],
         child_edges: Sequence[AssetChildEdgeSnap],
-        execution_type: Optional[AssetExecutionType] = None,
-        pools: Optional[set[str]] = None,
-        compute_kind: Optional[str] = None,
-        op_name: Optional[str] = None,
-        op_names: Optional[Sequence[str]] = None,
-        code_version: Optional[str] = None,
-        node_definition_name: Optional[str] = None,
-        graph_name: Optional[str] = None,
-        description: Optional[str] = None,
-        job_names: Optional[Sequence[str]] = None,
-        partitions: Optional[PartitionsSnap] = None,
-        output_name: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        group_name: Optional[str] = None,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
-        is_source: Optional[bool] = None,
+        execution_type: AssetExecutionType | None = None,
+        pools: set[str] | None = None,
+        compute_kind: str | None = None,
+        op_name: str | None = None,
+        op_names: Sequence[str] | None = None,
+        code_version: str | None = None,
+        node_definition_name: str | None = None,
+        graph_name: str | None = None,
+        description: str | None = None,
+        job_names: Sequence[str] | None = None,
+        partitions: PartitionsSnap | None = None,
+        output_name: str | None = None,
+        metadata: Mapping[str, MetadataValue] | None = None,
+        tags: Mapping[str, str] | None = None,
+        group_name: str | None = None,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
+        freshness_policy: FreshnessPolicy | None = None,
+        is_source: bool | None = None,
         is_observable: bool = False,
-        execution_set_identifier: Optional[str] = None,
-        required_top_level_resources: Optional[Sequence[str]] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
-        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-        auto_observe_interval_minutes: Optional[Union[float, int]] = None,
-        owners: Optional[Sequence[str]] = None,
+        execution_set_identifier: str | None = None,
+        required_top_level_resources: Sequence[str] | None = None,
+        auto_materialize_policy: AutoMaterializePolicy | None = None,
+        automation_condition_snapshot: AutomationConditionSnapshot | None = None,
+        backfill_policy: BackfillPolicy | None = None,
+        auto_observe_interval_minutes: float | int | None = None,
+        owners: Sequence[str] | None = None,
     ):
         metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
@@ -1132,7 +1135,7 @@ class AssetNodeSnap(IHaveNew):
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
     @property
-    def automation_condition(self) -> Optional[AutomationCondition]:
+    def automation_condition(self) -> AutomationCondition | None:
         if self.auto_materialize_policy is not None:
             return self.auto_materialize_policy.to_automation_condition()
         else:
@@ -1150,7 +1153,7 @@ class NodeHandleResourceUse(NamedTuple):
 def _get_resource_usage_from_node(
     pipeline: JobDefinition,
     node: Node,
-    parent_handle: Optional[NodeHandle] = None,
+    parent_handle: NodeHandle | None = None,
 ) -> Iterable[NodeHandleResourceUse]:
     handle = NodeHandle(node.name, parent_handle)
     if isinstance(node, OpNode):
@@ -1211,6 +1214,9 @@ def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[Ass
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
                 automation_condition=automation_condition,
                 automation_condition_snapshot=automation_condition_snapshot,
+                partitions_def_snapshot=PartitionsSnap.from_def(spec.partitions_def)
+                if spec.partitions_def
+                else None,
             )
         )
 
@@ -1283,7 +1289,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
         # Partition mappings are only exposed on the AssetNodeSnap if at least one asset is
         # partitioned and the partition mapping is one of the builtin types.
-        partition_mappings: dict[AssetKey, Optional[PartitionMapping]] = {}
+        partition_mappings: dict[AssetKey, PartitionMapping | None] = {}
         builtin_partition_mapping_types = get_builtin_partition_mapping_types()
         for pk in asset_node.parent_keys:
             # directly access the partition mapping to avoid the inference step of
@@ -1363,7 +1369,7 @@ def _get_nested_resources_map(
     return out_map
 
 
-def _find_match(nested_resource, resource_defs) -> Optional[str]:
+def _find_match(nested_resource, resource_defs) -> str | None:
     if is_coercible_to_resource(nested_resource):
         defn = coerce_to_resource(nested_resource)
     else:
@@ -1439,8 +1445,8 @@ def get_preview_tags(job_def: JobDefinition) -> Mapping[str, str]:
 
 
 def resolve_automation_condition_args(
-    automation_condition: Optional[AutomationCondition],
-) -> tuple[Optional[AutomationCondition], Optional[AutomationConditionSnapshot]]:
+    automation_condition: AutomationCondition | None,
+) -> tuple[AutomationCondition | None, AutomationConditionSnapshot | None]:
     if automation_condition is None:
         return None, None
     elif automation_condition.is_serializable:
@@ -1557,30 +1563,30 @@ class RepositorySnap(IHaveNew):
     partition_sets: Sequence[PartitionSetSnap]
     sensors: Sequence[SensorSnap]
     asset_nodes: Sequence[AssetNodeSnap]
-    job_datas: Optional[Sequence[JobDataSnap]]
-    job_refs: Optional[Sequence[JobRefSnap]]
-    resources: Optional[Sequence[ResourceSnap]]
-    asset_check_nodes: Optional[Sequence[AssetCheckNodeSnap]]
-    metadata: Optional[MetadataMapping]
-    utilized_env_vars: Optional[Mapping[str, Sequence[EnvVarConsumer]]]
-    component_tree: Optional[ComponentTreeSnap]
-    defs_state_info: Optional[DefsStateInfo]
+    job_datas: Sequence[JobDataSnap] | None
+    job_refs: Sequence[JobRefSnap] | None
+    resources: Sequence[ResourceSnap] | None
+    asset_check_nodes: Sequence[AssetCheckNodeSnap] | None
+    metadata: MetadataMapping | None
+    utilized_env_vars: Mapping[str, Sequence[EnvVarConsumer]] | None
+    component_tree: ComponentTreeSnap | None
+    defs_state_info: DefsStateInfo | None
 
     def __new__(
         cls,
         name: str,
         schedules: Sequence[ScheduleSnap],
         partition_sets: Sequence[PartitionSetSnap],
-        sensors: Optional[Sequence[SensorSnap]] = None,
-        asset_nodes: Optional[Sequence[AssetNodeSnap]] = None,
-        job_datas: Optional[Sequence[JobDataSnap]] = None,
-        job_refs: Optional[Sequence[JobRefSnap]] = None,
-        resources: Optional[Sequence[ResourceSnap]] = None,
-        asset_check_nodes: Optional[Sequence[AssetCheckNodeSnap]] = None,
-        metadata: Optional[MetadataMapping] = None,
-        utilized_env_vars: Optional[Mapping[str, Sequence[EnvVarConsumer]]] = None,
-        component_tree: Optional[ComponentTreeSnap] = None,
-        defs_state_info: Optional[DefsStateInfo] = None,
+        sensors: Sequence[SensorSnap] | None = None,
+        asset_nodes: Sequence[AssetNodeSnap] | None = None,
+        job_datas: Sequence[JobDataSnap] | None = None,
+        job_refs: Sequence[JobRefSnap] | None = None,
+        resources: Sequence[ResourceSnap] | None = None,
+        asset_check_nodes: Sequence[AssetCheckNodeSnap] | None = None,
+        metadata: MetadataMapping | None = None,
+        utilized_env_vars: Mapping[str, Sequence[EnvVarConsumer]] | None = None,
+        component_tree: ComponentTreeSnap | None = None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         return super().__new__(
             cls,

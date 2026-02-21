@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "paths": {
-      "shared/*": ["./src/*"]
+      "@shared/*": ["./src/shared/*"]
     },
     "target": "es2022",
     "module": "es2022",

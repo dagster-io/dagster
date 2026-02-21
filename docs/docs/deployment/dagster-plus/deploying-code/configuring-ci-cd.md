@@ -43,31 +43,42 @@ Pushing changes to the `main` branch of that project repository will automatical
       </TabItem>
     </Tabs>
 
-3.  Initialize a Git repository in the project directory:
+3. Add the `dagster-cloud` package as a project dependency:
+
+    <Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        <CliInvocationExample path="docs_snippets/docs_snippets/dagster-plus/deployment/ci-cd/uv-add-dagster-cloud.txt" />
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        <CliInvocationExample path="docs_snippets/docs_snippets/dagster-plus/deployment/ci-cd/pip-install-dagster-cloud.txt" />
+    </TabItem>
+    </Tabs>
+
+4.  Initialize a Git repository in the project directory:
 
     ```shell
     git init .
     ```
 
-4.  Create a remote repository on GitHub to connect with the local project repository. Be sure to select `Push an existing local repository to github.com` when prompted:
+5.  Create a remote repository on GitHub to connect with the local project repository. Be sure to select `Push an existing local repository to github.com` when prompted:
 
     ```shell
     gh repo create
     ```
 
-5.  Use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files for your deployment type, including a GitHub Actions workflow file:
+6.  Use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files for your deployment type, including a GitHub Actions workflow file:
 
     ```shell
     dg plus deploy configure --git-provider github
     ```
 
-6.  Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
+7.  Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
 
     ```shell
     dg plus create ci-api-token --description 'Used in my-project GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN
     ```
 
-7.  Commit and push your changes to deploy to Dagster+:
+8.  Commit and push your changes to deploy to Dagster+:
 
     ```shell
     git add . && git commit -m "Deploy to Dagster+" && git push origin main
@@ -162,7 +173,7 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
    dagster-cloud configure
    ```
 
-You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). {/* TODO - replace with `dg` equivalent */}
+You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). For new projects, consider using the `dg` CLI command `dg plus login` instead.
 
 3. Finally, deploy your project to Dagster+ using the `serverless` command, replacing `YOUR_PACKAGE_NAME` with the name of your Dagster package:
 
@@ -200,8 +211,6 @@ Before following the steps in this section, you must:
 - Log in to your Dagster organization with `dg plus login`
 
 :::
-
-{/* TODO add step 2 below for running `dg` equivalent of `dagster-cloud ci check --project-dir=. */}
 
 1.  Set the build environment variables. Note that all variables are required:
     - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.

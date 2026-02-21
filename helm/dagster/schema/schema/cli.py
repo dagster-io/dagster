@@ -1,14 +1,20 @@
 import os
-import subprocess
+from pathlib import Path
 
 import click
 
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 
+_DAGSTER_OSS_SUBDIRECTORY = "dagster-oss"
 
-def git_repo_root():
-    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
+
+def _discover_oss_root(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".git").exists() or path.name == _DAGSTER_OSS_SUBDIRECTORY:
+            return path
+        path = path.parent
+    raise ValueError("Could not find OSS root")
 
 
 CLI_HELP = """Tools to help generate the schema file for the Dagster Helm chart.
@@ -39,12 +45,13 @@ def show():
 @schema.command()
 def apply():
     """Saves the json schema in the Helm `values.schema.json`."""
+    oss_root = _discover_oss_root(Path(__file__))
     helm_values_path_tuples = {
-        (DagsterHelmValues, os.path.join(git_repo_root(), "helm", "dagster", "values.schema.json")),
+        (DagsterHelmValues, os.path.join(oss_root, "helm", "dagster", "values.schema.json")),
         (
             DagsterUserDeploymentsHelmValues,
             os.path.join(
-                git_repo_root(),
+                oss_root,
                 "helm",
                 "dagster",
                 "charts",

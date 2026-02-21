@@ -5,7 +5,7 @@ import {Box} from '../Box';
 import {Checkbox} from '../Checkbox';
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
-import {Menu, MenuDivider, MenuItem} from '../Menu';
+import {Menu, MenuDivider, MenuItemForInteractiveContent} from '../Menu';
 import {TagSelector, TagSelectorWithSearch} from '../TagSelector';
 
 // eslint-disable-next-line import/no-default-export
@@ -45,7 +45,8 @@ export const WithSearch = () => {
 
 export const Styled = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>(allTags.slice(0, 2));
-  const isAllSelected = selectedTags.length === 6;
+  const isAllSelected = selectedTags.length === allTags.length;
+
   return (
     <TagSelector
       allTags={allTags}
@@ -54,21 +55,20 @@ export const Styled = () => {
       placeholder="Select a partition or create one"
       renderDropdownItem={(tag, dropdownItemProps) => {
         return (
-          <label>
-            <MenuItem
-              tagName="div"
-              text={
-                <Box flex={{alignItems: 'center', gap: 12}}>
-                  <Checkbox
-                    checked={dropdownItemProps.selected}
-                    onChange={dropdownItemProps.toggle}
-                  />
-                  <Dot color={Math.random() > 0.5 ? Colors.accentGreen() : Colors.accentGray()} />
-                  <span>{tag}</span>
-                </Box>
-              }
-            />
-          </label>
+          <MenuItemForInteractiveContent>
+            <Box flex={{alignItems: 'center', gap: 12}}>
+              <Checkbox
+                checked={dropdownItemProps.selected}
+                onChange={dropdownItemProps.toggle}
+                label={
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                    <Dot color={Math.random() > 0.5 ? Colors.accentGreen() : Colors.accentGray()} />
+                    <span>{tag}</span>
+                  </Box>
+                }
+              />
+            </Box>
+          </MenuItemForInteractiveContent>
         );
       }}
       renderDropdown={(dropdown) => {
@@ -79,6 +79,7 @@ export const Styled = () => {
             setSelectedTags(allTags);
           }
         };
+
         return (
           <Menu>
             <Box padding={4}>
@@ -89,25 +90,23 @@ export const Styled = () => {
                 </Box>
               </Box>
               <MenuDivider />
-              <label>
-                <MenuItem
-                  tagName="div"
-                  text={
-                    <Box flex={{alignItems: 'center', gap: 8}}>
-                      <Checkbox checked={isAllSelected} onChange={toggleAll} />
-                      <span>Select All ({allTags.length})</span>
-                    </Box>
-                  }
-                />
-              </label>
+              <MenuItemForInteractiveContent>
+                <Box flex={{alignItems: 'center', gap: 8}}>
+                  <Checkbox
+                    checked={isAllSelected}
+                    onChange={toggleAll}
+                    label={<span>Select all ({allTags.length})</span>}
+                  />
+                </Box>
+              </MenuItemForInteractiveContent>
               {dropdown}
             </Box>
           </Menu>
         );
       }}
-      renderTagList={(tags) => {
-        if (tags.length > 3) {
-          return <span>{tags.length} partitions selected</span>;
+      renderTagList={(tags, totalCount) => {
+        if (totalCount > 3) {
+          return <span>{totalCount} partitions selected</span>;
         }
         return tags;
       }}

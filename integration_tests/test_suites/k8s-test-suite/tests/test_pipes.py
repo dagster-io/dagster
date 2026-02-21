@@ -39,7 +39,7 @@ def test_pipes_client(namespace, cluster_provider):
                 "storage_root": "/tmp/",
             },
             env={
-                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                 "NUMBER_Y": "2",
             },
         ).get_results()
@@ -154,7 +154,7 @@ def test_pipes_client_file_inject(namespace, cluster_provider):
                 "storage_root": "/tmp/",
             },
             env={
-                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                 "NUMBER_Y": "2",
             },
             base_pod_spec=pod_spec,
@@ -207,7 +207,7 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
                 env_vars=[
                     f"{k}={v}"
                     for k, v in {
-                        "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                        "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
                         **pipes_session.get_bootstrap_env_vars(),
                     }.items()
@@ -263,7 +263,7 @@ def test_pipes_error(namespace, cluster_provider):
                 "sleep_seconds": 3 * POLL_INTERVAL,
             },
             env={
-                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
             },
         ).get_results()
 
@@ -290,6 +290,74 @@ def test_pipes_error(namespace, cluster_provider):
     assert len(pipes_msgs) == 2
     assert "successfully opened" in pipes_msgs[0]
     assert "external process pipes closed with exception" in pipes_msgs[1]
+
+
+@pytest.mark.default
+def test_pipes_client_ignore_init_container(namespace, cluster_provider):
+    """Test that PipesK8sClient works with an init container listed in ignore_containers.
+
+    This test is expected to fail due to a logic bug in wait_for_pod where ignored
+    init containers can cause a StopIteration when the init container status is present
+    but the regular container statuses have not yet been populated.
+    """
+    docker_image = get_test_project_docker_image()
+
+    @asset
+    def number_y(
+        context: AssetExecutionContext,
+        pipes_client: PipesK8sClient,
+    ):
+        return pipes_client.run(
+            context=context,
+            namespace=namespace,
+            extras={
+                "storage_root": "/tmp/",
+            },
+            base_pod_spec={
+                "init_containers": [
+                    {
+                        "name": "init-setup",
+                        "image": "busybox",
+                        "command": ["sh", "-c", "echo 'init done'"],
+                    }
+                ],
+                "containers": [
+                    {
+                        "name": "dagster-pipes",
+                        "image": docker_image,
+                        "command": [
+                            "python",
+                            "-m",
+                            "numbers_example.number_y",
+                        ],
+                        "env": [
+                            {
+                                "name": "PYTHONPATH",
+                                "value": "/modules/dagster-test/dagster_test/toys/external_execution/",
+                            },
+                            {"name": "NUMBER_Y", "value": "2"},
+                        ],
+                    }
+                ],
+            },
+            ignore_containers={"init-setup"},
+        ).get_results()
+
+    result = materialize(
+        [number_y],
+        resources={
+            "pipes_client": PipesK8sClient(
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+                poll_interval=POLL_INTERVAL,
+            )
+        },
+        raise_on_error=False,
+    )
+    assert result.success
+    mats = result.asset_materializations_for_node(number_y.op.name)
+    assert "is_even" in mats[0].metadata
+    assert mats[0].metadata["is_even"].value is True
 
 
 @pytest.mark.default
@@ -320,7 +388,7 @@ def test_pipes_client_read_timeout(namespace, cluster_provider):
                     "storage_root": "/tmp/",
                 },
                 env={
-                    "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                    "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                     "NUMBER_Y": "2",
                 },
             ).get_results()

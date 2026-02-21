@@ -148,6 +148,45 @@ Clients
 
 .. autoclass:: dagster_aws.pipes.PipesEMRServerlessClient
 
+Components
+----------
+
+Resource components for use with Dagster's component system.
+
+Credentials Components
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_aws.Boto3CredentialsComponent
+
+.. autoclass:: dagster_aws.S3CredentialsComponent
+
+.. autoclass:: dagster_aws.AthenaCredentialsComponent
+
+.. autoclass:: dagster_aws.redshift.RedshiftCredentialsComponent
+
+Resource Components
+^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_aws.S3ResourceComponent
+
+.. autoclass:: dagster_aws.S3FileManagerResourceComponent
+
+.. autoclass:: dagster_aws.AthenaClientResourceComponent
+
+.. autoclass:: dagster_aws.redshift.RedshiftClientResourceComponent
+
+.. autoclass:: dagster_aws.SSMResourceComponent
+
+.. autoclass:: dagster_aws.ParameterStoreResourceComponent
+
+.. autoclass:: dagster_aws.SecretsManagerResourceComponent
+
+.. autoclass:: dagster_aws.SecretsManagerSecretsResourceComponent
+
+.. autoclass:: dagster_aws.RDSResourceComponent
+
+.. autoclass:: dagster_aws.ECRPublicResourceComponent
+
 Legacy
 --------
 

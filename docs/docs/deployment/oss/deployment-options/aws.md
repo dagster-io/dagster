@@ -165,6 +165,64 @@ Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/lates
 - Keys are in camelCase as they correspond to arguments in boto's API
 - All arguments with the exception of `taskDefinition` and `overrides` can be used in `run_launcher.config.run_task_kwargs`. `taskDefinition` can be overridden by configuring the `run_launcher.config.task_definition` field instead.
 
+### Customizing task and container overrides
+
+For more fine-grained control over the ECS task, you can use the `ecs/task_overrides` and `ecs/container_overrides` tags. These allow you to pass additional configuration to the [task overrides](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskOverride.html) and [container overrides](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerOverride.html) in the `run_task` API call.
+
+#### Task overrides
+
+Use the `ecs/task_overrides` tag to set task-level overrides. For example:
+
+```py
+import dagster as dg
+
+@dg.op()
+def my_op(context):
+  context.log.info('running')
+
+@dg.job(
+  tags={
+    "ecs/task_overrides": {
+      "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
+    },
+  }
+)
+def my_job():
+  my_op()
+```
+
+#### Container overrides
+
+Use the `ecs/container_overrides` tag to set container-level overrides. For example:
+
+```py
+import dagster as dg
+
+@dg.op()
+def my_op(context):
+  context.log.info('running')
+
+@dg.job(
+  tags={
+    "ecs/container_overrides": {
+      "resourceRequirements": [
+        {"type": "GPU", "value": "1"},
+      ],
+    },
+  }
+)
+def my_job():
+  my_op()
+```
+
+:::note
+
+Using the `ecs/container_overrides` tag requires dagster version `1.12.9` or higher.
+
+The run launcher will always override the `name` and `command` fields of the container, so you cannot override these values. If you use the `ecs/cpu` or `ecs/memory` tags together with `ecs/container_overrides`, the values from the dedicated tags will be merged together, with values from `ecs/container_overrides` breaking any ties.
+
+:::
+
 ### Secrets management in ECS
 
 ECS can bind [AWS Secrets Managers secrets as environment variables when runs launch](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html). By default, Dagster will fetch any Secrets Manager secrets tagged with the `dagster` key and set them as environment variables.

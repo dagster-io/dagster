@@ -1,6 +1,6 @@
 import {BodySmall, Box, Colors, Icon, Popover, Spinner, ifPlural} from '@dagster-io/ui-components';
+import {useCatalogViews} from '@shared/assets/catalog/useCatalogViews';
 import {useMemo} from 'react';
-import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
 import styles from './AssetSelectionSummaryTile.module.css';
 import {assertUnreachable} from '../../app/Util';

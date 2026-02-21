@@ -5,7 +5,7 @@
       "@dagster-io/ui-components": ["../ui-components/src"],
       "@dagster-io/ui-components/editor": ["../ui-components/src/editor"],
       "@dagster-io/dg-docs-components/*": ["../dg-docs-components/src/*"],
-      "shared/*": ["../ui-core/src/*"]
+      "@shared/*": ["../ui-core/src/shared/*"]
     },
     "module": "esnext",
     "target": "es2022",

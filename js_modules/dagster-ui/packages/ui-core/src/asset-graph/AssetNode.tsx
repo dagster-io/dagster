@@ -1,10 +1,10 @@
 import {Box, ButtonLink, Colors, FontFamily, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
+import {UserDisplay} from '@shared/runs/UserDisplay';
 import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {gql} from '../apollo-client';
@@ -317,7 +317,7 @@ const PartitionsFacetContent = ({
   }
 
   const {numMaterialized, numPartitions, numFailed} = partitionStats;
-  const filledPct = Math.round((numMaterialized / numPartitions) * 100);
+  const filledPct = Math.floor((numMaterialized / numPartitions) * 100);
   const displayText =
     numFailed > 0
       ? `${filledPct}% filled (${compactNumber(numFailed)} failed)`
@@ -550,12 +550,7 @@ export const AssetNodeMinimalWithHealth = ({
 
   return (
     <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
-      <TooltipStyled
-        content={displayName}
-        canShow={displayName.length > 14}
-        targetTagName="div"
-        position="top"
-      >
+      <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
@@ -573,7 +568,7 @@ export const AssetNodeMinimalWithHealth = ({
             {withMiddleTruncation(displayName, {maxLength: 18})}
           </MinimalName>
         </MinimalAssetNodeBox>
-      </TooltipStyled>
+      </Tooltip>
     </MinimalAssetNodeContainer>
   );
 };
@@ -619,12 +614,7 @@ export const AssetNodeMinimalWithoutHealth = ({
 
   return (
     <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
-      <TooltipStyled
-        content={displayName}
-        canShow={displayName.length > 14}
-        targetTagName="div"
-        position="top"
-      >
+      <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
@@ -642,7 +632,7 @@ export const AssetNodeMinimalWithoutHealth = ({
             {withMiddleTruncation(displayName, {maxLength: 18})}
           </MinimalName>
         </MinimalAssetNodeBox>
-      </TooltipStyled>
+      </Tooltip>
     </MinimalAssetNodeContainer>
   );
 };
@@ -858,8 +848,4 @@ export const AssetDescription = styled.div<{$color: string}>`
   text-overflow: ellipsis;
   color: ${(p) => p.$color};
   font-size: 12px;
-`;
-
-const TooltipStyled = styled(Tooltip)`
-  height: 100%;
 `;

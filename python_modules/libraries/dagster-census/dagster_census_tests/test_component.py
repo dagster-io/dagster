@@ -174,7 +174,7 @@ def test_basic_component_load(
                 {"attributes": {"defs_state": {"management_type": "LOCAL_FILESYSTEM"}}},
             ),
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):
@@ -219,7 +219,7 @@ def test_basic_component_filter(
                 {"attributes": {"sync_selector": sync_selector}},
             ),
         ) as (
-            component,
+            _component,
             defs,
         ),
     ):

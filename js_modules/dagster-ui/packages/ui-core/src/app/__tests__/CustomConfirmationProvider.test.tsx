@@ -33,6 +33,7 @@ describe('CustomConfirmationProvider', () => {
   });
 
   it('must render a Dialog when `confirm` is executed', async () => {
+    const user = userEvent.setup();
     render(
       <CustomConfirmationProvider>
         <Test />
@@ -40,12 +41,13 @@ describe('CustomConfirmationProvider', () => {
     );
 
     const button = screen.queryByRole('button', {name: /terminate/i}) as HTMLButtonElement;
-    await userEvent.click(button);
+    await user.click(button);
 
     expect(screen.queryByText(/r u sure about this/i)).toBeVisible();
   });
 
   it('must perform confirmation correctly', async () => {
+    const user = userEvent.setup();
     render(
       <CustomConfirmationProvider>
         <Test />
@@ -53,14 +55,14 @@ describe('CustomConfirmationProvider', () => {
     );
 
     const button = screen.queryByRole('button', {name: /terminate/i}) as HTMLButtonElement;
-    await userEvent.click(button);
+    await user.click(button);
 
     const confirmationButton = screen.queryByRole('button', {
       name: /confirm/i,
     }) as HTMLButtonElement;
 
     // Resolves the promise.
-    await userEvent.click(confirmationButton);
+    await user.click(confirmationButton);
 
     expect(screen.queryByText(/confirmed\? true/i)).toBeVisible();
   });

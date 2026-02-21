@@ -1,7 +1,6 @@
 import os
 import sys
 from contextlib import ExitStack
-from typing import Optional
 
 import click
 from dagster_shared.cli import WorkspaceOpts, workspace_options
@@ -77,8 +76,8 @@ def run_command(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
-    instance_ref: Optional[str],
-    shutdown_pipe: Optional[int],
+    instance_ref: str | None,
+    shutdown_pipe: int | None,
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)

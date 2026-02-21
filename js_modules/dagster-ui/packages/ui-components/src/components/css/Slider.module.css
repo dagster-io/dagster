@@ -1,0 +1,83 @@
+/* Slider Root */
+.slider {
+  --slider-track-height: 8px;
+  --slider-handle-size: 18px;
+  --slider-track-color: var(--color-background-gray);
+  --slider-range-color: var(--color-accent-gray);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  touch-action: none;
+  width: 100%;
+}
+
+.slider[data-orientation='vertical'] {
+  flex-direction: column;
+  width: 20px;
+  min-width: 20px;
+  height: 100%;
+}
+
+/* Track - the background rail */
+.track {
+  position: relative;
+  flex-grow: 1;
+  background-color: var(--slider-track-color);
+  height: var(--slider-track-height);
+  border-radius: 4px;
+}
+
+.slider[data-orientation='vertical'] .track {
+  width: var(--slider-track-height);
+}
+
+/* Range - the filled portion */
+.range {
+  position: absolute;
+  background-color: var(--slider-range-color);
+  opacity: 1;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.slider[data-orientation='vertical'] .range {
+  width: 100%;
+  height: auto;
+}
+
+/* Thumb - the draggable handle */
+.thumb {
+  display: block;
+  width: var(--slider-handle-size);
+  height: var(--slider-handle-size);
+  border-radius: 50%;
+  border: 2px solid var(--color-accent-gray);
+  background: var(--color-background-lighter);
+  box-shadow: none;
+  transition:
+    border-color 100ms,
+    box-shadow 150ms;
+  cursor: pointer;
+}
+
+.thumb:hover {
+  border-color: var(--color-accent-gray-hover);
+  box-shadow: var(--color-shadow-default) 0px 2px 12px 0px;
+}
+
+.thumb:focus,
+.thumb:focus-visible {
+  outline: none;
+  box-shadow: var(--color-focus-ring) 0 0 0 2px;
+}
+
+.thumb[data-disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.slider[data-disabled] {
+  opacity: 0.5;
+}

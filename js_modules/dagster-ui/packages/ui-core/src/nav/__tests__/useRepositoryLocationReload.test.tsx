@@ -49,6 +49,7 @@ describe('useRepositoryReloadLocation', () => {
   };
 
   it('reloads successfully if there are no errors', async () => {
+    const user = userEvent.setup();
     render(
       <TestProvider apolloProps={{mocks: [defaultMocks]}}>
         <Test />
@@ -61,7 +62,7 @@ describe('useRepositoryReloadLocation', () => {
     });
 
     const tryButton = screen.getByRole('button', {name: /try/i});
-    await userEvent.click(tryButton);
+    await user.click(tryButton);
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
@@ -75,6 +76,7 @@ describe('useRepositoryReloadLocation', () => {
   });
 
   it('surfaces mutation errors', async () => {
+    const user = userEvent.setup();
     const mocks = {
       ReloadRepositoryLocationMutationResult: () => ({
         __typename: 'RepositoryLocationNotFound',
@@ -94,7 +96,7 @@ describe('useRepositoryReloadLocation', () => {
     });
 
     const tryButton = screen.getByRole('button', {name: /try/i});
-    await userEvent.click(tryButton);
+    await user.click(tryButton);
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
@@ -103,6 +105,7 @@ describe('useRepositoryReloadLocation', () => {
   });
 
   it('surfaces code location errors', async () => {
+    const user = userEvent.setup();
     const mocks = {
       RepositoryLocationOrLoadError: () => ({
         __typename: 'PythonError',
@@ -121,7 +124,7 @@ describe('useRepositoryReloadLocation', () => {
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    await userEvent.click(screen.getByText(/Try/));
+    await user.click(screen.getByText(/Try/));
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
@@ -136,6 +139,7 @@ describe('useRepositoryReloadLocation', () => {
 
   // eslint-disable-next-line jest/no-disabled-tests
   it.skip('waits for polling when attempting reload', async () => {
+    const user = userEvent.setup();
     const mocks = {
       WorkspaceLocationEntry: () => ({
         id: () => LOCATION,
@@ -150,7 +154,7 @@ describe('useRepositoryReloadLocation', () => {
       </TestProvider>,
     );
 
-    await userEvent.click(screen.getByText(/Try/));
+    await user.click(screen.getByText(/Try/));
 
     // Still considered reloading while polling occurs.
     await waitFor(() => {
@@ -178,6 +182,7 @@ describe('useRepositoryReloadLocation', () => {
   });
 
   it('stops polling when attempting reload when `LOADED` and there are errors', async () => {
+    const user = userEvent.setup();
     const mocks = {
       WorkspaceLocationEntry: () => ({
         id: () => LOCATION,
@@ -192,7 +197,7 @@ describe('useRepositoryReloadLocation', () => {
       </TestProvider>,
     );
 
-    await userEvent.click(screen.getByText(/Try/));
+    await user.click(screen.getByText(/Try/));
 
     // Still considered reloading while polling occurs.
     await waitFor(() => {

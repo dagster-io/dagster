@@ -1,5 +1,3 @@
-from typing import Optional
-
 import click
 from dagster_shared.cli import workspace_options
 from tqdm import tqdm
@@ -95,7 +93,7 @@ def run_wipe_command(force: bool) -> None:
 @workspace_options
 @repository_options
 @job_name_option(name="job_name")
-def run_migrate_command(from_label: str, job_name: Optional[str], **other_opts: object) -> None:
+def run_migrate_command(from_label: str, job_name: str | None, **other_opts: object) -> None:
     from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG

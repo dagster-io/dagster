@@ -54,31 +54,15 @@ When you need to generate multiple assets from a single operation, you can use t
 - Making a single call to an API that updates multiple tables
 - Using the same in-memory object to compute multiple assets
 
-In this example, `my_multi_asset` produces two assets: `asset_one` and `asset_two`. Each is derived from the same function, which makes it easier to handle related data transformations together:
+In this example, `my_multi_asset` is a single function that materializes two assets: `asset_one` and `asset_two`. This makes it easier to handle related data transformations together:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-assets/data-assets/multi_asset_decorator.py" language="python" title="src/<project_name>/defs/assets.py" />
 
-This example could be expressed as:
+The function `my_multi_asset` produces two separate assets that appear in your asset graph:
 
-```mermaid
-%%{
-  init: {
-    'theme': 'base',
-    'themeVariables': {
-      'primaryColor': '#4F43DD',
-      'primaryTextColor': '#FFFFFF',
-      'primaryBorderColor': '#231F1B',
-      'lineColor': '#DEDDFF',
-      'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#FFFFFF'
-    }
-  }
-}%%
+![2048 resolution](/images/guides/build/assets/multi_asset.png)
 
-flowchart LR
-  multi(my_multi_asset) --> one(asset_one)
-  multi(my_multi_asset) --> two(asset_two)
-```
+Note that `my_multi_asset` is the function name, not an asset itself. When you materialize either `asset_one` or `asset_two`, the `my_multi_asset` function is executed.
 
 ## Defining multiple operations that create a single asset \{#graph-asset}
 
@@ -86,30 +70,9 @@ For cases where you need to perform multiple operations to produce a single asse
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-assets/data-assets/graph_asset_decorator.py" language="python" title="src/<project_name>/defs/assets.py" />
 
-In this example, `complex_asset` is an asset that's the result of two operations: `step_one` and `step_two`. These steps are combined into a single asset, abstracting away the intermediate representations.
+In this example, `complex_asset` is an asset that's the result of two operations: `step_one` and `step_two`. These steps are combined into a single asset, abstracting away the intermediate representations:
 
-This example could be expressed as:
-
-```mermaid
-%%{
-  init: {
-    'theme': 'base',
-    'themeVariables': {
-      'primaryColor': '#4F43DD',
-      'primaryTextColor': '#FFFFFF',
-      'primaryBorderColor': '#231F1B',
-      'lineColor': '#DEDDFF',
-      'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#FFFFFF'
-    }
-  }
-
-}%%
-
-flowchart LR
-  one((step_one)) --> asset(complex_asset)
-  two((step_two)) --> asset(complex_asset)
-```
+![2048 resolution](/images/guides/build/assets/complex_asset.png)
 
 ## Asset context
 
@@ -150,6 +113,7 @@ Assets are often objects in systems with hierarchical namespaces, like filesyste
 
 ## Next steps
 
+- Learn how to model ETL pipelines and other multi-step processes in [Modeling ETL pipelines with assets](/guides/build/assets/modeling-etl-pipelines)
 - Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/assets/metadata-and-tags)
 - Learn to [pass data between assets](/guides/build/assets/passing-data-between-assets)
 - Learn to use a [factory pattern](/guides/build/assets/creating-asset-factories) to create multiple, similar assets

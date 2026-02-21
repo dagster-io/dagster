@@ -2,11 +2,12 @@ import importlib
 import inspect
 import os
 import sys
+import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Optional, Union, cast
+from typing import cast
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.seven import get_import_error_message, import_module_from_path
@@ -29,19 +30,19 @@ class CodePointer(ABC):
 
     @staticmethod
     def from_module(
-        module_name: str, definition: str, working_directory: Optional[str]
+        module_name: str, definition: str, working_directory: str | None
     ) -> "ModuleCodePointer":
         return ModuleCodePointer(module_name, definition, working_directory)
 
     @staticmethod
     def from_python_package(
-        module_name: str, attribute: str, working_directory: Optional[str]
+        module_name: str, attribute: str, working_directory: str | None
     ) -> "PackageCodePointer":
         return PackageCodePointer(module_name, attribute, working_directory)
 
     @staticmethod
     def from_python_file(
-        python_file: str, definition: str, working_directory: Optional[str]
+        python_file: str, definition: str, working_directory: str | None
     ) -> "FileCodePointer":
         return FileCodePointer(
             python_file=python_file, fn_name=definition, working_directory=working_directory
@@ -59,7 +60,11 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
     )
 
 
-def load_python_file(python_file: Union[str, Path], working_directory: Optional[str]) -> ModuleType:
+def load_python_file(
+    python_file: str | Path,
+    working_directory: str | None,
+    add_uuid_suffix: bool = False,
+) -> ModuleType:
     """Takes a path to a python file and returns a loaded module."""
     check.inst_param(python_file, "python_file", (str, Path))
     check.opt_str_param(working_directory, "working_directory")
@@ -68,6 +73,8 @@ def load_python_file(python_file: Union[str, Path], working_directory: Optional[
     os.stat(python_file)
 
     module_name = os.path.splitext(os.path.basename(python_file))[0]
+    if add_uuid_suffix:
+        module_name = f"{module_name}_{uuid.uuid4().hex}"
 
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)
@@ -110,8 +117,8 @@ def load_python_file(python_file: Union[str, Path], working_directory: Optional[
 
 def load_python_module(
     module_name: str,
-    working_directory: Optional[str],
-    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
+    working_directory: str | None,
+    remove_from_path_fn: Callable[[], Sequence[str]] | None = None,
 ) -> ModuleType:
     check.str_param(module_name, "module_name")
     check.opt_str_param(working_directory, "working_directory")
@@ -155,7 +162,7 @@ def load_python_module(
 class FileCodePointer(CodePointer, LegacyNamedTupleMixin):
     python_file: str
     fn_name: str
-    working_directory: Optional[str] = None
+    working_directory: str | None = None
 
     def load_target(self) -> object:
         module = load_python_file(self.python_file, self.working_directory)
@@ -192,7 +199,7 @@ def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str
 class ModuleCodePointer(CodePointer, LegacyNamedTupleMixin):
     module: str
     fn_name: str
-    working_directory: Optional[str] = None
+    working_directory: str | None = None
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
@@ -209,7 +216,7 @@ class ModuleCodePointer(CodePointer, LegacyNamedTupleMixin):
 class PackageCodePointer(CodePointer, LegacyNamedTupleMixin):
     module: str
     attribute: str
-    working_directory: Optional[str] = None
+    working_directory: str | None = None
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
@@ -221,7 +228,7 @@ class PackageCodePointer(CodePointer, LegacyNamedTupleMixin):
         return f"from {self.module} import {self.attribute}"
 
 
-def get_python_file_from_target(target: object) -> Optional[str]:
+def get_python_file_from_target(target: object) -> str | None:
     module = inspect.getmodule(target)
     python_file = getattr(module, "__file__", None)
 
@@ -291,7 +298,7 @@ class CustomPointer(CodePointer, IHaveNew, LegacyNamedTupleMixin):
 @record
 class AutoloadDefsModuleCodePointer(CodePointer):
     module: str
-    working_directory: Optional[str]
+    working_directory: str | None
 
     def load_target(self) -> object:
         from dagster.components.core.load_defs import load_defs
