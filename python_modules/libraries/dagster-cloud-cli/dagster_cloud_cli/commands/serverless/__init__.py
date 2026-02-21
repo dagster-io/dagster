@@ -211,13 +211,15 @@ def deploy_command(
 
     if not source_directory:
         raise ui.error("No source directory provided.")
-
-    _check_source_directory(source_directory)
-    docker_utils.verify_docker()
-
-    env_vars = kwargs.get("env", [])
+        
     base_image = kwargs.get("base_image")
+    env_vars = kwargs.get("env", [])
+    
+    if not base_image:
+        _check_source_directory(source_directory)
 
+    docker_utils.verify_docker()
+    
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
         ecr_info = gql.get_ecr_info(client)
         registry = ecr_info["registry_url"]
