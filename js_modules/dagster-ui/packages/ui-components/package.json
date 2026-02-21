@@ -104,7 +104,7 @@
     "storybook": "^10.2.7",
     "typescript": "5.9.2",
     "vite": "^7.0.0",
-    "webpack": "^5.94.0"
+    "webpack": "^5.104.1"
   },
   "browserslist": {
     "production": [
