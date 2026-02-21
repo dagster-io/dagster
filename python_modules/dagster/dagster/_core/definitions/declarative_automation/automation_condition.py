@@ -1028,7 +1028,7 @@ class AutomationResult(Generic[T_EntityKey]):
 
     def get_serializable_subset(self) -> SerializableEntitySubset:
         return (
-            self.true_subset.convert_to_serializable_subset() or self._serializable_subset_override
+            self._serializable_subset_override or self.true_subset.convert_to_serializable_subset()
         )
 
     def compute_legacy_expected_data_time(self) -> datetime.datetime | None:
