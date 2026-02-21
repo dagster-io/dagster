@@ -30,6 +30,7 @@ from dagster._core.storage.tags import (
     POOL_TAG_PREFIX,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
+    RETRY_NUMBER_TAG,
     ROOT_RUN_ID_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
@@ -460,6 +461,7 @@ class DagsterRun(
         By default the tags include:
         * dagster/run-id
         * dagster/job
+        * dagster/retry-number
 
         And, if available:
         * dagster/partition
@@ -475,6 +477,7 @@ class DagsterRun(
         tags = {
             "dagster/run-id": self.run_id,
             "dagster/job": self.job_name,
+            "dagster/retry-number": self.tags.get(RETRY_NUMBER_TAG, "0"),
         }
 
         if self.remote_job_origin:
