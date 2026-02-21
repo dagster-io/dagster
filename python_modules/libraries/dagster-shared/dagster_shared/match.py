@@ -11,9 +11,10 @@ from typing import (
     get_args,
     get_origin,
 )
+from typing_extensions import is_typeddict
+
 
 T = TypeVar("T", bound=Any)
-
 
 # Use Any for type_ because there isn't a good static type that can handle all the cases listed
 # here.
@@ -32,7 +33,9 @@ def match_type(obj: object, type_: type[T] | tuple[type[T]]) -> TypeGuard[T]:
         elif isinstance(type_, ForwardRef):
             raise NotImplementedError(
                 f"Got ForwardRef {type_}. ForwardRef is not supported by `match_type`"
-            )
+            )  
+        elif is_typeddict(type_):
+            return isinstance(obj, dict)
         else:
             return isinstance(obj, type_)
 
