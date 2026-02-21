@@ -5,6 +5,7 @@ import errno
 import functools
 import inspect
 import multiprocessing
+import multiprocessing.synchronize
 import os
 import re
 import signal
@@ -371,7 +372,9 @@ def _termination_handler(
 def start_termination_thread(
     should_stop_event: threading.Event, is_done_event: threading.Event
 ) -> None:
-    check.inst_param(should_stop_event, "should_stop_event", ttype=type(multiprocessing.Event()))
+    check.inst_param(
+        should_stop_event, "should_stop_event", ttype=multiprocessing.synchronize.Event
+    )
 
     int_thread = threading.Thread(
         target=_termination_handler,
