@@ -120,11 +120,19 @@ def _build_column_lineage_metadata(
         )
 
     package_name = dbt_resource_props["package_name"]
-    node_sql_path = target_path.joinpath(
-        "compiled",
-        package_name,
-        dbt_resource_props["original_file_path"].replace("\\", "/"),
-    )
+    # Try both 'compiled' and 'run' directories for the node SQL path
+    original_file_path = dbt_resource_props["original_file_path"].replace("\\", "/")
+    compiled_path = target_path.joinpath("compiled", package_name, original_file_path)
+    run_path = target_path.joinpath("run", package_name, original_file_path)
+    if compiled_path.exists():
+        node_sql_path = compiled_path
+    elif run_path.exists():
+        node_sql_path = run_path
+    else:
+        raise FileNotFoundError(
+            f"Neither compiled nor run SQL file found for node: {compiled_path} or {run_path}"
+        )
+
     optimized_node_ast = cast(
         "exp.Query",
         optimize(
