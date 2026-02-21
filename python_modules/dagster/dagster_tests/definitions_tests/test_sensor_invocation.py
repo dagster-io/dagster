@@ -1729,6 +1729,41 @@ def test_dynamic_partitions_sensor():
         assert run_request.partition_key == "apple"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
+def test_dagster_instance_get_within_sensor_body():
+    dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="fruits")
+
+    @dg.asset(partitions_def=dynamic_partitions_def)
+    def fruits_asset():
+        return 1
+
+    my_job = dg.define_asset_job(
+        "fruits_job", [fruits_asset], partitions_def=dynamic_partitions_def
+    )
+
+    @dg.repository
+    def my_repo():
+        return [fruits_asset]
+
+    @dg.sensor(job=my_job)
+    def test_sensor():
+        with DagsterInstance.get() as instance:
+            assert instance.get_dynamic_partitions("fruits") == ["apple"]
+            return dg.RunRequest()
+
+    with dg.instance_for_test(set_dagster_home=False) as instance:
+        instance.add_dynamic_partitions("fruits", ["apple"])
+        with dg.build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        ) as ctx:
+            test_sensor(ctx)
+
+        with dg.build_sensor_context(
+            repository_def=my_repo, instance_ref=instance.get_ref()
+        ) as ctx:
+            test_sensor(ctx)
+
+
 def test_sensor_invocation_runconfig() -> None:
     class MyConfig(dg.Config):
         a_str: str
