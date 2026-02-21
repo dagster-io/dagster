@@ -1,5 +1,6 @@
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
+import dagster as dg
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster import (
@@ -22,17 +23,17 @@ from dagster_azure.adls2.utils import DataLakeServiceClient, create_adls2_client
 from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
 
 
-class ADLS2SASToken(Config):
+class ADLS2SASToken(dg.Resolvable, Config):
     credential_type: Literal["sas"] = "sas"
-    token: str
+    token: Optional[str] = None  # noqa: UP045
 
 
-class ADLS2Key(Config):
+class ADLS2Key(dg.Resolvable, Config):
     credential_type: Literal["key"] = "key"
-    key: str
+    key: Optional[str] = None  # noqa: UP045
 
 
-class ADLS2DefaultAzureCredential(Config):
+class ADLS2DefaultAzureCredential(dg.Resolvable, Config):
     credential_type: Literal["default_azure_credential"] = "default_azure_credential"
     kwargs: dict[str, Any]
 
