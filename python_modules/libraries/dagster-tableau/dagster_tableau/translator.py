@@ -355,7 +355,7 @@ class DagsterTableauTranslator:
                     workbook_id=data.properties["workbook"]["luid"]
                     if not data.properties["isPublished"]
                     else None,
-                )
+                ),
             },
             kinds=kinds,
         )

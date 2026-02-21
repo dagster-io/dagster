@@ -4,6 +4,7 @@ from pathlib import Path
 
 import dagster as dg
 from dagster._annotations import preview, public
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -21,6 +22,19 @@ from dagster_omni.translation import (
     ResolvedOmniTranslationFn,
 )
 from dagster_omni.workspace import OmniWorkspace
+
+
+def _extract_table_name_from_omni_table_name(table_name: str) -> str:
+    """Extract the table name from an Omni table name.
+
+    Omni returns the table_name as `<db_name>_<schema_name>__<table_name>`, so we are not
+    able to automatically distinguish between the db and schema names. Instead, just get the
+    table name (last part after '__', or the whole string if no '__').
+    """
+    table_parts = table_name.split("__")
+    if len(table_parts) == 1:
+        return table_parts[0]
+    return table_parts[-1]
 
 
 @preview
@@ -92,7 +106,12 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                 owners=[owner_email] if owner_email else None,
             )
         if isinstance(data.obj, OmniQuery):
-            return dg.AssetSpec(key=dg.AssetKey([data.obj.query_config.table]))
+            table_name = data.obj.query_config.table
+            extracted_name = _extract_table_name_from_omni_table_name(table_name)
+            return dg.AssetSpec(
+                key=dg.AssetKey([table_name]),
+                metadata={**TableMetadataSet(table_name=extracted_name)},
+            )
         return None
 
     @public

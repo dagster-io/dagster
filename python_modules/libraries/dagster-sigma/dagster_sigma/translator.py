@@ -1,6 +1,6 @@
 from typing import AbstractSet, Any  # noqa: UP035
 
-from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
+from dagster import AssetDep, AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._annotations import deprecated
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import (
@@ -212,24 +212,28 @@ class DagsterSigmaTranslator:
                         f" {data.properties['name']}"
                     )
 
+            dataset_keys = [
+                self.get_asset_key(
+                    SigmaDatasetTranslatorData(
+                        dataset=dataset, organization_data=data.organization_data
+                    )
+                )
+                for dataset in datasets
+            ]
+            table_deps = [
+                AssetDep(
+                    asset=asset_key_from_table_name(".".join(table.get_table_path()).lower()),
+                    metadata={
+                        **TableMetadataSet(table_name=".".join(table.get_table_path()).lower())
+                    },
+                )
+                for table in tables
+            ]
             return AssetSpec(
                 key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
                 metadata=metadata,
                 kinds={"sigma", "workbook"},
-                deps={
-                    *[
-                        self.get_asset_key(
-                            SigmaDatasetTranslatorData(
-                                dataset=dataset, organization_data=data.organization_data
-                            )
-                        )
-                        for dataset in datasets
-                    ],
-                    *[
-                        asset_key_from_table_name(".".join(table.get_table_path()).lower())
-                        for table in tables
-                    ],
-                },
+                deps=[*dataset_keys, *table_deps],
                 owners=[data.owner_email] if data.owner_email else None,
             )
         elif isinstance(data, SigmaDatasetTranslatorData):
@@ -244,7 +248,7 @@ class DagsterSigmaTranslator:
                         columns=[
                             TableColumn(name=column_name) for column_name in sorted(data.columns)
                         ]
-                    )
+                    ),
                 ),
             }
 
