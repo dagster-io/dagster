@@ -43,6 +43,7 @@ const filters: RunFilterTokenType[] = [
   'partition',
   'backfill',
   'status',
+  'code_location',
 ];
 
 export const RunsFeedRoot = () => {
