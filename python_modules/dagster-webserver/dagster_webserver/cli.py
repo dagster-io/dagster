@@ -170,6 +170,7 @@ DEFAULT_POOL_MAX_OVERFLOW = 20
     required=False,
     default="colored",
     help="Format of the log output from the webserver",
+    envvar="DAGSTER_WEBSERVER_LOG_FORMAT",
 )
 @click.option(
     "--code-server-log-level",
