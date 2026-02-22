@@ -73,7 +73,8 @@ def _select_unique_ids_from_cli(
         cmd.append("--selector")
         cmd.append(selector)
 
-    raw_events = DbtCliResource(project_dir=project).cli(cmd)._stream_stdout()  # noqa
+    invocation = DbtCliResource(project_dir=project).cli(cmd)
+    raw_events = invocation._stream_stdout()  # noqa
     unique_ids = set()
     for event in raw_events:
         if isinstance(event, dict):
@@ -82,6 +83,10 @@ def _select_unique_ids_from_cli(
             except orjson.JSONDecodeError:
                 continue
             unique_ids.add(msg.get("unique_id"))
+
+    if not invocation.is_successful():
+        err = invocation.get_error()
+        raise err or RuntimeError("dbt invocation failed but no error was captured")
 
     return unique_ids - {None}
 
