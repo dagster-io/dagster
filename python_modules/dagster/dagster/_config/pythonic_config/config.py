@@ -230,7 +230,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                     discriminator_key: discriminated_value,
                 }
                 continue 
-           
             elif (
                 field
                 and safe_is_subclass(field.annotation, Enum)

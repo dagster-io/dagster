@@ -1,6 +1,8 @@
+from typing import Literal, Union
+
 import dagster as dg
 from pydantic import Field
-from typing import Union, Literal
+
 
 def test_union_config_revalidation_fix():
     class ConfigA(dg.Config):
@@ -13,10 +15,8 @@ def test_union_config_revalidation_fix():
     class MasterConfig(dg.Config):
         union_field: Union[ConfigA, ConfigB] = Field(discriminator="t")
 
-    # דימוי של המרת אובייקט למילון (כמו שקורה ב-dump)
     data = {"union_field": {"t": "a", "v": 10}}
     
-    # לפני התיקון שלך - השורה הזו קרסה
     revalidated = MasterConfig(**data)
     
     assert revalidated.union_field.t == "a"
