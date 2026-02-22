@@ -316,7 +316,7 @@ def dagster_event_sequence_for_step(
         )
 
         if step_context.raise_on_error:
-            raise dagster_user_error.user_exception
+            raise dagster_user_error.user_exception from None
 
     # case (4) in top comment
     except (KeyboardInterrupt, DagsterExecutionInterruptedError) as interrupt_error:
