@@ -848,6 +848,17 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return AnyDownstreamConditionsCondition()
 
+    @public
+    @beta
+    @staticmethod
+    def is_root_executable() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the asset is a root executable asset."""
+        from dagster._core.definitions.declarative_automation.operands.operands import (
+            IsRootExecutableCondition,
+        )
+
+        return IsRootExecutableCondition()
+
 
 @record
 class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):

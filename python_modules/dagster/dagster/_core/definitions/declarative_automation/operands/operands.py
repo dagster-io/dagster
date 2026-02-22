@@ -329,3 +329,20 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
         return await context.asset_graph_view.compute_subset_with_status(
             key=context.key, status=target_status, from_subset=context.candidate_subset
         )
+
+
+@whitelist_for_serdes
+@record
+class IsRootExecutableCondition(BuiltinAutomationCondition):
+    @property
+    def name(self) -> str:
+        return "is_root_executable"
+
+    def evaluate(self, context):
+        root_keys = context.asset_graph.root_executable_asset_keys
+        key = context.key
+        if key in root_keys:
+            true_subset = context.candidate_subset
+        else:
+            true_subset = context.get_empty_subset()
+        return AutomationResult(context, true_subset)
