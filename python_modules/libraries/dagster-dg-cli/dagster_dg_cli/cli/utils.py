@@ -288,7 +288,22 @@ def _workspace_entry_for_project(
         "location_name": dg_context.code_location_name,
     }
     if use_executable_path:
-        entry["executable_path"] = str(dg_context.project_python_executable)
+        # dg_context.project_python_executable is already a Path, but we'll ensure it
+        exe_path = Path(dg_context.project_python_executable)
+
+        # Normalize path (important on Windows)
+        exe_path = exe_path.resolve()
+
+        if not exe_path.exists() or not exe_path.is_file():
+            exit_with_error(
+                f"Could not find virtual environment executable for project "
+                f"'{dg_context.project_name}' at {exe_path}.\n\n"
+                "Expected a Python executable inside the project's .venv directory.\n"
+                "Create the virtual environment (e.g., python -m venv .venv) or run:\n\n"
+                "    dg dev --use-active-venv\n"
+            )
+
+        entry["executable_path"] = str(exe_path)
     return {key: entry}
 
 
