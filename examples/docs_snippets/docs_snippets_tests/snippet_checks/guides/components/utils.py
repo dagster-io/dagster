@@ -123,6 +123,8 @@ def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> st
     return get_editable_install_cmd_for_paths(
         package_manager,
         [
+            EDITABLE_DIR.parent / "dagster",
+            EDITABLE_DIR.parent / "dagster-pipes",
             EDITABLE_DIR / "dagster-cloud-cli",
             EDITABLE_DIR / "dagster-dg-core",
             EDITABLE_DIR / "dagster-dg-cli",

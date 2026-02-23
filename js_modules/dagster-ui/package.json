@@ -27,6 +27,7 @@
     "node": ">=20.x"
   },
   "resolutions": {
-    "graphql-config": "^5.0.3"
+    "graphql-config": "^5.0.3",
+    "prettier": "3.8.1"
   }
 }

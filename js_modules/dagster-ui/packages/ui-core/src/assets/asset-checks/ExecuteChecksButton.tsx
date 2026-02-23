@@ -1,6 +1,6 @@
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import {useContext, useState} from 'react';
-import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {
   ExecuteChecksButtonAssetNodeFragment,

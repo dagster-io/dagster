@@ -10,11 +10,11 @@ import {
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
+import {CodeLocationAlertsSection} from '@shared/code-location/CodeLocationAlertsSection';
+import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
+import {CodeLocationServerSection} from '@shared/code-location/CodeLocationServerSection';
+import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useCallback, useContext, useMemo, useState} from 'react';
-import {CodeLocationAlertsSection} from 'shared/code-location/CodeLocationAlertsSection.oss';
-import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
-import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
-import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 

@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-cloud-cli"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster-shared",
+    "packaging>=20.9",
+    "questionary",
+    "requests",
+    "typer>=0.15.0",
+    "click",
+    "PyYAML>=5.1",
+    "github3.py",
+    "Jinja2",
+    "setuptools",
+    "tomli>=1.1.0;python_version<\"3.11\"",
+    "validators",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-cloud-cli"
+
+[project.scripts]
+dagster-cloud = "dagster_cloud_cli.entrypoint:app"
+dagster-plus = "dagster_cloud_cli.entrypoint:app"
+
+[project.optional-dependencies]
+test = [
+    "freezegun",
+    "pytest>=8",
+    "pytest-mock==3.14.0",
+    "flaky",
+    "pex>=2.1.132,<2.60.0",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_cloud_cli_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_cloud_cli_tests/**",
+]

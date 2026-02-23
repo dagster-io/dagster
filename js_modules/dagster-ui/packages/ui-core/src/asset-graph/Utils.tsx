@@ -1,6 +1,6 @@
+import {FeatureFlag} from '@shared/FeatureFlags';
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {featureEnabled} from '../app/Flags';
 import {AssetNodeKeyFragment} from './types/AssetNode.types';

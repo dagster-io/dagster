@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-dg-cli"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster-dg-core==1!0+dev",
+    "dagster==1!0+dev",
+    "dagster-cloud-cli==1!0+dev",
+    "typer",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dg-cli"
+
+[project.scripts]
+dg = "dagster_dg_cli.cli:main"
+
+[project.optional-dependencies]
+test = [
+    "syrupy>=4.0.0",
+]
+ai = [
+    "anthropic; python_version>='3.10'",
+    "claude-code-sdk>=0.0.19; python_version>='3.10'",
+    "mcp; python_version>='3.10'",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_dg_cli_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_dg_cli_tests/**",
+    "dagster_dg_cli/cli/**/*.md",
+    "dagster_dg_cli/api_layer/**/*.md",
+]

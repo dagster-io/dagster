@@ -60,7 +60,9 @@ attributes:
 ```
 
 ### Pattern 3: Observation sensor
+
 ## Pattern 3: Observation sensor
+
 Create a [sensor](/guides/automate/sensors) that monitors the external stream and emits observations. Observations create a time-series record of stream health without materializing the asset.
 
 <CodeExample

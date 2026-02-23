@@ -118,6 +118,8 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
         install_editable_dagster_packages_to_venv(
             venv_path,
             [
+                "dagster",
+                "dagster-pipes",
                 "libraries/dagster-dg-cli",
                 "libraries/dagster-dg-core",
                 "libraries/dagster-shared",

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+import {FeatureFlag} from '@shared/FeatureFlags';
 import {act, renderHook} from '@testing-library/react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 // Immediately import to force the mock constructor to file
 import '../../hooks/useStateWithStorage';

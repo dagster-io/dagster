@@ -19,9 +19,9 @@ import {
   NewConfigEditor,
   isHelpContextEqual,
 } from '@dagster-io/ui-components/editor';
+import {LaunchRootExecutionButton} from '@shared/launchpad/LaunchRootExecutionButton';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
-import {LaunchRootExecutionButton} from 'shared/launchpad/LaunchRootExecutionButton.oss';
 import styled from 'styled-components';
 import * as yaml from 'yaml';
 

@@ -27,10 +27,20 @@ const config = {
   viteFinal: async (config) => {
     return {
       ...config,
+      logLevel: 'warn',
       build: {
         ...config.build,
         // Disable asset inlining - Icon component uses CSS masks which require file paths
         assetsInlineLimit: 0,
+        rollupOptions: {
+          ...config.build?.rollupOptions,
+          onwarn(warning, warn) {
+            if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('"use client"')) {
+              return;
+            }
+            warn(warning);
+          },
+        },
       },
     };
   },

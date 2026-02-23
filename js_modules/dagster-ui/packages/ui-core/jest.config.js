@@ -80,7 +80,7 @@ module.exports = {
     '^@koale/useworker$': '<rootDir>/jest/mocks/@koale/useworker',
     '^@dagster-io/ui-components$': '<rootDir>/../ui-components/src/index',
     '^@dagster-io/ui-components/editor$': '<rootDir>/../ui-components/src/editor',
-    '^shared/(.*)$': '<rootDir>/src/$1',
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader

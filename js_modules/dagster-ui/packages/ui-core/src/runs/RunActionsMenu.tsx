@@ -14,11 +14,11 @@ import {
   Popover,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
-import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';

@@ -21,6 +21,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
 )
+from dagster._core.storage.dagster_run import RunRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
@@ -134,10 +135,14 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     ) -> AssetCheckExecutionResolvedStatus:
         return await self._execution.resolve_status(graphene_info.context)
 
-    def resolve_run(self, graphene_info: "ResolveInfo"):
+    async def resolve_run(self, graphene_info: "ResolveInfo"):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-        run_record = graphene_info.context.instance.get_run_record_by_id(self.runId)
+        if self.runId:
+            run_record = await RunRecord.gen(graphene_info.context, self.runId)
+        else:
+            run_record = None
+
         return GrapheneRun(run_record) if run_record else None
 
 

@@ -1,7 +1,7 @@
 import {Box, Page, PageHeader, Subtitle1, Tabs, Tag} from '@dagster-io/ui-components';
+import {AssetGlobalLineageLink} from '@shared/assets/AssetPageHeader';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';

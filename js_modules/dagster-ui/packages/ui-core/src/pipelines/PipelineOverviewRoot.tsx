@@ -1,6 +1,6 @@
+import {PipelineExplorerContainer} from '@shared/pipelines/PipelineExplorerRoot';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
-import {PipelineExplorerContainer} from 'shared/pipelines/PipelineExplorerRoot.oss';
 
 import {
   ExplorerPath,

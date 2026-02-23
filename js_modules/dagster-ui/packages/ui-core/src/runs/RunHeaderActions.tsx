@@ -1,9 +1,9 @@
 import {Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {RunAlertNotifications} from '@shared/runs/RunAlertNotifications';
+import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
-import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
-import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
-import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';

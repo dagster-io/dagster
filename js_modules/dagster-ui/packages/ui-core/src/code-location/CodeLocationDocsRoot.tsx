@@ -3,10 +3,10 @@ import ListView from '@dagster-io/dg-docs-components/ListView';
 import PackagePageDetails from '@dagster-io/dg-docs-components/PackagePageDetails';
 import {Contents} from '@dagster-io/dg-docs-components/types';
 import {Box} from '@dagster-io/ui-components';
+import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
+import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {memo, useContext, useMemo} from 'react';
 import {Link, Redirect, useParams} from 'react-router-dom';
-import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
-import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 
 import {useQuery} from '../apollo-client';
 import {CodeLocationDocsPackageTree} from './CodeLocationDocsPackageTree';

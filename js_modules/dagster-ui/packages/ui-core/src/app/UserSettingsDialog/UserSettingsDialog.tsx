@@ -11,9 +11,9 @@ import {
   Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {FeatureFlag} from '@shared/FeatureFlags';
+import {UserPreferences} from '@shared/app/UserSettingsDialog/UserPreferences';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {showCustomAlert} from '../CustomAlertProvider';

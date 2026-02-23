@@ -1,0 +1,30 @@
+import {FeatureFlag} from '@shared/FeatureFlags';
+import React from 'react';
+
+type FeatureFlagRow = {key: string; flagType: FeatureFlag; label?: React.ReactNode};
+
+/**
+ * Open-source feature flags to be displayed in Dagster UI "User settings"
+ */
+export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
+  {
+    key: 'Display resources in navigation sidebar',
+    flagType: FeatureFlag.flagSidebarResources,
+  },
+  {
+    key: 'Disable WebSockets',
+    flagType: FeatureFlag.flagDisableWebsockets,
+  },
+  {
+    key: 'Disable automatically loading default config in launchpad',
+    flagType: FeatureFlag.flagDisableAutoLoadDefaults,
+  },
+  {
+    key: 'Show separate asset graph groups per code location',
+    flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
+  },
+  {
+    key: 'Use new catalog layout (beta)',
+    flagType: FeatureFlag.flagAssetCatalogSidebar,
+  },
+];

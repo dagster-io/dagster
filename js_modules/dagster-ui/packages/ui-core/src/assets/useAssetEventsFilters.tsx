@@ -1,6 +1,6 @@
 import {Box, Icon} from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import React, {useCallback, useMemo} from 'react';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetKey} from './types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';

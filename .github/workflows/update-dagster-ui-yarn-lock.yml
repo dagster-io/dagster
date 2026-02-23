@@ -49,6 +49,5 @@ jobs:
               --title "Update dagster-ui yarn.lock" \
               --body "Automated PR to update \`js_modules/dagster-ui/yarn.lock\` after a \`package.json\` change." \
               --base master \
-              --head "$branch" \
-              --reviewer "dagster-io/frontend"
+              --head "$branch"
           fi

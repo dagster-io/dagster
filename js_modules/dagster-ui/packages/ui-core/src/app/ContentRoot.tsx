@@ -1,7 +1,7 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
+import {AssetsOverviewRoot} from '@shared/assets/AssetsOverviewRoot';
 import {memo, useEffect, useRef} from 'react';
 import {Redirect, Switch, useLocation} from 'react-router-dom';
-import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
@@ -13,7 +13,7 @@ const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
 const MergedAutomationRoot = lazy(() => import('../automation/MergedAutomationRoot'));
 const FallthroughRoot = lazy(() =>
-  import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
+  import('@shared/app/FallthroughRoot').then((mod) => ({default: mod.FallthroughRoot})),
 );
 const AssetsGlobalGraphRoot = lazy(() => import('../assets/AssetsGlobalGraphRoot'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));

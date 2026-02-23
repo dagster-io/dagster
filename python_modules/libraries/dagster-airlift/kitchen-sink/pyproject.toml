@@ -1,6 +1,26 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "kitchen-sink"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-airlift[core,in-airflow]",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["kitchen_sink_tests*"]
 
 [tool.dg.project]
 defs_module = "kitchen_sink.dagster_defs.inner_component_defs"

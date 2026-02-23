@@ -4,7 +4,6 @@ import * as React from 'react';
 import {OpTags} from './OpTags';
 import {DefinitionTag} from '../graphql/types';
 import {linkToAssetTableWithKindFilter} from '../search/links';
-import {safeRedirect} from '../util/safeRedirect';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
@@ -70,7 +69,7 @@ export const AssetKind = ({
                 }
               : shouldLink
                 ? () => {
-                    safeRedirect(linkToAssetTableWithKindFilter(kind));
+                    window.location.href = linkToAssetTableWithKindFilter(kind);
                   }
                 : () => {},
           },

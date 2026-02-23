@@ -9,8 +9,8 @@ import {
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {AddToFavoritesMenuItem} from '@shared/assets/AddToFavoritesMenuItem';
 import {memo, useContext, useMemo} from 'react';
-import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';

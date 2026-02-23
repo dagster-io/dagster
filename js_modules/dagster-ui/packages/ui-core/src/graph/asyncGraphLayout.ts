@@ -1,6 +1,6 @@
+import {Worker} from '@shared/workers/Worker';
 import memoize from 'lodash/memoize';
 import {useEffect, useLayoutEffect, useMemo, useReducer, useRef} from 'react';
-import {Worker} from 'shared/workers/Worker.oss';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
