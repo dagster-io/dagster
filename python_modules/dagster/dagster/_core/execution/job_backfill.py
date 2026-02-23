@@ -2,7 +2,7 @@ import logging
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
@@ -63,10 +63,10 @@ def execute_job_backfill_iteration(
     backfill: PartitionBackfill,
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
-    debug_crash_flags: Optional[Mapping[str, int]],
+    debug_crash_flags: Mapping[str, int] | None,
     instance: DagsterInstance,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> Optional[SerializableErrorInfo]:
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+) -> SerializableErrorInfo | None:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting job backfill for {backfill.backfill_id}")
     else:
@@ -207,7 +207,7 @@ def _get_partition_set(
 def _subdivide_partition_key_range(
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
-    max_range_size: Optional[int],
+    max_range_size: int | None,
 ) -> Sequence[PartitionKeyRange]:
     """Take a partition key range and subdivide it into smaller ranges of size max_range_size. This
     is done to satisfy backfill policies that limit the maximum number of partitions that can be
@@ -326,9 +326,9 @@ def submit_backfill_runs(
     instance: DagsterInstance,
     create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
-    partition_names_or_ranges: Optional[Sequence[str | PartitionKeyRange]] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> Iterable[Optional[str]]:
+    partition_names_or_ranges: Sequence[str | PartitionKeyRange] | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+) -> Iterable[str | None]:
     """Returns the run IDs of the submitted runs."""
     origin = cast("RemotePartitionSetOrigin", backfill_job.partition_set_origin)
 
@@ -416,7 +416,7 @@ def submit_backfill_runs(
             pd.name: pd.tags for pd in partition_set_execution_data.partition_data
         }
 
-    def create_and_submit_partition_run(backfill_run_request: BackfillRunRequest) -> Optional[str]:
+    def create_and_submit_partition_run(backfill_run_request: BackfillRunRequest) -> str | None:
         workspace = create_workspace()
         code_location = workspace.get_code_location(location_name)
 
@@ -468,7 +468,7 @@ def create_backfill_run(
     partition_key_or_range: str | PartitionKeyRange,
     run_tags: Mapping[str, str],
     run_config: Mapping[str, Any],
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     log_action(
@@ -573,7 +573,7 @@ def _fetch_last_run(
     instance: DagsterInstance,
     remote_partition_set: RemotePartitionSet,
     partition_key_or_range: str | PartitionKeyRange,
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(remote_partition_set, "remote_partition_set", RemotePartitionSet)
     check.str_param(partition_key_or_range, "partition_name")

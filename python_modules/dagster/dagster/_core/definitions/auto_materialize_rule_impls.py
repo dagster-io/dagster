@@ -2,7 +2,7 @@ import datetime
 import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -206,7 +206,7 @@ class MaterializeOnCronRule(
 class AutoMaterializeAssetPartitionsFilter(
     NamedTuple(
         "_AutoMaterializeAssetPartitionsFilter",
-        [("latest_run_required_tags", Optional[Mapping[str, str]])],
+        [("latest_run_required_tags", Mapping[str, str] | None)],
     )
 ):
     """A filter that can be applied to an asset partition, during auto-materialize evaluation, and
@@ -310,10 +310,10 @@ class MaterializeOnParentUpdatedRule(
     AutoMaterializeRule,
     NamedTuple(
         "_MaterializeOnParentUpdatedRule",
-        [("updated_parent_filter", Optional[AutoMaterializeAssetPartitionsFilter])],
+        [("updated_parent_filter", AutoMaterializeAssetPartitionsFilter | None)],
     ),
 ):
-    def __new__(cls, updated_parent_filter: Optional[AutoMaterializeAssetPartitionsFilter] = None):
+    def __new__(cls, updated_parent_filter: AutoMaterializeAssetPartitionsFilter | None = None):
         return super().__new__(cls, updated_parent_filter=updated_parent_filter)
 
     @property

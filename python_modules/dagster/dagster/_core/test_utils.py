@@ -15,15 +15,7 @@ from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
-from typing import (  # noqa: UP035
-    AbstractSet,
-    Any,
-    Callable,
-    NamedTuple,
-    NoReturn,
-    Optional,
-    TypeVar,
-)
+from typing import AbstractSet, Any, Callable, NamedTuple, NoReturn, TypeVar  # noqa: UP035
 
 from typing_extensions import Self
 
@@ -91,7 +83,7 @@ T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 def assert_namedtuple_lists_equal(
     t1_list: Sequence[T_NamedTuple],
     t2_list: Sequence[T_NamedTuple],
-    exclude_fields: Optional[Sequence[str]] = None,
+    exclude_fields: Sequence[str] | None = None,
 ) -> None:
     assert len(t1_list) == len(t2_list)
     for t1, t2 in zip(t1_list, t2_list):
@@ -99,7 +91,7 @@ def assert_namedtuple_lists_equal(
 
 
 def assert_namedtuples_equal(
-    t1: T_NamedTuple, t2: T_NamedTuple, exclude_fields: Optional[Sequence[str]] = None
+    t1: T_NamedTuple, t2: T_NamedTuple, exclude_fields: Sequence[str] | None = None
 ) -> None:
     exclude_fields = exclude_fields or []
     for field in type(t1)._fields:
@@ -113,7 +105,7 @@ def step_output_event_filter(pipe_iterator: Iterator[DagsterEvent]):
             yield step_event
 
 
-def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> GraphDefinition:
+def nesting_graph(depth: int, num_children: int, name: str | None = None) -> GraphDefinition:
     """Creates a job of nested graphs up to "depth" layers, with a fan-out of
     num_children at each layer.
 
@@ -223,7 +215,7 @@ def register_managed_run_for_test(
 
 
 def wait_for_runs_to_finish(
-    instance: DagsterInstance, timeout: float = 20, run_tags: Optional[Mapping[str, str]] = None
+    instance: DagsterInstance, timeout: float = 20, run_tags: Mapping[str, str] | None = None
 ) -> None:
     total_time = 0
     interval = 0.1
@@ -245,9 +237,9 @@ def wait_for_runs_to_finish(
 
 def poll_for_finished_run(
     instance: DagsterInstance,
-    run_id: Optional[str] = None,
+    run_id: str | None = None,
     timeout: float = 20,
-    run_tags: Optional[Mapping[str, str]] = None,
+    run_tags: Mapping[str, str] | None = None,
 ) -> DagsterRun:
     total_time = 0
     interval = 0.01
@@ -281,7 +273,7 @@ def poll_for_event(
     instance: DagsterInstance,
     run_id: str,
     event_type: str,
-    message: Optional[str],
+    message: str | None,
     timeout: float = 30,
 ) -> None:
     total_time = 0
@@ -330,24 +322,24 @@ from dagster._core.storage.runs import SqliteRunStorage
 
 
 class ExplodeOnInitRunStorage(SqliteRunStorage):
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         raise NotImplementedError("Init was called")
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value
+        cls, inst_data: ConfigurableClassData | None, config_value
     ) -> "SqliteRunStorage":
         raise NotImplementedError("from_config_value was called")
 
 
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
 
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -373,7 +365,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         bad_run_ids=None,
         bad_user_code_run_ids=None,
     ):
@@ -428,7 +420,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         self._queue = []
 
@@ -462,7 +454,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
 
 class TestSecretsLoader(SecretsLoader, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: dict[str, str]):
+    def __init__(self, inst_data: ConfigurableClassData | None, env_vars: dict[str, str]):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
@@ -470,7 +462,7 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
         return self.env_vars.copy()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -492,7 +484,7 @@ def get_crash_signals() -> Sequence[Signals]:
 def in_process_test_workspace(
     instance: DagsterInstance,
     loadable_target_origin: LoadableTargetOrigin,
-    container_image: Optional[str] = None,
+    container_image: str | None = None,
 ) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
         instance,
@@ -606,7 +598,7 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures: dict[str, Future], timeout: Optional[float] = None):
+def wait_for_futures(futures: dict[str, Future], timeout: float | None = None):
     start_time = time.time()
     results = {}
     for target_id, future in futures.copy().items():
@@ -715,7 +707,7 @@ def ensure_dagster_tests_import() -> None:
 def create_test_asset_job(
     assets: Sequence[AssetsDefinition | SourceAsset],
     *,
-    selection: Optional[CoercibleToAssetSelection] = None,
+    selection: CoercibleToAssetSelection | None = None,
     name: str = "asset_job",
     resources: Mapping[str, object] = {},
     **kwargs: Any,
@@ -833,7 +825,7 @@ def get_paginated_partition_keys(
 
 
 class BasicLoadingContext(LoadingContext):
-    def __init__(self, instance: Optional[DagsterInstance] = None):
+    def __init__(self, instance: DagsterInstance | None = None):
         from unittest import mock
 
         self._loaders = {}

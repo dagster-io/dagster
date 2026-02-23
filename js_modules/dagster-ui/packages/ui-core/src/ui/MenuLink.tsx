@@ -9,7 +9,8 @@ import {Link, LinkProps} from 'react-router-dom';
 import styles from './css/MenuLink.module.css';
 
 interface MenuLinkProps
-  extends CommonMenuItemProps,
+  extends
+    CommonMenuItemProps,
     Omit<
       React.ComponentProps<typeof MenuExternalLink>,
       'onClick' | 'onFocus' | 'target' | 'ref' | 'href' | 'download'

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
@@ -14,7 +14,7 @@ class SubmitRunContext(NamedTuple):
     dagster_run: DagsterRun
     workspace: "BaseWorkspaceRequestContext"
 
-    def get_request_header(self, key: str) -> Optional[str]:
+    def get_request_header(self, key: str) -> str | None:
         from dagster._core.workspace.context import WorkspaceRequestContext
 
         # if there is a source

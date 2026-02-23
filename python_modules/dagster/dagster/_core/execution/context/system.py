@@ -138,7 +138,7 @@ class IPlanContext(ABC):
 
     @property
     @abstractmethod
-    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
+    def output_capture(self) -> Mapping[StepOutputHandle, Any] | None:
         raise NotImplementedError()
 
     @property
@@ -157,7 +157,7 @@ class IPlanContext(ABC):
         check.str_param(key, "key")
         return key in self.dagster_run.tags
 
-    def get_tag(self, key: str) -> Optional[str]:
+    def get_tag(self, key: str) -> str | None:
         check.str_param(key, "key")
         return self.dagster_run.tags.get(key)
 
@@ -192,7 +192,7 @@ class ExecutionData(NamedTuple):
     scoped_resources_builder: ScopedResourcesBuilder
     resolved_run_config: ResolvedRunConfig
     job_def: JobDefinition
-    repository_def: Optional[RepositoryDefinition]
+    repository_def: RepositoryDefinition | None
 
 
 class IStepContext(IPlanContext):
@@ -209,7 +209,7 @@ class IStepContext(IPlanContext):
         raise NotImplementedError()
 
     @property
-    def op_retry_policy(self) -> Optional[RetryPolicy]:
+    def op_retry_policy(self) -> RetryPolicy | None:
         # Currently this pulls the retry policy directly from the definition object -
         # the retry policy would need to be moved to JobSnapshot or ExecutionPlanSnapshot
         # in order for the run worker to be able to handle retries without direct
@@ -228,7 +228,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[dict[StepOutputHandle, Any]],
+        output_capture: dict[StepOutputHandle, Any] | None,
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -258,7 +258,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> dict[StepOutputHandle, Any] | None:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -288,7 +288,7 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         log_manager: DagsterLogManager,
         executor: Executor,
         step: ExecutionStep,
-        output_capture: Optional[dict[StepOutputHandle, Any]],
+        output_capture: dict[StepOutputHandle, Any] | None,
     ):
         super().__init__(plan_data, log_manager, executor, output_capture)
         self._step = step
@@ -314,7 +314,7 @@ class PlanExecutionContext(IPlanContext):
         plan_data: PlanData,
         execution_data: ExecutionData,
         log_manager: DagsterLogManager,
-        output_capture: Optional[dict[StepOutputHandle, Any]],
+        output_capture: dict[StepOutputHandle, Any] | None,
         event_loop: AbstractEventLoop,
     ):
         self._plan_data = plan_data
@@ -328,7 +328,7 @@ class PlanExecutionContext(IPlanContext):
         return self._plan_data
 
     @property
-    def output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> dict[StepOutputHandle, Any] | None:
         return self._output_capture
 
     @property
@@ -425,7 +425,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         execution_data: ExecutionData,
         log_manager: DagsterLogManager,
         step: ExecutionStep,
-        output_capture: Optional[dict[StepOutputHandle, Any]],
+        output_capture: dict[StepOutputHandle, Any] | None,
         known_state: Optional["KnownExecutionState"],
         event_loop,
     ):
@@ -456,7 +456,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             resource for resource in resources_iter if isinstance(resource, StepLauncher)
         ]
 
-        self._step_launcher: Optional[StepLauncher] = None
+        self._step_launcher: StepLauncher | None = None
         if len(step_launcher_resources) > 1:
             raise DagsterInvariantViolationError(
                 f"Multiple required resources for {self.describe_op()} have inherited StepLauncher"
@@ -465,10 +465,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
 
-        self._step_exception: Optional[BaseException] = None
+        self._step_exception: BaseException | None = None
 
-        self._step_output_capture: Optional[dict[StepOutputHandle, Any]] = None
-        self._step_output_metadata_capture: Optional[dict[StepOutputHandle, Any]] = None
+        self._step_output_capture: dict[StepOutputHandle, Any] | None = None
+        self._step_output_metadata_capture: dict[StepOutputHandle, Any] | None = None
         # Enable step output capture if there are any hooks which will receive them.
         # Expect in the future that hooks may control whether or not they get outputs,
         # but for now presence of any will cause output capture.
@@ -491,11 +491,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._requires_typed_event_stream
 
     @property
-    def typed_event_stream_error_message(self) -> Optional[str]:
+    def typed_event_stream_error_message(self) -> str | None:
         return self._typed_event_stream_error_message
 
     # Error message will be appended to the default error message.
-    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None):
+    def set_requires_typed_event_stream(self, *, error_message: str | None = None):
         self._requires_typed_event_stream = True
         self._typed_event_stream_error_message = error_message
 
@@ -516,7 +516,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._resources
 
     @property
-    def step_launcher(self) -> Optional[StepLauncher]:
+    def step_launcher(self) -> StepLauncher | None:
         return self._step_launcher
 
     @property
@@ -540,7 +540,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.job_def.get_op(self._step.node_handle)
 
     @property
-    def op_retry_policy(self) -> Optional[RetryPolicy]:
+    def op_retry_policy(self) -> RetryPolicy | None:
         return self.job_def.get_retry_policy_for_handle(self.node_handle)
 
     def describe_op(self) -> str:
@@ -560,7 +560,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_output_context(
         self,
         step_output_handle: StepOutputHandle,
-        output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        output_metadata: Mapping[str, RawMetadataValue] | None = None,
     ) -> OutputContext:
         return get_output_context(
             self.execution_plan,
@@ -581,7 +581,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         config: Any,
         definition_metadata: Any,
         dagster_type: DagsterType,
-        source_handle: Optional[StepOutputHandle] = None,
+        source_handle: StepOutputHandle | None = None,
         resource_config: Any = None,
         resources: Optional["Resources"] = None,
         artificial_output_context: Optional["OutputContext"] = None,
@@ -589,7 +589,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if source_handle and artificial_output_context:
             check.failed("Cannot specify both source_handle and artificial_output_context.")
 
-        upstream_output: Optional[OutputContext] = None
+        upstream_output: OutputContext | None = None
 
         if source_handle is not None:
             version = self.execution_plan.get_version_for_step_output_handle(source_handle)
@@ -671,7 +671,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return False
 
-    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+    def observe_output(self, output_name: str, mapping_key: str | None = None) -> None:
         if mapping_key:
             if output_name not in self._seen_outputs:
                 self._seen_outputs[output_name] = set()
@@ -679,7 +679,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             self._seen_outputs[output_name] = "seen"
 
-    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+    def has_seen_output(self, output_name: str, mapping_key: str | None = None) -> bool:
         if mapping_key:
             return (
                 output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
@@ -689,8 +689,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
-        output_name: Optional[str] = None,
-        mapping_key: Optional[str] = None,
+        output_name: str | None = None,
+        mapping_key: str | None = None,
     ) -> None:
         if output_name is None and len(self.op_def.output_defs) == 1:
             output_def = self.op_def.output_defs[0]
@@ -731,8 +731,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def add_asset_metadata(
         self,
         metadata: Mapping[str, Any],
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        partition_key: Optional[str] = None,
+        asset_key: CoercibleToAssetKey | None = None,
+        partition_key: str | None = None,
     ) -> None:
         if not self.assets_def:
             raise DagsterInvariantViolationError(
@@ -779,18 +779,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_output_metadata(
         self,
         output_name: str,
-        mapping_key: Optional[str] = None,
-    ) -> Optional[Mapping[str, Any]]:
+        mapping_key: str | None = None,
+    ) -> Mapping[str, Any] | None:
         return self._metadata_accumulator.get_output_metadata(output_name, mapping_key)
 
     def get_asset_metadata(
         self,
         asset_key: AssetKey,
-        partition_key: Optional[str] = None,
-    ) -> Optional[Mapping[str, Any]]:
+        partition_key: str | None = None,
+    ) -> Mapping[str, Any] | None:
         return self._metadata_accumulator.get_asset_metadata(asset_key, partition_key)
 
-    def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+    def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> str | None:
         # walk through event logs to find the right run_id based on the run lineage
 
         parent_state = self.get_known_state().parent_state
@@ -838,7 +838,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # should not load if this step is being executed in the current run
         return step_output_handle.step_key not in self.dagster_run.step_keys_to_execute
 
-    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> str | None:
         if self._should_load_from_previous_runs(step_output_handle):
             return self._get_source_run_id_from_logs(step_output_handle)
         else:
@@ -848,15 +848,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._step_exception = check.inst_param(exception, "exception", BaseException)
 
     @property
-    def step_exception(self) -> Optional[BaseException]:
+    def step_exception(self) -> BaseException | None:
         return self._step_exception
 
     @property
-    def step_output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
+    def step_output_capture(self) -> dict[StepOutputHandle, Any] | None:
         return self._step_output_capture
 
     @property
-    def step_output_metadata_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
+    def step_output_metadata_capture(self) -> dict[StepOutputHandle, Any] | None:
         return self._step_output_metadata_capture
 
     @property
@@ -911,7 +911,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._data_version_cache.get_data_version(asset_key)
 
     @property
-    def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["InputAssetVersionInfo"]]]:
+    def input_asset_records(self) -> Mapping[AssetKey, Optional["InputAssetVersionInfo"]] | None:
         return self._data_version_cache.input_asset_version_info
 
     @property
@@ -949,7 +949,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return output_keys
 
     @cached_property
-    def run_partitions_def(self) -> Optional[PartitionsDefinition]:
+    def run_partitions_def(self) -> PartitionsDefinition | None:
         job_def_partitions_def = self.job_def.partitions_def
         if job_def_partitions_def is not None:
             return job_def_partitions_def
@@ -961,11 +961,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.entity_partitions_def
 
     @cached_property
-    def assets_def(self) -> Optional[AssetsDefinition]:
+    def assets_def(self) -> AssetsDefinition | None:
         return self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
 
     @cached_property
-    def entity_partitions_def(self) -> Optional[PartitionsDefinition]:
+    def entity_partitions_def(self) -> PartitionsDefinition | None:
         """If the current step is executing a partitioned asset, returns the PartitionsDefinition
         for that asset. If there are one or more partitioned assets executing in the step, they're
         expected to all have the same PartitionsDefinition.
@@ -1133,7 +1133,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f" but the step input has a partition range: '{start}' to '{end}'."
             )
 
-    def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
+    def _partitions_def_for_output(self, output_name: str) -> PartitionsDefinition | None:
         asset_key = self.job_def.asset_layer.get_asset_key_for_node_output(
             node_handle=self.node_handle, output_name=output_name
         )
@@ -1142,7 +1142,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             return None
 
-    def partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
+    def partitions_def_for_output(self, output_name: str) -> PartitionsDefinition | None:
         return self._partitions_def_for_output(output_name)
 
     def has_asset_partitions_for_output(self, output_name: str) -> bool:

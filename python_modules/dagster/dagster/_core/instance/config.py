@@ -44,8 +44,8 @@ def is_dagster_home_set() -> bool:
 def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
-    overrides: Optional[Mapping[str, object]] = None,
-) -> tuple[Mapping[str, Any], Optional[type["DagsterInstance"]]]:
+    overrides: Mapping[str, object] | None = None,
+) -> tuple[Mapping[str, Any], type["DagsterInstance"] | None]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_mapping_param(overrides, "overrides")
@@ -335,7 +335,7 @@ def retention_config_schema() -> Field:
 
 
 def get_tick_retention_settings(
-    settings: Optional[Mapping[str, Any]],
+    settings: Mapping[str, Any] | None,
     default_retention_settings: Mapping["TickStatus", int],
 ) -> Mapping["TickStatus", int]:
     if not settings or not settings.get("purge_after_days"):
@@ -620,9 +620,9 @@ class PoolGranularity(Enum):
 
 @record
 class PoolConfig:
-    pool_granularity: Optional[PoolGranularity]
-    default_pool_limit: Optional[int]
-    op_granularity_run_buffer: Optional[int]
+    pool_granularity: PoolGranularity | None
+    default_pool_limit: int | None
+    op_granularity_run_buffer: int | None
 
 
 @record

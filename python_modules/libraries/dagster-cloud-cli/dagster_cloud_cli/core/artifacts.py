@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 import requests
 
@@ -27,7 +26,7 @@ def download_artifact(
     scope: DagsterCloudInstanceScope,
     key: str,
     path: Path | str,
-    deployment: Optional[str] = None,
+    deployment: str | None = None,
 ):
     response = _dagster_cloud_http_client().post(
         url=f"{url}/gen_artifact_get",
@@ -56,7 +55,7 @@ def upload_artifact(
     scope: DagsterCloudInstanceScope,
     key: str,
     path: Path | str,
-    deployment: Optional[str] = None,
+    deployment: str | None = None,
 ):
     upload_file = Path(path).resolve(strict=True)
 
@@ -82,7 +81,7 @@ def upload_artifact(
     response.raise_for_status()
 
 
-def _resolve_org(passed_org: Optional[str]) -> str:
+def _resolve_org(passed_org: str | None) -> str:
     org = passed_org or get_organization()
     if org is None:
         raise Exception(
@@ -92,7 +91,7 @@ def _resolve_org(passed_org: Optional[str]) -> str:
     return org
 
 
-def _resolve_token(passed_token: Optional[str]) -> str:
+def _resolve_token(passed_token: str | None) -> str:
     api_token = get_user_token()
     if api_token is None:
         raise Exception(
@@ -102,7 +101,7 @@ def _resolve_token(passed_token: Optional[str]) -> str:
     return api_token
 
 
-def _resolve_deploy(passed_deploy: Optional[str]) -> str:
+def _resolve_deploy(passed_deploy: str | None) -> str:
     deploy = passed_deploy or get_deployment()
     if deploy is None:
         raise Exception(
@@ -112,7 +111,7 @@ def _resolve_deploy(passed_deploy: Optional[str]) -> str:
     return deploy
 
 
-def _resolve_url(organization: str, deployment: Optional[str] = None) -> str:
+def _resolve_url(organization: str, deployment: str | None = None) -> str:
     env_url = os.getenv(URL_ENV_VAR_NAME)
     if env_url:
         return env_url
@@ -123,8 +122,8 @@ def _resolve_url(organization: str, deployment: Optional[str] = None) -> str:
 def upload_organization_artifact(
     key: str,
     path: str | Path,
-    organization: Optional[str] = None,
-    api_token: Optional[str] = None,
+    organization: str | None = None,
+    api_token: str | None = None,
 ):
     upload_artifact(
         url=_resolve_url(
@@ -140,9 +139,9 @@ def upload_organization_artifact(
 def upload_deployment_artifact(
     key: str,
     path: str | Path,
-    organization: Optional[str] = None,
-    deployment: Optional[str] = None,
-    api_token: Optional[str] = None,
+    organization: str | None = None,
+    deployment: str | None = None,
+    api_token: str | None = None,
 ):
     upload_artifact(
         url=_resolve_url(
@@ -159,8 +158,8 @@ def upload_deployment_artifact(
 def download_organization_artifact(
     key: str,
     path: str | Path,
-    organization: Optional[str] = None,
-    api_token: Optional[str] = None,
+    organization: str | None = None,
+    api_token: str | None = None,
 ):
     download_artifact(
         url=_resolve_url(
@@ -176,9 +175,9 @@ def download_organization_artifact(
 def download_deployment_artifact(
     key: str,
     path: str | Path,
-    organization: Optional[str] = None,
-    deployment: Optional[str] = None,
-    api_token: Optional[str] = None,
+    organization: str | None = None,
+    deployment: str | None = None,
+    api_token: str | None = None,
 ):
     deployment = _resolve_deploy(deployment)
     download_artifact(

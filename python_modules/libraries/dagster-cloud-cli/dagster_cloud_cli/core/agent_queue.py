@@ -1,3 +1,3 @@
-from typing import Optional
+from typing import TypeAlias
 
-AgentQueue = Optional[str]
+AgentQueue: TypeAlias = str | None

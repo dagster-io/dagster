@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from dagster._utils.concurrency import ConcurrencyKeyInfo
 
 
-def _pool_key_for_step(step: ExecutionStepSnap) -> Optional[str]:
+def _pool_key_for_step(step: ExecutionStepSnap) -> str | None:
     if step.pool is not None:
         return step.pool
 
@@ -32,7 +32,7 @@ def _pool_key_for_step(step: ExecutionStepSnap) -> Optional[str]:
 
 def compute_run_op_concurrency_info_for_snapshot(
     plan_snapshot: ExecutionPlanSnapshot,
-) -> Optional[RunOpConcurrency]:
+) -> RunOpConcurrency | None:
     """Utility function called at run creation time to add the concurrency info needed to keep track
     of concurrency limits for each in-flight run.
     """
@@ -83,7 +83,7 @@ class GlobalOpConcurrencyLimitsCounter:
         concurrency_keys: set[str],
         pool_limits: Sequence[PoolLimit],
         slot_count_offset: int = 0,
-        pool_granularity: Optional[PoolGranularity] = None,
+        pool_granularity: PoolGranularity | None = None,
     ):
         self._root_pools_by_run = {}
         self._concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = {}

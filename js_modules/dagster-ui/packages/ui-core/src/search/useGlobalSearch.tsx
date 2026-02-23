@@ -1,5 +1,5 @@
+import {useAugmentSearchResults} from '@shared/search/useAugmentSearchResults';
 import {useCallback, useContext, useEffect, useRef} from 'react';
-import {useAugmentSearchResults} from 'shared/search/useAugmentSearchResults.oss';
 
 import {buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';

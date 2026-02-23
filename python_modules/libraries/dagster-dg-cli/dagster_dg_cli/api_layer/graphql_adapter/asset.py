@@ -1,7 +1,6 @@
 """GraphQL implementation for asset operations."""
 
 import logging
-from typing import Optional
 
 from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAsset,
@@ -110,8 +109,8 @@ query AssetNodes($assetKeys: [AssetKeyInput!]!) {
 
 def list_dg_plus_api_assets_via_graphql(
     client: IGraphQLClient,
-    limit: Optional[int] = None,
-    cursor: Optional[str] = None,
+    limit: int | None = None,
+    cursor: str | None = None,
 ) -> DgApiAssetList:
     """Fetch assets using two-step GraphQL approach.
 
@@ -472,8 +471,8 @@ def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
 
 def list_dg_plus_api_assets_with_status_via_graphql(
     client: IGraphQLClient,
-    limit: Optional[int] = None,
-    cursor: Optional[str] = None,
+    limit: int | None = None,
+    cursor: str | None = None,
 ) -> DgApiAssetList:
     """Fetch assets with status information using comprehensive GraphQL approach."""
     # Step 1: Get paginated asset keys

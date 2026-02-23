@@ -116,15 +116,15 @@ class DagsterType:
     def __init__(
         self,
         type_check_fn: TypeCheckFn,
-        key: t.Optional[str] = None,
-        name: t.Optional[str] = None,
+        key: str | None = None,
+        name: str | None = None,
         is_builtin: bool = False,
-        description: t.Optional[str] = None,
-        loader: t.Optional[DagsterTypeLoader] = None,
-        required_resource_keys: t.Optional[t.Set[str]] = None,
+        description: str | None = None,
+        loader: DagsterTypeLoader | None = None,
+        required_resource_keys: t.Set[str] | None = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = t.Any,
-        metadata: t.Optional[t.Mapping[str, RawMetadataValue]] = None,
+        metadata: t.Mapping[str, RawMetadataValue] | None = None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")
@@ -227,7 +227,7 @@ class DagsterType:
 
     @public
     @property
-    def unique_name(self) -> t.Optional[str]:
+    def unique_name(self) -> str | None:
         """The unique name of this type. Can be None if the type is not unique, such as container types."""
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(
@@ -250,13 +250,13 @@ class DagsterType:
 
     @public
     @property
-    def loader(self) -> t.Optional[DagsterTypeLoader]:
+    def loader(self) -> DagsterTypeLoader | None:
         """Optional[DagsterTypeLoader]: Loader for this type, if any."""
         return self._loader
 
     @public
     @property
-    def description(self) -> t.Optional[str]:
+    def description(self) -> str | None:
         """Optional[str]: Description of the type, or None if not provided."""
         return self._description
 
@@ -265,7 +265,7 @@ class DagsterType:
         return []
 
     @property
-    def loader_schema_key(self) -> t.Optional[str]:
+    def loader_schema_key(self) -> str | None:
         return self.loader.schema_type.key if self.loader else None
 
     @property
@@ -301,7 +301,7 @@ class DagsterType:
             )
 
 
-def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
+def _validate_type_check_fn(fn: t.Callable, name: str | None) -> bool:
     from dagster_shared.seven import get_arg_names
 
     args = get_arg_names(fn)
@@ -423,11 +423,11 @@ class _Bool(BuiltinScalarDagsterType):
 class Anyish(DagsterType):
     def __init__(
         self,
-        key: t.Optional[str],
-        name: t.Optional[str],
-        loader: t.Optional[DagsterTypeLoader] = None,
+        key: str | None,
+        name: str | None,
+        loader: DagsterTypeLoader | None = None,
         is_builtin: bool = False,
-        description: t.Optional[str] = None,
+        description: str | None = None,
     ):
         super(Anyish, self).__init__(
             key=key,
@@ -466,8 +466,8 @@ class _Any(Anyish):
 
 def create_any_type(
     name: str,
-    loader: t.Optional[DagsterTypeLoader] = None,
-    description: t.Optional[str] = None,
+    loader: DagsterTypeLoader | None = None,
+    description: str | None = None,
 ) -> Anyish:
     return Anyish(
         key=name,
@@ -570,8 +570,8 @@ class PythonObjectDagsterType(DagsterType):
     def __init__(
         self,
         python_type: t.Type | t.Tuple[t.Type, ...],
-        key: t.Optional[str] = None,
-        name: t.Optional[str] = None,
+        key: str | None = None,
+        name: str | None = None,
         **kwargs,
     ):
         if isinstance(python_type, tuple):
@@ -622,7 +622,7 @@ class NoneableInputSchema(DagsterTypeLoader):
 
 def _create_nullable_input_schema(
     inner_type: DagsterType,
-) -> t.Optional[DagsterTypeLoader]:
+) -> DagsterTypeLoader | None:
     if not inner_type.loader:
         return None
 
@@ -647,7 +647,7 @@ class OptionalType(DagsterType):
             type_check_fn=self.type_check_method,
             loader=_create_nullable_input_schema(inner_type),
             # This throws a type error with Py
-            typing_type=t.Optional[inner_type.typing_type],
+            typing_type=t.Optional[inner_type.typing_type],  # noqa: UP045
         )
 
     @property
@@ -771,9 +771,7 @@ def _List(inner_type):
 
 
 class Stringish(DagsterType):
-    def __init__(
-        self, key: t.Optional[str] = None, name: t.Optional[str] = None, **kwargs
-    ):
+    def __init__(self, key: str | None = None, name: str | None = None, **kwargs):
         name = check.opt_str_param(name, "name", type(self).__name__)
         key = check.opt_str_param(key, "key", name)
         super(Stringish, self).__init__(

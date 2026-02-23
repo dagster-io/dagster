@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar, cast
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -195,7 +195,7 @@ def partition_dimensions_to_dnf(
     partition_dimensions: Iterable[TablePartitionDimension],
     table_schema: Schema,
     str_values: bool = False,
-) -> Optional[list[FilterLiteralType]]:
+) -> list[FilterLiteralType] | None:
     parts = []
     for partition_dimension in partition_dimensions:
         field = _field_from_schema(partition_dimension.partition_expr, table_schema)
@@ -248,14 +248,14 @@ def _time_window_partition_dnf(
     return (table_partition.partition_expr, "=", start_dt)
 
 
-def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
+def _field_from_schema(field_name: str, schema: Schema) -> DeltaField | None:
     for field in schema.fields:
         if field.name == field_name:
             return field
     return None
 
 
-def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = None):
+def _get_partition_stats(dt: DeltaTable, table_slice: TableSlice | None = None):
     # Get all add actions
     actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
 
@@ -298,7 +298,7 @@ def _has_partitions(table_slice: TableSlice) -> bool:
     )
 
 
-def _format_predicate_value(value) -> Optional[str]:
+def _format_predicate_value(value) -> str | None:
     """Format a value for use in partition predicate."""
     # Handle single-element lists (common in static partitions)
     if isinstance(value, list) and len(value) == 1:
@@ -313,7 +313,7 @@ def _format_predicate_value(value) -> Optional[str]:
         return str(value)
 
 
-def _build_partition_predicate(partition_dimensions, table_schema) -> Optional[str]:
+def _build_partition_predicate(partition_dimensions, table_schema) -> str | None:
     """Build partition predicate string from dimensions."""
     predicate_conditions = []
     for partition_dim in partition_dimensions:

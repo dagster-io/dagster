@@ -29,29 +29,29 @@ class IJob(ABC):
     def get_subset(
         self,
         *,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ) -> "IJob":
         pass
 
     @property
     @abstractmethod
-    def op_selection(self) -> Optional[AbstractSet[str]]:
+    def op_selection(self) -> AbstractSet[str] | None:
         pass
 
     @property
     @abstractmethod
-    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+    def asset_selection(self) -> AbstractSet[AssetKey] | None:
         pass
 
     @property
     @abstractmethod
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+    def asset_check_selection(self) -> AbstractSet[AssetCheckKey] | None:
         pass
 
     @property
-    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> AbstractSet[str] | None:
         return set(self.op_selection) if self.op_selection else None
 
 
@@ -71,9 +71,9 @@ class InMemoryJob(IJob):
     def get_subset(
         self,
         *,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ) -> "InMemoryJob":
         op_selection = set(op_selection) if op_selection else None
         return InMemoryJob(
@@ -85,15 +85,15 @@ class InMemoryJob(IJob):
         )
 
     @property
-    def op_selection(self) -> Optional[AbstractSet[str]]:
+    def op_selection(self) -> AbstractSet[str] | None:
         return self._job_def.op_selection
 
     @property
-    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+    def asset_selection(self) -> AbstractSet[AssetKey] | None:
         return self._job_def.asset_selection
 
     @property
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+    def asset_check_selection(self) -> AbstractSet[AssetCheckKey] | None:
         return self._job_def.asset_check_selection
 
 
@@ -113,22 +113,22 @@ class RepoBackedJob(IJob):
         return self._repository_def
 
     @property
-    def op_selection(self) -> Optional[AbstractSet[str]]:
+    def op_selection(self) -> AbstractSet[str] | None:
         return self.get_definition().op_selection
 
     @property
-    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+    def asset_selection(self) -> AbstractSet[AssetKey] | None:
         return self.get_definition().asset_selection
 
     @property
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+    def asset_check_selection(self) -> AbstractSet[AssetCheckKey] | None:
         return self.get_definition().asset_check_selection
 
     def get_subset(
         self,
         *,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ) -> "RepoBackedJob":
         raise NotImplementedError("RepoBackedJob does not support get_subset")

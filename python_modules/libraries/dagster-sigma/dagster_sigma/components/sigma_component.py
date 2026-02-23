@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, TypeAlias
+from typing import Annotated, TypeAlias
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -82,8 +82,8 @@ ResolvedTargetedKeyOnlySigmaTranslationFn = Annotated[
 
 @record
 class SigmaAssetArgs(AssetSpecUpdateKwargs, Resolvable):
-    for_workbook: Optional[ResolvedTargetedSigmaTranslationFn] = None
-    for_dataset: Optional[ResolvedTargetedSigmaTranslationFn] = None
+    for_workbook: ResolvedTargetedSigmaTranslationFn | None = None
+    for_dataset: ResolvedTargetedSigmaTranslationFn | None = None
 
 
 def resolve_multilayer_translation(context: ResolutionContext, model):
@@ -141,14 +141,14 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
 class SigmaFilterArgs(Model, Resolvable):
     """Arguments for filtering which Sigma objects to load."""
 
-    workbook_folders: Optional[list[list[str]]] = Field(
+    workbook_folders: list[list[str]] | None = Field(
         default=None,
         description=(
             "A list of folder paths to fetch workbooks from. Each folder path is a list of folder names, "
             "starting from the root folder. All workbooks contained in the specified folders will be fetched."
         ),
     )
-    workbooks: Optional[list[list[str]]] = Field(
+    workbooks: list[list[str]] | None = Field(
         default=None,
         description=(
             "A list of fully qualified workbook paths to fetch. Each workbook path is a list of folder names, "
@@ -161,7 +161,7 @@ class SigmaFilterArgs(Model, Resolvable):
     )
 
 
-def resolve_sigma_filter(context: ResolutionContext, model) -> Optional[SigmaFilter]:
+def resolve_sigma_filter(context: ResolutionContext, model) -> SigmaFilter | None:
     """Resolver function for SigmaFilter that properly resolves templated strings."""
     if model is None:
         return None
@@ -213,7 +213,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
         ),
     ]
     sigma_filter: Annotated[
-        Optional[SigmaFilter],
+        SigmaFilter | None,
         Resolver(
             resolve_sigma_filter,
             model_field_type=SigmaFilterArgs.model(),
@@ -228,7 +228,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
     ] = None
     fetch_column_data: bool = True
     fetch_lineage_data: bool = True
-    translation: Optional[ResolvedMultilayerTranslationFn] = None
+    translation: ResolvedMultilayerTranslationFn | None = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -309,7 +309,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
         state_path.write_text(dg.serialize_value(state))
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

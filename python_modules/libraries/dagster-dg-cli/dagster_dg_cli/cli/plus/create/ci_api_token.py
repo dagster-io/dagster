@@ -1,5 +1,3 @@
-from typing import Optional
-
 import click
 from dagster_dg_core.shared_options import dg_global_options
 from dagster_dg_core.utils import DgClickCommand
@@ -14,7 +12,7 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 @click.option("--description", type=str, help="Description for the token")
 @dg_global_options
 @cli_telemetry_wrapper
-def create_ci_api_token(description: Optional[str] = None, **global_options: object) -> None:
+def create_ci_api_token(description: str | None = None, **global_options: object) -> None:
     """Create a Dagster Plus API token for CI."""
     if not DagsterPlusCliConfig.exists():
         raise click.UsageError(

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -49,7 +48,7 @@ class FlowerIngressConfiguration(BaseModel):
 # current solution does work.
 class Ingress(BaseModel, extra="allow"):
     enabled: bool
-    apiVersion: Optional[str] = None
+    apiVersion: str | None = None
     labels: kubernetes.Labels
     annotations: kubernetes.Annotations
     flower: FlowerIngressConfiguration

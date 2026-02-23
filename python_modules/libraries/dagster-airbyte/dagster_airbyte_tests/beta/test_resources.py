@@ -2,7 +2,6 @@ import json
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -59,8 +58,8 @@ def assert_api_call(
     call: responses.Call,
     base_url: str,
     endpoint: str,
-    object_id: Optional[str] = None,
-    method: Optional[str] = None,
+    object_id: str | None = None,
+    method: str | None = None,
     auth_method: AuthMethod = AuthMethod.BEARER,
 ):
     rest_api_url = call.request.url.split("?")[0]

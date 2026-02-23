@@ -1,11 +1,11 @@
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 
 import {AssetGraphQueryItem} from '../../../asset-graph/types';
 import {AssetHealthStatus} from '../../../graphql/types';
 import {SUB_STATUSES, getAttributesMap} from '../util';
 
 // Mock the observeEnabled function
-jest.mock('shared/app/assetHealthEnabled.oss', () => ({
+jest.mock('@shared/app/assetHealthEnabled', () => ({
   assetHealthEnabled: jest.fn(),
 }));
 

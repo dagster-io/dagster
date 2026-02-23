@@ -1,6 +1,6 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
+import {AddToFavoritesMenuItem} from '@shared/assets/AddToFavoritesMenuItem';
 import * as React from 'react';
-import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';

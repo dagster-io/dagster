@@ -3,7 +3,7 @@ import json
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import IO, Any, Optional
+from typing import IO, Any
 
 import dagster_shared.seven as seven
 from dagster import (
@@ -64,7 +64,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
         self,
         bucket,
         local_dir=None,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         prefix="dagster",
         json_credentials_envvar=None,
         upload_interval=None,
@@ -123,7 +123,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
         return self._local_manager
 
     @property
-    def upload_interval(self) -> Optional[int]:
+    def upload_interval(self) -> int | None:
         return self._upload_interval if self._upload_interval else None
 
     def _clean_prefix(self, prefix):
@@ -161,7 +161,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
                 )
 
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self, log_key: Sequence[str] | None = None, prefix: Sequence[str] | None = None
     ):
         self._local_manager.delete_logs(log_key, prefix)
         if log_key:

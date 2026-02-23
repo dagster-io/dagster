@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
@@ -49,11 +49,11 @@ async def gen_list_repositories_grpc(
 
 def sync_list_repositories_ephemeral_grpc(
     executable_path: str,
-    python_file: Optional[str],
-    module_name: Optional[str],
-    working_directory: Optional[str],
-    attribute: Optional[str],
-    package_name: Optional[str],
+    python_file: str | None,
+    module_name: str | None,
+    working_directory: str | None,
+    attribute: str | None,
+    package_name: str | None,
 ) -> "ListRepositoriesResponse":
     from dagster._grpc.client import ephemeral_grpc_api_client
 
@@ -79,11 +79,11 @@ def sync_list_repositories_ephemeral_grpc(
 
 async def gen_list_repositories_ephemeral_grpc(
     executable_path: str,
-    python_file: Optional[str],
-    module_name: Optional[str],
-    working_directory: Optional[str],
-    attribute: Optional[str],
-    package_name: Optional[str],
+    python_file: str | None,
+    module_name: str | None,
+    working_directory: str | None,
+    attribute: str | None,
+    package_name: str | None,
 ) -> "ListRepositoriesResponse":
     from dagster._grpc.client import ephemeral_grpc_api_client
 

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 def observe(
     assets: Sequence[AssetsDefinition | SourceAsset],
     run_config: Any = None,
-    instance: Optional[DagsterInstance] = None,
-    resources: Optional[Mapping[str, object]] = None,
-    partition_key: Optional[str] = None,
+    instance: DagsterInstance | None = None,
+    resources: Mapping[str, object] | None = None,
+    partition_key: str | None = None,
     raise_on_error: bool = True,
-    tags: Optional[Mapping[str, str]] = None,
+    tags: Mapping[str, str] | None = None,
 ) -> "ExecuteInProcessResult":
     """Executes a single-threaded, in-process run which observes provided source assets.
 

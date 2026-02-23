@@ -51,8 +51,8 @@ class MultiAssetSensorAssetCursorComponent(
     NamedTuple(
         "_MultiAssetSensorAssetCursorComponent",
         [
-            ("latest_consumed_event_partition", Optional[str]),
-            ("latest_consumed_event_id", Optional[int]),
+            ("latest_consumed_event_partition", str | None),
+            ("latest_consumed_event_id", int | None),
             ("trailing_unconsumed_partitioned_event_ids", dict[str, int]),
         ],
     )
@@ -115,13 +115,13 @@ class MultiAssetSensorContextCursor:
     # Tracks the state of the cursor within the tick, created for utility purposes.
     # Must call MultiAssetSensorEvaluationContext._update_cursor_after_evaluation at end of tick
     # to serialize the cursor.
-    def __init__(self, cursor: Optional[str], context: "MultiAssetSensorEvaluationContext"):
+    def __init__(self, cursor: str | None, context: "MultiAssetSensorEvaluationContext"):
         loaded_cursor = json.loads(cursor) if cursor else {}
         loaded_cursor = loaded_cursor if isinstance(loaded_cursor, dict) else {}
         self._cursor_component_by_asset_key: dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
         # The initial latest consumed event ID at the beginning of the tick
-        self.initial_latest_consumed_event_ids_by_asset_key: dict[str, Optional[int]] = {}
+        self.initial_latest_consumed_event_ids_by_asset_key: dict[str, int | None] = {}
 
         for str_asset_key, cursor_list in loaded_cursor.items():
             if len(cursor_list) != 3:
@@ -218,22 +218,22 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     def __init__(
         self,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: InstanceRef | None,
         monitored_assets: Sequence[AssetKey] | AssetSelection,
-        last_tick_completion_time: Optional[float] = None,
-        last_run_key: Optional[str] = None,
-        cursor: Optional[str] = None,
-        repository_name: Optional[str] = None,
+        last_tick_completion_time: float | None = None,
+        last_run_key: str | None = None,
+        cursor: str | None = None,
+        repository_name: str | None = None,
         repository_def: Optional["RepositoryDefinition"] = None,
-        instance: Optional[DagsterInstance] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        instance: DagsterInstance | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
         definitions: Optional["Definitions"] = None,
-        last_sensor_start_time: Optional[float] = None,
-        log_key: Optional[Sequence[str]] = None,
-        sensor_name: Optional[str] = None,
+        last_sensor_start_time: float | None = None,
+        log_key: Sequence[str] | None = None,
+        sensor_name: str | None = None,
         code_location_origin: Optional["CodeLocationOrigin"] = None,
         # deprecated param
-        last_completion_time: Optional[float] = None,
+        last_completion_time: float | None = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -249,8 +249,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         else:
             self._monitored_asset_keys = monitored_assets
 
-        self._assets_by_key: dict[AssetKey, Optional[AssetsDefinition]] = {}
-        self._partitions_def_by_asset_key: dict[AssetKey, Optional[PartitionsDefinition]] = {}
+        self._assets_by_key: dict[AssetKey, AssetsDefinition | None] = {}
+        self._partitions_def_by_asset_key: dict[AssetKey, PartitionsDefinition | None] = {}
         asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
             asset_node = asset_graph.get(asset_key) if asset_graph.has(asset_key) else None
@@ -386,7 +386,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @public
     def latest_materialization_records_by_key(
         self,
-        asset_keys: Optional[Sequence[AssetKey]] = None,
+        asset_keys: Sequence[AssetKey] | None = None,
     ) -> Mapping[AssetKey, Optional["EventLogRecord"]]:
         """Fetches the most recent materialization event record for each asset in asset_keys.
         Only fetches events after the latest consumed event ID for the given asset key.
@@ -411,7 +411,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         asset_records = self.instance.get_asset_records(asset_keys)
 
-        asset_event_records: dict[AssetKey, Optional[EventLogRecord]] = {
+        asset_event_records: dict[AssetKey, EventLogRecord | None] = {
             asset_key: None for asset_key in asset_keys
         }
         for record in asset_records:
@@ -428,7 +428,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def materialization_records_for_key(
-        self, asset_key: AssetKey, limit: Optional[int] = None
+        self, asset_key: AssetKey, limit: int | None = None
     ) -> Iterable["EventLogRecord"]:
         """Fetches asset materialization event records for asset_key, with the earliest event first.
 
@@ -486,7 +486,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def latest_materialization_records_by_partition(
         self,
         asset_key: AssetKey,
-        after_cursor_partition: Optional[bool] = False,
+        after_cursor_partition: bool | None = False,
     ) -> Mapping[str, "EventLogRecord"]:
         """Given an asset, returns a mapping of partition key to the latest materialization event
         for that partition. Fetches only materializations that have not been marked as "consumed"
@@ -625,7 +625,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return asset_and_materialization_tuple_by_partition
 
     @public
-    def get_cursor_partition(self, asset_key: Optional[AssetKey]) -> Optional[str]:
+    def get_cursor_partition(self, asset_key: AssetKey | None) -> str | None:
         """A utility method to get the current partition the cursor is on."""
         asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
         if asset_key not in self._monitored_asset_keys:
@@ -647,7 +647,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def all_partitions_materialized(
-        self, asset_key: AssetKey, partitions: Optional[Sequence[str]] = None
+        self, asset_key: AssetKey, partitions: Sequence[str] | None = None
     ) -> bool:
         """A utility method to check if a provided list of partitions have been materialized
         for a particular asset. This method ignores the cursor and checks all materializations
@@ -801,7 +801,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     @property
-    def assets_defs_by_key(self) -> Mapping[AssetKey, Optional[AssetsDefinition]]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, AssetsDefinition | None]:
         """Mapping[AssetKey, Optional[AssetsDefinition]]: A mapping from AssetKey to the
         AssetsDefinition object which produces it. If a given asset is monitored by this sensor, but
         is not produced within the same project as this sensor, then the value will be None.
@@ -817,7 +817,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
 class MultiAssetSensorCursorAdvances:
     _advanced_record_ids_by_key: dict[AssetKey, set[int]]
-    _partition_key_by_record_id: dict[int, Optional[str]]
+    _partition_key_by_record_id: dict[int, str | None]
     advance_all_cursors_called: bool
 
     def __init__(self):
@@ -840,7 +840,7 @@ class MultiAssetSensorCursorAdvances:
         self,
         context: MultiAssetSensorEvaluationContext,
         initial_cursor: MultiAssetSensorContextCursor,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Given the multi asset sensor context and the cursor at the start of the tick,
         returns the cursor that should be used in the next tick.
 
@@ -983,13 +983,13 @@ def build_multi_asset_sensor_context(
     *,
     monitored_assets: Sequence[AssetKey] | AssetSelection,
     repository_def: Optional["RepositoryDefinition"] = None,
-    instance: Optional[DagsterInstance] = None,
-    cursor: Optional[str] = None,
-    repository_name: Optional[str] = None,
+    instance: DagsterInstance | None = None,
+    cursor: str | None = None,
+    repository_name: str | None = None,
     cursor_from_latest_materializations: bool = False,
-    resources: Optional[Mapping[str, object]] = None,
+    resources: Mapping[str, object] | None = None,
     definitions: Optional["Definitions"] = None,
-    last_sensor_start_time: Optional[float] = None,
+    last_sensor_start_time: float | None = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -1143,17 +1143,17 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
         self,
         name: str,
         monitored_assets: Sequence[AssetKey] | AssetSelection,
-        job_name: Optional[str],
+        job_name: str | None,
         asset_materialization_fn: MultiAssetMaterializationFunction,
-        minimum_interval_seconds: Optional[int] = None,
-        description: Optional[str] = None,
-        job: Optional[ExecutableDefinition] = None,
-        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        minimum_interval_seconds: int | None = None,
+        description: str | None = None,
+        job: ExecutableDefinition | None = None,
+        jobs: Sequence[ExecutableDefinition] | None = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        request_assets: Optional[AssetSelection] = None,
-        required_resource_keys: Optional[set[str]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        request_assets: AssetSelection | None = None,
+        required_resource_keys: set[str] | None = None,
+        tags: Mapping[str, str] | None = None,
+        metadata: RawMetadataMapping | None = None,
     ):
         resource_arg_names: set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
@@ -1298,17 +1298,17 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
         *,
         name: str,
         monitored_assets: Sequence[AssetKey] | AssetSelection,
-        job_name: Optional[str],
+        job_name: str | None,
         asset_materialization_fn: MultiAssetMaterializationFunction,
-        minimum_interval_seconds: Optional[int],
-        description: Optional[str],
-        job: Optional[ExecutableDefinition],
-        jobs: Optional[Sequence[ExecutableDefinition]],
+        minimum_interval_seconds: int | None,
+        description: str | None,
+        job: ExecutableDefinition | None,
+        jobs: Sequence[ExecutableDefinition] | None,
         default_status: DefaultSensorStatus,
-        request_assets: Optional[AssetSelection],
-        required_resource_keys: Optional[set[str]],
-        tags: Optional[Mapping[str, str]],
-        metadata: Optional[RawMetadataMapping],
+        request_assets: AssetSelection | None,
+        required_resource_keys: set[str] | None,
+        tags: Mapping[str, str] | None,
+        metadata: RawMetadataMapping | None,
     ) -> "MultiAssetSensorDefinition":
         return MultiAssetSensorDefinition(
             name=name,
@@ -1329,8 +1329,8 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
     def with_attributes(
         self,
         *,
-        jobs: Optional[Sequence[ExecutableDefinition]] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        jobs: Sequence[ExecutableDefinition] | None = None,
+        metadata: RawMetadataMapping | None = None,
     ) -> "MultiAssetSensorDefinition":
         """Returns a copy of this sensor with the attributes replaced."""
         job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)

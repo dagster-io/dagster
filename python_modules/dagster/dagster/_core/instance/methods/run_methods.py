@@ -83,7 +83,7 @@ class RunMethods:
 
     @traced
     def get_run_step_stats(
-        self, run_id: str, step_keys: Optional[Sequence[str]] = None
+        self, run_id: str, step_keys: Sequence[str] | None = None
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._event_storage_impl.get_step_stats_for_run(run_id, step_keys)
 
@@ -91,8 +91,8 @@ class RunMethods:
     def get_run_tags(
         self,
         tag_keys: Sequence[str],
-        value_prefix: Optional[str] = None,
-        limit: Optional[int] = None,
+        value_prefix: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[tuple[str, set[str]]]:
         return self._run_storage_impl.get_run_tags(
             tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
@@ -103,7 +103,7 @@ class RunMethods:
         return self._run_storage_impl.get_run_tag_keys()
 
     @traced
-    def get_run_group(self, run_id: str) -> Optional[tuple[str, Sequence[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]] | None:
         return self._run_storage_impl.get_run_group(run_id)
 
     # Run Creation Methods - moved from RunsMixin
@@ -112,15 +112,15 @@ class RunMethods:
         self,
         job_def: "JobDefinition",
         execution_plan: Optional["ExecutionPlan"] = None,
-        run_id: Optional[str] = None,
-        run_config: Optional[Mapping[str, object]] = None,
-        resolved_op_selection: Optional[Set[str]] = None,
-        status: Optional[DagsterRunStatus | str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        root_run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Set[AssetKey]] = None,
+        run_id: str | None = None,
+        run_config: Mapping[str, object] | None = None,
+        resolved_op_selection: Set[str] | None = None,
+        status: DagsterRunStatus | str | None = None,
+        tags: Mapping[str, str] | None = None,
+        root_run_id: str | None = None,
+        parent_run_id: str | None = None,
+        op_selection: Sequence[str] | None = None,
+        asset_selection: Set[AssetKey] | None = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional["JobPythonOrigin"] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
@@ -147,20 +147,20 @@ class RunMethods:
         self,
         *,
         job_name: str,
-        run_id: Optional[str],
-        run_config: Optional[Mapping[str, object]],
-        status: Optional[DagsterRunStatus],
-        tags: Optional[Mapping[str, Any]],
-        root_run_id: Optional[str],
-        parent_run_id: Optional[str],
-        step_keys_to_execute: Optional[Sequence[str]],
+        run_id: str | None,
+        run_config: Mapping[str, object] | None,
+        status: DagsterRunStatus | None,
+        tags: Mapping[str, Any] | None,
+        root_run_id: str | None,
+        parent_run_id: str | None,
+        step_keys_to_execute: Sequence[str] | None,
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         job_snapshot: Optional["JobSnap"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]],
-        asset_check_selection: Optional[Set["AssetCheckKey"]],
-        resolved_op_selection: Optional[Set[str]],
-        op_selection: Optional[Sequence[str]],
+        asset_selection: Set[AssetKey] | None,
+        asset_check_selection: Set["AssetCheckKey"] | None,
+        resolved_op_selection: Set[str] | None,
+        op_selection: Sequence[str] | None,
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional["JobPythonOrigin"],
         asset_graph: "BaseAssetGraph",
@@ -195,8 +195,8 @@ class RunMethods:
         code_location: "CodeLocation",
         remote_job: "RemoteJob",
         strategy: "ReexecutionStrategy",
-        extra_tags: Optional[Mapping[str, Any]] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
+        extra_tags: Mapping[str, Any] | None = None,
+        run_config: Mapping[str, Any] | None = None,
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
         return self.run_domain.create_reexecuted_run(
@@ -214,16 +214,16 @@ class RunMethods:
         self,
         job_name: str,
         run_id: str,
-        run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
-        step_keys_to_execute: Optional[Sequence[str]],
+        run_config: Mapping[str, object] | None,
+        resolved_op_selection: Set[str] | None,
+        step_keys_to_execute: Sequence[str] | None,
         tags: Mapping[str, str],
-        root_run_id: Optional[str],
-        parent_run_id: Optional[str],
+        root_run_id: str | None,
+        parent_run_id: str | None,
         job_snapshot: Optional["JobSnap"],
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnap"],
-        op_selection: Optional[Sequence[str]] = None,
+        op_selection: Sequence[str] | None = None,
         job_code_origin: Optional["JobPythonOrigin"] = None,
     ) -> DagsterRun:
         return self.run_domain.register_managed_run(
@@ -250,7 +250,7 @@ class RunMethods:
 
     @traced
     def handle_run_event(
-        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+        self, run_id: str, event: "DagsterEvent", update_timestamp: datetime | None = None
     ) -> None:
         return self._run_storage_impl.handle_run_event(run_id, event, update_timestamp)
 
@@ -265,10 +265,10 @@ class RunMethods:
     @traced
     def get_runs(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        bucket_by: Optional[JobBucket | TagBucket] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        bucket_by: JobBucket | TagBucket | None = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         return self._run_storage_impl.get_runs(filters, cursor, limit, bucket_by, ascending)
@@ -276,14 +276,14 @@ class RunMethods:
     @traced
     def get_run_ids(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[str]:
         return self._run_storage_impl.get_run_ids(filters, cursor=cursor, limit=limit)
 
     @traced
-    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
+    def get_runs_count(self, filters: RunsFilter | None = None) -> int:
         return self._run_storage_impl.get_runs_count(filters)
 
     @traced

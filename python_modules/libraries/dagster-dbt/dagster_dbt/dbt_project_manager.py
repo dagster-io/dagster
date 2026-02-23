@@ -3,7 +3,7 @@ import shutil
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 from urllib.parse import quote, urlparse, urlunparse
 
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -49,7 +49,7 @@ class DbtProjectManager(ABC):
         state_path.touch()
 
     @abstractmethod
-    def get_project(self, state_path: Optional[Path]) -> "DbtProject": ...
+    def get_project(self, state_path: Path | None) -> "DbtProject": ...
 
 
 @dataclass
@@ -67,7 +67,7 @@ class NoopDbtProjectManager(DbtProjectManager):
     def sync(self, state_path: Path) -> None:
         pass
 
-    def get_project(self, state_path: Optional[Path]) -> DbtProject:
+    def get_project(self, state_path: Path | None) -> DbtProject:
         return self.project
 
 
@@ -93,7 +93,7 @@ class DbtProjectArgsManager(DbtProjectManager):
             self.args.project_dir, self._local_project_dir(state_path), dirs_exist_ok=True
         )
 
-    def get_project(self, state_path: Optional[Path]) -> "DbtProject":
+    def get_project(self, state_path: Path | None) -> "DbtProject":
         kwargs = asdict(self.args)
 
         project_dir = self._local_project_dir(state_path) if state_path else self.args.project_dir
@@ -117,18 +117,18 @@ class RemoteGitDbtProjectManager(DbtProjectManager, Resolvable):
         ),
     ] = "."
     token: Annotated[
-        Optional[str],
+        str | None,
         Resolver.default(
             description="Token for authenticating to the provided repository.",
             examples=["'{{ env.GITHUB_TOKEN }}'"],
         ),
     ] = None
     profile: Annotated[
-        Optional[str],
+        str | None,
         Resolver.default(description="The profile to use for the dbt project."),
     ] = None
     target: Annotated[
-        Optional[str],
+        str | None,
         Resolver.default(
             description="The target to use for the dbt project.",
             examples=["dev", "prod"],
@@ -158,7 +158,7 @@ class RemoteGitDbtProjectManager(DbtProjectManager, Resolvable):
         project = self.get_project(state_path)
         project.preparer.prepare(project)
 
-    def get_project(self, state_path: Optional[Path]) -> "DbtProject":
+    def get_project(self, state_path: Path | None) -> "DbtProject":
         if state_path is None:
             raise DagsterInvalidDefinitionError(
                 "Attempted to `get_project()` on a `RemoteGitDbtProjectWrapper` without a path. "

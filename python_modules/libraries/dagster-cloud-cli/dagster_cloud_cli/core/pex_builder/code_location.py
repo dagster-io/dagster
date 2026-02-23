@@ -2,7 +2,6 @@ import logging
 import re
 import subprocess
 import time
-from typing import Optional
 
 from dagster_cloud_cli import gql
 from dagster_cloud_cli.core.pex_builder import github_context
@@ -46,9 +45,9 @@ def create_or_update_branch_deployment_from_local_git_context(
     dagster_cloud_api_token: str,
     project_dir: str,
     mark_closed: bool,
-    base_deployment_name: Optional[str],
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
-) -> Optional[str]:
+    base_deployment_name: str | None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None,
+) -> str | None:
     branch_name = get_local_branch_name(project_dir)
 
     if not branch_name:
@@ -96,9 +95,9 @@ def create_or_update_branch_deployment_from_github_context(
     dagster_cloud_api_token: str,
     github_event: github_context.GithubEvent,
     mark_closed: bool,
-    base_deployment_name: Optional[str],
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
-) -> Optional[str]:
+    base_deployment_name: str | None,
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None,
+) -> str | None:
     """Return the branch deployment associated with the github PR."""
     event = github_event
     logging.debug("Read github event GithubEvent(%r)", event.__dict__)

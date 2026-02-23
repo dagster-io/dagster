@@ -2,7 +2,7 @@ import re
 import urllib.parse
 from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from dagster import (
     UrlMetadataValue,
@@ -38,7 +38,7 @@ _clean_asset_name = clean_name
 PARSE_M_QUERY_OBJECT = re.compile(r'\[Name="(?P<name>[^"]+)",Kind="(?P<kind>[^"]+)"\]')
 
 
-def _attempt_parse_m_query_source(sources: list[dict[str, Any]]) -> Optional[AssetKey]:
+def _attempt_parse_m_query_source(sources: list[dict[str, Any]]) -> AssetKey | None:
     for source in sources:
         if "expression" in source:
             objects = PARSE_M_QUERY_OBJECT.findall(source["expression"])
@@ -140,7 +140,7 @@ class PowerBIWorkspaceData:
 
 
 class PowerBITagSet(NamespacedTagSet):
-    asset_type: Optional[Literal["dashboard", "report", "semantic_model", "data_source"]] = None
+    asset_type: Literal["dashboard", "report", "semantic_model", "data_source"] | None = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -148,9 +148,9 @@ class PowerBITagSet(NamespacedTagSet):
 
 
 class PowerBIMetadataSet(NamespacedMetadataSet):
-    web_url: Optional[UrlMetadataValue] = None
-    id: Optional[str] = None
-    name: Optional[str] = None
+    web_url: UrlMetadataValue | None = None
+    id: str | None = None
+    name: str | None = None
 
     @classmethod
     def namespace(cls) -> str:

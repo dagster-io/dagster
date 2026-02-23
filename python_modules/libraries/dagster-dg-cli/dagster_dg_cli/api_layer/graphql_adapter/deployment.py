@@ -1,6 +1,6 @@
 """GraphQL implementation for deployment operations."""
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
@@ -78,7 +78,7 @@ def process_deployments_response(graphql_response: dict[str, Any]) -> "Deploymen
 
 def list_deployments_via_graphql(
     client: IGraphQLClient,
-    limit: Optional[int] = None,
+    limit: int | None = None,
 ) -> "DeploymentList":
     """Fetch deployments using GraphQL.
     This is an implementation detail that can be replaced with REST calls later.

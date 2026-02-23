@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from dagster._core.definitions.metadata.table import TableSchema
 
@@ -9,7 +9,7 @@ class AirbyteTableMetadata:
         self,
         raw_table_name: str,
         schema: TableSchema,
-        normalization_tables: Optional[Mapping[str, "AirbyteTableMetadata"]] = None,
+        normalization_tables: Mapping[str, "AirbyteTableMetadata"] | None = None,
     ):
         """Contains metadata about an Airbyte table, including its destination raw table name,
         schema and any created normalization tables.

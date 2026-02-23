@@ -30,13 +30,13 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
     the metadata required for the UI.
     """
 
-    latest_materialization_timestamp: Optional[float]
-    latest_terminal_run_id: Optional[str]
+    latest_materialization_timestamp: float | None
+    latest_terminal_run_id: str | None
     num_failed_partitions: int
     num_currently_materialized_partitions: int
-    partitions_snap: Optional[PartitionsSnap]
-    latest_failed_to_materialize_timestamp: Optional[float] = None
-    latest_failed_to_materialize_run_id: Optional[str] = None
+    partitions_snap: PartitionsSnap | None
+    latest_failed_to_materialize_timestamp: float | None = None
+    latest_failed_to_materialize_run_id: str | None = None
 
     @property
     def health_status(self) -> AssetHealthStatus:
@@ -48,7 +48,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
             return AssetHealthStatus.HEALTHY
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         if self.partitions_snap is None:
             return None
         return self.partitions_snap.get_partitions_definition()
@@ -102,14 +102,14 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
 
     materialized_subset: SerializableEntitySubset[AssetKey]
     failed_subset: SerializableEntitySubset[AssetKey]
-    partitions_snap: Optional[PartitionsSnap]
-    latest_terminal_run_id: Optional[str]
-    latest_materialization_timestamp: Optional[float] = None
-    latest_failed_to_materialize_timestamp: Optional[float] = None
-    latest_failed_to_materialize_run_id: Optional[str] = None
+    partitions_snap: PartitionsSnap | None
+    latest_terminal_run_id: str | None
+    latest_materialization_timestamp: float | None = None
+    latest_failed_to_materialize_timestamp: float | None = None
+    latest_failed_to_materialize_run_id: str | None = None
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         if self.partitions_snap is None:
             return None
         return self.partitions_snap.get_partitions_definition()
@@ -132,7 +132,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     async def compute_for_asset(
         cls,
         asset_key: AssetKey,
-        partitions_def: Optional[PartitionsDefinition],
+        partitions_def: PartitionsDefinition | None,
         loading_context: LoadingContext,
     ) -> "AssetMaterializationHealthState":
         """Creates an AssetMaterializationHealthState for the given asset. Requires fetching the AssetRecord
@@ -268,7 +268,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
 
 async def _get_is_currently_failed_and_latest_terminal_run_id(
     loading_context: LoadingContext, asset_record: AssetRecord
-) -> tuple[bool, Optional[str]]:
+) -> tuple[bool, str | None]:
     """Determines if the asset is currently in a failed state. If we are storing failure events for the
     asset, this can be determined by looking at the AssetRecord. For assets where we are not storing failure
     events, we have to derive the failure state from the latest run record.
@@ -331,8 +331,8 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
     num_failed_partitions: int
     num_missing_partitions: int
     total_num_partitions: int
-    latest_run_id: Optional[str] = None
-    latest_failed_to_materialize_run_id: Optional[str] = None
+    latest_run_id: str | None = None
+    latest_failed_to_materialize_run_id: str | None = None
 
 
 @whitelist_for_serdes
@@ -340,14 +340,14 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
 class AssetHealthMaterializationHealthyPartitionedMeta:
     num_missing_partitions: int
     total_num_partitions: int
-    latest_run_id: Optional[str] = None
-    latest_failed_to_materialize_run_id: Optional[str] = None
+    latest_run_id: str | None = None
+    latest_failed_to_materialize_run_id: str | None = None
 
 
 @whitelist_for_serdes
 @record.record
 class AssetHealthMaterializationDegradedNotPartitionedMeta:
-    failed_run_id: Optional[str]
+    failed_run_id: str | None
 
 
 AssetHealthMaterializationMetadata: TypeAlias = (

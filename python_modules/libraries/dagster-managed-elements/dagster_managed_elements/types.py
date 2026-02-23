@@ -2,7 +2,7 @@ import enum
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Sequence
-from typing import Any, NamedTuple, Optional, TypeAlias
+from typing import Any, NamedTuple, TypeAlias
 
 import click
 import dagster._check as check
@@ -82,9 +82,9 @@ class ManagedElementDiff(
 
     def __new__(
         cls,
-        additions: Optional[Sequence[DiffData]] = None,
-        deletions: Optional[Sequence[DiffData]] = None,
-        modifications: Optional[Sequence[ModifiedDiffData]] = None,
+        additions: Sequence[DiffData] | None = None,
+        deletions: Sequence[DiffData] | None = None,
+        modifications: Sequence[ModifiedDiffData] | None = None,
     ):
         additions = check.opt_sequence_param(additions, "additions", of_type=DiffData)
         deletions = check.opt_sequence_param(deletions, "deletions", of_type=DiffData)

@@ -39,7 +39,7 @@ jest.mock('../../assets/useAllAssets', () => ({
   useAllAssetsNodes: () => ({allAssetKeys: mockAllAssetKeys, loading: false}),
 }));
 
-jest.mock('../../app/assetHealthEnabled.oss', () => ({
+jest.mock('@shared/app/assetHealthEnabled', () => ({
   assetHealthEnabled: jest.fn(() => true),
 }));
 
@@ -50,7 +50,7 @@ jest.mock('../../app/assetHealthEnabled.oss', () => ({
  * */
 describe('AssetNode', function () {
   afterAll(() => {
-    jest.unmock('../../app/assetHealthEnabled.oss');
+    jest.unmock('@shared/app/assetHealthEnabled');
   });
 
   Scenarios.forEach((scenario: AssetNodeScenario) =>

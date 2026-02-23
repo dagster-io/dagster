@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from functools import cached_property
-from typing import Optional
 
 from dagster_fivetran.asset_defs import (
     AssetSpec,

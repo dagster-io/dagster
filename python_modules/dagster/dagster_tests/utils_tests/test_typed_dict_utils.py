@@ -1,16 +1,16 @@
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from dagster._utils.typed_dict import init_optional_typeddict
 from typing_extensions import NotRequired
 
 
 class MyNestedTypedDict(TypedDict):
-    nested: Optional[str]
+    nested: str | None
 
 
 class MyTypedDict(TypedDict):
     nested: MyNestedTypedDict
-    optional_field: Optional[str]
+    optional_field: str | None
     dict_field: dict[str, Any]
     not_required_field: NotRequired[str]
 

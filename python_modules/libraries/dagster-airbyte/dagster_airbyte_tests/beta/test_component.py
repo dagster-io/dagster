@@ -3,7 +3,7 @@ import copy
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -388,7 +388,7 @@ class TestAirbyteTranslation(TestTranslation):
         fetch_workspace_data_api_mocks: responses.RequestsMock,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
         rest_api_url: str,
         config_api_url: str,
         component_body: dict,

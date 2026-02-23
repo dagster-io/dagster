@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 from dagster._record import record
 
@@ -15,10 +14,10 @@ class AirflowFilter:
         dataset_uri_ilike (Optional[str]): A pattern used to match the set of datasets to retrieve. Uses the sql ILIKE operator Airflow-side.
     """
 
-    dag_id_ilike: Optional[str] = None
-    airflow_tags: Optional[Sequence[str]] = None
+    dag_id_ilike: str | None = None
+    airflow_tags: Sequence[str] | None = None
     retrieve_datasets: bool = True
-    dataset_uri_ilike: Optional[str] = None
+    dataset_uri_ilike: str | None = None
 
     def augment_request_params(self, request_params: dict) -> dict:
         new_request_params = request_params.copy()

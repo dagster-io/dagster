@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any, Callable, ContextManager, NamedTuple, Optional, TypeVar  # noqa: UP035
+from typing import Any, Callable, ContextManager, NamedTuple, TypeVar  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -69,10 +69,10 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def all_instigator_state(
         self,
-        repository_origin_id: Optional[str] = None,
-        repository_selector_id: Optional[str] = None,
-        instigator_type: Optional[InstigatorType] = None,
-        instigator_statuses: Optional[set[InstigatorStatus]] = None,
+        repository_origin_id: str | None = None,
+        repository_selector_id: str | None = None,
+        instigator_type: InstigatorType | None = None,
+        instigator_statuses: set[InstigatorStatus] | None = None,
     ) -> Sequence[InstigatorState]:
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
@@ -102,7 +102,7 @@ class SqlScheduleStorage(ScheduleStorage):
         rows = self.execute(query)
         return self._deserialize_rows(rows, InstigatorState)
 
-    def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional[InstigatorState]:
+    def get_instigator_state(self, origin_id: str, selector_id: str) -> InstigatorState | None:
         check.str_param(origin_id, "origin_id")
         check.str_param(selector_id, "selector_id")
 
@@ -242,9 +242,9 @@ class SqlScheduleStorage(ScheduleStorage):
     def _add_filter_limit(
         self,
         query: SqlAlchemyQuery,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
         statuses=None,
     ) -> SqlAlchemyQuery:
         check.opt_float_param(before, "before")
@@ -281,8 +281,8 @@ class SqlScheduleStorage(ScheduleStorage):
     def get_batch_ticks(
         self,
         selector_ids: Sequence[str],
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence[TickStatus]] = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
     ) -> Mapping[str, Sequence[InstigatorTick]]:
         check.sequence_param(selector_ids, "selector_ids", of_type=str)
         check.opt_int_param(limit, "limit")
@@ -350,10 +350,10 @@ class SqlScheduleStorage(ScheduleStorage):
         self,
         origin_id: str,
         selector_id: str,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence[TickStatus]] = None,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
     ) -> Sequence[InstigatorTick]:
         check.str_param(origin_id, "origin_id")
         check.opt_float_param(before, "before")
@@ -435,7 +435,7 @@ class SqlScheduleStorage(ScheduleStorage):
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[Sequence[TickStatus]] = None,
+        tick_statuses: Sequence[TickStatus] | None = None,
     ) -> None:
         check.str_param(origin_id, "origin_id")
         check.float_param(before, "before")
@@ -509,7 +509,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     )
 
     def get_auto_materialize_asset_evaluations(
-        self, key: EntityKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: int | None = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
         with self.connect() as conn:
             query = (
@@ -610,7 +610,7 @@ class SqlScheduleStorage(ScheduleStorage):
     def _execute_data_migrations(
         self,
         migrations: Mapping[str, Callable[..., Any]],
-        print_fn: Optional[Callable] = None,
+        print_fn: Callable | None = None,
         force_rebuild_all: bool = False,
     ) -> None:
         for migration_name, migration_fn in migrations.items():
@@ -626,12 +626,12 @@ class SqlScheduleStorage(ScheduleStorage):
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(
             REQUIRED_SCHEDULE_DATA_MIGRATIONS, print_fn, force_rebuild_all
         )
 
-    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def optimize(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(
             OPTIONAL_SCHEDULE_DATA_MIGRATIONS, print_fn, force_rebuild_all
         )

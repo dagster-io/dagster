@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -23,7 +22,7 @@ PROJECT_ALTERNATE_ENTRYPOINT_PATH = dg.file_relative_path(
 )
 
 
-def invoke_validate(options: Optional[Sequence[str]] = None, log_level: str = "DEBUG"):
+def invoke_validate(options: Sequence[str] | None = None, log_level: str = "DEBUG"):
     runner = CliRunner()
     return runner.invoke(
         definitions_validate_command, list(options or []) + ["--log-level", log_level]

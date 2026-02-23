@@ -9,12 +9,12 @@ import {
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
+import {observeEnabled} from '@shared/app/observeEnabled';
+import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {

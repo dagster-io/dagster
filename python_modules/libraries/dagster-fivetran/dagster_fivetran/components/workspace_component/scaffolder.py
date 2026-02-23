@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
@@ -7,9 +5,9 @@ from pydantic import BaseModel
 
 
 class FivetranScaffolderParams(BaseModel):
-    account_id: Optional[str] = None
-    api_key: Optional[str] = None
-    api_secret: Optional[str] = None
+    account_id: str | None = None
+    api_key: str | None = None
+    api_secret: str | None = None
 
 
 class FivetranAccountComponentScaffolder(Scaffolder[FivetranScaffolderParams]):

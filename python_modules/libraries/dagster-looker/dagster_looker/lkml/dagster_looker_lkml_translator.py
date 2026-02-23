@@ -3,7 +3,7 @@ import logging
 import re
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 
 from dagster import AssetKey, AssetSpec
 from dagster._annotations import beta, public, superseded
@@ -80,7 +80,7 @@ def build_deps_for_looker_view(
     lookml_view_path, _, lookml_view_props = lookml_structure
 
     # https://cloud.google.com/looker/docs/derived-tables
-    derived_table_sql: Optional[str] = lookml_view_props.get("derived_table", {}).get("sql")
+    derived_table_sql: str | None = lookml_view_props.get("derived_table", {}).get("sql")
     if not derived_table_sql:
         # https://cloud.google.com/looker/docs/reference/param-view-sql-table-name
         sql_table_name = lookml_view_props.get("sql_table_name") or lookml_view_props["name"]
@@ -422,7 +422,7 @@ class DagsterLookerLkmlTranslator:
     @public
     def get_description(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[str]:
+    ) -> str | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster description of the structure.
 
@@ -449,7 +449,7 @@ class DagsterLookerLkmlTranslator:
 
     def _default_description_fn(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[str]:
+    ) -> str | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster description of the structure.
 
@@ -480,7 +480,7 @@ class DagsterLookerLkmlTranslator:
     @public
     def get_metadata(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any] | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster metadata of the structure.
 
@@ -509,7 +509,7 @@ class DagsterLookerLkmlTranslator:
     @public
     def _default_metadata_fn(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any] | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster metadata of the structure.
 
@@ -539,7 +539,7 @@ class DagsterLookerLkmlTranslator:
     @public
     def get_group_name(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[str]:
+    ) -> str | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster group name of the structure.
 
@@ -566,7 +566,7 @@ class DagsterLookerLkmlTranslator:
 
     def _default_group_name_fn(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[str]:
+    ) -> str | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster group name of the structure.
 
@@ -595,7 +595,7 @@ class DagsterLookerLkmlTranslator:
     @public
     def get_owners(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[Sequence[str]]:
+    ) -> Sequence[str] | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster owners of the structure.
 
@@ -622,7 +622,7 @@ class DagsterLookerLkmlTranslator:
 
     def _default_owners_fn(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[Sequence[str]]:
+    ) -> Sequence[str] | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster owners of the structure.
 
@@ -651,7 +651,7 @@ class DagsterLookerLkmlTranslator:
     @public
     def get_tags(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[Mapping[str, str]]:
+    ) -> Mapping[str, str] | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster tags of the structure.
 
@@ -679,7 +679,7 @@ class DagsterLookerLkmlTranslator:
 
     def _default_tags_fn(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-    ) -> Optional[Mapping[str, str]]:
+    ) -> Mapping[str, str] | None:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster tags of the structure.
 

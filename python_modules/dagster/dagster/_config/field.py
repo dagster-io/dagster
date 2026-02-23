@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast, overload
+from typing import Any, cast, overload
 
 from dagster_shared.seven import is_subclass
 
@@ -269,8 +269,8 @@ class Field:
         self,
         config: Any,
         default_value: Any = FIELD_NO_DEFAULT_PROVIDED,
-        is_required: Optional[bool] = None,
-        description: Optional[str] = None,
+        is_required: bool | None = None,
+        description: str | None = None,
         is_secret: bool = False,
     ):
         from dagster._config.post_process import resolve_defaults
@@ -368,7 +368,7 @@ class Field:
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """A human-readable description of this config field, if provided."""
         return self._description
 
@@ -393,5 +393,5 @@ class Field:
         )
 
 
-def check_opt_field_param(obj: object, param_name: str) -> Optional[Field]:
-    return check.opt_inst_param(cast("Optional[Field]", obj), param_name, Field)
+def check_opt_field_param(obj: object, param_name: str) -> Field | None:
+    return check.opt_inst_param(cast("Field | None", obj), param_name, Field)

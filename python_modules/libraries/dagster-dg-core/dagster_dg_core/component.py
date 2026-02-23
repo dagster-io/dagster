@@ -1,7 +1,7 @@
 import re
 import sys
 from collections.abc import Iterable, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster_shared.check as check
 from dagster_shared.error import (
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class EnvRegistry:
     @staticmethod
     def from_dg_context(
-        dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
+        dg_context: "DgContext", extra_modules: Sequence[str] | None = None
     ) -> "EnvRegistry":
         """Fetches the set of available registry objects. The default set includes everything
         discovered under the "dagster_dg_cli.registry_modules" entry point group in the target environment. If
@@ -99,8 +99,8 @@ class EnvRegistry:
 
     def get_objects(
         self,
-        package: Optional[str] = None,
-        feature: Optional[EnvRegistryObjectFeature] = None,
+        package: str | None = None,
+        feature: EnvRegistryObjectFeature | None = None,
     ) -> Sequence[EnvRegistryObjectSnap]:
         return [
             entry

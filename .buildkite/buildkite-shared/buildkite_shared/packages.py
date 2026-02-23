@@ -2,7 +2,6 @@ import logging
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Optional
 
 from buildkite_shared.environment import is_feature_branch, run_all_tests
 from buildkite_shared.git import ChangedFiles
@@ -28,11 +27,11 @@ def requirements(name: str, directory: str):
 
 def skip_reason(
     directory: str,
-    name: Optional[str] = None,
-    always_run_if: Optional[Callable[[], bool]] = None,
-    skip_if: Optional[Callable[[], Optional[str]]] = None,
+    name: str | None = None,
+    always_run_if: Callable[[], bool] | None = None,
+    skip_if: Callable[[], str | None] | None = None,
     is_oss: bool = False,
-) -> Optional[str]:
+) -> str | None:
     """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
     We actually use this to determine whether or not to run the package.
     """

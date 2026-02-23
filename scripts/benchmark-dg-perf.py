@@ -5,7 +5,6 @@ import tempfile
 import textwrap
 import time
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.utils import activate_venv, pushd
@@ -213,7 +212,7 @@ def main(use_latest_release: bool = False) -> None:
 # ########################
 
 
-def _time_command(cmd: list[str], cwd: Optional[Path] = None, timeout: float = 120) -> float:
+def _time_command(cmd: list[str], cwd: Path | None = None, timeout: float = 120) -> float:
     """Execute a command and return (execution_time, stdout)."""
     start_time = time.time()
     try:

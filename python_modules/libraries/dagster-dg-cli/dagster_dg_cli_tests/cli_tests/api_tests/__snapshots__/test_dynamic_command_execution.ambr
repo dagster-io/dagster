@@ -2183,6 +2183,36 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[run_event_error_run_not_found_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_event_success_get_events_json]
+  dict({
+    'count': 2,
+    'events': list([
+      dict({
+        'eventType': 'PIPELINE_START',
+        'level': 'INFO',
+        'message': 'Started execution of run for "dbt_analytics_core_job".',
+        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+        'stepKey': None,
+        'timestamp': '1771476078297',
+      }),
+      dict({
+        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
+        'level': 'INFO',
+        'message': 'dbt_analytics_core_job intends to materialize asset "my_asset".',
+        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+        'stepKey': 'dbt_non_partitioned_models_2',
+        'timestamp': '1771476078298',
+      }),
+    ]),
+    'run_id': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_canceled_run_json]
   dict({
     'created_at': 1751036896.306532,

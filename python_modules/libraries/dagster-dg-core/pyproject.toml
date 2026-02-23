@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-dg-core"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "Jinja2",
+    "tomlkit<0.13.3",  # bug in this version
+    "click>=8,<9",
+    "click-aliases",
+    "typing_extensions>=4.4.0,<5",
+    "gql[requests]",
+    "markdown",
+    "jsonschema",
+    "PyYAML>=5.1",
+    "rich",
+    "watchdog",
+    "yaspin",
+    "setuptools",  # Needed to parse setup.cfg
+    "packaging",
+    "python-dotenv",
+    "typer>=0.15.1,<1.0",
+    "dagster-shared==1!0+dev",
+    "dagster-cloud-cli==1!0+dev",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dg-core"
+
+[project.optional-dependencies]
+test = [
+    "click",
+    "dagster==1!0+dev",
+    "freezegun",
+    "psutil",
+    "pydantic",
+    "pytest",
+    "dagster-graphql==1!0+dev",
+    "create-dagster==1!0+dev",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dagster_dg_core_tests*",
+]
+
+[tool.check-manifest]
+ignore = [
+    ".coveragerc",
+    "tox.ini",
+    "pytest.ini",
+    "dagster_dg_core_tests/**",
+    "CHANGELOG.md",
+]

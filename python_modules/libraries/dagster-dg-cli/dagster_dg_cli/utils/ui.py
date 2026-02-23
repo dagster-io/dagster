@@ -3,7 +3,6 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 from yaspin import Spinner, yaspin
 from yaspin.core import Yaspin
@@ -14,7 +13,7 @@ DEFAULT_SPINNER_INTERVAL = 0.1  # seconds between spinner frame updates
 DEFAULT_ELLIPSIS_INTERVAL = 0.5  # seconds between ellipsis animation updates
 
 
-def format_duration(seconds: Optional[float]) -> str:
+def format_duration(seconds: float | None) -> str:
     """Format duration in a human-readable way."""
     if seconds is None:
         return "0s"

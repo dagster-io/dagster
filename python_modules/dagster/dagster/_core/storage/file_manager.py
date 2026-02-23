@@ -5,7 +5,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import BinaryIO, ContextManager, Optional, TextIO, TypeAlias  # noqa: UP035
+from typing import BinaryIO, ContextManager, TextIO, TypeAlias  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -137,7 +137,7 @@ class FileManager(ABC):
 
     @public
     @abstractmethod
-    def write(self, file_obj: IOStream, mode: str = "wb", ext: Optional[str] = None) -> FileHandle:
+    def write(self, file_obj: IOStream, mode: str = "wb", ext: str | None = None) -> FileHandle:
         """Write the bytes contained within the given file object into the file manager.
 
         Args:
@@ -154,7 +154,7 @@ class FileManager(ABC):
 
     @public
     @abstractmethod
-    def write_data(self, data: bytes, ext: Optional[str] = None) -> FileHandle:
+    def write_data(self, data: bytes, ext: str | None = None) -> FileHandle:
         """Write raw bytes into the file manager.
 
         Args:
@@ -277,12 +277,12 @@ class LocalFileManager(FileManager):
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()  # type: ignore  # (??)
 
-    def write_data(self, data: bytes, ext: Optional[str] = None):
+    def write_data(self, data: bytes, ext: str | None = None):
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
     def write(
-        self, file_obj: IOStream, mode: str = "wb", ext: Optional[str] = None
+        self, file_obj: IOStream, mode: str = "wb", ext: str | None = None
     ) -> LocalFileHandle:
         check_file_like_obj(file_obj)
         check.opt_str_param(ext, "ext")

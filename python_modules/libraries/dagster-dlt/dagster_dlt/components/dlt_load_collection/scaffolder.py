@@ -4,7 +4,7 @@ import subprocess
 import textwrap
 from collections.abc import Mapping
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster import Scaffolder, scaffold_component
 from dagster._utils import pushd
@@ -107,8 +107,8 @@ def _construct_pipeline_source_file(
 
 
 class DltScaffolderParams(BaseModel):
-    source: Optional[str] = None
-    destination: Optional[str] = None
+    source: str | None = None
+    destination: str | None = None
 
 
 DLT_INIT_FILES_TO_CLEAN_UP = [".gitignore", "requirements.txt", ".dlt"]

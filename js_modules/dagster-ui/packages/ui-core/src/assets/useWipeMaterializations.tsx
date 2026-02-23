@@ -1,6 +1,6 @@
 import {MenuItem} from '@dagster-io/ui-components';
+import {AssetWipeDialog} from '@shared/assets/AssetWipeDialog';
 import {useContext, useMemo, useState} from 'react';
-import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 
 import {RefetchQueriesFunction} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';

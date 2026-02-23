@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 
@@ -75,7 +75,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
-        async def _fetch_single_job(job_id: int) -> Optional[dict]:
+        async def _fetch_single_job(job_id: int) -> dict | None:
             async with semaphore:
                 async with aiohttp.ClientSession(headers=headers) as session:
                     url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/get?job_id={job_id}"

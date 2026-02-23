@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import Any, Optional, TypeAlias, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 import click
 from typing_extensions import Self
@@ -163,21 +163,21 @@ def workspace_options(f: T_Callable) -> T_Callable:
 @record
 class WorkspaceOpts:
     empty_workspace: bool = False
-    workspace: Optional[Sequence[str]] = None
+    workspace: Sequence[str] | None = None
 
     # Like PythonPointerParams but multiple files/modules/packages are allowed
-    python_file: Optional[Sequence[str]] = None
-    module_name: Optional[Sequence[str]] = None
-    package_name: Optional[Sequence[str]] = None
-    working_directory: Optional[str] = None
-    attribute: Optional[str] = None
+    python_file: Sequence[str] | None = None
+    module_name: Sequence[str] | None = None
+    package_name: Sequence[str] | None = None
+    working_directory: str | None = None
+    attribute: str | None = None
 
-    autoload_defs_module_name: Optional[str] = None
+    autoload_defs_module_name: str | None = None
 
     # For gRPC server
-    grpc_port: Optional[int] = None
-    grpc_socket: Optional[str] = None
-    grpc_host: Optional[str] = None
+    grpc_port: int | None = None
+    grpc_socket: str | None = None
+    grpc_host: str | None = None
     use_ssl: bool = False
 
     @classmethod
@@ -208,12 +208,12 @@ class WorkspaceOpts:
 
 @record
 class PythonPointerOpts:
-    python_file: Optional[str] = None
-    module_name: Optional[str] = None
-    package_name: Optional[str] = None
-    working_directory: Optional[str] = None
-    attribute: Optional[str] = None
-    autoload_defs_module_name: Optional[str] = None
+    python_file: str | None = None
+    module_name: str | None = None
+    package_name: str | None = None
+    working_directory: str | None = None
+    attribute: str | None = None
+    autoload_defs_module_name: str | None = None
 
     @classmethod
     def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:

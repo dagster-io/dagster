@@ -104,7 +104,7 @@ class RemoteRepository:
         repository_snap: RepositorySnap,
         repository_handle: RepositoryHandle,
         auto_materialize_use_sensors: bool,
-        ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
+        ref_to_data_fn: Callable[[JobRefSnap], JobDataSnap] | None = None,
     ):
         self.repository_snap = check.inst_param(repository_snap, "repository_snap", RepositorySnap)
 
@@ -266,7 +266,7 @@ class RemoteRepository:
                     if not isinstance(job_item, JobRefSnap):
                         check.failed("unexpected job item")
                     job_ref = job_item
-                    job_data_snap: Optional[JobDataSnap] = None
+                    job_data_snap: JobDataSnap | None = None
                 else:
                     if not isinstance(job_item, JobDataSnap):
                         check.failed("unexpected job item")
@@ -321,7 +321,7 @@ class RemoteRepository:
         """
         return self.get_remote_origin().get_id()
 
-    def get_asset_node_snaps(self, job_name: Optional[str] = None) -> Sequence[AssetNodeSnap]:
+    def get_asset_node_snaps(self, job_name: str | None = None) -> Sequence[AssetNodeSnap]:
         return (
             self.repository_snap.asset_nodes
             if job_name is None
@@ -338,11 +338,11 @@ class RemoteRepository:
             mapping[asset_snap.asset_key] = asset_snap
         return mapping
 
-    def get_asset_node_snap(self, asset_key: AssetKey) -> Optional[AssetNodeSnap]:
+    def get_asset_node_snap(self, asset_key: AssetKey) -> AssetNodeSnap | None:
         return self._asset_snaps_by_key.get(asset_key)
 
     def get_asset_check_node_snaps(
-        self, job_name: Optional[str] = None
+        self, job_name: str | None = None
     ) -> Sequence[AssetCheckNodeSnap]:
         if job_name:
             return self._asset_check_jobs.get(job_name, [])
@@ -448,10 +448,10 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
 
     def __init__(
         self,
-        job_data_snap: Optional[JobDataSnap],
+        job_data_snap: JobDataSnap | None,
         repository_handle: RepositoryHandle,
-        job_ref_snap: Optional[JobRefSnap] = None,
-        ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
+        job_ref_snap: JobRefSnap | None = None,
+        ref_to_data_fn: Callable[[JobRefSnap], JobDataSnap] | None = None,
     ):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.opt_inst_param(job_data_snap, "job_data", JobDataSnap)
@@ -459,7 +459,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         self._repository_handle = repository_handle
 
         self._memo_lock = RLock()
-        self._index: Optional[JobIndex] = None
+        self._index: JobIndex | None = None
 
         self._job_data_snap = job_data_snap
         self._job_ref_snap = job_ref_snap
@@ -519,7 +519,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         return self._job_index.job_snapshot.description
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         if self._job_ref_snap is not None:
             return self._job_ref_snap.owners
         return getattr(self._job_index.job_snapshot, "owners", None)
@@ -543,7 +543,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         return self._repository_handle
 
     @property
-    def op_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Sequence[str] | None:
         return (
             self._job_index.job_snapshot.lineage_snapshot.op_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -551,7 +551,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         )
 
     @property
-    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> AbstractSet[str] | None:
         return (
             self._job_index.job_snapshot.lineage_snapshot.resolved_op_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -559,7 +559,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         )
 
     @property
-    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+    def asset_selection(self) -> AbstractSet[AssetKey] | None:
         return (
             self._job_index.job_snapshot.lineage_snapshot.asset_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -567,7 +567,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         )
 
     @property
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+    def asset_check_selection(self) -> AbstractSet[AssetCheckKey] | None:
         return (
             self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -595,7 +595,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         return self._active_preset_dict[preset_name]
 
     @property
-    def root_config_key(self) -> Optional[str]:
+    def root_config_key(self) -> str | None:
         return self.get_mode_def_snap(DEFAULT_MODE_NAME).root_config_key
 
     @property
@@ -647,7 +647,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
     def get_remote_origin_id(self) -> str:
         return self.get_remote_origin().get_id()
 
-    def get_external_job_source(self) -> Optional[str]:
+    def get_external_job_source(self) -> str | None:
         """Retrieve the external job source from the job.
 
         Prefers retrieval from the JobRefSnap, to avoid an expensive retrieval of the JobDataSnap.
@@ -674,7 +674,7 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
 @record
 class RemoteExecutionPlanSelector:
     job_selector: JobSubsetSelector
-    run_config: Optional[Mapping[str, Any]]
+    run_config: Mapping[str, Any] | None
 
     @cached_method
     def __hash__(self) -> int:
@@ -820,7 +820,7 @@ class RemoteResource:
         return self._resource_snap.name
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._resource_snap.resource_snapshot.description
 
     @property
@@ -889,11 +889,11 @@ class RemoteSchedule:
         return self._schedule_snap.cron_schedule
 
     @property
-    def execution_timezone(self) -> Optional[str]:
+    def execution_timezone(self) -> str | None:
         return self._schedule_snap.execution_timezone
 
     @property
-    def op_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Sequence[str] | None:
         return self._schedule_snap.op_selection
 
     @property
@@ -901,23 +901,23 @@ class RemoteSchedule:
         return self._schedule_snap.job_name
 
     @property
-    def asset_selection(self) -> Optional[AssetSelection]:
+    def asset_selection(self) -> AssetSelection | None:
         return self._schedule_snap.asset_selection
 
     @property
-    def mode(self) -> Optional[str]:
+    def mode(self) -> str | None:
         return self._schedule_snap.mode
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._schedule_snap.description
 
     @property
-    def partition_set_name(self) -> Optional[str]:
+    def partition_set_name(self) -> str | None:
         return self._schedule_snap.partition_set_name
 
     @property
-    def environment_vars(self) -> Optional[Mapping[str, str]]:
+    def environment_vars(self) -> Mapping[str, str] | None:
         return self._schedule_snap.environment_vars
 
     @property
@@ -933,7 +933,7 @@ class RemoteSchedule:
         return self._schedule_snap.metadata
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         return getattr(self._schedule_snap, "owners", None)
 
     def get_remote_origin(self) -> RemoteInstigatorOrigin:
@@ -1034,31 +1034,31 @@ class RemoteSensor:
         return self._handle
 
     @property
-    def job_name(self) -> Optional[str]:
+    def job_name(self) -> str | None:
         target = self._get_single_target()
         return target.job_name if target else None
 
     @property
-    def asset_selection(self) -> Optional[AssetSelection]:
+    def asset_selection(self) -> AssetSelection | None:
         return self._sensor_snap.asset_selection
 
     @property
-    def mode(self) -> Optional[str]:
+    def mode(self) -> str | None:
         target = self._get_single_target()
         return target.mode if target else None
 
     @property
-    def op_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Sequence[str] | None:
         target = self._get_single_target()
         return target.op_selection if target else None
 
-    def _get_single_target(self) -> Optional[TargetSnap]:
+    def _get_single_target(self) -> TargetSnap | None:
         if self._sensor_snap.target_dict:
             return next(iter(self._sensor_snap.target_dict.values()))
         else:
             return None
 
-    def get_target(self, job_name: Optional[str] = None) -> Optional[TargetSnap]:
+    def get_target(self, job_name: str | None = None) -> TargetSnap | None:
         if job_name:
             return self._sensor_snap.target_dict[job_name]
         else:
@@ -1068,7 +1068,7 @@ class RemoteSensor:
         return list(self._sensor_snap.target_dict.values())
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._sensor_snap.description
 
     @property
@@ -1162,7 +1162,7 @@ class RemoteSensor:
             )
 
     @property
-    def metadata(self) -> Optional[SensorMetadataSnap]:
+    def metadata(self) -> SensorMetadataSnap | None:
         return self._sensor_snap.metadata
 
     @property
@@ -1170,7 +1170,7 @@ class RemoteSensor:
         return self._sensor_snap.tags
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         return getattr(self._sensor_snap, "owners", None)
 
     @property
@@ -1193,11 +1193,11 @@ class RemotePartitionSet:
         return self._partition_set_snap.name
 
     @property
-    def op_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Sequence[str] | None:
         return self._partition_set_snap.op_selection
 
     @property
-    def mode(self) -> Optional[str]:
+    def mode(self) -> str | None:
         return self._partition_set_snap.mode
 
     @property
@@ -1205,7 +1205,7 @@ class RemotePartitionSet:
         return self._partition_set_snap.job_name
 
     @property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
+    def backfill_policy(self) -> BackfillPolicy | None:
         return self._partition_set_snap.backfill_policy
 
     @property

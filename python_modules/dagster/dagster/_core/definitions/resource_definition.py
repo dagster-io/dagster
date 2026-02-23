@@ -5,7 +5,6 @@ from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Optional,
     TypeAlias,
     Union,
     cast,
@@ -86,9 +85,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         self,
         resource_fn: ResourceFunction,
         config_schema: CoercableToConfigSchema = None,
-        description: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        version: Optional[str] = None,
+        description: str | None = None,
+        required_resource_keys: AbstractSet[str] | None = None,
+        version: str | None = None,
     ):
         self._resource_fn = check.callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
@@ -107,9 +106,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         *,
         resource_fn: ResourceFunction,
         config_schema: CoercableToConfigSchema,
-        description: Optional[str],
-        required_resource_keys: Optional[AbstractSet[str]],
-        version: Optional[str],
+        description: str | None,
+        required_resource_keys: AbstractSet[str] | None,
+        version: str | None,
     ) -> "ResourceDefinition":
         return ResourceDefinition(
             resource_fn=resource_fn,
@@ -129,13 +128,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """A human-readable description of the resource."""
         return self._description
 
     @public
     @property
-    def version(self) -> Optional[str]:
+    def version(self) -> str | None:
         """A string which can be used to identify a particular code version of a resource definition."""
         return self._version
 
@@ -158,7 +157,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     @public
     @staticmethod
-    def none_resource(description: Optional[str] = None) -> "ResourceDefinition":
+    def none_resource(description: str | None = None) -> "ResourceDefinition":
         """A helper function that returns a none resource.
 
         Args:
@@ -171,7 +170,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     @public
     @staticmethod
-    def hardcoded_resource(value: Any, description: Optional[str] = None) -> "ResourceDefinition":
+    def hardcoded_resource(value: Any, description: str | None = None) -> "ResourceDefinition":
         """A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
 
         Args:
@@ -193,7 +192,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     @public
     @staticmethod
-    def mock_resource(description: Optional[str] = None) -> "ResourceDefinition":
+    def mock_resource(description: str | None = None) -> "ResourceDefinition":
         """A helper function that creates a ``ResourceDefinition`` which wraps a ``mock.MagicMock``.
 
         Args:
@@ -211,7 +210,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     @public
     @staticmethod
-    def string_resource(description: Optional[str] = None) -> "ResourceDefinition":
+    def string_resource(description: str | None = None) -> "ResourceDefinition":
         """Creates a ``ResourceDefinition`` which takes in a single string as configuration
         and returns this configured string to any ops or assets which depend on it.
 
@@ -230,7 +229,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     def copy_for_configured(
         self,
-        description: Optional[str],
+        description: str | None,
         config_schema: CoercableToConfigSchema,
     ) -> "ResourceDefinition":
         resource_def = ResourceDefinition.dagster_internal_init(
@@ -265,7 +264,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
             if args:
                 check.opt_inst_param(args[0], context_param_name, UnboundInitResourceContext)
                 return resource_invocation_result(
-                    self, cast("Optional[UnboundInitResourceContext]", args[0])
+                    self, cast("UnboundInitResourceContext | None", args[0])
                 )
             else:
                 if context_param_name not in kwargs:
@@ -277,7 +276,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
                 )
 
                 return resource_invocation_result(
-                    self, cast("Optional[UnboundInitResourceContext]", kwargs[context_param_name])
+                    self, cast("UnboundInitResourceContext | None", kwargs[context_param_name])
                 )
         elif len(args) + len(kwargs) > 0:
             raise DagsterInvalidInvocationError(
@@ -290,7 +289,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
 
     def get_resource_requirements(
         self,
-        source_key: Optional[str],
+        source_key: str | None,
     ) -> Iterator[ResourceRequirement]:
         for resource_key in sorted(list(self.required_resource_keys)):
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
@@ -306,10 +305,10 @@ def dagster_maintained_resource(
 class _ResourceDecoratorCallable:
     def __init__(
         self,
-        config_schema: Optional[Mapping[str, Any]] = None,
-        description: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        version: Optional[str] = None,
+        config_schema: Mapping[str, Any] | None = None,
+        description: str | None = None,
+        required_resource_keys: AbstractSet[str] | None = None,
+        version: str | None = None,
     ):
         self.config_schema = config_schema  # checked by underlying definition
         self.description = check.opt_str_param(description, "description")
@@ -363,9 +362,9 @@ def resource(config_schema: ResourceFunction) -> ResourceDefinition: ...
 @overload
 def resource(
     config_schema: CoercableToConfigSchema = ...,
-    description: Optional[str] = ...,
-    required_resource_keys: Optional[AbstractSet[str]] = ...,
-    version: Optional[str] = ...,
+    description: str | None = ...,
+    required_resource_keys: AbstractSet[str] | None = ...,
+    version: str | None = ...,
 ) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
@@ -373,9 +372,9 @@ def resource(
 @beta_param(param="version")
 def resource(
     config_schema: ResourceFunction | CoercableToConfigSchema = None,
-    description: Optional[str] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    version: Optional[str] = None,
+    description: str | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    version: str | None = None,
 ) -> Union[Callable[[ResourceFunction], "ResourceDefinition"], "ResourceDefinition"]:
     """Define a resource.
 
@@ -404,7 +403,7 @@ def resource(
 
     def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
-            config_schema=cast("Optional[dict[str, Any]]", config_schema),
+            config_schema=cast("dict[str, Any] | None", config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,

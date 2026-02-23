@@ -69,7 +69,7 @@ class SchedulingMethods:
         return self._scheduler_impl
 
     @property
-    def scheduler_class(self) -> Optional[str]:
+    def scheduler_class(self) -> str | None:
         """Get scheduler class name."""
         return self.scheduler.__class__.__name__ if self.scheduler else None
 
@@ -223,10 +223,10 @@ class SchedulingMethods:
     @traced
     def all_instigator_state(
         self,
-        repository_origin_id: Optional[str] = None,
-        repository_selector_id: Optional[str] = None,
+        repository_origin_id: str | None = None,
+        repository_selector_id: str | None = None,
         instigator_type: Optional["InstigatorType"] = None,
-        instigator_statuses: Optional[set["InstigatorStatus"]] = None,
+        instigator_statuses: set["InstigatorStatus"] | None = None,
     ) -> Sequence["InstigatorState"]:
         """Get all instigator states - moved from DagsterInstance.all_instigator_state()."""
         if not self._schedule_storage_impl:
@@ -265,8 +265,8 @@ class SchedulingMethods:
     def get_backfills(
         self,
         filters: Optional["BulkActionsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
         status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
         """Get backfills - moved from DagsterInstance.get_backfills()."""
@@ -386,8 +386,8 @@ class SchedulingMethods:
     def get_batch_ticks(
         self,
         selector_ids: Sequence[str],
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence["TickStatus"]] = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
     ) -> Mapping[str, Sequence["InstigatorTick"]]:
         if not self._schedule_storage_impl:
             return {}
@@ -409,10 +409,10 @@ class SchedulingMethods:
         self,
         origin_id: str,
         selector_id: str,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence["TickStatus"]] = None,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
     ) -> Sequence["InstigatorTick"]:
         if not self._schedule_storage_impl:
             return []
@@ -436,10 +436,10 @@ class SchedulingMethods:
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[Sequence["TickStatus"]] = None,
+        tick_statuses: Sequence["TickStatus"] | None = None,
     ) -> None:
         if self._schedule_storage_impl:
             self._schedule_storage_impl.purge_ticks(origin_id, selector_id, before, tick_statuses)
 
-    def get_tick_termination_check_interval(self) -> Optional[int]:
+    def get_tick_termination_check_interval(self) -> int | None:
         return None

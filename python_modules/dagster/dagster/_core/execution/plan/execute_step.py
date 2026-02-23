@@ -1,7 +1,7 @@
 import inspect
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from typing_extensions import TypedDict
 
@@ -694,7 +694,7 @@ def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -
 
 class _InputProvenanceData(TypedDict):
     data_version: DataVersion
-    storage_id: Optional[int]
+    storage_id: int | None
 
 
 def _get_input_provenance_data(
@@ -948,7 +948,7 @@ def _log_materialization_or_observation_events_for_asset(
 def _dagster_event_for_asset_event(
     step_context: StepExecutionContext,
     asset_event: AssetMaterialization | AssetObservation,
-    batch_metadata: Optional[DagsterEventBatchMetadata],
+    batch_metadata: DagsterEventBatchMetadata | None,
 ) -> DagsterEvent:
     if isinstance(asset_event, AssetMaterialization):
         return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)

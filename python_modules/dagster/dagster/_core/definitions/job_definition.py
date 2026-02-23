@@ -100,44 +100,43 @@ class JobDefinition(IHasInternalInit):
 
     _name: str
     _graph_def: GraphDefinition
-    _description: Optional[str]
+    _description: str | None
     _tags: Mapping[str, str]
-    _run_tags: Optional[Mapping[str, str]]
+    _run_tags: Mapping[str, str] | None
     _metadata: Mapping[str, MetadataValue]
     _current_level_node_defs: Sequence[NodeDefinition]
     _hook_defs: AbstractSet[HookDefinition]
-    _op_retry_policy: Optional[RetryPolicy]
+    _op_retry_policy: RetryPolicy | None
     _asset_layer: AssetLayer
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: dict[str, "RunConfigSchema"]
-    _subset_selection_data: Optional[OpSelectionData | AssetSelectionData]
+    _subset_selection_data: OpSelectionData | AssetSelectionData | None
     input_values: Mapping[str, object]
-    _owners: Optional[Sequence[str]]
+    _owners: Sequence[str] | None
 
     def __init__(
         self,
         *,
         graph_def: GraphDefinition,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        executor_def: Optional[ExecutorDefinition] = None,
-        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        name: Optional[str] = None,
-        config: Optional[
-            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
-        ] = None,
-        description: Optional[str] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        run_tags: Optional[Mapping[str, Any]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional[RetryPolicy] = None,
-        _subset_selection_data: Optional[OpSelectionData | AssetSelectionData] = None,
-        asset_layer: Optional[AssetLayer] = None,
-        input_values: Optional[Mapping[str, object]] = None,
-        _was_explicitly_provided_resources: Optional[bool] = None,
-        owners: Optional[Sequence[str]] = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        executor_def: ExecutorDefinition | None = None,
+        logger_defs: Mapping[str, LoggerDefinition] | None = None,
+        name: str | None = None,
+        config: Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+        | None = None,
+        description: str | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        tags: Mapping[str, Any] | None = None,
+        run_tags: Mapping[str, Any] | None = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        op_retry_policy: RetryPolicy | None = None,
+        _subset_selection_data: OpSelectionData | AssetSelectionData | None = None,
+        asset_layer: AssetLayer | None = None,
+        input_values: Mapping[str, object] | None = None,
+        _was_explicitly_provided_resources: bool | None = None,
+        owners: Sequence[str] | None = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
@@ -229,25 +228,23 @@ class JobDefinition(IHasInternalInit):
     def dagster_internal_init(
         *,
         graph_def: GraphDefinition,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]],
-        executor_def: Optional[ExecutorDefinition],
-        logger_defs: Optional[Mapping[str, LoggerDefinition]],
-        name: Optional[str],
-        config: Optional[
-            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
-        ],
-        description: Optional[str],
-        partitions_def: Optional[PartitionsDefinition],
-        tags: Optional[Mapping[str, Any]],
-        run_tags: Optional[Mapping[str, Any]],
-        metadata: Optional[Mapping[str, RawMetadataValue]],
-        hook_defs: Optional[AbstractSet[HookDefinition]],
-        op_retry_policy: Optional[RetryPolicy],
-        _subset_selection_data: Optional[OpSelectionData | AssetSelectionData],
-        asset_layer: Optional[AssetLayer],
-        input_values: Optional[Mapping[str, object]],
-        _was_explicitly_provided_resources: Optional[bool],
-        owners: Optional[Sequence[str]],
+        resource_defs: Mapping[str, ResourceDefinition] | None,
+        executor_def: ExecutorDefinition | None,
+        logger_defs: Mapping[str, LoggerDefinition] | None,
+        name: str | None,
+        config: Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"] | None,
+        description: str | None,
+        partitions_def: PartitionsDefinition | None,
+        tags: Mapping[str, Any] | None,
+        run_tags: Mapping[str, Any] | None,
+        metadata: Mapping[str, RawMetadataValue] | None,
+        hook_defs: AbstractSet[HookDefinition] | None,
+        op_retry_policy: RetryPolicy | None,
+        _subset_selection_data: OpSelectionData | AssetSelectionData | None,
+        asset_layer: AssetLayer | None,
+        input_values: Mapping[str, object] | None,
+        _was_explicitly_provided_resources: bool | None,
+        owners: Sequence[str] | None,
     ) -> "JobDefinition":
         return JobDefinition(
             graph_def=graph_def,
@@ -274,8 +271,8 @@ class JobDefinition(IHasInternalInit):
     def for_external_job(
         asset_keys: Iterable[AssetKey],
         name: str,
-        metadata: Optional[Mapping[str, Any]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        metadata: Mapping[str, Any] | None = None,
+        tags: Mapping[str, Any] | None = None,
     ) -> "JobDefinition":
         from dagster._core.definitions import op
 
@@ -338,11 +335,11 @@ class JobDefinition(IHasInternalInit):
         return self._metadata
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._description
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         return self._owners
 
     @property
@@ -388,7 +385,7 @@ class JobDefinition(IHasInternalInit):
 
     @public
     @property
-    def partitioned_config(self) -> Optional[PartitionedConfig]:
+    def partitioned_config(self) -> PartitionedConfig | None:
         """The partitioned config for the job, if it has one.
 
         A partitioned config defines a way to map partition keys to run config for the job.
@@ -397,7 +394,7 @@ class JobDefinition(IHasInternalInit):
 
     @public
     @property
-    def config_mapping(self) -> Optional[ConfigMapping]:
+    def config_mapping(self) -> ConfigMapping | None:
         """The config mapping for the job, if it has one.
 
         A config mapping defines a way to map a top-level config schema to run config for the job.
@@ -431,7 +428,7 @@ class JobDefinition(IHasInternalInit):
         return self._required_resource_keys
 
     @property
-    def run_config(self) -> Optional[Mapping[str, Any]]:
+    def run_config(self) -> Mapping[str, Any] | None:
         return self._resolve_configs()[2]
 
     @property
@@ -442,7 +439,7 @@ class JobDefinition(IHasInternalInit):
 
     @public
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         """Returns the :py:class:`PartitionsDefinition` for the job, if it has one.
 
         A partitions definition defines the set of partition keys the job operates on.
@@ -474,13 +471,13 @@ class JobDefinition(IHasInternalInit):
         return self._current_level_node_defs
 
     @property
-    def op_retry_policy(self) -> Optional[RetryPolicy]:
+    def op_retry_policy(self) -> RetryPolicy | None:
         return self._op_retry_policy
 
     @cached_method
     def _resolve_configs(
         self,
-    ) -> tuple[Optional[PartitionedConfig], Optional[ConfigMapping], Optional[Mapping[str, Any]]]:
+    ) -> tuple[PartitionedConfig | None, ConfigMapping | None, Mapping[str, Any] | None]:
         config = self._original_config_argument
         partition_def = self._original_partitions_def_argument
 
@@ -667,7 +664,7 @@ class JobDefinition(IHasInternalInit):
 
         return frozenset(hook_defs)
 
-    def get_retry_policy_for_handle(self, handle: NodeHandle) -> Optional[RetryPolicy]:
+    def get_retry_policy_for_handle(self, handle: NodeHandle) -> RetryPolicy | None:
         node = self.get_node(handle)
         definition = node.definition
 
@@ -690,16 +687,16 @@ class JobDefinition(IHasInternalInit):
     @public
     def execute_in_process(
         self,
-        run_config: Optional[Union[Mapping[str, Any], "RunConfig"]] = None,
+        run_config: Union[Mapping[str, Any], "RunConfig"] | None = None,
         instance: Optional["DagsterInstance"] = None,
-        partition_key: Optional[str] = None,
+        partition_key: str | None = None,
         raise_on_error: bool = True,
-        op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Sequence[AssetKey]] = None,
-        run_id: Optional[str] = None,
-        input_values: Optional[Mapping[str, object]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        resources: Optional[Mapping[str, object]] = None,
+        op_selection: Sequence[str] | None = None,
+        asset_selection: Sequence[AssetKey] | None = None,
+        run_id: str | None = None,
+        input_values: Mapping[str, object] | None = None,
+        tags: Mapping[str, str] | None = None,
+        resources: Mapping[str, object] | None = None,
     ) -> "ExecuteInProcessResult":
         """Execute the Job in-process, gathering results in-memory.
 
@@ -798,8 +795,8 @@ class JobDefinition(IHasInternalInit):
         self,
         resource_defs: Mapping[str, ResourceDefinition],
         input_values: Mapping[str, object],
-        op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        op_selection: Sequence[str] | None = None,
+        asset_selection: Sequence[AssetKey] | None = None,
     ) -> "JobDefinition":
         from dagster._core.definitions.executor_definition import execute_in_process_executor
 
@@ -833,7 +830,7 @@ class JobDefinition(IHasInternalInit):
         return bool(self.asset_layer and self.asset_layer.selected_asset_keys)
 
     def _get_partitions_def(
-        self, selected_asset_keys: Optional[Iterable[AssetKey]]
+        self, selected_asset_keys: Iterable[AssetKey] | None
     ) -> PartitionsDefinition:
         if self.partitions_def:
             return self.partitions_def
@@ -859,16 +856,14 @@ class JobDefinition(IHasInternalInit):
         else:
             check.failed("Job has no PartitionsDefinition")
 
-    def get_partition_keys(
-        self, selected_asset_keys: Optional[Iterable[AssetKey]]
-    ) -> Sequence[str]:
+    def get_partition_keys(self, selected_asset_keys: Iterable[AssetKey] | None) -> Sequence[str]:
         partitions_def = self._get_partitions_def(selected_asset_keys)
         return partitions_def.get_partition_keys()
 
     def validate_partition_key(
         self,
         partition_key: str,
-        selected_asset_keys: Optional[Iterable[AssetKey]],
+        selected_asset_keys: Iterable[AssetKey] | None,
         context: PartitionLoadingContext,
     ) -> None:
         """Ensures that the given partition_key is a member of the PartitionsDefinition
@@ -878,7 +873,7 @@ class JobDefinition(IHasInternalInit):
         partitions_def.validate_partition_key(partition_key, context=context)
 
     def get_tags_for_partition_key(
-        self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
+        self, partition_key: str, selected_asset_keys: Iterable[AssetKey] | None
     ) -> Mapping[str, str]:
         """Gets tags for the given partition key."""
         if self.partitioned_config is not None:
@@ -894,7 +889,7 @@ class JobDefinition(IHasInternalInit):
             return {}
 
     @property
-    def op_selection_data(self) -> Optional[OpSelectionData]:
+    def op_selection_data(self) -> OpSelectionData | None:
         return (
             self._subset_selection_data
             if isinstance(self._subset_selection_data, OpSelectionData)
@@ -902,7 +897,7 @@ class JobDefinition(IHasInternalInit):
         )
 
     @property
-    def asset_selection_data(self) -> Optional[AssetSelectionData]:
+    def asset_selection_data(self) -> AssetSelectionData | None:
         return (
             self._subset_selection_data
             if isinstance(self._subset_selection_data, AssetSelectionData)
@@ -916,9 +911,9 @@ class JobDefinition(IHasInternalInit):
     def get_subset(
         self,
         *,
-        op_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_selection: Iterable[str] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
     ) -> "JobDefinition":
         check.invariant(
             not (op_selection and (asset_selection or asset_check_selection)),
@@ -1014,11 +1009,11 @@ class JobDefinition(IHasInternalInit):
     def run_request_for_partition(
         self,
         partition_key: str,
-        run_key: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        asset_selection: Optional[Sequence[AssetKey]] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
-        current_time: Optional[datetime] = None,
+        run_key: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        asset_selection: Sequence[AssetKey] | None = None,
+        run_config: Mapping[str, Any] | None = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> "RunRequest":
         """Creates a RunRequest object for a run that processes the given partition.
@@ -1176,21 +1171,21 @@ class JobDefinition(IHasInternalInit):
         return self._copy(metadata=normalize_metadata(metadata))
 
     @property
-    def op_selection(self) -> Optional[AbstractSet[str]]:
+    def op_selection(self) -> AbstractSet[str] | None:
         return set(self.op_selection_data.op_selection) if self.op_selection_data else None
 
     @property
-    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+    def asset_selection(self) -> AbstractSet[AssetKey] | None:
         return self.asset_selection_data.asset_selection if self.asset_selection_data else None
 
     @property
-    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+    def asset_check_selection(self) -> AbstractSet[AssetCheckKey] | None:
         return (
             self.asset_selection_data.asset_check_selection if self.asset_selection_data else None
         )
 
     @property
-    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> AbstractSet[str] | None:
         return self.op_selection_data.resolved_op_selection if self.op_selection_data else None
 
 
@@ -1345,7 +1340,7 @@ def get_run_config_schema_for_job(
     resource_defs: Mapping[str, ResourceDefinition],
     executor_def: "ExecutorDefinition",
     logger_defs: Mapping[str, LoggerDefinition],
-    asset_layer: Optional[AssetLayer],
+    asset_layer: AssetLayer | None,
     was_explicitly_provided_resources: bool = False,
 ) -> ConfigType:
     return JobDefinition(
@@ -1369,7 +1364,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     assets_defs_by_key: dict[AssetKey, AssetsDefinition] = {}
 
     # each entry is a graph definition and its handle relative to the job root
-    stack: list[tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
+    stack: list[tuple[GraphDefinition, NodeHandle | None]] = [(job_graph_def, None)]
 
     while stack:
         graph_def, parent_node_handle = stack.pop()

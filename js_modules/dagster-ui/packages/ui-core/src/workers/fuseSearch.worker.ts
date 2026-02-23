@@ -2,7 +2,7 @@
  * A Web Worker that creates and queries a Fuse object.
  */
 
-import {createWorkerThread} from 'shared/workers/WorkerThread.oss';
+import {createWorkerThread} from '@shared/workers/WorkerThread';
 
 import {Fuse} from '../search/fuse';
 

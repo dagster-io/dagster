@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     AssetCheckEvaluation,
@@ -49,7 +49,7 @@ class DbtCloudJobRunHandler:
             client=client,
         )
 
-    def wait(self, timeout: Optional[float] = None) -> DbtCloudRun:
+    def wait(self, timeout: float | None = None) -> DbtCloudRun:
         run_details = self.client.poll_run(run_id=self.run_id, poll_timeout=timeout)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run
@@ -63,7 +63,7 @@ class DbtCloudJobRunHandler:
     def list_run_artifacts(self) -> Sequence[str]:
         return self.client.list_run_artifacts(run_id=self.run_id)
 
-    def get_run_logs(self) -> Optional[str]:
+    def get_run_logs(self) -> str | None:
         """Retrieves the stdout/stderr logs from the completed dbt Cloud run.
 
         This method fetches logs from the run_steps by calling get_run_details
@@ -109,8 +109,8 @@ class DbtCloudJobRunResults:
         self,
         client: DbtCloudWorkspaceClient,
         manifest: Mapping[str, Any],
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[AssetExecutionContext] = None,
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
+        context: AssetExecutionContext | None = None,
     ) -> Iterator[AssetCheckEvaluation | AssetCheckResult | AssetMaterialization | Output]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 

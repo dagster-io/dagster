@@ -1,7 +1,7 @@
 import base64
 import zlib
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster_shared.record import IHaveNew, copy, record, record_custom
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
@@ -36,12 +36,12 @@ class ExecutionPlanSnapshotArgs:
     job_origin: RemoteJobOrigin
     op_selection: Sequence[str]
     run_config: Mapping[str, object]
-    step_keys_to_execute: Optional[Sequence[str]]
+    step_keys_to_execute: Sequence[str] | None
     job_snapshot_id: str
-    known_state: Optional[KnownExecutionState] = None
-    instance_ref: Optional[InstanceRef] = None
-    asset_selection: Optional[AbstractSet[AssetKey]] = None
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None
+    known_state: KnownExecutionState | None = None
+    instance_ref: InstanceRef | None = None
+    asset_selection: AbstractSet[AssetKey] | None = None
+    asset_check_selection: AbstractSet[AssetCheckKey] | None = None
     mode: str = DEFAULT_MODE_NAME
 
 
@@ -64,15 +64,15 @@ class ExecuteRunArgs(IHaveNew):
     # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
     job_origin: JobPythonOrigin
     run_id: str
-    instance_ref: Optional[InstanceRef]
-    set_exit_code_on_failure: Optional[bool]
+    instance_ref: InstanceRef | None
+    set_exit_code_on_failure: bool | None
 
     def __new__(
         cls,
         job_origin: JobPythonOrigin,
         run_id: str,
-        instance_ref: Optional[InstanceRef],
-        set_exit_code_on_failure: Optional[bool] = None,
+        instance_ref: InstanceRef | None,
+        set_exit_code_on_failure: bool | None = None,
     ):
         return super().__new__(
             cls,
@@ -103,15 +103,15 @@ class ResumeRunArgs(IHaveNew):
     # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
     job_origin: JobPythonOrigin
     run_id: str
-    instance_ref: Optional[InstanceRef]
-    set_exit_code_on_failure: Optional[bool]
+    instance_ref: InstanceRef | None
+    set_exit_code_on_failure: bool | None
 
     def __new__(
         cls,
         job_origin: JobPythonOrigin,
         run_id: str,
-        instance_ref: Optional[InstanceRef],
-        set_exit_code_on_failure: Optional[bool] = None,
+        instance_ref: InstanceRef | None,
+        set_exit_code_on_failure: bool | None = None,
     ):
         return super().__new__(
             cls,
@@ -142,7 +142,7 @@ class ResumeRunArgs(IHaveNew):
 class ExecuteExternalJobArgs:
     job_origin: RemoteJobOrigin
     run_id: str
-    instance_ref: Optional[InstanceRef]
+    instance_ref: InstanceRef | None
 
 
 @whitelist_for_serdes(
@@ -156,23 +156,23 @@ class ExecuteStepArgs(IHaveNew):
     # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
     job_origin: JobPythonOrigin
     run_id: str
-    step_keys_to_execute: Optional[Sequence[str]]
-    instance_ref: Optional[InstanceRef]
-    retry_mode: Optional[RetryMode]
-    known_state: Optional[KnownExecutionState]
-    should_verify_step: Optional[bool]
+    step_keys_to_execute: Sequence[str] | None
+    instance_ref: InstanceRef | None
+    retry_mode: RetryMode | None
+    known_state: KnownExecutionState | None
+    should_verify_step: bool | None
     print_serialized_events: bool
 
     def __new__(
         cls,
         job_origin: JobPythonOrigin,
         run_id: str,
-        step_keys_to_execute: Optional[Sequence[str]],
-        instance_ref: Optional[InstanceRef] = None,
-        retry_mode: Optional[RetryMode] = None,
-        known_state: Optional[KnownExecutionState] = None,
-        should_verify_step: Optional[bool] = None,
-        print_serialized_events: Optional[bool] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        instance_ref: InstanceRef | None = None,
+        retry_mode: RetryMode | None = None,
+        known_state: KnownExecutionState | None = None,
+        should_verify_step: bool | None = None,
+        print_serialized_events: bool | None = None,
     ):
         return super().__new__(
             cls,
@@ -227,24 +227,24 @@ class LoadableRepositorySymbol:
 @record_custom
 class ListRepositoriesResponse(IHaveNew):
     repository_symbols: Sequence[LoadableRepositorySymbol]
-    executable_path: Optional[str]
+    executable_path: str | None
     repository_code_pointer_dict: Mapping[str, CodePointer]
-    entry_point: Optional[Sequence[str]]
-    container_image: Optional[str]
-    container_context: Optional[Mapping[str, Any]]
-    dagster_library_versions: Optional[Mapping[str, str]]
-    defs_state_info: Optional[DefsStateInfo]
+    entry_point: Sequence[str] | None
+    container_image: str | None
+    container_context: Mapping[str, Any] | None
+    dagster_library_versions: Mapping[str, str] | None
+    defs_state_info: DefsStateInfo | None
 
     def __new__(
         cls,
         repository_symbols: Sequence[LoadableRepositorySymbol],
-        executable_path: Optional[str] = None,
-        repository_code_pointer_dict: Optional[Mapping[str, CodePointer]] = None,
-        entry_point: Optional[Sequence[str]] = None,
-        container_image: Optional[str] = None,
-        container_context: Optional[Mapping[str, Any]] = None,
-        dagster_library_versions: Optional[Mapping[str, str]] = None,
-        defs_state_info: Optional[DefsStateInfo] = None,
+        executable_path: str | None = None,
+        repository_code_pointer_dict: Mapping[str, CodePointer] | None = None,
+        entry_point: Sequence[str] | None = None,
+        container_image: str | None = None,
+        container_context: Mapping[str, Any] | None = None,
+        dagster_library_versions: Mapping[str, str] | None = None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         return super().__new__(
             cls,
@@ -264,17 +264,17 @@ class ListRepositoriesResponse(IHaveNew):
 @whitelist_for_serdes
 @record_custom
 class ListRepositoriesInput(IHaveNew):
-    module_name: Optional[str]
-    python_file: Optional[str]
-    working_directory: Optional[str]
-    attribute: Optional[str]
+    module_name: str | None
+    python_file: str | None
+    working_directory: str | None
+    attribute: str | None
 
     def __new__(
         cls,
-        module_name: Optional[str],
-        python_file: Optional[str],
-        working_directory: Optional[str],
-        attribute: Optional[str],
+        module_name: str | None,
+        python_file: str | None,
+        working_directory: str | None,
+        attribute: str | None,
     ):
         check.invariant(not (module_name and python_file), "Must set only one")
         check.invariant(module_name or python_file, "Must set at least one")
@@ -294,8 +294,8 @@ class PartitionArgs:
     # This is here for backcompat. it's expected to always be f"{job_name}_partition_set".
     partition_set_name: str
     partition_name: str
-    job_name: Optional[str] = None
-    instance_ref: Optional[InstanceRef] = None
+    job_name: str | None = None
+    instance_ref: InstanceRef | None = None
 
     def get_job_name(self) -> str:
         if self.job_name:
@@ -314,7 +314,7 @@ class PartitionNamesArgs:
     # to target assets with different PartitionsDefinitions. Prior user code versions can
     # (and do) safely ignore this parameter, because, in those versions, the job name on its
     # own is enough to specify which PartitionsDefinition to use.
-    job_name: Optional[str] = None
+    job_name: str | None = None
 
     def get_job_name(self) -> str:
         if self.job_name:
@@ -329,7 +329,7 @@ class PartitionSetExecutionParamArgs:
     repository_origin: RemoteRepositoryOrigin
     partition_set_name: str
     partition_names: Sequence[str]
-    instance_ref: Optional[InstanceRef] = None
+    instance_ref: InstanceRef | None = None
 
 
 @whitelist_for_serdes(
@@ -344,18 +344,18 @@ class PartitionSetExecutionParamArgs:
 @record_custom
 class JobSubsetSnapshotArgs(IHaveNew):
     job_origin: RemoteJobOrigin
-    op_selection: Optional[Sequence[str]]
-    asset_selection: Optional[AbstractSet[AssetKey]]
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
+    op_selection: Sequence[str] | None
+    asset_selection: AbstractSet[AssetKey] | None
+    asset_check_selection: AbstractSet[AssetCheckKey] | None
     include_parent_snapshot: bool
 
     def __new__(
         cls,
         job_origin: RemoteJobOrigin,
-        op_selection: Optional[Sequence[str]],
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-        include_parent_snapshot: Optional[bool] = None,
+        op_selection: Sequence[str] | None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
+        include_parent_snapshot: bool | None = None,
     ):
         return super().__new__(
             cls,
@@ -381,22 +381,22 @@ class NotebookPathArgs:
 @record_custom
 class ExternalScheduleExecutionArgs(IHaveNew):
     repository_origin: RemoteRepositoryOrigin
-    instance_ref: Optional[InstanceRef]
+    instance_ref: InstanceRef | None
     schedule_name: str
-    scheduled_execution_timestamp: Optional[float]
-    scheduled_execution_timezone: Optional[str]
+    scheduled_execution_timestamp: float | None
+    scheduled_execution_timezone: str | None
     log_key: Sequence[str]
-    timeout: Optional[int]
+    timeout: int | None
 
     def __new__(
         cls,
         repository_origin: RemoteRepositoryOrigin,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: InstanceRef | None,
         schedule_name: str,
-        scheduled_execution_timestamp: Optional[float] = None,
-        scheduled_execution_timezone: Optional[str] = None,
-        log_key: Optional[Sequence[str]] = None,
-        timeout: Optional[int] = None,
+        scheduled_execution_timestamp: float | None = None,
+        scheduled_execution_timezone: str | None = None,
+        log_key: Sequence[str] | None = None,
+        timeout: int | None = None,
     ):
         return super().__new__(
             cls,
@@ -414,30 +414,30 @@ class ExternalScheduleExecutionArgs(IHaveNew):
 @record_custom
 class SensorExecutionArgs(IHaveNew):
     repository_origin: RemoteRepositoryOrigin
-    instance_ref: Optional[InstanceRef]
+    instance_ref: InstanceRef | None
     sensor_name: str
-    last_tick_completion_time: Optional[float]
-    last_run_key: Optional[str]
-    cursor: Optional[str]
+    last_tick_completion_time: float | None
+    last_run_key: str | None
+    cursor: str | None
     log_key: Sequence[str]
-    timeout: Optional[int]
-    last_sensor_start_time: Optional[float]
+    timeout: int | None
+    last_sensor_start_time: float | None
     # deprecated
-    last_completion_time: Optional[float]
+    last_completion_time: float | None
 
     def __new__(
         cls,
         repository_origin: RemoteRepositoryOrigin,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: InstanceRef | None,
         sensor_name: str,
-        last_tick_completion_time: Optional[float] = None,
-        last_run_key: Optional[str] = None,
-        cursor: Optional[str] = None,
-        log_key: Optional[Sequence[str]] = None,
-        timeout: Optional[int] = None,
-        last_sensor_start_time: Optional[float] = None,
+        last_tick_completion_time: float | None = None,
+        last_run_key: str | None = None,
+        cursor: str | None = None,
+        log_key: Sequence[str] | None = None,
+        timeout: int | None = None,
+        last_sensor_start_time: float | None = None,
         # deprecated param
-        last_completion_time: Optional[float] = None,
+        last_completion_time: float | None = None,
     ):
         # populate both last_tick_completion_time and last_completion_time for backcompat, so that
         # older versions can still construct the correct context object.  We manually create the
@@ -479,7 +479,7 @@ class ExternalJobArgs:
 @record
 class ShutdownServerResult:
     success: bool
-    serializable_error_info: Optional[SerializableErrorInfo]
+    serializable_error_info: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes
@@ -492,8 +492,8 @@ class CancelExecutionRequest:
 @record
 class CancelExecutionResult:
     success: bool
-    message: Optional[str]
-    serializable_error_info: Optional[SerializableErrorInfo]
+    message: str | None
+    serializable_error_info: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes
@@ -512,19 +512,19 @@ class CanCancelExecutionResult:
 @record
 class StartRunResult:
     success: bool
-    message: Optional[str]
-    serializable_error_info: Optional[SerializableErrorInfo]
+    message: str | None
+    serializable_error_info: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes
 @record
 class GetCurrentImageResult:
-    current_image: Optional[str]
-    serializable_error_info: Optional[SerializableErrorInfo]
+    current_image: str | None
+    serializable_error_info: SerializableErrorInfo | None
 
 
 @whitelist_for_serdes
 @record
 class GetCurrentRunsResult:
     current_runs: Sequence[str]
-    serializable_error_info: Optional[SerializableErrorInfo]
+    serializable_error_info: SerializableErrorInfo | None

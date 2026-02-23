@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Optional, TypeAlias, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 from dagster_shared import check
 
@@ -26,7 +26,7 @@ def _get_annotation_target(obj: Annotatable) -> object:
         return obj
 
 
-def _get_subject(obj: Annotatable, param: Optional[str] = None) -> str:
+def _get_subject(obj: Annotatable, param: str | None = None) -> str:
     from dagster._core.decorator_utils import is_resource_def
 
     """Get the string representation of an annotated object that will appear in

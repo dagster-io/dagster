@@ -1,7 +1,6 @@
 """List command for dagster-docs."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -43,7 +42,7 @@ def packages():
 @ls.command()
 @click.option("--all", "list_all", is_flag=True, help="Check all symbols")
 @click.option("--package", help="Filter down to a particular package")
-def symbols(list_all: bool, package: Optional[str]):
+def symbols(list_all: bool, package: str | None):
     """Print out all public symbols exported."""
     if not list_all and not package:
         click.echo("Error: One of --all or --package must be provided", err=True)

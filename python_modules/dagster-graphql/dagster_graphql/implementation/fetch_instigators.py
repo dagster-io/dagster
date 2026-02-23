@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def get_instigator_state_by_selector(
     graphene_info: "ResolveInfo",
     selector: InstigatorSelector,
-    instigator_id: Optional[CompoundID],
+    instigator_id: CompoundID | None,
 ) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:
     from dagster_graphql.schema.instigation import (
         GrapheneInstigationState,

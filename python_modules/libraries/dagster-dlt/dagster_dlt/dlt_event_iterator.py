@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Optional, TypeAlias
+from typing import TypeAlias
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import public
@@ -16,7 +16,7 @@ T = TypeVar("T", bound=DltEventType)
 def _fetch_row_count(
     dlt_pipeline: Pipeline,
     table_name: str,
-) -> Optional[int]:
+) -> int | None:
     """Exists mostly for ease of testing."""
     with dlt_pipeline.sql_client() as client:
         with client.execute_query(

@@ -10,7 +10,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Literal, Optional, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import pexpect
 
@@ -66,7 +66,7 @@ USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 def _run_command(
     cmd: str | Sequence[str],
     expect_error: bool = False,
-    input_str: Optional[str] = None,
+    input_str: str | None = None,
 ) -> str:
     if not isinstance(cmd, str):
         cmd = " ".join(cmd)
@@ -165,8 +165,8 @@ def _assert_matches_or_update_snippet(
     contents: str,
     snippet_path: Path,
     update_snippets: bool,
-    snippet_replace_regex: Optional[Sequence[tuple[str, str]]],
-    custom_comparison_fn: Optional[Callable[[str, str], bool]],
+    snippet_replace_regex: Sequence[tuple[str, str]] | None,
+    custom_comparison_fn: Callable[[str, str], bool] | None,
 ):
     comparison_fn = custom_comparison_fn or (
         lambda actual, expected: actual == expected
@@ -259,6 +259,9 @@ SNIPPET_ENV = {
     "HOME": "/tmp",
     "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
     "UV_PYTHON": "3.11",
+    # HOME is set to /tmp for isolation, but uv resolves its Python install dir
+    # relative to HOME. Point it at the real install location.
+    "UV_PYTHON_INSTALL_DIR": str(Path.home() / ".local" / "share" / "uv" / "python"),
 }
 
 
@@ -299,13 +302,13 @@ class SnippetGenerationContext:
     def run_command_and_snippet_output(
         self,
         cmd: str | Sequence[str],
-        snippet_path: Optional[Path | str] = None,
-        snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
-        custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
+        snippet_path: Path | str | None = None,
+        snippet_replace_regex: Sequence[tuple[str, str]] | None = None,
+        custom_comparison_fn: Callable[[str, str], bool] | None = None,
         ignore_output: bool = False,
         expect_error: bool = False,
-        print_cmd: Optional[str] = None,
-        input_str: Optional[str] = None,
+        print_cmd: str | None = None,
+        input_str: str | None = None,
     ) -> str:
         """Run the given command and check that the output matches the contents of the snippet
         at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
@@ -351,8 +354,8 @@ class SnippetGenerationContext:
     def check_file(
         self,
         file_path: Path | str,
-        snippet_path: Optional[Path | str] = None,
-        snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
+        snippet_path: Path | str | None = None,
+        snippet_replace_regex: Sequence[tuple[str, str]] | None = None,
     ):
         """Check that the contents of the file at `file_path` match the contents of the snippet
         at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
@@ -389,8 +392,8 @@ class SnippetGenerationContext:
         self,
         file_path: Path | str,
         contents: str,
-        snippet_path: Optional[Path | str] = None,
-        snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
+        snippet_path: Path | str | None = None,
+        snippet_replace_regex: Sequence[tuple[str, str]] | None = None,
     ):
         """Create a file with the given contents. If `snippet_path` is provided, outputs
         the contents to the snippet file too.
@@ -423,7 +426,7 @@ class SnippetGenerationContext:
 def isolated_snippet_generation_environment(
     should_update_snippets: bool,
     snapshot_base_dir: Path,
-    global_snippet_replace_regexes: Optional[Sequence[tuple[str, str]]] = None,
+    global_snippet_replace_regexes: Sequence[tuple[str, str]] | None = None,
     clear_snapshot_dir_before_update: bool = True,
 ) -> Iterator[SnippetGenerationContext]:
     with (
@@ -467,8 +470,8 @@ def screenshot_page(
     url: str,
     path: Path,
     update_screenshots: bool,
-    width: Optional[int] = 1024,
-    height: Optional[int] = 768,
+    width: int | None = 1024,
+    height: int | None = 768,
 ) -> None:
     if not update_screenshots:
         return

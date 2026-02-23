@@ -5,10 +5,10 @@ import {
   tokenizedValuesFromStringArray,
   tokensAsStringArray,
 } from '@dagster-io/ui-components';
+import {UserDisplay} from '@shared/runs/UserDisplay';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import {useCallback, useMemo} from 'react';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
 import {gql, useApolloClient, useLazyQuery} from '../apollo-client';

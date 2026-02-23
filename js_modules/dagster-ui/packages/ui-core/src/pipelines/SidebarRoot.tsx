@@ -1,5 +1,5 @@
 import {Box, ErrorBoundary, Tabs} from '@dagster-io/ui-components';
-import {useJobSidebarAlertsTabConfig} from 'shared/pipelines/useJobSidebarAlertsTabConfig.oss';
+import {useJobSidebarAlertsTabConfig} from '@shared/pipelines/useJobSidebarAlertsTabConfig';
 
 import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';

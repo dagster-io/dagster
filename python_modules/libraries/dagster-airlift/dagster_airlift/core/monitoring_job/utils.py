@@ -1,6 +1,6 @@
 import json
 from collections.abc import Iterable, Sequence
-from typing import Optional, TypeVar, cast
+from typing import TypeVar, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata.external_metadata import (
@@ -26,7 +26,7 @@ def structured_log(context: OpExecutionContext, message: str) -> None:
 
 def get_dagster_run_for_airflow_repr(
     context: OpExecutionContext, airflow_repr: DagRun | TaskInstance
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     return next(
         iter(
             context.instance.get_runs(

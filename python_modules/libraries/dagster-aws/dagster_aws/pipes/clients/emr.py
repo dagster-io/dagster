@@ -58,7 +58,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         self,
         message_reader: PipesMessageReader,
         client: Optional["EMRClient"] = None,
-        context_injector: Optional[PipesContextInjector] = None,
+        context_injector: PipesContextInjector | None = None,
         forward_termination: bool = True,
         wait_for_s3_logs_seconds: int = 10,
         s3_application_logs_prefix: str = "containers",
@@ -92,7 +92,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         *,
         context: OpExecutionContext | AssetExecutionContext,
         run_job_flow_params: "RunJobFlowInputTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run a job on AWS EMR, enriched with the pipes protocol.
 

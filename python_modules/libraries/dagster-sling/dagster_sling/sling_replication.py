@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from functools import cache
 from pathlib import Path
-from typing import Any, Optional, TypeAlias, cast
+from typing import Any, TypeAlias, cast
 
 import dagster._check as check
 import yaml
@@ -19,7 +19,7 @@ def read_replication_path(replication_path: Path) -> Mapping[str, Any]:
     return cast("Mapping[str, Any]", yaml.safe_load(replication_path.read_bytes()))
 
 
-def validate_replication(replication: Optional[SlingReplicationParam]) -> Mapping[str, Any]:
+def validate_replication(replication: SlingReplicationParam | None) -> Mapping[str, Any]:
     replication = replication or {}
     check.inst_param(replication, "manifest", (Path, str, dict))
 

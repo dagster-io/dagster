@@ -84,7 +84,7 @@ def list_all_components_schema(
                     key.name,
                     type=(Literal[key_string], key_string),
                     attributes=(model_cls, None),
-                    requirements=(Optional[ComponentRequirementsModel], None),
+                    requirements=(Optional[ComponentRequirementsModel], None),  # noqa: UP045
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
@@ -92,7 +92,7 @@ def list_all_components_schema(
     return TypeAdapter(union_type).json_schema()
 
 
-def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> RepositoryDefinition:
+def _load_defs_at_path(dg_context: DgContext, path: Path | None) -> RepositoryDefinition:
     """Attempts to load the component tree from the context project root, falling back to
     resolving the entire repository and using the attached component tree.
     """
@@ -125,8 +125,8 @@ def _tag_filter(tag_key: str) -> bool:
 
 def list_definitions(
     dg_context: DgContext,
-    path: Optional[Path] = None,
-    asset_selection: Optional[str] = None,
+    path: Path | None = None,
+    asset_selection: str | None = None,
 ) -> DgDefinitionMetadata:
     with get_possibly_temporary_instance_for_cli() as instance:
         instance.inject_env_vars(dg_context.code_location_name)
@@ -287,7 +287,7 @@ def _load_component_types(
 def _get_source(
     metadata: ArbitraryMetadataMapping,
     dg_context: DgContext,
-) -> Optional[str]:
+) -> str | None:
     code_ref_metadata = check.opt_inst(
         metadata.get("dagster/code_references"), CodeReferencesMetadataValue
     )

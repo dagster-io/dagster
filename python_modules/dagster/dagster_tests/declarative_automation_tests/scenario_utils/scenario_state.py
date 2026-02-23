@@ -7,7 +7,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import AbstractSet, NamedTuple, Optional, cast  # noqa: UP035
+from typing import AbstractSet, NamedTuple, cast  # noqa: UP035
 from unittest import mock
 
 import dagster as dg
@@ -96,7 +96,7 @@ def _get_code_location_origin_from_repository(repository: RepositoryDefinition, 
 
 class MultiAssetSpec(NamedTuple):
     specs: Sequence[dg.AssetSpec]
-    partitions_def: Optional[dg.PartitionsDefinition] = None
+    partitions_def: dg.PartitionsDefinition | None = None
     can_subset: bool = False
 
 
@@ -215,7 +215,7 @@ class ScenarioSpec:
 
     def with_asset_properties(
         self,
-        keys: Optional[Iterable[CoercibleToAssetKey]] = None,
+        keys: Iterable[CoercibleToAssetKey] | None = None,
         **kwargs,
     ) -> "ScenarioSpec":
         """Convenience method to update the properties of one or more assets in the scenario state."""
@@ -275,7 +275,7 @@ class ScenarioState:
         )
 
     def with_asset_properties(
-        self, keys: Optional[Iterable[CoercibleToAssetKey]] = None, **kwargs
+        self, keys: Iterable[CoercibleToAssetKey] | None = None, **kwargs
     ) -> Self:
         return dataclasses.replace(
             self, scenario_spec=self.scenario_spec.with_asset_properties(keys, **kwargs)
@@ -284,7 +284,7 @@ class ScenarioState:
     def _with_run_with_status_for_assets(
         self,
         asset_keys: AbstractSet[dg.AssetKey],
-        partition_key: Optional[str],
+        partition_key: str | None,
         status: DagsterRunStatus,
     ) -> Self:
         run_id = make_new_run_id()
@@ -306,7 +306,7 @@ class ScenarioState:
         return self
 
     def with_in_progress_run_for_asset(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+        self, asset_key: CoercibleToAssetKey, partition_key: str | None = None
     ) -> Self:
         asset_key = AssetKey.from_coercible(asset_key)
         return self._with_run_with_status_for_assets(
@@ -314,7 +314,7 @@ class ScenarioState:
         )
 
     def with_failed_run_for_asset(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+        self, asset_key: CoercibleToAssetKey, partition_key: str | None = None
     ) -> Self:
         asset_key = AssetKey.from_coercible(asset_key)
         return self._with_run_with_status_for_assets(
@@ -348,7 +348,7 @@ class ScenarioState:
         )
 
     def with_reported_materialization(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+        self, asset_key: CoercibleToAssetKey, partition_key: str | None = None
     ) -> Self:
         mat = dg.AssetMaterialization(
             asset_key=asset_key,
@@ -360,8 +360,8 @@ class ScenarioState:
     def with_reported_observation(
         self,
         asset_key: CoercibleToAssetKey,
-        partition_key: Optional[str] = None,
-        data_version: Optional[str] = None,
+        partition_key: str | None = None,
+        data_version: str | None = None,
     ) -> Self:
         obs = dg.AssetObservation(
             asset_key=asset_key,

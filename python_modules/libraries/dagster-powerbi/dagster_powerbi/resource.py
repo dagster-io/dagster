@@ -4,7 +4,7 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import requests
@@ -71,7 +71,7 @@ class PowerBIServicePrincipal(ConfigurableResource):
     tenant_id: str = Field(
         ..., description="The Entra tenant ID where service principal was created."
     )
-    _api_token: Optional[str] = PrivateAttr(default=None)
+    _api_token: str | None = PrivateAttr(default=None)
 
     def get_api_token(self) -> str:
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -123,7 +123,7 @@ class PowerBIWorkspace(ConfigurableResource):
         endpoint: str,
         method: str = "GET",
         json: Any = None,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         group_scoped: bool = True,
     ) -> requests.Response:
         """Fetch JSON data from the PowerBI API. Raises an exception if the request fails.
@@ -159,7 +159,7 @@ class PowerBIWorkspace(ConfigurableResource):
         endpoint: str,
         method: str = "GET",
         json: Any = None,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         group_scoped: bool = True,
     ) -> dict[str, Any]:
         return self._fetch(endpoint, method, json, group_scoped=group_scoped, params=params).json()
@@ -392,9 +392,9 @@ class PowerBIWorkspace(ConfigurableResource):
 @beta
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
-    dagster_powerbi_translator: Optional[
-        DagsterPowerBITranslator | type[DagsterPowerBITranslator]
-    ] = None,
+    dagster_powerbi_translator: DagsterPowerBITranslator
+    | type[DagsterPowerBITranslator]
+    | None = None,
     use_workspace_scan: bool = True,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Power BI content in the workspace.

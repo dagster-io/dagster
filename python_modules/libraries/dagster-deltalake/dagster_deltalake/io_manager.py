@@ -4,7 +4,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, TypedDict, cast
+from typing import TypedDict, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -33,7 +33,7 @@ DELTA_DATE_FORMAT = "%Y-%m-%d"
 class TableConnection:
     table_uri: str
     storage_options: dict[str, str]
-    table_config: Optional[dict[str, str]]
+    table_config: dict[str, str] | None
 
 
 class _StorageOptionsConfig(TypedDict, total=False):
@@ -135,23 +135,23 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         description="Configuration for accessing storage location.",
     )
 
-    client_options: Optional[ClientConfig] = Field(
+    client_options: ClientConfig | None = Field(
         default=None, description="Additional configuration passed to http client."
     )
 
-    table_config: Optional[dict[str, str]] = Field(
+    table_config: dict[str, str] | None = Field(
         default=None,
         description="Additional config and metadata added to table on creation.",
     )
 
-    schema_: Optional[str] = Field(
+    schema_: str | None = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
 
-    custom_metadata: Optional[dict[str, str]] = Field(
+    custom_metadata: dict[str, str] | None = Field(
         default=None, description="Custom metadata that is added to transaction commit."
     )
-    writer_properties: Optional[dict[str, str]] = Field(
+    writer_properties: dict[str, str] | None = Field(
         default=None, description="Writer properties passed to the rust engine writer."
     )
 
@@ -160,7 +160,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel
 
@@ -7,21 +5,21 @@ from schema.charts.utils.utils import BaseModel
 class Server(BaseModel):
     host: str
     port: int
-    name: Optional[str] = None
-    ssl: Optional[bool] = None
+    name: str | None = None
+    ssl: bool | None = None
 
 
 class Workspace(BaseModel):
     enabled: bool
     servers: list[Server]
-    externalConfigmap: Optional[str] = None
+    externalConfigmap: str | None = None
 
 
 class Webserver(BaseModel, extra="forbid"):
     replicaCount: int
     image: kubernetes.Image
     nameOverride: str
-    pathPrefix: Optional[str] = None
+    pathPrefix: str | None = None
     service: kubernetes.Service
     workspace: Workspace
     env: dict[str, str] | list[kubernetes.EnvVar]
@@ -34,21 +32,21 @@ class Webserver(BaseModel, extra="forbid"):
     tolerations: kubernetes.Tolerations
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
-    checkDbReadyInitContainer: Optional[bool] = None
+    checkDbReadyInitContainer: bool | None = None
     resources: kubernetes.Resources
     readinessProbe: kubernetes.ReadinessProbe
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     enableReadOnly: bool
-    dbStatementTimeout: Optional[int] = None
-    dbPoolRecycle: Optional[int] = None
-    dbPoolMaxOverflow: Optional[int] = None
-    logLevel: Optional[str] = None
-    logFormat: Optional[str] = None
-    schedulerName: Optional[str] = None
-    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
-    volumes: Optional[list[kubernetes.Volume]] = None
-    initContainerResources: Optional[kubernetes.Resources] = None
-    extraContainers: Optional[list[kubernetes.Container]] = None
-    extraPrependedInitContainers: Optional[list[kubernetes.InitContainer]] = None
+    dbStatementTimeout: int | None = None
+    dbPoolRecycle: int | None = None
+    dbPoolMaxOverflow: int | None = None
+    logLevel: str | None = None
+    logFormat: str | None = None
+    schedulerName: str | None = None
+    volumeMounts: list[kubernetes.VolumeMount] | None = None
+    volumes: list[kubernetes.Volume] | None = None
+    initContainerResources: kubernetes.Resources | None = None
+    extraContainers: list[kubernetes.Container] | None = None
+    extraPrependedInitContainers: list[kubernetes.InitContainer] | None = None

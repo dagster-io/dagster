@@ -7,7 +7,6 @@ from typing import (  # noqa: UP035
     Generic,
     Literal,
     NamedTuple,
-    Optional,
     TypeVar,
 )
 
@@ -61,7 +60,7 @@ class EntitySubset(Generic[T_EntityKey]):
         return self._key
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         return self._asset_graph_view.asset_graph.get(self._key).partitions_def
 
     def convert_to_serializable_subset(self) -> SerializableEntitySubset[T_EntityKey]:

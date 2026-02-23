@@ -7,7 +7,7 @@ import traceback
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import docker
@@ -384,7 +384,7 @@ def _get_asset(repo_content: Mapping[str, Any], asset_key: AssetKey) -> Mapping[
 
 
 def assert_runs_and_exists(
-    client: DagsterGraphQLClient, name: str, subset_selection: Optional[Sequence[str]] = None
+    client: DagsterGraphQLClient, name: str, subset_selection: Sequence[str] | None = None
 ):
     run_id = client.submit_job_execution(
         job_name=name,

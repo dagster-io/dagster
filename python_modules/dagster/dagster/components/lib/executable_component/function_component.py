@@ -1,7 +1,7 @@
 import importlib
 from collections.abc import Callable, Iterable
 from functools import cached_property
-from typing import Annotated, Any, Literal, Optional, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from dagster_shared import check
 
@@ -88,7 +88,7 @@ class ExecuteFnMetadata:
         return get_config_param_type(self.execute_fn)
 
     @cached_property
-    def config_fields(self) -> Optional[dict[str, Field]]:
+    def config_fields(self) -> dict[str, Field] | None:
         return self.config_cls.to_fields_dict() if self.config_cls else None
 
 
@@ -142,11 +142,11 @@ class FunctionComponent(ExecutableComponent):
         return self.execute_fn_metadata.resource_keys
 
     @cached_property
-    def config_fields(self) -> Optional[dict[str, Field]]:
+    def config_fields(self) -> dict[str, Field] | None:
         return self.execute_fn_metadata.config_fields
 
     @property
-    def config_cls(self) -> Optional[type]:
+    def config_cls(self) -> type | None:
         return self.execute_fn_metadata.config_cls
 
     def invoke_execute_fn(

@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster import (
     AssetMaterialization,
@@ -21,7 +21,7 @@ DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY = "dagster-airbyte/dagster_airbyte_trans
 clean_name = clean_name_lower
 
 
-def get_airbyte_connection_table_name(stream_prefix: Optional[str], stream_name: str) -> str:
+def get_airbyte_connection_table_name(stream_prefix: str | None, stream_name: str) -> str:
     return f"{stream_prefix if stream_prefix else ''}{stream_name}"
 
 
@@ -67,7 +67,7 @@ def _get_attempt(attempt: dict):
 def generate_materializations(
     output: AirbyteOutput,
     asset_key_prefix: Sequence[str],
-    stream_to_asset_map: Optional[Mapping[str, str]] = None,
+    stream_to_asset_map: Mapping[str, str] | None = None,
 ) -> Iterator[AssetMaterialization]:
     prefix = output.connection_details.get("prefix") or ""
     # all the streams that are set to be sync'd by this connection

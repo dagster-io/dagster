@@ -1,4 +1,4 @@
-from typing import AbstractSet, Callable, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Callable, Union  # noqa: UP035
 
 import dagster._check as check
 import graphene
@@ -180,7 +180,7 @@ class GrapheneMapConfigType(graphene.ObjectType):
             self._config_type_snap.inner_type_key,
         )
 
-    def resolve_key_label_name(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_key_label_name(self, _graphene_info: ResolveInfo) -> str | None:
         return self._config_type_snap.given_name
 
 
@@ -387,7 +387,7 @@ class GrapheneConfigTypeField(graphene.ObjectType):
     def resolve_config_type(self, graphene_info: ResolveInfo) -> GrapheneConfigTypeUnion:
         return to_config_type(self._get_config_type, self._field_snap.type_key)
 
-    def resolve_default_value_as_json(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_default_value_as_json(self, _graphene_info: ResolveInfo) -> str | None:
         # Mask default values for secret fields
         if self._field_snap.is_secret:
             # Return JSON-encoded mask if there's a default value

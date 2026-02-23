@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple, Optional, Union, cast
+from typing import NamedTuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.dependency import NodeHandle
@@ -11,7 +11,7 @@ from dagster._serdes import whitelist_for_serdes
 class StepHandle(NamedTuple("_StepHandle", [("node_handle", NodeHandle), ("key", str)])):
     """A reference to an ExecutionStep that was determined statically."""
 
-    def __new__(cls, node_handle: NodeHandle, key: Optional[str] = None):
+    def __new__(cls, node_handle: NodeHandle, key: str | None = None):
         return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
@@ -70,7 +70,7 @@ class ResolvedFromDynamicStepHandle(
     completed successfully.
     """
 
-    def __new__(cls, node_handle: NodeHandle, mapping_key: str, key: Optional[str] = None):
+    def __new__(cls, node_handle: NodeHandle, mapping_key: str, key: str | None = None):
         return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),

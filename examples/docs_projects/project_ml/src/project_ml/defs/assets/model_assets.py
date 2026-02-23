@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 import matplotlib.pyplot as plt
@@ -518,7 +518,7 @@ class DeploymentConfig(dg.Config):
 
     accuracy_threshold: float = ACCURACY_THRESHOLD
     model_path: str = str(MODELS_DIR)
-    custom_model_name: Optional[str] = None  # Allow users to specify a specific model to deploy
+    custom_model_name: str | None = None  # Allow users to specify a specific model to deploy
     force_deploy: bool = False  # Allow users to bypass accuracy threshold
 
 
@@ -535,7 +535,7 @@ def production_digit_classifier(
     digit_classifier: DigitCNN,
     model_evaluation: dict[str, Any],
     config: DeploymentConfig,
-) -> Optional[DigitCNN]:
+) -> DigitCNN | None:
     """Deploy model to production based on configuration options."""
     # Get the model store resource
     model_store = context.resources.model_storage

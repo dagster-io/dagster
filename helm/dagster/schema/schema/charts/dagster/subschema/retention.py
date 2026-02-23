@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -18,4 +16,4 @@ class Retention(BaseModel, extra="forbid"):
     enabled: bool
     sensor: TickRetention
     schedule: TickRetention
-    autoMaterialize: Optional[TickRetention] = None
+    autoMaterialize: TickRetention | None = None

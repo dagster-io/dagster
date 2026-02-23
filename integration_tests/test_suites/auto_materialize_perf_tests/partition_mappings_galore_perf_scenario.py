@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Optional, cast
+from typing import cast
 
 from dagster import (
     AssetDep,
@@ -27,7 +27,7 @@ from auto_materialize_perf_tests.perf_scenario import ActivityHistory, PerfScena
 def asset_def(
     key: str,
     deps: Sequence[str | AssetDep],
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: PartitionsDefinition | None = None,
 ) -> AssetsDefinition:
     @asset(
         name=key,

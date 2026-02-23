@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable, Mapping
 from enum import Enum
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from typing_extensions import NotRequired
 
@@ -64,7 +64,7 @@ CommandStepConfiguration = TypedDict(
         "commands": NotRequired[list[str]],
         "depends_on": NotRequired[list[str]],
         "key": NotRequired[str],
-        "skip": NotRequired[Optional[str]],
+        "skip": NotRequired[str | None],
         "artifact_paths": NotRequired[list[str]],
         "concurrency": NotRequired[int],
         "concurrency_group": NotRequired[str],
@@ -81,10 +81,10 @@ class CommandStepBuilder:
     def __init__(
         self,
         label,
-        key: Optional[str] = None,
+        key: str | None = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
         retry_automatically: bool = True,
-        plugins: Optional[list[dict[str, object]]] = None,
+        plugins: list[dict[str, object]] | None = None,
     ):
         self._secrets = {}
         self._k8s_secrets = []
@@ -137,7 +137,7 @@ class CommandStepBuilder:
         self._step["commands"] = list(argc)
         return self
 
-    def resources(self, resources: Optional[ResourceRequests]) -> "CommandStepBuilder":
+    def resources(self, resources: ResourceRequests | None) -> "CommandStepBuilder":
         self._resources = resources
         return self
 
@@ -280,7 +280,7 @@ class CommandStepBuilder:
         self._step["soft_fail"] = fail
         return self
 
-    def skip_if(self, skip_reason: Optional[str] = None):
+    def skip_if(self, skip_reason: str | None = None):
         self._step["skip"] = skip_reason
         return self
 

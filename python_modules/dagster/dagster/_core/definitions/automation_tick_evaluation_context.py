@@ -2,7 +2,7 @@ import datetime
 import logging
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster import PartitionKeyRange
@@ -50,8 +50,8 @@ class AutomationTickEvaluationContext:
         asset_selection: AssetSelection,
         logger: logging.Logger,
         emit_backfills: bool,
-        default_condition: Optional[AutomationCondition] = None,
-        evaluation_time: Optional[datetime.datetime] = None,
+        default_condition: AutomationCondition | None = None,
+        evaluation_time: datetime.datetime | None = None,
     ):
         resolved_entity_keys = {
             entity_key
@@ -199,9 +199,7 @@ class AutomationTickEvaluationContext:
         )
 
 
-_PartitionsDefKeyMapping = dict[
-    tuple[Optional[PartitionsDefinition], Optional[str]], set[EntityKey]
-]
+_PartitionsDefKeyMapping = dict[tuple[PartitionsDefinition | None, str | None], set[EntityKey]]
 
 
 def _get_mapping_from_entity_subsets(
@@ -233,8 +231,8 @@ def _get_mapping_from_entity_subsets(
 def _build_backfill_request(
     entity_subsets: Sequence[EntitySubset[EntityKey]],
     asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
-) -> tuple[Optional[RunRequest], Sequence[EntitySubset[EntityKey]]]:
+    run_tags: Mapping[str, str] | None,
+) -> tuple[RunRequest | None, Sequence[EntitySubset[EntityKey]]]:
     """Determines a set of entity subsets that can be executed using a backfill.
     If any entity subset has size greater than 1, then it and all assets connected
     to it will be grouped into the backfill. Returns the corresponding backfill
@@ -293,7 +291,7 @@ def _build_backfill_request(
 def build_run_requests(
     entity_subsets: Sequence[EntitySubset],
     asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
+    run_tags: Mapping[str, str] | None,
     emit_backfills: bool,
 ) -> Sequence[RunRequest]:
     """For a single asset in a given tick, the asset will only be part of a run or a backfill, not both.
@@ -320,7 +318,7 @@ def build_run_requests(
 def _build_run_requests_from_partitions_def_mapping(
     mapping: _PartitionsDefKeyMapping,
     asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
+    run_tags: Mapping[str, str] | None,
 ) -> Sequence[RunRequest]:
     run_requests = []
 
@@ -372,7 +370,7 @@ def build_run_requests_with_backfill_policies(
             asset_partition_keys[asset_partition.asset_key].add(asset_partition.partition_key)
 
     assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy: Mapping[
-        tuple[Optional[PartitionsDefinition], Optional[frozenset[str]], Optional[BackfillPolicy]],
+        tuple[PartitionsDefinition | None, frozenset[str] | None, BackfillPolicy | None],
         set[AssetKey],
     ] = defaultdict(set)
 

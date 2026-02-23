@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 import dagster as dg
 import pytest
@@ -56,7 +56,7 @@ thing:
 
     @dataclass
     class ResolveFromListComponent(dg.Component, dg.Resolvable):
-        thing: Optional[list[MyModel]]
+        thing: list[MyModel] | None
         num: Annotated[
             int,
             dg.Resolver(

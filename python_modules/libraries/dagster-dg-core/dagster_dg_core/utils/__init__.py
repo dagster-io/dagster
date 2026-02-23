@@ -11,17 +11,7 @@ import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Optional,
-    TextIO,
-    TypeAlias,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeAlias, TypeVar, Union, overload
 
 import click
 from click_aliases import ClickAliasedGroup
@@ -61,7 +51,7 @@ def is_uv_installed() -> bool:
     return shutil.which("uv") is not None
 
 
-def get_activated_venv() -> Optional[Path]:
+def get_activated_venv() -> Path | None:
     """Returns the path to the activated virtual environment, or None if no virtual environment is active."""
     venv_path = os.environ.get("VIRTUAL_ENV")
     if venv_path:
@@ -69,7 +59,7 @@ def get_activated_venv() -> Optional[Path]:
     return None
 
 
-def resolve_local_venv(start_path: Path) -> Optional[Path]:
+def resolve_local_venv(start_path: Path) -> Path | None:
     path = start_path
     while path != path.parent:
         venv_path = path / ".venv"
@@ -260,7 +250,7 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
 def hash_directory_metadata(
     hasher: Hash,
     path: str | Path,
-    includes: Optional[Sequence[str]],
+    includes: Sequence[str] | None,
     excludes: Sequence[str],
     error_on_missing: bool,
 ) -> None:
@@ -305,7 +295,7 @@ def hash_file_metadata(hasher: Hash, path: str | Path, error_on_missing) -> None
 T = TypeVar("T")
 
 
-def not_none(value: Optional[T]) -> T:
+def not_none(value: T | None) -> T:
     if value is None:
         raise DgError("Expected non-none value.")
     return value
@@ -339,7 +329,7 @@ def generate_missing_registry_object_error_message(registry_object_key: str) -> 
 
 def generate_project_and_activated_venv_mismatch_warning(
     project_venv_path: Path,
-    active_venv_path: Optional[Path],
+    active_venv_path: Path | None,
 ) -> str:
     return f"""
         The active virtual environment does not match the virtual environment found in the project
@@ -602,12 +592,12 @@ def _gather_toml_nodes(
 @overload
 def _gather_toml_nodes(
     doc: TomlDoc, path: TomlPath, error_on_missing: Literal[False] = ...
-) -> Optional[list[Any]]: ...
+) -> list[Any] | None: ...
 
 
 def _gather_toml_nodes(
     doc: TomlDoc, path: TomlPath, error_on_missing: bool = True
-) -> Optional[list[Any]]:
+) -> list[Any] | None:
     nodes: list[Any] = []
     current: Any = doc
     for key in path:

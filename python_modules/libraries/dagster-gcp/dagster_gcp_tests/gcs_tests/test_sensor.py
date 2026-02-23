@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -27,8 +26,8 @@ from dagster_gcp.gcs.sensor import get_gcs_keys
 )
 def test_get_gcs_keys(
     test_name: str,
-    since_key: Optional[str],
-    blob_prefix: Optional[str],
+    since_key: str | None,
+    blob_prefix: str | None,
     nb_bucket_keys: int,
     expected_keys: list[str],
 ):

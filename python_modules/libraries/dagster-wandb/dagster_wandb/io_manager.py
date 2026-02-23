@@ -6,7 +6,7 @@ import shutil
 import time
 import uuid
 from contextlib import contextmanager
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from dagster import (
     Field,
@@ -46,11 +46,11 @@ class Config(TypedDict):
     wandb_host: str
     wandb_entity: str
     wandb_project: str
-    wandb_run_name: Optional[str]
-    wandb_run_id: Optional[str]
-    wandb_run_tags: Optional[list[str]]
+    wandb_run_name: str | None
+    wandb_run_id: str | None
+    wandb_run_tags: list[str] | None
     base_dir: str
-    cache_duration_in_minutes: Optional[int]
+    cache_duration_in_minutes: int | None
 
 
 class ArtifactsIOManager(IOManager):

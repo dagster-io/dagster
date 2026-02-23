@@ -188,7 +188,7 @@ def _gather_modules(current_segments: list[str], remaining_pattern: list[str]) -
         return _gather_modules([*current_segments, current_pattern], rest_pattern)
 
 
-def _get_module_spec(module_name: str) -> Optional[ModuleSpec]:
+def _get_module_spec(module_name: str) -> ModuleSpec | None:
     try:
         return importlib.util.find_spec(module_name)
 

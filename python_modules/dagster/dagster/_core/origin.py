@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Final, NamedTuple, Optional
+from typing import Any, Final, NamedTuple
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -19,9 +19,9 @@ class RepositoryPythonOrigin(
         [
             ("executable_path", str),
             ("code_pointer", CodePointer),
-            ("container_image", Optional[str]),
-            ("entry_point", Optional[Sequence[str]]),
-            ("container_context", Optional[Mapping[str, Any]]),
+            ("container_image", str | None),
+            ("entry_point", Sequence[str] | None),
+            ("container_context", Mapping[str, Any] | None),
         ],
     ),
 ):
@@ -42,9 +42,9 @@ class RepositoryPythonOrigin(
         cls,
         executable_path: str,
         code_pointer: CodePointer,
-        container_image: Optional[str] = None,
-        entry_point: Optional[Sequence[str]] = None,
-        container_context: Optional[Mapping[str, Any]] = None,
+        container_image: str | None = None,
+        entry_point: Sequence[str] | None = None,
+        container_context: Mapping[str, Any] | None = None,
     ):
         return super().__new__(
             cls,

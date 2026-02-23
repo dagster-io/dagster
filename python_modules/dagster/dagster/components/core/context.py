@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, TypeVar, Union, overload
 
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
@@ -165,7 +165,7 @@ class ComponentDeclLoadContext:
     ) -> T: ...
 
     def load_component(
-        self, defs_path: "ResolvableToComponentPath", expected_type: Optional[type[T]] = None
+        self, defs_path: "ResolvableToComponentPath", expected_type: type[T] | None = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -195,7 +195,7 @@ class ComponentDeclLoadContext:
         additional_warn_text="Use load_component instead.",
     )
     def load_component_at_path(
-        self, defs_path: "ResolvableToComponentPath", expected_type: Optional[type[T]] = None
+        self, defs_path: "ResolvableToComponentPath", expected_type: type[T] | None = None
     ) -> Any:
         """Loads a component from the given path.
 

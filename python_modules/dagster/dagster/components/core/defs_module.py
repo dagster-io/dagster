@@ -3,7 +3,7 @@ import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from dagster_shared.record import record, replace
 from dagster_shared.yaml_utils.source_position import SourcePosition
@@ -46,21 +46,21 @@ ResolvableToComponentPath = Union[Path, "ComponentPath", str]
 class ComponentRequirementsModel(BaseModel):
     """Describes dependencies for a component to load."""
 
-    env: Optional[list[str]] = None
+    env: list[str] | None = None
 
 
 class ComponentPostProcessingModel(Resolvable, Model):
-    assets: Optional[Sequence[AssetPostProcessor]] = None
+    assets: Sequence[AssetPostProcessor] | None = None
 
 
 class ComponentFileModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: str
-    attributes: Optional[Mapping[str, Any]] = None
-    template_vars_module: Optional[str] = None
-    requirements: Optional[ComponentRequirementsModel] = None
-    post_processing: Optional[Mapping[str, Any]] = None
+    attributes: Mapping[str, Any] | None = None
+    template_vars_module: str | None = None
+    requirements: ComponentRequirementsModel | None = None
+    post_processing: Mapping[str, Any] | None = None
 
 
 def _add_defs_yaml_metadata(
@@ -158,7 +158,7 @@ class ComponentPath:
     """
 
     file_path_posix: str
-    instance_key: Optional[int | str] = None
+    instance_key: int | str | None = None
 
     @property
     def file_path(self) -> Path:
@@ -173,7 +173,7 @@ class ComponentPath:
         return ComponentPath.from_path(path=normalized_path, instance_key=None)
 
     @staticmethod
-    def from_path(path: Path, instance_key: Optional[int | str] = None) -> "ComponentPath":
+    def from_path(path: Path, instance_key: int | str | None = None) -> "ComponentPath":
         check.param_invariant(path.is_absolute(), "Path must be absolute")
         return ComponentPath(file_path_posix=path.as_posix(), instance_key=instance_key)
 
@@ -189,7 +189,7 @@ class ComponentPath:
         return key
 
 
-def get_component(context: ComponentLoadContext) -> Optional[Component]:
+def get_component(context: ComponentLoadContext) -> Component | None:
     """Attempts to load a component from the given context. Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
@@ -454,7 +454,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check
-def find_defs_or_component_yaml(path: Path) -> Optional[Path]:
+def find_defs_or_component_yaml(path: Path) -> Path | None:
     # Check for defs.yaml has precedence, component.yaml is deprecated
     return next(
         (p for p in (path / "defs.yaml", path / "component.yaml") if p.exists()),
@@ -468,7 +468,7 @@ T = TypeVar("T", bound=ComponentDeclLoadContext)
 def context_with_injected_scope(
     context: T,
     component_cls: type[Component],
-    template_vars_module: Optional[str],
+    template_vars_module: str | None,
 ) -> T:
     # Merge backward-compatible get_additional_scope with context-aware static template vars
 
@@ -509,7 +509,7 @@ def context_with_injected_scope(
 
 
 def asset_post_processor_list_from_post_processing_dict(
-    resolution_context: ResolutionContext, post_processing: Optional[Mapping[str, Any]]
+    resolution_context: ResolutionContext, post_processing: Mapping[str, Any] | None
 ) -> list[AssetPostProcessor]:
     if not post_processing:
         return []

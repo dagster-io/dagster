@@ -1,7 +1,7 @@
 import pickle
 import tempfile
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster import (
@@ -75,22 +75,22 @@ def _make_dagstermill_asset_compute_fn(
 def define_dagstermill_asset(
     name: str,
     notebook_path: str,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Iterable[CoercibleToAssetKey | AssetsDefinition | SourceAsset]] = None,
-    metadata: Optional[Mapping[str, Any]] = None,
-    config_schema: Optional[Any | Mapping[str, Any]] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    group_name: Optional[str] = None,
-    io_manager_key: Optional[str] = None,
-    retry_policy: Optional[RetryPolicy] = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    ins: Mapping[str, AssetIn] | None = None,
+    deps: Iterable[CoercibleToAssetKey | AssetsDefinition | SourceAsset] | None = None,
+    metadata: Mapping[str, Any] | None = None,
+    config_schema: Any | Mapping[str, Any] | None = None,
+    required_resource_keys: set[str] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = None,
+    description: str | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    group_name: str | None = None,
+    io_manager_key: str | None = None,
+    retry_policy: RetryPolicy | None = None,
     save_notebook_on_failure: bool = False,
-    non_argument_deps: Optional[set[AssetKey] | set[str]] = None,
-    asset_tags: Optional[Mapping[str, Any]] = None,
+    non_argument_deps: set[AssetKey] | set[str] | None = None,
+    asset_tags: Mapping[str, Any] | None = None,
 ) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.
 

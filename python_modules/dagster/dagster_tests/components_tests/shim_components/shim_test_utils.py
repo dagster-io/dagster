@@ -3,7 +3,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 import dagster as dg
 from dagster.components.lib.shim_components.base import ShimScaffolder, TModel
@@ -14,7 +14,7 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def make_test_scaffold_request(
-    filename: str, params: Optional[TModel] = None
+    filename: str, params: TModel | None = None
 ) -> dg.ScaffoldRequest[TModel]:
     return dg.ScaffoldRequest[TModel](
         type_name="Test",
@@ -59,7 +59,7 @@ def execute_ruff_compliance_test(code: str) -> None:
 def execute_scaffolder_and_get_symbol(
     scaffolder: ShimScaffolder[Any],
     symbol_name: str,
-    params: Optional[TModel] = None,
+    params: TModel | None = None,
 ) -> Any:
     """Helper function to execute a scaffolder and get the created symbol."""
     # Construct a ScaffoldRequest for the new get_text signature

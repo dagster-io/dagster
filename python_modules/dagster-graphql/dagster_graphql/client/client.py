@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import requests.exceptions
@@ -70,12 +70,12 @@ class DagsterGraphQLClient:
     def __init__(
         self,
         hostname: str,
-        port_number: Optional[int] = None,
-        transport: Optional[Transport] = None,
+        port_number: int | None = None,
+        transport: Transport | None = None,
         use_https: bool = False,
         timeout: int = 300,
-        headers: Optional[dict[str, str]] = None,
-        auth: Optional[AuthBase] = None,
+        headers: dict[str, str] | None = None,
+        auth: AuthBase | None = None,
     ):
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
@@ -105,7 +105,7 @@ class DagsterGraphQLClient:
                 + "correctly?"
             ) from exc
 
-    def _execute(self, query: str, variables: Optional[dict[str, Any]] = None):
+    def _execute(self, query: str, variables: dict[str, Any] | None = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
         except requests.exceptions.ConnectionError as exc:
@@ -140,15 +140,15 @@ class DagsterGraphQLClient:
     def _core_submit_execution(
         self,
         pipeline_name: str,
-        repository_location_name: Optional[str] = None,
-        repository_name: Optional[str] = None,
-        run_config: Optional[RunConfig | Mapping[str, Any]] = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
+        run_config: RunConfig | Mapping[str, Any] | None = None,
         mode: str = "default",
-        preset: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Sequence[CoercibleToAssetKey]] = None,
-        is_using_job_op_graph_apis: Optional[bool] = False,
+        preset: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        op_selection: Sequence[str] | None = None,
+        asset_selection: Sequence[CoercibleToAssetKey] | None = None,
+        is_using_job_op_graph_apis: bool | None = False,
     ):
         check.opt_str_param(repository_location_name, "repository_location_name")
         check.opt_str_param(repository_name, "repository_name")
@@ -246,12 +246,12 @@ class DagsterGraphQLClient:
     def submit_job_execution(
         self,
         job_name: str,
-        repository_location_name: Optional[str] = None,
-        repository_name: Optional[str] = None,
-        run_config: Optional[RunConfig | Mapping[str, Any]] = None,
-        tags: Optional[dict[str, Any]] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Sequence[CoercibleToAssetKey]] = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
+        run_config: RunConfig | Mapping[str, Any] | None = None,
+        tags: dict[str, Any] | None = None,
+        op_selection: Sequence[str] | None = None,
+        asset_selection: Sequence[CoercibleToAssetKey] | None = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
 

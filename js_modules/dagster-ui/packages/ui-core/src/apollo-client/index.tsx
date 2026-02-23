@@ -11,13 +11,17 @@ import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 export * from '@apollo/client';
 export * from '@apollo/client/link/error';
 
-interface ExtendedQueryOptions<TData = any, TVariables extends OperationVariables = any>
-  extends QueryHookOptions<TData, TVariables> {
+interface ExtendedQueryOptions<
+  TData = any,
+  TVariables extends OperationVariables = any,
+> extends QueryHookOptions<TData, TVariables> {
   blocking?: boolean;
 }
 
-interface ExtendedLazyQueryOptions<TData = any, TVariables extends OperationVariables = any>
-  extends LazyQueryHookOptions<TData, TVariables> {
+interface ExtendedLazyQueryOptions<
+  TData = any,
+  TVariables extends OperationVariables = any,
+> extends LazyQueryHookOptions<TData, TVariables> {
   blocking?: boolean;
 }
 

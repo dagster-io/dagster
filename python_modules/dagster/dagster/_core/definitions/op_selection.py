@@ -1,6 +1,6 @@
 import itertools
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, cast  # noqa: UP035
 
 from dagster import _check as check
 from dagster._core.definitions.dependency import (
@@ -111,7 +111,7 @@ def get_graph_subset(
 def _get_graph_subset(
     graph: GraphDefinition,
     selection_tree: OpSelectionNode,
-    parent_handle: Optional[NodeHandle],
+    parent_handle: NodeHandle | None,
     selected_outputs_by_op_handle: Mapping[NodeHandle, AbstractSet[str]],
 ) -> SubselectedGraphDefinition:
     subgraph_deps: dict[

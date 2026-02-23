@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 from unittest.mock import ANY, call
 
 import freezegun
@@ -214,7 +213,7 @@ def test_all_instrumented_commands_have_urls(mocker):
                     args.append("foo")
         return args
 
-    def walk_cli(obj, chain: Optional[list] = None):
+    def walk_cli(obj, chain: list | None = None):
         if not chain:
             chain = []
 

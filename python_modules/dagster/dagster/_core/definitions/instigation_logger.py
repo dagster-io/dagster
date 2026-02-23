@@ -93,13 +93,13 @@ class InstigationLogger(logging.Logger):
 
     def __init__(
         self,
-        log_key: Optional[Sequence[str]] = None,
+        log_key: Sequence[str] | None = None,
         instance: Optional["DagsterInstance"] = None,
-        repository_name: Optional[str] = None,
-        instigator_name: Optional[str] = None,
+        repository_name: str | None = None,
+        instigator_name: str | None = None,
         level: int = logging.NOTSET,
         logger_name: str = "dagster",
-        console_logger: Optional[logging.Logger] = None,
+        console_logger: logging.Logger | None = None,
     ):
         super().__init__(name=logger_name, level=coerce_valid_log_level(level))
         self._log_key = log_key

@@ -1,6 +1,6 @@
 import contextlib
 from collections.abc import Generator, Sequence
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
@@ -103,7 +103,7 @@ def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string
 def enrich_validation_errors_with_source_position(
     source_position_tree: SourcePositionTree, obj_key_path_prefix: KeyPath
 ) -> Generator[None, None, None]:
-    err: Optional[ValidationError] = None
+    err: ValidationError | None = None
     try:
         yield
     except ValidationError as e:

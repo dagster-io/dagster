@@ -1,6 +1,6 @@
 import {Box, Checkbox, Colors, IconName, Popover} from '@dagster-io/ui-components';
+import {useStaticSetFilterSorter} from '@shared/ui/BaseFilters/useStaticSetFilterSorter';
 import {ComponentProps, Fragment, useMemo, useRef} from 'react';
-import {useStaticSetFilterSorter} from 'shared/ui/BaseFilters/useStaticSetFilterSorter.oss';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';

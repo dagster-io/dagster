@@ -1,8 +1,8 @@
 import {Page} from '@dagster-io/ui-components';
+import {AssetsGraphHeader} from '@shared/assets/AssetsGraphHeader';
+import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-import {AssetsGraphHeader} from 'shared/assets/AssetsGraphHeader.oss';
-import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {

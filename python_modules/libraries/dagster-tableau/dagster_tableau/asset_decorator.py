@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta, beta_param
@@ -15,10 +15,10 @@ from dagster_tableau.translator import DagsterTableauTranslator, WorkbookSelecto
 def tableau_assets(
     *,
     workspace: BaseTableauWorkspace,
-    name: Optional[str] = None,
-    group_name: Optional[str] = None,
-    dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
-    workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+    name: str | None = None,
+    group_name: str | None = None,
+    dagster_tableau_translator: DagsterTableauTranslator | None = None,
+    workbook_selector_fn: WorkbookSelectorFn | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to refresh the extracted data sources and views of a given Tableau workspace.
 

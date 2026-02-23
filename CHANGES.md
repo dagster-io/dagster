@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.12.15 (core) / 0.28.15 (libraries)
+
+### New
+
+- Pool names can now be any non-whitespace character, instead of requiring alphanumbeic characters, slashes, and underscores.
+- [dagster-aws] The `EcsRunLauncher` will now retry a task launch when a RunTask API call fails due to a throttling error in an underlying EC2 API call.
+- [dagster-tableau] Tableau workbooks and projects can now be filtered using the `workbook_selector` and `project_selector` in `TableauComponent`.
+
+### Bugfixes
+
+- [ui] Fixed issue where saved launchpad config was not used for single-partition asset materializations.
+- [ui] Fix console error noise during asset lineage navigation.
+- [ui] Fixed an issue where the "Start X Automations" and "Stop X Automations" menu options on the Automations tab were sometimes incorrectly disabled.
+- [dagster-dbt] The `DbtProject` constructor now correctly accepts strings for the `target_path` parameter.
+
 ## 1.12.14 (core) / 0.28.14 (libraries)
 
 ### New

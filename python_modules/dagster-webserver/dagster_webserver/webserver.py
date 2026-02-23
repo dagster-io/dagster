@@ -3,7 +3,7 @@ import io
 import mimetypes
 import uuid
 from os import path, walk
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -59,7 +59,7 @@ class DagsterWebserver(
         self,
         process_context: TProcessContext,
         app_path_prefix: str = "",
-        live_data_poll_rate: Optional[int] = None,
+        live_data_poll_rate: int | None = None,
         uses_app_path_prefix: bool = True,
     ) -> None:
         self._process_context = process_context

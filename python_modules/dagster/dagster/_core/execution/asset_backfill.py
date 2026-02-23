@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -118,10 +118,10 @@ class PartitionedAssetBackfillStatus(
 class UnpartitionedAssetBackfillStatus(
     NamedTuple(
         "_UnpartitionedAssetBackfillStatus",
-        [("asset_key", AssetKey), ("backfill_status", Optional[AssetBackfillStatus])],
+        [("asset_key", AssetKey), ("backfill_status", AssetBackfillStatus | None)],
     )
 ):
-    def __new__(cls, asset_key: AssetKey, asset_backfill_status: Optional[AssetBackfillStatus]):
+    def __new__(cls, asset_key: AssetKey, asset_backfill_status: AssetBackfillStatus | None):
         return super().__new__(
             cls,
             check.inst_param(asset_key, "asset_key", AssetKey),
@@ -139,7 +139,7 @@ class AssetBackfillData(NamedTuple):
 
     target_subset: AssetGraphSubset
     requested_runs_for_target_roots: bool
-    latest_storage_id: Optional[int]
+    latest_storage_id: int | None
     materialized_subset: AssetGraphSubset
     requested_subset: AssetGraphSubset
     failed_and_downstream_subset: AssetGraphSubset
@@ -156,7 +156,7 @@ class AssetBackfillData(NamedTuple):
     def replace_requested_subset(self, requested_subset: AssetGraphSubset) -> "AssetBackfillData":
         return self._replace(requested_subset=requested_subset)
 
-    def with_latest_storage_id(self, latest_storage_id: Optional[int]) -> "AssetBackfillData":
+    def with_latest_storage_id(self, latest_storage_id: int | None) -> "AssetBackfillData":
         return self._replace(
             latest_storage_id=latest_storage_id,
         )
@@ -290,7 +290,7 @@ class AssetBackfillData(NamedTuple):
 
     def get_target_root_partitions_subset(
         self, asset_graph: BaseAssetGraph
-    ) -> Optional[PartitionsSubset]:
+    ) -> PartitionsSubset | None:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
         target_partitioned_asset_keys = {
             asset_key for asset_key in self.target_subset.partitions_subsets_by_asset_key
@@ -308,7 +308,7 @@ class AssetBackfillData(NamedTuple):
 
         return None
 
-    def get_num_partitions(self) -> Optional[int]:
+    def get_num_partitions(self) -> int | None:
         """Only valid when the same number of partitions are targeted in every asset.
 
         When not valid, returns None.
@@ -417,7 +417,7 @@ class AssetBackfillData(NamedTuple):
         topological_order = self.get_targeted_asset_keys_topological_order(asset_graph)
         return [_get_status_for_asset_key(asset_key) for asset_key in topological_order]
 
-    def get_partition_names(self) -> Optional[Sequence[str]]:
+    def get_partition_names(self) -> Sequence[str] | None:
         """Only valid when the same number of partitions are targeted in every asset.
 
         When not valid, returns None.
@@ -532,7 +532,7 @@ class AssetBackfillData(NamedTuple):
     def from_asset_partitions(
         cls,
         asset_graph: BaseAssetGraph,
-        partition_names: Optional[Sequence[str]],
+        partition_names: Sequence[str] | None,
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
         backfill_start_timestamp: float,
@@ -838,7 +838,7 @@ async def _submit_runs_and_update_backfill_in_chunks(
 def _check_target_partitions_subset_is_valid(
     asset_key: AssetKey,
     asset_graph: BaseAssetGraph,
-    target_partitions_subset: Optional[PartitionsSubset],
+    target_partitions_subset: PartitionsSubset | None,
     instance_queryer: CachingInstanceQueryer,
 ) -> None:
     """Checks for any partitions definition changes since backfill launch that should mark
@@ -1485,7 +1485,7 @@ def execute_asset_backfill_iteration_inner(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
     logger: logging.Logger,
-    run_config: Optional[Mapping[str, Any]],
+    run_config: Mapping[str, Any] | None,
 ) -> AssetBackfillIterationResult:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -1547,7 +1547,7 @@ def _execute_asset_backfill_iteration_inner(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
     logger: logging.Logger,
-    run_config: Optional[Mapping[str, Any]],
+    run_config: Mapping[str, Any] | None,
 ) -> AssetBackfillIterationResult:
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     asset_graph: RemoteWorkspaceAssetGraph = cast(
@@ -1895,7 +1895,7 @@ def _get_cant_run_because_of_parent_reason(
     candidate_asset_graph_subset_unit: AssetGraphSubset,
     parent_materialized_subset: EntitySubset[AssetKey],
     logger: logging.Logger,
-) -> Optional[str]:
+) -> str | None:
     candidate_asset_key = entity_subset_to_filter.key
     parent_asset_key = parent_subset.key
 

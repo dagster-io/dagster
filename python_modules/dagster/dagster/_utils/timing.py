@@ -1,6 +1,5 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 import dagster_shared.seven as seven
 
@@ -9,7 +8,7 @@ import dagster._check as check
 
 class TimerResult:
     start_time: float
-    end_time: Optional[float]
+    end_time: float | None
 
     def __init__(self):
         self.start_time = seven.time_fn()

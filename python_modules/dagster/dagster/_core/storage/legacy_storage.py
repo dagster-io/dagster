@@ -84,7 +84,7 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
         run_storage: RunStorage,
         event_log_storage: EventLogStorage,
         schedule_storage: ScheduleStorage,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._run_storage = run_storage
         self._event_log_storage = check.inst_param(
@@ -97,7 +97,7 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -123,7 +123,7 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
     @classmethod
     def from_config_value(
         cls,
-        inst_data: Optional[ConfigurableClassData],
+        inst_data: ConfigurableClassData | None,
         config_value: Mapping[str, Mapping[str, str]],
     ) -> "CompositeStorage":
         run_storage_config = config_value["run_storage"]
@@ -162,13 +162,13 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
 
 
 class LegacyRunStorage(RunStorage, ConfigurableClass):
-    def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, storage: DagsterStorage, inst_data: ConfigurableClassData | None = None):
         self._storage = check.inst_param(storage, "storage", DagsterStorage)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @property
@@ -189,7 +189,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+        cls, inst_data: ConfigurableClassData | None, config_value: Mapping[str, str]
     ) -> "LegacyRunStorage":
         storage = ConfigurableClassData(
             module_name=config_value["module_name"],
@@ -207,16 +207,16 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._storage.run_storage.add_historical_run(dagster_run, run_creation_time)
 
     def handle_run_event(
-        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+        self, run_id: str, event: "DagsterEvent", update_timestamp: datetime | None = None
     ) -> None:
         return self._storage.run_storage.handle_run_event(run_id, event, update_timestamp)
 
     def get_runs(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Optional["RunsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        bucket_by: Union["JobBucket", "TagBucket"] | None = None,
         ascending: bool = False,
     ) -> Iterable["DagsterRun"]:
         return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
@@ -224,25 +224,25 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_run_ids(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Optional["RunsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ) -> Iterable[str]:
         return self._storage.run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
 
     def get_runs_count(self, filters: Optional["RunsFilter"] = None) -> int:
         return self._storage.run_storage.get_runs_count(filters)
 
-    def get_run_group(self, run_id: str) -> Optional[tuple[str, Iterable["DagsterRun"]]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_run_group(self, run_id: str) -> tuple[str, Iterable["DagsterRun"]] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage.run_storage.get_run_group(run_id)
 
     def get_run_records(
         self,
         filters: Optional["RunsFilter"] = None,
-        limit: Optional[int] = None,
-        order_by: Optional[str] = None,
+        limit: int | None = None,
+        order_by: str | None = None,
         ascending: bool = False,
-        cursor: Optional[str] = None,
-        bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+        cursor: str | None = None,
+        bucket_by: Union["JobBucket", "TagBucket"] | None = None,
     ) -> Sequence["RunRecord"]:
         return self._storage.run_storage.get_run_records(
             filters, limit, order_by, ascending, cursor, bucket_by
@@ -251,8 +251,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_run_tags(
         self,
         tag_keys: Sequence[str],
-        value_prefix: Optional[str] = None,
-        limit: Optional[int] = None,
+        value_prefix: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[tuple[str, set[str]]]:
         return self._storage.run_storage.get_run_tags(tag_keys, value_prefix, limit)
 
@@ -300,10 +300,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def delete_run(self, run_id: str) -> None:
         return self._storage.run_storage.delete_run(run_id)
 
-    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def optimize(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.optimize(print_fn, force_rebuild_all)
 
     def dispose(self) -> None:
@@ -328,8 +328,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_backfills(
         self,
         filters: Optional["BulkActionsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
         status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
         return self._storage.run_storage.get_backfills(
@@ -360,18 +360,18 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
 
-    def alembic_version(self) -> Optional[AlembicVersion]:
+    def alembic_version(self) -> AlembicVersion | None:
         return self._storage.run_storage.alembic_version()
 
 
 class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
-    def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, storage: DagsterStorage, inst_data: ConfigurableClassData | None = None):
         self._storage = check.inst_param(storage, "storage", DagsterStorage)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -384,7 +384,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+        cls, inst_data: ConfigurableClassData | None, config_value: Mapping[str, str]
     ) -> "LegacyEventLogStorage":
         storage = ConfigurableClassData(
             module_name=config_value["module_name"],
@@ -409,9 +409,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_logs_for_run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         run_id: str,
-        cursor: Optional[str | int] = None,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-        limit: Optional[int] = None,
+        cursor: str | int | None = None,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+        limit: int | None = None,
         ascending: bool = True,
     ) -> Iterable["EventLogEntry"]:
         return self._storage.event_log_storage.get_logs_for_run(
@@ -421,21 +421,21 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_logs_for_all_runs_by_log_id(
         self,
         after_cursor: int = -1,
-        dagster_event_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-        limit: Optional[int] = None,
+        dagster_event_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+        limit: int | None = None,
     ) -> Mapping[int, "EventLogEntry"]:
         return self._storage.event_log_storage.get_logs_for_all_runs_by_log_id(
             after_cursor=after_cursor, dagster_event_type=dagster_event_type, limit=limit
         )
 
-    def get_maximum_record_id(self) -> Optional[int]:
+    def get_maximum_record_id(self) -> int | None:
         return self._storage.event_log_storage.get_maximum_record_id()
 
     def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
 
     def get_step_stats_for_run(
-        self, run_id: str, step_keys: Optional[Sequence[str]] = None
+        self, run_id: str, step_keys: Sequence[str] | None = None
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._storage.event_log_storage.get_step_stats_for_run(run_id, step_keys)
 
@@ -448,10 +448,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def upgrade(self) -> None:
         return self._storage.event_log_storage.upgrade()
 
-    def reindex_events(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
+    def reindex_events(self, print_fn: PrintFn | None = None, force: bool = False) -> None:
         return self._storage.event_log_storage.reindex_events(print_fn, force)
 
-    def reindex_assets(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
+    def reindex_assets(self, print_fn: PrintFn | None = None, force: bool = False) -> None:
         return self._storage.event_log_storage.reindex_assets(print_fn, force)
 
     def wipe(self) -> None:
@@ -481,8 +481,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_event_records(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
-        limit: Optional[int] = None,
+        event_records_filter: EventRecordsFilter | None = None,
+        limit: int | None = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         # type ignored because `get_event_records` does not accept None. Unclear which type
@@ -497,7 +497,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_materializations(
@@ -508,7 +508,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         records_filter: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_failed_materializations(
@@ -519,7 +519,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
@@ -528,7 +528,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
         limit: int,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_run_status_changes(
@@ -538,8 +538,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_latest_planned_materialization_info(
         self,
         asset_key: AssetKey,
-        partition: Optional[str] = None,
-    ) -> Optional[PlannedMaterializationInfo]:
+        partition: str | None = None,
+    ) -> PlannedMaterializationInfo | None:
         return self._storage.event_log_storage.get_latest_planned_materialization_info(
             asset_key, partition
         )
@@ -552,7 +552,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         )
 
     def get_asset_records(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, asset_keys: Optional[Sequence["AssetKey"]] = None
+        self, asset_keys: Sequence["AssetKey"] | None = None
     ) -> Iterable[AssetRecord]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
 
@@ -574,9 +574,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_asset_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        prefix: Sequence[str] | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> Iterable["AssetKey"]:
         return self._storage.event_log_storage.get_asset_keys(prefix, limit, cursor)
 
@@ -597,8 +597,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_materialized_partitions(
         self,
         asset_key: AssetKey,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ) -> set[str]:
         return self._storage.event_log_storage.get_materialized_partitions(
             asset_key, before_cursor, after_cursor
@@ -608,7 +608,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
-        partitions: Optional[set[str]] = None,
+        partitions: set[str] | None = None,
     ) -> Mapping[str, int]:
         return self._storage.event_log_storage.get_latest_storage_id_by_partition(
             asset_key, event_type, partitions
@@ -619,16 +619,16 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
         tag_keys: Sequence[str],
-        asset_partitions: Optional[Sequence[str]] = None,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
+        asset_partitions: Sequence[str] | None = None,
+        before_cursor: int | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, Mapping[str, str]]:
         return self._storage.event_log_storage.get_latest_tags_by_partition(
             asset_key, event_type, tag_keys, asset_partitions, before_cursor, after_cursor
         )
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: "AssetKey", after_storage_id: Optional[int] = None
+        self, asset_key: "AssetKey", after_storage_id: int | None = None
     ) -> Mapping[str, tuple[str, int]]:
         return self._storage.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
             asset_key, after_storage_id
@@ -638,7 +638,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_dynamic_partitions(partitions_def_name)
 
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
     ) -> PaginatedResults[str]:
         return self._storage.event_log_storage.get_paginated_dynamic_partitions(
             partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
@@ -664,8 +664,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_event_tags_for_asset(
         self,
         asset_key: "AssetKey",
-        filter_tags: Optional[Mapping[str, str]] = None,
-        filter_event_id: Optional[int] = None,
+        filter_tags: Mapping[str, str] | None = None,
+        filter_event_id: int | None = None,
     ) -> Sequence[Mapping[str, str]]:
         return self._storage.event_log_storage.get_event_tags_for_asset(
             asset_key, filter_tags, filter_event_id
@@ -690,9 +690,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_records_for_run(
         self,
         run_id: str,
-        cursor: Optional[str] = None,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+        limit: int | None = None,
         ascending: bool = True,
     ) -> EventLogConnection:
         return self._storage.event_log_storage.get_records_for_run(
@@ -720,7 +720,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
 
     def claim_concurrency_slot(
-        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+        self, concurrency_key: str, run_id: str, step_key: str, priority: int | None = None
     ) -> ConcurrencyClaimStatus:
         return self._storage.event_log_storage.claim_concurrency_slot(
             concurrency_key, run_id, step_key, priority
@@ -744,9 +744,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         check_key: "AssetCheckKey",
         limit: int,
-        cursor: Optional[int] = None,
-        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
-        partition_filter: Optional[PartitionKeyFilter] = None,
+        cursor: int | None = None,
+        status: AbstractSet[AssetCheckExecutionRecordStatus] | None = None,
+        partition_filter: PartitionKeyFilter | None = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
@@ -759,7 +759,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_latest_asset_check_execution_by_key(
         self,
         check_keys: Sequence["AssetCheckKey"],
-        partition_filter: Optional[PartitionKeyFilter] = None,
+        partition_filter: PartitionKeyFilter | None = None,
     ) -> Mapping["AssetCheckKey", AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(
             check_keys, partition_filter=partition_filter
@@ -768,8 +768,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_asset_check_partition_info(
         self,
         keys: Sequence["AssetCheckKey"],
-        after_storage_id: Optional[int] = None,
-        partition_keys: Optional[Sequence[str]] = None,
+        after_storage_id: int | None = None,
+        partition_keys: Sequence[str] | None = None,
     ) -> Sequence[AssetCheckPartitionInfo]:
         return self._storage.event_log_storage.get_asset_check_partition_info(
             keys=keys, after_storage_id=after_storage_id, partition_keys=partition_keys
@@ -782,13 +782,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
-    def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, storage: DagsterStorage, inst_data: ConfigurableClassData | None = None):
         self._storage = check.inst_param(storage, "storage", DagsterStorage)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -801,7 +801,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+        cls, inst_data: ConfigurableClassData | None, config_value: Mapping[str, str]
     ) -> "LegacyScheduleStorage":
         storage = ConfigurableClassData(
             module_name=config_value["module_name"],
@@ -823,10 +823,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
 
     def all_instigator_state(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        repository_origin_id: Optional[str] = None,
-        repository_selector_id: Optional[str] = None,
+        repository_origin_id: str | None = None,
+        repository_selector_id: str | None = None,
         instigator_type: Optional["InstigatorType"] = None,
-        instigator_statuses: Optional[set["InstigatorStatus"]] = None,
+        instigator_statuses: set["InstigatorStatus"] | None = None,
     ) -> Iterable["InstigatorState"]:
         return self._storage.schedule_storage.all_instigator_state(
             repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
@@ -851,8 +851,8 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def get_batch_ticks(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         selector_ids: Sequence[str],
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence["TickStatus"]] = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
         return self._storage.schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
 
@@ -863,10 +863,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         self,
         origin_id: str,
         selector_id: str,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence["TickStatus"]] = None,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
     ) -> Iterable["InstigatorTick"]:
         return self._storage.schedule_storage.get_ticks(
             origin_id, selector_id, before, after, limit, statuses
@@ -883,7 +883,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[Sequence["TickStatus"]] = None,
+        tick_statuses: Sequence["TickStatus"] | None = None,
     ) -> None:
         return self._storage.schedule_storage.purge_ticks(
             origin_id, selector_id, before, tick_statuses
@@ -899,7 +899,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, key: EntityKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: int | None = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
             key, limit, cursor
@@ -918,10 +918,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def upgrade(self) -> None:
         return self._storage.schedule_storage.upgrade()
 
-    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.migrate(print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def optimize(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
     def optimize_for_webserver(

@@ -7,7 +7,7 @@ import tempfile
 import time
 import zlib
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from dagster import (
     Bool,
@@ -200,19 +200,19 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self,
         run_config: Mapping[str, Any],
         permissions: Mapping[str, Any],
-        databricks_host: Optional[str],
+        databricks_host: str | None,
         secrets_to_env_variables: Sequence[Mapping[str, Any]],
         staging_prefix: str,
         wait_for_logs: bool,
         max_completion_wait_time_seconds: int,
-        databricks_token: Optional[str] = None,
-        oauth_credentials: Optional[Mapping[str, str]] = None,
-        azure_credentials: Optional[Mapping[str, str]] = None,
-        env_variables: Optional[Mapping[str, str]] = None,
-        storage: Optional[Mapping[str, Any]] = None,
+        databricks_token: str | None = None,
+        oauth_credentials: Mapping[str, str] | None = None,
+        azure_credentials: Mapping[str, str] | None = None,
+        env_variables: Mapping[str, str] | None = None,
+        storage: Mapping[str, Any] | None = None,
         poll_interval_sec: int = 5,
-        local_pipeline_package_path: Optional[str] = None,
-        local_dagster_job_package_path: Optional[str] = None,
+        local_pipeline_package_path: str | None = None,
+        local_dagster_job_package_path: str | None = None,
         verbose_logs: bool = True,
         add_dagster_env_variables: bool = True,
     ):

@@ -25,9 +25,9 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
     failing_checks: set[AssetCheckKey]
     warning_checks: set[AssetCheckKey]
     all_checks: set[AssetCheckKey]
-    latest_passing_check_timestamp: Optional[float] = None
-    latest_failing_check_timestamp: Optional[float] = None
-    latest_warning_check_timestamp: Optional[float] = None
+    latest_passing_check_timestamp: float | None = None
+    latest_failing_check_timestamp: float | None = None
+    latest_warning_check_timestamp: float | None = None
 
     @classmethod
     def default(cls) -> "AssetCheckHealthState":

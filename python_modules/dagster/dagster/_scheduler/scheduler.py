@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 from typing_extensions import Self
 
@@ -271,12 +271,12 @@ def launch_scheduled_runs(
     logger: logging.Logger,
     end_datetime_utc: datetime.datetime,
     iteration_times: dict[str, ScheduleIterationTimes],
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    scheduler_run_futures: Optional[dict[str, Future]] = None,
+    threadpool_executor: ThreadPoolExecutor | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+    scheduler_run_futures: dict[str, Future] | None = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
-    debug_crash_flags: Optional[DebugCrashFlags] = None,
+    debug_crash_flags: DebugCrashFlags | None = None,
     scheduler_delay_instrumentation: SchedulerDelayInstrumentation = default_scheduler_delay_instrumentation,
 ) -> "DaemonIterator":
     instance = workspace_process_context.instance
@@ -514,9 +514,9 @@ def launch_scheduled_runs_for_schedule(
     max_catchup_runs: int,
     max_tick_retries: int,
     tick_retention_settings: Mapping[TickStatus, int],
-    schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    in_memory_last_iteration_timestamp: Optional[float],
+    schedule_debug_crash_flags: SingleInstigatorDebugCrashFlags | None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    in_memory_last_iteration_timestamp: float | None,
 ) -> ScheduleIterationTimes:
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
@@ -549,9 +549,9 @@ def launch_scheduled_runs_for_schedule_iterator(
     max_catchup_runs: int,
     max_tick_retries: int,
     tick_retention_settings: Mapping[TickStatus, int],
-    schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    in_memory_last_iteration_timestamp: Optional[float],
+    schedule_debug_crash_flags: SingleInstigatorDebugCrashFlags | None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    in_memory_last_iteration_timestamp: float | None,
 ) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
@@ -559,7 +559,7 @@ def launch_scheduled_runs_for_schedule_iterator(
 
     instigator_origin_id = remote_schedule.get_remote_origin_id()
     ticks = instance.get_ticks(instigator_origin_id, remote_schedule.selector_id, limit=1)
-    latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
+    latest_tick: InstigatorTick | None = ticks[0] if ticks else None
 
     instigator_data = cast("ScheduleInstigatorData", schedule_state.instigator_data)
     start_timestamp_utc: float = instigator_data.start_timestamp or 0
@@ -758,10 +758,10 @@ def launch_scheduled_runs_for_schedule_iterator(
 
 
 class SubmitRunRequestResult(NamedTuple):
-    run_key: Optional[str]
-    error_info: Optional[SerializableErrorInfo]
-    existing_run: Optional[DagsterRun]
-    submitted_run: Optional[DagsterRun]
+    run_key: str | None
+    error_info: SerializableErrorInfo | None
+    existing_run: DagsterRun | None
+    submitted_run: DagsterRun | None
 
 
 def _submit_run_request(
@@ -859,8 +859,8 @@ def _schedule_runs_at_time(
     schedule_time: datetime.datetime,
     timezone_str: str,
     tick_context: _ScheduleLaunchContext,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
 ) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
     instance = workspace_process_context.instance
     repository_handle = remote_schedule.handle.repository_handle
@@ -963,7 +963,7 @@ def _get_existing_run_for_request(
     remote_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     run_request: RunRequest,
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     tags = merge_dicts(
         DagsterRun.tags_for_schedule(remote_schedule),
         {

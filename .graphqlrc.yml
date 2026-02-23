@@ -1,4 +1,0 @@
-projects:
-  dagit:
-    schema: "./js_modules/dagster-ui/packages/ui-core/src/graphql/schema.graphql"
-    documents: "./js_modules/dagster-ui/packages/ui-core/src/**/*.{ts,tsx}"

@@ -1,22 +1,22 @@
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
 
 class ConcurrencyPools(BaseModel, extra="forbid"):
-    defaultLimit: Optional[int] = None
-    granularity: Optional[str] = None  # "run" or "op"
-    opGranularityRunBuffer: Optional[int] = None
+    defaultLimit: int | None = None
+    granularity: str | None = None  # "run" or "op"
+    opGranularityRunBuffer: int | None = None
 
 
 class TagConcurrencyLimit(BaseModel, extra="forbid"):
     key: str
-    value: Optional[str | dict[str, Any]] = None
+    value: str | dict[str, Any] | None = None
     limit: int
 
 
 class ConcurrencyRuns(BaseModel, extra="forbid"):
-    maxConcurrentRuns: Optional[int] = None
+    maxConcurrentRuns: int | None = None
     tagConcurrencyLimits: list[TagConcurrencyLimit] = []
 
 

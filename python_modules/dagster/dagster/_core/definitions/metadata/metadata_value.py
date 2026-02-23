@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from os import PathLike
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Union
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.serdes.serdes import (
@@ -372,7 +372,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
         job_name: str,
         location_name: str,
         *,
-        repository_name: Optional[str] = None,
+        repository_name: str | None = None,
     ) -> "DagsterJobMetadataValue":
         """Static constructor for a metadata value referencing a Dagster job, by name.
 
@@ -406,7 +406,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
     @public
     @staticmethod
     def table(
-        records: Sequence[TableRecord], schema: Optional[TableSchema] = None
+        records: Sequence[TableRecord], schema: TableSchema | None = None
     ) -> "TableMetadataValue":
         """Static constructor for a metadata value wrapping arbitrary tabular data as
         :py:class:`TableMetadataValue`. Can be used as the value type for the `metadata`
@@ -537,7 +537,7 @@ class TextMetadataValue(MetadataValue[str]):
         text (Optional[str]): The text data.
     """
 
-    text: PublicAttr[Optional[str]] = ""  # type: ignore
+    text: PublicAttr[str | None] = ""  # type: ignore
 
     @public
     @property
@@ -556,7 +556,7 @@ class UrlMetadataValue(MetadataValue[str]):
         url (Optional[str]): The URL as a string.
     """
 
-    url: PublicAttr[Optional[str]] = ""  # type: ignore
+    url: PublicAttr[str | None] = ""  # type: ignore
 
     @public
     @property
@@ -577,7 +577,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
 
     fspath: str
 
-    def __new__(cls, path: Optional[str | PathLike]):
+    def __new__(cls, path: str | PathLike | None):
         return super().__new__(
             cls,
             # coerces to str
@@ -608,7 +608,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
 
     fspath: str
 
-    def __new__(cls, path: Optional[str | PathLike]):
+    def __new__(cls, path: str | PathLike | None):
         return super().__new__(
             cls,
             # coerces to str
@@ -656,7 +656,7 @@ class JsonDataFieldSerializer(FieldSerializer):
 @public
 class JsonMetadataValue(
     IHaveNew,
-    MetadataValue[Optional[Sequence[Any] | Mapping[str, Any]]],
+    MetadataValue[Sequence[Any] | Mapping[str, Any] | None],
 ):
     """Container class for JSON metadata entry data.
 
@@ -664,9 +664,9 @@ class JsonMetadataValue(
         data (Union[Sequence[Any], Dict[str, Any]]): The JSON data.
     """
 
-    data: PublicAttr[Optional[Sequence[Any] | Mapping[str, Any]]]
+    data: PublicAttr[Sequence[Any] | Mapping[str, Any] | None]
 
-    def __new__(cls, data: Optional[Sequence[Any] | Mapping[str, Any]]):
+    def __new__(cls, data: Sequence[Any] | Mapping[str, Any] | None):
         try:
             # check that the value is JSON serializable (and do any transformation
             # that json.dumps would do under the hood, like enums to string values)
@@ -677,7 +677,7 @@ class JsonMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[Sequence[Any] | Mapping[str, Any]]:
+    def value(self) -> Sequence[Any] | Mapping[str, Any] | None:
         """Optional[Union[Sequence[Any], Dict[str, Any]]]: The wrapped JSON data."""
         return self.data
 
@@ -692,7 +692,7 @@ class MarkdownMetadataValue(MetadataValue[str]):
         md_str (Optional[str]): The markdown as a string.
     """
 
-    md_str: PublicAttr[Optional[str]] = ""
+    md_str: PublicAttr[str | None] = ""
 
     @public
     @property
@@ -729,39 +729,39 @@ class PythonArtifactMetadataValue(
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
 @record(kw_only=False)
 @public
-class FloatMetadataValue(MetadataValue[Optional[float]]):
+class FloatMetadataValue(MetadataValue[float | None]):
     """Container class for float metadata entry data.
 
     Args:
         value (Optional[float]): The float value.
     """
 
-    value: PublicAttr[Optional[float]]  # type: ignore
+    value: PublicAttr[float | None]  # type: ignore
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
 @record(kw_only=False)
 @public
-class IntMetadataValue(MetadataValue[Optional[int]]):
+class IntMetadataValue(MetadataValue[int | None]):
     """Container class for int metadata entry data.
 
     Args:
         value (Optional[int]): The int value.
     """
 
-    value: PublicAttr[Optional[int]]  # type: ignore
+    value: PublicAttr[int | None]  # type: ignore
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
 @record(kw_only=False)
-class BoolMetadataValue(MetadataValue[Optional[bool]]):
+class BoolMetadataValue(MetadataValue[bool | None]):
     """Container class for bool metadata entry data.
 
     Args:
         value (Optional[bool]): The bool value.
     """
 
-    value: PublicAttr[Optional[bool]]  # type: ignore
+    value: PublicAttr[bool | None]  # type: ignore
 
 
 @public
@@ -810,7 +810,7 @@ class DagsterJobMetadataValue(MetadataValue["DagsterJobMetadataValue"]):
 
     job_name: PublicAttr[str]
     location_name: PublicAttr[str]
-    repository_name: PublicAttr[Optional[str]] = None
+    repository_name: PublicAttr[str | None] = None
 
     @public
     @property
@@ -882,7 +882,7 @@ class TableMetadataValue(
         else:
             return "string"
 
-    def __new__(cls, records: Sequence[TableRecord], schema: Optional[TableSchema]):
+    def __new__(cls, records: Sequence[TableRecord], schema: TableSchema | None):
         check.sequence_param(records, "records", of_type=TableRecord)
         check.opt_inst_param(schema, "schema", TableSchema)
 
@@ -1049,7 +1049,7 @@ class ObjectMetadataValue(
     """
 
     class_name: PublicAttr[str]
-    instance: Optional[object] = None
+    instance: object | None = None
 
     def __new__(
         cls,

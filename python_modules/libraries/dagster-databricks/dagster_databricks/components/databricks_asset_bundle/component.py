@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 from dagster import (
     AssetExecutionContext,
@@ -118,7 +118,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ),
     ] = field(default_factory=ResolvedDatabricksServerlessConfig)
     op: Annotated[
-        Optional[OpSpec],
+        OpSpec | None,
         Resolver.default(
             description="Op related arguments to set on the generated @multi_asset",
             examples=[
@@ -132,7 +132,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ] = None
-    assets_by_task_key: Optional[dict[str, list[ResolvedAssetSpec]]] = None
+    assets_by_task_key: dict[str, list[ResolvedAssetSpec]] | None = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:

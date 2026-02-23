@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Optional
 from unittest.mock import MagicMock
 
 import dagster as dg
@@ -538,7 +537,7 @@ def test_get_downstream_with_current_time(
     downstream_partitions_def: TimeWindowPartitionsDefinition,
     upstream_keys: Sequence[str],
     expected_downstream_keys: Sequence[str],
-    current_time: Optional[datetime],
+    current_time: datetime | None,
 ):
     mapping = dg.TimeWindowPartitionMapping()
     assert (
@@ -647,7 +646,7 @@ def test_get_upstream_with_current_time(
     downstream_partitions_def: TimeWindowPartitionsDefinition,
     expected_upstream_keys: Sequence[str],
     downstream_keys: Sequence[str],
-    current_time: Optional[datetime],
+    current_time: datetime | None,
     invalid_time_windows: Sequence[dg.TimeWindow],
 ):
     mapping = dg.TimeWindowPartitionMapping()

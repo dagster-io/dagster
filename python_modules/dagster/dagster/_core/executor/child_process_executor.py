@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
-from typing import TYPE_CHECKING, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Literal, NamedTuple, Union
 
 import dagster._check as check
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -101,7 +101,7 @@ PROCESS_DEAD_AND_QUEUE_EMPTY = "PROCESS_DEAD_AND_QUEUE_EMPTY"
 
 def _poll_for_event(
     process, event_queue
-) -> Optional[Union["DagsterEvent", Literal["PROCESS_DEAD_AND_QUEUE_EMPTY"]]]:
+) -> Union["DagsterEvent", Literal["PROCESS_DEAD_AND_QUEUE_EMPTY"]] | None:
     try:
         return event_queue.get(block=True, timeout=TICK)
     except queue.Empty:
@@ -120,7 +120,7 @@ def _poll_for_event(
 
 def execute_child_process_command(
     multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
-) -> Iterator[Optional[Union["DagsterEvent", ChildProcessEvent, BaseProcess]]]:
+) -> Iterator[Union["DagsterEvent", ChildProcessEvent, BaseProcess] | None]:
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by

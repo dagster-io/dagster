@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Optional
 
 import dagster._check as check
 from dagster._annotations import public
@@ -71,10 +70,10 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         start_date: datetime | str,
         end_date: datetime | str | None = None,
         minute_offset: int = 0,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
+        timezone: str | None = None,
+        fmt: str | None = None,
         end_offset: int = 0,
-        exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+        exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -150,10 +149,10 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         end_date: datetime | str | None = None,
         minute_offset: int = 0,
         hour_offset: int = 0,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
+        timezone: str | None = None,
+        fmt: str | None = None,
         end_offset: int = 0,
-        exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+        exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -235,10 +234,10 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         minute_offset: int = 0,
         hour_offset: int = 0,
         day_offset: int = 0,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
+        timezone: str | None = None,
+        fmt: str | None = None,
         end_offset: int = 0,
-        exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+        exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -319,10 +318,10 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         minute_offset: int = 0,
         hour_offset: int = 0,
         day_offset: int = 1,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
+        timezone: str | None = None,
+        fmt: str | None = None,
         end_offset: int = 0,
-        exclusions: Optional[Sequence[str | datetime | TimestampWithTimezone]] = None,
+        exclusions: Sequence[str | datetime | TimestampWithTimezone] | None = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT

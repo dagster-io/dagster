@@ -6,7 +6,6 @@ import time
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Optional
 
 from dagster import (
     DagsterEvent,
@@ -44,7 +43,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
     def __init__(self, interval_seconds, page_size=PAGE_SIZE) -> None:
         self._exit_stack = ExitStack()
-        self._executor: Optional[ThreadPoolExecutor] = None
+        self._executor: ThreadPoolExecutor | None = None
         self._location_timeouts_lock = threading.Lock()
         self._location_timeouts: dict[str, float] = {}
         self._page_size = page_size
@@ -75,7 +74,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def run_iteration(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-        fixed_iteration_time: Optional[float] = None,  # used for tests
+        fixed_iteration_time: float | None = None,  # used for tests
     ) -> DaemonIterator:
         if not isinstance(workspace_process_context.instance.run_coordinator, QueuedRunCoordinator):
             check.failed(
@@ -106,7 +105,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         run_coordinator: QueuedRunCoordinator,
         runs_to_dequeue: list[DagsterRun],
         concurrency_config: ConcurrencyConfig,
-        fixed_iteration_time: Optional[float],
+        fixed_iteration_time: float | None,
     ) -> Iterator[None]:
         if run_coordinator.dequeue_use_threads:
             yield from self._dequeue_runs_iter_threaded(
@@ -129,7 +128,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         run: DagsterRun,
         concurrency_config: ConcurrencyConfig,
-        fixed_iteration_time: Optional[float],
+        fixed_iteration_time: float | None,
     ) -> bool:
         return self._dequeue_run(
             workspace_process_context.instance,
@@ -143,9 +142,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         runs_to_dequeue: list[DagsterRun],
-        max_workers: Optional[int],
+        max_workers: int | None,
         concurrency_config: ConcurrencyConfig,
-        fixed_iteration_time: Optional[float],
+        fixed_iteration_time: float | None,
     ) -> Iterator[None]:
         num_dequeued_runs = 0
 
@@ -172,7 +171,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         runs_to_dequeue: list[DagsterRun],
         concurrency_config: ConcurrencyConfig,
-        fixed_iteration_time: Optional[float],
+        fixed_iteration_time: float | None,
     ) -> Iterator[None]:
         num_dequeued_runs = 0
         for run in runs_to_dequeue:
@@ -194,7 +193,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         instance: DagsterInstance,
         concurrency_config: ConcurrencyConfig,
-        fixed_iteration_time: Optional[float],
+        fixed_iteration_time: float | None,
     ) -> list[DagsterRun]:
         if not isinstance(instance.run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {instance.run_coordinator}")
@@ -367,7 +366,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace: BaseWorkspaceRequestContext,
         run: DagsterRun,
         concurrency_config: ConcurrencyConfig,
-        fixed_iteration_time: Optional[float],
+        fixed_iteration_time: float | None,
     ) -> bool:
         assert concurrency_config.run_queue_config
         # double check that the run is still queued before dequeing

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 import pyarrow as pa
@@ -28,5 +28,5 @@ class DeltaLakePandasIOManager(DeltaLakeIOManager):
         return [DeltaLakePandasTypeHandler(), DeltaLakePyArrowTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return pd.DataFrame

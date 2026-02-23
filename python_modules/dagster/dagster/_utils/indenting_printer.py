@@ -2,7 +2,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from io import StringIO
 from textwrap import TextWrapper
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import Self
 
@@ -69,7 +69,7 @@ class IndentingPrinter:
         self.current_indent -= self.indent_level
 
     @contextmanager
-    def with_indent(self, text: Optional[str] = None) -> Iterator[None]:
+    def with_indent(self, text: str | None = None) -> Iterator[None]:
         if text is not None:
             self.line(text)
         self.increase_indent()

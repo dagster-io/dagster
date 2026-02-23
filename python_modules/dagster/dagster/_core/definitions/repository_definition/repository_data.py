@@ -204,8 +204,8 @@ class RepositoryData(ABC):
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
-    _all_jobs: Optional[Sequence[JobDefinition]]
-    _all_pipelines: Optional[Sequence[JobDefinition]]
+    _all_jobs: Sequence[JobDefinition] | None
+    _all_pipelines: Sequence[JobDefinition] | None
 
     def __init__(
         self,
@@ -360,9 +360,9 @@ class CachingRepositoryData(RepositoryData):
     def from_list(
         cls,
         repository_definitions: Sequence[RepositoryElementDefinition],
-        default_executor_def: Optional[ExecutorDefinition] = None,
-        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        default_executor_def: ExecutorDefinition | None = None,
+        default_logger_defs: Mapping[str, LoggerDefinition] | None = None,
+        top_level_resources: Mapping[str, ResourceDefinition] | None = None,
         component_tree: Optional["ComponentTree"] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.

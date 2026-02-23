@@ -3,7 +3,7 @@
 import json
 import subprocess
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import click
 
@@ -29,7 +29,7 @@ def run_command(cmd: list[str], description: str) -> subprocess.CompletedProcess
 
 def get_stack_info(
     stack_only: bool = False,
-) -> tuple[list[dict[str, Any]], Optional[dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     """Get stack information using the gt-stack command."""
     # Get current branch info
     current_result = run_command(
@@ -51,7 +51,7 @@ def get_stack_info(
 
 def find_previous_branch(
     all_branches: list[dict[str, Any]], current_branch_name: str
-) -> Optional[str]:
+) -> str | None:
     """Find the previous branch in the stack (the one after the current branch)."""
     current_index = None
 
@@ -72,7 +72,7 @@ def find_previous_branch(
 
 
 def get_changes_info(
-    current_branch: str, previous_branch: Optional[str], use_smart_summary: bool = False
+    current_branch: str, previous_branch: str | None, use_smart_summary: bool = False
 ) -> dict[str, Any]:
     """Get changes information for the current branch."""
     if not previous_branch:
@@ -200,7 +200,7 @@ def get_changes_info(
     return result
 
 
-def check_pr_exists() -> Optional[str]:
+def check_pr_exists() -> str | None:
     """Check if a PR exists for the current branch."""
     try:
         result = subprocess.run(

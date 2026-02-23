@@ -1,6 +1,6 @@
 import json
 from collections.abc import Iterable, Sequence, Set
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._core.definitions.partitions.definition.partitions_definition import (
@@ -23,7 +23,7 @@ class DefaultPartitionsSubset(
 
     def __new__(
         cls,
-        subset: Optional[Set[str]] = None,
+        subset: Set[str] | None = None,
     ):
         check.opt_set_param(subset, "subset")
         return super().__new__(cls, subset or set())
@@ -184,8 +184,8 @@ class DefaultPartitionsSubset(
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool:
         if serialized_partitions_def_class_name is not None:
             return serialized_partitions_def_class_name == partitions_def.__class__.__name__
@@ -211,7 +211,7 @@ class DefaultPartitionsSubset(
 
     @classmethod
     def create_empty_subset(
-        cls, partitions_def: Optional[PartitionsDefinition] = None
+        cls, partitions_def: PartitionsDefinition | None = None
     ) -> "DefaultPartitionsSubset":
         return cls()
 

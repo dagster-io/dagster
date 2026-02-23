@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
@@ -21,7 +21,7 @@ class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
                 ...
     """
 
-    project: Optional[str] = Field(default=None, description="Project name")
+    project: str | None = Field(default=None, description="Project name")
 
     def get_client(self) -> storage.Client:
         """Creates a GCS Client.
@@ -46,7 +46,7 @@ def gcs_resource(init_context) -> storage.Client:
 class GCSFileManagerResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """FileManager that provides abstract access to GCS."""
 
-    project: Optional[str] = Field(default=None, description="Project name")
+    project: str | None = Field(default=None, description="Project name")
     gcs_bucket: str = Field(description="GCS bucket to store files")
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
 
@@ -77,7 +77,7 @@ def gcs_file_manager(context):
     return GCSFileManagerResource.from_resource_context(context).get_client()
 
 
-def _gcs_client_from_config(project: Optional[str]) -> storage.Client:
+def _gcs_client_from_config(project: str | None) -> storage.Client:
     """Creates a GCS Client.
 
     Args:

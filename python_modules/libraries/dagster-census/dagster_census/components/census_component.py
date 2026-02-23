@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import dagster as dg
 import pydantic
@@ -44,7 +44,7 @@ class CensusSyncSelectorById(dg.Resolvable, dg.Model):
 
 def resolve_sync_selector(
     context: dg.ResolutionContext, model
-) -> Optional[Callable[[CensusSync], bool]]:
+) -> Callable[[CensusSync], bool] | None:
     if isinstance(model, str):
         resolved = context.resolve_value(model)
         resolved = check.callable_param(resolved, "unknown")  # pyright: ignore[reportArgumentType]
@@ -105,7 +105,7 @@ class CensusComponent(StateBackedComponent, dg.Resolvable):
     ]
 
     sync_selector: Annotated[
-        Optional[Callable[[CensusSync], bool]],
+        Callable[[CensusSync], bool] | None,
         dg.Resolver(
             resolve_sync_selector,
             model_field_type=str
@@ -204,7 +204,7 @@ class CensusComponent(StateBackedComponent, dg.Resolvable):
         return _asset
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

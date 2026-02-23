@@ -142,7 +142,7 @@ class AssetLayer:
     def has(self, asset_key: AssetKey) -> bool:
         return self.asset_graph.has(asset_key)
 
-    def _maybe_get_data(self, ptr: NodeHandle | EntityKey) -> Optional[AssetLayerData]:
+    def _maybe_get_data(self, ptr: NodeHandle | EntityKey) -> AssetLayerData | None:
         if isinstance(ptr, NodeHandle):
             # we need to ensure that the node handle we use for the lookup is the **outer**
             # node handle when in the context of a graph asset.
@@ -180,13 +180,13 @@ class AssetLayer:
     def get_op_output_name(self, key: EntityKey) -> str:
         return self.get_op_output_handle(key).output_name
 
-    def get_node_input_name(self, node_handle: NodeHandle, key: AssetKey) -> Optional[str]:
+    def get_node_input_name(self, node_handle: NodeHandle, key: AssetKey) -> str | None:
         data = self._maybe_get_data(node_handle)
         return data.assets_def.input_names_by_node_key.get(key) if data else None
 
     def get_entity_key_for_node_output(
         self, inner_node_handle: NodeHandle, output_name: str
-    ) -> Optional[EntityKey]:
+    ) -> EntityKey | None:
         data = self._maybe_get_data(inner_node_handle)
         if data is None:
             return None
@@ -197,19 +197,19 @@ class AssetLayer:
 
     def get_asset_key_for_node_output(
         self, node_handle: NodeHandle, output_name: str
-    ) -> Optional[AssetKey]:
+    ) -> AssetKey | None:
         key = self.get_entity_key_for_node_output(node_handle, output_name)
         return key if isinstance(key, AssetKey) else None
 
     def get_asset_check_key_for_node_output(
         self, node_handle: NodeHandle, output_name: str
-    ) -> Optional[AssetCheckKey]:
+    ) -> AssetCheckKey | None:
         key = self.get_entity_key_for_node_output(node_handle, output_name)
         return key if isinstance(key, AssetCheckKey) else None
 
     def get_asset_key_for_node_input(
         self, inner_node_handle: NodeHandle, input_name: str
-    ) -> Optional[AssetKey]:
+    ) -> AssetKey | None:
         node_input_handle = NodeInputHandle(node_handle=inner_node_handle, input_name=input_name)
         return self._asset_keys_by_inner_input_handle.get(node_input_handle)
 

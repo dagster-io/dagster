@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional, TypeGuard, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, TypeGuard, Union, cast
 
 from dagster_shared.serdes import EnumSerializer, whitelist_for_serdes
 
@@ -74,12 +74,12 @@ class IExecutionStep:
 
     @property
     @abstractmethod
-    def tags(self) -> Optional[Mapping[str, str]]:
+    def tags(self) -> Mapping[str, str] | None:
         pass
 
     @property
     @abstractmethod
-    def pool(self) -> Optional[str]:
+    def pool(self) -> str | None:
         pass
 
     @property
@@ -126,7 +126,7 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
             ("tags", Mapping[str, str]),
             ("logging_tags", Mapping[str, str]),
             ("key", str),
-            ("pool", Optional[str]),
+            ("pool", str | None),
         ],
     ),
     IExecutionStep,
@@ -139,10 +139,10 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
         job_name: str,
         step_inputs: Sequence[StepInput],
         step_outputs: Sequence[StepOutput],
-        tags: Optional[Mapping[str, str]],
-        pool: Optional[str],
-        logging_tags: Optional[Mapping[str, str]] = None,
-        key: Optional[str] = None,
+        tags: Mapping[str, str] | None,
+        pool: str | None,
+        logging_tags: Mapping[str, str] | None = None,
+        key: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -212,7 +212,7 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
             deps.update(inp.dependency_keys)
         return deps
 
-    def get_mapping_key(self) -> Optional[str]:
+    def get_mapping_key(self) -> str | None:
         if isinstance(self.handle, ResolvedFromDynamicStepHandle):
             return self.handle.mapping_key
 
@@ -228,7 +228,7 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
             ("step_input_dict", Mapping[str, StepInput | UnresolvedMappedStepInput]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
-            ("pool", Optional[str]),
+            ("pool", str | None),
         ],
     ),
     IExecutionStep,
@@ -241,8 +241,8 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
         job_name: str,
         step_inputs: Sequence[StepInput | UnresolvedMappedStepInput],
         step_outputs: Sequence[StepOutput],
-        tags: Optional[Mapping[str, str]],
-        pool: Optional[str],
+        tags: Mapping[str, str] | None,
+        pool: str | None,
     ):
         return super().__new__(
             cls,
@@ -340,7 +340,7 @@ class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariab
         return frozenset(keys)
 
     def resolve(
-        self, mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]]
+        self, mappings: Mapping[str, Mapping[str, Sequence[str] | None]]
     ) -> Sequence[ExecutionStep]:
         check.invariant(
             all(key in mappings for key in self.resolved_by_step_keys),
@@ -390,7 +390,7 @@ class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVaria
             ("step_input_dict", Mapping[str, StepInput | UnresolvedCollectStepInput]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
-            ("pool", Optional[str]),
+            ("pool", str | None),
         ],
     ),
     IExecutionStep,
@@ -403,8 +403,8 @@ class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVaria
         job_name: str,
         step_inputs: Sequence[StepInput | UnresolvedCollectStepInput],
         step_outputs: Sequence[StepOutput],
-        tags: Optional[Mapping[str, str]],
-        pool: Optional[str],
+        tags: Mapping[str, str] | None,
+        pool: str | None,
     ):
         return super().__new__(
             cls,
@@ -480,9 +480,7 @@ class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVaria
 
         return frozenset(keys)
 
-    def resolve(
-        self, mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]]
-    ) -> ExecutionStep:
+    def resolve(self, mappings: Mapping[str, Mapping[str, Sequence[str] | None]]) -> ExecutionStep:
         check.invariant(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",

@@ -1,6 +1,6 @@
 import time
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster_shared.seven as seven
 from typing_extensions import Self
@@ -32,7 +32,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._inst_data = inst_data
 
@@ -41,7 +41,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod

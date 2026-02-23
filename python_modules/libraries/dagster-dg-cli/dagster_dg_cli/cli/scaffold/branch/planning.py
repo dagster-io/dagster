@@ -6,7 +6,7 @@ and provides bidirectional communication with Claude for interactive sessions.
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import click
 from dagster_dg_core.context import DgContext
@@ -337,7 +337,7 @@ Provide the complete updated plan in the same markdown format as before."""
         return combined_content
 
 
-def get_user_plan_approval(plan: GeneratedPlan) -> tuple[bool, Optional[str]]:
+def get_user_plan_approval(plan: GeneratedPlan) -> tuple[bool, str | None]:
     """Get user approval for a generated plan.
 
     Args:

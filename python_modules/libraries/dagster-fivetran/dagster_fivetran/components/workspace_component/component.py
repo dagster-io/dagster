@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import dagster as dg
 import pydantic
@@ -64,7 +64,7 @@ class FivetranConnectorSelectorById(pydantic.BaseModel):
 
 def resolve_connector_selector(
     context: dg.ResolutionContext, model
-) -> Optional[Callable[[FivetranConnector], bool]]:
+) -> Callable[[FivetranConnector], bool] | None:
     if isinstance(model, str):
         model = context.resolve_value(model)
 
@@ -110,18 +110,19 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         ),
     ]
     connector_selector: Annotated[
-        Optional[Callable[[FivetranConnector], bool]],
+        Callable[[FivetranConnector], bool] | None,
         dg.Resolver(
             resolve_connector_selector,
             model_field_type=str | FivetranConnectorSelectorByName | FivetranConnectorSelectorById,
         ),
     ] = None
-    translation: Optional[
+    translation: (
         Annotated[
             TranslationFn[FivetranConnectorTableProps],
             TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"props": data}),
         ]
-    ] = pydantic.Field(
+        | None
+    ) = pydantic.Field(
         default=None,
         description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
     )
@@ -237,7 +238,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         state_path.write_text(dg.serialize_value(state))
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

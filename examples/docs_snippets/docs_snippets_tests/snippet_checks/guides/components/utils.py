@@ -123,6 +123,8 @@ def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> st
     return get_editable_install_cmd_for_paths(
         package_manager,
         [
+            EDITABLE_DIR.parent / "dagster",
+            EDITABLE_DIR.parent / "dagster-pipes",
             EDITABLE_DIR / "dagster-cloud-cli",
             EDITABLE_DIR / "dagster-dg-core",
             EDITABLE_DIR / "dagster-dg-cli",
@@ -142,6 +144,7 @@ def get_editable_install_cmd_for_project(
             EDITABLE_DIR.parent / "dagster-pipes",
             EDITABLE_DIR.parent / "dagster-test",
             EDITABLE_DIR.parent / "dagster-webserver",
+            EDITABLE_DIR.parent / "dagster-graphql",
             EDITABLE_DIR / "dagster-shared",
         ],
     )
@@ -153,7 +156,7 @@ def get_editable_install_cmd_for_paths(
     if package_manager == "uv":
         lines = [
             "uv add --editable",
-            *[(str(path)) for path in paths if path != Path(".")],
+            *[str(path) for path in paths if path != Path(".")],
         ]
     elif package_manager == "pip":
         lines = [

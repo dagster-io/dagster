@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import ContextManager, Optional, cast  # noqa: UP035
+from typing import ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -57,7 +57,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, mysql_url: str, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, mysql_url: str, inst_data: ConfigurableClassData | None = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
 
@@ -101,7 +101,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -110,7 +110,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: MySqlStorageConfig
     ) -> "MySQLScheduleStorage":
         return MySQLScheduleStorage(
             inst_data=inst_data, mysql_url=mysql_url_from_config(config_value)
@@ -143,7 +143,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             MINIMUM_MYSQL_BATCH_VERSION
         )
 
-    def get_server_version(self) -> Optional[str]:
+    def get_server_version(self) -> str | None:
         with self.connect() as conn:
             row = conn.execute(db.text("select version()")).fetchone()
 

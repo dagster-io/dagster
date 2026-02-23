@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional, cast  # noqa: UP035
+from typing import ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -55,10 +55,10 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     """
 
-    def __init__(self, mysql_url: str, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, mysql_url: str, inst_data: ConfigurableClassData | None = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = check.str_param(mysql_url, "mysql_url")
-        self._event_watcher: Optional[SqlPollingEventWatcher] = None
+        self._event_watcher: SqlPollingEventWatcher | None = None
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
@@ -105,7 +105,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             run_alembic_upgrade(alembic_config, conn)
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -114,7 +114,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: MySqlStorageConfig
     ) -> "MySQLEventLogStorage":
         return MySQLEventLogStorage(
             inst_data=inst_data, mysql_url=mysql_url_from_config(config_value)
@@ -135,7 +135,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def get_server_version(self) -> Optional[str]:
+    def get_server_version(self) -> str | None:
         with self.index_connection() as conn:
             row = conn.execute(db.text("select version()")).fetchone()
 
@@ -176,7 +176,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _connect(self) -> ContextManager[Connection]:
         return create_mysql_connection(self._engine, __file__, "event log")
 
-    def run_connection(self, run_id: Optional[str] = None) -> ContextManager[Connection]:
+    def run_connection(self, run_id: str | None = None) -> ContextManager[Connection]:
         return self._connect()
 
     def index_connection(self) -> ContextManager[Connection]:
@@ -196,7 +196,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id: str, cursor: Optional[str], callback: EventHandlerFn) -> None:
+    def watch(self, run_id: str, cursor: str | None, callback: EventHandlerFn) -> None:
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
             check.failed("Cannot call `watch` with an offset cursor")
 

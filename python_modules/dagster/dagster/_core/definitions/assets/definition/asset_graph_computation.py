@@ -2,7 +2,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Mapping
 from functools import cached_property
-from typing import AbstractSet, Optional, cast  # noqa: UP035
+from typing import AbstractSet, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
@@ -30,7 +30,7 @@ class AssetGraphComputation(IHaveNew):
     keys_by_input_name: Mapping[str, AssetKey]
     keys_by_output_name: Mapping[str, AssetKey]
     check_keys_by_output_name: Mapping[str, AssetCheckKey]
-    backfill_policy: Optional[BackfillPolicy]
+    backfill_policy: BackfillPolicy | None
     can_subset: bool
     is_subset: bool
     selected_asset_keys: AbstractSet[AssetKey]
@@ -43,7 +43,7 @@ class AssetGraphComputation(IHaveNew):
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
         check_keys_by_output_name: Mapping[str, AssetCheckKey],
-        backfill_policy: Optional[BackfillPolicy],
+        backfill_policy: BackfillPolicy | None,
         can_subset: bool,
         is_subset: bool,
         selected_asset_keys: AbstractSet[AssetKey],
@@ -107,7 +107,7 @@ class AssetGraphComputation(IHaveNew):
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
-        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+        selected_asset_check_keys: AbstractSet[AssetCheckKey] | None,
     ) -> "AssetGraphComputation":
         check.invariant(
             self.can_subset,
@@ -197,7 +197,7 @@ class AssetGraphComputation(IHaveNew):
     @cached_property
     def dep_op_handles_by_entity_key(
         self,
-    ) -> Mapping[EntityKey, AbstractSet[Optional[NodeHandle]]]:
+    ) -> Mapping[EntityKey, AbstractSet[NodeHandle | None]]:
         result = defaultdict(set)
         for op_output_handle, keys in self.entity_keys_by_dep_op_output_handle.items():
             for key in keys:

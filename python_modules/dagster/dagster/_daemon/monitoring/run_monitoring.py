@@ -2,7 +2,6 @@ import logging
 import sys
 import time
 from collections.abc import Iterator
-from typing import Optional
 
 from dagster import (
     DagsterInstance,
@@ -175,8 +174,8 @@ def monitor_started_run(
 def execute_run_monitoring_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    _debug_crash_flags: Optional[DebugCrashFlags] = None,
-) -> Iterator[Optional[SerializableErrorInfo]]:
+    _debug_crash_flags: DebugCrashFlags | None = None,
+) -> Iterator[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
 
     # TODO: consider limiting number of runs to fetch

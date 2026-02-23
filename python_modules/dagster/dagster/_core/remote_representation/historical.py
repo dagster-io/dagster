@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster._check as check
 from dagster._core.remote_representation.job_index import JobIndex
 from dagster._core.remote_representation.represented import RepresentedJob
@@ -20,7 +18,7 @@ class HistoricalJob(RepresentedJob):
         self,
         job_snapshot: JobSnap,
         identifying_job_snapshot_id: str,
-        parent_job_snapshot: Optional[JobSnap],
+        parent_job_snapshot: JobSnap | None,
     ):
         self._snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         self._parent_snapshot = check.opt_inst_param(
@@ -48,5 +46,5 @@ class HistoricalJob(RepresentedJob):
     def computed_job_snapshot_id(self):
         return self._job_index.job_snapshot_id
 
-    def get_external_job_source(self) -> Optional[str]:
+    def get_external_job_source(self) -> str | None:
         return self._job_index.job_snapshot.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)

@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import pytest
 from dagster import job
@@ -72,8 +71,8 @@ def databricks_client_factory(request):
 def test_databricks_run_now_op(
     databricks_client_factory,
     mocker: MockerFixture,
-    databricks_job_configuration: Optional[dict],
-    databricks_resource_key: Optional[str],
+    databricks_job_configuration: dict | None,
+    databricks_resource_key: str | None,
 ) -> None:
     mock_run_now = mocker.patch("databricks.sdk.JobsAPI.run_now")
     mock_get_run = mocker.patch("databricks.sdk.JobsAPI.get_run")
@@ -134,7 +133,7 @@ def test_databricks_run_now_op(
 def test_databricks_submit_run_op(
     databricks_client_factory,
     mocker: MockerFixture,
-    databricks_resource_key: Optional[str],
+    databricks_resource_key: str | None,
 ) -> None:
     mock_submit_run = mocker.patch("databricks.sdk.JobsAPI.submit")
     mock_get_run = mocker.patch("databricks.sdk.JobsAPI.get_run")

@@ -2,7 +2,6 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from itertools import chain
-from typing import Optional
 
 from dagster import (
     AssetMaterialization,
@@ -387,7 +386,7 @@ def persist_events(
 def _report_materialization(
     *,
     context: OpExecutionContext,
-    corresponding_run: Optional[DagsterRun],
+    corresponding_run: DagsterRun | None,
     materialization: AssetMaterialization,
     airflow_event: TaskInstance | DagRun,
 ) -> None:

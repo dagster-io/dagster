@@ -5,7 +5,7 @@ import dagster as dg
 
 
 @dg.template_var
-def group_from_fqn() -> Callable[[Sequence[str]], Optional[str]]:
+def group_from_fqn() -> Callable[[Sequence[str]], str | None]:
     """Returns a function that extracts the group name from a dbt model's fqn.
 
     The fqn (fully qualified name) contains the directory structure, e.g.:
@@ -13,7 +13,7 @@ def group_from_fqn() -> Callable[[Sequence[str]], Optional[str]]:
     ["jaffle_shop", "marts", "customers"] -> returns "marts"
     """
 
-    def _get_group(fqn: Sequence[str]) -> Optional[str]:
+    def _get_group(fqn: Sequence[str]) -> str | None:
         # fqn structure: [project_name, folder, ..., model_name]
         # We want the first folder after the project name
         if len(fqn) >= 2:

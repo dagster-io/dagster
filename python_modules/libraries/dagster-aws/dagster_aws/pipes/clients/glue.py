@@ -44,7 +44,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         context_injector: PipesContextInjector,
-        message_reader: Optional[PipesMessageReader] = None,
+        message_reader: PipesMessageReader | None = None,
         client: Optional["GlueClient"] = None,
         forward_termination: bool = True,
     ):
@@ -63,7 +63,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         *,
         context: OpExecutionContext | AssetExecutionContext,
         start_job_run_params: "StartJobRunRequestTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Start a Glue job, enriched with the pipes protocol.
 

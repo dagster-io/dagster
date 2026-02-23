@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from dagster import (
     AssetsDefinition,
@@ -42,9 +42,7 @@ def airlift_mapped_kind_dict() -> dict:
 
 
 def spec_iterator(
-    assets: Optional[
-        Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition]
-    ],
+    assets: Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition] | None,
 ) -> Iterator[AssetSpec]:
     for asset in assets or []:
         if isinstance(asset, AssetsDefinition):

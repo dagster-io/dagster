@@ -13,9 +13,9 @@ import {
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import React, {useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useAllAssetsNodes} from './useAllAssets';

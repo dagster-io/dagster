@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Union
 
 import yaml
 from dagster import (
@@ -44,7 +44,7 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
         return {}
 
 
-def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsOnConfig"]:
+def parse_depends_on(depends_on: list | None) -> list["DatabricksTaskDependsOnConfig"]:
     parsed_depends_on = []
     if depends_on:
         for dep in depends_on:
@@ -59,7 +59,7 @@ def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsO
     return parsed_depends_on
 
 
-def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.compute.Library]:
+def parse_libraries(libraries: list[Mapping[str, Any]] | None) -> list[jobs.compute.Library]:
     libraries_list = []
     for lib in libraries or []:
         if "whl" in lib:
@@ -110,7 +110,7 @@ def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.c
 @record
 class DatabricksTaskDependsOnConfig:
     task_key: str
-    outcome: Optional[str]
+    outcome: str | None
 
 
 @whitelist_for_serdes
@@ -514,7 +514,7 @@ class DatabricksConfig(IHaveNew):
     @classmethod
     def _extract_tasks_from_resource(
         cls, resource_path: Path
-    ) -> tuple[list[Any], Optional[Mapping[str, Any]]]:
+    ) -> tuple[list[Any], Mapping[str, Any] | None]:
         """Extract Databricks tasks from a resource YAML file."""
         resource_config = load_yaml(resource_path)
         tasks = []
@@ -587,7 +587,7 @@ class DatabricksConfig(IHaveNew):
     @classmethod
     def _extract_job_level_parameters(
         cls, job_config: Mapping[str, Any]
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any] | None:
         """Extract job-level parameters from job configuration."""
         # Job-level parameters can be defined in several ways in Databricks bundle
         job_parameters = None
@@ -629,4 +629,4 @@ class DatabricksJob:
 
     job_id: int
     name: str
-    tasks: Optional[list[DatabricksBaseTask]] = None
+    tasks: list[DatabricksBaseTask] | None = None

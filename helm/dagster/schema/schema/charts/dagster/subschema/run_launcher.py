@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
@@ -16,17 +16,17 @@ class RunLauncherType(str, Enum):
 class CeleryWorkerQueue(BaseModel):
     replicaCount: int = Field(gt=0)
     name: str
-    labels: Optional[kubernetes.Labels] = None
-    nodeSelector: Optional[kubernetes.NodeSelector] = None
-    configSource: Optional[dict] = None
-    additionalCeleryArgs: Optional[list[str]] = None
+    labels: kubernetes.Labels | None = None
+    nodeSelector: kubernetes.NodeSelector | None = None
+    configSource: dict | None = None
+    additionalCeleryArgs: list[str] | None = None
 
     model_config = ConfigDict(extra="forbid")
 
 
 class CeleryK8sRunLauncherConfig(BaseModel):
     image: kubernetes.Image
-    imagePullPolicy: Optional[kubernetes.PullPolicy] = None
+    imagePullPolicy: kubernetes.PullPolicy | None = None
     nameOverride: str
     configSource: dict
     workerQueues: list[CeleryWorkerQueue] = Field(min_items=1)
@@ -40,53 +40,53 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
-    checkDbReadyInitContainer: Optional[bool] = None
+    checkDbReadyInitContainer: bool | None = None
     livenessProbe: kubernetes.LivenessProbe
     volumeMounts: list[kubernetes.VolumeMount]
     volumes: list[kubernetes.Volume]
-    labels: Optional[dict[str, str]] = None
-    failPodOnRunFailure: Optional[bool] = None
-    schedulerName: Optional[str] = None
-    jobNamespace: Optional[str] = None
+    labels: dict[str, str] | None = None
+    failPodOnRunFailure: bool | None = None
+    schedulerName: str | None = None
+    jobNamespace: str | None = None
 
     model_config = ConfigDict(extra="forbid")
 
 
 class RunK8sConfig(BaseModel):
-    containerConfig: Optional[dict[str, Any]] = None
-    podSpecConfig: Optional[dict[str, Any]] = None
-    podTemplateSpecMetadata: Optional[dict[str, Any]] = None
-    jobSpecConfig: Optional[dict[str, Any]] = None
-    jobMetadata: Optional[dict[str, Any]] = None
+    containerConfig: dict[str, Any] | None = None
+    podSpecConfig: dict[str, Any] | None = None
+    podTemplateSpecMetadata: dict[str, Any] | None = None
+    jobSpecConfig: dict[str, Any] | None = None
+    jobMetadata: dict[str, Any] | None = None
 
     model_config = ConfigDict(extra="forbid")
 
 
 class K8sRunLauncherConfig(BaseModel):
-    image: Optional[kubernetes.Image] = None
+    image: kubernetes.Image | None = None
     imagePullPolicy: kubernetes.PullPolicy
-    jobNamespace: Optional[str] = None
+    jobNamespace: str | None = None
     loadInclusterConfig: bool
-    kubeconfigFile: Optional[str] = None
+    kubeconfigFile: str | None = None
     envConfigMaps: list[kubernetes.ConfigMapEnvSource]
     envSecrets: list[kubernetes.SecretEnvSource]
     envVars: list[str]
     volumeMounts: list[kubernetes.VolumeMount]
     volumes: list[kubernetes.Volume]
-    labels: Optional[dict[str, str]] = None
-    failPodOnRunFailure: Optional[bool] = None
-    resources: Optional[kubernetes.ResourceRequirements] = None
-    schedulerName: Optional[str] = None
-    securityContext: Optional[kubernetes.SecurityContext] = None
-    runK8sConfig: Optional[RunK8sConfig] = None
+    labels: dict[str, str] | None = None
+    failPodOnRunFailure: bool | None = None
+    resources: kubernetes.ResourceRequirements | None = None
+    schedulerName: str | None = None
+    securityContext: kubernetes.SecurityContext | None = None
+    runK8sConfig: RunK8sConfig | None = None
 
     model_config = ConfigDict(extra="forbid")
 
 
 class RunLauncherConfig(BaseModel):
-    celeryK8sRunLauncher: Optional[CeleryK8sRunLauncherConfig] = None
-    k8sRunLauncher: Optional[K8sRunLauncherConfig] = None
-    customRunLauncher: Optional[ConfigurableClass] = None
+    celeryK8sRunLauncher: CeleryK8sRunLauncherConfig | None = None
+    k8sRunLauncher: K8sRunLauncherConfig | None = None
+    customRunLauncher: ConfigurableClass | None = None
 
 
 class RunLauncher(BaseModel):

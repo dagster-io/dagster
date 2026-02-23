@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Mapping
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import great_expectations as ge
 from dagster import (
@@ -30,7 +30,7 @@ from pydantic import Field
 
 @beta
 class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    ge_root_dir: Optional[str] = Field(
+    ge_root_dir: str | None = Field(
         default=None,
         description="The root directory for your Great Expectations project.",
     )
@@ -61,7 +61,7 @@ def ge_validation_op_factory(
     batch_identifiers: dict,
     input_dagster_type: DagsterType = DataFrame,  # default to pandas support
     runtime_method_type: Literal["batch_data", "path", "query"] = "batch_data",
-    extra_kwargs: Optional[Mapping[str, Any]] = None,
+    extra_kwargs: Mapping[str, Any] | None = None,
 ) -> OpDefinition:
     """Generates ops for interacting with `Great Expectations <https://greatexpectations.io/>`_.
 

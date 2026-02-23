@@ -1,7 +1,7 @@
 import {onError} from '@apollo/client/link/error';
 import {Observable} from '@apollo/client/utilities';
 import {Colors, FontFamily, showToast} from '@dagster-io/ui-components';
-import {GraphQLError} from 'graphql';
+import {GraphQLFormattedError} from 'graphql';
 import {ReactNode} from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
@@ -15,8 +15,8 @@ interface DagsterSerializableErrorInfo {
   context: DagsterSerializableErrorInfo | null;
 }
 
-type DagsterGraphQLError = GraphQLError & {
-  extensions:
+type DagsterGraphQLError = GraphQLFormattedError & {
+  extensions?:
     | {
         errorInfo?: DagsterSerializableErrorInfo;
       }

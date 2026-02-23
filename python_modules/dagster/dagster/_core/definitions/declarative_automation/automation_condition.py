@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, TypeVar, Union
 
 from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
@@ -119,7 +119,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def operator_type(self) -> OperatorType:
         return "identity"
 
-    def get_label(self) -> Optional[str]:
+    def get_label(self) -> str | None:
         return None
 
     def get_node_snapshot(self, unique_id: str) -> AutomationConditionNodeSnapshot:
@@ -134,7 +134,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
     def get_snapshot(
-        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+        self, *, parent_unique_id: str | None = None, index: int | None = None
     ) -> AutomationConditionSnapshot:
         """Returns a serializable snapshot of the entire AutomationCondition tree."""
         unique_id = self.get_node_unique_id(
@@ -150,9 +150,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def get_node_unique_id(
         self,
         *,
-        parent_unique_id: Optional[str],
-        index: Optional[int],
-        target_key: Optional[EntityKey],
+        parent_unique_id: str | None,
+        index: int | None,
+        target_key: EntityKey | None,
     ) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
         return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
@@ -160,9 +160,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def get_backcompat_node_unique_ids(
         self,
         *,
-        parent_unique_id: Optional[str] = None,
-        index: Optional[int] = None,
-        target_key: Optional[EntityKey] = None,
+        parent_unique_id: str | None = None,
+        index: int | None = None,
+        target_key: EntityKey | None = None,
     ) -> Sequence[str]:
         """Used for backwards compatibility when condition unique id logic changes."""
         return []
@@ -170,9 +170,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def get_node_unique_ids(
         self,
         *,
-        parent_unique_ids: Sequence[Optional[str]],
-        child_indices: Sequence[Optional[int]],
-        target_key: Optional[EntityKey],
+        parent_unique_ids: Sequence[str | None],
+        child_indices: Sequence[int | None],
+        target_key: EntityKey | None,
     ) -> Sequence[str]:
         unique_ids = []
         for parent_unique_id in parent_unique_ids:
@@ -194,7 +194,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return unique_ids
 
     def get_unique_id(
-        self, *, parent_node_unique_id: Optional[str] = None, index: Optional[int] = None
+        self, *, parent_node_unique_id: str | None = None, index: int | None = None
     ) -> str:
         """Returns a unique identifier for the entire subtree."""
         node_unique_id = self.get_node_unique_id(
@@ -497,7 +497,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @staticmethod
     def in_latest_time_window(
-        lookback_delta: Optional[datetime.timedelta] = None,
+        lookback_delta: datetime.timedelta | None = None,
     ) -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true when the target it is within the latest
         time window.
@@ -546,8 +546,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def executed_with_tags(
         *,
-        tag_keys: Optional[Set[str]] = None,
-        tag_values: Optional[Mapping[str, str]] = None,
+        tag_keys: Set[str] | None = None,
+        tag_values: Mapping[str, str] | None = None,
     ) -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true if the latest run that updated the target was
         launched from the declarative automation system.
@@ -568,8 +568,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def all_new_updates_have_run_tags(
         *,
-        tag_keys: Optional[Set[str]] = None,
-        tag_values: Optional[Mapping[str, str]] = None,
+        tag_keys: Set[str] | None = None,
+        tag_values: Mapping[str, str] | None = None,
     ) -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true if all new materializations since the
         previous tick were executed in runs with the provided tags. Can be used to prevent
@@ -594,8 +594,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def any_new_update_has_run_tags(
         *,
-        tag_keys: Optional[Set[str]] = None,
-        tag_values: Optional[Mapping[str, str]] = None,
+        tag_keys: Set[str] | None = None,
+        tag_values: Mapping[str, str] | None = None,
     ) -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true if any new materializations since the
         previous tick were executed in runs with the provided tags. Can be used to only allow
@@ -853,17 +853,17 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
     """Base class for AutomationConditions provided by the core dagster framework."""
 
-    label: Optional[str] = None
+    label: str | None = None
 
-    def get_label(self) -> Optional[str]:
+    def get_label(self) -> str | None:
         return self.label
 
     @public
-    def with_label(self, label: Optional[str]) -> Self:
+    def with_label(self, label: str | None) -> Self:
         """Returns a copy of this AutomationCondition with a human-readable label."""
         return copy(self, label=label)
 
-    def _get_stable_unique_id(self, target_key: Optional[EntityKey]) -> str:
+    def _get_stable_unique_id(self, target_key: EntityKey | None) -> str:
         """Returns an identifier that is stable regardless of where it exists in the broader condition tree.
         This should only be used for conditions that don't change their output based on what conditions are
         evaluated before them (i.e. they explicitly set their candidate subset to the entire subset).
@@ -891,8 +891,8 @@ class AutomationResult(Generic[T_EntityKey]):
         self,
         context: "AutomationContext",
         true_subset: EntitySubset[T_EntityKey],
-        cursor: Optional[str] = None,
-        child_results: Optional[Sequence["AutomationResult"]] = None,
+        cursor: str | None = None,
+        child_results: Sequence["AutomationResult"] | None = None,
         **kwargs,
     ):
         from dagster._core.definitions.declarative_automation.automation_context import (
@@ -929,7 +929,7 @@ class AutomationResult(Generic[T_EntityKey]):
         self._extra_state = check.opt_str_param(cursor, "cursor") or structured_cursor
 
         # used to enable the evaluator class to modify the evaluation in some edge cases
-        self._serializable_subset_override: Optional[SerializableEntitySubset] = None
+        self._serializable_subset_override: SerializableEntitySubset | None = None
 
     @property
     def key(self) -> T_EntityKey:
@@ -978,7 +978,7 @@ class AutomationResult(Generic[T_EntityKey]):
         return non_secure_md5_hash_str("".join(components).encode("utf-8"))
 
     @cached_property
-    def node_cursor(self) -> Optional[AutomationConditionNodeCursor]:
+    def node_cursor(self) -> AutomationConditionNodeCursor | None:
         """Cursor value storing information about this specific evaluation node, if required."""
         if not self.condition.requires_cursor:
             return None
@@ -1031,7 +1031,7 @@ class AutomationResult(Generic[T_EntityKey]):
             self.true_subset.convert_to_serializable_subset() or self._serializable_subset_override
         )
 
-    def compute_legacy_expected_data_time(self) -> Optional[datetime.datetime]:
+    def compute_legacy_expected_data_time(self) -> datetime.datetime | None:
         from dagster._core.definitions.freshness_based_auto_materialize import (
             get_expected_data_time_for_asset_key,
         )

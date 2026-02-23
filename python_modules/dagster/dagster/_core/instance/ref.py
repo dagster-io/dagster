@@ -53,8 +53,8 @@ def configurable_class_data(config_field: Mapping[str, Any]) -> ConfigurableClas
 
 
 def configurable_class_data_or_default(
-    config_value: Mapping[str, Any], field_name: str, default: Optional[ConfigurableClassData]
-) -> Optional[ConfigurableClassData]:
+    config_value: Mapping[str, Any], field_name: str, default: ConfigurableClassData | None
+) -> ConfigurableClassData | None:
     return (
         configurable_class_data(config_value[field_name])
         if config_value.get(field_name)
@@ -63,8 +63,8 @@ def configurable_class_data_or_default(
 
 
 def configurable_secrets_loader_data(
-    config_field: Mapping[str, Any], default: Optional[ConfigurableClassData]
-) -> Optional[ConfigurableClassData]:
+    config_field: Mapping[str, Any], default: ConfigurableClassData | None
+) -> ConfigurableClassData | None:
     if not config_field:
         return default
     elif "custom" in config_field:
@@ -74,12 +74,12 @@ def configurable_secrets_loader_data(
 
 
 def configurable_storage_data(
-    config_field: Mapping[str, Any], defaults: Mapping[str, Optional[ConfigurableClassData]]
-) -> Sequence[Optional[ConfigurableClassData]]:
+    config_field: Mapping[str, Any], defaults: Mapping[str, ConfigurableClassData | None]
+) -> Sequence[ConfigurableClassData | None]:
     storage_data: ConfigurableClassData
-    run_storage_data: Optional[ConfigurableClassData]
-    event_storage_data: Optional[ConfigurableClassData]
-    schedule_storage_data: Optional[ConfigurableClassData]
+    run_storage_data: ConfigurableClassData | None
+    event_storage_data: ConfigurableClassData | None
+    schedule_storage_data: ConfigurableClassData | None
 
     if not config_field:
         storage_data = check.not_none(defaults.get("storage"))
@@ -197,21 +197,21 @@ class InstanceRef(
         [
             ("local_artifact_storage_data", ConfigurableClassData),
             ("compute_logs_data", ConfigurableClassData),
-            ("scheduler_data", Optional[ConfigurableClassData]),
-            ("run_coordinator_data", Optional[ConfigurableClassData]),
-            ("run_launcher_data", Optional[ConfigurableClassData]),
+            ("scheduler_data", ConfigurableClassData | None),
+            ("run_coordinator_data", ConfigurableClassData | None),
+            ("run_launcher_data", ConfigurableClassData | None),
             ("settings", Mapping[str, object]),
             # Required for backwards compatibility, but going forward will be unused by new versions
             # of DagsterInstance, which instead will instead grab the constituent storages from the
             # unified `storage_data`, if it is populated.
-            ("run_storage_data", Optional[ConfigurableClassData]),
-            ("event_storage_data", Optional[ConfigurableClassData]),
-            ("schedule_storage_data", Optional[ConfigurableClassData]),
-            ("custom_instance_class_data", Optional[ConfigurableClassData]),
+            ("run_storage_data", ConfigurableClassData | None),
+            ("event_storage_data", ConfigurableClassData | None),
+            ("schedule_storage_data", ConfigurableClassData | None),
+            ("custom_instance_class_data", ConfigurableClassData | None),
             # unified storage field
-            ("storage_data", Optional[ConfigurableClassData]),
-            ("secrets_loader_data", Optional[ConfigurableClassData]),
-            ("defs_state_storage_data", Optional[ConfigurableClassData]),
+            ("storage_data", ConfigurableClassData | None),
+            ("secrets_loader_data", ConfigurableClassData | None),
+            ("defs_state_storage_data", ConfigurableClassData | None),
         ],
     )
 ):
@@ -224,17 +224,17 @@ class InstanceRef(
         cls,
         local_artifact_storage_data: ConfigurableClassData,
         compute_logs_data: ConfigurableClassData,
-        scheduler_data: Optional[ConfigurableClassData],
-        run_coordinator_data: Optional[ConfigurableClassData],
-        run_launcher_data: Optional[ConfigurableClassData],
+        scheduler_data: ConfigurableClassData | None,
+        run_coordinator_data: ConfigurableClassData | None,
+        run_launcher_data: ConfigurableClassData | None,
         settings: Mapping[str, object],
-        run_storage_data: Optional[ConfigurableClassData],
-        event_storage_data: Optional[ConfigurableClassData],
-        schedule_storage_data: Optional[ConfigurableClassData],
-        custom_instance_class_data: Optional[ConfigurableClassData] = None,
-        storage_data: Optional[ConfigurableClassData] = None,
-        secrets_loader_data: Optional[ConfigurableClassData] = None,
-        defs_state_storage_data: Optional[ConfigurableClassData] = None,
+        run_storage_data: ConfigurableClassData | None,
+        event_storage_data: ConfigurableClassData | None,
+        schedule_storage_data: ConfigurableClassData | None,
+        custom_instance_class_data: ConfigurableClassData | None = None,
+        storage_data: ConfigurableClassData | None = None,
+        secrets_loader_data: ConfigurableClassData | None = None,
+        defs_state_storage_data: ConfigurableClassData | None = None,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -278,7 +278,7 @@ class InstanceRef(
         )
 
     @staticmethod
-    def config_defaults(base_dir: str) -> Mapping[str, Optional[ConfigurableClassData]]:
+    def config_defaults(base_dir: str) -> Mapping[str, ConfigurableClassData | None]:
         default_run_storage_data = ConfigurableClassData(
             "dagster._core.storage.runs",
             "SqliteRunStorage",
@@ -342,7 +342,7 @@ class InstanceRef(
     def from_dir(
         base_dir: str,
         *,
-        config_dir: Optional[str] = None,
+        config_dir: str | None = None,
         config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
         overrides: Optional["DagsterInstanceOverrides"] = None,
     ) -> "InstanceRef":

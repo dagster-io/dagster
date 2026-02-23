@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Optional
 
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import failure_hook
@@ -28,8 +27,8 @@ def _source_fn(context: HookContext) -> str:
 def pagerduty_on_failure(
     severity: str,
     summary_fn: Callable[[HookContext], str] = _default_summary_fn,
-    dagit_base_url: Optional[str] = None,
-    webserver_base_url: Optional[str] = None,
+    dagit_base_url: str | None = None,
+    webserver_base_url: str | None = None,
 ) -> HookDefinition:
     """Create a hook on step failure events that will trigger a PagerDuty alert.
 

@@ -17,13 +17,13 @@ def get_instigation_ticks(
     instigator_origin_id: str,
     selector_id: str,
     batch_loader: Optional["RepositoryScopedBatchLoader"],
-    dayRange: Optional[int],
-    dayOffset: Optional[int],
-    limit: Optional[int],
-    cursor: Optional[str],
-    status_strings: Optional[Sequence[str]],
-    before: Optional[float],
-    after: Optional[float],
+    dayRange: int | None,
+    dayOffset: int | None,
+    limit: int | None,
+    cursor: str | None,
+    status_strings: Sequence[str] | None,
+    before: float | None,
+    after: float | None,
 ):
     from dagster_graphql.schema.instigation import GrapheneInstigationTick
 

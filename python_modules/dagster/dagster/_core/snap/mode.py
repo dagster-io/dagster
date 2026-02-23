@@ -1,6 +1,6 @@
 # Contains mode, resources, loggers
 from collections.abc import Sequence
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -36,20 +36,20 @@ class ModeDefSnap(
         "_ModeDefSnap",
         [
             ("name", str),
-            ("description", Optional[str]),
+            ("description", str | None),
             ("resource_def_snaps", Sequence["ResourceDefSnap"]),
             ("logger_def_snaps", Sequence["LoggerDefSnap"]),
-            ("root_config_key", Optional[str]),
+            ("root_config_key", str | None),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        description: Optional[str],
+        description: str | None,
         resource_def_snaps: Sequence["ResourceDefSnap"],
         logger_def_snaps: Sequence["LoggerDefSnap"],
-        root_config_key: Optional[str] = None,
+        root_config_key: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -85,14 +85,12 @@ class ResourceDefSnap(
         "_ResourceDefSnap",
         [
             ("name", str),
-            ("description", Optional[str]),
-            ("config_field_snap", Optional[ConfigFieldSnap]),
+            ("description", str | None),
+            ("config_field_snap", ConfigFieldSnap | None),
         ],
     )
 ):
-    def __new__(
-        cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]
-    ):
+    def __new__(cls, name: str, description: str | None, config_field_snap: ConfigFieldSnap | None):
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -123,14 +121,12 @@ class LoggerDefSnap(
         "_LoggerDefSnap",
         [
             ("name", str),
-            ("description", Optional[str]),
-            ("config_field_snap", Optional[ConfigFieldSnap]),
+            ("description", str | None),
+            ("config_field_snap", ConfigFieldSnap | None),
         ],
     )
 ):
-    def __new__(
-        cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]
-    ):
+    def __new__(cls, name: str, description: str | None, config_field_snap: ConfigFieldSnap | None):
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),

@@ -4,7 +4,7 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, cast  # noqa: UP035
 
 import dagster as dg
 import dagster._check as check
@@ -59,7 +59,7 @@ def get_loadable_target_origin(filename: str) -> LoadableTargetOrigin:
 
 
 def get_code_location_origin(
-    filename: str, location_name: Optional[str] = None
+    filename: str, location_name: str | None = None
 ) -> InProcessCodeLocationOrigin:
     return InProcessCodeLocationOrigin(
         loadable_target_origin=get_loadable_target_origin(filename),
@@ -94,7 +94,7 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 @contextmanager
 def get_workspace_request_context(
-    filenames: Sequence[str | tuple[str, str]], overrides: Optional[dict[str, Any]] = None
+    filenames: Sequence[str | tuple[str, str]], overrides: dict[str, Any] | None = None
 ):
     with dg.instance_for_test(
         overrides=overrides,
@@ -118,7 +118,7 @@ def get_workspace_request_context(
 
 
 @contextmanager
-def get_grpc_workspace_request_context(filename: str, instance_ref: Optional[InstanceRef] = None):
+def get_grpc_workspace_request_context(filename: str, instance_ref: InstanceRef | None = None):
     with (
         DagsterInstance.from_ref(instance_ref) if instance_ref else dg.instance_for_test()
     ) as instance:

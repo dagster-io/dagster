@@ -67,12 +67,12 @@ class DbtProjectArgs(dg.Resolvable):
     """Aligns with DbtProject.__new__."""
 
     project_dir: str
-    target_path: Optional[str] = None
-    profiles_dir: Optional[str] = None
-    profile: Optional[str] = None
-    target: Optional[str] = None
-    packaged_project_dir: Optional[str] = None
-    state_path: Optional[str] = None
+    target_path: str | None = None
+    profiles_dir: str | None = None
+    profile: str | None = None
+    target: str | None = None
+    packaged_project_dir: str | None = None
+    state_path: str | None = None
 
 
 def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
@@ -174,7 +174,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         ),
     ] = field(default_factory=list)
     op: Annotated[
-        Optional[OpSpec],
+        OpSpec | None,
         Resolver.default(
             description="Op related arguments to set on the generated @dbt_assets",
             examples=[
@@ -208,11 +208,11 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         ),
     ] = DBT_DEFAULT_SELECTOR
     translation: Annotated[
-        Optional[TranslationFn[Mapping[str, Any]]],
+        TranslationFn[Mapping[str, Any]] | None,
         TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
     ] = None
     translation_settings: Annotated[
-        Optional[DagsterDbtComponentTranslatorSettings],
+        DagsterDbtComponentTranslatorSettings | None,
         Resolver.default(
             description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
             examples=[
@@ -238,11 +238,11 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         )
 
     @property
-    def op_config_schema(self) -> Optional[type[dg.Config]]:
+    def op_config_schema(self) -> type[dg.Config] | None:
         return None
 
     @property
-    def config_cls(self) -> Optional[type[dg.Config]]:
+    def config_cls(self) -> type[dg.Config] | None:
         """Internal property that returns the config schema for the op.
 
         Delegates to op_config_schema for backwards compatibility and consistency
@@ -302,7 +302,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     @public
     def get_asset_spec(
-        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
     ) -> dg.AssetSpec:
         """Generates an AssetSpec for a given dbt node.
 
@@ -340,7 +340,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         manifest: Mapping[str, Any],
         unique_id: str,
         project: Optional["DbtProject"],
-    ) -> Optional[dg.AssetCheckSpec]:
+    ) -> dg.AssetCheckSpec | None:
         return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
 
     @cached_property
@@ -368,7 +368,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         self._project_manager.prepare(state_path)
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         project = self._project_manager.get_project(state_path)
 
@@ -521,13 +521,13 @@ class DbtProjectComponentTranslator(
     def __init__(
         self,
         component: DbtProjectComponent,
-        settings: Optional[DagsterDbtComponentTranslatorSettings],
+        settings: DagsterDbtComponentTranslatorSettings | None,
     ):
         self._component = component
         super().__init__(settings)
 
     def get_asset_spec(
-        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
     ) -> dg.AssetSpec:
         base_spec = super().get_asset_spec(manifest, unique_id, project)
         if self.component.translation is None:

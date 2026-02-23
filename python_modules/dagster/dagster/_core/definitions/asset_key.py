@@ -93,7 +93,7 @@ class AssetKey(IHaveNew):
         """
         return ASSET_KEY_DELIMITER.join([part.replace("/", "\\/") for part in self.path])
 
-    def to_python_identifier(self, suffix: Optional[str] = None) -> str:
+    def to_python_identifier(self, suffix: str | None = None) -> str:
         """Build a valid Python identifier based on the asset key that can be used for
         operation names or I/O manager keys.
         """
@@ -114,7 +114,7 @@ class AssetKey(IHaveNew):
         return AssetKey(to_assey_key_path(asset_key_string))
 
     @staticmethod
-    def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
+    def from_db_string(asset_key_string: str | None) -> Optional["AssetKey"]:
         if not asset_key_string:
             return None
         if asset_key_string[0] == "[":
@@ -182,8 +182,8 @@ CoercibleToAssetKeySubset: TypeAlias = str | Sequence[str]
 
 
 def check_opt_coercible_to_asset_key_prefix_param(
-    prefix: Optional[CoercibleToAssetKeyPrefix], param_name: str
-) -> Optional[Sequence[str]]:
+    prefix: CoercibleToAssetKeyPrefix | None, param_name: str
+) -> Sequence[str] | None:
     try:
         return key_prefix_from_coercible(prefix) if prefix is not None else None
     except check.CheckError:

@@ -1,7 +1,6 @@
 import datetime
 import os
 from functools import cached_property
-from typing import Optional
 
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils.warnings import emit_warning
@@ -65,7 +64,7 @@ def _create_dagster_update_check_enabled(context: DgContext) -> bool:
     )
 
 
-def _get_create_dagster_pypi_version_info(context: DgContext) -> Optional[_PyPiVersionInfo]:
+def _get_create_dagster_pypi_version_info(context: DgContext) -> _PyPiVersionInfo | None:
     if context.config.cli.verbose:
         context.log.info("Checking for the latest version of `create-dagster` on PyPI.")
     try:

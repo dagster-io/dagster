@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def _get_migration_error(
     graphene_info: "ResolveInfo",
-) -> Optional[GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError]:
+) -> GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError | None:
     if graphene_info.context.instance.schedule_storage is None:
         return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
             message="Instance does not have schedule storage configured, cannot fetch evaluations."
@@ -116,7 +116,7 @@ def fetch_asset_condition_evaluation_records_for_asset_key(
     graphene_info: "ResolveInfo",
     graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
     limit: int,
-    cursor: Optional[str],
+    cursor: str | None,
 ) -> GrapheneAssetConditionEvaluationRecordsOrError:
     """Fetch asset policy evaluations from storage."""
     migration_error = _get_migration_error(graphene_info)
