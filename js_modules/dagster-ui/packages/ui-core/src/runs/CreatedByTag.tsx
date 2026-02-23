@@ -1,7 +1,7 @@
 import {Box, Tag} from '@dagster-io/ui-components';
+import {UserDisplay} from '@shared/runs/UserDisplay';
 import {memo} from 'react';
 import {Link} from 'react-router-dom';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
 import {DagsterTag} from './RunTag';

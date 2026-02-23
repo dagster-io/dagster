@@ -5,7 +5,7 @@ import time
 from collections.abc import Mapping
 from enum import Enum
 from importlib.metadata import version
-from typing import IO, Any, Final, Optional
+from typing import IO, Any, Final
 
 import dagster
 import dagster._check as check
@@ -44,13 +44,13 @@ class AuthTypeEnum(Enum):
 class WorkspaceClientFactory:
     def __init__(
         self,
-        host: Optional[str],
-        token: Optional[str],
-        oauth_client_id: Optional[str],
-        oauth_client_secret: Optional[str],
-        azure_client_id: Optional[str],
-        azure_client_secret: Optional[str],
-        azure_tenant_id: Optional[str],
+        host: str | None,
+        token: str | None,
+        oauth_client_id: str | None,
+        oauth_client_secret: str | None,
+        azure_client_id: str | None,
+        azure_client_secret: str | None,
+        azure_tenant_id: str | None,
     ):
         """Initialize the Databricks Workspace client. Users may provide explicit credentials for a PAT, databricks
         service principal oauth credentials, or azure service principal credentials. If no credentials are provided,
@@ -140,12 +140,12 @@ class WorkspaceClientFactory:
 
     def _raise_if_multiple_auth_types(
         self,
-        token: Optional[str] = None,
-        oauth_client_id: Optional[str] = None,
-        oauth_client_secret: Optional[str] = None,
-        azure_client_id: Optional[str] = None,
-        azure_client_secret: Optional[str] = None,
-        azure_tenant_id: Optional[str] = None,
+        token: str | None = None,
+        oauth_client_id: str | None = None,
+        oauth_client_secret: str | None = None,
+        azure_client_id: str | None = None,
+        azure_client_secret: str | None = None,
+        azure_tenant_id: str | None = None,
     ):
         more_than_one_auth_type_provided = (
             sum(
@@ -168,12 +168,12 @@ class WorkspaceClientFactory:
 
     @staticmethod
     def _get_auth_type(
-        token: Optional[str],
-        oauth_client_id: Optional[str],
-        oauth_client_secret: Optional[str],
-        azure_client_id: Optional[str],
-        azure_client_secret: Optional[str],
-        azure_tenant_id: Optional[str],
+        token: str | None,
+        oauth_client_id: str | None,
+        oauth_client_secret: str | None,
+        azure_client_id: str | None,
+        azure_client_secret: str | None,
+        azure_tenant_id: str | None,
     ) -> AuthTypeEnum:
         """Get the type of authentication used to initialize the WorkspaceClient."""
         if oauth_client_id and oauth_client_secret:
@@ -188,11 +188,11 @@ class WorkspaceClientFactory:
 
     @staticmethod
     def _assert_valid_credentials_combos(
-        oauth_client_id: Optional[str] = None,
-        oauth_client_secret: Optional[str] = None,
-        azure_client_id: Optional[str] = None,
-        azure_client_secret: Optional[str] = None,
-        azure_tenant_id: Optional[str] = None,
+        oauth_client_id: str | None = None,
+        oauth_client_secret: str | None = None,
+        azure_client_id: str | None = None,
+        azure_client_secret: str | None = None,
+        azure_tenant_id: str | None = None,
     ):
         """Ensure that all required credentials are provided for the given auth type."""
         if (oauth_client_id and not oauth_client_secret) or (
@@ -216,7 +216,7 @@ class WorkspaceClientFactory:
         return WorkspaceClient(config=self.config)
 
     @staticmethod
-    def _resolve_host(host: Optional[str]) -> str:
+    def _resolve_host(host: str | None) -> str:
         host = host if host else os.getenv("DATABRICKS_HOST")
         if host is None:
             raise ValueError(
@@ -231,14 +231,14 @@ class DatabricksClient:
 
     def __init__(
         self,
-        host: Optional[str] = None,
-        token: Optional[str] = None,
-        oauth_client_id: Optional[str] = None,
-        oauth_client_secret: Optional[str] = None,
-        azure_client_id: Optional[str] = None,
-        azure_client_secret: Optional[str] = None,
-        azure_tenant_id: Optional[str] = None,
-        workspace_id: Optional[str] = None,
+        host: str | None = None,
+        token: str | None = None,
+        oauth_client_id: str | None = None,
+        oauth_client_secret: str | None = None,
+        azure_client_id: str | None = None,
+        azure_client_secret: str | None = None,
+        azure_tenant_id: str | None = None,
+        workspace_id: str | None = None,
     ):
         self.host = host
         self.workspace_id = workspace_id
@@ -415,13 +415,13 @@ class DatabricksJobRunner:
 
     def __init__(
         self,
-        host: Optional[str] = None,
-        token: Optional[str] = None,
-        oauth_client_id: Optional[str] = None,
-        oauth_client_secret: Optional[str] = None,
-        azure_client_id: Optional[str] = None,
-        azure_client_secret: Optional[str] = None,
-        azure_tenant_id: Optional[str] = None,
+        host: str | None = None,
+        token: str | None = None,
+        oauth_client_id: str | None = None,
+        oauth_client_secret: str | None = None,
+        azure_client_id: str | None = None,
+        azure_client_secret: str | None = None,
+        azure_tenant_id: str | None = None,
         poll_interval_sec: float = 5,
         max_wait_time_sec: float = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
@@ -579,7 +579,7 @@ class DatabricksJobRunner:
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
-    ) -> Optional[tuple[Optional[str], Optional[str]]]:
+    ) -> tuple[str | None, str | None] | None:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
         # Run.cluster_instance can be None. In that case, fall back to cluster instance on first
@@ -623,7 +623,7 @@ class DatabricksJobRunner:
         filename: str,
         waiter_delay: int = 10,
         waiter_max_attempts: int = 10,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Attempt up to `waiter_max_attempts` attempts to get logs from DBFS."""
         path = "/".join([prefix, cluster_id, "driver", filename])
         log.info(f"Retrieving logs from {path}")

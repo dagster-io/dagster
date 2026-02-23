@@ -3,7 +3,7 @@ import inspect
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -95,19 +95,19 @@ def _build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
     fetch_column_metadata: bool,
-    poll_timeout: Optional[float],
+    poll_timeout: float | None,
     poll_interval: float,
-    io_manager_key: Optional[str],
-    asset_key_prefix: Optional[Sequence[str]],
-    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]],
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]],
-    resource_defs: Optional[Mapping[str, ResourceDefinition]],
-    group_name: Optional[str],
+    io_manager_key: str | None,
+    asset_key_prefix: Sequence[str] | None,
+    metadata_by_table_name: Mapping[str, RawMetadataMapping] | None,
+    table_to_asset_key_map: Mapping[str, AssetKey] | None,
+    resource_defs: Mapping[str, ResourceDefinition] | None,
+    group_name: str | None,
     infer_missing_tables: bool,
-    op_tags: Optional[Mapping[str, Any]],
-    asset_tags: Optional[Mapping[str, Any]],
+    op_tags: Mapping[str, Any] | None,
+    asset_tags: Mapping[str, Any] | None,
     max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
-    translator: Optional[type[DagsterFivetranTranslator]] = None,
+    translator: type[DagsterFivetranTranslator] | None = None,
     connection_metadata: Optional["FivetranConnectionMetadata"] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
@@ -231,13 +231,13 @@ def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
     poll_interval: float = DEFAULT_POLL_INTERVAL,
-    poll_timeout: Optional[float] = None,
-    io_manager_key: Optional[str] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
-    group_name: Optional[str] = None,
+    poll_timeout: float | None = None,
+    io_manager_key: str | None = None,
+    asset_key_prefix: Sequence[str] | None = None,
+    metadata_by_table_name: Mapping[str, RawMetadataMapping] | None = None,
+    group_name: str | None = None,
     infer_missing_tables: bool = False,
-    op_tags: Optional[Mapping[str, Any]] = None,
+    op_tags: Mapping[str, Any] | None = None,
     fetch_column_metadata: bool = True,
 ) -> Sequence[AssetsDefinition]:
     """Build a set of assets for a given Fivetran connector.
@@ -335,17 +335,17 @@ class FivetranConnectionMetadata(
             ("connector_id", str),
             ("connector_url", str),
             ("schemas", Mapping[str, Any]),
-            ("database", Optional[str]),
-            ("service", Optional[str]),
+            ("database", str | None),
+            ("service", str | None),
         ],
     )
 ):
     def build_asset_defn_metadata(
         self,
         key_prefix: Sequence[str],
-        group_name: Optional[str],
+        group_name: str | None,
         table_to_asset_key_fn: Callable[[str], AssetKey],
-        io_manager_key: Optional[str] = None,
+        io_manager_key: str | None = None,
     ) -> AssetsDefinitionCacheableData:
         schema_table_meta: dict[str, RawMetadataMapping] = {}
         if "schemas" in self.schemas:
@@ -404,14 +404,14 @@ def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Mapping[str, ResourceDefinition],
     poll_interval: float,
-    poll_timeout: Optional[float],
+    poll_timeout: float | None,
     fetch_column_metadata: bool,
-    translator: Optional[type[DagsterFivetranTranslator]] = None,
+    translator: type[DagsterFivetranTranslator] | None = None,
 ) -> AssetsDefinition:
     metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
     connector_id = cast("str", metadata["connector_id"])
-    io_manager_key = cast("Optional[str]", metadata["io_manager_key"])
-    storage_kind = cast("Optional[str]", metadata.get("storage_kind"))
+    io_manager_key = cast("str | None", metadata["io_manager_key"])
+    storage_kind = cast("str | None", metadata.get("storage_kind"))
 
     connection_metadata = FivetranConnectionMetadata.from_serializable_repr(
         metadata["connection_metadata"]
@@ -446,17 +446,17 @@ def _build_fivetran_assets_from_metadata(
 class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        fivetran_resource_def: Union[FivetranResource, ResourceDefinition],
+        fivetran_resource_def: FivetranResource | ResourceDefinition,
         key_prefix: Sequence[str],
-        connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
-        connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
-        connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
-        connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
-        destination_ids: Optional[list[str]],
+        connector_to_group_fn: Callable[[str], str | None] | None,
+        connector_filter: Callable[[FivetranConnectionMetadata], bool] | None,
+        connector_to_io_manager_key_fn: Callable[[str], str | None] | None,
+        connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] | None,
+        destination_ids: list[str] | None,
         poll_interval: float,
-        poll_timeout: Optional[float],
+        poll_timeout: float | None,
         fetch_column_metadata: bool,
-        translator: Optional[type[DagsterFivetranTranslator]] = None,
+        translator: type[DagsterFivetranTranslator] | None = None,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -591,20 +591,18 @@ _clean_name = clean_name_lower
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
 def load_assets_from_fivetran_instance(
-    fivetran: Union[FivetranResource, ResourceDefinition],
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = None,
-    io_manager_key: Optional[str] = None,
-    connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
-    connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
-    connector_to_asset_key_fn: Optional[
-        Callable[[FivetranConnectionMetadata, str], AssetKey]
-    ] = None,
-    destination_ids: Optional[list[str]] = None,
+    fivetran: FivetranResource | ResourceDefinition,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    connector_to_group_fn: Callable[[str], str | None] | None = None,
+    io_manager_key: str | None = None,
+    connector_to_io_manager_key_fn: Callable[[str], str | None] | None = None,
+    connector_filter: Callable[[FivetranConnectionMetadata], bool] | None = None,
+    connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] | None = None,
+    destination_ids: list[str] | None = None,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
-    poll_timeout: Optional[float] = None,
+    poll_timeout: float | None = None,
     fetch_column_metadata: bool = True,
-    translator: Optional[type[DagsterFivetranTranslator]] = None,
+    translator: type[DagsterFivetranTranslator] | None = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -717,8 +715,8 @@ def load_assets_from_fivetran_instance(
 def build_fivetran_assets_definitions(
     *,
     workspace: FivetranWorkspace,
-    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-    connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+    dagster_fivetran_translator: DagsterFivetranTranslator | None = None,
+    connector_selector_fn: ConnectorSelectorFn | None = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connectors in the Fivetran workspace.
 

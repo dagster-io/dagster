@@ -3,7 +3,7 @@ from asyncio import AbstractEventLoop
 from collections import deque
 from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
-from typing import AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, cast  # noqa: UP035
 
 from dagster_shared.utils.timing import format_duration
 
@@ -123,11 +123,11 @@ def _core_resource_initialization_event_generator(
     resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
     resource_managers: deque[EventGenerationManager],
-    execution_plan: Optional[ExecutionPlan],
-    dagster_run: Optional[DagsterRun],
-    resource_keys_to_init: Optional[AbstractSet[str]],
-    instance: Optional[DagsterInstance],
-    emit_persistent_events: Optional[bool],
+    execution_plan: ExecutionPlan | None,
+    dagster_run: DagsterRun | None,
+    resource_keys_to_init: AbstractSet[str] | None,
+    instance: DagsterInstance | None,
+    emit_persistent_events: bool | None,
     event_loop,
     job_def: Optional["JobDefinition"] = None,
 ):
@@ -504,7 +504,7 @@ def get_required_resource_keys_for_step(
 
 
 def _wrapped_resource_iterator(
-    resource_or_gen: Union[Any, Generator[Any, None, None]],
+    resource_or_gen: Any | Generator[Any, None, None],
 ) -> Generator[Any, None, None]:
     """Returns an iterator which yields a single item, which is the resource.
 

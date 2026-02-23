@@ -3,7 +3,7 @@ import sys
 import threading
 import time
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
@@ -46,20 +46,20 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def __init__(
         self,
         loadable_target_origin: LoadableTargetOrigin,
-        fixed_server_id: Optional[str],
-        container_image: Optional[str],
-        container_context: Optional[dict],
+        fixed_server_id: str | None,
+        container_image: str | None,
+        container_context: dict | None,
         inject_env_vars_from_instance: bool,
-        location_name: Optional[str],
+        location_name: str | None,
         log_level: str,
         startup_timeout: int,
         server_termination_event: threading.Event,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: InstanceRef | None,
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
         heartbeat_ttl: int,
-        defs_state_info: Optional[DefsStateInfo],
+        defs_state_info: DefsStateInfo | None,
     ):
         super().__init__()
 

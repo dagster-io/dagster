@@ -1,5 +1,4 @@
 from collections.abc import Iterable, Sequence
-from typing import Optional
 
 from dagster_shared.serdes.serdes import deserialize_value
 
@@ -71,8 +70,8 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool:
         return True
 
@@ -91,7 +90,7 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
 
     @classmethod
     def create_empty_subset(
-        cls, partitions_def: Optional[PartitionsDefinition] = None
+        cls, partitions_def: PartitionsDefinition | None = None
     ) -> "KeyRangesPartitionsSubset":
         return KeyRangesPartitionsSubset(
             key_ranges=[], partitions_snap=PartitionsSnap.from_def(check.not_none(partitions_def))

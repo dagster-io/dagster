@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._annotations import public
@@ -30,9 +30,9 @@ class InitLoggerContext:
     def __init__(
         self,
         logger_config: Any,
-        logger_def: Optional[LoggerDefinition] = None,
-        job_def: Optional[JobDefinition] = None,
-        run_id: Optional[str] = None,
+        logger_def: LoggerDefinition | None = None,
+        job_def: JobDefinition | None = None,
+        run_id: str | None = None,
     ):
         self._logger_config = logger_config
         self._job_def = check.opt_inst_param(job_def, "job_def", JobDefinition)
@@ -48,19 +48,19 @@ class InitLoggerContext:
         return self._logger_config
 
     @property
-    def job_def(self) -> Optional[JobDefinition]:
+    def job_def(self) -> JobDefinition | None:
         """The job definition currently being executed."""
         return self._job_def
 
     @public
     @property
-    def logger_def(self) -> Optional[LoggerDefinition]:
+    def logger_def(self) -> LoggerDefinition | None:
         """The logger definition for the logger being constructed."""
         return self._logger_def
 
     @public
     @property
-    def run_id(self) -> Optional[str]:
+    def run_id(self) -> str | None:
         """The ID for this run of the job."""
         return self._run_id
 
@@ -74,7 +74,7 @@ class UnboundInitLoggerContext(InitLoggerContext):
     and it is subsumed into an `InitLoggerContext`, which contains the logger_def validated against.
     """
 
-    def __init__(self, logger_config: Any, job_def: Optional[JobDefinition]):
+    def __init__(self, logger_config: Any, job_def: JobDefinition | None):
         super().__init__(logger_config, logger_def=None, job_def=job_def, run_id=None)
 
     @property
@@ -84,5 +84,5 @@ class UnboundInitLoggerContext(InitLoggerContext):
         )
 
     @property
-    def run_id(self) -> Optional[str]:
+    def run_id(self) -> str | None:
         return RUN_ID_PLACEHOLDER

@@ -54,7 +54,7 @@ def test_python_object_type_with_custom_type_check():
 def test_tuple_union_typing_type():
     UnionType = dg.PythonObjectDagsterType(python_type=(str, int, float))
 
-    assert UnionType.typing_type == typing.Union[str, int, float]
+    assert UnionType.typing_type == typing.Union[str, int, float]  # noqa: UP007
 
 
 def test_nullable_python_object_type():

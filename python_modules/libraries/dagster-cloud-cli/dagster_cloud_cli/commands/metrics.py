@@ -3,7 +3,6 @@ import time
 from contextvars import ContextVar
 from enum import Enum
 from functools import wraps
-from typing import Optional
 
 from dagster_cloud_cli import gql
 from dagster_cloud_cli.types import CliEventTags, CliEventType
@@ -61,7 +60,7 @@ def instrument_add_tags(tags: list[Enum]):
     mark_cli_event_context_tags.set(context_tags + new_tags)
 
 
-def instrument(event_type: CliEventType, tags: Optional[list[Enum]] = None):
+def instrument(event_type: CliEventType, tags: list[Enum] | None = None):
     str_tags = [str(tag.value) for tag in tags or []]
     str_tags.append(str(get_source().value))
 

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any, TypeAlias
 
 import polars as pl
 import pyarrow as pa
@@ -13,13 +13,13 @@ from dagster_deltalake.handler import (
 )
 from dagster_deltalake.io_manager import DeltaLakeIOManager, TableConnection
 
-PolarsTypes = Union[pl.DataFrame, pl.LazyFrame]
+PolarsTypes: TypeAlias = pl.DataFrame | pl.LazyFrame
 
 
 class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
     def from_arrow(
         self,
-        obj: Union[ds.Dataset, pa.RecordBatchReader],
+        obj: ds.Dataset | pa.RecordBatchReader,
         target_type: type[PolarsTypes],
     ) -> PolarsTypes:
         if isinstance(obj, pa.RecordBatchReader):
@@ -69,5 +69,5 @@ class DeltaLakePolarsIOManager(DeltaLakeIOManager):
         return [DeltaLakePolarsTypeHandler(), DeltaLakePyArrowTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return pl.DataFrame

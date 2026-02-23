@@ -92,8 +92,8 @@ class AssetGraphView(LoadingContext):
     def for_test(
         defs: "Definitions",
         instance: Optional["DagsterInstance"] = None,
-        effective_dt: Optional[datetime] = None,
-        last_event_id: Optional[int] = None,
+        effective_dt: datetime | None = None,
+        last_event_id: int | None = None,
     ):
         from dagster._core.instance import DagsterInstance
 
@@ -148,7 +148,7 @@ class AssetGraphView(LoadingContext):
         return self._temporal_context.effective_dt
 
     @property
-    def last_event_id(self) -> Optional[int]:
+    def last_event_id(self) -> int | None:
         return self._temporal_context.last_event_id
 
     @property
@@ -316,7 +316,7 @@ class AssetGraphView(LoadingContext):
     @use_partition_loading_context
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
-    ) -> Optional[EntitySubset[T_EntityKey]]:
+    ) -> EntitySubset[T_EntityKey] | None:
         key = serializable_subset.key
         if self.asset_graph.has(key) and serializable_subset.is_compatible_with_partitions_def(
             self._get_partitions_def(key)
@@ -515,7 +515,7 @@ class AssetGraphView(LoadingContext):
 
     @use_partition_loading_context
     def compute_latest_time_window_subset(
-        self, asset_key: AssetKey, lookback_delta: Optional[timedelta] = None
+        self, asset_key: AssetKey, lookback_delta: timedelta | None = None
     ) -> EntitySubset[AssetKey]:
         """Compute the subset of the asset which exists within the latest time partition window. If
         the asset has no time dimension, this will always return the full subset. If
@@ -839,7 +839,7 @@ class AssetGraphView(LoadingContext):
         )
 
     async def _expensively_filter_entity_subset(
-        self, subset: EntitySubset, filter_fn: Callable[[Optional[str]], Awaitable[bool]]
+        self, subset: EntitySubset, filter_fn: Callable[[str | None], Awaitable[bool]]
     ) -> EntitySubset:
         if subset.is_partitioned:
             return subset.compute_intersection_with_partition_keys(
@@ -854,7 +854,7 @@ class AssetGraphView(LoadingContext):
 
     async def _compute_latest_check_run_matches(
         self,
-        partition_key: Optional[str],
+        partition_key: str | None,
         query_key: AssetCheckKey,
         filter_fn: Callable[["RunRecord"], bool],
     ) -> bool:
@@ -872,7 +872,7 @@ class AssetGraphView(LoadingContext):
 
     async def _compute_latest_asset_run_matches(
         self,
-        partition_key: Optional[str],
+        partition_key: str | None,
         query_key: AssetKey,
         filter_fn: Callable[["RunRecord"], bool],
     ) -> bool:
@@ -914,7 +914,7 @@ class AssetGraphView(LoadingContext):
         )
 
     async def _compute_updated_since_cursor_subset(
-        self, key: AssetKey, cursor: Optional[int], require_data_version_update: bool = False
+        self, key: AssetKey, cursor: int | None, require_data_version_update: bool = False
     ) -> EntitySubset[AssetKey]:
         value = self._queryer.get_asset_subset_updated_after_cursor(
             asset_key=key,

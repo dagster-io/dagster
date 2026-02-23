@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster_dbt import DagsterDbtTranslator, DbtProject
@@ -17,7 +17,7 @@ def get_dbt_cloud_assets() -> dg.AssetsDefinition:
             self,
             manifest: Mapping[str, Any],
             unique_id: str,
-            project: Optional[DbtProject],
+            project: DbtProject | None,
         ) -> dg.AssetSpec:
             default_spec = super().get_asset_spec(
                 manifest=manifest, unique_id=unique_id, project=project

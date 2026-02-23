@@ -1,7 +1,7 @@
 import os
 import posixpath
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 DEFAULT_FILE_EXCLUDE_PATTERNS: list[str] = [
     "__pycache__",
@@ -34,9 +34,9 @@ def scaffold_subtree(
     *,
     path: Path,
     project_template_path: Path,
-    excludes: Optional[list[str]] = None,
+    excludes: list[str] | None = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""

@@ -1,6 +1,6 @@
 import threading
 from functools import lru_cache
-from typing import Any, Optional, TypeAlias, Union
+from typing import Any, TypeAlias
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -24,14 +24,14 @@ SqlAlchemyQuery: TypeAlias = Any
 # Stand-in for a typed row object, which is only available in sqlalchemy 2+
 SqlAlchemyRow: TypeAlias = Any
 
-AlembicVersion: TypeAlias = tuple[Optional[str], Optional[Union[str, tuple[str, ...]]]]
+AlembicVersion: TypeAlias = tuple[str | None, str | tuple[str, ...] | None]
 
 
 @lru_cache(maxsize=3)  # run, event, and schedule storages
 def get_alembic_config(
     dunder_file: str,
     config_path: str = "alembic/alembic.ini",
-    script_location: Optional[str] = None,
+    script_location: str | None = None,
 ) -> Config:
     if not script_location:
         script_location = ALEMBIC_SCRIPTS_LOCATION
@@ -42,7 +42,7 @@ def get_alembic_config(
 
 
 def run_alembic_upgrade(
-    alembic_config: Config, conn: Connection, run_id: Optional[str] = None, rev: str = "head"
+    alembic_config: Config, conn: Connection, run_id: str | None = None, rev: str = "head"
 ) -> None:
     alembic_config.attributes["connection"] = conn
     alembic_config.attributes["run_id"] = run_id
@@ -50,7 +50,7 @@ def run_alembic_upgrade(
 
 
 def run_alembic_downgrade(
-    alembic_config: Config, conn: Connection, rev: str, run_id: Optional[str] = None
+    alembic_config: Config, conn: Connection, rev: str, run_id: str | None = None
 ) -> None:
     alembic_config.attributes["connection"] = conn
     alembic_config.attributes["run_id"] = run_id

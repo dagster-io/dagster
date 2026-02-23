@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import dagster._check as check
 import docker
@@ -115,7 +115,7 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
 class DockerStepHandler(StepHandler):
     def __init__(
         self,
-        image: Optional[str],
+        image: str | None,
         container_context: DockerContainerContext,
     ):
         super().__init__()

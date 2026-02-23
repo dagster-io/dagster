@@ -1,7 +1,6 @@
 """Run metadata schema definitions."""
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -24,9 +23,9 @@ class DgApiRun(BaseModel):
     id: str
     status: DgApiRunStatus
     created_at: float  # Unix timestamp (seconds since epoch)
-    started_at: Optional[float] = None  # Unix timestamp (seconds since epoch)
-    ended_at: Optional[float] = None  # Unix timestamp (seconds since epoch)
-    job_name: Optional[str] = None
+    started_at: float | None = None  # Unix timestamp (seconds since epoch)
+    ended_at: float | None = None  # Unix timestamp (seconds since epoch)
+    job_name: str | None = None
 
     class Config:
         from_attributes = True

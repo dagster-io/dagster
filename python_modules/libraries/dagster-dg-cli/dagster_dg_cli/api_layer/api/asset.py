@@ -1,7 +1,7 @@
 """Asset endpoints - REST-like interface."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.asset import (
     get_dg_plus_api_asset_via_graphql,
@@ -21,9 +21,9 @@ class DgApiAssetApi:
 
     def list_assets(
         self,
-        limit: Optional[int] = 50,
-        cursor: Optional[str] = None,
-        view: Optional[str] = None,
+        limit: int | None = 50,
+        cursor: str | None = None,
+        view: str | None = None,
     ) -> "DgApiAssetList":
         """List assets with cursor-based pagination and optional view."""
         from dagster_dg_cli.cli.api.asset import DG_API_MAX_ASSET_LIMIT
@@ -43,7 +43,7 @@ class DgApiAssetApi:
         else:
             return list_dg_plus_api_assets_via_graphql(self.client, limit=limit, cursor=cursor)
 
-    def get_asset(self, asset_key: str, view: Optional[str] = None) -> "DgApiAsset":
+    def get_asset(self, asset_key: str, view: str | None = None) -> "DgApiAsset":
         """Get single asset by slash-separated key (e.g., 'foo/bar') with optional view."""
         # Parse "foo/bar" to ["foo", "bar"]
         asset_key_parts = asset_key.split("/")

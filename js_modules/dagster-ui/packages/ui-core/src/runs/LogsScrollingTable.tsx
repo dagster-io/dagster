@@ -52,8 +52,8 @@ export const LogsScrollingTable = (props: Props) => {
 
     const onScroll = () => {
       const totalHeight = virtualizer.getTotalSize();
-      const rectHeight = virtualizer.scrollRect.height;
-      const scrollOffset = virtualizer.scrollOffset;
+      const rectHeight = virtualizer.scrollRect?.height ?? 0;
+      const scrollOffset = virtualizer.scrollOffset ?? 0;
 
       // If we're within a certain threshold of the maximum scroll depth, consider this
       // to mean that the user wants to pin scrolling to the bottom.

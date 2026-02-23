@@ -2,7 +2,7 @@ import logging
 import time
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 from urllib.parse import quote, urlencode
 
 import alembic.config
@@ -56,7 +56,7 @@ def get_conn_string(
     hostname: str,
     db_name: str,
     port: str = "5432",
-    params: Optional[Mapping[str, object]] = None,
+    params: Mapping[str, object] | None = None,
     scheme: str = "postgresql",
 ) -> str:
     uri = f"{scheme}://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
@@ -148,7 +148,7 @@ def wait_for_connection(conn_string: str, retry_limit: int = 5, retry_wait: floa
 
 
 def pg_alembic_config(
-    dunder_file: str, script_location: Optional[str] = None
+    dunder_file: str, script_location: str | None = None
 ) -> alembic.config.Config:
     return get_alembic_config(
         dunder_file, config_path="../alembic/alembic.ini", script_location=script_location

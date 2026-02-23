@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 def get_execution_period_for_policy(
     freshness_policy: LegacyFreshnessPolicy,
-    effective_data_time: Optional[datetime.datetime],
+    effective_data_time: datetime.datetime | None,
     current_time: datetime.datetime,
 ) -> TimeWindow:
     if freshness_policy.cron_schedule:
@@ -67,11 +67,11 @@ def get_execution_period_for_policy(
 
 
 def get_execution_period_and_evaluation_data_for_policies(
-    local_policy: Optional[LegacyFreshnessPolicy],
+    local_policy: LegacyFreshnessPolicy | None,
     policies: AbstractSet[LegacyFreshnessPolicy],
-    effective_data_time: Optional[datetime.datetime],
+    effective_data_time: datetime.datetime | None,
     current_time: datetime.datetime,
-) -> tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
+) -> tuple[TimeWindow | None, Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
@@ -119,7 +119,7 @@ def get_execution_period_and_evaluation_data_for_policies(
 
 def get_expected_data_time_for_asset_key(
     context: "LegacyRuleEvaluationContext", will_materialize: bool
-) -> Optional[datetime.datetime]:
+) -> datetime.datetime | None:
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, cast
+from typing import NamedTuple, cast
 
 import dagster._check as check
 from dagster._annotations import beta, public
@@ -25,16 +25,16 @@ class InferSingleToMultiDimensionDepsResult(
         "_InferSingleToMultiDimensionDepsResult",
         [
             ("can_infer", bool),
-            ("inference_failure_reason", Optional[str]),
-            ("dimension_dependency", Optional[DimensionDependency]),
+            ("inference_failure_reason", str | None),
+            ("dimension_dependency", DimensionDependency | None),
         ],
     )
 ):
     def __new__(
         cls,
         can_infer: bool,
-        inference_failure_reason: Optional[str] = None,
-        dimension_dependency: Optional[DimensionDependency] = None,
+        inference_failure_reason: str | None = None,
+        dimension_dependency: DimensionDependency | None = None,
     ):
         if can_infer and dimension_dependency is None:
             check.failed("dimension_dependency must be provided if can_infer is True")
@@ -52,7 +52,7 @@ class InferSingleToMultiDimensionDepsResult(
 def get_infer_single_to_multi_dimension_deps_result(
     upstream_partitions_def: PartitionsDefinition,
     downstream_partitions_def: PartitionsDefinition,
-    partition_dimension_name: Optional[str] = None,
+    partition_dimension_name: str | None = None,
 ) -> InferSingleToMultiDimensionDepsResult:
     from dagster._core.definitions.partitions.mapping import TimeWindowPartitionMapping
 
@@ -165,7 +165,7 @@ class MultiToSingleDimensionPartitionMapping(
     BaseMultiPartitionMapping,
     PartitionMapping,
     NamedTuple(
-        "_MultiToSingleDimensionPartitionMapping", [("partition_dimension_name", Optional[str])]
+        "_MultiToSingleDimensionPartitionMapping", [("partition_dimension_name", str | None)]
     ),
 ):
     """Defines a correspondence between an single-dimensional partitions definition
@@ -183,7 +183,7 @@ class MultiToSingleDimensionPartitionMapping(
             MultiPartitionsDefinition that matches the single-dimension partitions definition.
     """
 
-    def __new__(cls, partition_dimension_name: Optional[str] = None):
+    def __new__(cls, partition_dimension_name: str | None = None):
         return super().__new__(
             cls,
             partition_dimension_name=check.opt_str_param(
@@ -202,7 +202,7 @@ class MultiToSingleDimensionPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_def: PartitionsDefinition | None,
     ):
         if not downstream_partitions_def:
             raise DagsterInvalidDefinitionError(

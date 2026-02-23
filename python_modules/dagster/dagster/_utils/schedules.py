@@ -4,7 +4,7 @@ import functools
 import math
 import re
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._time import get_current_datetime, get_timezone
@@ -71,7 +71,7 @@ def is_valid_cron_string(cron_string: str) -> bool:
     return True
 
 
-def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
+def is_valid_cron_schedule(cron_schedule: str | Sequence[str]) -> bool:
     return (
         is_valid_cron_string(cron_schedule)
         if isinstance(cron_schedule, str)
@@ -227,7 +227,7 @@ def _find_hourly_schedule_time(
 def _find_daily_schedule_time(
     minute: int,
     hour: int,
-    days_of_week: Optional[Sequence[int]],
+    days_of_week: Sequence[int] | None,
     date: datetime.datetime,
     ascending: bool,
     already_on_boundary: bool,
@@ -372,10 +372,10 @@ def _find_monthly_schedule_time(
 
 
 def _find_schedule_time(
-    minutes: Optional[Sequence[int]],
-    hour: Optional[int],
-    day_of_month: Optional[int],
-    days_of_week: Optional[Sequence[int]],
+    minutes: Sequence[int] | None,
+    hour: int | None,
+    day_of_month: int | None,
+    days_of_week: Sequence[int] | None,
     schedule_type: "ScheduleType",
     date: datetime.datetime,
     ascending: bool,
@@ -624,7 +624,7 @@ def _has_out_of_range_cron_interval_str(cron_string: str):
     return False
 
 
-def has_out_of_range_cron_interval(cron_schedule: Union[str, Sequence[str]]):
+def has_out_of_range_cron_interval(cron_schedule: str | Sequence[str]):
     """Utility function to detect cron schedules like '*/90 * * * *', which are valid cron schedules
     but which evaluate to once every hour, not once every 90 minutes as might be expected.  This is
     useful to detect so that we can issue warnings or some other kind of feedback to the user.  This
@@ -641,7 +641,7 @@ def has_out_of_range_cron_interval(cron_schedule: Union[str, Sequence[str]]):
 def cron_string_iterator(
     start_timestamp: float,
     cron_string: str,
-    execution_timezone: Optional[str],
+    execution_timezone: str | None,
     ascending: bool = True,
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
@@ -683,7 +683,7 @@ def cron_string_iterator(
         isinstance(cron_part, int) for cron_part in cron_parts[4]
     )
 
-    known_schedule_type: Optional[ScheduleType] = None
+    known_schedule_type: ScheduleType | None = None
 
     expected_hour = None
     expected_minutes = None
@@ -814,15 +814,15 @@ def _croniter_string_iterator(
 def reverse_cron_string_iterator(
     end_timestamp: float,
     cron_string: str,
-    execution_timezone: Optional[str],
+    execution_timezone: str | None,
 ) -> Iterator[datetime.datetime]:
     yield from cron_string_iterator(end_timestamp, cron_string, execution_timezone, ascending=False)
 
 
 def schedule_execution_time_iterator(
     start_timestamp: float,
-    cron_schedule: Union[str, Sequence[str]],
-    execution_timezone: Optional[str],
+    cron_schedule: str | Sequence[str],
+    execution_timezone: str | None,
     ascending: bool = True,
 ) -> Iterator[datetime.datetime]:
     """Generator of execution datetimes >= start_timestamp for the given schedule.
@@ -865,7 +865,7 @@ def schedule_execution_time_iterator(
 def get_latest_completed_cron_tick(
     cron_string: str,
     current_time: datetime.datetime,
-    timezone: Optional[str],
+    timezone: str | None,
 ) -> datetime.datetime:
     cron_iter = reverse_cron_string_iterator(
         end_timestamp=current_time.timestamp(),
@@ -878,7 +878,7 @@ def get_latest_completed_cron_tick(
 def get_next_cron_tick(
     cron_string: str,
     current_time: datetime.datetime,
-    timezone: Optional[str],
+    timezone: str | None,
 ) -> datetime.datetime:
     cron_iter = cron_string_iterator(
         start_timestamp=current_time.timestamp(),
@@ -890,7 +890,7 @@ def get_next_cron_tick(
 
 def get_smallest_cron_interval(
     cron_string: str,
-    execution_timezone: Optional[str] = None,
+    execution_timezone: str | None = None,
 ) -> datetime.timedelta:
     """Find the smallest interval between cron ticks for a given cron schedule.
 

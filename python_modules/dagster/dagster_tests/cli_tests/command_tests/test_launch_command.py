@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import click
 import dagster as dg
@@ -21,7 +21,7 @@ from dagster_tests.cli_tests.command_tests.test_cli_commands import (
 
 
 def run_launch(
-    parsed_args: dict[str, Any], instance: DagsterInstance, expected_count: Optional[int] = None
+    parsed_args: dict[str, Any], instance: DagsterInstance, expected_count: int | None = None
 ):
     run = execute_launch_command(instance=instance, **parsed_args)
     assert run
@@ -31,7 +31,7 @@ def run_launch(
 
 
 def run_job_launch_cli(
-    execution_args: list[str], instance: DagsterInstance, expected_count: Optional[int] = None
+    execution_args: list[str], instance: DagsterInstance, expected_count: int | None = None
 ):
     runner = CliRunner()
     result = runner.invoke(job_launch_command, execution_args)

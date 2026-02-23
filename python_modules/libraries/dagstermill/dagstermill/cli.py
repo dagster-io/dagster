@@ -2,7 +2,6 @@ import copy
 import os
 import subprocess
 from collections.abc import Mapping
-from typing import Optional
 
 import click
 import dagster._check as check
@@ -22,7 +21,7 @@ def get_parameters_cell():
     return parameters_cell
 
 
-def get_kernelspec(kernel: Optional[str] = None):
+def get_kernelspec(kernel: str | None = None):
     kernelspecs = loads(subprocess.check_output(["jupyter", "kernelspec", "list", "--json"]))
 
     check.invariant(len(kernelspecs["kernelspecs"]) > 0, "No available Jupyter kernelspecs!")

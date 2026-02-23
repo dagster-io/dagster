@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from itertools import chain
 from types import UnionType
-from typing import TYPE_CHECKING, Annotated, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict
 
@@ -118,12 +118,12 @@ class Resolver:
 
     def __init__(
         self,
-        fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
+        fn: ParentFn | AttrWithContextFn | Callable[["ResolutionContext", Any], Any],
         *,
-        model_field_name: Optional[str] = None,
-        model_field_type: Optional[type | UnionType] = None,
-        description: Optional[str] = None,
-        examples: Optional[list[Any]] = None,
+        model_field_name: str | None = None,
+        model_field_type: type | UnionType | None = None,
+        description: str | None = None,
+        examples: list[Any] | None = None,
         inject_before_resolve: bool = True,
     ):
         """Resolve this field by invoking the function which will receive the corresponding field value
@@ -171,16 +171,16 @@ class Resolver:
         field_types = tuple(r.model_field_type or t for t, r in arg_resolver_pairs)
         return Resolver(
             fn=functools.partial(resolve_union, [r for _, r in arg_resolver_pairs]),
-            model_field_type=Union[field_types],  # pyright: ignore[reportInvalidTypeArguments]
+            model_field_type=Union[field_types],  # pyright: ignore[reportInvalidTypeArguments]  # noqa: UP007
         )
 
     @staticmethod
     def default(
         *,
-        model_field_name: Optional[str] = None,
-        model_field_type: Optional[type | UnionType] = None,
-        description: Optional[str] = None,
-        examples: Optional[list[Any]] = None,
+        model_field_name: str | None = None,
+        model_field_type: type | UnionType | None = None,
+        description: str | None = None,
+        examples: list[Any] | None = None,
     ):
         """Default recursive resolution."""
         return Resolver(
@@ -194,8 +194,8 @@ class Resolver:
 
     @staticmethod
     def passthrough(
-        description: Optional[str] = None,
-        examples: Optional[list[Any]] = None,
+        description: str | None = None,
+        examples: list[Any] | None = None,
     ):
         """Resolve this field by returning the underlying value, without resolving any
         nested resolvers or processing any template variables.

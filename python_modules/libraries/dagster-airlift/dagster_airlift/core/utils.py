@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from dagster import (
     AssetsDefinition,
@@ -42,9 +42,7 @@ def airlift_mapped_kind_dict() -> dict:
 
 
 def spec_iterator(
-    assets: Optional[
-        Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]
-    ],
+    assets: Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition] | None,
 ) -> Iterator[AssetSpec]:
     for asset in assets or []:
         if isinstance(asset, AssetsDefinition):
@@ -122,7 +120,7 @@ def get_producing_dag_ids(spec: AssetSpec) -> set[str]:
         return {task_handle.dag_id for task_handle in task_handles_for_spec(spec)}
 
 
-MappedAsset = Union[AssetSpec, AssetsDefinition]
+MappedAsset: TypeAlias = AssetSpec | AssetsDefinition
 
 
 def _type_check_asset(asset: Any) -> MappedAsset:

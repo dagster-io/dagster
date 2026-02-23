@@ -1,7 +1,7 @@
 import json
 from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from click.testing import CliRunner
@@ -21,7 +21,7 @@ class ReplayClient(DagsterPlusGraphQLClient):
         self.responses = responses
         self.call_index = 0
 
-    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None) -> dict:
+    def execute(self, query: str, variables: Mapping[str, Any] | None = None) -> dict:
         """Return next recorded response."""
         if self.call_index >= len(self.responses):
             raise ValueError(f"Exhausted {len(self.responses)} responses")

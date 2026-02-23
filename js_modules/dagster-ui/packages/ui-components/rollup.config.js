@@ -14,6 +14,7 @@ const extensions = ['.js', '.jsx', '.ts', '.tsx', '.css', '.svg'];
 const sharedPlugins = [
   styles({
     extract: true,
+    autoModules: true,
   }),
   json(),
   url(),

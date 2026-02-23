@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -16,7 +15,7 @@ class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     credentials: S3CredentialsComponent = Field(description="Credentials for connecting to S3.")
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the S3 resource will be bound to the definitions.",
     )
@@ -44,7 +43,7 @@ class S3FileManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     credentials: S3CredentialsComponent = Field(description="Credentials for connecting to S3.")
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the S3FileManager resource will be bound to the definitions.",
     )

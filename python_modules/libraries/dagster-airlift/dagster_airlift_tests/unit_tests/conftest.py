@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Generator, Mapping, Sequence
 from datetime import datetime, timedelta
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 from dagster import (
@@ -45,10 +45,10 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 
 def fully_loaded_repo_from_airflow_asset_graph(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
-    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
+    dataset_construction_info: list[dict[str, Any]] | None = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
-    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
+    dag_level_asset_overrides: dict[str, list[str]] | None = None,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
@@ -66,14 +66,14 @@ def fully_loaded_repo_from_airflow_asset_graph(
 
 def create_defs_and_instance(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
-    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
+    dataset_construction_info: list[dict[str, Any]] | None = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
-    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
-    seeded_runs: Optional[list[DagRun]] = None,
-    seeded_task_instances: Optional[list[TaskInstance]] = None,
-    seeded_logs: Optional[Mapping[str, Mapping[str, str]]] = None,
+    dag_level_asset_overrides: dict[str, list[str]] | None = None,
+    seeded_runs: list[DagRun] | None = None,
+    seeded_task_instances: list[TaskInstance] | None = None,
+    seeded_logs: Mapping[str, Mapping[str, str]] | None = None,
 ) -> tuple[Definitions, AirflowInstance]:
     assets = []
     dag_and_task_structure = defaultdict(list)
@@ -144,14 +144,14 @@ def create_defs_and_instance(
 
 def load_definitions_airflow_asset_graph(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
-    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
+    dataset_construction_info: list[dict[str, Any]] | None = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
-    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
+    dag_level_asset_overrides: dict[str, list[str]] | None = None,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
-    seeded_runs: Optional[list[DagRun]] = None,
-    seeded_task_instances: Optional[list[TaskInstance]] = None,
+    seeded_runs: list[DagRun] | None = None,
+    seeded_task_instances: list[TaskInstance] | None = None,
 ) -> Definitions:
     defs, instance = create_defs_and_instance(
         assets_per_task=assets_per_task,
@@ -173,7 +173,7 @@ def build_and_invoke_sensor(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
     instance: DagsterInstance,
     additional_defs: Definitions = Definitions(),
-    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
+    dag_level_asset_overrides: dict[str, list[str]] | None = None,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
@@ -190,7 +190,7 @@ def build_and_invoke_sensor(
 
 
 def assert_expected_key_order(
-    mats: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+    mats: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
     expected_key_order: Sequence[str],
 ) -> None:
     assert all(isinstance(mat, AssetMaterialization) for mat in mats)

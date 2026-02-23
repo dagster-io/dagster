@@ -97,7 +97,6 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
     try {
       currentQueryString = qs.parse(location.search, {
         ignoreQueryPrefix: true,
-        // @ts-expect-error QS types are out of date.
         throwOnLimitExceeded: true,
         arrayLimit: ARRAY_LIMIT,
       });

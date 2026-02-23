@@ -90,8 +90,10 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
   return [minUnix, maxUnix] as const;
 };
 
-interface PartitionPerAssetStatusProps
-  extends Omit<PartitionStepStatusBaseProps, 'partitionNames'> {
+interface PartitionPerAssetStatusProps extends Omit<
+  PartitionStepStatusBaseProps,
+  'partitionNames'
+> {
   assetHealth: PartitionHealthData[];
   assetQueryItems: GraphQueryItem[];
   rangeDimensionIdx: number;

@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, Optional, Sequence
+from typing import Iterator, Sequence
 
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
@@ -14,13 +14,13 @@ from dagster_shared.record import LegacyNamedTupleMixin, record, as_dict
 )
 @record
 class LoadableTargetOrigin(LegacyNamedTupleMixin):
-    executable_path: Optional[str] = None
-    python_file: Optional[str] = None
-    module_name: Optional[str] = None
-    working_directory: Optional[str] = None
-    attribute: Optional[str] = None
-    package_name: Optional[str] = None
-    autoload_defs_module_name: Optional[str] = None
+    executable_path: str | None = None
+    python_file: str | None = None
+    module_name: str | None = None
+    working_directory: str | None = None
+    attribute: str | None = None
+    package_name: str | None = None
+    autoload_defs_module_name: str | None = None
 
     def get_cli_args(self) -> Sequence[str]:
         args = (
@@ -52,8 +52,8 @@ class LoadableTargetOrigin(LegacyNamedTupleMixin):
         return {k: v for k, v in as_dict(self).items() if v is not None}
 
 
-_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = (
-    ContextVar("_current_loadable_target_origin", default=None)
+_current_loadable_target_origin: ContextVar[LoadableTargetOrigin | None] = ContextVar(
+    "_current_loadable_target_origin", default=None
 )
 
 

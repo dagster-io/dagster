@@ -1,7 +1,7 @@
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from dagster_shared import check
@@ -29,7 +29,7 @@ def _add_or_update_location(
     location_document: dict[str, Any],
     location_load_timeout: int,
     agent_heartbeat_timeout: int,
-    url: Optional[str] = None,
+    url: str | None = None,
 ) -> None:
     try:
         gql.add_or_update_code_location(client, location_document)
@@ -52,7 +52,7 @@ def _add_or_update_location(
 def add_command(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     location_load_timeout: int,
     agent_heartbeat_timeout: int,
     location: str = Argument(None, help="Code location name."),
@@ -85,7 +85,7 @@ def list_locations(location_names: list[str]) -> str:
 def update_command(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     location_load_timeout: int,
     agent_heartbeat_timeout: int,
     location: str = Argument(None, help="Code location name."),
@@ -125,8 +125,8 @@ def wait_for_load(
     client,
     locations,
     location_load_timeout=DEFAULT_LOCATION_LOAD_TIMEOUT,
-    agent_heartbeat_timeout: Optional[int] = DEFAULT_LOCATION_LOAD_TIMEOUT,
-    url: Optional[str] = None,
+    agent_heartbeat_timeout: int | None = DEFAULT_LOCATION_LOAD_TIMEOUT,
+    url: str | None = None,
 ):
     start_time = time.time()
     if url:
@@ -211,7 +211,7 @@ def wait_for_load(
 def delete_command(
     api_token: str,
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     location: str = Argument(..., help="Code location name."),
 ):
     """Delete a code location from the deployment."""
@@ -229,7 +229,7 @@ def delete_command(
 @dagster_cloud_options(allow_empty=True, requires_url=True)
 def list_command(
     url: str,
-    deployment: Optional[str],
+    deployment: str | None,
     api_token: str,
 ):
     """List code locations in the deployment."""
@@ -263,7 +263,7 @@ def execute_list_command(client):
 def pull_command(
     url: str,
     api_token: str,
-    deployment: Optional[str],
+    deployment: str | None,
 ):
     """Retrieve code location definitions as a workspace.yaml file."""
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
@@ -279,7 +279,7 @@ def pull_command(
 def sync_command(
     url: str,
     api_token: str,
-    deployment: Optional[str],
+    deployment: str | None,
     location_load_timeout: int,
     agent_heartbeat_timeout: int,
     workspace: Path = Option(
@@ -338,7 +338,7 @@ def format_workspace_config(workspace_config) -> dict[str, Any]:
 
 
 def execute_sync_command(
-    client, workspace, location_load_timeout, agent_heartbeat_timeout, url: Optional[str] = None
+    client, workspace, location_load_timeout, agent_heartbeat_timeout, url: str | None = None
 ):
     with open(str(workspace), encoding="utf8") as f:
         config = yaml.load(f.read(), Loader=yaml.SafeLoader)

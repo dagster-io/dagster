@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 import dagster._check as check
 import graphene
@@ -171,7 +171,7 @@ class GrapheneExecutionStepRestartEvent(graphene.ObjectType):
 
 
 class GrapheneExecutionStepUpForRetryEvent(graphene.ObjectType):
-    secondsToWait = graphene.Field(graphene.Int)
+    secondsToWait = graphene.Field(graphene.Float)
 
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneErrorEvent)
@@ -345,7 +345,7 @@ class AssetEventMixin:
         self._event = event
         self._metadata = metadata
 
-    def resolve_assetKey(self, _graphene_info) -> Optional[GrapheneAssetKey]:
+    def resolve_assetKey(self, _graphene_info) -> GrapheneAssetKey | None:
         asset_key = self._metadata.asset_key
 
         if not asset_key:

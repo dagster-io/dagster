@@ -3,7 +3,7 @@ import copy
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 import responses
@@ -352,10 +352,10 @@ def test_custom_filter_fn_python(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     filter_fn: Callable[[AirbyteConnection], bool],
     num_assets: int,
-    component_class: Union[type[AirbyteCloudWorkspaceComponent], type[AirbyteWorkspaceComponent]],
+    component_class: type[AirbyteCloudWorkspaceComponent] | type[AirbyteWorkspaceComponent],
     rest_api_url: str,
     config_api_url: str,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     defs = component_class(
         workspace=resource,
@@ -388,7 +388,7 @@ class TestAirbyteTranslation(TestTranslation):
         fetch_workspace_data_api_mocks: responses.RequestsMock,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
         rest_api_url: str,
         config_api_url: str,
         component_body: dict,
@@ -433,7 +433,7 @@ def test_subclass_override_get_asset_spec(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     rest_api_url: str,
     config_api_url: str,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     """Test that subclasses of AirbyteWorkspaceComponent can override get_asset_spec method."""
 

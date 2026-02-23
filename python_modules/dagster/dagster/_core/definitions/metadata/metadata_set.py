@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping
 from functools import cache
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
@@ -183,11 +183,11 @@ class TableMetadataSet(NamespacedMetadataSet):
             For example, `my_database.my_schema.my_table`.
     """
 
-    column_schema: Optional[TableSchema] = None
-    column_lineage: Optional[TableColumnLineage] = None
-    row_count: Optional[int] = None
-    partition_row_count: Optional[int] = None
-    table_name: Optional[str] = None
+    column_schema: TableSchema | None = None
+    column_lineage: TableColumnLineage | None = None
+    row_count: int | None = None
+    partition_row_count: int | None = None
+    table_name: str | None = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -198,7 +198,7 @@ class TableMetadataSet(NamespacedMetadataSet):
         return {"relation_identifier": "table_name"}
 
     @classmethod
-    def extract_normalized_table_name(cls, metadata: Mapping[str, Any]) -> Optional[str]:
+    def extract_normalized_table_name(cls, metadata: Mapping[str, Any]) -> str | None:
         from pydantic import ValidationError
 
         metadata_subset = {
@@ -221,7 +221,7 @@ class UriMetadataSet(NamespacedMetadataSet):
         uri (Optional[str]): The URI address for the asset.
     """
 
-    uri: Optional[str] = None
+    uri: str | None = None
 
     @classmethod
     def namespace(cls) -> str:

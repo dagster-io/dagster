@@ -2,7 +2,7 @@ import json
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -77,10 +77,10 @@ def dev_command(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
-    port: Optional[int],
-    host: Optional[str],
+    port: int | None,
+    host: str | None,
     live_data_poll_rate: int,
-    check_yaml: Optional[bool],
+    check_yaml: bool | None,
     target_path: Path,
     verbose: bool,  # from dg_global_options
     use_active_venv: bool,

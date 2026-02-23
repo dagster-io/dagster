@@ -5,7 +5,6 @@ import os
 import sys
 import textwrap
 from collections.abc import AsyncIterator
-from typing import Optional
 
 import click
 import dagster._check as check
@@ -215,9 +214,9 @@ def dagster_webserver(
     dagster_log_level: str,
     log_format: str,
     code_server_log_level: str,
-    instance_ref: Optional[str],
+    instance_ref: str | None,
     live_data_poll_rate: int,
-    shutdown_pipe: Optional[int],
+    shutdown_pipe: int | None,
     **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -284,11 +283,11 @@ async def _lifespan(app) -> AsyncIterator:
 
 def host_dagster_ui_with_workspace_process_context(
     workspace_process_context: IWorkspaceProcessContext,
-    host: Optional[str],
-    port: Optional[int],
+    host: str | None,
+    port: int | None,
     path_prefix: str,
     log_level: str,
-    live_data_poll_rate: Optional[int] = None,
+    live_data_poll_rate: int | None = None,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext

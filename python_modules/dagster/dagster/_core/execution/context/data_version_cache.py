@@ -55,7 +55,7 @@ class InputAssetVersionInfo:
 class DataVersionCache:
     def __init__(self, context: "StepExecutionContext"):
         self._context = context
-        self.input_asset_version_info: dict[AssetKey, Optional[InputAssetVersionInfo]] = {}
+        self.input_asset_version_info: dict[AssetKey, InputAssetVersionInfo | None] = {}
         self.is_external_input_asset_version_info_loaded = False
         self.values: dict[AssetKey, DataVersion] = {}
 

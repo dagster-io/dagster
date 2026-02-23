@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
@@ -26,8 +26,14 @@ class OmniLabel:
     verified: bool
 
     @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "OmniLabel":
-        """Create OmniLabel from JSON response data."""
+    def from_json(cls, data: dict[str, Any] | str) -> "OmniLabel":
+        """Create OmniLabel from JSON response data.
+
+        The documents endpoint returns labels as strings, while the labels
+        endpoint returns full objects with name/verified/homepage/usage_count.
+        """
+        if isinstance(data, str):
+            return cls(name=data, verified=False)
         return cls(name=data["name"], verified=data["verified"])
 
 
@@ -55,11 +61,11 @@ class OmniDocument:
     type: str
     updated_at: str
     owner: OmniOwner
-    folder: Optional[OmniFolder]
+    folder: OmniFolder | None
     labels: list[OmniLabel]
     queries: list["OmniQuery"]
-    favorites: Optional[int] = None
-    views: Optional[int] = None
+    favorites: int | None = None
+    views: int | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any], queries: list["OmniQuery"]) -> "OmniDocument":
@@ -129,11 +135,11 @@ class OmniUser:
     """Represents an Omni user with all user information in a single class."""
 
     id: str
-    name: Optional[str]
+    name: str | None
     display_name: str
     user_name: str
     active: bool
-    primary_email: Optional[str]
+    primary_email: str | None
     groups: list[str]
     created: str
     last_modified: str
@@ -176,5 +182,5 @@ class OmniWorkspaceData:
     def _users_by_id(self) -> dict[str, OmniUser]:
         return {user.id: user for user in self.users}
 
-    def get_user(self, user_id: str) -> Optional[OmniUser]:
+    def get_user(self, user_id: str) -> OmniUser | None:
         return self._users_by_id.get(user_id)

@@ -15,9 +15,9 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
+import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useState} from 'react';
-import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
@@ -295,7 +295,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return;
     }
 
-    const runConfigData = config.yaml || '';
+    const runConfigData = savedConfig?.runConfigYaml || config.yaml || '';
     let allTags = [...config.tags, ...tags];
 
     if (launchWithRangesAsTags) {

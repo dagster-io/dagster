@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Union, cast
+from typing import cast
 
 import dagster as dg
 import dagster._check as check
@@ -145,7 +145,7 @@ def test_resolve_wrong_data():
 
 
 def define_uncacheable_and_resource_dependent_cacheable_assets() -> Sequence[
-    Union[CacheableAssetsDefinition, dg.AssetsDefinition]
+    CacheableAssetsDefinition | dg.AssetsDefinition
 ]:
     class ResourceDependentCacheableAsset(CacheableAssetsDefinition):
         def __init__(self):

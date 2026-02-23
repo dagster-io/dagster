@@ -5,7 +5,6 @@ Consider using `dg plus deploy configure [serverless|hybrid]` instead.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_cloud_cli.utils import SUPPORTED_PYTHON_VERSIONS
@@ -27,7 +26,7 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def _resolve_config_for_build_artifacts(
-    python_version: Optional[str],
+    python_version: str | None,
     skip_confirmation_prompt: bool,
     use_editable_dagster: bool,
     dg_context: DgContext,
@@ -94,8 +93,8 @@ def _resolve_config_for_build_artifacts(
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_build_artifacts_command(
-    python_version: Optional[str],
-    use_editable_dagster: Optional[str],
+    python_version: str | None,
+    use_editable_dagster: str | None,
     skip_confirmation_prompt: bool,
     **global_options: object,
 ) -> None:

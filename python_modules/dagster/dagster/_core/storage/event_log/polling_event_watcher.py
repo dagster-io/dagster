@@ -1,7 +1,7 @@
 import os
 import threading
 from collections.abc import Callable
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
@@ -22,7 +22,7 @@ class CallbackAfterCursor(NamedTuple):
         to call on new EventLogEntrys, with a string cursor
     """
 
-    cursor: Optional[str]
+    cursor: str | None
     callback: Callable[[EventLogEntry, str], None]
 
 
@@ -55,7 +55,7 @@ class SqlPollingEventWatcher:
     def watch_run(
         self,
         run_id: str,
-        cursor: Optional[str],
+        cursor: str | None,
         callback: Callable[[EventLogEntry, str], None],
     ) -> None:
         run_id = check.str_param(run_id, "run_id")
@@ -125,7 +125,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
     def should_thread_exit(self) -> threading.Event:
         return self._should_thread_exit
 
-    def add_callback(self, cursor: Optional[str], callback: Callable[[EventLogEntry, str], None]):
+    def add_callback(self, cursor: str | None, callback: Callable[[EventLogEntry, str], None]):
         """Observer has started watching this run.
             Add a callback to execute on new EventLogEntrys after the given cursor.
 

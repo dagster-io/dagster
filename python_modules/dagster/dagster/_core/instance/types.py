@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Generic, Mapping, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Generic, Mapping, Union  # noqa: UP035
 
 from typing_extensions import Protocol, TypeVar, runtime_checkable
 
@@ -79,7 +79,7 @@ T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance", defaul
 class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
-    _instance_weakref: "Optional[weakref.ReferenceType[T_DagsterInstance]]"
+    _instance_weakref: "weakref.ReferenceType[T_DagsterInstance] | None"
 
     def __init__(self):
         self._instance_weakref = None
@@ -129,7 +129,7 @@ class DynamicPartitionsStore(Protocol):
         partitions_def_name: str,
         limit: int,
         ascending: bool,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]: ...
 
     @abstractmethod
@@ -153,7 +153,7 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
 
     @cached_method
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
     ) -> PaginatedResults[str]:
         return self._instance.get_paginated_dynamic_partitions(
             partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
@@ -223,7 +223,7 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
 
     @cached_method
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
     ) -> PaginatedResults[str]:
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
         return PaginatedResults.create_from_sequence(

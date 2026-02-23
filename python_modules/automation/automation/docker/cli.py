@@ -1,5 +1,3 @@
-from typing import Optional
-
 import click
 import dagster._check as check
 
@@ -55,7 +53,7 @@ opt_build_timestamp = click.option(
 @click.option("-v", "--python-version", type=click.STRING, required=True)
 @opt_build_platform
 def build(
-    name: str, dagster_version: str, timestamp: str, python_version: str, platform: Optional[str]
+    name: str, dagster_version: str, timestamp: str, python_version: str, platform: str | None
 ):
     get_image(name).build(timestamp, dagster_version, python_version, platform)
 
@@ -65,7 +63,7 @@ def build(
 @opt_build_dagster_version
 @opt_build_timestamp
 @opt_build_platform
-def build_all(name: str, dagster_version: str, timestamp: str, platform: Optional[str]):
+def build_all(name: str, dagster_version: str, timestamp: str, platform: str | None):
     """Build all supported python versions for image."""
     image = get_image(name)
 
@@ -92,7 +90,7 @@ opt_set_latest = click.option(
 @opt_push_name
 @click.option("-v", "--python-version", type=click.STRING, required=True)
 @click.option("--custom-tag", type=click.STRING, required=False)
-def push(name: str, python_version: str, custom_tag: Optional[str]):
+def push(name: str, python_version: str, custom_tag: str | None):
     ensure_ecr_login()
     get_image(name).push(python_version, custom_tag=custom_tag)
 

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import duckdb
 
@@ -11,7 +10,7 @@ class ExportDuckDbToCsvArgs:
     csv_path: Path
     duckdb_path: Path
     duckdb_database_name: str
-    duckdb_schema: Optional[str] = None
+    duckdb_schema: str | None = None
 
 
 def export_duckdb_to_csv(args: ExportDuckDbToCsvArgs) -> None:

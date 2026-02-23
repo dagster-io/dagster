@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
-from typing import Optional
 
 import click
 from packaging import version
@@ -33,20 +32,20 @@ class LocationBuild:
     deps_requirements: deps.DepsRequirements
 
     # One of deps_pex_path or published_deps_pex should be set
-    deps_pex_path: Optional[str] = None  # locally build deps.pex
-    published_deps_pex: Optional[str] = None  # already published deps.pex
+    deps_pex_path: str | None = None  # locally build deps.pex
+    published_deps_pex: str | None = None  # already published deps.pex
     # dagster_version should be always set for both cases, pre published and locally built deps
-    dagster_version: Optional[str] = None
-    source_pex_path: Optional[str] = None
-    pex_tag: Optional[str] = None  # composite tag used to identify the set of pex files
+    dagster_version: str | None = None
+    source_pex_path: str | None = None
+    pex_tag: str | None = None  # composite tag used to identify the set of pex files
 
-    code_location_update_error: Optional[Exception] = None
+    code_location_update_error: Exception | None = None
 
 
 @dataclass
 class DepsCacheTags:
-    deps_cache_from_tag: Optional[str]
-    deps_cache_to_tag: Optional[str]
+    deps_cache_from_tag: str | None
+    deps_cache_to_tag: str | None
 
 
 def build_locations(
@@ -147,7 +146,7 @@ def build_locations(
 
 def get_user_specified_base_image_for(
     dagster_cloud_url: str, dagster_cloud_api_token: str, location_build: LocationBuild
-) -> Optional[str]:
+) -> str | None:
     # Full path to base image is supplied
     base_image = os.getenv("SERVERLESS_BASE_IMAGE")
     if base_image:
@@ -164,7 +163,7 @@ def get_user_specified_base_image_for(
     return None
 
 
-def notify(deployment_name: Optional[str], location_name: str, action: str):
+def notify(deployment_name: str | None, location_name: str, action: str):
     if github_event:
         github_context.update_pr_comment(
             github_event,
@@ -174,7 +173,7 @@ def notify(deployment_name: Optional[str], location_name: str, action: str):
         )
 
 
-github_event: Optional[github_context.GithubEvent] = None
+github_event: github_context.GithubEvent | None = None
 
 
 def load_github_event(project_dir):

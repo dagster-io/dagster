@@ -17,15 +17,15 @@ import {
   getFirstPanelSizeFromStorage,
   ifPlural,
 } from '@dagster-io/ui-components';
+import {CreateCatalogViewButton} from '@shared/assets/CreateCatalogViewButton';
+import {AssetCatalogAlerts} from '@shared/assets/catalog/AssetCatalogAlerts';
+import {AssetCatalogTabs} from '@shared/assets/catalog/AssetCatalogTabs';
+import {useCatalogExtraDropdownOptions} from '@shared/assets/catalog/useCatalogExtraDropdownOptions';
+import {AssetCatalogInsights} from '@shared/assets/insights/AssetCatalogInsights';
+import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {AssetCatalogAlerts} from 'shared/assets/catalog/AssetCatalogAlerts.oss';
-import {AssetCatalogTabs} from 'shared/assets/catalog/AssetCatalogTabs.oss';
-import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
-import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
-import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogTableSidebar} from './AssetCatalogTableSidebar';

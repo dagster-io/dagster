@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from time import perf_counter
-from typing import Any, Final, Optional, Protocol
+from typing import Any, Final, Protocol
 
 from claude_code_sdk import query
 from claude_code_sdk.types import (
@@ -55,7 +55,7 @@ class ClaudeSDKClient:
         model: ModelType,
         allowed_tools: list[str],
         output_channel: OutputChannel,
-        disallowed_tools: Optional[list[str]] = None,
+        disallowed_tools: list[str] | None = None,
         verbose: bool = False,
     ) -> list[Message]:
         """Execute scaffolding operation with Claude Code SDK.
@@ -124,7 +124,7 @@ class ClaudeSDKClient:
 
             return collected_messages
 
-    def _format_message_for_output(self, message: Message) -> Optional[str]:
+    def _format_message_for_output(self, message: Message) -> str | None:
         """Format SDK message for user-friendly output.
 
         Args:

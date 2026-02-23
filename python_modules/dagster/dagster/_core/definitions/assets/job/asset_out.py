@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from types import EllipsisType
-from typing import Any, Optional, Union
+from typing import Any
 
 import dagster._check as check
 from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs, public
@@ -80,29 +80,29 @@ class AssetOut:
     """
 
     _spec: AssetSpec
-    key_prefix: Optional[Sequence[str]]
-    dagster_type: Union[type, DagsterType]
+    key_prefix: Sequence[str] | None
+    dagster_type: type | DagsterType
     is_required: bool
-    io_manager_key: Optional[str]
-    backfill_policy: Optional[BackfillPolicy]
+    io_manager_key: str | None
+    backfill_policy: BackfillPolicy | None
 
     def __init__(
         self,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        key: Optional[CoercibleToAssetKey] = None,
-        dagster_type: Union[type, DagsterType] = NoValueSentinel,
-        description: Optional[str] = None,
+        key_prefix: CoercibleToAssetKeyPrefix | None = None,
+        key: CoercibleToAssetKey | None = None,
+        dagster_type: type | DagsterType = NoValueSentinel,
+        description: str | None = None,
         is_required: bool = True,
-        io_manager_key: Optional[str] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
-        group_name: Optional[str] = None,
-        code_version: Optional[str] = None,
-        automation_condition: Optional[AutomationCondition] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-        owners: Optional[Sequence[str]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        kinds: Optional[set[str]] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        io_manager_key: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        group_name: str | None = None,
+        code_version: str | None = None,
+        automation_condition: AutomationCondition | None = None,
+        backfill_policy: BackfillPolicy | None = None,
+        owners: Sequence[str] | None = None,
+        tags: Mapping[str, str] | None = None,
+        kinds: set[str] | None = None,
+        freshness_policy: FreshnessPolicy | None = None,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -179,47 +179,47 @@ class AssetOut:
         self.backfill_policy = backfill_policy
 
     @property
-    def key(self) -> Optional[AssetKey]:
+    def key(self) -> AssetKey | None:
         return self._spec.key if self._spec.key != EMPTY_ASSET_KEY_SENTINEL else None
 
     @property
-    def metadata(self) -> Optional[Mapping[str, Any]]:
+    def metadata(self) -> Mapping[str, Any] | None:
         return self._spec.metadata
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._spec.description
 
     @property
-    def group_name(self) -> Optional[str]:
+    def group_name(self) -> str | None:
         return self._spec.group_name
 
     @property
-    def code_version(self) -> Optional[str]:
+    def code_version(self) -> str | None:
         return self._spec.code_version
 
     @property
-    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
+    def legacy_freshness_policy(self) -> LegacyFreshnessPolicy | None:
         return self._spec.legacy_freshness_policy
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def freshness_policy(self) -> FreshnessPolicy | None:
         return self._spec.freshness_policy
 
     @property
-    def automation_condition(self) -> Optional[AutomationCondition]:
+    def automation_condition(self) -> AutomationCondition | None:
         return self._spec.automation_condition
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         return self._spec.owners
 
     @property
-    def tags(self) -> Optional[Mapping[str, str]]:
+    def tags(self) -> Mapping[str, str] | None:
         return self._spec.tags
 
     @property
-    def kinds(self) -> Optional[set[str]]:
+    def kinds(self) -> set[str] | None:
         return self._spec.kinds
 
     def to_out(self) -> Out:
@@ -237,7 +237,7 @@ class AssetOut:
         key: AssetKey,
         deps: Sequence[AssetDep],
         additional_tags: Mapping[str, str] = {},
-        partitions_def: Optional[PartitionsDefinition] | EllipsisType = ...,
+        partitions_def: PartitionsDefinition | None | EllipsisType = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,
@@ -251,10 +251,10 @@ class AssetOut:
     @staticmethod
     def from_spec(
         spec: AssetSpec,
-        dagster_type: Union[type, DagsterType] = NoValueSentinel,
+        dagster_type: type | DagsterType = NoValueSentinel,
         is_required: bool = True,
-        io_manager_key: Optional[str] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        io_manager_key: str | None = None,
+        backfill_policy: BackfillPolicy | None = None,
     ) -> "AssetOut":
         """Builds an AssetOut from the passed spec.
 
@@ -285,7 +285,7 @@ class AssetOut:
         )
 
     @property
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+    def auto_materialize_policy(self) -> AutoMaterializePolicy | None:
         return (
             self.automation_condition.as_auto_materialize_policy()
             if self.automation_condition

@@ -8,7 +8,7 @@ from dagster._core.definitions.partitions.definition import StaticPartitionsDefi
 
 """Testing utilities for components."""
 
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 # Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
 # implementation if pytest is not installed.
@@ -29,7 +29,7 @@ class TranslationTestCase(NamedTuple):
     name: str
     attributes: dict[str, Any]
     assertion: Callable[[AssetSpec], bool]
-    key_modifier: Optional[Callable[[AssetKey], AssetKey]] = None
+    key_modifier: Callable[[AssetKey], AssetKey] | None = None
 
 
 test_cases = [

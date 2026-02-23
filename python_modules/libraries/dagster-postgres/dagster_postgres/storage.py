@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.base_storage import DagsterStorage
@@ -38,7 +36,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         self,
         postgres_url,
         should_autocreate_tables=True,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
@@ -51,7 +49,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -60,7 +58,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: PostgresStorageConfig
     ) -> "DagsterPostgresStorage":
         return DagsterPostgresStorage(
             inst_data=inst_data,
@@ -81,7 +79,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         return self._schedule_storage
 
     @property
-    def event_storage_data(self) -> Optional[ConfigurableClassData]:
+    def event_storage_data(self) -> ConfigurableClassData | None:
         return (
             ConfigurableClassData(
                 "dagster_postgres",
@@ -93,7 +91,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         )
 
     @property
-    def run_storage_data(self) -> Optional[ConfigurableClassData]:
+    def run_storage_data(self) -> ConfigurableClassData | None:
         return (
             ConfigurableClassData(
                 "dagster_postgres",
@@ -105,7 +103,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         )
 
     @property
-    def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
+    def schedule_storage_data(self) -> ConfigurableClassData | None:
         return (
             ConfigurableClassData(
                 "dagster_postgres",

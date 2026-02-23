@@ -1,5 +1,3 @@
-from typing import Union
-
 import graphene
 from dagster._check import invariant
 from dagster._core.utils import is_valid_email
@@ -30,7 +28,7 @@ class GrapheneDefinitionOwner(graphene.Union):
 
 def definition_owner_from_owner_str(
     owner_str: str,
-) -> Union[GrapheneUserDefinitionOwner, GrapheneTeamDefinitionOwner]:
+) -> GrapheneUserDefinitionOwner | GrapheneTeamDefinitionOwner:
     if is_valid_email(owner_str):
         return GrapheneUserDefinitionOwner(email=owner_str)
     else:

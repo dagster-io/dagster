@@ -1,5 +1,4 @@
 import subprocess
-from typing import Optional
 
 import typer
 from typer import Typer
@@ -90,7 +89,7 @@ def create_or_update(
         None,
         help="The name of the deployment to use as the base deployment for the branch deployment.",
     ),
-    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition] = typer.Option(
+    snapshot_base_condition: SnapshotBaseDeploymentCondition | None = typer.Option(
         None,
         help="""
 If and when to snapshot the definitions in the base deployment for highlighting changes in the branch:

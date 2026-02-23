@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import dagster._check as check
@@ -58,7 +58,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         self,
         message_reader: PipesMessageReader,
         client: Optional["EMRClient"] = None,
-        context_injector: Optional[PipesContextInjector] = None,
+        context_injector: PipesContextInjector | None = None,
         forward_termination: bool = True,
         wait_for_s3_logs_seconds: int = 10,
         s3_application_logs_prefix: str = "containers",
@@ -90,9 +90,9 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         run_job_flow_params: "RunJobFlowInputTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run a job on AWS EMR, enriched with the pipes protocol.
 
@@ -151,7 +151,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
     def _start(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         params: "RunJobFlowInputTypeDef",
     ) -> "RunJobFlowOutputTypeDef":
@@ -166,7 +166,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
     def _wait_for_completion(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         response: "RunJobFlowOutputTypeDef",
     ) -> "DescribeClusterOutputTypeDef":
         cluster_id = response["JobFlowId"]
@@ -189,7 +189,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
     def _add_log_readers(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         response: "RunJobFlowOutputTypeDef",
     ):
         cluster = self.client.describe_cluster(ClusterId=response["JobFlowId"])
@@ -234,7 +234,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
     def _read_application_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         response: "DescribeClusterOutputTypeDef",
     ):
@@ -328,7 +328,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
     def _terminate(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         start_response: "RunJobFlowOutputTypeDef",
     ):
         cluster_id = start_response["JobFlowId"]

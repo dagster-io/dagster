@@ -1,8 +1,9 @@
+import json
 from collections.abc import Sequence
-from typing import Optional, Union
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSelector
@@ -13,6 +14,7 @@ from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from dagster_graphql.implementation.execution import (
     delete_pipeline_run,
+    report_asset_check_evaluation,
     report_runless_asset_events,
     terminate_pipeline_execution,
     terminate_pipeline_execution_for_runs,
@@ -72,6 +74,7 @@ from dagster_graphql.schema.inputs import (
     GrapheneLaunchBackfillParams,
     GraphenePartitionsByAssetSelector,
     GrapheneReexecutionParams,
+    GrapheneReportAssetCheckEvaluationParams,
     GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
@@ -215,7 +218,7 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
     @require_permission_check(Permissions.DELETE_PIPELINE_RUN)
     def mutate(
         self, graphene_info: ResolveInfo, runId: str
-    ) -> Union[GrapheneRunNotFoundError, GrapheneDeletePipelineRunSuccess]:
+    ) -> GrapheneRunNotFoundError | GrapheneDeletePipelineRunSuccess:
         return delete_pipeline_run(graphene_info, runId)
 
 
@@ -326,7 +329,7 @@ class GrapheneLaunchRunMutation(graphene.Mutation):
     @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
     async def mutate(
         self, graphene_info: ResolveInfo, executionParams: GrapheneExecutionParams
-    ) -> Union[GrapheneLaunchRunSuccess, GrapheneError, GraphenePythonError]:
+    ) -> GrapheneLaunchRunSuccess | GrapheneError | GraphenePythonError:
         return await create_execution_params_and_launch_pipeline_exec(
             graphene_info, executionParams
         )
@@ -346,11 +349,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
     @capture_error
     async def mutate(
         self, graphene_info: ResolveInfo, executionParamsList: list[GrapheneExecutionParams]
-    ) -> Union[
-        GrapheneLaunchMultipleRunsResult,
-        GrapheneError,
-        GraphenePythonError,
-    ]:
+    ) -> GrapheneLaunchMultipleRunsResult | GrapheneError | GraphenePythonError:
         launch_multiple_runs_result = []
 
         for execution_params in executionParamsList:
@@ -530,8 +529,8 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     async def mutate(
         self,
         graphene_info: ResolveInfo,
-        executionParams: Optional[GrapheneExecutionParams] = None,
-        reexecutionParams: Optional[GrapheneReexecutionParams] = None,
+        executionParams: GrapheneExecutionParams | None = None,
+        reexecutionParams: GrapheneReexecutionParams | None = None,
     ):
         if bool(executionParams) == bool(reexecutionParams):
             raise DagsterInvariantViolationError(
@@ -596,7 +595,7 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runId: str,
-        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+        terminatePolicy: GrapheneTerminateRunPolicy | None = None,
     ):
         return terminate_pipeline_execution(
             graphene_info,
@@ -623,7 +622,7 @@ class GrapheneTerminateRunsMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runIds: Sequence[str],
-        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+        terminatePolicy: GrapheneTerminateRunPolicy | None = None,
     ):
         return terminate_pipeline_execution_for_runs(
             graphene_info,
@@ -683,11 +682,11 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
     @require_permission_check(Permissions.RELOAD_REPOSITORY_LOCATION)
     def mutate(
         self, graphene_info: ResolveInfo, repositoryLocationName: str
-    ) -> Union[
-        GrapheneWorkspaceLocationEntry,
-        GrapheneReloadNotSupported,
-        GrapheneRepositoryLocationNotFound,
-    ]:
+    ) -> (
+        GrapheneWorkspaceLocationEntry
+        | GrapheneReloadNotSupported
+        | GrapheneRepositoryLocationNotFound
+    ):
         assert_permission_for_location(
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
@@ -724,7 +723,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
     @require_permission_check(Permissions.RELOAD_REPOSITORY_LOCATION)
     def mutate(
         self, graphene_info: ResolveInfo, repositoryLocationName: str
-    ) -> Union[GrapheneRepositoryLocationNotFound, GrapheneShutdownRepositoryLocationSuccess]:
+    ) -> GrapheneRepositoryLocationNotFound | GrapheneShutdownRepositoryLocationSuccess:
         assert_permission_for_location(
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
@@ -892,6 +891,67 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
         )
 
 
+class GrapheneReportAssetCheckEvaluationSuccess(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "ReportAssetCheckEvaluationSuccess"
+
+
+class GrapheneReportAssetCheckEvaluationResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReportAssetCheckEvaluationSuccess,
+        )
+        name = "ReportAssetCheckEvaluationResult"
+
+
+class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
+    """Reports an asset check evaluation result."""
+
+    Output = graphene.NonNull(GrapheneReportAssetCheckEvaluationResult)
+
+    class Arguments:
+        eventParams = graphene.Argument(graphene.NonNull(GrapheneReportAssetCheckEvaluationParams))
+
+    class Meta:
+        name = "ReportAssetCheckEvaluationMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        eventParams: GrapheneReportAssetCheckEvaluationParams,
+    ):
+        asset_key = AssetKey.from_graphql_input(eventParams["assetKey"])
+        check_name = eventParams["checkName"]
+        passed = eventParams["passed"]
+        severity_raw = eventParams.get("severity")
+        severity = AssetCheckSeverity(severity_raw) if severity_raw else AssetCheckSeverity.ERROR
+        serialized_metadata = eventParams.get("serializedMetadata")
+        metadata = json.loads(serialized_metadata) if serialized_metadata else None
+        partition = eventParams.get("partition")
+
+        asset_graph = graphene_info.context.asset_graph
+
+        assert_permission_for_asset_graph(
+            graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS
+        )
+
+        return report_asset_check_evaluation(
+            graphene_info,
+            asset_key=asset_key,
+            check_name=check_name,
+            passed=passed,
+            severity=severity,
+            metadata=metadata,
+            partition=partition,
+        )
+
+
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
     """Output indicating that telemetry was logged."""
 
@@ -1025,7 +1085,7 @@ class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
 
     @capture_error
     @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
-    def mutate(self, graphene_info, runId: str, stepKey: Optional[str] = None):
+    def mutate(self, graphene_info, runId: str, stepKey: str | None = None):
         event_log_storage = graphene_info.context.instance.event_log_storage
         if stepKey:
             event_log_storage.free_concurrency_slot_for_step(runId, stepKey)
@@ -1082,6 +1142,7 @@ class GrapheneMutation(graphene.ObjectType):
     shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
     wipeAssets = GrapheneAssetWipeMutation.Field()
     reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
+    reportAssetCheckEvaluation = GrapheneReportAssetCheckEvaluationMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     reexecutePartitionBackfill = GrapheneReexecuteBackfillMutation.Field()

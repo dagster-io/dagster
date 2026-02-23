@@ -17,6 +17,7 @@ import {AssetCheckHistoricalEventsButton} from './AssetCheckHistoricalEventsButt
 import {AssetCheckPartitionStatus} from './AssetCheckPartitionStatus';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {useAssetCheckPartitionDetail} from './useAssetCheckPartitionDetail';
+import {ExecutionStatusIcon} from './util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {linkToRunEvent, titleForRun} from '../../runs/RunUtils';
@@ -124,7 +125,7 @@ export const AssetCheckPartitionDetail = ({
           <Box flex={{gap: 4, direction: 'column'}}>
             <Subheading>Latest execution</Subheading>
             <Box flex={{gap: 4}}>
-              <Icon name="status" />
+              <Icon name="status" color={Colors.accentGray()} />
               None
             </Box>
           </Box>
@@ -132,8 +133,11 @@ export const AssetCheckPartitionDetail = ({
           <Box flex={{gap: 4, direction: 'column'}}>
             <Subheading>Latest execution</Subheading>
             <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
-              <Icon name="check_circle" />
-              <Timestamp timestamp={{ms: Number(latestExecution.evaluation.timestamp)}} />
+              <ExecutionStatusIcon
+                status={latestExecution.status}
+                severity={latestExecution.evaluation.severity}
+              />
+              <Timestamp timestamp={{unix: latestExecution.evaluation.timestamp}} />
             </Box>
           </Box>
         )}
@@ -162,7 +166,7 @@ export const AssetCheckPartitionDetail = ({
               <Link to={`/runs/${latestExecution.evaluation.targetMaterialization.runId}`}>
                 <Timestamp
                   timestamp={{
-                    ms: Number(latestExecution.evaluation.targetMaterialization.timestamp),
+                    unix: latestExecution.evaluation.targetMaterialization.timestamp,
                   }}
                 />
               </Link>

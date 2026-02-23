@@ -5,7 +5,7 @@ import sys
 import threading
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import ExitStack, contextmanager, nullcontext
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Union  # noqa: UP035
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
@@ -73,7 +73,7 @@ class IPCErrorMessage:
     """
 
     serializable_error_info: SerializableErrorInfo
-    message: Optional[str]
+    message: str | None
 
 
 class RunInSubprocessComplete:
@@ -172,8 +172,8 @@ def core_execute_run(
 
 @contextmanager
 def _instance_from_ref_for_dynamic_partitions(
-    instance_ref: Optional[InstanceRef], partitions_def: PartitionsDefinition
-) -> Iterator[Optional[DagsterInstance]]:
+    instance_ref: InstanceRef | None, partitions_def: PartitionsDefinition
+) -> Iterator[DagsterInstance | None]:
     # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
     # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
 
@@ -280,9 +280,9 @@ def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
     recon_repo: ReconstructableRepository,
     job_name: str,
-    op_selection: Optional[Sequence[str]],
-    asset_selection: Optional[AbstractSet[AssetKey]],
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
+    op_selection: Sequence[str] | None,
+    asset_selection: AbstractSet[AssetKey] | None,
+    asset_check_selection: AbstractSet[AssetCheckKey] | None,
     include_parent_snapshot: bool,
 ):
     try:
@@ -308,11 +308,11 @@ def get_external_pipeline_subset_result(
 
 def get_external_schedule_execution(
     repo_def: RepositoryDefinition,
-    instance_ref: Optional[InstanceRef],
+    instance_ref: InstanceRef | None,
     schedule_name: str,
-    scheduled_execution_timestamp: Optional[float],
-    scheduled_execution_timezone: Optional[str],
-    log_key: Optional[Sequence[str]],
+    scheduled_execution_timestamp: float | None,
+    scheduled_execution_timezone: str | None,
+    log_key: Sequence[str] | None,
 ) -> Union["ScheduleExecutionData", ScheduleExecutionErrorSnap]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
@@ -360,13 +360,13 @@ def get_external_schedule_execution(
 def get_external_sensor_execution(
     repo_def: RepositoryDefinition,
     code_location_origin: CodeLocationOrigin,
-    instance_ref: Optional[InstanceRef],
+    instance_ref: InstanceRef | None,
     sensor_name: str,
-    last_tick_completion_timestamp: Optional[float],
-    last_run_key: Optional[str],
-    cursor: Optional[str],
-    log_key: Optional[Sequence[str]],
-    last_sensor_start_timestamp: Optional[float],
+    last_tick_completion_timestamp: float | None,
+    last_run_key: str | None,
+    cursor: str | None,
+    log_key: Sequence[str] | None,
+    last_sensor_start_timestamp: float | None,
 ) -> Union["SensorExecutionData", SensorExecutionErrorSnap]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
@@ -434,8 +434,8 @@ def get_partition_config(
     repo_def: RepositoryDefinition,
     job_name: str,
     partition_key: str,
-    instance_ref: Optional[InstanceRef] = None,
-) -> Union[PartitionConfigSnap, PartitionExecutionErrorSnap]:
+    instance_ref: InstanceRef | None = None,
+) -> PartitionConfigSnap | PartitionExecutionErrorSnap:
     try:
         job_def = repo_def.get_job(job_name)
 
@@ -456,7 +456,7 @@ def get_partition_config(
 
 def get_partition_names(
     repo_def: RepositoryDefinition, job_name: str
-) -> Union[PartitionNamesSnap, PartitionExecutionErrorSnap]:
+) -> PartitionNamesSnap | PartitionExecutionErrorSnap:
     try:
         job_def = repo_def.get_job(job_name)
 
@@ -480,8 +480,8 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     job_name: str,
     partition_name: str,
-    instance_ref: Optional[InstanceRef] = None,
-) -> Union[PartitionTagsSnap, PartitionExecutionErrorSnap]:
+    instance_ref: InstanceRef | None = None,
+) -> PartitionTagsSnap | PartitionExecutionErrorSnap:
     try:
         job_def = repo_def.get_job(job_name)
 
@@ -530,8 +530,8 @@ def get_partition_set_execution_param_data(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_names: Sequence[str],
-    instance_ref: Optional[InstanceRef] = None,
-) -> Union[PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap]:
+    instance_ref: InstanceRef | None = None,
+) -> PartitionSetExecutionParamSnap | PartitionExecutionErrorSnap:
     (
         job_def,
         _partitions_def,

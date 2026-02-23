@@ -8,7 +8,7 @@ import sys
 import time
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
-from typing import Any, Literal, Optional, TextIO, Union
+from typing import Any, Literal, TextIO
 
 import dagster._check as check
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -46,8 +46,8 @@ class BasePipesDatabricksClient(PipesClient):
     def __init__(
         self,
         client: WorkspaceClient,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         poll_interval_seconds: float = 5,
         forward_termination: bool = True,
     ):
@@ -70,14 +70,14 @@ class BasePipesDatabricksClient(PipesClient):
     def run(
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
-        extras: Optional[PipesExtras] = None,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None = None,
         **kwargs,
     ):
         raise NotImplementedError()
 
     def _poll_til_success(
-        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+        self, context: OpExecutionContext | AssetExecutionContext, run_id: int
     ) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
@@ -166,7 +166,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
             is interrupted or canceled. Defaults to True.
     """
 
-    env: Optional[Mapping[str, str]] = Field(
+    env: Mapping[str, str] | None = Field(
         default=None,
         description="An optional dict of environment variables to pass to the subprocess.",
     )
@@ -174,9 +174,9 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
     def __init__(
         self,
         client: WorkspaceClient,
-        env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        env: Mapping[str, str] | None = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         poll_interval_seconds: float = 5,
         forward_termination: bool = True,
     ):
@@ -242,10 +242,10 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
-        extras: Optional[PipesExtras] = None,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None = None,
         task: jobs.SubmitTask,
-        submit_args: Optional[Mapping[str, Any]] = None,
+        submit_args: Mapping[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Synchronously execute a Databricks job with the pipes protocol.
 
@@ -306,7 +306,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
 
     def _enrich_submit_task_dict(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
     ) -> dict[str, Any]:
@@ -423,7 +423,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         interval: float = 10,
         client: WorkspaceClient,
         include_stdio_in_messages: bool = False,
-        log_readers: Optional[Sequence[PipesLogReader]] = None,
+        log_readers: Sequence[PipesLogReader] | None = None,
     ):
         self.include_stdio_in_messages = check.bool_param(
             include_stdio_in_messages, "include_stdio_in_messages"
@@ -450,7 +450,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         except Exception:
             return False
 
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
@@ -490,7 +490,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         remote_log_name: Literal["stdout", "stderr"],
         target_stream: TextIO,
         client: WorkspaceClient,
-        debug_info: Optional[str] = None,
+        debug_info: str | None = None,
     ):
         super().__init__(interval=interval, target_stream=target_stream)
         self.dbfs_client = files.DbfsAPI(client.api_client)
@@ -501,13 +501,13 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         self._debug_info = debug_info
 
     @property
-    def debug_info(self) -> Optional[str]:
+    def debug_info(self) -> str | None:
         return self._debug_info
 
     def target_is_readable(self, params: PipesParams) -> bool:
         return self._get_log_path(params) is not None
 
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
+    def download_log_chunk(self, params: PipesParams) -> str | None:
         log_path = self._get_log_path(params)
         if log_path is None:
             return None
@@ -532,7 +532,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
 
     # The directory containing logs will not exist until either 5 minutes have elapsed or the
     # job has finished.
-    def _get_log_path(self, params: PipesParams) -> Optional[str]:
+    def _get_log_path(self, params: PipesParams) -> str | None:
         if self.log_path is None:
             cluster_driver_log_root = (
                 params["extras"].get("cluster_driver_log_root") if "extras" in params else None
@@ -582,8 +582,8 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         self,
         client: WorkspaceClient,
         volume_path: str,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         poll_interval_seconds: float = 5,
         forward_termination: bool = True,
     ):
@@ -603,10 +603,10 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
-        extras: Optional[PipesExtras] = None,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None = None,
         task: jobs.SubmitTask,
-        submit_args: Optional[Mapping[str, Any]] = None,
+        submit_args: Mapping[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Synchronously execute a Databricks job with the pipes protocol.
 
@@ -668,7 +668,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
 
     def _enrich_submit_task_dict(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
     ) -> dict[str, Any]:
@@ -831,7 +831,7 @@ class PipesUnityCatalogVolumesMessageReader(PipesBlobStoreMessageReader):
         except Exception:
             return False
 
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+    def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:
         """Download a specific message chunk from Unity Catalog Volume."""
         message_path = f"{params['path']}/{index}.json"
 

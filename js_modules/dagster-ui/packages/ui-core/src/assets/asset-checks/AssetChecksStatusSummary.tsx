@@ -12,23 +12,11 @@ import countBy from 'lodash/countBy';
 import * as React from 'react';
 
 import {CheckStatusRow} from './AssetCheckStatusTag';
+import {AssetCheckIconType, getAggregateCheckIconType} from './util';
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {LiveDataForNode} from '../../asset-graph/Utils';
-import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  AssetKeyInput,
-} from '../../graphql/types';
-
-type AssetCheckIconType =
-  | Exclude<
-      AssetCheckExecutionResolvedStatus,
-      AssetCheckExecutionResolvedStatus.FAILED | AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-    >
-  | 'NOT_EVALUATED'
-  | 'WARN'
-  | 'ERROR';
+import {AssetCheckExecutionResolvedStatus, AssetKeyInput} from '../../graphql/types';
 
 const AssetCheckIconsOrdered: {
   type: AssetCheckIconType;
@@ -75,6 +63,10 @@ const titlePerCheckType = (type: AssetCheckIconType) => {
       return 'Skipped';
     case AssetCheckExecutionResolvedStatus.SUCCEEDED:
       return 'Succeeded';
+    case AssetCheckExecutionResolvedStatus.FAILED:
+      return 'Failed';
+    case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+      return 'Execution failed';
     case 'NOT_EVALUATED':
       return 'Not evaluated';
     case 'WARN':
@@ -90,10 +82,12 @@ export const ChecksSummaryPopover = ({
   type,
   assetKey,
   assetChecks,
+  preferLatestStatus = false,
 }: {
   type: AssetCheckIconType;
   assetKey: AssetKeyInput;
   assetChecks: AssetCheckLiveFragment[];
+  preferLatestStatus?: boolean;
 }) => {
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
@@ -101,23 +95,36 @@ export const ChecksSummaryPopover = ({
         <Subtitle2>{`${titlePerCheckType(type)} checks`}</Subtitle2>
       </Box>
       {assetChecks.map((check) => (
-        <CheckStatusRow key={check.name} assetCheck={check} assetKey={assetKey} />
+        <CheckStatusRow
+          key={check.name}
+          assetCheck={check}
+          assetKey={assetKey}
+          preferLatestStatus={preferLatestStatus}
+        />
       ))}
     </Box>
   );
 };
 
 function iconTypeFromCheck(check: AssetCheckLiveFragment): AssetCheckIconType {
-  const status = check.executionForLatestMaterialization?.status;
-  return status === undefined
-    ? 'NOT_EVALUATED'
-    : status === AssetCheckExecutionResolvedStatus.FAILED
-      ? check.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
-        ? 'WARN'
-        : 'ERROR'
-      : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-        ? 'ERROR'
-        : status;
+  return getAggregateCheckIconType(check);
+}
+
+function iconTypeFromLatestExecution(check: AssetCheckLiveFragment): AssetCheckIconType {
+  const execution = check.executionForLatestMaterialization;
+  if (!execution?.status) {
+    return 'NOT_EVALUATED';
+  }
+  const status = execution.status;
+  const isWarn = execution.evaluation?.severity === 'WARN';
+
+  if (status === AssetCheckExecutionResolvedStatus.FAILED) {
+    return isWarn ? 'WARN' : 'ERROR';
+  }
+  if (status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED) {
+    return 'ERROR';
+  }
+  return status;
 }
 
 export const AssetChecksStatusSummary = ({
@@ -129,7 +136,10 @@ export const AssetChecksStatusSummary = ({
   rendering: 'dag2025' | 'dag' | 'tags';
   assetKey: AssetKeyInput;
 }) => {
-  const byIconType = countBy(liveData.assetChecks, iconTypeFromCheck);
+  // For tags rendering (Overview Tab), use latest execution status
+  // For dag renderings, use aggregate status
+  const iconTypeFunction = rendering === 'tags' ? iconTypeFromLatestExecution : iconTypeFromCheck;
+  const byIconType = countBy(liveData.assetChecks, iconTypeFunction);
 
   if (rendering === 'dag2025') {
     const icon = () => {
@@ -145,13 +155,27 @@ export const AssetChecksStatusSummary = ({
       return <Icon name="done" color={Colors.accentGreen()} />;
     };
 
-    const succeeded = byIconType[AssetCheckExecutionResolvedStatus.SUCCEEDED] ?? 0;
-    const total = liveData.assetChecks.length;
+    // Calculate total passed/total checks - count each check as 1 unit
+    const {passed, total} = liveData.assetChecks.reduce(
+      (acc, check) => {
+        // Count each check as 1 unit, regardless of partitioning
+        const aggregateStatus = getAggregateCheckIconType(check);
+
+        if (aggregateStatus === AssetCheckExecutionResolvedStatus.SUCCEEDED) {
+          acc.passed += 1;
+        }
+        acc.total += 1;
+
+        return acc;
+      },
+      {passed: 0, total: 0},
+    );
+
     return (
       <Box flex={{gap: 4, alignItems: 'center'}}>
         {icon()}
         <span>
-          {succeeded} / {total} Passed
+          {passed} / {total} Passed
         </span>
       </Box>
     );
@@ -177,7 +201,8 @@ export const AssetChecksStatusSummary = ({
             <ChecksSummaryPopover
               type={type}
               assetKey={assetKey}
-              assetChecks={liveData.assetChecks.filter((a) => iconTypeFromCheck(a) === type)}
+              assetChecks={liveData.assetChecks.filter((a) => iconTypeFunction(a) === type)}
+              preferLatestStatus={rendering === 'tags'}
             />
           }
           position="top-left"

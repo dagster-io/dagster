@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
@@ -21,7 +21,7 @@ class SerializedPartitionsSubset(NamedTuple):
             serialized_partitions_def_class_name=partitions_def.__class__.__name__,
         )
 
-    def can_deserialize(self, partitions_def: Optional[PartitionsDefinition]) -> bool:
+    def can_deserialize(self, partitions_def: PartitionsDefinition | None) -> bool:
         if not partitions_def:
             # Asset had a partitions definition at storage time, but no longer does
             return False

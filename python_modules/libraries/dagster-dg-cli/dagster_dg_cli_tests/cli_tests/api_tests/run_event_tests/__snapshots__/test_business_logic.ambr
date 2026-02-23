@@ -1,0 +1,37 @@
+# serializer version: 1
+# name: TestFormatRunEventsJson.test_format_with_events[0]
+  dict({
+    'count': 2,
+    'events': list([
+      dict({
+        'eventType': 'PIPELINE_START',
+        'level': 'INFO',
+        'message': 'Started execution of run for "dbt_analytics_core_job".',
+        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+        'stepKey': None,
+        'timestamp': '1771476078297',
+      }),
+      dict({
+        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
+        'level': 'INFO',
+        'message': 'dbt_analytics_core_job intends to materialize asset "my_asset".',
+        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+        'stepKey': 'dbt_non_partitioned_models_2',
+        'timestamp': '1771476078298',
+      }),
+    ]),
+    'run_id': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+  })
+# ---
+# name: TestFormatRunEventsTable.test_format_with_events[0]
+  '''
+  Events for run a34cd75c-cfa9-4e99-8f0a-955492b89afd:
+  
+  TIMESTAMP            TYPE                 STEP_KEY                       MESSAGE                                           
+  ---------------------------------------------------------------------------------------------------------------------------
+  1771476078297        PIPELINE_START                                      Started execution of run for "dbt_analytics_cor...
+  1771476078298        ASSET_MATERIALIZATION_PLANNED dbt_non_partitioned_models_2   dbt_analytics_core_job intends to materialize a...
+  
+  Total events: 2
+  '''
+# ---

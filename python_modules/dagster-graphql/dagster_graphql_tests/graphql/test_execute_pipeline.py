@@ -1,7 +1,7 @@
 import json
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 from unittest import mock
 
 from dagster._core.storage.dagster_run import RunsFilter
@@ -779,7 +779,7 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
                 return message_data
 
 
-def first_event_of_type(logs, message_type) -> Optional[dict[str, Any]]:
+def first_event_of_type(logs, message_type) -> dict[str, Any] | None:
     for log in logs:
         if log["__typename"] == message_type:
             return log

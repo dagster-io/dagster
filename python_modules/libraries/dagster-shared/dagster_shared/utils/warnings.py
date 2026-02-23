@@ -2,7 +2,7 @@ import warnings
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from dagster_shared import check
 
@@ -21,7 +21,7 @@ class PreviewWarning(Warning):
 
 def preview_warning(
     subject: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     stacklevel: int = 3,
 ):
     if not _warnings_on.get():
@@ -47,7 +47,7 @@ class BetaWarning(Warning):
 
 def beta_warning(
     subject: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     stacklevel: int = 3,
 ):
     if not _warnings_on.get():
@@ -73,7 +73,7 @@ class SupersessionWarning(FutureWarning):
 
 def supersession_warning(
     subject: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     stacklevel: int = 3,
 ):
     if not _warnings_on.get():
@@ -97,7 +97,7 @@ def normalize_renamed_param(
     new_arg: str,
     old_val: T,
     old_arg: str,
-    coerce_old_to_new: Optional[Callable[[T], T]] = None,
+    coerce_old_to_new: Callable[[T], T] | None = None,
 ) -> T:
     """Utility for managing backwards compatibility of a renamed parameter.
 
@@ -133,7 +133,7 @@ def normalize_renamed_param(
 def deprecation_warning(
     subject: str,
     breaking_version: str,
-    additional_warn_text: Optional[str] = None,
+    additional_warn_text: str | None = None,
     stacklevel: int = 3,
 ):
     if not _warnings_on.get():

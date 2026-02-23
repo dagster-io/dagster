@@ -4,7 +4,7 @@ import asyncio
 import copy
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -92,7 +92,7 @@ class TestLookerTranslation(TestTranslation):
         looker_api_mocks,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
     ) -> None:
         body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
         body["attributes"]["translation"] = attributes

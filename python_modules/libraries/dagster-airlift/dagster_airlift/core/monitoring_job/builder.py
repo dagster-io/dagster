@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional, Union
 
 from dagster import RunRequest, sensor
 from dagster._annotations import beta
@@ -99,7 +98,7 @@ def build_monitoring_sensor(
     )
     def airflow_monitoring_job_sensor(
         context: SensorEvaluationContext,
-    ) -> Union[RunRequest, SkipReason]:
+    ) -> RunRequest | SkipReason:
         effective_timestamp = get_current_datetime()
         if context.cursor is None:
             cursor = AirflowMonitoringJobSensorCursor(
@@ -136,7 +135,7 @@ def _get_run_for_cursor(
     context: SensorEvaluationContext,
     airflow_instance: AirflowInstance,
     cursor: AirflowMonitoringJobSensorCursor,
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     return next(
         iter(
             context.instance.get_runs(

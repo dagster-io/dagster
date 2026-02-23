@@ -1,5 +1,4 @@
 import operator
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -24,7 +23,7 @@ partitions_defs = [
 @pytest.mark.parametrize("first_all", [True, False])
 @pytest.mark.parametrize("second_all", [True, False])
 def test_operations(
-    partitions_def: Optional[dg.PartitionsDefinition], first_all: bool, second_all: bool
+    partitions_def: dg.PartitionsDefinition | None, first_all: bool, second_all: bool
 ) -> None:
     @dg.asset(partitions_def=partitions_def)
     def foo() -> None: ...
@@ -60,7 +59,7 @@ def test_operations(
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
-def test_round_trip(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+def test_round_trip(partitions_def: dg.PartitionsDefinition | None) -> None:
     @dg.asset(partitions_def=partitions_def)
     def foo() -> None: ...
 

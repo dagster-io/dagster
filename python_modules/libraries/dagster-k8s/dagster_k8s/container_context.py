@@ -51,7 +51,7 @@ class K8sContainerContext(
         [
             ("server_k8s_config", UserDefinedDagsterK8sConfig),
             ("run_k8s_config", UserDefinedDagsterK8sConfig),
-            ("namespace", Optional[str]),
+            ("namespace", str | None),
         ],
     )
 ):
@@ -63,22 +63,22 @@ class K8sContainerContext(
 
     def __new__(
         cls,
-        image_pull_policy: Optional[str] = None,
-        image_pull_secrets: Optional[Sequence[Mapping[str, str]]] = None,
-        service_account_name: Optional[str] = None,
-        env_config_maps: Optional[Sequence[str]] = None,
-        env_secrets: Optional[Sequence[str]] = None,
-        env_vars: Optional[Sequence[str]] = None,
-        volume_mounts: Optional[Sequence[Mapping[str, Any]]] = None,
-        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
-        labels: Optional[Mapping[str, str]] = None,
-        namespace: Optional[str] = None,
-        resources: Optional[Mapping[str, Any]] = None,
-        scheduler_name: Optional[str] = None,
-        security_context: Optional[Mapping[str, Any]] = None,
-        server_k8s_config: Optional[UserDefinedDagsterK8sConfig] = None,
-        run_k8s_config: Optional[UserDefinedDagsterK8sConfig] = None,
-        env: Optional[Sequence[Mapping[str, Any]]] = None,
+        image_pull_policy: str | None = None,
+        image_pull_secrets: Sequence[Mapping[str, str]] | None = None,
+        service_account_name: str | None = None,
+        env_config_maps: Sequence[str] | None = None,
+        env_secrets: Sequence[str] | None = None,
+        env_vars: Sequence[str] | None = None,
+        volume_mounts: Sequence[Mapping[str, Any]] | None = None,
+        volumes: Sequence[Mapping[str, Any]] | None = None,
+        labels: Mapping[str, str] | None = None,
+        namespace: str | None = None,
+        resources: Mapping[str, Any] | None = None,
+        scheduler_name: str | None = None,
+        security_context: Mapping[str, Any] | None = None,
+        server_k8s_config: UserDefinedDagsterK8sConfig | None = None,
+        run_k8s_config: UserDefinedDagsterK8sConfig | None = None,
+        env: Sequence[Mapping[str, Any]] | None = None,
     ):
         top_level_k8s_config = K8sContainerContext._get_base_user_defined_k8s_config(
             image_pull_policy=check.opt_str_param(image_pull_policy, "image_pull_policy"),
@@ -131,9 +131,9 @@ class K8sContainerContext(
 
     @staticmethod
     def _get_base_user_defined_k8s_config(
-        image_pull_policy: Optional[str],
-        image_pull_secrets: Optional[Sequence[Mapping[str, str]]],
-        service_account_name: Optional[str],
+        image_pull_policy: str | None,
+        image_pull_secrets: Sequence[Mapping[str, str]] | None,
+        service_account_name: str | None,
         env_config_maps: Sequence[str],
         env_secrets: Sequence[str],
         env_vars: Sequence[str],
@@ -141,7 +141,7 @@ class K8sContainerContext(
         volumes: Sequence[Mapping[str, Any]],
         labels: Mapping[str, str],
         resources: Mapping[str, Any],
-        scheduler_name: Optional[str],
+        scheduler_name: str | None,
         security_context: Mapping[str, Any],
         env: Sequence[Mapping[str, Any]],
     ) -> UserDefinedDagsterK8sConfig:
@@ -306,8 +306,8 @@ class K8sContainerContext(
 
     def validate_user_k8s_config_for_run(
         self,
-        only_allow_user_defined_k8s_config_fields: Optional[Mapping[str, Any]],
-        only_allow_user_defined_env_vars: Optional[Sequence[str]],
+        only_allow_user_defined_k8s_config_fields: Mapping[str, Any] | None,
+        only_allow_user_defined_env_vars: Sequence[str] | None,
     ):
         return self._validate_user_k8s_config(
             self.run_k8s_config,
@@ -317,8 +317,8 @@ class K8sContainerContext(
 
     def validate_user_k8s_config_for_code_server(
         self,
-        only_allow_user_defined_k8s_config_fields: Optional[Mapping[str, Any]],
-        only_allow_user_defined_env_vars: Optional[Sequence[str]],
+        only_allow_user_defined_k8s_config_fields: Mapping[str, Any] | None,
+        only_allow_user_defined_env_vars: Sequence[str] | None,
     ):
         return self._validate_user_k8s_config(
             self.server_k8s_config,
@@ -329,8 +329,8 @@ class K8sContainerContext(
     def _validate_user_k8s_config(
         self,
         user_defined_k8s_config: UserDefinedDagsterK8sConfig,
-        only_allow_user_defined_k8s_config_fields: Optional[Mapping[str, Any]],
-        only_allow_user_defined_env_vars: Optional[Sequence[str]],
+        only_allow_user_defined_k8s_config_fields: Mapping[str, Any] | None,
+        only_allow_user_defined_env_vars: Sequence[str] | None,
     ) -> "K8sContainerContext":
         used_fields = self._get_used_k8s_config_fields(user_defined_k8s_config)
 

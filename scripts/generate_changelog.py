@@ -11,7 +11,6 @@ from dataclasses import dataclass, replace
 from functools import cached_property
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import click
 import git
@@ -99,11 +98,11 @@ class ParsedCommit:
     issue_number: str
     is_community_contribution: bool
     changelog_category: str
-    changelog_entry: Optional[str]
+    changelog_entry: str | None
     title: str
     authors: list[Author]
     repo_name: str
-    prefix: Optional[str]  # Library prefix like [dagster-dbt], [ui], etc.
+    prefix: str | None  # Library prefix like [dagster-dbt], [ui], etc.
     ignore: bool
     commit_hash: str = ""  # Git commit SHA
     synced_from_oss: bool = False  # True if commit was synced from dagster-io/dagster
@@ -126,14 +125,14 @@ class ParsedCommit:
         return self.first_external_author or self.authors[0]
 
     @cached_property
-    def first_external_author(self) -> Optional[Author]:
+    def first_external_author(self) -> Author | None:
         for author in self.authors:
             if author.is_external:
                 return author
         return None
 
     @cached_property
-    def github_pr_author_username(self) -> Optional[str]:
+    def github_pr_author_username(self) -> str | None:
         """Extract GitHub username from commit author email, name, or PR webpage."""
         # Check if email is a GitHub noreply email
         if self.primary_author.email and "@users.noreply.github.com" in self.primary_author.email:
@@ -172,7 +171,7 @@ def _clean_changelog_entry(text: str) -> str:
     return text
 
 
-def _needs_period_fix(entry: Optional[str]) -> bool:
+def _needs_period_fix(entry: str | None) -> bool:
     """Check if changelog entry needs a period added at the end."""
     if not entry or entry == "<UNDOCUMENTED>":
         return False
@@ -184,7 +183,7 @@ def _needs_period_fix(entry: Optional[str]) -> bool:
     return stripped[-1] not in ".!?)]"
 
 
-def _extract_prefix_from_text(text: str) -> tuple[Optional[str], str]:
+def _extract_prefix_from_text(text: str) -> tuple[str | None, str]:
     """Extract library prefix from changelog text and return (prefix, cleaned_text).
 
     Examples:
@@ -205,7 +204,7 @@ def _extract_prefix_from_text(text: str) -> tuple[Optional[str], str]:
     return None, text
 
 
-def _is_valid_prefix(prefix: Optional[str]) -> bool:
+def _is_valid_prefix(prefix: str | None) -> bool:
     """Check if prefix is valid: None, 'ui', or 'dagster-*'."""
     if prefix is None:
         return True
@@ -216,7 +215,7 @@ def _is_valid_prefix(prefix: Optional[str]) -> bool:
     return False
 
 
-def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
+def _fetch_github_username_from_pr(pr_url: str) -> str | None:
     """Fetch GitHub username from PR using GitHub API."""
     try:
         # Parse PR URL to extract owner, repo, and PR number
@@ -252,7 +251,7 @@ def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
     return None
 
 
-def _fetch_pr_body(pr_url: str) -> Optional[str]:
+def _fetch_pr_body(pr_url: str) -> str | None:
     """Fetch PR body/description from GitHub API."""
     try:
         if not re.match(r"https?://(?:www\.)?github\.com/", pr_url):
@@ -328,7 +327,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     synced_from_oss = "Synced-From-Dagster" in commit_message
 
     # Extract original author if this is a synced commit
-    original_author: Optional[Author] = None
+    original_author: Author | None = None
     if synced_from_oss:
         # Look for ORIGINAL_AUTHOR=Name <email> pattern
         match = re.search(r"ORIGINAL_AUTHOR=(.+?) <(.+?)>", commit_message)
@@ -646,7 +645,7 @@ def _cycle_category(current_category: str, is_internal_repo: bool = False) -> st
         return categories[0]
 
 
-def _get_edited_entry_interactive(current_entry: str) -> Optional[str]:
+def _get_edited_entry_interactive(current_entry: str) -> str | None:
     """Get user's edited changelog entry with simple prompt."""
 
     def pre_input_hook():
@@ -672,7 +671,7 @@ def _update_display_and_refresh(
     live.refresh()
 
 
-def _get_edited_prefix_interactive(current_prefix: Optional[str]) -> Optional[str]:
+def _get_edited_prefix_interactive(current_prefix: str | None) -> str | None:
     """Get user's edited prefix with simple prompt."""
     current_text = current_prefix or ""
 
@@ -714,7 +713,7 @@ class AIChangelogSuggestion:
 
     description: str
     category: str  # "New", "Bugfixes", "Documentation", "Dagster Plus"
-    prefix: Optional[str]  # e.g., "dagster-dbt", "ui", or None
+    prefix: str | None  # e.g., "dagster-dbt", "ui", or None
     should_thank: bool
     should_skip: bool
     reasoning: str
@@ -744,7 +743,7 @@ def _get_commit_diff(commit_hash: str, max_lines: int = 200) -> str:
     return "(could not fetch diff)"
 
 
-def _generate_changelog_with_ai(commit: ParsedCommit) -> Optional[AIChangelogSuggestion]:
+def _generate_changelog_with_ai(commit: ParsedCommit) -> AIChangelogSuggestion | None:
     """Use Claude CLI to generate changelog entry fields for a commit."""
     # Fetch PR body from GitHub
     pr_body = _fetch_pr_body(commit.pr_url) or "(could not fetch)"
@@ -1371,7 +1370,7 @@ def _get_documented_section_with_thanks(documented: Sequence[ParsedCommit]) -> s
 @click.command()
 @click.argument("new_version", type=str, required=True)
 @click.argument("prev_version", type=str, required=False)
-def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
+def generate_changelog(new_version: str, prev_version: str | None = None) -> None:
     if prev_version is None:
         prev_version = _get_previous_version(new_version)
 

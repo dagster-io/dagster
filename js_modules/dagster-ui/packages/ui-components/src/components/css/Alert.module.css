@@ -7,19 +7,19 @@
   background-color: var(--alert-background);
   box-shadow: inset 4px 0 var(--alert-box-shadow);
   color: var(--alert-text);
+}
 
-  a {
-    color: var(--alert-text);
-    text-decoration: underline;
-  }
+.alert a {
+  color: var(--alert-text);
+  text-decoration: underline;
+}
 
-  .icon div[role='img'] {
-    background-color: var(--alert-icon);
-  }
+.alert .icon div[role='img'] {
+  background-color: var(--alert-icon);
+}
 
-  .button div[role='img'] {
-    background-color: var(--alert-text);
-  }
+.alert .button div[role='img'] {
+  background-color: var(--alert-text);
 }
 
 .alert.warning {

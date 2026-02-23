@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Optional
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
@@ -22,9 +21,9 @@ def _is_dag_is_schedule(dag: DAG) -> bool:
 
 def make_dagster_schedule_from_airflow_dag(
     dag: DAG,
-    tags: Optional[Mapping[str, str]] = None,
-    connections: Optional[list[Connection]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    tags: Mapping[str, str] | None = None,
+    connections: list[Connection] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = {},
 ) -> ScheduleDefinition:
     """Construct a Dagster schedule corresponding to an Airflow DAG.
 

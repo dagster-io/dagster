@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -19,9 +19,9 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
     instance: DagsterInstance,
     repository_handle: RepositoryHandle,
     schedule_name: str,
-    scheduled_execution_time: Optional[TimestampWithTimezone],
-    log_key: Optional[Sequence[str]],
-    timeout: Optional[int] = None,
+    scheduled_execution_time: TimestampWithTimezone | None,
+    log_key: Sequence[str] | None,
+    timeout: int | None = None,
 ) -> ScheduleExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
@@ -45,9 +45,9 @@ def sync_get_external_schedule_execution_data_grpc(
     instance: DagsterInstance,
     repository_handle: RepositoryHandle,
     schedule_name: str,
-    scheduled_execution_time: Optional[TimestampWithTimezone],
-    log_key: Optional[Sequence[str]],
-    timeout: Optional[int] = None,
+    scheduled_execution_time: TimestampWithTimezone | None,
+    log_key: Sequence[str] | None,
+    timeout: int | None = None,
 ) -> ScheduleExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")

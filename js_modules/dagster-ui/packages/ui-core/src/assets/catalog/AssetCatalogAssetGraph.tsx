@@ -1,6 +1,6 @@
+import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
-import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetGraphExplorer} from '../../asset-graph/AssetGraphExplorer';
 import {AssetGraphViewType, tokenForAssetKey} from '../../asset-graph/Utils';

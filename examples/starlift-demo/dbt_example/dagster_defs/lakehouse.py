@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Optional
 
 from dagster import AssetKey, AssetSpec, multi_asset
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
@@ -20,8 +19,8 @@ def lakehouse_asset_key(*, csv_path) -> AssetKey:
 def specs_from_lakehouse(
     *,
     csv_path: Path,
-    automation_condition: Optional[AutomationCondition] = None,
-    upstreams_map: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
+    automation_condition: AutomationCondition | None = None,
+    upstreams_map: Mapping[AssetKey, Sequence[AssetKey]] | None = None,
 ) -> Sequence[AssetSpec]:
     key = lakehouse_asset_key(csv_path=csv_path)
     return [
@@ -38,8 +37,8 @@ def lakehouse_assets_def(
     csv_path: Path,
     duckdb_path: Path,
     columns: list[str],
-    automation_condition: Optional[AutomationCondition] = None,
-    upstreams_map: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
+    automation_condition: AutomationCondition | None = None,
+    upstreams_map: Mapping[AssetKey, Sequence[AssetKey]] | None = None,
 ) -> AssetsDefinition:
     @multi_asset(
         specs=specs_from_lakehouse(

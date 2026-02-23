@@ -1,6 +1,6 @@
+import {FeatureFlag} from '@shared/FeatureFlags';
+import {DEFAULT_FEATURE_FLAG_VALUES} from '@shared/app/DefaultFeatureFlags';
 import {useEffect, useState} from 'react';
-import {DEFAULT_FEATURE_FLAG_VALUES} from 'shared/app/DefaultFeatureFlags.oss';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {featureFlagsChannel, getCurrentFeatureFlags} from './Flags';
 

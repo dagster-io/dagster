@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator, Collection, Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from enum import Enum
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import dagster._check as check
 from dagster._serdes import pack_value
@@ -122,7 +122,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                 text = TEMPLATE.replace("{{ app_path_prefix }}", self._app_path_prefix)
                 return HTMLResponse(text)
 
-            data: Union[dict[str, str], QueryParams] = request.query_params
+            data: dict[str, str] | QueryParams = request.query_params
         elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
 
@@ -147,7 +147,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             )
 
         query = data.get("query")
-        variables: Union[Optional[str], dict[str, Any]] = data.get("variables")
+        variables: str | None | dict[str, Any] = data.get("variables")
         operation_name = data.get("operationName")
 
         if query is None:
@@ -235,8 +235,8 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         self,
         request: Request,
         query: str,
-        variables: Optional[dict[str, Any]],
-        operation_name: Optional[str],
+        variables: dict[str, Any] | None,
+        operation_name: str | None,
     ) -> JSONResponse:
         # run each query in a separate thread, as much of the schema is sync/blocking
         # use execute_async to allow async resolvers to facilitate dataloader pattern
@@ -252,8 +252,8 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         self,
         request: Request,
         query: str,
-        variables: Optional[dict[str, Any]],
-        operation_name: Optional[str],
+        variables: dict[str, Any] | None,
+        operation_name: str | None,
     ) -> JSONResponse:
         with self.request_context(request) as request_context:
             return run(
@@ -269,8 +269,8 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         self,
         request_context: TRequestContext,
         query: str,
-        variables: Optional[dict[str, Any]],
-        operation_name: Optional[str],
+        variables: dict[str, Any] | None,
+        operation_name: str | None,
     ) -> JSONResponse:
         # Parse
         try:
@@ -331,9 +331,9 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         websocket: WebSocket,
         operation_id: str,
         query: str,
-        variables: Optional[dict[str, Any]],
-        operation_name: Optional[str],
-    ) -> tuple[Optional[Task], Optional[GraphQLFormattedError]]:
+        variables: dict[str, Any] | None,
+        operation_name: str | None,
+    ) -> tuple[Task | None, GraphQLFormattedError | None]:
         with self.request_context(websocket) as request_context:
             try:
                 async_result = await self._graphene_schema.subscribe(
@@ -372,7 +372,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
 
     def _determine_status_code(
         self,
-        resolver_errors: Optional[list[GraphQLError]],
+        resolver_errors: list[GraphQLError] | None,
         captured_errors: list[Exception],
     ) -> int:
         server_error = False

@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 import click
 import typer
@@ -342,13 +342,13 @@ def sync_project_to_packaged_dir(
 @project_app.command(name="prepare-and-package")
 def project_prepare_and_package_command(
     file: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             help="The file containing DbtProject definitions to prepare.",
         ),
     ] = None,
     components: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             help="The path to a dg project directory containing DbtProjectComponents.",
         ),

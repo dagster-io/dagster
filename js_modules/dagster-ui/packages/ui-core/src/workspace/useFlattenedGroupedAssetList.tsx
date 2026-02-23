@@ -19,9 +19,10 @@ const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-s
 type Config = {
   repoAddress: RepoAddress;
   assets: Asset[];
+  expandAllGroups: boolean;
 };
 
-export const useFlattenedGroupedAssetList = ({repoAddress, assets}: Config) => {
+export const useFlattenedGroupedAssetList = ({repoAddress, assets, expandAllGroups}: Config) => {
   const repoKey = repoAddressAsHumanString(repoAddress);
   const {expandedKeys, onToggle} = usePersistedExpansionState(
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
@@ -34,8 +35,7 @@ export const useFlattenedGroupedAssetList = ({repoAddress, assets}: Config) => {
       if (!groups[groupName]) {
         groups[groupName] = [];
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      groups[groupName]!.push(asset);
+      groups[groupName].push(asset);
     }
 
     Object.values(groups).forEach((group) => {
@@ -50,20 +50,24 @@ export const useFlattenedGroupedAssetList = ({repoAddress, assets}: Config) => {
     return groups;
   }, [assets]);
 
+  const expandedKeysSet = useMemo(() => {
+    return expandAllGroups ? new Set(Object.keys(grouped)) : new Set(expandedKeys);
+  }, [grouped, expandedKeys, expandAllGroups]);
+
   const flattened: RowType[] = useMemo(() => {
     const flat: RowType[] = [];
     Object.entries(grouped)
       .sort(([aName], [bName]) => COMMON_COLLATOR.compare(aName, bName))
       .forEach(([groupName, assetsForGroup]) => {
         flat.push({type: 'group', name: groupName, assetCount: assetsForGroup.length});
-        if (expandedKeys.includes(groupName)) {
+        if (expandedKeysSet.has(groupName)) {
           assetsForGroup.forEach((asset) => {
             flat.push({type: 'asset', id: asset.id, definition: asset});
           });
         }
       });
     return flat;
-  }, [grouped, expandedKeys]);
+  }, [grouped, expandedKeysSet]);
 
-  return {flattened, expandedKeys: new Set(expandedKeys), onToggle};
+  return {flattened, expandedKeys: expandedKeysSet, onToggle};
 };

@@ -1,5 +1,5 @@
+import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import {useState} from 'react';
-import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {
   LAUNCH_ASSET_LOADER_QUERY,

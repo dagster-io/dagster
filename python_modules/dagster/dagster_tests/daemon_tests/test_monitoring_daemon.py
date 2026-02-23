@@ -4,7 +4,7 @@ import os
 import time
 from collections.abc import Mapping
 from logging import Logger
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster as dg
 import dagster._check as check
@@ -35,7 +35,7 @@ from typing_extensions import Self
 
 
 class TestRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         self.should_fail_termination = False
         self.should_except_termination = False

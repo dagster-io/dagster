@@ -37,7 +37,7 @@ class InstanceConcurrencyContext:
     def __init__(self, instance: DagsterInstance, dagster_run: DagsterRun):
         self._instance = instance
         self._run_id = dagster_run.run_id
-        self._pools: Optional[dict[str, PoolLimit]] = None
+        self._pools: dict[str, PoolLimit] | None = None
         self._pending_timeouts = defaultdict(float)
         self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
@@ -54,9 +54,9 @@ class InstanceConcurrencyContext:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         to_clear = []
         for step_key in self._pending_claims:
@@ -175,7 +175,7 @@ class InstanceConcurrencyContext:
         self._claims.remove(step_key)
 
 
-def _calculate_timeout_interval(sleep_interval: Optional[float], pending_claim_count: int) -> float:
+def _calculate_timeout_interval(sleep_interval: float | None, pending_claim_count: int) -> float:
     if sleep_interval is not None:
         return sleep_interval
 

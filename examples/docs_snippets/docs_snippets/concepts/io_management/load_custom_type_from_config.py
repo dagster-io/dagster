@@ -1,5 +1,4 @@
 # def_start_marker
-from typing import Union
 
 import dagster as dg
 
@@ -7,9 +6,7 @@ import dagster as dg
 @dg.dagster_type_loader(
     config_schema={"diameter": float, "juiciness": float, "cultivar": str}
 )
-def apple_loader(
-    _context: dg.DagsterTypeLoaderContext, config: dict[str, Union[float, str]]
-):
+def apple_loader(_context: dg.DagsterTypeLoaderContext, config: dict[str, float | str]):
     return Apple(
         diameter=config["diameter"],
         juiciness=config["juiciness"],

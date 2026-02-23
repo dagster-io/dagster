@@ -5,7 +5,7 @@ import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import nbformat
 import papermill
@@ -273,9 +273,9 @@ def _make_dagstermill_compute_fn(
     dagster_factory_name: str,
     name: str,
     notebook_path: str,
-    output_notebook_name: Optional[str] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    output_notebook: Optional[str] = None,
+    output_notebook_name: str | None = None,
+    asset_key_prefix: Sequence[str] | None = None,
+    output_notebook: str | None = None,
     save_notebook_on_failure: bool = False,
 ) -> Callable:
     def _t_fn(op_context: OpExecutionContext, inputs: Mapping[str, object]) -> Iterable:
@@ -350,15 +350,15 @@ def _make_dagstermill_compute_fn(
 def define_dagstermill_op(
     name: str,
     notebook_path: str,
-    ins: Optional[Mapping[str, In]] = None,
-    outs: Optional[Mapping[str, Out]] = None,
-    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    output_notebook_name: Optional[str] = None,
-    asset_key_prefix: Optional[Union[Sequence[str], str]] = None,
-    description: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
-    io_manager_key: Optional[str] = None,
+    ins: Mapping[str, In] | None = None,
+    outs: Mapping[str, Out] | None = None,
+    config_schema: Any | Mapping[str, Any] | None = None,
+    required_resource_keys: set[str] | None = None,
+    output_notebook_name: str | None = None,
+    asset_key_prefix: Sequence[str] | str | None = None,
+    description: str | None = None,
+    tags: Mapping[str, Any] | None = None,
+    io_manager_key: str | None = None,
     save_notebook_on_failure: bool = False,
 ) -> OpDefinition:
     """Wrap a Jupyter notebook in a op.

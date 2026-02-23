@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import ContextManager, Optional, cast  # noqa: UP035
+from typing import ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -56,7 +56,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, mysql_url: str, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, mysql_url: str, inst_data: ConfigurableClassData | None = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
 
@@ -103,14 +103,14 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         )
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
     def config_type(cls) -> UserConfigSchema:
         return mysql_config()
 
-    def get_server_version(self) -> Optional[str]:
+    def get_server_version(self) -> str | None:
         with self.connect() as conn:
             row = conn.execute(db.text("select version()")).fetchone()
 
@@ -121,7 +121,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: MySqlStorageConfig
     ) -> "MySQLRunStorage":
         return MySQLRunStorage(inst_data=inst_data, mysql_url=mysql_url_from_config(config_value))
 
@@ -140,7 +140,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         MySQLRunStorage.wipe_storage(mysql_url)
         return MySQLRunStorage(mysql_url)
 
-    def connect(self, run_id: Optional[str] = None) -> ContextManager[Connection]:
+    def connect(self, run_id: str | None = None) -> ContextManager[Connection]:
         return create_mysql_connection(self._engine, __file__, "run")
 
     def upgrade(self) -> None:

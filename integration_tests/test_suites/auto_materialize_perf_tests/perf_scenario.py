@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster import (
     AssetKey,
@@ -61,7 +61,7 @@ class PerfScenario(NamedTuple):
     defs: Definitions
     activity_history: ActivityHistory
     max_execution_time_seconds: int
-    current_time: Optional[datetime] = None
+    current_time: datetime | None = None
 
     def save_instance_snapshot(self) -> None:
         """Executes the specified runs for the given asset graph, writing the resulting instance to
@@ -95,7 +95,7 @@ class RandomAssets(NamedTuple):
     name: str
     n_assets: int
     n_sources: int = 0
-    asset_partitions_def: Optional[PartitionsDefinition] = None
+    asset_partitions_def: PartitionsDefinition | None = None
     max_connectivity: int = 20
 
     def build_definitions(self) -> Definitions:
@@ -147,7 +147,7 @@ class RandomAssets(NamedTuple):
         max_execution_time_seconds: int,
         n_runs: int = 1,
         randomize_runs: bool = False,
-        partition_keys_to_backfill: Optional[Sequence[str]] = None,
+        partition_keys_to_backfill: Sequence[str] | None = None,
     ) -> PerfScenario:
         defs = self.build_definitions()
         asset_graph = defs.resolve_asset_graph()

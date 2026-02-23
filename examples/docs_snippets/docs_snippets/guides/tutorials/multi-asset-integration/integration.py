@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -61,9 +61,9 @@ class ReplicationTranslator:
 def custom_replication_assets(
     *,
     replication_project: ReplicationProject,
-    name: Optional[str] = None,
-    group_name: Optional[str] = None,
-    translator: Optional[ReplicationTranslator] = None,
+    name: str | None = None,
+    group_name: str | None = None,
+    translator: ReplicationTranslator | None = None,
 ) -> Callable[[Callable[..., Any]], dg.AssetsDefinition]:
     project = replication_project.load()
 

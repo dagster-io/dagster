@@ -11,17 +11,7 @@ import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Optional,
-    TextIO,
-    TypeAlias,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeAlias, TypeVar, Union, overload
 
 import click
 from click_aliases import ClickAliasedGroup
@@ -61,7 +51,7 @@ def is_uv_installed() -> bool:
     return shutil.which("uv") is not None
 
 
-def get_activated_venv() -> Optional[Path]:
+def get_activated_venv() -> Path | None:
     """Returns the path to the activated virtual environment, or None if no virtual environment is active."""
     venv_path = os.environ.get("VIRTUAL_ENV")
     if venv_path:
@@ -69,7 +59,7 @@ def get_activated_venv() -> Optional[Path]:
     return None
 
 
-def resolve_local_venv(start_path: Path) -> Optional[Path]:
+def resolve_local_venv(start_path: Path) -> Path | None:
     path = start_path
     while path != path.parent:
         venv_path = path / ".venv"
@@ -166,7 +156,7 @@ def discover_venv(path: Path) -> Path:
 
 
 @contextlib.contextmanager
-def pushd(path: Union[str, Path]) -> Iterator[None]:
+def pushd(path: str | Path) -> Iterator[None]:
     old_cwd = os.getcwd()
     os.chdir(path)
     try:
@@ -259,8 +249,8 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
 
 def hash_directory_metadata(
     hasher: Hash,
-    path: Union[str, Path],
-    includes: Optional[Sequence[str]],
+    path: str | Path,
+    includes: Sequence[str] | None,
     excludes: Sequence[str],
     error_on_missing: bool,
 ) -> None:
@@ -284,7 +274,7 @@ def hash_directory_metadata(
             hash_file_metadata(hasher, filepath, error_on_missing)
 
 
-def hash_file_metadata(hasher: Hash, path: Union[str, Path], error_on_missing) -> None:
+def hash_file_metadata(hasher: Hash, path: str | Path, error_on_missing) -> None:
     """Hashes the metadata of a file.
 
     Args:
@@ -305,7 +295,7 @@ def hash_file_metadata(hasher: Hash, path: Union[str, Path], error_on_missing) -
 T = TypeVar("T")
 
 
-def not_none(value: Optional[T]) -> T:
+def not_none(value: T | None) -> T:
     if value is None:
         raise DgError("Expected non-none value.")
     return value
@@ -339,7 +329,7 @@ def generate_missing_registry_object_error_message(registry_object_key: str) -> 
 
 def generate_project_and_activated_venv_mismatch_warning(
     project_venv_path: Path,
-    active_venv_path: Optional[Path],
+    active_venv_path: Path | None,
 ) -> str:
     return f"""
         The active virtual environment does not match the virtual environment found in the project
@@ -518,7 +508,7 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ##### TOML MANIPULATION
 # ########################
 
-TomlPath: TypeAlias = tuple[Union[str, int], ...]
+TomlPath: TypeAlias = tuple[str | int, ...]
 TomlDoc: TypeAlias = Union["tomlkit.TOMLDocument", dict[str, Any]]
 
 
@@ -531,7 +521,7 @@ def load_toml_as_dict(path: Path) -> dict[str, Any]:
 def get_toml_node(
     doc: TomlDoc,
     path: TomlPath,
-    expected_type: Union[type[T], tuple[type[T], ...]],
+    expected_type: type[T] | tuple[type[T], ...],
 ) -> T:
     """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
     it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
@@ -602,12 +592,12 @@ def _gather_toml_nodes(
 @overload
 def _gather_toml_nodes(
     doc: TomlDoc, path: TomlPath, error_on_missing: Literal[False] = ...
-) -> Optional[list[Any]]: ...
+) -> list[Any] | None: ...
 
 
 def _gather_toml_nodes(
     doc: TomlDoc, path: TomlPath, error_on_missing: bool = True
-) -> Optional[list[Any]]:
+) -> list[Any] | None:
     nodes: list[Any] = []
     current: Any = doc
     for key in path:
@@ -669,7 +659,7 @@ def toml_path_from_str(path: str) -> TomlPath:
 
 def create_toml_node(
     doc: dict[str, Any],
-    path: tuple[Union[str, int], ...],
+    path: tuple[str | int, ...],
     value: object,
 ) -> None:
     """Set a toml node at a path that consists of a sequence of keys and integer indices.
@@ -716,8 +706,8 @@ def create_toml_node(
 
 
 def _get_new_container_node(
-    representative_key: Union[int, str],
-) -> Union[dict[str, Any], list[Any]]:
+    representative_key: int | str,
+) -> dict[str, Any] | list[Any]:
     return [] if isinstance(representative_key, int) else {}
 
 
@@ -734,7 +724,7 @@ def capture_stdout() -> Iterator[TextIO]:
 
 
 @contextlib.contextmanager
-def activate_venv(venv_path: Union[str, Path]) -> Iterator[None]:
+def activate_venv(venv_path: str | Path) -> Iterator[None]:
     """Simulated activation of the passed in virtual environment for the current process."""
     venv_path = (Path(venv_path) if isinstance(venv_path, str) else venv_path).absolute()
     with environ(

@@ -3,7 +3,7 @@
 import json
 import os
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import click
 import requests
@@ -168,7 +168,7 @@ def print_status_summary(
     "--pipeline", default="dagster-dagster", help="Pipeline slug (default: dagster-dagster)"
 )
 @click.option("--json", "output_json", is_flag=True, help="Output in JSON format")
-def bk_build_status(build_number: Optional[str], org: str, pipeline: str, output_json: bool):
+def bk_build_status(build_number: str | None, org: str, pipeline: str, output_json: bool):
     """Get build status from Buildkite.
 
     Shows a summary of running, passed, and failed jobs for a specific build.

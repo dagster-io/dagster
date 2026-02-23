@@ -1,5 +1,5 @@
 from gzip import GzipFile
-from typing import Any, Optional
+from typing import Any
 
 import click
 from dagster import DagsterInstance
@@ -32,7 +32,7 @@ class WebserverDebugWorkspaceProcessContext(IWorkspaceProcessContext):
     ):
         self._instance = instance
 
-    def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
+    def create_request_context(self, source: Any | None = None) -> BaseWorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
             current_workspace=CurrentWorkspace(code_location_entries={}),

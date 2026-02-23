@@ -1,7 +1,7 @@
 """System-provided config objects and constructors."""
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.executor_definition import (
@@ -55,7 +55,7 @@ class OutputsConfig(NamedTuple):
     output_config_schema, and a list otherwise.
     """
 
-    config: Optional[Union[dict, list]]
+    config: dict | list | None
 
     @property
     def output_names(self) -> AbstractSet[str]:
@@ -98,12 +98,12 @@ class ResolvedRunConfig(
 ):
     def __new__(
         cls,
-        ops: Optional[Mapping[str, OpConfig]] = None,
+        ops: Mapping[str, OpConfig] | None = None,
         execution: Optional["ExecutionConfig"] = None,
-        resources: Optional[Mapping[str, ResourceConfig]] = None,
-        loggers: Optional[Mapping[str, Mapping[str, object]]] = None,
-        original_config_dict: Optional[Mapping[str, object]] = None,
-        inputs: Optional[Mapping[str, object]] = None,
+        resources: Mapping[str, ResourceConfig] | None = None,
+        loggers: Mapping[str, Mapping[str, object]] | None = None,
+        original_config_dict: Mapping[str, object] | None = None,
+        inputs: Mapping[str, object] | None = None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
         check.opt_mapping_param(original_config_dict, "original_config_dict")
@@ -126,7 +126,7 @@ class ResolvedRunConfig(
     @staticmethod
     def build(
         job_def: JobDefinition,
-        run_config: Optional[Mapping[str, object]] = None,
+        run_config: Mapping[str, object] | None = None,
     ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
         successful, we instantiate an ResolvedRunConfig object.
@@ -168,7 +168,7 @@ class ResolvedRunConfig(
         # If using the `execute_in_process` executor, we ignore the execution config value, since it
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
         if job_def.executor_def == execute_in_process_executor:
-            config_mapped_execution_configs: Optional[Mapping[str, Any]] = {}
+            config_mapped_execution_configs: Mapping[str, Any] | None = {}
         else:
             executor_config = config_value.get("execution", {})
             config_mapped_execution_configs = config_map_executor(
@@ -314,7 +314,7 @@ def config_map_objects(
     keyed_by: str,
     def_type: type,
     name_of_def_type: str,
-) -> Optional[Mapping[str, Any]]:
+) -> Mapping[str, Any] | None:
     """This function executes the config mappings for executors definitions with respect to
     ConfigurableDefinition. It calls the ensure_single_item macro on the incoming config and then
     applies config mapping to the result and the first executor_def with the same name on
@@ -354,15 +354,15 @@ class ExecutionConfig(
     NamedTuple(
         "_ExecutionConfig",
         [
-            ("execution_engine_name", Optional[str]),
+            ("execution_engine_name", str | None),
             ("execution_engine_config", Mapping[str, Any]),
         ],
     )
 ):
     def __new__(
         cls,
-        execution_engine_name: Optional[str],
-        execution_engine_config: Optional[Mapping[str, object]],
+        execution_engine_name: str | None,
+        execution_engine_config: Mapping[str, object] | None,
     ):
         return super().__new__(
             cls,
@@ -376,7 +376,7 @@ class ExecutionConfig(
         )
 
     @staticmethod
-    def from_dict(config: Optional[Mapping[str, Mapping[str, Any]]] = None) -> "ExecutionConfig":
+    def from_dict(config: Mapping[str, Mapping[str, Any]] | None = None) -> "ExecutionConfig":
         config = check.opt_mapping_param(config, "config", key_type=str)
         if config:
             execution_engine_name, execution_engine_config = ensure_single_item(config)

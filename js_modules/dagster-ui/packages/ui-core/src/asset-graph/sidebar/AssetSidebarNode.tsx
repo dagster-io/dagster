@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, UnstyledButton} from '@dagster-io/ui-components';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import * as React from 'react';
-import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';

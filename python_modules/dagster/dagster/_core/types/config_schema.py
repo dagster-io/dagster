@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator
 
 from typing_extensions import TypeAlias
 
@@ -71,7 +71,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
 
 
 def _create_type_loader_for_decorator(
-    config_type: ConfigType, func, required_resource_keys: Optional[AbstractSet[str]]
+    config_type: ConfigType, func, required_resource_keys: AbstractSet[str] | None
 ):
     return DagsterTypeLoaderFromDecorator(config_type, func, required_resource_keys)
 
@@ -81,7 +81,7 @@ DagsterTypeLoaderFn: TypeAlias = Callable[["DagsterTypeLoaderContext", Any], Any
 
 @public
 def dagster_type_loader(
-    config_schema: object, required_resource_keys: Optional[AbstractSet[str]] = None
+    config_schema: object, required_resource_keys: AbstractSet[str] | None = None
 ) -> Callable[[DagsterTypeLoaderFn], DagsterTypeLoaderFromDecorator]:
     """Create an dagster type loader that maps config data to a runtime value.
 

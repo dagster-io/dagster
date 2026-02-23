@@ -1,8 +1,8 @@
 import {Box} from '@dagster-io/ui-components';
+import {ViewBreadcrumb} from '@shared/assets/ViewBreadcrumb';
 import React, {useEffect} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {ViewBreadcrumb} from 'shared/assets/ViewBreadcrumb.oss';
 
 import {AssetCatalogTableV2} from './AssetCatalogTableV2';
 import {currentPageAtom} from '../../app/analytics';

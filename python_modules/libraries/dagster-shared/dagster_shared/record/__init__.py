@@ -5,7 +5,7 @@ from abc import ABC
 from collections import namedtuple
 from collections.abc import Callable, Iterator, Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, overload
 
 from typing_extensions import Self, dataclass_transform
 
@@ -106,7 +106,7 @@ def _namedtuple_record_transform(
     checked: bool,
     with_new: bool,
     decorator_frames: int,
-    field_to_new_mapping: Optional[Mapping[str, str]],
+    field_to_new_mapping: Mapping[str, str] | None,
     kw_only: bool,
 ) -> TType:
     """Transforms the input class in to one that inherits a generated NamedTuple base class
@@ -258,11 +258,11 @@ def record(
     frozen_default=True,
 )
 def record(
-    cls: Optional[TType] = None,
+    cls: TType | None = None,
     *,
     checked: bool = True,
     kw_only: bool = True,
-) -> Union[TType, Callable[[TType], TType]]:
+) -> TType | Callable[[TType], TType]:
     """A class decorator that will create an immutable record class based on the defined fields.
 
     Args:
@@ -319,16 +319,16 @@ def record_custom(
 def record_custom(
     *,
     checked: bool = True,
-    field_to_new_mapping: Optional[Mapping[str, str]] = None,
+    field_to_new_mapping: Mapping[str, str] | None = None,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
 def record_custom(
-    cls: Optional[TType] = None,
+    cls: TType | None = None,
     *,
     checked: bool = True,
-    field_to_new_mapping: Optional[Mapping[str, str]] = None,
-) -> Union[TType, Callable[[TType], TType]]:
+    field_to_new_mapping: Mapping[str, str] | None = None,
+) -> TType | Callable[[TType], TType]:
     """Variant of the record decorator to use when overriding __new__.
 
     Example:

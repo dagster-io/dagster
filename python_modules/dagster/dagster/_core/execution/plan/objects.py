@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 import dagster._check as check
 from dagster._core.definitions.metadata import (
@@ -30,7 +30,7 @@ class TypeCheckData(
         [
             ("success", bool),
             ("label", str),
-            ("description", Optional[str]),
+            ("description", str | None),
             ("metadata", Mapping[str, MetadataValue]),
         ],
     )
@@ -56,7 +56,7 @@ class UserFailureData(
         "_UserFailureData",
         [
             ("label", str),
-            ("description", Optional[str]),
+            ("description", str | None),
             ("metadata", Mapping[str, MetadataValue]),
         ],
     )
@@ -89,8 +89,8 @@ class StepFailureData(
     NamedTuple(
         "_StepFailureData",
         [
-            ("error", Optional[SerializableErrorInfo]),
-            ("user_failure_data", Optional[UserFailureData]),
+            ("error", SerializableErrorInfo | None),
+            ("user_failure_data", UserFailureData | None),
             ("error_source", ErrorSource),
         ],
     )
@@ -138,8 +138,8 @@ class StepFailureData(
 def step_failure_event_from_exc_info(
     step_context: "StepExecutionContext",
     exc_info: ExcInfo,
-    user_failure_data: Optional[UserFailureData] = None,
-    error_source: Optional[ErrorSource] = None,
+    user_failure_data: UserFailureData | None = None,
+    error_source: ErrorSource | None = None,
 ):
     from dagster._core.events import DagsterEvent
 
@@ -157,7 +157,7 @@ def step_failure_event_from_exc_info(
 class StepRetryData(
     NamedTuple(
         "_StepRetryData",
-        [("error", SerializableErrorInfo), ("seconds_to_wait", Optional[check.Numeric])],
+        [("error", SerializableErrorInfo), ("seconds_to_wait", check.Numeric | None)],
     )
 ):
     def __new__(cls, error, seconds_to_wait=None):

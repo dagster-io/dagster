@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -22,7 +21,7 @@ from dagster._core.test_utils import create_run_for_test
 def _create_check_planned_event(
     run_id: str,
     check_key: dg.AssetCheckKey,
-    partitions_subset: Optional[PartitionsSubset] = None,
+    partitions_subset: PartitionsSubset | None = None,
     timestamp: float = 0.0,
 ) -> dg.EventLogEntry:
     """Helper to create an ASSET_CHECK_EVALUATION_PLANNED event."""
@@ -48,8 +47,8 @@ def _create_check_evaluation_event(
     run_id: str,
     check_key: dg.AssetCheckKey,
     passed: bool,
-    partition: Optional[str] = None,
-    target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
+    partition: str | None = None,
+    target_materialization_data: AssetCheckEvaluationTargetMaterializationData | None = None,
     timestamp: float = 0.0,
 ) -> dg.EventLogEntry:
     """Helper to create an ASSET_CHECK_EVALUATION event."""
@@ -78,7 +77,7 @@ def _create_check_evaluation_event(
 def _create_materialization_event(
     run_id: str,
     asset_key: dg.AssetKey,
-    partition: Optional[str] = None,
+    partition: str | None = None,
     timestamp: float = 0.0,
 ) -> dg.EventLogEntry:
     """Helper to create an ASSET_MATERIALIZATION event."""

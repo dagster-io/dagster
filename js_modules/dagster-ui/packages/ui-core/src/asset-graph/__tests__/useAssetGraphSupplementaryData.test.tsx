@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
+import {useAssetGraphSupplementaryData} from '@shared/asset-graph/useAssetGraphSupplementaryData';
 import {renderHook, waitFor} from '@testing-library/react';
 import React from 'react';
-import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {parseExpression} from '../../asset-selection/AssetSelectionSupplementaryDataVisitor';

@@ -1,7 +1,7 @@
 import gzip
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from dagster import ConfigurableResource
@@ -15,7 +15,7 @@ HN_BASE_URL = "https://hacker-news.firebaseio.com/v0"
 
 class HNClient(ConfigurableResource, ABC):
     @abstractmethod
-    def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
+    def fetch_item_by_id(self, item_id: int) -> HNItemRecord | None:
         pass
 
     @abstractmethod
@@ -28,7 +28,7 @@ class HNClient(ConfigurableResource, ABC):
 
 
 class HNAPIClient(HNClient):
-    def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
+    def fetch_item_by_id(self, item_id: int) -> HNItemRecord | None:
         item_url = f"{HN_BASE_URL}/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()
         return item
@@ -47,7 +47,7 @@ class HNSnapshotClient(HNClient):
         with gzip.open(file_path, "r") as f:
             return json.loads(f.read().decode())
 
-    def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
+    def fetch_item_by_id(self, item_id: int) -> HNItemRecord | None:
         return self.load_items().get(str(item_id))
 
     def fetch_max_item_id(self) -> int:
@@ -65,7 +65,7 @@ class HNAPISubsampleClient(HNClient):
     subsample_rate: int
     _items: dict[int, HNItemRecord] = {}
 
-    def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
+    def fetch_item_by_id(self, item_id: int) -> HNItemRecord | None:
         # map self.subsample_rate items to the same item_id, caching it for faster performance
         subsample_id = item_id - item_id % self.subsample_rate
         if subsample_id not in self._items:

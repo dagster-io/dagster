@@ -140,7 +140,7 @@ def get_auto_restart_code_server_interval() -> int:
 
 
 class GrpcApiMetrics(TypedDict):
-    current_request_count: Optional[int]
+    current_request_count: int | None
 
 
 class DagsterCodeServerUtilizationMetrics(TypedDict):
@@ -185,7 +185,7 @@ class CouldNotBindGrpcServerToAddress(Exception):
     pass
 
 
-def _get_request_count(api_name: str) -> Optional[int]:
+def _get_request_count(api_name: str) -> int | None:
     if api_name not in _UTILIZATION_METRICS["per_api_metrics"]:
         return None
     return _UTILIZATION_METRICS["per_api_metrics"][api_name]["current_request_count"]
@@ -232,11 +232,11 @@ def retrieve_metrics():
 class LoadedRepositories:
     def __init__(
         self,
-        loadable_target_origin: Optional[LoadableTargetOrigin],
-        container_image: Optional[str],
+        loadable_target_origin: LoadableTargetOrigin | None,
+        container_image: str | None,
         entry_point: Sequence[str],
-        container_context: Optional[Mapping[str, Any]],
-        defs_state_info: Optional[DefsStateInfo] = None,
+        container_context: Mapping[str, Any] | None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -372,19 +372,19 @@ class DagsterApiServer(DagsterApiServicer):
         server_termination_event: ThreadingEventType,
         logger: logging.Logger,
         server_threadpool_executor: FuturesAwareThreadPoolExecutor,
-        loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+        loadable_target_origin: LoadableTargetOrigin | None = None,
         heartbeat: bool = False,
         heartbeat_timeout: int = 30,
         lazy_load_user_code: bool = False,
-        fixed_server_id: Optional[str] = None,
-        entry_point: Optional[Sequence[str]] = None,
-        container_image: Optional[str] = None,
-        container_context: Optional[dict] = None,
-        inject_env_vars_from_instance: Optional[bool] = False,
-        instance_ref: Optional[InstanceRef] = None,
-        location_name: Optional[str] = None,
+        fixed_server_id: str | None = None,
+        entry_point: Sequence[str] | None = None,
+        container_image: str | None = None,
+        container_context: dict | None = None,
+        inject_env_vars_from_instance: bool | None = False,
+        instance_ref: InstanceRef | None = None,
+        location_name: str | None = None,
         enable_metrics: bool = False,
-        defs_state_info: Optional[DefsStateInfo] = None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         super().__init__()
 
@@ -462,7 +462,7 @@ class DagsterApiServer(DagsterApiServicer):
                     raise e
                 self._instance = None
 
-            self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
+            self._loaded_repositories: LoadedRepositories | None = LoadedRepositories(
                 loadable_target_origin,
                 entry_point=self._entry_point,
                 container_image=self._container_image,
@@ -493,7 +493,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
-            self.__heartbeat_thread: Optional[threading.Thread] = threading.Thread(
+            self.__heartbeat_thread: threading.Thread | None = threading.Thread(
                 target=self._heartbeat_thread,
                 args=(heartbeat_timeout,),
                 name="grpc-server-heartbeat",
@@ -1287,8 +1287,8 @@ class DagsterGrpcServer:
         logger: logging.Logger,
         threadpool_executor: FuturesAwareThreadPoolExecutor,
         host="localhost",
-        port: Optional[int] = None,
-        socket: Optional[str] = None,
+        port: int | None = None,
+        socket: str | None = None,
         enable_metrics: bool = False,
     ):
         check.invariant(
@@ -1402,7 +1402,7 @@ def wait_for_grpc_server(
     client: "DagsterGrpcClient",
     subprocess_args: Sequence[str],
     timeout: int = 60,
-    additional_timeout_msg: Optional[str] = None,
+    additional_timeout_msg: str | None = None,
 ) -> None:
     start_time = time.time()
 
@@ -1431,25 +1431,25 @@ def wait_for_grpc_server(
 
 
 def open_server_process(
-    instance_ref: Optional[InstanceRef],
-    port: Optional[int],
-    socket: Optional[str],
+    instance_ref: InstanceRef | None,
+    port: int | None,
+    socket: str | None,
     server_command: GrpcServerCommand,
-    location_name: Optional[str] = None,
-    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
-    max_workers: Optional[int] = None,
+    location_name: str | None = None,
+    loadable_target_origin: LoadableTargetOrigin | None = None,
+    max_workers: int | None = None,
     heartbeat: bool = False,
     heartbeat_timeout: int = 30,
-    fixed_server_id: Optional[str] = None,
+    fixed_server_id: str | None = None,
     startup_timeout: int = 20,
-    cwd: Optional[str] = None,
+    cwd: str | None = None,
     log_level: str = "INFO",
     inject_env_vars_from_instance: bool = True,
-    container_image: Optional[str] = None,
-    container_context: Optional[dict[str, Any]] = None,
+    container_image: str | None = None,
+    container_context: dict[str, Any] | None = None,
     enable_metrics: bool = False,
-    additional_timeout_msg: Optional[str] = None,
-    defs_state_info: Optional[DefsStateInfo] = None,
+    additional_timeout_msg: str | None = None,
+    defs_state_info: DefsStateInfo | None = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1534,9 +1534,9 @@ def open_server_process(
 
 def _open_server_process_on_dynamic_port(
     max_retries: int,
-    instance_ref: Optional[InstanceRef],
+    instance_ref: InstanceRef | None,
     **kwargs,
-) -> tuple[Optional["Popen[str]"], Optional[int]]:
+) -> tuple[Optional["Popen[str]"], int | None]:
     server_process = None
     retries = 0
     port = None
@@ -1557,25 +1557,25 @@ def _open_server_process_on_dynamic_port(
 class GrpcServerProcess:
     def __init__(
         self,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: InstanceRef | None,
         server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
-        location_name: Optional[str] = None,
-        loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+        location_name: str | None = None,
+        loadable_target_origin: LoadableTargetOrigin | None = None,
         force_port: bool = False,
         max_retries: int = 10,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         heartbeat: bool = False,
         heartbeat_timeout: int = 30,
-        fixed_server_id: Optional[str] = None,
+        fixed_server_id: str | None = None,
         startup_timeout: int = 20,
-        cwd: Optional[str] = None,
+        cwd: str | None = None,
         log_level: str = "INFO",
         wait_on_exit=False,
         inject_env_vars_from_instance: bool = True,
-        container_image: Optional[str] = None,
-        container_context: Optional[dict[str, Any]] = None,
-        additional_timeout_msg: Optional[str] = None,
-        defs_state_info: Optional[DefsStateInfo] = None,
+        container_image: str | None = None,
+        container_context: dict[str, Any] | None = None,
+        additional_timeout_msg: str | None = None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         self.port = None
         self.socket = None

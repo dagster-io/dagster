@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, cast, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -10,8 +10,8 @@ from dagster._core.definitions.config import ConfigMapping, ConfigMappingFn
 class _ConfigMapping:
     def __init__(
         self,
-        config_schema: Optional[UserConfigSchema] = None,
-        receive_processed_config_values: Optional[bool] = None,
+        config_schema: UserConfigSchema | None = None,
+        receive_processed_config_values: bool | None = None,
     ):
         self.config_schema = config_schema
         self.receive_processed_config_values = check.opt_bool_param(
@@ -81,16 +81,16 @@ def config_mapping(
 def config_mapping(
     *,
     config_schema: UserConfigSchema = ...,
-    receive_processed_config_values: Optional[bool] = ...,
+    receive_processed_config_values: bool | None = ...,
 ) -> Callable[[ConfigMappingFn], ConfigMapping]: ...
 
 
 def config_mapping(
-    config_fn: Optional[Callable[..., Any]] = None,
+    config_fn: Callable[..., Any] | None = None,
     *,
-    config_schema: Optional[UserConfigSchema] = None,
-    receive_processed_config_values: Optional[bool] = None,
-) -> Union[Callable[[ConfigMappingFn], ConfigMapping], ConfigMapping]:
+    config_schema: UserConfigSchema | None = None,
+    receive_processed_config_values: bool | None = None,
+) -> Callable[[ConfigMappingFn], ConfigMapping] | ConfigMapping:
     """Create a config mapping with the specified parameters from the decorated function.
 
     The config schema will be inferred from the type signature of the decorated function if not explicitly provided.

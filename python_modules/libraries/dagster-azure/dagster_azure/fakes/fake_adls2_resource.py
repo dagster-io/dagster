@@ -1,6 +1,6 @@
 import io
 import random
-from typing import Any, Optional
+from typing import Any
 from unittest import mock
 
 from dagster import resource
@@ -25,7 +25,7 @@ class FakeADLS2Resource(ConfigurableResource):
     """
 
     account_name: str
-    storage_account: Optional[str] = None
+    storage_account: str | None = None
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:

@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
@@ -105,7 +104,7 @@ def test_project_depends_fn(version: AvailablePythonVersion, _) -> list[str]:
         return []
 
 
-def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
+def skip_if_version_not_needed(version: AvailablePythonVersion) -> str | None:
     if version in build_test_project_for:
         return None
 

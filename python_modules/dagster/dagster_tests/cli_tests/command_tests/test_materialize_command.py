@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 from click.testing import CliRunner
 from dagster._cli.asset import asset_materialize_command
@@ -7,8 +5,8 @@ from dagster._cli.asset import asset_materialize_command
 
 def invoke_materialize(
     select: str,
-    partition: Optional[str] = None,
-    partition_range: Optional[str] = None,
+    partition: str | None = None,
+    partition_range: str | None = None,
 ):
     runner = CliRunner()
     options = ["-f", dg.file_relative_path(__file__, "assets.py"), "--select", select]

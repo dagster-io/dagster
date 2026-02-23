@@ -8,10 +8,10 @@ import {
   NonIdealState,
   Popover,
 } from '@dagster-io/ui-components';
+import {useCatalogExtraDropdownOptions} from '@shared/assets/catalog/useCatalogExtraDropdownOptions';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';

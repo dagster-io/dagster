@@ -1,3 +1,4 @@
+import {Unmasked} from '@apollo/client/masking';
 import {MockedResponse} from '@apollo/client/testing';
 import {GraphQLError} from 'graphql';
 
@@ -28,7 +29,7 @@ export function buildQueryMock<
         ? ({
             __typename: 'Query',
             ...data,
-          } as TQuery)
+          } as Unmasked<TQuery>)
         : undefined,
       errors,
     },
@@ -61,7 +62,7 @@ export function buildMutationMock<
         ? ({
             __typename: 'Mutation',
             ...data,
-          } as TMutation)
+          } as Unmasked<TMutation>)
         : undefined,
       errors,
     },
@@ -84,9 +85,13 @@ export function getMockResultFn<T>(mock: MockedResponse<T>) {
 }
 
 let nativeGBRC: any;
+let nativeOffsetHeight: PropertyDescriptor | undefined;
+let nativeOffsetWidth: PropertyDescriptor | undefined;
 
-/* simulate getBoundingCLientRect returning a > 0x0 size, important for
-testing React trees that useVirtualized()
+/* simulate getBoundingClientRect returning a > 0x0 size, important for
+testing React trees that useVirtualized().
+Also mocks offsetHeight/offsetWidth which @tanstack/virtual-core v3 uses
+(via getRect()) to measure scroll containers.
 */
 export function mockViewportClientRect() {
   if (nativeGBRC) {
@@ -96,6 +101,21 @@ export function mockViewportClientRect() {
   window.Element.prototype.getBoundingClientRect = jest
     .fn()
     .mockReturnValue({height: 400, width: 400});
+
+  nativeOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+  nativeOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get() {
+      return 400;
+    },
+  });
+  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+    configurable: true,
+    get() {
+      return 400;
+    },
+  });
 }
 
 export function restoreViewportClientRect() {
@@ -104,4 +124,27 @@ export function restoreViewportClientRect() {
   }
   window.Element.prototype.getBoundingClientRect = nativeGBRC;
   nativeGBRC = null;
+
+  if (nativeOffsetHeight) {
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', nativeOffsetHeight);
+  } else {
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get() {
+        return 0;
+      },
+    });
+  }
+  if (nativeOffsetWidth) {
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', nativeOffsetWidth);
+  } else {
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get() {
+        return 0;
+      },
+    });
+  }
+  nativeOffsetHeight = undefined;
+  nativeOffsetWidth = undefined;
 }

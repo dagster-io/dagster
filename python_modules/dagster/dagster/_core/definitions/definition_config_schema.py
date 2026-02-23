@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import dagster._check as check
 from dagster._config import (
@@ -48,7 +48,7 @@ class IDefinitionConfigSchema(ABC):
         raise NotImplementedError()
 
     @property
-    def config_type(self) -> Optional[ConfigType]:
+    def config_type(self) -> ConfigType | None:
         field = self.as_field()
         return field.config_type if field else None
 
@@ -75,7 +75,7 @@ class IDefinitionConfigSchema(ABC):
         return field.default_value_as_json_str
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         field = self.as_field()
         return field.description if field else None
 
@@ -99,13 +99,13 @@ def _get_user_code_error_str_lambda(
 
 class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
     parent_def: "ConfigurableDefinition"
-    _current_field: Optional[Field]
+    _current_field: Field | None
     _config_fn: Callable[..., object]
 
     def __init__(
         self,
         parent_definition: "ConfigurableDefinition",
-        config_schema: Optional[IDefinitionConfigSchema],
+        config_schema: IDefinitionConfigSchema | None,
         config_or_config_fn: object,
     ):
         from dagster._core.definitions.configurable import ConfigurableDefinition

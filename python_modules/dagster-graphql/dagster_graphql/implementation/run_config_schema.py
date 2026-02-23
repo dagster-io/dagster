@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 async def resolve_run_config_schema_or_error(
-    graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
+    graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: str | None = None
 ) -> "GrapheneRunConfigSchema":
     from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 

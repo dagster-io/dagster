@@ -2,7 +2,6 @@ import glob
 import os
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 import click
 from dagster_shared.cli import workspace_options
@@ -153,7 +152,7 @@ def execute_list_command(
 @click.option("--start-all", help="start all schedules", is_flag=True, default=False)
 @workspace_options
 @repository_options
-def schedule_start_command(schedule_name: Optional[str], start_all: bool, **other_opts: object):
+def schedule_start_command(schedule_name: str | None, start_all: bool, **other_opts: object):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -174,7 +173,7 @@ def schedule_start_command(schedule_name: Optional[str], start_all: bool, **othe
 
 def execute_start_command(
     *,
-    schedule_name: Optional[str],
+    schedule_name: str | None,
     start_all: bool,
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,
@@ -225,7 +224,7 @@ def execute_stop_command(
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,
     print_fn: PrintFn,
-    instance: Optional[DagsterInstance] = None,
+    instance: DagsterInstance | None = None,
 ):
     with (
         get_instance_for_cli() as instance,
@@ -248,7 +247,7 @@ def execute_stop_command(
 @click.argument("schedule_name", required=False)
 @workspace_options
 @repository_options
-def schedule_logs_command(schedule_name: Optional[str], **other_opts: object):
+def schedule_logs_command(schedule_name: str | None, **other_opts: object):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -272,7 +271,7 @@ def execute_logs_command(
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,
     print_fn: PrintFn,
-    instance: Optional[DagsterInstance] = None,
+    instance: DagsterInstance | None = None,
 ):
     with (
         get_instance_for_cli() as instance,
@@ -331,7 +330,7 @@ def execute_logs_command(
 )
 @workspace_options
 @repository_options
-def schedule_restart_command(schedule_name: Optional[str], restart_all_running: bool, **other_opts):
+def schedule_restart_command(schedule_name: str | None, restart_all_running: bool, **other_opts):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -346,7 +345,7 @@ def schedule_restart_command(schedule_name: Optional[str], restart_all_running: 
 
 def execute_restart_command(
     *,
-    schedule_name: Optional[str],
+    schedule_name: str | None,
     restart_all_running: bool,
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,

@@ -1,6 +1,5 @@
 import time
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -68,8 +67,8 @@ class GrapheneSchedule(graphene.ObjectType):
     def __init__(
         self,
         remote_schedule: RemoteSchedule,
-        schedule_state: Optional[InstigatorState],
-        batch_loader: Optional[RepositoryScopedBatchLoader] = None,
+        schedule_state: InstigatorState | None,
+        batch_loader: RepositoryScopedBatchLoader | None = None,
     ):
         self._remote_schedule = check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
 
@@ -142,9 +141,9 @@ class GrapheneSchedule(graphene.ObjectType):
     def resolve_futureTicks(
         self,
         _graphene_info: ResolveInfo,
-        cursor: Optional[float] = None,
-        limit: Optional[int] = None,
-        until: Optional[float] = None,
+        cursor: float | None = None,
+        limit: int | None = None,
+        until: float | None = None,
     ):
         cursor = cursor or time.time()
 
@@ -183,9 +182,9 @@ class GrapheneSchedule(graphene.ObjectType):
     def resolve_potentialTickTimestamps(
         self,
         _graphene_info: ResolveInfo,
-        start_timestamp: Optional[float] = None,
-        upper_limit: Optional[int] = None,
-        lower_limit: Optional[int] = None,
+        start_timestamp: float | None = None,
+        upper_limit: int | None = None,
+        lower_limit: int | None = None,
     ):
         """Get timestamps when ticks will occur before and after a given timestamp.
 

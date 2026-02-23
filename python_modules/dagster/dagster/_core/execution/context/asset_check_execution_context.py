@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -130,7 +130,7 @@ class AssetCheckExecutionContext:
 
     @property
     @_copy_docs_from_op_execution_context
-    def step_launcher(self) -> Optional[StepLauncher]:
+    def step_launcher(self) -> StepLauncher | None:
         return self.op_execution_context.step_launcher
 
     @_copy_docs_from_op_execution_context
