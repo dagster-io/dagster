@@ -6,13 +6,18 @@ from dagster_shared.record import record
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec, map_asset_specs
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import FreshnessPolicy
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._record import replace
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -419,10 +424,48 @@ def apply_post_processor_to_defs(
 ) -> Definitions:
     check.inst(model, AssetPostProcessorModel.model())
 
-    return defs.map_resolved_asset_specs(
-        selection=model.target,
-        func=lambda spec: apply_post_processor_to_spec(model, spec, context),
+    target = model.target
+
+    if target is None or target == "*":
+        # When targeting all assets, no selection resolution is needed.
+        # Use map_asset_specs which does not trigger resolve_asset_graph()
+        # and therefore avoids premature resource validation.
+        return defs.map_asset_specs(
+            func=lambda spec: apply_post_processor_to_spec(model, spec, context),
+        )
+
+    # For targeted selections, resolve the selection against a lightweight
+    # AssetGraph built directly from the definitions' assets, rather than
+    # going through get_repository_def() which validates resource requirements.
+    # This is necessary because during post-processing, the Definitions may
+    # not yet contain resources from parent folders (they get merged later).
+    selection = AssetSelection.from_string(target, include_sources=True)
+    all_assets = []
+    for a in defs.assets or []:
+        if isinstance(a, (AssetsDefinition, SourceAsset)):
+            all_assets.append(a)
+        elif isinstance(a, AssetSpec):
+            all_assets.append(AssetsDefinition(specs=[a]))
+    asset_graph = AssetGraph.from_assets(all_assets)
+    target_keys = selection.resolve(asset_graph)
+
+    mappable = iter(
+        d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
     )
+    mapped_assets = map_asset_specs(
+        lambda spec: (
+            apply_post_processor_to_spec(model, spec, context)
+            if spec.key in target_keys
+            else spec
+        ),
+        mappable,
+    )
+
+    assets = [
+        *mapped_assets,
+        *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+    ]
+    return replace(defs, assets=assets)
 
 
 def resolve_schema_to_post_processor(
