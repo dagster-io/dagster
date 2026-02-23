@@ -181,7 +181,15 @@ def _pandera_schema_to_type_check_fn(
             try:
                 # `lazy` instructs pandera to capture every (not just the first) validation error
                 # TODO: pending alternative dataframe support
-                if isinstance(schema, pa_pd.DataFrameSchema):
+                if (
+                    not hasattr(value, "pandera")
+                    or value.pandera.schema is None
+                    # don't re-validate a dataframe that contains the same
+                    # exact schema
+                    or value.pandera.schema != schema
+                    ):
+                    pass
+                elif isinstance(schema, pa_pd.DataFrameSchema):
                     df = check.inst(value, pd.DataFrame, "Must be a pandas DataFrame.")
                     schema.validate(df, lazy=True)
                 # need to check that polars and pandera.polars are available before isinstance
