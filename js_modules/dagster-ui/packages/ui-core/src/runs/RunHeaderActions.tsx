@@ -36,7 +36,7 @@ type VisibleDialog =
   | 'pools'
   | null;
 
-export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
+export const RunHeaderActions = ({ run, isJob }: { run: RunFragment; isJob: boolean }) => {
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
@@ -71,8 +71,10 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   return (
     <div>
-      <Box flex={{direction: 'row', gap: 8}}>
-        <RunAlertNotifications runId={run.id} />
+      <Box flex={{ direction: 'row', gap: 8 }}>
+        {!doneStatuses.has(run.status) && (
+          <RunAlertNotifications runId={run.id} runStatus={run.status} />
+        )}
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason}>
             <Button icon={<Icon name={jobLink.icon} />} disabled>

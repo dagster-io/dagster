@@ -11,3 +11,20 @@
 .toastMessage {
   color: var(--color-text-default);
 }
+
+.toastCloseButton {
+  padding: 4px;
+  margin: -4px -4px -4px 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toastCloseButton:hover {
+  background-color: var(--color-background-light);
+}
