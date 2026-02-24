@@ -15,6 +15,8 @@ interface ConfigTypeSchemaProps {
   typesInScope: TypeData[];
   theme?: ConfigTypeSchemaTheme;
   maxDepth?: number;
+  contextPath?: string[];
+  onInsertDefaultValue?: (path: string[], defaultValue: string) => void;
 }
 
 // Either type is guaranteed not to be undefined or if its possibly undefined
@@ -25,6 +27,7 @@ type renderTypeRecursiveType = ((
   typeLookup: {[typeName: string]: TypeData},
   depth: number,
   props: ConfigTypeSchemaProps,
+  path: string[],
   typeName?: string,
 ) => React.ReactElement<HTMLElement>) &
   ((
@@ -32,10 +35,18 @@ type renderTypeRecursiveType = ((
     typeLookup: {[typeName: string]: TypeData},
     depth: number,
     props: ConfigTypeSchemaProps,
+    path: string[],
     typeName: string,
   ) => React.ReactElement<HTMLElement>);
 
-const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, props, typeName) => {
+const renderTypeRecursive: renderTypeRecursiveType = (
+  type,
+  typeLookup,
+  depth,
+  props,
+  path,
+  typeName,
+) => {
   if (!type) {
     return (
       <span style={{color: Colors.textRed(), opacity: 0.8}}>
@@ -56,14 +67,24 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
           <DictBlockComment indent={innerIndent} content="One of the following:" />
         )}
         {type.fields.map((fieldData) => {
+          const fieldPath = [...path, fieldData.name];
+          const hasDefault = fieldData.defaultValueAsJson != null;
           const keyDisplay = (
             <DictKey
               theme={props.theme}
-              style={
-                fieldData.defaultValueAsJson
-                  ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`, cursor: 'pointer'}
+              $hasDefault={hasDefault}
+              style={hasDefault ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`} : undefined}
+              onClick={
+                hasDefault && props.onInsertDefaultValue
+                  ? () => {
+                      const fullPath = props.contextPath
+                        ? [...props.contextPath, ...fieldPath]
+                        : fieldPath;
+                      props.onInsertDefaultValue?.(fullPath, fieldData.defaultValueAsJson ?? '');
+                    }
                   : undefined
               }
+              title={hasDefault ? 'Click to insert default value' : undefined}
             >
               {fieldData.name}
             </DictKey>
@@ -91,6 +112,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
                 typeLookup,
                 depth + 1,
                 props,
+                fieldPath,
                 fieldData.configTypeKey,
               )}
             </DictEntry>
@@ -103,7 +125,9 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
 
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0] ?? '';
-    return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}]</>;
+    return (
+      <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, path, ofTypeKey)}]</>
+    );
   }
 
   if (type.__typename === 'MapConfigType') {
@@ -119,13 +143,21 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
         {`{`}
         <DictEntry>
           {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
-          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props, keyTypeKey)}]
-          {`: `}
+          {renderTypeRecursive(
+            typeLookup[keyTypeKey],
+            typeLookup,
+            depth + 1,
+            props,
+            path,
+            keyTypeKey,
+          )}
+          ]{`: `}
           {renderTypeRecursive(
             typeLookup[valueTypeKey],
             typeLookup,
             depth + 1,
             props,
+            path,
             valueTypeKey,
           )}
         </DictEntry>
@@ -138,7 +170,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
     const ofTypeKey = type.typeParamKeys[0] ?? '';
     return (
       <>
-        {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}
+        {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, path, ofTypeKey)}
         {Optional}
       </>
     );
@@ -150,6 +182,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
       typeLookup,
       depth,
       props,
+      path,
       type.nonScalarTypeKey,
     );
     const scalarTypeMarkup = renderTypeRecursive(
@@ -157,6 +190,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
       typeLookup,
       depth,
       props,
+      path,
       type.scalarTypeKey,
     );
 
@@ -219,7 +253,7 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
     <HoveredDictEntryContextProvider>
       <TypeSchemaContainer>
         <DictBlockComment content={type.description} indent="" />
-        {renderTypeRecursive(type, typeLookup, 0, props)}
+        {renderTypeRecursive(type, typeLookup, 0, props, [])}
       </TypeSchemaContainer>
     </HoveredDictEntryContextProvider>
   );
@@ -348,8 +382,22 @@ const TypeSchemaContainer = styled.code`
   line-height: 18px;
 `;
 
-const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
+const DictKey = styled.button<{theme: ConfigTypeSchemaTheme | undefined; $hasDefault: boolean}>`
   color: ${({theme}) => (theme === 'dark' ? Colors.accentReversed() : Colors.accentPrimary())};
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+  ${({$hasDefault}) =>
+    $hasDefault
+      ? `
+    cursor: pointer;
+  `
+      : `
+    cursor: default;
+  `}
 `;
 
 const DictComment = styled.div`
