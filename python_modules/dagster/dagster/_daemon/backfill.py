@@ -59,8 +59,19 @@ def _get_instigation_logger_if_log_storage_enabled(
         yield default_logger
 
 
-def _get_max_asset_backfill_retries():
-    return int(os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES", "5"))
+def _get_max_backfill_retries():
+    env_val = os.getenv("DAGSTER_MAX_BACKFILL_RETRIES")
+    if env_val is None:
+        legacy_val = os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES")
+        if legacy_val is not None:
+            import warnings
+            warnings.warn(
+                "DAGSTER_MAX_ASSET_BACKFILL_RETRIES is deprecated. Use DAGSTER_MAX_BACKFILL_RETRIES instead.",
+                DeprecationWarning,
+            )
+            return int(legacy_val)
+        return 5
+    return int(env_val)
 
 
 def execute_backfill_iteration_loop(
@@ -75,6 +86,8 @@ def execute_backfill_iteration_loop(
     from dagster._daemon.daemon import SpanMarker
 
     backfill_futures: dict[str, Future] = {}
+    last_attempt_times: dict[str, float] = {}
+    run_already_exists_counts: dict[str, int] = {}
     while True:
         start_time = get_current_timestamp()
         if until and start_time >= until:
@@ -90,6 +103,8 @@ def execute_backfill_iteration_loop(
                 threadpool_executor=threadpool_executor,
                 backfill_futures=backfill_futures,
                 submit_threadpool_executor=submit_threadpool_executor,
+                last_attempt_times=last_attempt_times,
+                run_already_exists_counts=run_already_exists_counts,
             )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -116,6 +131,8 @@ def execute_backfill_iteration(
     submit_threadpool_executor: ThreadPoolExecutor | None = None,
     backfill_futures: dict[str, Future] | None = None,
     debug_crash_flags: Mapping[str, int] | None = None,
+    last_attempt_times: dict[str, float] | None = None,
+    run_already_exists_counts: dict[str, int] | None = None,
 ) -> Iterable[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
 
@@ -145,10 +162,12 @@ def execute_backfill_iteration(
         submit_threadpool_executor=submit_threadpool_executor,
         backfill_futures=backfill_futures,
         debug_crash_flags=debug_crash_flags,
+        last_attempt_times=last_attempt_times,
+        run_already_exists_counts=run_already_exists_counts,
     )
 
 
-def _is_retryable_asset_backfill_error(e: Exception):
+def _is_retryable_backfill_error(e: Exception):
     # Retry on issues reaching or loading user code, or transient race conditions submitting runs.
     if isinstance(
         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError, DagsterRunAlreadyExists)
@@ -167,6 +186,7 @@ def execute_backfill_iteration_with_instigation_logger(
     instance: "DagsterInstance",
     submit_threadpool_executor: ThreadPoolExecutor | None = None,
     debug_crash_flags: Mapping[str, int] | None = None,
+    run_already_exists_counts: dict[str, int] | None = None,
 ) -> Iterable[SerializableErrorInfo | None]:
     with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
         # create a logger that will always include the backfill_id as an `extra`
@@ -199,13 +219,40 @@ def execute_backfill_iteration_with_instigation_logger(
                     )
         except Exception as e:
             backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
+            max_retries = _get_max_backfill_retries()
             if (
-                backfill.is_asset_backfill
-                and backfill.status == BulkActionStatus.REQUESTED
-                and backfill.failure_count < _get_max_asset_backfill_retries()
-                and _is_retryable_asset_backfill_error(e)
+                backfill.status == BulkActionStatus.REQUESTED
+                and backfill.failure_count < max_retries
+                and _is_retryable_backfill_error(e)
             ):
-                if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
+                if isinstance(e, DagsterRunAlreadyExists):
+                    rae_count = 0
+                    if run_already_exists_counts is not None:
+                        rae_count = run_already_exists_counts.get(backfill.backfill_id, 0) + 1
+                        run_already_exists_counts[backfill.backfill_id] = rae_count
+                    
+                    if rae_count > max_retries + 5:
+                        error_info = DaemonErrorCapture.process_exception(
+                            sys.exc_info(),
+                            logger=backfill_logger,
+                            log_message=f"Backfill hit persistent DagsterRunAlreadyExists for {backfill.backfill_id} and will retry.",
+                        )
+                        instance.update_backfill(
+                            backfill.with_error(error_info).with_failure_count(
+                                backfill.failure_count + 1
+                            )
+                        )
+                    else:
+                        error_info = DaemonErrorCapture.process_exception(
+                            sys.exc_info(),
+                            logger=backfill_logger,
+                            log_message=f"Backfill hit transient DagsterRunAlreadyExists for {backfill.backfill_id}, retrying without consuming failure budget.",
+                        )
+                        instance.update_backfill(
+                            backfill.with_error(error_info)
+                        )
+
+                elif isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
                     try:
                         raise DagsterUserCodeUnreachableError(
                             "Unable to reach the code server. Backfill will resume once the code server is available."
@@ -216,7 +263,11 @@ def execute_backfill_iteration_with_instigation_logger(
                             logger=backfill_logger,
                             log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
                         )
-                        instance.update_backfill(backfill.with_error(error_info))
+                        instance.update_backfill(
+                            backfill.with_error(error_info).with_failure_count(
+                                backfill.failure_count + 1
+                            )
+                        )
                 else:
                     error_info = DaemonErrorCapture.process_exception(
                         sys.exc_info(),
@@ -250,11 +301,22 @@ def execute_backfill_jobs(
     submit_threadpool_executor: ThreadPoolExecutor | None = None,
     backfill_futures: dict[str, Future] | None = None,
     debug_crash_flags: Mapping[str, int] | None = None,
+    last_attempt_times: dict[str, float] | None = None,
+    run_already_exists_counts: dict[str, int] | None = None,
 ) -> Iterable[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
 
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
+
+        if backfill_job.status == BulkActionStatus.REQUESTED and last_attempt_times is not None:
+            now = get_current_timestamp()
+            last_attempt_time = last_attempt_times.get(backfill_id)
+            if last_attempt_time is not None and backfill_job.failure_count > 0:
+                time_since_last_attempt = now - last_attempt_time
+                if time_since_last_attempt < min(120, 2 ** backfill_job.failure_count):
+                    logger.debug(f"Skipping backfill {backfill_id} due to backoff")
+                    continue
 
         try:
             if threadpool_executor:
@@ -271,6 +333,9 @@ def execute_backfill_jobs(
                     # The backfill is now in a terminal state, skip iteration
                     continue
 
+                if backfill.status == BulkActionStatus.REQUESTED and last_attempt_times is not None:
+                    last_attempt_times[backfill_id] = get_current_timestamp()
+
                 future = threadpool_executor.submit(
                     return_as_list(execute_backfill_iteration_with_instigation_logger),
                     backfill,
@@ -279,6 +344,7 @@ def execute_backfill_jobs(
                     instance,
                     submit_threadpool_executor=submit_threadpool_executor,
                     debug_crash_flags=debug_crash_flags,
+                    run_already_exists_counts=run_already_exists_counts,
                 )
 
                 backfill_futures[backfill_id] = future
@@ -291,6 +357,9 @@ def execute_backfill_jobs(
                     # The backfill is now in a terminal state, skip iteration
                     continue
 
+                if backfill.status == BulkActionStatus.REQUESTED and last_attempt_times is not None:
+                    last_attempt_times[backfill_id] = get_current_timestamp()
+
                 yield from execute_backfill_iteration_with_instigation_logger(
                     backfill,
                     logger,
@@ -298,6 +367,7 @@ def execute_backfill_jobs(
                     instance,
                     submit_threadpool_executor=submit_threadpool_executor,
                     debug_crash_flags=debug_crash_flags,
+                    run_already_exists_counts=run_already_exists_counts,
                 )
 
         except Exception:

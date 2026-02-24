@@ -658,6 +658,95 @@ def test_simple_backfill(
 
 
 @pytest.mark.parametrize("parallel", [True, False])
+def test_job_backfill_code_location_unreachable_error_retry(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+    parallel: bool,
+):
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill_id = "job_retry"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    import dagster._core.execution.job_backfill as module_to_mock
+    original_submit = module_to_mock.submit_backfill_runs
+
+    counter = 0
+
+    def mock_submit_backfill_runs(*args, **kwargs):
+        nonlocal counter
+        if counter == 0:
+            counter += 1
+            raise DagsterUserCodeUnreachableError("Unreachable!")
+        else:
+            return original_submit(*args, **kwargs)
+
+    with mock.patch(
+        "dagster._core.execution.job_backfill.submit_backfill_runs",
+        side_effect=mock_submit_backfill_runs,
+    ):
+        errors = [
+            error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon"),
+                    threadpool_executor=ThreadPoolExecutor(2) if parallel else None,
+                    backfill_futures={} if parallel else None,
+                )
+            )
+            if error
+        ]
+        assert len(errors) == 1
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.failure_count == 1
+    assert instance.get_runs_count() == 0
+
+    # now run it again and it should succeed
+    with mock.patch(
+        "dagster._core.execution.job_backfill.submit_backfill_runs",
+        side_effect=original_submit,
+    ):
+        if parallel:
+            backfill_daemon_futures = {}
+            list(
+                execute_backfill_iteration(
+                    workspace_context,
+                    get_default_daemon_logger("BackfillDaemon"),
+                    threadpool_executor=ThreadPoolExecutor(2),
+                    backfill_futures=backfill_daemon_futures,
+                )
+            )
+
+            wait_for_futures(backfill_daemon_futures)
+        else:
+            list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+
+    assert instance.get_runs_count() == 3
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+
+@pytest.mark.parametrize("parallel", [True, False])
 def test_two_backfills_at_the_same_time(
     tmp_path: Path,
     parallel: bool,
