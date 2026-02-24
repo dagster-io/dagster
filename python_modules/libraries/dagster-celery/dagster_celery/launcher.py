@@ -41,6 +41,16 @@ if TYPE_CHECKING:
 class CeleryRunLauncher(RunLauncher, ConfigurableClass):
     """Dagster [Run Launcher](https://docs.dagster.io/guides/deploy/execution/run-launchers) which
     starts runs as Celery tasks.
+
+    Supports run worker crash detection and automatic resume. When ``run_monitoring``
+    is enabled in ``dagster.yaml``, the daemon periodically calls
+    ``check_run_worker_health`` which pings the Celery worker via the
+    ``inspect`` API. If the worker is unreachable the run is marked as
+    failed and, when ``max_resume_run_attempts > 0``, resumed on a
+    healthy worker.
+
+    Requires a persistent result backend (e.g. Redis) so that task state
+    survives worker restarts.
     """
 
     _instance: DagsterInstance  # pyright: ignore[reportIncompatibleMethodOverride]
