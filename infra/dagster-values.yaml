@@ -1,0 +1,48 @@
+dagsterWebserver:
+  replicaCount: 1
+  image:
+    repository: "docker.io/dagster/dagster-celery-k8s"
+    tag: "latest"
+    pullPolicy: Always
+
+dagsterDaemon:
+  enabled: true
+  image:
+    repository: "docker.io/dagster/dagster-celery-k8s"
+    tag: "latest"
+    pullPolicy: Always
+
+runLauncher:
+  type: CustomRunLauncher
+  config:
+    customRunLauncher:
+      module: dagster_celery.launcher
+      class: CeleryRunLauncher
+      config:
+        broker: "pyamqp://guest:guest@dagster-rabbitmq:5672//"
+        backend: "redis://dagster-redis-master:6379/0"
+        default_queue: "dagster"
+
+runMonitoring:
+  enabled: true
+  startTimeoutSeconds: 180
+  cancelTimeoutSeconds: 180
+  maxResumeRunAttempts: 3
+  pollIntervalSeconds: 30
+
+rabbitmq:
+  enabled: true
+
+redis:
+  enabled: true
+  internal: true
+
+dagster-user-deployments:
+  # Keep enabled so the workspace ConfigMap (load_from: []) is generated, which
+  # the daemon and webserver require to start. enableSubchart: false means no
+  # user-code gRPC server pods are actually deployed.
+  enabled: true
+  enableSubchart: false
+  deployments: []
+
+generatePostgresqlPasswordSecret: true
