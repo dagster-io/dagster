@@ -20,7 +20,13 @@ export const ConfigEditorHelp = memo(
     return (
       <Container>
         <ConfigScrollWrap>
-          <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} onInsertDefaultValue={onInsertDefaultValue} />
+          <ConfigTypeSchema
+            type={context.type}
+            typesInScope={allInnerTypes}
+            maxDepth={2}
+            contextPath={context.path}
+            onInsertDefaultValue={onInsertDefaultValue}
+          />
         </ConfigScrollWrap>
         <AutocompletionsNote>Use Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
       </Container>

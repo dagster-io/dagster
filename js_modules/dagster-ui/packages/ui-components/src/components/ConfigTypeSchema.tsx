@@ -15,6 +15,7 @@ interface ConfigTypeSchemaProps {
   typesInScope: TypeData[];
   theme?: ConfigTypeSchemaTheme;
   maxDepth?: number;
+  contextPath?: string[];
   onInsertDefaultValue?: (path: string[], defaultValue: string) => void;
 }
 
@@ -77,7 +78,12 @@ const renderTypeRecursive: renderTypeRecursiveType = (
               }
               onClick={
                 fieldData.defaultValueAsJson != null && props.onInsertDefaultValue
-                  ? () => props.onInsertDefaultValue?.(fieldPath, fieldData.defaultValueAsJson!)
+                  ? () => {
+                      const fullPath = props.contextPath
+                        ? [...props.contextPath, ...fieldPath]
+                        : fieldPath;
+                      props.onInsertDefaultValue?.(fullPath, fieldData.defaultValueAsJson!);
+                    }
                   : undefined
               }
               title={

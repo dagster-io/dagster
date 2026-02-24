@@ -3,4 +3,7 @@ import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 export const isHelpContextEqual = (
   prev: ConfigEditorHelpContext | null,
   next: ConfigEditorHelpContext | null,
-) => (prev && prev.type.key) === (next && next.type.key);
+) => {
+  if (!prev || !next) return prev === next;
+  return prev.type.key === next.type.key && JSON.stringify(prev.path) === JSON.stringify(next.path);
+};

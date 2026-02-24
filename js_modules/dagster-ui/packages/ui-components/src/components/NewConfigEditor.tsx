@@ -60,7 +60,7 @@ const performInitialPass = (
 
   // update the contextual help based on the configSchema and content
   const {context} = expandAutocompletionContextAtCursor(editor);
-  onHelpContextChange(context ? {type: context.closestMappingType} : null);
+  onHelpContextChange(context ? {type: context.closestMappingType, path: context.path || []} : null);
 };
 
 const ConfigEditorStyle = createGlobalStyle`
@@ -283,7 +283,7 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
           onHelpContextChange(null);
         } else {
           const {context} = expandAutocompletionContextAtCursor(editorInstance);
-          onHelpContextChange(context ? {type: context.closestMappingType} : null);
+          onHelpContextChange(context ? {type: context.closestMappingType, path: context.path || []} : null);
         }
       },
       onBlur: (editorInstance: CodeMirror.Editor) => {
