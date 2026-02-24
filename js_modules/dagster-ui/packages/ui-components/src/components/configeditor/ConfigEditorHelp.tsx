@@ -9,17 +9,18 @@ import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
   allInnerTypes: TypeData[];
+  onInsertDefaultValue?: (path: string[], defaultValue: string) => void;
 }
 
 export const ConfigEditorHelp = memo(
-  ({context, allInnerTypes}: ConfigEditorHelpProps) => {
+  ({context, allInnerTypes, onInsertDefaultValue}: ConfigEditorHelpProps) => {
     if (!context) {
       return <Container />;
     }
     return (
       <Container>
         <ConfigScrollWrap>
-          <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} />
+          <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} onInsertDefaultValue={onInsertDefaultValue} />
         </ConfigScrollWrap>
         <AutocompletionsNote>Use Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
       </Container>
