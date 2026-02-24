@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from dagster import DagsterRunStatus
+from dagster._core.launcher import WorkerStatus
 from dagster._core.launcher.base import ResumeRunContext
 from dagster_celery.launcher import CeleryRunLauncher
 from dagster_celery.tags import DAGSTER_CELERY_TASK_ID_TAG
@@ -61,3 +62,83 @@ class TestResumeRun:
 
             # The first positional arg must be the Celery app, not ResumeRunArgs
             mock_create.assert_called_once_with(launcher.celery)
+
+
+class TestCheckRunWorkerHealth:
+    def test_task_success_returns_success(self, launcher, mock_celery_app):
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "SUCCESS"
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.SUCCESS
+
+    def test_task_failure_returns_failed(self, launcher, mock_celery_app):
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "FAILURE"
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.FAILED
+
+    def test_task_pending_returns_unknown(self, launcher, mock_celery_app):
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "PENDING"
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.UNKNOWN
+
+    def test_task_started_worker_alive_returns_running(self, launcher, mock_celery_app):
+        """When Celery says STARTED and the worker responds to ping, return RUNNING."""
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "STARTED"
+        result.info = {"hostname": "celery@worker-pod-1"}
+
+        # Worker responds to ping
+        inspect_mock = MagicMock()
+        inspect_mock.ping.return_value = {"celery@worker-pod-1": {"ok": "pong"}}
+        mock_celery_app.control.inspect.return_value = inspect_mock
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.RUNNING
+
+    def test_task_started_worker_dead_returns_failed(self, launcher, mock_celery_app):
+        """When Celery says STARTED but the worker doesn't respond to ping, return FAILED."""
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "STARTED"
+        result.info = {"hostname": "celery@worker-pod-1"}
+
+        # Worker does NOT respond to ping
+        inspect_mock = MagicMock()
+        inspect_mock.ping.return_value = None
+        mock_celery_app.control.inspect.return_value = inspect_mock
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.FAILED
+        assert "not responding" in health.msg.lower()
+
+    def test_task_started_no_worker_info_returns_running(self, launcher, mock_celery_app):
+        """When worker hostname is unavailable, fall back to trusting Celery state."""
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "STARTED"
+        result.info = None
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.RUNNING
+
+    def test_task_started_inspect_raises_returns_running(self, launcher, mock_celery_app):
+        """When inspect API fails (broker issue), fall back to trusting Celery state."""
+        run = _make_run()
+        result = mock_celery_app.AsyncResult.return_value
+        result.state = "STARTED"
+        result.info = {"hostname": "celery@worker-pod-1"}
+
+        # Inspect raises an exception
+        mock_celery_app.control.inspect.side_effect = Exception("Broker connection failed")
+
+        health = launcher.check_run_worker_health(run)
+        assert health.status == WorkerStatus.RUNNING

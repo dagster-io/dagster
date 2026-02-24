@@ -184,6 +184,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: DagsterRun) -> CheckRunHealthResult:
+        """Check whether the Celery worker running this task is alive."""
         task_id = run.tags[DAGSTER_CELERY_TASK_ID_TAG]
 
         result: AsyncResult = self.celery.AsyncResult(task_id)
@@ -194,9 +195,58 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         if task_status == "FAILURE":
             return CheckRunHealthResult(WorkerStatus.FAILED, "Celery task failed.")
         if task_status == "STARTED":
-            return CheckRunHealthResult(WorkerStatus.RUNNING)
+            return self._check_started_task_worker_health(result)
         # Handles the PENDING and RETRYING states.
         return CheckRunHealthResult(WorkerStatus.UNKNOWN, f"Unknown task status: {task_status}")
+
+    def _check_started_task_worker_health(self, result: "AsyncResult") -> CheckRunHealthResult:
+        """When a task reports STARTED, verify the worker is still alive via inspect ping.
+
+        With persistent result backends (e.g. Redis), the task state stays STARTED
+        even after the worker crashes. We use Celery's inspect API to ping the specific
+        worker and verify it's still responsive.
+        """
+        worker_hostname = self._get_worker_hostname(result)
+        if not worker_hostname:
+            # Cannot determine worker — fall back to trusting Celery state
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+
+        try:
+            inspector = self.celery.control.inspect(
+                destination=[worker_hostname],
+                timeout=2.0,
+            )
+            ping_response = inspector.ping()
+        except Exception:
+            # If we can't reach the broker to inspect, fall back to trusting state
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+
+        if ping_response and worker_hostname in ping_response:
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+
+        return CheckRunHealthResult(
+            WorkerStatus.FAILED,
+            f"Celery worker {worker_hostname} is not responding to ping.",
+        )
+
+    @staticmethod
+    def _get_worker_hostname(result: "AsyncResult") -> "str | None":
+        """Extract the worker hostname from an AsyncResult.
+
+        The hostname is available via result.info when the task has been started,
+        or via result.worker on some backends.
+        """
+        # Try result.info dict (standard approach)
+        info = result.info
+        if isinstance(info, dict) and "hostname" in info:
+            return info["hostname"]
+
+        # Try result.worker attribute (available on some backends)
+        worker = getattr(result, "worker", None)
+        if isinstance(worker, str) and worker:
+            return worker
+
+        return None
 
     @override
     def get_run_worker_debug_info(
