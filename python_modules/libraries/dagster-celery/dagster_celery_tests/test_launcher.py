@@ -167,6 +167,52 @@ def test_crashy_run(
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
     seven.IS_WINDOWS,
+    reason="Crashy jobs leave resources open on windows",
+)
+def test_crashy_run_detected_by_monitoring(
+    dagster_celery_worker,
+    instance: DagsterInstance,
+    workspace: WorkspaceRequestContext,
+    workspace_process_context: WorkspaceProcessContext,
+    run_config,
+):
+    """Test that monitoring detects a crashed worker and marks the run as failed."""
+    logger = logging.getLogger()
+
+    remote_job = (
+        workspace.get_code_location("test")
+        .get_repository("celery_test_repository")
+        .get_full_job("crashy_job")
+    )
+
+    run = instance.create_run_for_job(
+        job_def=crashy_job,
+        run_config=run_config,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
+    )
+
+    instance.launch_run(run.run_id, workspace)
+    poll_for_step_start(instance, run.run_id, timeout=5)
+    time.sleep(5)
+
+    # Run monitoring iteration — should detect the crash
+    list(execute_run_monitoring_iteration(workspace_process_context, logger))
+
+    # Verify monitoring detected the worker failure
+    events = instance.all_logs(run.run_id)
+    monitoring_events = [
+        e for e in events if e.message and "Detected run worker status" in e.message
+    ]
+    assert len(monitoring_events) > 0, (
+        "Monitoring should have detected the worker crash. "
+        f"Events: {[e.message for e in events if e.message]}"
+    )
+
+
+@pytest.mark.parametrize("run_config", run_configs())
+@pytest.mark.skipif(
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_exity_run(
