@@ -175,8 +175,8 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
           }
 
           // Find or create the key at this level
-          let pair: any = current.items.find((item: any) =>
-            item.key?.value === key || item.key?.strValue === key
+          let pair: any = current.items.find(
+            (item: any) => item.key?.value === key || item.key?.strValue === key,
           );
 
           if (!pair) {
@@ -200,8 +200,8 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
         const lastKey = path[path.length - 1];
         if (current instanceof yaml.YAMLMap && lastKey) {
           // Check if key already exists
-          const existingPair = current.items.find((item: any) =>
-            item.key?.value === lastKey || item.key?.strValue === lastKey
+          const existingPair = current.items.find(
+            (item: any) => item.key?.value === lastKey || item.key?.strValue === lastKey,
           );
 
           if (existingPair) {
@@ -209,10 +209,7 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
             existingPair.value = valueToInsert;
           } else {
             // Add new key-value pair
-            const newPair = new yaml.Pair(
-              new yaml.Scalar(lastKey),
-              valueToInsert
-            );
+            const newPair = new yaml.Pair(new yaml.Scalar(lastKey), valueToInsert);
             current.add(newPair);
           }
         }
@@ -281,7 +278,9 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
           onHelpContextChange(null);
         } else {
           const {context, path} = expandAutocompletionContextAtCursor(editorInstance);
-          onHelpContextChange(context ? {type: context.closestMappingType, path: path || []} : null);
+          onHelpContextChange(
+            context ? {type: context.closestMappingType, path: path || []} : null,
+          );
         }
       },
       onBlur: (editorInstance: CodeMirror.Editor) => {

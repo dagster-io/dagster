@@ -69,57 +69,22 @@ const renderTypeRecursive: renderTypeRecursiveType = (
         {type.fields.map((fieldData) => {
           const fieldPath = [...path, fieldData.name];
           const hasDefault = fieldData.defaultValueAsJson != null;
-          const old_keyDisplay = (
-            <DictKey
-              theme={props.theme}
-              style={
-                fieldData.defaultValueAsJson
-                  ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`, cursor: 'pointer'}
-                  : undefined
-              }
-              onClick={
-                fieldData.defaultValueAsJson != null && props.onInsertDefaultValue
-                  ? () => {
-                      const fullPath = props.contextPath
-                        ? [...props.contextPath, ...fieldPath]
-                        : fieldPath;
-                      props.onInsertDefaultValue?.(fullPath, fieldData.defaultValueAsJson!);
-                    }
-                  : undefined
-              }
-              title={
-                fieldData.defaultValueAsJson
-                  ? 'Click to insert default value'
-                  : undefined
-              }
-            >
-              {fieldData.name}
-            </DictKey>
-          );
           const keyDisplay = (
             <DictKey
               theme={props.theme}
               $hasDefault={hasDefault}
-              style={
-                hasDefault
-                  ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`}
-                  : undefined
-              }
+              style={hasDefault ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`} : undefined}
               onClick={
                 hasDefault && props.onInsertDefaultValue
                   ? () => {
                       const fullPath = props.contextPath
                         ? [...props.contextPath, ...fieldPath]
                         : fieldPath;
-                      props.onInsertDefaultValue?.(fullPath, fieldData.defaultValueAsJson!);
+                      props.onInsertDefaultValue?.(fullPath, fieldData.defaultValueAsJson ?? '');
                     }
                   : undefined
               }
-              title={
-                hasDefault
-                  ? 'Click to insert default value'
-                  : undefined
-              }
+              title={hasDefault ? 'Click to insert default value' : undefined}
             >
               {fieldData.name}
             </DictKey>
@@ -160,7 +125,9 @@ const renderTypeRecursive: renderTypeRecursiveType = (
 
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0] ?? '';
-    return <>{'['}{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, path, ofTypeKey)}{']'}</>;
+    return (
+      <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, path, ofTypeKey)}]</>
+    );
   }
 
   if (type.__typename === 'MapConfigType') {
@@ -176,8 +143,15 @@ const renderTypeRecursive: renderTypeRecursiveType = (
         {`{`}
         <DictEntry>
           {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
-          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props, path, keyTypeKey)}]
-          {`: `}
+          {renderTypeRecursive(
+            typeLookup[keyTypeKey],
+            typeLookup,
+            depth + 1,
+            props,
+            path,
+            keyTypeKey,
+          )}
+          ]{`: `}
           {renderTypeRecursive(
             typeLookup[valueTypeKey],
             typeLookup,
