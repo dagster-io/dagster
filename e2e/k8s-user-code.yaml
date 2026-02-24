@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e2e-user-code
+  namespace: dagster
+  labels:
+    app: e2e-user-code
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e2e-user-code
+  template:
+    metadata:
+      labels:
+        app: e2e-user-code
+    spec:
+      containers:
+        - name: user-code
+          image: dagster-celery-e2e:latest
+          imagePullPolicy: Never
+          command: ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "/opt/dagster/app/repo.py"]
+          ports:
+            - containerPort: 4000
+          env:
+            - name: DAGSTER_CURRENT_IMAGE
+              value: "dagster-celery-e2e:latest"
+            - name: DAGSTER_POSTGRES_HOST
+              value: "dagster-postgresql"
+            - name: DAGSTER_POSTGRES_PORT
+              value: "5432"
+            - name: DAGSTER_POSTGRES_USER
+              value: "test"
+            - name: DAGSTER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dagster-postgresql-secret
+                  key: postgresql-password
+            - name: DAGSTER_POSTGRES_DB
+              value: "test"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: e2e-user-code
+  namespace: dagster
+spec:
+  selector:
+    app: e2e-user-code
+  ports:
+    - port: 4000
+      targetPort: 4000
