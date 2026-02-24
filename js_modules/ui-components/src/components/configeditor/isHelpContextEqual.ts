@@ -7,5 +7,5 @@ export const isHelpContextEqual = (
   if (!prev || !next) {
     return prev === next;
   }
-  return prev.type.key === next.type.key && JSON.stringify(prev.path) === JSON.stringify(next.path);
+  return prev.type.key === next.type.key && prev.path.length === next.path.length && prev.path.every((p, i) => p === next.path[i]);
 };
