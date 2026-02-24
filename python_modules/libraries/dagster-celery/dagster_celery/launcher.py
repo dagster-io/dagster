@@ -131,7 +131,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
 
         task = create_resume_job_task(self.celery)
         task_signature = task.si(
-            execute_job_args_packed=pack_value(args),
+            resume_job_args_packed=pack_value(args),
         )
 
         self._launch_celery_task_run(

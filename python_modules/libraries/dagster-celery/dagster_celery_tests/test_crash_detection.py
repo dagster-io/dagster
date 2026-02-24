@@ -63,6 +63,12 @@ class TestResumeRun:
             # The first positional arg must be the Celery app, not ResumeRunArgs
             mock_create.assert_called_once_with(launcher.celery)
 
+            # The task signature must use resume_job_args_packed (not execute_job_args_packed)
+            call_kwargs = mock_task.si.call_args.kwargs
+            assert "resume_job_args_packed" in call_kwargs, (
+                f"Expected 'resume_job_args_packed' kwarg, got: {list(call_kwargs.keys())}"
+            )
+
 
 class TestCheckRunWorkerHealth:
     def test_task_success_returns_success(self, launcher, mock_celery_app):
