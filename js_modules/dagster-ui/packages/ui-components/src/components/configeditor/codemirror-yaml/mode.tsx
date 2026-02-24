@@ -710,7 +710,6 @@ export function expandAutocompletionContextAtCursor(editor: any) {
   // Takes the schema and the YAML tokenizer state and returns the
   // type in scope and available (yet-to-be-used) fields
   // if it is a composite type.
-  const context = findAutocompletionContext(schema, token.state.parents, start);
   return {
     start,
     cursor,
@@ -718,7 +717,7 @@ export function expandAutocompletionContextAtCursor(editor: any) {
     token,
     prevToken,
     path,
-    context: context ? {...context, path} : null,
+    context: findAutocompletionContext(schema, token.state.parents, start),
   };
 }
 

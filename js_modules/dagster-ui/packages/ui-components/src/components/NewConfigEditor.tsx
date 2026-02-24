@@ -59,8 +59,8 @@ const performInitialPass = (
   performLint(editor);
 
   // update the contextual help based on the configSchema and content
-  const {context} = expandAutocompletionContextAtCursor(editor);
-  onHelpContextChange(context ? {type: context.closestMappingType, path: context.path || []} : null);
+  const {context, path} = expandAutocompletionContextAtCursor(editor);
+  onHelpContextChange(context ? {type: context.closestMappingType, path: path || []} : null);
 };
 
 const ConfigEditorStyle = createGlobalStyle`
@@ -142,7 +142,6 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
     };
 
     const insertValueAtPath = (path: string[], value: string) => {
-      console.table({ path, value })
       if (!editor.current || path.length === 0) {
         return;
       }
@@ -194,7 +193,6 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
             // Value exists but is not a map, replace it
             pair.value = new yaml.YAMLMap();
           }
-          
           current = pair.value;
         }
 
@@ -282,8 +280,8 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
         if (editorInstance.getSelection().length) {
           onHelpContextChange(null);
         } else {
-          const {context} = expandAutocompletionContextAtCursor(editorInstance);
-          onHelpContextChange(context ? {type: context.closestMappingType, path: context.path || []} : null);
+          const {context, path} = expandAutocompletionContextAtCursor(editorInstance);
+          onHelpContextChange(context ? {type: context.closestMappingType, path: path || []} : null);
         }
       },
       onBlur: (editorInstance: CodeMirror.Editor) => {

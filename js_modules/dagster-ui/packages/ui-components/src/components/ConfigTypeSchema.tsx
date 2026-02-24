@@ -68,7 +68,8 @@ const renderTypeRecursive: renderTypeRecursiveType = (
         )}
         {type.fields.map((fieldData) => {
           const fieldPath = [...path, fieldData.name];
-          const keyDisplay = (
+          const hasDefault = fieldData.defaultValueAsJson != null;
+          const old_keyDisplay = (
             <DictKey
               theme={props.theme}
               style={
@@ -88,6 +89,34 @@ const renderTypeRecursive: renderTypeRecursiveType = (
               }
               title={
                 fieldData.defaultValueAsJson
+                  ? 'Click to insert default value'
+                  : undefined
+              }
+            >
+              {fieldData.name}
+            </DictKey>
+          );
+          const keyDisplay = (
+            <DictKey
+              theme={props.theme}
+              $hasDefault={hasDefault}
+              style={
+                hasDefault
+                  ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`}
+                  : undefined
+              }
+              onClick={
+                hasDefault && props.onInsertDefaultValue
+                  ? () => {
+                      const fullPath = props.contextPath
+                        ? [...props.contextPath, ...fieldPath]
+                        : fieldPath;
+                      props.onInsertDefaultValue?.(fullPath, fieldData.defaultValueAsJson!);
+                    }
+                  : undefined
+              }
+              title={
+                hasDefault
                   ? 'Click to insert default value'
                   : undefined
               }
@@ -379,19 +408,22 @@ const TypeSchemaContainer = styled.code`
   line-height: 18px;
 `;
 
-const DictKey = styled.button<{theme: ConfigTypeSchemaTheme | undefined}>`
+const DictKey = styled.button<{theme: ConfigTypeSchemaTheme | undefined; $hasDefault: boolean}>`
   color: ${({theme}) => (theme === 'dark' ? Colors.accentReversed() : Colors.accentPrimary())};
   background: none;
   border: none;
   padding: 0;
   margin: 0;
   font: inherit;
-  cursor: inherit;
   text-align: left;
-
-  &:hover {
-    text-decoration: underline;
-  }
+  ${({$hasDefault}) =>
+    $hasDefault
+      ? `
+    cursor: pointer;
+  `
+      : `
+    cursor: default;
+  `}
 `;
 
 const DictComment = styled.div`
