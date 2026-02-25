@@ -236,7 +236,13 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
                 timeout=2.0,
             )
             ping_response = inspector.ping()
-        except Exception:
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to ping Celery worker {worker_hostname}: {e}. "
+                "Falling back to trusting task state."
+            )
+            # If we can't reach the broker to inspect, fall back to trusting state
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
             # If we can't reach the broker to inspect, fall back to trusting state
             return CheckRunHealthResult(WorkerStatus.RUNNING)
 
