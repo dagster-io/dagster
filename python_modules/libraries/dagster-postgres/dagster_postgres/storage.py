@@ -10,7 +10,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.schedule_storage import PostgresScheduleStorage
-from dagster_postgres.utils import pg_url_from_config
+from dagster_postgres.utils import pg_config_password_provider, pg_url_from_config
 
 
 class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
@@ -37,15 +37,23 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         postgres_url,
         should_autocreate_tables=True,
         inst_data: ConfigurableClassData | None = None,
+        password_provider: str | None = None,
     ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
             should_autocreate_tables, "should_autocreate_tables"
         )
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        self._run_storage = PostgresRunStorage(postgres_url, should_autocreate_tables)
-        self._event_log_storage = PostgresEventLogStorage(postgres_url, should_autocreate_tables)
-        self._schedule_storage = PostgresScheduleStorage(postgres_url, should_autocreate_tables)
+        self.password_provider = password_provider
+        self._run_storage = PostgresRunStorage(
+            postgres_url, should_autocreate_tables, password_provider=password_provider
+        )
+        self._event_log_storage = PostgresEventLogStorage(
+            postgres_url, should_autocreate_tables, password_provider=password_provider
+        )
+        self._schedule_storage = PostgresScheduleStorage(
+            postgres_url, should_autocreate_tables, password_provider=password_provider
+        )
         super().__init__()
 
     @property
@@ -64,6 +72,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
+            password_provider=pg_config_password_provider(config_value),
         )
 
     @property

@@ -32,10 +32,12 @@ from sqlalchemy.engine import Connection
 from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,
+    pg_config_password_provider,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
     set_pg_statement_timeout,
+    setup_pg_password_provider_event,
 )
 
 
@@ -72,6 +74,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         postgres_url: str,
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
+        password_provider: str | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = postgres_url
@@ -83,6 +86,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
+
+        self.password_provider = password_provider
+        if self.password_provider:
+            setup_pg_password_provider_event(self._engine, self.password_provider)
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
@@ -118,6 +125,9 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
         self._engine = create_engine(self.postgres_url, **kwargs)
+        if self.password_provider:
+            setup_pg_password_provider_event(self._engine, self.password_provider)
+
         event.listen(
             self._engine,
             "connect",
@@ -140,20 +150,26 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
+            password_provider=pg_config_password_provider(config_value),
         )
 
     @staticmethod
     def create_clean_storage(
-        postgres_url: str, should_autocreate_tables: bool = True
+        postgres_url: str,
+        should_autocreate_tables: bool = True,
+        password_provider: str | None = None,
     ) -> "PostgresScheduleStorage":
         engine = create_engine(
             postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
+        if password_provider:
+            setup_pg_password_provider_event(engine, password_provider)
+
         try:
             ScheduleStorageSqlMetadata.drop_all(engine)
         finally:
             engine.dispose()
-        return PostgresScheduleStorage(postgres_url, should_autocreate_tables)
+        return PostgresScheduleStorage(postgres_url, should_autocreate_tables, password_provider=password_provider)
 
     def connect(self, run_id: str | None = None) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
