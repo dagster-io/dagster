@@ -1,3 +1,4 @@
+import importlib
 import logging
 import time
 from collections.abc import Callable, Iterator, Mapping
@@ -13,6 +14,7 @@ import sqlalchemy
 import sqlalchemy.exc
 from dagster import _check as check
 from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
+from dagster._core.errors import DagsterInvariantViolationError
 
 # re-export
 from dagster._core.storage.config import pg_config as pg_config
@@ -50,15 +52,26 @@ def pg_url_from_config(config_value: Mapping[str, Any]) -> str:
         return get_conn_string(**config_value["postgres_db"])
 
 
+def pg_config_password_provider(config_value: Mapping[str, Any]) -> str | None:
+    if config_value.get("postgres_db"):
+        return config_value["postgres_db"].get("password_provider")
+    return None
+
 def get_conn_string(
     username: str,
-    password: str,
     hostname: str,
     db_name: str,
+    password: str = "",
     port: str = "5432",
     params: Mapping[str, object] | None = None,
     scheme: str = "postgresql",
+    password_provider: str | None = None,
 ) -> str:
+    check.invariant(
+        password or password_provider,
+        "postgres storage config must provide either a `password` or a `password_provider`",
+    )
+    
     uri = f"{scheme}://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
 
     if params:
@@ -175,3 +188,30 @@ def set_pg_statement_timeout(conn: psycopg2.extensions.connection, millis: int):
     with conn:
         with conn.cursor() as curs:
             curs.execute(f"SET statement_timeout = {millis};")
+
+
+def setup_pg_password_provider_event(
+    engine: sqlalchemy.engine.Engine, password_provider: str
+) -> None:
+    """
+    Sets up an SQLAlchemy do_connect event listener that dynamically retrieves the password
+    by importing and invoking the callable specified by `password_provider`.
+    
+    WARNING: `password_provider` is dynamically imported using `importlib.import_module`.
+             This should only be used with trusted code paths.
+    """
+    parts = password_provider.split(".")
+    if len(parts) < 2:
+        raise DagsterInvariantViolationError(
+            f"password_provider must be a dot-separated string like 'my_module.my_function'. "
+            f"Got: '{password_provider}'"
+        )
+    module_name = ".".join(parts[:-1])
+    callable_name = parts[-1]
+
+    @sqlalchemy.event.listens_for(engine, "do_connect")
+    def receive_do_connect(dialect, conn_rec, cargs, cparams):
+        module = importlib.import_module(module_name)
+        get_password = getattr(module, callable_name)
+        check.callable_param(get_password, "password_provider")
+        cparams["password"] = get_password()
