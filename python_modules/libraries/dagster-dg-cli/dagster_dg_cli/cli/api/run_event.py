@@ -109,8 +109,10 @@ def get_run_events_command(
     api = DgApiRunEventApi(client)
 
     try:
+        event_types = tuple(event_type.split(",")) if event_type else ()
+        step_keys = (step_key,) if step_key else ()
         events = api.get_events(
-            run_id=run_id, event_type=event_type, step_key=step_key, limit=limit
+            run_id=run_id, event_types=event_types, step_keys=step_keys, limit=limit
         )
 
         if output_json:

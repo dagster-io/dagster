@@ -1428,33 +1428,242 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[log_success_logs_debug_level_json_json]
   dict({
-    'count': 0,
-    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODUzNTQzOH0=',
-    'hasMore': True,
+    'count': 1,
+    'cursor': None,
+    'hasMore': False,
     'logs': list([
+      dict({
+        'error': None,
+        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
+        'level': 'DEBUG',
+        'message': 'run_etl_pipeline intends to materialize asset ["enriched_data"]',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.concat_chunk_list',
+        'timestamp': '1758808865047',
+      }),
     ]),
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[log_success_logs_debug_level_text_text]
   '''
-  No logs found for run 85156191-170d-4229-8eba-14450b6ca9e3
+  Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
+  
+  TIMESTAMP            LEVEL    STEP_KEY                  MESSAGE
+  --------------------------------------------------------------------------------
+  2025-09-25 14:01:05  DEBUG    enriched_data.concat_chu  run_etl_pipeline intends to materialize asset ["enriched_data"]
+  
+  Total log entries: 1
   
   '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_json_json]
   dict({
-    'count': 0,
+    'count': 3,
     'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
     'hasMore': False,
     'logs': list([
+      dict({
+        'error': dict({
+          'cause': dict({
+            'cause': None,
+            'className': 'FileNotFoundError',
+            'message': '''
+              FileNotFoundError: [Errno 2] No such file or directory: '/opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11'
+  
+            ''',
+            'stack': list([
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+                    yield
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 619, in _load_input_with_input_manager
+                    value = input_manager.load_input(context)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 406, in load_input
+                    return self._load_single_input(path, context)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 273, in _load_single_input
+                    obj = self.load_from_path(context=context, path=path)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/fs_io_manager.py", line 284, in load_from_path
+                    with path.open("rb") as file:
+                         ^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/upath/implementations/local.py", line 134, in open
+                    return PosixPath.open(self, mode, buffering, encoding, errors, newline)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open
+                    return io.open(self, mode, buffering, encoding, errors, newline)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+            ]),
+            'stackTrace': '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+                  yield
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 619, in _load_input_with_input_manager
+                  value = input_manager.load_input(context)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 406, in load_input
+                  return self._load_single_input(path, context)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 273, in _load_single_input
+                  obj = self.load_from_path(context=context, path=path)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/fs_io_manager.py", line 284, in load_from_path
+                  with path.open("rb") as file:
+                       ^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/upath/implementations/local.py", line 134, in open
+                  return PosixPath.open(self, mode, buffering, encoding, errors, newline)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open
+                  return io.open(self, mode, buffering, encoding, errors, newline)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+            ''',
+          }),
+          'className': 'RetryRequestedFromPolicy',
+          'message': '''
+            Exceeded max_retries of 2
+  
+          ''',
+          'stack': list([
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py", line 246, in dagster_event_sequence_for_step
+                  yield from check.generator(step_events)
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py", line 468, in core_dagster_event_sequence_for_step
+                  for event_or_input_value in step_input.source.load_input_object(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 364, in load_input_object
+                  yield from _load_input_with_input_manager(input_manager, load_input_context)
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 612, in _load_input_with_input_manager
+                  with op_execution_error_boundary(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+                  self.gen.throw(value)
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 75, in op_execution_error_boundary
+                  raise RetryRequestedFromPolicy(
+  
+            ''',
+          ]),
+          'stackTrace': '''
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py", line 246, in dagster_event_sequence_for_step
+                yield from check.generator(step_events)
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py", line 468, in core_dagster_event_sequence_for_step
+                for event_or_input_value in step_input.source.load_input_object(
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 364, in load_input_object
+                yield from _load_input_with_input_manager(input_manager, load_input_context)
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 612, in _load_input_with_input_manager
+                with op_execution_error_boundary(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            
+              File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+                self.gen.throw(value)
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 75, in op_execution_error_boundary
+                raise RetryRequestedFromPolicy(
+  
+          ''',
+        }),
+        'eventType': 'STEP_FAILURE',
+        'level': 'ERROR',
+        'message': 'Execution of step "enriched_data.process_chunk[11]" failed.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808877726',
+      }),
+      dict({
+        'error': None,
+        'eventType': None,
+        'level': 'ERROR',
+        'message': "Dependencies for step enriched_data.concat_chunk_list failed: ['enriched_data.process_chunk[11]']. Not executing.",
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.concat_chunk_list',
+        'timestamp': '1758808877786',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_FAILURE',
+        'level': 'ERROR',
+        'message': 'Execution of run for "run_etl_pipeline" failed. Steps failed: [\'enriched_data.process_chunk[11]\'].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808878519',
+      }),
     ]),
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_text_text]
   '''
-  No logs found for run 85156191-170d-4229-8eba-14450b6ca9e3
+  Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
+  
+  TIMESTAMP            LEVEL    STEP_KEY                  MESSAGE
+  --------------------------------------------------------------------------------
+  2025-09-25 14:01:17  ERROR    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed.
+  
+  Stack Trace:
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py", line 246, in dagster_event_sequence_for_step
+        yield from check.generator(step_events)
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py", line 468, in core_dagster_event_sequence_for_step
+        for event_or_input_value in step_input.source.load_input_object(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 364, in load_input_object
+        yield from _load_input_with_input_manager(input_manager, load_input_context)
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 612, in _load_input_with_input_manager
+        with op_execution_error_boundary(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+        self.gen.throw(value)
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 75, in op_execution_error_boundary
+        raise RetryRequestedFromPolicy(
+  
+  2025-09-25 14:01:17  ERROR    enriched_data.concat_chu  Dependencies for step enriched_data.concat_chunk_list failed: ['enriched_data.process_chunk[11]']. Not executing.
+  2025-09-25 14:01:18  ERROR                              Execution of run for "run_etl_pipeline" failed. Steps failed: ['enriched_data.process_chunk[11]'].
+  
+  Total log entries: 3
   
   '''
 # ---
@@ -1533,8 +1742,8 @@
 # name: TestDynamicCommandExecution.test_command_execution[log_success_logs_step_filter_json_json]
   dict({
     'count': 3,
-    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU0MDMyNn0=',
-    'hasMore': True,
+    'cursor': None,
+    'hasMore': False,
     'logs': list([
       dict({
         'error': None,
@@ -1578,7 +1787,6 @@
   2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
   
   Total log entries: 3
-  Note: More logs available (use --limit to increase or --cursor to paginate)
   
   '''
 # ---
