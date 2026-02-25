@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-webserver"
@@ -36,13 +36,3 @@ dagster-webserver-debug = "dagster_webserver.debug:main"
 [project.optional-dependencies]
 notebook = ["nbconvert"]  # notebooks support
 test = ["starlette[full]"]  # TestClient deps in full
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = ["dagster_webserver_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "dagster_webserver_tests/**", "build_js.sh"]

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dbt-cloud-kitchen-sink"
@@ -19,6 +19,3 @@ dependencies = [
 test = [
     "pytest",
 ]
-
-[tool.setuptools.packages.find]
-exclude = ["kitchen_sink_tests*"]

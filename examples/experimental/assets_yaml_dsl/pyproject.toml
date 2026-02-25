@@ -1,6 +1,27 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "assets_yaml_dsl"
+version = "1!0+dev"
+description = "Dagster example of yaml dsl for building asset graphs"
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster",
+    "pandas",
+    "dagster-pipes",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/examples/assets_yaml_dsl"
 
 [tool.dagster]
 module_name = "assets_yaml_dsl.definitions"

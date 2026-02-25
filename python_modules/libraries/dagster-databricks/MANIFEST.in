@@ -1,6 +1,0 @@
-recursive-include dagster_databricks *.sh
-recursive-include dagster_databricks *.yaml
-recursive-include dagster_databricks *.txt
-recursive-include dagster_databricks *.template
-include LICENSE
-include dagster_databricks/py.typed

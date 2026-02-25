@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-pipes"
@@ -25,13 +25,3 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dag
 stubs = [
     "google-cloud-storage",
 ]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = ["dagster_pipes_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "pytest.ini", "dagster_pipes_tests/**"]

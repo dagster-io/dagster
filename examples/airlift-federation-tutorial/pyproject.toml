@@ -1,6 +1,18 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "airlift-federation-tutorial"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-airlift[core]",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
 
 [tool.dagster]
 module_name = "airlift_federation_tutorial.definitions"

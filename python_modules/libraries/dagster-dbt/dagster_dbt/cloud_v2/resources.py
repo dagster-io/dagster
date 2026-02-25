@@ -21,6 +21,9 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
@@ -450,7 +453,13 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
         )
 
         all_asset_specs = [
-            spec.replace_attributes(kinds={"dbtcloud"} | spec.kinds - {"dbt"})
+            spec.replace_attributes(kinds={"dbtcloud"} | spec.kinds - {"dbt"}).merge_attributes(
+                metadata={
+                    DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY: self.workspace.credentials.account_id,
+                    DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY: state.project_id,
+                    DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY: state.environment_id,
+                }
+            )
             for spec in all_asset_specs
         ]
 

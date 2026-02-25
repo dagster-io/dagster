@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "perf-harness"
@@ -23,9 +23,6 @@ perf-harness = "perf_harness.cli:main"
 test = [
     "pytest",
 ]
-
-[tool.setuptools.packages.find]
-exclude = ["perf_harness_tests*"]
 
 [tool.dagster]
 module_name = "perf_harness.dagster_defs"

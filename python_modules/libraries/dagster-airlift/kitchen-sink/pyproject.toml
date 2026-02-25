@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "kitchen-sink"
@@ -18,9 +18,6 @@ dependencies = [
 test = [
     "pytest",
 ]
-
-[tool.setuptools.packages.find]
-exclude = ["kitchen_sink_tests*"]
 
 [tool.dg.project]
 defs_module = "kitchen_sink.dagster_defs.inner_component_defs"

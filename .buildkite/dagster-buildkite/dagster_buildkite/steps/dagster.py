@@ -1,5 +1,4 @@
 import os
-from glob import glob
 
 from buildkite_shared.environment import is_release_branch, safe_getenv
 from buildkite_shared.python_packages import PythonPackages
@@ -12,7 +11,6 @@ from buildkite_shared.step_builders.command_step_builder import (
 from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.defines import GIT_REPO_ROOT
 from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
@@ -46,10 +44,9 @@ def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
 
 def build_repo_wide_steps() -> list[StepConfiguration]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
-    # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
+    # the target. `pyright` and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
         *build_repo_wide_prettier_steps(),
@@ -168,37 +165,6 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
             ],
             key="pyright",
         ).build()
-    ]
-
-
-def build_repo_wide_check_manifest_steps() -> list[CommandStepConfiguration]:
-    published_packages = [
-        "python_modules/dagit",
-        "python_modules/dagster",
-        "python_modules/dagster-graphql",
-        "python_modules/dagster-webserver",
-        *(
-            os.path.relpath(p, GIT_REPO_ROOT)
-            for p in glob(f"{GIT_REPO_ROOT}/python_modules/libraries/*")
-        ),
-    ]
-
-    commands = [
-        "uv pip install --system check-manifest",
-        *(
-            f"check-manifest {library}"
-            for library in published_packages
-            if not library.endswith("CONTRIBUTING.md")  # ignore md file in dir
-        ),
-    ]
-
-    return [
-        add_test_image(
-            CommandStepBuilder(":white_check_mark: check-manifest")
-            .run(*commands)
-            .skip_if(skip_if_no_python_changes()),
-            AvailablePythonVersion.get_default(),
-        ).build(),
     ]
 
 

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-shared"
@@ -34,13 +34,3 @@ test = [
     "pytest",
     "flaky",
 ]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = ["dagster_shared_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "pytest.ini", "CLAUDE.md", "dagster_shared_tests/**"]

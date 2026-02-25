@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-managed-elements"
@@ -29,20 +29,3 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 [project.scripts]
 dagster-managed-elements = "dagster_managed_elements.cli:main"
 dagster-me = "dagster_managed_elements.cli:main"
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagster_managed_elements_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "pytest.ini",
-    "dagster_managed_elements_tests/**",
-]

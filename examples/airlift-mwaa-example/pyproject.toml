@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["mwaa_example"]
+
+[project]
+name = "mwaa-example"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-airlift[core,mwaa]",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]

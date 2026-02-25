@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-celery-docker"
@@ -26,21 +26,4 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 [project.optional-dependencies]
 test = [
     "botocore>=1.21.49",
-]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagster_celery_docker_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "pytest.ini",
-    "dagster_celery_docker_tests/**",
 ]

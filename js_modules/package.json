@@ -15,7 +15,13 @@
     "jest": "yarn workspace @dagster-io/ui-core jest-all-silent && yarn workspace @dagster-io/ui-components jest-all-silent"
   },
   "workspaces": {
-    "packages": ["packages/*"]
+    "packages": [
+      "app-oss",
+      "dg-docs-components",
+      "eslint-config",
+      "ui-core",
+      "ui-components"
+    ]
   },
   "dependencies": {
     "graphql.macro": "^1.4.2"
@@ -26,6 +32,7 @@
   },
   "resolutions": {
     "graphql-config": "^5.0.3",
-    "prettier": "3.8.1"
+    "prettier": "3.8.1",
+    "@types/react": "^18.3.9"
   }
 }

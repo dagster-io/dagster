@@ -1,6 +1,27 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dagster_pypi"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "dagster-dbt",
+    "dagster-duckdb-pandas",
+    "dagster-gcp",
+    "dagster-gcp-pandas",
+    "dagster-hex",
+    "dagster-pandas",
+    "dbt-bigquery",
+    "dbt-duckdb",
+    "google-cloud-bigquery",
+    "psycopg2-binary",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "dagster_pypi.definitions"

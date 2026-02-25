@@ -25,7 +25,6 @@ This directory contains the Dagster documentation site which is built with
 
 ## Generated content
 
-- Kinds tags in `docs/partials/_KindsTags.md` can be regenerated with
-  `yarn build-kinds-tags` (typically handled during production builds).
+- Kinds tags in `docs/partials/_KindsTags.md` can be regenerated with `yarn build-kinds-tags`. Since this is handled during production builds, locally generated kinds tags will be overwritten by the production build process.
 
 Refer to `README.md` in this directory for full details.

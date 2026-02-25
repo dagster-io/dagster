@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-graphql"
@@ -33,13 +33,3 @@ dagster-graphql = "dagster_graphql.cli:main"
 
 [project.optional-dependencies]
 test = ["dagster-test"]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = ["dagster_graphql_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "pytest.ini", "tox.ini", "tox_postgres.ini", "dagster_graphql_tests/**"]

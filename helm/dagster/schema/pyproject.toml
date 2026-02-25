@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-helm"
@@ -34,7 +34,5 @@ test = [
     "dagster-k8s",
 ]
 
-[tool.setuptools.packages.find]
-exclude = [
-    "schema_tests",
-]
+[tool.hatch.build]
+packages = ["schema"]

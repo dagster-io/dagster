@@ -1,4 +1,9 @@
 import responses
+from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY,
+)
 from dagster_dbt.cloud_v2.resources import (
     DbtCloudWorkspace,
     load_dbt_cloud_asset_specs,
@@ -6,6 +11,7 @@ from dagster_dbt.cloud_v2.resources import (
 )
 
 from dagster_dbt_tests.cloud_v2.conftest import (
+    TEST_ACCOUNT_ID,
     TEST_ADHOC_JOB_ID,
     TEST_ENVIRONMENT_ID,
     TEST_LIST_JOBS,
@@ -41,9 +47,12 @@ def test_load_asset_specs(
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["customers"]
-    first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
-    assert "dbtcloud" in first_asset_kinds
-    assert "dbt" not in first_asset_kinds
+    first_spec = next(spec for spec in sorted(all_assets))
+    assert "dbtcloud" in first_spec.kinds
+    assert "dbt" not in first_spec.kinds
+    assert first_spec.metadata[DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY] == TEST_ACCOUNT_ID
+    assert first_spec.metadata[DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY] == TEST_PROJECT_ID
+    assert first_spec.metadata[DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY] == TEST_ENVIRONMENT_ID
 
 
 def test_load_asset_specs_select(
@@ -60,9 +69,9 @@ def test_load_asset_specs_select(
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["customers"]
-    first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
-    assert "dbtcloud" in first_asset_kinds
-    assert "dbt" not in first_asset_kinds
+    first_spec = next(spec for spec in sorted(all_assets))
+    assert "dbtcloud" in first_spec.kinds
+    assert "dbt" not in first_spec.kinds
 
 
 def test_load_asset_specs_exclude(
@@ -79,9 +88,9 @@ def test_load_asset_specs_exclude(
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["orders"]
-    first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
-    assert "dbtcloud" in first_asset_kinds
-    assert "dbt" not in first_asset_kinds
+    first_spec = next(spec for spec in sorted(all_assets))
+    assert "dbtcloud" in first_spec.kinds
+    assert "dbt" not in first_spec.kinds
 
 
 def test_load_asset_specs_selector(
@@ -100,9 +109,9 @@ def test_load_asset_specs_selector(
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["customers"]
-    first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
-    assert "dbtcloud" in first_asset_kinds
-    assert "dbt" not in first_asset_kinds
+    first_spec = next(spec for spec in sorted(all_assets))
+    assert "dbtcloud" in first_spec.kinds
+    assert "dbt" not in first_spec.kinds
 
 
 def test_load_check_specs(

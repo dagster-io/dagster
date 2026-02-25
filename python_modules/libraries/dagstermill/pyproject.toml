@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagstermill"
@@ -42,18 +42,4 @@ test = [
     "matplotlib",
     "scikit-learn>=0.19.0",
     "tqdm<=4.48",  # https://github.com/tqdm/tqdm/issues/1049
-]
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagstermill_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "pytest.ini",
-    "dagstermill_tests/**",
-    "dagstermill/examples/**",
 ]

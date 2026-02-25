@@ -6,13 +6,23 @@ import responses
 from dagster import AssetExecutionContext, AssetKey, AssetSpec, OpExecutionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dbt import DbtProject
-from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY,
+    build_dbt_specs,
+)
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_shared.check.functions import ParameterCheckError
 
-from dagster_dbt_tests.cloud_v2.conftest import get_sample_manifest_json
+from dagster_dbt_tests.cloud_v2.conftest import (
+    TEST_ACCOUNT_ID,
+    TEST_ENVIRONMENT_ID,
+    TEST_PROJECT_ID,
+    get_sample_manifest_json,
+)
 
 
 def test_asset_defs(
@@ -34,9 +44,12 @@ def test_asset_defs(
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["customers"]
-    first_asset_kinds = next(spec.kinds for spec in sorted(assets_def_specs))
-    assert "dbtcloud" in first_asset_kinds
-    assert "dbt" not in first_asset_kinds
+    first_spec = next(spec for spec in sorted(assets_def_specs))
+    assert "dbtcloud" in first_spec.kinds
+    assert "dbt" not in first_spec.kinds
+    assert first_spec.metadata[DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY] == TEST_ACCOUNT_ID
+    assert first_spec.metadata[DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY] == TEST_PROJECT_ID
+    assert first_spec.metadata[DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY] == TEST_ENVIRONMENT_ID
 
 
 class MyCustomTranslator(DagsterDbtTranslator):

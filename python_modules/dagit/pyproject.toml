@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagit"
@@ -35,20 +35,4 @@ notebook = [
 ]
 test = [
     "dagster-webserver[test]==1!0+dev",
-]
-
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagit_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "dagit_tests/**",
-    "build_js.sh",
 ]

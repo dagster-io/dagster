@@ -1,6 +1,6 @@
 ---
 description: Dagster's public, stable API adheres to semantic versioning and won't break within any major release.
-sidebar_position: 30
+sidebar_position: 50
 title: Releases and compatibility
 sidebar_label: Releases
 ---

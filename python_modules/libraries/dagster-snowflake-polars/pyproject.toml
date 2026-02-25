@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-snowflake-polars"
@@ -31,21 +31,4 @@ test = [
     # https://status.snowflake.com/incidents/txclg2cyzq32
     "certifi==2025.1.31",
     "snowflake-connector-python[pandas]>=3.4.0",
-]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagster_snowflake_polars_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "pytest.ini",
-    "dagster_snowflake_polars_tests/**",
 ]

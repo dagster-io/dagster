@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dg-cli"
@@ -39,21 +39,12 @@ ai = [
     "mcp; python_version>='3.10'",
 ]
 
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
+[tool.hatch.build]
 exclude = [
-    "dagster_dg_cli_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "pytest.ini",
-    "dagster_dg_cli_tests/**",
-    "dagster_dg_cli/cli/**/*.md",
-    "dagster_dg_cli/api_layer/**/*.md",
+    "dagster_dg_cli/.gitignore",
+    "dagster_dg_cli/cli/plus/*.md",
+    "dagster_dg_cli/cli/plus/schema.graphql",
+    "dagster_dg_cli/cli/api/*.md",
+    "dagster_dg_cli/api_layer/*.md",
+    "dagster_dg_cli/api_layer/schemas/*.md",
 ]

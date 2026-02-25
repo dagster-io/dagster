@@ -1,6 +1,24 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "assets_pandas_type_metadata"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-pandera",
+    "jupyterlab",
+    "matplotlib",
+    "seaborn",
+    "pandera",
+    "pandas",
+    "pyarrow",
+    "pandera>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "assets_pandas_type_metadata.definitions"

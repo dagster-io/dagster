@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-test"
@@ -25,13 +25,4 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 # Eventually we should remove this as an extra and just include it in the main package
 pyspark = [
     "pyspark<4",
-]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagster_test_tests*",
 ]

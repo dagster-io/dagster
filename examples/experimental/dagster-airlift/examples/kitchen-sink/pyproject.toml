@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kitchen-sink"
+version = "1!0+dev"
+dependencies = [
+    "dagster==1!0+dev",
+    "dagster-webserver==1!0+dev",
+    "dagster-airlift[core,in-airflow]==1!0+dev",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]

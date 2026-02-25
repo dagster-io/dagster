@@ -1,6 +1,18 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "iris_analysis"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver"]
 
 [tool.dagster]
 module_name = "iris_analysis.definitions"

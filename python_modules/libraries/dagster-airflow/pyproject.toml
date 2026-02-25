@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-airflow"
@@ -65,22 +65,4 @@ test_airflow_1 = [
 ]
 test = [
     "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-]
-
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagster_airflow_tests*",
-]
-
-[tool.check-manifest]
-ignore = [
-    ".coveragerc",
-    "tox.ini",
-    "pytest.ini",
-    "dagster_airflow_tests/**",
-    "conftest.py",
-    "example_dag.png",
 ]

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-hightouch"
@@ -27,12 +27,3 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster_hightouch = "dagster_hightouch"
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = [
-    "dagster_hightouch_tests*",
-]
