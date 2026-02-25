@@ -243,7 +243,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
             )
             # If we can't reach the broker to inspect, fall back to trusting state
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        if ping_response and worker_hostname in ping_response:
+        if ping_response and isinstance(ping_response, dict) and worker_hostname in ping_response:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
 
         return CheckRunHealthResult(
