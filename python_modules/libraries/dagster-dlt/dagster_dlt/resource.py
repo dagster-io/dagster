@@ -131,6 +131,7 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == normalized_table_name
         ]
+        rows_loaded = None
         try:
             rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
                 normalized_table_name
