@@ -1,4 +1,4 @@
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from dagster._config import Field, IntSource, Permissive, Selector, StringSource
 from dagster._config.config_schema import UserConfigSchema
@@ -39,7 +39,8 @@ class PostgresStorageConfig(TypedDict):
 
 class PostgresStorageConfigDb(TypedDict):
     username: str
-    password: str
+    password: NotRequired[str]
+    password_provider: NotRequired[str]
     hostname: str
     db_name: str
     port: int
@@ -53,7 +54,8 @@ def pg_config() -> UserConfigSchema:
         "postgres_db": Field(
             {
                 "username": StringSource,
-                "password": StringSource,
+                "password": Field(StringSource, is_required=False),
+                "password_provider": Field(StringSource, is_required=False),
                 "hostname": StringSource,
                 "db_name": StringSource,
                 "port": Field(IntSource, is_required=False, default_value=5432),
