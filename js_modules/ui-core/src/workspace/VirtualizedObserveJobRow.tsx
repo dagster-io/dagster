@@ -262,16 +262,13 @@ const AutomationButton = ({type, automations, enabled, repoAddress}: AutomationB
                     flex={{
                       direction: 'row',
                       gap: 12,
-                      alignItems: 'center',
+                      alignItems: 'flex-start',
                       justifyContent: 'space-between',
                     }}
-                    padding={12}
+                    padding={8}
                     border={ii === 0 ? null : 'top'}
                   >
-                    <Box
-                      flex={{direction: 'row', alignItems: 'center', gap: 8}}
-                      style={{width: '100%', overflow: 'hidden'}}
-                    >
+                    <Box flex={{direction: 'row', gap: 8}}>
                       <Icon name={automation.__typename === 'Schedule' ? 'schedule' : 'sensor'} />
                       <Link
                         to={workspacePathFromAddress(
@@ -280,9 +277,13 @@ const AutomationButton = ({type, automations, enabled, repoAddress}: AutomationB
                             ? `/schedules/${automation.name}`
                             : `/sensors/${automation.name}`,
                         )}
-                        style={{flex: 1, overflow: 'hidden', width: '100%'}}
+                        style={{fontSize: 13, flex: 1, overflow: 'hidden'}}
                       >
-                        <MiddleTruncate text={displayName} />
+                        {automation.__typename === 'Sensor' ? (
+                          <MiddleTruncate text={displayName} />
+                        ) : (
+                          displayName
+                        )}
                       </Link>
                     </Box>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>

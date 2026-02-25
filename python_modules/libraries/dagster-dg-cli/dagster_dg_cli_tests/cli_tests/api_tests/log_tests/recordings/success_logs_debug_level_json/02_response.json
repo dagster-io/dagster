@@ -1,0 +1,8 @@
+{
+    "logsForRun": {
+        "__typename": "EventConnection",
+        "events": [],
+        "cursor": null,
+        "hasMore": false
+    }
+}
