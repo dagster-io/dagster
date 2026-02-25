@@ -4,6 +4,12 @@ dagsterWebserver:
     repository: "docker.io/dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
+  workspace:
+    enabled: true
+    servers:
+      - host: "e2e-user-code"
+        port: 4000
+        name: "e2e-test"
 
 dagsterDaemon:
   enabled: true
@@ -19,7 +25,7 @@ runLauncher:
       module: dagster_celery.launcher
       class: CeleryRunLauncher
       config:
-        broker: "pyamqp://guest:guest@dagster-rabbitmq:5672//"
+        broker: "pyamqp://test:test@dagster-rabbitmq:5672//"
         backend: "redis://dagster-redis-master:6379/0"
         default_queue: "dagster"
 

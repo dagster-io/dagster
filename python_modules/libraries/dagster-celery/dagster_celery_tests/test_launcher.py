@@ -176,7 +176,16 @@ def test_crashy_run_detected_by_monitoring(
     workspace_process_context: WorkspaceProcessContext,
     run_config,
 ):
-    """Test that monitoring detects a crashed worker and marks the run as failed."""
+    """Test that monitoring detects a crashed worker via the PENDING/UNKNOWN path.
+
+    This test uses the rpc:// backend, so when a worker crashes the task state
+    is lost and result.state returns PENDING. Monitoring maps PENDING to
+    WorkerStatus.UNKNOWN which triggers failure handling.
+
+    The ping-based detection path (for persistent backends like Redis where
+    result.state stays STARTED after a crash) is covered by unit tests in
+    test_crash_detection.py::TestCheckRunWorkerHealth.
+    """
     logger = logging.getLogger()
 
     remote_job = (

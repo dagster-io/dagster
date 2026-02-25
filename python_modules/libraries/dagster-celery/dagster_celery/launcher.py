@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
@@ -78,6 +79,14 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         self.celery = make_app(
             app_args=self.app_args(),
         )
+
+        if backend and backend.startswith("rpc://"):
+            logging.getLogger(__name__).warning(
+                "CeleryRunLauncher is configured with the 'rpc://' result backend. "
+                "Crash detection via worker ping requires a persistent result backend "
+                "(e.g. Redis). With 'rpc://', task state is lost when a worker crashes "
+                "and monitoring falls back to the PENDING/UNKNOWN detection path."
+            )
 
         super().__init__()
 
@@ -297,7 +306,13 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
                 Noneable(StringSource),
                 is_required=False,
                 default_value="rpc://",
-                description="The URL of the Celery results backend. Default: 'rpc://'.",
+                description=(
+                    "The URL of the Celery results backend. Default: 'rpc://'. "
+                    "Note: crash detection via worker ping requires a persistent "
+                    "backend such as Redis (e.g. 'redis://localhost:6379/0'). "
+                    "The default 'rpc://' backend loses task state on worker "
+                    "crash, falling back to the PENDING/UNKNOWN detection path."
+                ),
             ),
             "include": Field(
                 [str],

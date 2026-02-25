@@ -7,6 +7,4 @@ _rabbitmq_host = os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")
 
 broker_url = f"pyamqp://test:{_rabbitmq_password}@{_rabbitmq_host}:5672//"
 
-result_backend = os.getenv(
-    "CELERY_RESULT_BACKEND", "redis://dagster-redis-master:6379/0"
-)
+result_backend = os.getenv("CELERY_RESULT_BACKEND", "redis://dagster-redis-master:6379/0")
