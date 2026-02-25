@@ -99,7 +99,7 @@ jobs:
         if: steps.prerun.outputs.result == 'pex-deploy' || steps.prerun.outputs.result == 'docker-deploy'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
+          command: "plus deploy build-and-push --target-path=${{ env.DAGSTER_PROJECT_DIR }} --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
 
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
@@ -107,7 +107,7 @@ jobs:
         if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus deploy finish"
+          command: "plus deploy finish --target-path=${{ env.DAGSTER_PROJECT_DIR }}"
 
       # Update a PR comment - this runs always() so the comment is updated on success and failure
       - name: Update PR comment for branch deployments
