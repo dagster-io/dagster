@@ -1,8 +1,7 @@
 import logging
-import os
 import re
 
-from buildkite_shared.environment import safe_getenv
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.quarantine import (
     filter_and_print_steps_by_quarantined,
     get_buildkite_quarantined_objects,
@@ -65,7 +64,7 @@ def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_
     return filtered_steps, skipped_steps, muted_steps
 
 
-def build_dagster_oss_main_steps() -> list[StepConfiguration]:
+def build_dagster_oss_main_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     steps: list[StepConfiguration] = []
 
     # Note: we used to trigger an internal build (oss-internal-compatibility/internal),
@@ -73,20 +72,16 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
     # now come from the internal repo
 
     # Full pipeline.
-    steps += build_repo_wide_steps()
-    steps += build_docs_steps()
-    steps += build_dagster_ui_components_steps()
-    steps += build_dagster_ui_core_steps()
-    steps += build_dagster_steps()
-
-    BUILDKITE_TEST_QUARANTINE_TOKEN = os.getenv("BUILDKITE_TEST_QUARANTINE_TOKEN")
-    BUILDKITE_ORGANIZATION_SLUG = os.getenv("BUILDKITE_ORGANIZATION_SLUG")
-    BUILDKITE_STEP_SUITE_SLUG = os.getenv("BUILDKITE_STEP_SUITE_SLUG")
+    steps += build_repo_wide_steps(ctx)
+    steps += build_docs_steps(ctx)
+    steps += build_dagster_ui_components_steps(ctx)
+    steps += build_dagster_ui_core_steps(ctx)
+    steps += build_dagster_steps(ctx)
 
     buildkite_suite_mute_quarantined_objects = get_buildkite_quarantined_objects(
-        BUILDKITE_TEST_QUARANTINE_TOKEN,
-        BUILDKITE_ORGANIZATION_SLUG,
-        BUILDKITE_STEP_SUITE_SLUG,
+        ctx.get_env("BUILDKITE_TEST_QUARANTINE_TOKEN"),
+        ctx.get_env("BUILDKITE_ORGANIZATION_SLUG"),
+        ctx.get_env("BUILDKITE_STEP_SUITE_SLUG"),
         "muted",
         suppress_errors=True,
     )
@@ -94,9 +89,9 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
         f"buildkite_suite_mute_quarantined_objects = {buildkite_suite_mute_quarantined_objects}"
     )
     buildkite_suite_skip_quarantined_objects = get_buildkite_quarantined_objects(
-        BUILDKITE_TEST_QUARANTINE_TOKEN,
-        BUILDKITE_ORGANIZATION_SLUG,
-        BUILDKITE_STEP_SUITE_SLUG,
+        ctx.get_env("BUILDKITE_TEST_QUARANTINE_TOKEN"),
+        ctx.get_env("BUILDKITE_ORGANIZATION_SLUG"),
+        ctx.get_env("BUILDKITE_STEP_SUITE_SLUG"),
         "skipped",
         suppress_errors=True,
     )
@@ -105,20 +100,8 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
     )
 
     return filter_and_print_steps_by_quarantined(
+        ctx,
         steps,
         {obj.name for obj in buildkite_suite_skip_quarantined_objects},
         {obj.name for obj in buildkite_suite_mute_quarantined_objects},
     )
-
-
-def _get_setting(name: str) -> str | None:
-    """Load a setting defined either as an environment variable or in a `[<key>=<value>]`
-    string in the commit message.
-    """
-    direct_specifier = os.getenv(name)
-    commit_message = safe_getenv("BUILDKITE_MESSAGE")
-    if direct_specifier:
-        return direct_specifier
-    else:
-        m = re.search(r"\[" + name + r"=([^\]]+)\]", commit_message)
-        return m.group(1) if m else None

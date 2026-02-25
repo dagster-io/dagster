@@ -1,7 +1,7 @@
 import os
 from enum import Enum
 
-from buildkite_shared.environment import is_release_branch, safe_getenv
+from buildkite_shared.context import BuildkiteContext
 
 
 class AvailablePythonVersion(Enum):
@@ -28,17 +28,15 @@ class AvailablePythonVersion(Enum):
         return [v for v in cls.get_all() if v != cls.get_default()]
 
     @classmethod
-    def get_pytest_defaults(cls) -> list["AvailablePythonVersion"]:
-        branch_name = safe_getenv("BUILDKITE_BRANCH")
-        commit_message = safe_getenv("BUILDKITE_MESSAGE")
-        if is_release_branch(branch_name):
+    def get_pytest_defaults(cls, ctx: BuildkiteContext) -> list["AvailablePythonVersion"]:
+        if ctx.is_release_branch:
             return cls.get_all()
         else:
             # environment variable-specified defaults
             # branch name or commit message-specified defaults
             test_pythons = os.environ.get("TEST_PYTHON_VERSIONS", "")
 
-            env_vars = [branch_name, commit_message, test_pythons]
+            env_vars = [ctx.branch, ctx.message, test_pythons]
 
             specified_versions: list[AvailablePythonVersion] = []
             for version in cls.get_all():

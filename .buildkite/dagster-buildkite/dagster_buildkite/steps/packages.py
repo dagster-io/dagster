@@ -5,6 +5,7 @@ from glob import glob
 from pathlib import Path
 from typing import TypeAlias
 
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
@@ -139,7 +140,7 @@ class PackageSpec:
     run_pytest: bool = True
     splits: int = 1
     always_run_if: Callable[[], bool] | None = None
-    skip_if: Callable[[], str | None] | None = None
+    skip: Callable[[], str | None] | None = None
 
     def __post_init__(self):
         if not self.name:
@@ -151,12 +152,12 @@ class PackageSpec:
         self._should_skip = None
         self._skip_reason = None
 
-    def build_steps(self) -> list[TopLevelStepConfiguration]:
+    def build_steps(self, ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
         base_name = self.name or os.path.basename(self.directory)
         steps: list[GroupLeafStepConfiguration] = []
 
         if self.run_pytest:
-            default_python_versions = AvailablePythonVersion.get_pytest_defaults()
+            default_python_versions = AvailablePythonVersion.get_pytest_defaults(ctx)
 
             tox_factors: Sequence[ToxFactor | None] = (
                 self.pytest_tox_factors if self.pytest_tox_factors else [None]
@@ -201,8 +202,9 @@ class PackageSpec:
                     else:
                         base_extra_commands_pre = []
 
+                    skip_reason_str = self.get_skip_reason(ctx)
                     dependencies = []
-                    if not self.skip_reason:
+                    if not skip_reason_str:
                         if isinstance(self.pytest_step_dependencies, list):
                             dependencies = self.pytest_step_dependencies
                         elif callable(self.pytest_step_dependencies):
@@ -233,7 +235,7 @@ class PackageSpec:
                                 timeout_in_minutes=self.timeout_in_minutes,
                                 queue=self.queue,
                                 retries=self.retries,
-                                skip_reason=self.skip_reason,
+                                skip_reason=skip_reason_str,
                                 pytest_args=pytest_args,
                                 concurrency=other_factor.concurrency if other_factor else None,
                                 concurrency_group=(
@@ -259,15 +261,8 @@ class PackageSpec:
         else:
             return []
 
-    @property
-    def skip_reason(self) -> str | None:
-        """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
-        We actually use this to determine whether or not to run the package.
-
-        Because we use an archaic version of python to build our images, we can't use `cached_property`, and so we reinvent the wheel here with
-        self._should_skip and self._skip_reason. When we determine definitively that a package should or shouldn't be skipped, we cache the result on self._should_skip
-        as a boolean (it starts out as None), and cache the skip reason (or lack thereof) on self._skip_reason.
-        """
+    def get_skip_reason(self, ctx: BuildkiteContext) -> str | None:
+        """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run."""
         # If self._should_skip is not None, then the result is cached on self._skip_reason and we can return it.
         if self._should_skip is not None:
             if self._should_skip is True:
@@ -277,14 +272,15 @@ class PackageSpec:
             return self._skip_reason
 
         self._skip_reason = skip_reason(
-            self.directory, self.name, self.always_run_if, self.skip_if, is_oss=True
+            self.directory, self.name, self.always_run_if, self.skip, is_oss=True, ctx=ctx
         )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
 
 
-def build_example_packages_steps() -> list[StepConfiguration]:
-    custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
+def build_example_packages_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
+    custom_packages = _example_packages_with_custom_config(ctx)
+    custom_example_pkg_roots = [pkg.directory for pkg in custom_packages]
     example_packages_with_standard_config = [
         PackageSpec(pkg)
         for pkg in (
@@ -294,13 +290,14 @@ def build_example_packages_steps() -> list[StepConfiguration]:
         if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
     ]
 
-    example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
+    example_packages = custom_packages + example_packages_with_standard_config
 
-    return build_steps_from_package_specs(example_packages)
+    return build_steps_from_package_specs(example_packages, ctx)
 
 
-def build_library_packages_steps() -> list[StepConfiguration]:
-    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
+def build_library_packages_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
+    custom_packages = _library_packages_with_custom_config(ctx)
+    custom_library_pkg_roots = [pkg.directory for pkg in custom_packages]
     library_packages_with_standard_config = [
         *[
             PackageSpec(pkg)
@@ -315,12 +312,13 @@ def build_library_packages_steps() -> list[StepConfiguration]:
     ]
 
     return build_steps_from_package_specs(
-        LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG + library_packages_with_standard_config
+        custom_packages + library_packages_with_standard_config, ctx
     )
 
 
 def build_steps_from_package_specs(
     package_specs: list[PackageSpec],
+    ctx: BuildkiteContext,
 ) -> list[StepConfiguration]:
     steps: list[StepConfiguration] = []
     all_packages = sorted(
@@ -329,7 +327,7 @@ def build_steps_from_package_specs(
     )
 
     for pkg in all_packages:
-        steps += pkg.build_steps()
+        steps += pkg.build_steps(ctx)
 
     return steps
 
@@ -435,9 +433,9 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
 ui_extra_cmds = ["make rebuild_ui"]
 
 
-def has_dg_or_component_integration_changes() -> bool:
+def has_dg_or_component_integration_changes(ctx: BuildkiteContext) -> bool:
     """Check for changes in dagster-dg-cli or in integrations that implement components."""
-    return has_dg_changes() or has_component_integration_changes()
+    return has_dg_changes(ctx) or has_component_integration_changes(ctx)
 
 
 mysql_extra_cmds = [
@@ -479,124 +477,125 @@ gcp_creds_extra_cmds = (
 
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
-EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
-    PackageSpec(
-        "examples/assets_smoke_test",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # dbt-core incompatible
-        ],
-    ),
-    PackageSpec(
-        "examples/deploy_docker",
-        pytest_extra_cmds=deploy_docker_example_extra_cmds,
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
-        ],
-    ),
-    PackageSpec(
-        "examples/docs_snippets",
-        # The docs_snippets test suite also installs a ton of packages in the same environment,
-        # which is liable to cause dependency collisions. It's not necessary to test all these
-        # snippets in all python versions since we are testing the core code exercised by the
-        # snippets against all supported python versions.
-        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-        pytest_tox_factors=[
-            ToxFactor("all"),
-            ToxFactor("integrations"),
-            ToxFactor("docs_snapshot_test", splits=3),
-        ],
-        always_run_if=has_dg_changes,
-    ),
-    PackageSpec(
-        "examples/project_fully_featured",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,  # duckdb
-            AvailablePythonVersion.V3_13,  # duckdb
-            AvailablePythonVersion.V3_14,  # duckdb
-        ],
-    ),
-    PackageSpec(
-        "examples/with_great_expectations",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # great_expectations incompatible
-        ],
-    ),
-    PackageSpec(
-        "examples/with_pyspark",
-    ),
-    PackageSpec(
-        "examples/with_pyspark_emr",
-    ),
-    PackageSpec(
-        "examples/with_wandb",
-        unsupported_python_versions=[
-            # dagster-wandb dep
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-    ),
-    # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
-    PackageSpec(
-        "examples/assets_modern_data_stack",
-        pytest_tox_factors=[ToxFactor("pypi")],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # dbt-core incompatible
-        ],
-    ),
-    PackageSpec(
-        "examples/assets_dbt_python",
-        pytest_tox_factors=[ToxFactor("pypi")],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,  # duckdb
-            AvailablePythonVersion.V3_13,  # duckdb
-            AvailablePythonVersion.V3_14,  # duckdb
-        ],
-    ),
-    PackageSpec(
-        "examples/assets_dynamic_partitions",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,  # duckdb
-            AvailablePythonVersion.V3_13,  # duckdb
-            AvailablePythonVersion.V3_14,  # duckdb
-        ],
-    ),
-    PackageSpec(
-        "examples/quickstart_etl",
-        pytest_tox_factors=[ToxFactor("pypi")],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
-        ],
-    ),
-    PackageSpec(
-        "examples/use_case_repository",
-        pytest_tox_factors=[ToxFactor("source")],
-    ),
-    # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
-    # beefier instance
-    PackageSpec(
-        "examples/airlift-federation-tutorial",
-        always_run_if=has_dagster_airlift_changes,
-        timeout_in_minutes=30,
-        queue=BuildkiteQueue.DOCKER,
-        unsupported_python_versions=[
-            # airflow
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-    ),
-    PackageSpec(
-        "examples/airlift-migration-tutorial",
-        always_run_if=has_dagster_airlift_changes,
-        unsupported_python_versions=[
-            # airflow
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-    ),
-]
+def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageSpec]:
+    return [
+        PackageSpec(
+            "examples/assets_smoke_test",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # dbt-core incompatible
+            ],
+        ),
+        PackageSpec(
+            "examples/deploy_docker",
+            pytest_extra_cmds=deploy_docker_example_extra_cmds,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
+            ],
+        ),
+        PackageSpec(
+            "examples/docs_snippets",
+            # The docs_snippets test suite also installs a ton of packages in the same environment,
+            # which is liable to cause dependency collisions. It's not necessary to test all these
+            # snippets in all python versions since we are testing the core code exercised by the
+            # snippets against all supported python versions.
+            unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+            pytest_tox_factors=[
+                ToxFactor("all"),
+                ToxFactor("integrations"),
+                ToxFactor("docs_snapshot_test", splits=3),
+            ],
+            always_run_if=lambda: has_dg_changes(ctx),
+        ),
+        PackageSpec(
+            "examples/project_fully_featured",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,  # duckdb
+                AvailablePythonVersion.V3_13,  # duckdb
+                AvailablePythonVersion.V3_14,  # duckdb
+            ],
+        ),
+        PackageSpec(
+            "examples/with_great_expectations",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # great_expectations incompatible
+            ],
+        ),
+        PackageSpec(
+            "examples/with_pyspark",
+        ),
+        PackageSpec(
+            "examples/with_pyspark_emr",
+        ),
+        PackageSpec(
+            "examples/with_wandb",
+            unsupported_python_versions=[
+                # dagster-wandb dep
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+        ),
+        # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
+        PackageSpec(
+            "examples/assets_modern_data_stack",
+            pytest_tox_factors=[ToxFactor("pypi")],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # dbt-core incompatible
+            ],
+        ),
+        PackageSpec(
+            "examples/assets_dbt_python",
+            pytest_tox_factors=[ToxFactor("pypi")],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,  # duckdb
+                AvailablePythonVersion.V3_13,  # duckdb
+                AvailablePythonVersion.V3_14,  # duckdb
+            ],
+        ),
+        PackageSpec(
+            "examples/assets_dynamic_partitions",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,  # duckdb
+                AvailablePythonVersion.V3_13,  # duckdb
+                AvailablePythonVersion.V3_14,  # duckdb
+            ],
+        ),
+        PackageSpec(
+            "examples/quickstart_etl",
+            pytest_tox_factors=[ToxFactor("pypi")],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
+            ],
+        ),
+        PackageSpec(
+            "examples/use_case_repository",
+            pytest_tox_factors=[ToxFactor("source")],
+        ),
+        # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
+        # beefier instance
+        PackageSpec(
+            "examples/airlift-federation-tutorial",
+            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            timeout_in_minutes=30,
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                # airflow
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+        ),
+        PackageSpec(
+            "examples/airlift-migration-tutorial",
+            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            unsupported_python_versions=[
+                # airflow
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+        ),
+    ]
 
 
 def _unsupported_dagster_python_versions(
@@ -641,444 +640,448 @@ def tox_factors_for_folder(tests_folder_name: str) -> list[ToxFactor]:
     ]
 
 
-LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
-    PackageSpec(
-        "python_modules/automation",
-        # automation is internal code that doesn't need to be tested in every python version. The
-        # test suite also installs a ton of packages in the same environment, which is liable to
-        # cause dependency collisions.
-        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-        retries=0,
-    ),
-    PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
-    PackageSpec(
-        "python_modules/dagster",
-        env_vars=["AWS_ACCOUNT_ID"],
-        pytest_tox_factors=[
-            ToxFactor("api_tests"),
-            ToxFactor("asset_defs_tests"),
-            ToxFactor("cli_tests", splits=2),
-            ToxFactor("components_tests"),
-            ToxFactor("core_tests"),
-            ToxFactor("daemon_sensor_tests", splits=2),
-            ToxFactor("daemon_tests", splits=2),
-            ToxFactor("declarative_automation_tests", splits=2),
-            ToxFactor("definitions_tests"),
-            ToxFactor("general_tests"),
-            ToxFactor("general_tests_old_protobuf"),
-            ToxFactor("launcher_tests"),
-            ToxFactor("logging_tests"),
-            ToxFactor("model_tests"),
-            ToxFactor("scheduler_tests"),
-            ToxFactor("storage_tests", splits=2),
-            ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
-            ToxFactor("storage_tests_sqlalchemy_1_4", splits=2),
-            ToxFactor("utils_tests"),
-            ToxFactor("type_signature_tests"),
-        ]
-        + tox_factors_for_folder("execution_tests"),
-        unsupported_python_versions=_unsupported_dagster_python_versions,
-    ),
-    PackageSpec(
-        "python_modules/dagster-graphql",
-        pytest_extra_cmds=dagster_graphql_extra_cmds,
-        pytest_tox_factors=[
-            ToxFactor("not_graphql_context_test_suite", splits=2),
-            ToxFactor("sqlite_instance_multi_location"),
-            ToxFactor("sqlite_instance_managed_grpc_env", splits=2),
-            ToxFactor("sqlite_instance_deployed_grpc_env", splits=2),
-            ToxFactor("sqlite_instance_code_server_cli_grpc_env", splits=2),
-            ToxFactor("graphql_python_client"),
-            ToxFactor("postgres-graphql_context_variants"),
-            ToxFactor("postgres-instance_multi_location"),
-            ToxFactor("postgres-instance_managed_grpc_env", splits=2),
-            ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
-            ToxFactor("gql_v3"),
-            ToxFactor("gql_v3_5"),
-        ],
-        unsupported_python_versions=lambda tox_factor: (
-            # test suites particularly likely to crash and/or hang
-            # due to https://github.com/grpc/grpc/issues/31885
-            (
-                [AvailablePythonVersion.V3_11]
-                if tox_factor
-                and tox_factor.factor
-                in {
-                    "sqlite_instance_managed_grpc_env",
-                    "sqlite_instance_deployed_grpc_env",
-                    "sqlite_instance_code_server_cli_grpc_env",
-                    "sqlite_instance_multi_location",
-                    "postgres-instance_multi_location",
-                    "postgres-instance_managed_grpc_env",
-                }
-                else []
-            )
-            # postgres grpc tests hit "too many clients" on 3.14,
-            # likely due to gRPC subprocess connection cleanup issues
-            + (
-                [AvailablePythonVersion.V3_14]
-                if tox_factor
-                and tox_factor.factor
-                in {
-                    "postgres-instance_deployed_grpc_env",
-                    "postgres-instance_managed_grpc_env",
-                    "postgres-instance_multi_location",
-                }
-                else []
-            )
+def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageSpec]:
+    return [
+        PackageSpec(
+            "python_modules/automation",
+            # automation is internal code that doesn't need to be tested in every python version. The
+            # test suite also installs a ton of packages in the same environment, which is liable to
+            # cause dependency collisions.
+            unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+            retries=0,
         ),
-        timeout_in_minutes=30,
-    ),
-    PackageSpec(
-        "python_modules/dagster-test",
-        unsupported_python_versions=[
-            # dagster-airflow
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dbt",
-        pytest_tox_factors=[
-            ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
-            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
-            for command_factor in ["cloud", "core-main", "core-derived-metadata"]
-        ],
-        # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
-        # dbt-core is incompatible with Python 3.14
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
-                if tox_factor and tox_factor.factor.startswith("dbt17")
-                else [AvailablePythonVersion.V3_14]
-            )
+        PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
+        PackageSpec(
+            "python_modules/dagster",
+            env_vars=["AWS_ACCOUNT_ID"],
+            pytest_tox_factors=[
+                ToxFactor("api_tests"),
+                ToxFactor("asset_defs_tests"),
+                ToxFactor("cli_tests", splits=2),
+                ToxFactor("components_tests"),
+                ToxFactor("core_tests"),
+                ToxFactor("daemon_sensor_tests", splits=2),
+                ToxFactor("daemon_tests", splits=2),
+                ToxFactor("declarative_automation_tests", splits=2),
+                ToxFactor("definitions_tests"),
+                ToxFactor("general_tests"),
+                ToxFactor("general_tests_old_protobuf"),
+                ToxFactor("launcher_tests"),
+                ToxFactor("logging_tests"),
+                ToxFactor("model_tests"),
+                ToxFactor("scheduler_tests"),
+                ToxFactor("storage_tests", splits=2),
+                ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
+                ToxFactor("storage_tests_sqlalchemy_1_4", splits=2),
+                ToxFactor("utils_tests"),
+                ToxFactor("type_signature_tests"),
+            ]
+            + tox_factors_for_folder("execution_tests"),
+            unsupported_python_versions=_unsupported_dagster_python_versions,
         ),
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dbt/",
-        skip_if=skip_if_not_dagster_dbt_commit,
-        name="dagster-dbt-fusion",
-        pytest_tox_factors=[
-            ToxFactor(
-                "dbtfusion-snowflake",
-                concurrency=1,
-                concurrency_group="dagster-dbt-fusion-snowflake",
-            )
-        ],
-        env_vars=[
-            "SNOWFLAKE_ACCOUNT",
-            "SNOWFLAKE_USER",
-            "SNOWFLAKE_BUILDKITE_PASSWORD",
-        ],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # dbt-core incompatible
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake",
-        env_vars=[
-            "SNOWFLAKE_ACCOUNT",
-            "SNOWFLAKE_USER",
-            "SNOWFLAKE_BUILDKITE_PASSWORD",
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airlift",
-        unsupported_python_versions=[
-            # airflow
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-        env_vars=[
-            "AIRLIFT_MWAA_TEST_ENV_NAME",
-            "AIRLIFT_MWAA_TEST_PROFILE",
-            "AIRLIFT_MWAA_TEST_REGION",
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airbyte",
-        pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
-    ),
-    # PackageSpec(
-    #     "python_modules/libraries/dagster-airflow",
-    #     # omit python 3.10 until we add support
-    #     unsupported_python_versions=[
-    #         AvailablePythonVersion.V3_10,
-    #         AvailablePythonVersion.V3_11,
-    #         AvailablePythonVersion.V3_12,
-    #         AvailablePythonVersion.V3_13,
-    #     ],
-    #     env_vars=[
-    #         "AIRFLOW_HOME",
-    #         "AWS_ACCOUNT_ID",
-    #         "AWS_ACCESS_KEY_ID",
-    #         "AWS_SECRET_ACCESS_KEY",
-    #         "BUILDKITE_SECRETS_BUCKET",
-    #         "GOOGLE_APPLICATION_CREDENTIALS",
-    #     ],
-    #     pytest_extra_cmds=airflow_extra_cmds,
-    #     pytest_tox_factors=[
-    #         ToxFactor("default-airflow2"),
-    #         ToxFactor("localdb-airflow2"),
-    #         ToxFactor("persistentdb-airflow2"),
-    #     ],
-    # ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dg-cli",
-        pytest_tox_factors=[
-            ToxFactor("general", splits=3),
-            ToxFactor("docs"),
-            ToxFactor("plus"),
-        ],
-        env_vars=["SHELL"],
-        always_run_if=has_dg_or_component_integration_changes,
-        # general tests depend on dagster-dbt which does not support Python 3.14
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [AvailablePythonVersion.V3_14]
-                if (tox_factor and tox_factor.factor == "general")
-                else []
-            )
+        PackageSpec(
+            "python_modules/dagster-graphql",
+            pytest_extra_cmds=dagster_graphql_extra_cmds,
+            pytest_tox_factors=[
+                ToxFactor("not_graphql_context_test_suite", splits=2),
+                ToxFactor("sqlite_instance_multi_location"),
+                ToxFactor("sqlite_instance_managed_grpc_env", splits=2),
+                ToxFactor("sqlite_instance_deployed_grpc_env", splits=2),
+                ToxFactor("sqlite_instance_code_server_cli_grpc_env", splits=2),
+                ToxFactor("graphql_python_client"),
+                ToxFactor("postgres-graphql_context_variants"),
+                ToxFactor("postgres-instance_multi_location"),
+                ToxFactor("postgres-instance_managed_grpc_env", splits=2),
+                ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
+                ToxFactor("gql_v3"),
+                ToxFactor("gql_v3_5"),
+            ],
+            unsupported_python_versions=lambda tox_factor: (
+                # test suites particularly likely to crash and/or hang
+                # due to https://github.com/grpc/grpc/issues/31885
+                (
+                    [AvailablePythonVersion.V3_11]
+                    if tox_factor
+                    and tox_factor.factor
+                    in {
+                        "sqlite_instance_managed_grpc_env",
+                        "sqlite_instance_deployed_grpc_env",
+                        "sqlite_instance_code_server_cli_grpc_env",
+                        "sqlite_instance_multi_location",
+                        "postgres-instance_multi_location",
+                        "postgres-instance_managed_grpc_env",
+                    }
+                    else []
+                )
+                # postgres grpc tests hit "too many clients" on 3.14,
+                # likely due to gRPC subprocess connection cleanup issues
+                + (
+                    [AvailablePythonVersion.V3_14]
+                    if tox_factor
+                    and tox_factor.factor
+                    in {
+                        "postgres-instance_deployed_grpc_env",
+                        "postgres-instance_managed_grpc_env",
+                        "postgres-instance_multi_location",
+                    }
+                    else []
+                )
+            ),
+            timeout_in_minutes=30,
         ),
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dg-cli",
-        name="dagster-dg-cli-mcp",
-        pytest_tox_factors=[ToxFactor("mcp")],
-        always_run_if=has_dg_or_component_integration_changes,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-aws",
-        env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-azure",
-        env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-celery",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_extra_cmds,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-celery-docker",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dask",
-        env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-databricks",
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-docker",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=docker_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb-pandas",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb-polars",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb-pyspark",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-pandas",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_creds_extra_cmds,
-        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp-pandas",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_creds_extra_cmds,
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp-pyspark",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_creds_extra_cmds,
-        # spark-bigquery connector not yet compatible with Spark 4.x (required for PySpark on 3.14)
-        unsupported_python_versions=[AvailablePythonVersion.V3_14],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-ge",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # great_expectations incompatible
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-k8s",
-        env_vars=[
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-        ],
-        pytest_tox_factors=[
-            ToxFactor("default"),
-            ToxFactor("old_kubernetes"),
-        ],
-        pytest_extra_cmds=k8s_extra_cmds,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-mlflow",
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-mysql",
-        pytest_extra_cmds=mysql_extra_cmds,
-        pytest_tox_factors=[
-            ToxFactor("storage_tests", splits=2),
-            ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
-        ],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
-        ],
-        always_run_if=has_storage_test_fixture_changes,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake-pandas",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake-pyspark",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # pyspark<4 not available
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake-polars",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-postgres",
-        pytest_tox_factors=[
-            ToxFactor("storage_tests"),
-            ToxFactor("storage_tests_sqlalchemy_1_3"),
-        ],
-        always_run_if=has_storage_test_fixture_changes,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-twilio",
-        env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
-        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-wandb",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagstermill",
-        pytest_tox_factors=[ToxFactor("papermill1", splits=2), ToxFactor("papermill2", splits=2)],
-        retries=2,  # Workaround for flaky kernel issues
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [
-                    AvailablePythonVersion.V3_12,
-                    AvailablePythonVersion.V3_13,
-                    AvailablePythonVersion.V3_14,
-                ]
-                if (tox_factor and tox_factor.factor == "papermill1")
-                else []
-            )
+        PackageSpec(
+            "python_modules/dagster-test",
+            unsupported_python_versions=[
+                # dagster-airflow
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
         ),
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airlift/perf-harness",
-        always_run_if=has_dagster_airlift_changes,
-        unsupported_python_versions=[
-            # airflow
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airlift/kitchen-sink",
-        always_run_if=has_dagster_airlift_changes,
-        unsupported_python_versions=[
-            # airflow
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ],
-        queue=BuildkiteQueue.DOCKER,
-        splits=2,
-    ),
-    # Runs against live dbt cloud instance, we only want to run on commits and on the
-    # nightly build
-    PackageSpec(
-        "python_modules/libraries/dagster-dbt/kitchen-sink",
-        skip_if=skip_if_not_dagster_dbt_cloud_commit,
-        name="dagster-dbt-cloud-live",
-        env_vars=[
-            "KS_DBT_CLOUD_ACCOUNT_ID",
-            "KS_DBT_CLOUD_ACCESS_URL",
-            "KS_DBT_CLOUD_TOKEN",
-            "KS_DBT_CLOUD_PROJECT_ID",
-            "KS_DBT_CLOUD_ENVIRONMENT_ID",
-        ],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_14,  # dbt-core incompatible
-        ],
-    ),
-    PackageSpec(
-        ".buildkite/dagster-buildkite",
-        run_pytest=False,
-    ),
-]
+        PackageSpec(
+            "python_modules/libraries/dagster-dbt",
+            pytest_tox_factors=[
+                ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
+                for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
+                for command_factor in ["cloud", "core-main", "core-derived-metadata"]
+            ],
+            # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
+            # dbt-core is incompatible with Python 3.14
+            unsupported_python_versions=(
+                lambda tox_factor: (
+                    [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
+                    if tox_factor and tox_factor.factor.startswith("dbt17")
+                    else [AvailablePythonVersion.V3_14]
+                )
+            ),
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-dbt/",
+            skip=lambda: skip_if_not_dagster_dbt_commit(ctx),
+            name="dagster-dbt-fusion",
+            pytest_tox_factors=[
+                ToxFactor(
+                    "dbtfusion-snowflake",
+                    concurrency=1,
+                    concurrency_group="dagster-dbt-fusion-snowflake",
+                )
+            ],
+            env_vars=[
+                "SNOWFLAKE_ACCOUNT",
+                "SNOWFLAKE_USER",
+                "SNOWFLAKE_BUILDKITE_PASSWORD",
+            ],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # dbt-core incompatible
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-snowflake",
+            env_vars=[
+                "SNOWFLAKE_ACCOUNT",
+                "SNOWFLAKE_USER",
+                "SNOWFLAKE_BUILDKITE_PASSWORD",
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-airlift",
+            unsupported_python_versions=[
+                # airflow
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+            env_vars=[
+                "AIRLIFT_MWAA_TEST_ENV_NAME",
+                "AIRLIFT_MWAA_TEST_PROFILE",
+                "AIRLIFT_MWAA_TEST_REGION",
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-airbyte",
+            pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
+        ),
+        # PackageSpec(
+        #     "python_modules/libraries/dagster-airflow",
+        #     # omit python 3.10 until we add support
+        #     unsupported_python_versions=[
+        #         AvailablePythonVersion.V3_10,
+        #         AvailablePythonVersion.V3_11,
+        #         AvailablePythonVersion.V3_12,
+        #         AvailablePythonVersion.V3_13,
+        #     ],
+        #     env_vars=[
+        #         "AIRFLOW_HOME",
+        #         "AWS_ACCOUNT_ID",
+        #         "AWS_ACCESS_KEY_ID",
+        #         "AWS_SECRET_ACCESS_KEY",
+        #         "BUILDKITE_SECRETS_BUCKET",
+        #         "GOOGLE_APPLICATION_CREDENTIALS",
+        #     ],
+        #     pytest_extra_cmds=airflow_extra_cmds,
+        #     pytest_tox_factors=[
+        #         ToxFactor("default-airflow2"),
+        #         ToxFactor("localdb-airflow2"),
+        #         ToxFactor("persistentdb-airflow2"),
+        #     ],
+        # ),
+        PackageSpec(
+            "python_modules/libraries/dagster-dg-cli",
+            pytest_tox_factors=[
+                ToxFactor("general", splits=3),
+                ToxFactor("docs"),
+                ToxFactor("plus"),
+            ],
+            env_vars=["SHELL"],
+            always_run_if=lambda: has_dg_or_component_integration_changes(ctx),
+            # general tests depend on dagster-dbt which does not support Python 3.14
+            unsupported_python_versions=(
+                lambda tox_factor: (
+                    [AvailablePythonVersion.V3_14]
+                    if (tox_factor and tox_factor.factor == "general")
+                    else []
+                )
+            ),
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-dg-cli",
+            name="dagster-dg-cli-mcp",
+            pytest_tox_factors=[ToxFactor("mcp")],
+            always_run_if=lambda: has_dg_or_component_integration_changes(ctx),
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-aws",
+            env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-azure",
+            env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-celery",
+            env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+            pytest_extra_cmds=celery_extra_cmds,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-celery-docker",
+            env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+            pytest_extra_cmds=celery_extra_cmds,
+            pytest_step_dependencies=test_project_depends_fn,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-dask",
+            env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-databricks",
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-docker",
+            env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+            pytest_extra_cmds=docker_extra_cmds,
+            pytest_step_dependencies=test_project_depends_fn,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-duckdb",
+            unsupported_python_versions=[
+                # duckdb
+                AvailablePythonVersion.V3_12,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-duckdb-pandas",
+            unsupported_python_versions=[
+                # duckdb
+                AvailablePythonVersion.V3_12,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-duckdb-polars",
+            unsupported_python_versions=[
+                # duckdb
+                AvailablePythonVersion.V3_12,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-duckdb-pyspark",
+            unsupported_python_versions=[
+                # duckdb
+                AvailablePythonVersion.V3_12,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-pandas",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-gcp",
+            env_vars=[
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "BUILDKITE_SECRETS_BUCKET",
+                "GCP_PROJECT_ID",
+            ],
+            pytest_extra_cmds=gcp_creds_extra_cmds,
+            # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
+            retries=2,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-gcp-pandas",
+            env_vars=[
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "BUILDKITE_SECRETS_BUCKET",
+                "GCP_PROJECT_ID",
+            ],
+            pytest_extra_cmds=gcp_creds_extra_cmds,
+            retries=2,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-gcp-pyspark",
+            env_vars=[
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "BUILDKITE_SECRETS_BUCKET",
+                "GCP_PROJECT_ID",
+            ],
+            pytest_extra_cmds=gcp_creds_extra_cmds,
+            # spark-bigquery connector not yet compatible with Spark 4.x (required for PySpark on 3.14)
+            unsupported_python_versions=[AvailablePythonVersion.V3_14],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-ge",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # great_expectations incompatible
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-k8s",
+            env_vars=[
+                "AWS_ACCOUNT_ID",
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "BUILDKITE_SECRETS_BUCKET",
+            ],
+            pytest_tox_factors=[
+                ToxFactor("default"),
+                ToxFactor("old_kubernetes"),
+            ],
+            pytest_extra_cmds=k8s_extra_cmds,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-mlflow",
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-mysql",
+            pytest_extra_cmds=mysql_extra_cmds,
+            pytest_tox_factors=[
+                ToxFactor("storage_tests", splits=2),
+                ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
+            ],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
+            ],
+            always_run_if=lambda: has_storage_test_fixture_changes(ctx),
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-snowflake-pandas",
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-snowflake-pyspark",
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # pyspark<4 not available
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-snowflake-polars",
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-postgres",
+            pytest_tox_factors=[
+                ToxFactor("storage_tests"),
+                ToxFactor("storage_tests_sqlalchemy_1_3"),
+            ],
+            always_run_if=lambda: has_storage_test_fixture_changes(ctx),
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-twilio",
+            env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
+            # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
+            retries=2,
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-wandb",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagstermill",
+            pytest_tox_factors=[
+                ToxFactor("papermill1", splits=2),
+                ToxFactor("papermill2", splits=2),
+            ],
+            retries=2,  # Workaround for flaky kernel issues
+            unsupported_python_versions=(
+                lambda tox_factor: (
+                    [
+                        AvailablePythonVersion.V3_12,
+                        AvailablePythonVersion.V3_13,
+                        AvailablePythonVersion.V3_14,
+                    ]
+                    if (tox_factor and tox_factor.factor == "papermill1")
+                    else []
+                )
+            ),
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-airlift/perf-harness",
+            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            unsupported_python_versions=[
+                # airflow
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+        ),
+        PackageSpec(
+            "python_modules/libraries/dagster-airlift/kitchen-sink",
+            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            unsupported_python_versions=[
+                # airflow
+                AvailablePythonVersion.V3_12,
+                AvailablePythonVersion.V3_13,
+                AvailablePythonVersion.V3_14,
+            ],
+            queue=BuildkiteQueue.DOCKER,
+            splits=2,
+        ),
+        # Runs against live dbt cloud instance, we only want to run on commits and on the
+        # nightly build
+        PackageSpec(
+            "python_modules/libraries/dagster-dbt/kitchen-sink",
+            skip=lambda: skip_if_not_dagster_dbt_cloud_commit(ctx),
+            name="dagster-dbt-cloud-live",
+            env_vars=[
+                "KS_DBT_CLOUD_ACCOUNT_ID",
+                "KS_DBT_CLOUD_ACCESS_URL",
+                "KS_DBT_CLOUD_TOKEN",
+                "KS_DBT_CLOUD_PROJECT_ID",
+                "KS_DBT_CLOUD_ENVIRONMENT_ID",
+            ],
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_14,  # dbt-core incompatible
+            ],
+        ),
+        PackageSpec(
+            ".buildkite/dagster-buildkite",
+            run_pytest=False,
+        ),
+    ]

@@ -1,15 +1,11 @@
-import functools
 import logging
-import os
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 
 import packaging.version
 import yaml
-from buildkite_shared.environment import is_feature_branch, message_contains
-from buildkite_shared.git import ChangedFiles
-from buildkite_shared.packages import run_all_tests
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
@@ -141,85 +137,84 @@ def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
-def skip_if_no_python_changes(overrides: Sequence[str] | None = None):
-    if run_all_tests():
+def skip_if_no_python_changes(ctx: BuildkiteContext, overrides: Sequence[str] | None = None):
+    if ctx.config.no_skip:
         return None
 
-    if not is_feature_branch():
+    if not ctx.is_feature_branch:
         return None
 
-    if any(path.suffix == ".py" for path in ChangedFiles.all_oss):
+    if any(path.suffix == ".py" for path in ctx.all_changed_oss_files):
         return None
 
     if overrides and any(
-        Path(override) in path.parents for override in overrides for path in ChangedFiles.all_oss
+        Path(override) in path.parents
+        for override in overrides
+        for path in ctx.all_changed_oss_files
     ):
         return None
 
     return "No python changes"
 
 
-def skip_if_no_pyright_requirements_txt_changes():
-    if run_all_tests():
+def skip_if_no_pyright_requirements_txt_changes(ctx: BuildkiteContext):
+    if ctx.config.no_skip:
         return None
 
-    if not is_feature_branch():
+    if not ctx.is_feature_branch:
         return None
 
-    if any(path.match("pyright/*/requirements.txt") for path in ChangedFiles.all_oss):
+    if any(path.match("pyright/*/requirements.txt") for path in ctx.all_changed_oss_files):
         return None
 
     return "No pyright requirements.txt changes"
 
 
-def skip_if_no_yaml_changes():
-    if run_all_tests():
+def skip_if_no_yaml_changes(ctx: BuildkiteContext):
+    if ctx.config.no_skip:
         return None
 
-    if not is_feature_branch():
+    if not ctx.is_feature_branch:
         return None
 
-    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all_oss):
+    if any(path.suffix in [".yml", ".yaml"] for path in ctx.all_changed_oss_files):
         return None
 
     return "No yaml changes"
 
 
-def skip_if_no_non_docs_markdown_changes():
-    if run_all_tests():
+def skip_if_no_non_docs_markdown_changes(ctx: BuildkiteContext):
+    if ctx.config.no_skip:
         return None
 
-    if not is_feature_branch():
+    if not ctx.is_feature_branch:
         return None
 
     if any(
         path.suffix == ".md" and Path("dagster-oss/docs") not in path.parents
-        for path in ChangedFiles.all_oss
+        for path in ctx.all_changed_oss_files
     ):
         return None
 
     return "No markdown changes outside of docs"
 
 
-@functools.cache
-def has_helm_changes():
-    return any(Path("helm") in path.parents for path in ChangedFiles.all_oss)
+def has_helm_changes(ctx: BuildkiteContext) -> bool:
+    return any(Path("helm") in path.parents for path in ctx.all_changed_oss_files)
 
 
-@functools.cache
-def has_dagster_airlift_changes():
-    return any("dagster-airlift" in str(path) for path in ChangedFiles.all_oss)
+def has_dagster_airlift_changes(ctx: BuildkiteContext) -> bool:
+    return any("dagster-airlift" in str(path) for path in ctx.all_changed_oss_files)
 
 
-@functools.cache
-def has_dg_changes():
+def has_dg_changes(ctx: BuildkiteContext) -> bool:
     return any(
-        "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in ChangedFiles.all_oss
+        "dagster-dg" in str(path) or "docs_snippets" in str(path)
+        for path in ctx.all_changed_oss_files
     )
 
 
-@functools.cache
-def has_component_integration_changes():
+def has_component_integration_changes(ctx: BuildkiteContext) -> bool:
     """Check for changes in integrations that implement components."""
     component_integrations = [
         "dagster-sling",
@@ -234,73 +229,72 @@ def has_component_integration_changes():
     ]
     return any(
         any(integration in str(path) for integration in component_integrations)
-        for path in ChangedFiles.all_oss
+        for path in ctx.all_changed_oss_files
     )
 
 
-@functools.cache
-def has_storage_test_fixture_changes():
+def has_storage_test_fixture_changes(ctx: BuildkiteContext) -> bool:
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(
         Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
-        for path in ChangedFiles.all_oss
+        for path in ctx.all_changed_oss_files
     )
 
 
-def skip_if_not_dagster_dbt_cloud_commit() -> str | None:
+def skip_if_not_dagster_dbt_cloud_commit(ctx: BuildkiteContext) -> str | None:
     """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
     return (
         None
         if (
-            any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all_oss)
+            any("dagster_dbt/cloud_v2" in str(path) for path in ctx.all_changed_oss_files)
             # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
             # Do not skip tests if changes are made to this test suite.
-            or any("dagster-dbt/kitchen-sink" in str(path) for path in ChangedFiles.all_oss)
+            or any("dagster-dbt/kitchen-sink" in str(path) for path in ctx.all_changed_oss_files)
         )
         else "Not a dagster-dbt Cloud commit"
     )
 
 
-def skip_if_not_dagster_dbt_commit() -> str | None:
+def skip_if_not_dagster_dbt_commit(ctx: BuildkiteContext) -> str | None:
     """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
     return (
         None
-        if (any("dagster_dbt" in str(path) for path in ChangedFiles.all_oss))
+        if (any("dagster_dbt" in str(path) for path in ctx.all_changed_oss_files))
         else "Not a dagster-dbt commit"
     )
 
 
-def skip_if_no_helm_changes():
-    if run_all_tests():
+def skip_if_no_helm_changes(ctx: BuildkiteContext):
+    if ctx.config.no_skip:
         return None
 
-    if not is_feature_branch():
+    if not ctx.is_feature_branch:
         return None
 
-    if has_helm_changes():
+    if has_helm_changes(ctx):
         logging.info("Run helm steps because files in the helm directory changed")
         return None
 
     return "No helm changes"
 
 
-def skip_if_no_docs_changes():
-    if run_all_tests():
+def skip_if_no_docs_changes(ctx: BuildkiteContext):
+    if ctx.config.no_skip:
         return None
 
-    if message_contains("BUILDKITE_DOCS"):
+    if "BUILDKITE_DOCS" in ctx.message:
         return None
 
-    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):  # pyright: ignore[reportArgumentType]
+    if not ctx.is_feature_branch:
         return None
 
     # If anything changes in the docs directory
-    if any(Path("dagster-oss/docs") in path.parents for path in ChangedFiles.all_oss):
+    if any(Path("dagster-oss/docs") in path.parents for path in ctx.all_changed_oss_files):
         logging.info("Run docs steps because files in the dagster-oss/docs directory changed")
         return None
 
     # If anything changes in the examples directory. This is where our docs snippets live.
-    if any(Path("dagster-oss/examples") in path.parents for path in ChangedFiles.all_oss):
+    if any(Path("dagster-oss/examples") in path.parents for path in ctx.all_changed_oss_files):
         logging.info("Run docs steps because files in the dagster-oss/examples directory changed")
         return None
 

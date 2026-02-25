@@ -1,3 +1,4 @@
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
 from buildkite_shared.step_builders.group_step_builder import (
@@ -10,7 +11,7 @@ from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import skip_if_no_docs_changes
 
 
-def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
+def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
         add_test_image(
             CommandStepBuilder(":notebook: yarn format_check"),
@@ -21,12 +22,12 @@ def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
             "yarn install",
             "yarn format_check",
         )
-        .skip_if(skip_if_no_docs_changes())
+        .skip(skip_if_no_docs_changes(ctx))
         .build()
     )
 
 
-def build_build_docs_step():
+def build_build_docs_step(ctx: BuildkiteContext):
     return (
         add_test_image(CommandStepBuilder("build docs"), AvailablePythonVersion.get_default())
         .run(
@@ -37,7 +38,7 @@ def build_build_docs_step():
             "yarn build-api-docs",
             "yarn build",
         )
-        .skip_if(skip_if_no_docs_changes())
+        .skip(skip_if_no_docs_changes(ctx))
         .build()
     )
 
@@ -64,14 +65,14 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
     )
 
 
-def build_docs_steps() -> list[StepConfiguration]:
+def build_docs_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     return [
         GroupStepBuilder(
             name=":book: docs",
             key="docs",
             steps=[
-                build_build_docs_step(),
-                build_repo_wide_format_docs_step(),
+                build_build_docs_step(ctx),
+                build_repo_wide_format_docs_step(ctx),
                 build_docstring_validation_step(),
             ],
         ).build()

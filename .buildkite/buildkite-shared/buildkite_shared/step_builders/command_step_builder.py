@@ -278,7 +278,7 @@ class CommandStepBuilder:
         self._step["soft_fail"] = fail
         return self
 
-    def skip_if(self, skip_reason: str | None = None):
+    def skip(self, skip_reason: str | None = None):
         self._step["skip"] = skip_reason
         return self
 
