@@ -1,0 +1,19 @@
+.refreshButton {
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px;
+  outline: none;
+  background-color: transparent;
+  position: relative;
+  top: 1px;
+}
+
+.refreshButton :global(.iconGlobal) {
+  display: block;
+  transition: color 100ms linear;
+}
+
+.refreshButton :global(.iconGlobal):hover {
+  color: var(--color-accent-gray-hover);
+}

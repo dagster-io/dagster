@@ -7,7 +7,6 @@ import time
 from collections.abc import Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Optional
 
 import click
 import yaml
@@ -118,11 +117,11 @@ def dev_command(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
-    port: Optional[str],
-    host: Optional[str],
-    live_data_poll_rate: Optional[str],
+    port: str | None,
+    host: str | None,
+    live_data_poll_rate: str | None,
     use_legacy_code_server_behavior: bool,
-    shutdown_pipe: Optional[int],
+    shutdown_pipe: int | None,
     verbose: bool,
     **other_opts: object,
 ) -> None:
@@ -147,13 +146,13 @@ def dev_command_impl(
     code_server_log_level: str,
     log_level: str,
     log_format: str,
-    port: Optional[str],
-    host: Optional[str],
+    port: str | None,
+    host: str | None,
     use_legacy_code_server_behavior: bool,
-    shutdown_pipe: Optional[int],
+    shutdown_pipe: int | None,
     verbose: bool,
     workspace_opts: WorkspaceOpts,
-    live_data_poll_rate: Optional[str] = "2000",
+    live_data_poll_rate: str | None = "2000",
 ) -> None:
     # check if dagster-webserver installed, crash if not
     try:

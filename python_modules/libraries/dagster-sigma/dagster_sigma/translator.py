@@ -1,6 +1,6 @@
-from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
-from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
+from dagster import AssetDep, AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._annotations import deprecated
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import (
@@ -32,12 +32,12 @@ def _inode_from_url(url: str) -> str:
 
 
 class SigmaWorkbookMetadataSet(NamespacedMetadataSet):
-    web_url: Optional[UrlMetadataValue]
-    version: Optional[int]
-    created_at: Optional[TimestampMetadataValue]
-    properties: Optional[JsonMetadataValue]
-    lineage: Optional[JsonMetadataValue]
-    materialization_schedules: Optional[JsonMetadataValue] = None
+    web_url: UrlMetadataValue | None
+    version: int | None
+    created_at: TimestampMetadataValue | None
+    properties: JsonMetadataValue | None
+    lineage: JsonMetadataValue | None
+    materialization_schedules: JsonMetadataValue | None = None
     workbook_id: str
 
     @classmethod
@@ -58,8 +58,8 @@ class SigmaWorkbook:
     lineage: list[dict[str, Any]]
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
-    owner_email: Optional[str]
-    materialization_schedules: Optional[list[dict[str, Any]]]
+    owner_email: str | None
+    materialization_schedules: list[dict[str, Any]] | None
 
 
 @whitelist_for_serdes
@@ -114,11 +114,11 @@ class SigmaWorkbookTranslatorData:
         return self.workbook.direct_table_deps
 
     @property
-    def owner_email(self) -> Optional[str]:
+    def owner_email(self) -> str | None:
         return self.workbook.owner_email
 
     @property
-    def materialization_schedules(self) -> Optional[list[dict[str, Any]]]:
+    def materialization_schedules(self) -> list[dict[str, Any]] | None:
         return self.workbook.materialization_schedules
 
 
@@ -168,13 +168,13 @@ class DagsterSigmaTranslator:
         additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
     )
     def get_asset_key(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return self.get_asset_spec(data).key
 
     def get_asset_spec(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetSpec:
         """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
         if isinstance(data, SigmaWorkbookTranslatorData):
@@ -212,24 +212,28 @@ class DagsterSigmaTranslator:
                         f" {data.properties['name']}"
                     )
 
+            dataset_keys = [
+                self.get_asset_key(
+                    SigmaDatasetTranslatorData(
+                        dataset=dataset, organization_data=data.organization_data
+                    )
+                )
+                for dataset in datasets
+            ]
+            table_deps = [
+                AssetDep(
+                    asset=asset_key_from_table_name(".".join(table.get_table_path()).lower()),
+                    metadata={
+                        **TableMetadataSet(table_name=".".join(table.get_table_path()).lower())
+                    },
+                )
+                for table in tables
+            ]
             return AssetSpec(
                 key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
                 metadata=metadata,
                 kinds={"sigma", "workbook"},
-                deps={
-                    *[
-                        self.get_asset_key(
-                            SigmaDatasetTranslatorData(
-                                dataset=dataset, organization_data=data.organization_data
-                            )
-                        )
-                        for dataset in datasets
-                    ],
-                    *[
-                        asset_key_from_table_name(".".join(table.get_table_path()).lower())
-                        for table in tables
-                    ],
-                },
+                deps=[*dataset_keys, *table_deps],
                 owners=[data.owner_email] if data.owner_email else None,
             )
         elif isinstance(data, SigmaDatasetTranslatorData):
@@ -244,7 +248,7 @@ class DagsterSigmaTranslator:
                         columns=[
                             TableColumn(name=column_name) for column_name in sorted(data.columns)
                         ]
-                    )
+                    ),
                 ),
             }
 

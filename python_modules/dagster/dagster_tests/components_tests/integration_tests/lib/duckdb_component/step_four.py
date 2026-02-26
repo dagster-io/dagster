@@ -1,7 +1,6 @@
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 import duckdb
@@ -10,8 +9,8 @@ from pydantic import BaseModel
 
 
 class DuckDbScaffolderParams(BaseModel):
-    sql_file: Optional[str]
-    asset_key: Optional[str]
+    sql_file: str | None
+    asset_key: str | None
 
 
 class DuckDbComponentScaffolder(dg.Scaffolder[DuckDbScaffolderParams]):

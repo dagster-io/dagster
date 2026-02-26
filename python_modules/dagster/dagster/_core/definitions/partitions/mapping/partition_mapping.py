@@ -50,7 +50,7 @@ class PartitionMapping(ABC):
         upstream_partitions_subset: PartitionsSubset,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         """Returns the subset of partition keys in the downstream asset that use the data in the given
@@ -67,7 +67,7 @@ class PartitionMapping(ABC):
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_def: PartitionsDefinition | None,
     ) -> None:
         """Raises an exception if the mapping is not valid for the two partitions definitions
         due to some incompatibility between the definitions (ignoring specific keys or subsets).
@@ -79,10 +79,10 @@ class PartitionMapping(ABC):
     @abstractmethod
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_subset: PartitionsSubset | None,
+        downstream_partitions_def: PartitionsDefinition | None,
         upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         """Returns a UpstreamPartitionsResult object containing the partition keys the downstream

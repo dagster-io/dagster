@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from dagster_shared.record import record
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
@@ -8,7 +8,7 @@ from dagster.components.resolved.model import Model, Resolver
 
 
 class DefsStateConfigArgs(Model):
-    key: Optional[str] = Field(
+    key: str | None = Field(
         default=None, description="The key for the state. This must be unique per deployment."
     )
     management_type: DefsStateManagementType = Field(

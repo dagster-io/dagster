@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import pytest
 from dagster import DefaultScheduleStatus, RunConfig
@@ -67,10 +67,10 @@ def test_dbt_build_schedule(
     dbt_select: str,
     dbt_exclude: str,
     dbt_selector: str,
-    schedule_name: Optional[str],
-    tags: Optional[Mapping[str, str]],
-    config: Optional[RunConfig],
-    execution_timezone: Optional[str],
+    schedule_name: str | None,
+    tags: Mapping[str, str] | None,
+    config: RunConfig | None,
+    execution_timezone: str | None,
     default_status: DefaultScheduleStatus,
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)

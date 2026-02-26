@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Union
 
 import pytest
 import responses
@@ -33,7 +32,7 @@ from dagster_airbyte_tests.beta.conftest import (
 
 def test_fetch_airbyte_workspace_data(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     actual_workspace_data = resource.fetch_airbyte_workspace_data()
     assert len(actual_workspace_data.connections_by_id) == 1
@@ -54,7 +53,7 @@ def test_fetch_airbyte_workspace_data(
 def test_translator_spec(
     asset_specs_loader_fn: Callable,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     all_assets = asset_specs_loader_fn(resource)
     all_assets_keys = [asset.key for asset in all_assets]
@@ -85,7 +84,7 @@ def test_translator_spec(
 def test_connection_selector(
     asset_specs_loader_fn: Callable,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     # Test with no selector (should include all connections)
     all_assets = asset_specs_loader_fn(workspace=resource)
@@ -108,7 +107,7 @@ def test_connection_selector(
 
 def test_cached_load_spec_single_resource(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     # load asset specs, calls are made
     resource.load_asset_specs()
@@ -123,8 +122,8 @@ def test_cached_load_spec_multiple_resources(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     rest_api_url: str,
     config_api_url: str,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
-    another_resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
+    another_resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
@@ -165,7 +164,7 @@ def test_cached_load_spec_multiple_resources(
 
 def test_cached_load_spec_with_asset_factory(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     # build_airbyte_assets_definitions calls workspace.load_asset_specs to get the connection IDs,
     # then workspace.load_asset_specs is called once per connection ID in airbyte_assets,
@@ -184,7 +183,7 @@ class MyCustomTranslator(DagsterAirbyteTranslator):
 
 def test_translator_custom_metadata(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     all_asset_specs = resource.load_asset_specs(dagster_airbyte_translator=MyCustomTranslator())
     asset_spec = next(spec for spec in all_asset_specs)
@@ -204,7 +203,7 @@ class MyCustomTranslatorWithGroupName(DagsterAirbyteTranslator):
 
 def test_translator_custom_group_name_with_asset_factory(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     my_airbyte_assets = build_airbyte_assets_definitions(
         workspace=resource, dagster_airbyte_translator=MyCustomTranslatorWithGroupName()
@@ -217,7 +216,7 @@ def test_translator_custom_group_name_with_asset_factory(
 
 def test_translator_invariant_group_name_with_asset_decorator(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
     with pytest.raises(
         DagsterInvariantViolationError,

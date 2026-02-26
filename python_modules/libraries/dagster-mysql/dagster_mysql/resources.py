@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 import mysql.connector as mysql
 from dagster import ConfigurableResource
@@ -39,14 +39,14 @@ class MySQLResource(ConfigurableResource):
             )
     """
 
-    host: Optional[str] = Field(
+    host: str | None = Field(
         description=(
             "The host name or IP address of the MySQL server. Defaults to localhost if not provided."
         ),
         default=None,
     )
 
-    port: Optional[int] = Field(
+    port: int | None = Field(
         description=(
             "The TCP/IP port of the MySQL server. Must be an integer. Defaults to 3306 if not provided."
         ),
@@ -57,14 +57,14 @@ class MySQLResource(ConfigurableResource):
         description=("The user name used to authenticate with the MySQL server."),
     )
 
-    password: Optional[str] = Field(
+    password: str | None = Field(
         description=(
             "The password to authenticate the user with the MySQL server. Defaults to empty string if not provided."
         ),
         default=None,
     )
 
-    database: Optional[str] = Field(
+    database: str | None = Field(
         description=(
             "The database name to use when connecting with the MySQL server. Defaults to None."
         ),
@@ -90,7 +90,8 @@ class MySQLResource(ConfigurableResource):
     @contextmanager
     def get_connection(
         self,
-    ) -> Generator[Union[PooledMySQLConnection, MySQLConnectionAbstract], None, None]:
+        # Union is required because mysql connector types' metaclass doesn't support `|` at runtime.
+    ) -> Generator[Union[PooledMySQLConnection, MySQLConnectionAbstract], None, None]:  # noqa: UP007
         connection = backoff(
             fn=mysql.connect,
             retry_on=(mysql.errors.DatabaseError,),

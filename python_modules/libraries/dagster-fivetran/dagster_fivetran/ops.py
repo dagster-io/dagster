@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from dagster import AssetKey, Config, In, Nothing, Out, Output, op
 from dagster._annotations import deprecated
@@ -21,7 +21,7 @@ class SyncConfig(Config):
         default=DEFAULT_POLL_INTERVAL,
         description="The time (in seconds) that will be waited between successive polls.",
     )
-    poll_timeout: Optional[float] = Field(
+    poll_timeout: float | None = Field(
         default=None,
         description=(
             "The maximum time that will waited before this operation is timed out. By "
@@ -110,7 +110,7 @@ def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
 
 
 class FivetranResyncConfig(SyncConfig):
-    resync_parameters: Optional[dict[str, Any]] = Field(
+    resync_parameters: dict[str, Any] | None = Field(
         None,
         description=(
             "Optional resync parameters to send in the payload to the Fivetran API. You can"

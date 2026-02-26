@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 from dagster.components.component.state_backed_component import StateBackedComponent
@@ -12,7 +11,7 @@ from dagster.components.utils.defs_state import (
 
 class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     fail_write: bool = False
-    defs_state_key_id: Optional[str] = None
+    defs_state_key_id: str | None = None
     defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
 
     @property
@@ -23,7 +22,7 @@ class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

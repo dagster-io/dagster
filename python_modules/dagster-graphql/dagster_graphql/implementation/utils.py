@@ -6,17 +6,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    NamedTuple,
-    Optional,
-    TypeAlias,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, TypeVar, Union, cast, overload
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
@@ -139,7 +129,7 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
 def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    entity_keys: Optional[Sequence[EntityKey]],
+    entity_keys: Sequence[EntityKey] | None,
     permission: str,
 ) -> bool:
     all_keys = set(entity_keys) if entity_keys else set()
@@ -198,7 +188,7 @@ def has_permission_for_asset_graph(
 def assert_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    entity_keys: Optional[Sequence[EntityKey]],
+    entity_keys: Sequence[EntityKey] | None,
     permission: str,
 ) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
@@ -288,9 +278,8 @@ def has_permission_for_job(
     graphene_info: "ResolveInfo",
     permission: Permissions,
     job_selector: JobSelector,
-    entity_keys: Optional[
-        Sequence[EntityKey]
-    ] = None,  # entity keys are only required for implicit asset jobs
+    entity_keys: Sequence[EntityKey]
+    | None = None,  # entity keys are only required for implicit asset jobs
 ) -> bool:
     if is_implicit_asset_job_name(job_selector.job_name):
         return has_permission_for_asset_graph(
@@ -304,9 +293,8 @@ def assert_permission_for_job(
     graphene_info: "ResolveInfo",
     permission: Permissions,
     job_selector: JobSelector,
-    entity_keys: Optional[
-        Sequence[EntityKey]
-    ] = None,  # entity keys are only required for implicit asset jobs
+    entity_keys: Sequence[EntityKey]
+    | None = None,  # entity keys are only required for implicit asset jobs
 ):
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
@@ -553,11 +541,11 @@ def capture_error(  # pyright: ignore[reportOverlappingOverload]
 
 
 def capture_error(
-    fn: Union[Callable[P, T], Callable[P, Awaitable[T]]],
-) -> Union[
-    Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]],
-    Callable[P, Awaitable[Union[T, "GrapheneError", "GraphenePythonError"]]],
-]:
+    fn: Callable[P, T] | Callable[P, Awaitable[T]],
+) -> (
+    Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]
+    | Callable[P, Awaitable[Union[T, "GrapheneError", "GraphenePythonError"]]]
+):
     if iscoroutinefunction(fn):
 
         @functools.wraps(fn)
@@ -600,10 +588,8 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
-    asset_selection = cast("Optional[Iterable[dict[str, list[str]]]]", data.get("assetSelection"))
-    asset_check_selection = cast(
-        "Optional[Iterable[dict[str, Any]]]", data.get("assetCheckSelection")
-    )
+    asset_selection = cast("Iterable[dict[str, list[str]]] | None", data.get("assetSelection"))
+    asset_check_selection = cast("Iterable[dict[str, Any]] | None", data.get("assetCheckSelection"))
     return JobSubsetSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
@@ -636,19 +622,19 @@ class ExecutionParams(
         [
             ("selector", JobSubsetSelector),
             ("run_config", Mapping[str, object]),
-            ("mode", Optional[str]),
+            ("mode", str | None),
             ("execution_metadata", "ExecutionMetadata"),
-            ("step_keys", Optional[Sequence[str]]),
+            ("step_keys", Sequence[str] | None),
         ],
     )
 ):
     def __new__(
         cls,
         selector: JobSubsetSelector,
-        run_config: Optional[Mapping[str, object]],
-        mode: Optional[str],
+        run_config: Mapping[str, object] | None,
+        mode: str | None,
         execution_metadata: "ExecutionMetadata",
-        step_keys: Optional[Sequence[str]],
+        step_keys: Sequence[str] | None,
     ):
         check.opt_list_param(step_keys, "step_keys", of_type=str)
 
@@ -677,19 +663,19 @@ class ExecutionMetadata(
     NamedTuple(
         "_ExecutionMetadata",
         [
-            ("run_id", Optional[str]),
+            ("run_id", str | None),
             ("tags", Mapping[str, str]),
-            ("root_run_id", Optional[str]),
-            ("parent_run_id", Optional[str]),
+            ("root_run_id", str | None),
+            ("parent_run_id", str | None),
         ],
     )
 ):
     def __new__(
         cls,
-        run_id: Optional[str],
+        run_id: str | None,
         tags: Mapping[str, str],
-        root_run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
+        root_run_id: str | None = None,
+        parent_run_id: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -710,9 +696,9 @@ class ExecutionMetadata(
 
 def apply_cursor_limit_reverse(
     items: Sequence[str],
-    cursor: Optional[str],
-    limit: Optional[int],
-    reverse: Optional[bool],
+    cursor: str | None,
+    limit: int | None,
+    reverse: bool | None,
 ) -> Sequence[str]:
     start = 0
     end = len(items)
@@ -735,7 +721,7 @@ def apply_cursor_limit_reverse(
     return items[max(start, 0) : end]
 
 
-def get_query_limit_with_default(provided_limit: Optional[int], default_limit: int) -> int:
+def get_query_limit_with_default(provided_limit: int | None, default_limit: int) -> int:
     check.opt_int_param(provided_limit, "provided_limit")
 
     if provided_limit is None:

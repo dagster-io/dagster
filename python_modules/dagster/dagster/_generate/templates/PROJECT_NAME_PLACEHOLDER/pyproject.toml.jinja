@@ -16,12 +16,9 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [tool.dagster]
 module_name = "{{ project_name }}.definitions"
 code_location_name = "{{ project_name }}"
-
-[tool.setuptools.packages.find]
-exclude=["{{ project_name }}_tests"]

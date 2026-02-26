@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Optional
 
 from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
@@ -23,7 +22,7 @@ class AssetChecksDefinition(AssetsDefinition):
         node_def: OpDefinition,
         check_specs_by_output_name: Mapping[str, AssetCheckSpec],
         can_subset: bool,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
     ):
         """Create an AssetChecksDefinition."""
         return AssetChecksDefinition(

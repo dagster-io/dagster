@@ -1,7 +1,7 @@
 """Settings methods for DagsterInstance."""
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
 from dagster._core.instance.config import (
@@ -188,7 +188,7 @@ class SettingsMethods:
         return self.get_settings("auto_materialize").get("use_sensors", True)
 
     @property
-    def global_op_concurrency_default_limit(self) -> Optional[int]:
+    def global_op_concurrency_default_limit(self) -> int | None:
         return self.get_concurrency_config().pool_config.default_pool_limit
 
     # python logs
@@ -200,7 +200,7 @@ class SettingsMethods:
         return loggers
 
     @property
-    def python_log_level(self) -> Optional[str]:
+    def python_log_level(self) -> str | None:
         python_log_settings = self.get_settings("python_logs") or {}
         return python_log_settings.get("python_log_level")
 

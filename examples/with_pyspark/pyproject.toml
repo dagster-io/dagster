@@ -1,6 +1,18 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "with_pyspark"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-spark",
+    "dagster-pyspark",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "with_pyspark"

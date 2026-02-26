@@ -1,6 +1,26 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "feature_graph_backed_assets"
+version = "1!0+dev"
+description = "Dagster example of op and graph-backed assets."
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/examples/feature_graph_backed_assets"
 
 [tool.dagster]
 module_name = "feature_graph_backed_assets.definitions"

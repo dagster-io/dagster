@@ -1,7 +1,7 @@
 import os
 import sys
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 import click
 
@@ -50,7 +50,7 @@ list_examples_command_help_text = "List the examples that available to bootstrap
 
 
 class PackageConflictCheckResult(NamedTuple):
-    request_error_msg: Optional[str]
+    request_error_msg: str | None
     conflict_exists: bool = False
 
 
@@ -189,7 +189,7 @@ def scaffold_code_location_command(context, name: str):
 )
 def scaffold_command(
     name: str,
-    excludes: Optional[Union[list[str], tuple]] = None,
+    excludes: list[str] | tuple | None = None,
     ignore_package_conflict: bool = False,
 ) -> None:
     dir_abspath = os.path.abspath(name)
@@ -250,7 +250,7 @@ def scaffold_command(
     default=dagster_version,
     show_default=True,
 )
-def from_example_command(name: Optional[str], example: str, version: str) -> None:
+def from_example_command(name: str | None, example: str, version: str) -> None:
     name = name or example
     dir_abspath = os.path.abspath(name) + "/"
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):

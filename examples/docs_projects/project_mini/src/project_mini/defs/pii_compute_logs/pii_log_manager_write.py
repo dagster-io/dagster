@@ -1,6 +1,5 @@
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional
 
 from dagster import Bool, Field, StringSource
 from dagster._core.storage.captured_log_manager import CapturedLogContext
@@ -45,14 +44,14 @@ class PIIComputeLogManagerWrite(LocalComputeLogManager, ConfigurableClass):
         self,
         base_dir: str = "compute_logs",
         redact_on_write: bool = True,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         super().__init__(base_dir)
         self.redact_on_write = redact_on_write
         self._inst_data = inst_data
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod

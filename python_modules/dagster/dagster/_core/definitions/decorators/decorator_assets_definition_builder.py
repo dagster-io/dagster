@@ -2,7 +2,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from inspect import Parameter
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -82,7 +82,7 @@ def validate_can_coexist(asset_in: AssetIn, asset_dep: AssetDep) -> None:
 
 def build_and_validate_named_ins(
     fn: Callable[..., Any],
-    deps: Optional[Iterable[AssetDep]],
+    deps: Iterable[AssetDep] | None,
     passed_asset_ins: Mapping[str, AssetIn],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
@@ -228,27 +228,27 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     asset_in_map: Mapping[str, AssetIn]
     asset_out_map: Mapping[str, AssetOut]
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
-    backfill_policy: Optional[BackfillPolicy]
+    backfill_policy: BackfillPolicy | None
     can_subset: bool
     check_specs_by_output_name: Mapping[str, AssetCheckSpec]
-    code_version: Optional[str]
-    compute_kind: Optional[str]
-    config_schema: Optional[UserConfigSchema]
+    code_version: str | None
+    compute_kind: str | None
+    config_schema: UserConfigSchema | None
     decorator_name: str
-    group_name: Optional[str]
-    name: Optional[str]
+    group_name: str | None
+    name: str | None
     op_def_resource_defs: Mapping[str, ResourceDefinition]
-    op_description: Optional[str]
-    op_tags: Optional[Mapping[str, Any]]
-    hooks: Optional[AbstractSet[HookDefinition]]
-    partitions_def: Optional[PartitionsDefinition]
+    op_description: str | None
+    op_tags: Mapping[str, Any] | None
+    hooks: AbstractSet[HookDefinition] | None
+    partitions_def: PartitionsDefinition | None
     required_resource_keys: AbstractSet[str]
-    retry_policy: Optional[RetryPolicy]
-    retry_policy: Optional[RetryPolicy]
+    retry_policy: RetryPolicy | None
+    retry_policy: RetryPolicy | None
     specs: Sequence[AssetSpec]
-    upstream_asset_deps: Optional[Iterable[AssetDep]]
-    execution_type: Optional[AssetExecutionType]
-    pool: Optional[str]
+    upstream_asset_deps: Iterable[AssetDep] | None
+    execution_type: AssetExecutionType | None
+    pool: str | None
     allow_arbitrary_check_specs: bool = False
 
     @property
@@ -414,7 +414,7 @@ class DecoratorAssetsDefinitionBuilder:
         asset_in_map: Mapping[str, AssetIn],
         asset_out_map: Mapping[str, AssetOut],
         asset_deps: Mapping[str, set[AssetKey]],
-        upstream_asset_deps: Optional[Iterable[AssetDep]],
+        upstream_asset_deps: Iterable[AssetDep] | None,
         passed_args: DecoratorAssetsDefinitionBuilderArgs,
     ):
         check.param_invariant(
@@ -474,7 +474,7 @@ class DecoratorAssetsDefinitionBuilder:
         )
 
     @property
-    def group_name(self) -> Optional[str]:
+    def group_name(self) -> str | None:
         return self.args.group_name
 
     @cached_property
@@ -621,8 +621,8 @@ class DecoratorAssetsDefinitionBuilder:
         ]
 
     def _validate_spec_partitions_defs(
-        self, specs: Sequence[AssetSpec], partitions_def: Optional[PartitionsDefinition]
-    ) -> Optional[PartitionsDefinition]:
+        self, specs: Sequence[AssetSpec], partitions_def: PartitionsDefinition | None
+    ) -> PartitionsDefinition | None:
         any_spec_has_partitions_def = False
         any_spec_has_no_partitions_def = False
         if partitions_def is not None:
@@ -689,14 +689,14 @@ class DecoratorAssetsDefinitionBuilder:
 
 
 def validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+    check_specs: Sequence[AssetCheckSpec] | None, valid_asset_keys: Sequence[AssetKey]
 ) -> Mapping[str, AssetCheckSpec]:
     _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
     return create_check_specs_by_output_name(check_specs)
 
 
 def create_check_specs_by_output_name(
-    check_specs: Optional[Sequence[AssetCheckSpec]],
+    check_specs: Sequence[AssetCheckSpec] | None,
 ) -> Mapping[str, AssetCheckSpec]:
     checks_by_output_name = {
         spec.get_python_identifier(): spec
@@ -717,7 +717,7 @@ def create_check_specs_by_output_name(
 
 
 def _validate_check_specs_target_relevant_asset_keys(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+    check_specs: Sequence[AssetCheckSpec] | None, valid_asset_keys: Sequence[AssetKey]
 ) -> None:
     for spec in check_specs or []:
         if spec.asset_key not in valid_asset_keys:

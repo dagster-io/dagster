@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import dlt
 import duckdb
@@ -247,7 +247,7 @@ def test_get_materialize_policy_legacy(dlt_pipeline: Pipeline):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
-        ) -> Optional[AutoMaterializePolicy]:
+        ) -> AutoMaterializePolicy | None:
             return AutoMaterializePolicy.eager().with_rules(
                 AutoMaterializeRule.materialize_on_cron("0 1 * * *")
             )
@@ -266,7 +266,7 @@ def test_get_materialize_policy_legacy(dlt_pipeline: Pipeline):
 
 def test_get_automation_condition_legacy(dlt_pipeline: Pipeline):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
+        def get_automation_condition(self, resource: DltResource) -> AutomationCondition | None:
             return AutomationCondition.eager() | AutomationCondition.on_cron("0 1 * * *")
 
     @dlt_assets(
@@ -287,7 +287,7 @@ def test_get_automation_condition_converts_auto_materialize_policy_legacy(
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
-        ) -> Optional[AutoMaterializePolicy]:
+        ) -> AutoMaterializePolicy | None:
             return AutoMaterializePolicy.eager().with_rules(
                 AutoMaterializeRule.materialize_on_cron("0 1 * * *")
             )
@@ -635,7 +635,7 @@ def test_with_description_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_description = "customized description"
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_description(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_description(self, _) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_description
 
     @dlt_assets(
@@ -672,7 +672,7 @@ def test_with_metadata_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_metadata(self, _) -> Mapping[str, Any] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_metadata
 
     @dlt_assets(
@@ -690,7 +690,7 @@ def test_with_group_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_group = "customized_group"
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_group_name(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_group_name(self, _) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_group
 
     @dlt_assets(
@@ -708,7 +708,7 @@ def test_with_owner_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_owners(self, _) -> Optional[Sequence[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_owners(self, _) -> Sequence[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_owners
 
     @dlt_assets(
@@ -761,7 +761,7 @@ def test_with_tag_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     }
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_tags(self, _) -> Optional[Mapping[str, str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_tags(self, _) -> Mapping[str, str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_tags
 
         def get_kinds(self, resource: DltResource, destination: Destination) -> set[str]:

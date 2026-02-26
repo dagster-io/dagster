@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 from collections.abc import Iterator
-from typing import Optional, cast
+from typing import cast
 
 import dagster as dg
 import pytest
@@ -84,7 +84,7 @@ def remote_repo_fixture(
     yield code_location.get_repository("the_repo")
 
 
-def loadable_target_origin(attribute: Optional[str] = None) -> LoadableTargetOrigin:
+def loadable_target_origin(attribute: str | None = None) -> LoadableTargetOrigin:
     return LoadableTargetOrigin(
         executable_path=sys.executable,
         module_name="dagster_tests.daemon_tests.test_backfill",
@@ -93,7 +93,7 @@ def loadable_target_origin(attribute: Optional[str] = None) -> LoadableTargetOri
     )
 
 
-def unloadable_target_origin(attribute: Optional[str] = None) -> LoadableTargetOrigin:
+def unloadable_target_origin(attribute: str | None = None) -> LoadableTargetOrigin:
     return LoadableTargetOrigin(
         executable_path=sys.executable,
         module_name="dagster_tests.daemon_tests.test_locations.unloadable_location",

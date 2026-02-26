@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -56,12 +55,12 @@ def cgroup_version_mock():
 )
 def test_containerized_utilization_metrics_cgroup_v1(
     temp_dir: str,
-    cpu_usage_val: Optional[float],
-    cpu_cores_val: Optional[int],
-    cpu_quota_val: Optional[float],
-    cpu_period_val: Optional[float],
-    memory_usage_val: Optional[int],
-    memory_limit_val: Optional[int],
+    cpu_usage_val: float | None,
+    cpu_cores_val: int | None,
+    cpu_quota_val: float | None,
+    cpu_period_val: float | None,
+    memory_usage_val: int | None,
+    memory_limit_val: int | None,
     was_cpu_previously_retrieved: bool,
     was_previous_timestamp_previously_set: bool,
     cgroup_version_mock: mock.Mock,
@@ -138,11 +137,11 @@ def test_containerized_utilization_metrics_cgroup_v1(
 )
 def test_containerized_utilization_metrics_cgroup_v2(
     temp_dir: str,
-    cpu_usage_val: Optional[float],
-    cpu_cores_val: Optional[int],
-    cpu_quota_and_period_val: Optional[str],
-    memory_usage_val: Optional[int],
-    memory_limit_val: Optional[int],
+    cpu_usage_val: float | None,
+    cpu_cores_val: int | None,
+    cpu_quota_and_period_val: str | None,
+    memory_usage_val: int | None,
+    memory_limit_val: int | None,
     was_cpu_previously_retrieved: bool,
     was_previous_timestamp_previously_set: bool,
     cgroup_version_mock: mock.Mock,

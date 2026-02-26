@@ -2,7 +2,7 @@ import tempfile
 import time
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 import dagster._check as check
@@ -24,7 +24,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._watcher: Optional[SqlPollingEventWatcher] = None
+        self._watcher: SqlPollingEventWatcher | None = None
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -35,7 +35,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     def watch(
         self,
         run_id: str,
-        cursor: Optional[str],
+        cursor: str | None,
         callback: Callable[[dg.EventLogEntry, str], None],
     ):
         check.str_param(run_id, "run_id")

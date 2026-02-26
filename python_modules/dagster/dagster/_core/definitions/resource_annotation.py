@@ -1,7 +1,7 @@
 from abc import ABC
 from collections.abc import Sequence
 from inspect import Parameter
-from typing import Annotated, Any, Optional, TypeVar
+from typing import Annotated, Any, TypeVar
 
 from dagster_shared.seven import is_subclass
 
@@ -36,7 +36,7 @@ class TreatAsResourceParam(ABC):
     """
 
 
-def _is_resource_annotation(annotation: Optional[type[Any]]) -> bool:
+def _is_resource_annotation(annotation: type[Any] | None) -> bool:
     from dagster._config.pythonic_config import ConfigurableResourceFactory
 
     if isinstance(annotation, type) and (

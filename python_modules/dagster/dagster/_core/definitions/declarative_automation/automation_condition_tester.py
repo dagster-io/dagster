@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import AbstractSet  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value, serialize_value
 
@@ -45,7 +45,7 @@ class EvaluateAutomationConditionsResult:
         self._partition_loading_context = partition_loading_context
 
     @cached_property
-    def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[Optional[str]]]:
+    def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[str | None]]:
         mapping = defaultdict(set)
         for asset_partition in self._requested_asset_partitions:
             mapping[asset_partition.asset_key].add(asset_partition.partition_key)
@@ -57,7 +57,7 @@ class EvaluateAutomationConditionsResult:
         with partition_loading_context(new_ctx=self._partition_loading_context):
             return sum(r.true_subset.size for r in self.results)
 
-    def get_requested_partitions(self, asset_key: AssetKey) -> AbstractSet[Optional[str]]:
+    def get_requested_partitions(self, asset_key: AssetKey) -> AbstractSet[str | None]:
         """Returns the specific partition keys requested for the given asset during this evaluation."""
         return self._requested_partitions_by_asset_key[asset_key]
 
@@ -67,11 +67,11 @@ class EvaluateAutomationConditionsResult:
 
 
 def evaluate_automation_conditions(
-    defs: Union[Definitions, Sequence[AssetsDefinition]],
+    defs: Definitions | Sequence[AssetsDefinition],
     instance: DagsterInstance,
-    asset_selection: Optional[AssetSelection] = None,
-    evaluation_time: Optional[datetime.datetime] = None,
-    cursor: Optional[AssetDaemonCursor] = None,
+    asset_selection: AssetSelection | None = None,
+    evaluation_time: datetime.datetime | None = None,
+    cursor: AssetDaemonCursor | None = None,
 ) -> EvaluateAutomationConditionsResult:
     """Evaluates the AutomationConditions of the provided assets, returning the results. Intended
     for use in unit tests.

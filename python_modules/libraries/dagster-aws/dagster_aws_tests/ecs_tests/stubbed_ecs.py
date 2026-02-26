@@ -113,6 +113,7 @@ class StubbedEcs:
         self.client = boto3_client
         self.stubber = Stubber(self.client)
         self.meta = self.client.meta
+        self.exceptions = self.client.exceptions
         self.storage = storage
 
         self.stub_count = 0

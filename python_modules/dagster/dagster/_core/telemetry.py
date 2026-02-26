@@ -17,7 +17,7 @@ import os
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, overload
 
 from dagster_shared.telemetry import (
     DAGSTER_HOME_FALLBACK,
@@ -91,13 +91,13 @@ def telemetry_wrapper(target_fn: T_Callable) -> T_Callable: ...
 @overload
 def telemetry_wrapper(
     *,
-    metadata: Optional[Mapping[str, str]],
+    metadata: Mapping[str, str] | None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
 def telemetry_wrapper(
-    target_fn: Optional[T_Callable] = None, *, metadata: Optional[Mapping[str, str]] = None
-) -> Union[T_Callable, Callable[[Callable[P, T]], Callable[P, T]]]:
+    target_fn: T_Callable | None = None, *, metadata: Mapping[str, str] | None = None
+) -> T_Callable | Callable[[Callable[P, T]], Callable[P, T]]:
     """Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
 
@@ -114,7 +114,7 @@ def telemetry_wrapper(
 
 
 def _telemetry_wrapper(
-    f: Callable[P, T], metadata: Optional[Mapping[str, str]] = None
+    f: Callable[P, T], metadata: Mapping[str, str] | None = None
 ) -> Callable[P, T]:
     metadata = check.opt_mapping_param(metadata, "metadata", key_type=str, value_type=str)
 
@@ -395,8 +395,8 @@ def log_remote_repo_stats(
 def log_repo_stats(
     instance: DagsterInstance,
     source: str,
-    job: Optional[IJob] = None,
-    repo: Optional[ReconstructableRepository] = None,
+    job: IJob | None = None,
+    repo: ReconstructableRepository | None = None,
 ) -> None:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
@@ -489,9 +489,9 @@ def log_workspace_stats(
 def log_action(
     instance: DagsterInstance,
     action: str,
-    client_time: Optional[datetime.datetime] = None,
-    elapsed_time: Optional[datetime.timedelta] = None,
-    metadata: Optional[Mapping[str, str]] = None,
+    client_time: datetime.datetime | None = None,
+    elapsed_time: datetime.timedelta | None = None,
+    metadata: Mapping[str, str] | None = None,
 ) -> None:
     log_telemetry_action(
         lambda: _get_instance_telemetry_info(instance),

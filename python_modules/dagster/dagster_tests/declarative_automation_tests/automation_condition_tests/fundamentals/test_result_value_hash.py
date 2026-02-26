@@ -32,7 +32,7 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
         ("93a765c5052e9c0e26fbb97b11f31ea9", AC.on_cron("0 * * * *"), one_parent, False),
-        ("43046d5ec05cba0be4df7165f293af37", AC.on_cron("0 * * * *"), one_parent, True),
+        ("c9fc208a4bd809418b372c28a7d33cba", AC.on_cron("0 * * * *"), one_parent, True),
         ("1e26dfd160b5d289156992e6e44e7959", AC.on_cron("0 0 * * *"), one_parent, False),
         ("aee5e2b0af668dfdde74f81d1b76773b", AC.on_cron("0 * * * *"), one_parent_daily, False),
         ("9d04ca345d1605f756f1f92f6a48a2a7", AC.on_cron("0 * * * *"), two_parents, False),

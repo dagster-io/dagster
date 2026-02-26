@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import AbstractSet, Optional  # noqa: UP035
+from typing import AbstractSet  # noqa: UP035
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
@@ -105,7 +105,7 @@ def load_assets_from_airflow_dag(
     dag: DAG,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]] = {},
     upstream_dependencies_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]] = {},
-    connections: Optional[list[Connection]] = None,
+    connections: list[Connection] | None = None,
 ) -> list[AssetsDefinition]:
     """Construct Dagster Assets for a given Airflow DAG.
 

@@ -39,7 +39,7 @@ def test_pipes_client(namespace, cluster_provider):
                 "storage_root": "/tmp/",
             },
             env={
-                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                 "NUMBER_Y": "2",
             },
         ).get_results()
@@ -154,7 +154,7 @@ def test_pipes_client_file_inject(namespace, cluster_provider):
                 "storage_root": "/tmp/",
             },
             env={
-                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                 "NUMBER_Y": "2",
             },
             base_pod_spec=pod_spec,
@@ -207,7 +207,7 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
                 env_vars=[
                     f"{k}={v}"
                     for k, v in {
-                        "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                        "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                         "NUMBER_Y": "2",
                         **pipes_session.get_bootstrap_env_vars(),
                     }.items()
@@ -263,7 +263,7 @@ def test_pipes_error(namespace, cluster_provider):
                 "sleep_seconds": 3 * POLL_INTERVAL,
             },
             env={
-                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
             },
         ).get_results()
 
@@ -333,7 +333,7 @@ def test_pipes_client_ignore_init_container(namespace, cluster_provider):
                         "env": [
                             {
                                 "name": "PYTHONPATH",
-                                "value": "/dagster_test/toys/external_execution/",
+                                "value": "/modules/dagster-test/dagster_test/toys/external_execution/",
                             },
                             {"name": "NUMBER_Y", "value": "2"},
                         ],
@@ -388,7 +388,7 @@ def test_pipes_client_read_timeout(namespace, cluster_provider):
                     "storage_root": "/tmp/",
                 },
                 env={
-                    "PYTHONPATH": "/dagster_test/toys/external_execution/",
+                    "PYTHONPATH": "/modules/dagster-test/dagster_test/toys/external_execution/",
                     "NUMBER_Y": "2",
                 },
             ).get_results()

@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
@@ -40,10 +40,10 @@ FRESHNESS_SENSOR_DESCRIPTION = """
 def build_sensor_for_freshness_checks(
     *,
     freshness_checks: Sequence[AssetChecksDefinition],
-    minimum_interval_seconds: Optional[int] = None,
+    minimum_interval_seconds: int | None = None,
     name: str = DEFAULT_FRESHNESS_SENSOR_NAME,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Mapping[str, Any] | None = None,
 ) -> SensorDefinition:
     """Builds a sensor which kicks off evaluation of freshness checks.
 
@@ -93,7 +93,7 @@ def build_sensor_for_freshness_checks(
         default_status=default_status,
         description=FRESHNESS_SENSOR_DESCRIPTION,
     )
-    def the_sensor(context: SensorEvaluationContext) -> Optional[Union[RunRequest, SkipReason]]:
+    def the_sensor(context: SensorEvaluationContext) -> RunRequest | SkipReason | None:
         left_off_asset_check_key = (
             AssetCheckKey.from_user_string(context.cursor) if context.cursor else None
         )
@@ -127,7 +127,7 @@ def build_sensor_for_freshness_checks(
 
 
 def ordered_iterator_freshness_checks_starting_with_key(
-    left_off_asset_check_key: Optional[AssetCheckKey],
+    left_off_asset_check_key: AssetCheckKey | None,
     freshness_checks: Sequence[AssetChecksDefinition],
 ) -> Iterator[AssetCheckKey]:
     asset_check_keys_sorted = sorted(
@@ -150,7 +150,7 @@ def ordered_iterator_freshness_checks_starting_with_key(
 def freshness_checks_get_evaluations_iter(
     context: SensorEvaluationContext,
     start_time: datetime.datetime,
-    left_off_asset_check_key: Optional[AssetCheckKey],
+    left_off_asset_check_key: AssetCheckKey | None,
     freshness_checks: Sequence[AssetChecksDefinition],
 ) -> Iterator[tuple[AssetCheckKey, bool]]:
     """Yields the set of freshness check keys to evaluate."""

@@ -2,7 +2,7 @@ import os
 import subprocess
 import uuid
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import click
 import dagster._check as check
@@ -25,7 +25,7 @@ def create_worker_cli_group():
     return group
 
 
-def get_config_value_from_yaml(yaml_path: Optional[str]) -> Mapping[str, Any]:
+def get_config_value_from_yaml(yaml_path: str | None) -> Mapping[str, Any]:
     if yaml_path is None:
         return {}
     parsed_yaml = load_yaml_from_path(yaml_path) or {}
@@ -38,7 +38,7 @@ def get_config_value_from_yaml(yaml_path: Optional[str]) -> Mapping[str, Any]:
     )
 
 
-def get_app(config_yaml: Optional[str] = None) -> CeleryExecutor:
+def get_app(config_yaml: str | None = None) -> CeleryExecutor:
     return make_app(
         CeleryExecutor.for_cli(**get_config_value_from_yaml(config_yaml)).app_args()
         if config_yaml
@@ -46,11 +46,11 @@ def get_app(config_yaml: Optional[str] = None) -> CeleryExecutor:
     )
 
 
-def get_worker_name(name: Optional[str] = None) -> str:
+def get_worker_name(name: str | None = None) -> str:
     return name + "@%h" if name is not None else f"dagster-{str(uuid.uuid4())[-6:]}@%h"
 
 
-def get_validated_config(config_yaml: Optional[str] = None) -> Any:
+def get_validated_config(config_yaml: str | None = None) -> Any:
     config_type = celery_executor.config_schema.config_type
     config_value = get_config_value_from_yaml(config_yaml)
     config = validate_config(config_type, config_value)

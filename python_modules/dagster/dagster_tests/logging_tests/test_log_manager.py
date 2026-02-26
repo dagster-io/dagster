@@ -1,7 +1,6 @@
 import logging
 import sys
 import textwrap
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -69,9 +68,7 @@ def test_construct_log_message_for_log():
     )
 
 
-def _make_error_log_message(
-    error: SerializableErrorInfo, error_source: Optional[ErrorSource] = None
-):
+def _make_error_log_message(error: SerializableErrorInfo, error_source: ErrorSource | None = None):
     step_failure_event = dg.DagsterEvent(
         event_type_value="STEP_FAILURE",
         job_name="my_job",

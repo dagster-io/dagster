@@ -4,7 +4,6 @@ import time
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 from uuid import uuid4
 
 import dagster as dg
@@ -48,7 +47,7 @@ from dagster_test.utils.data_factory import dagster_run as create_dagster_run
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
-def _get_run_by_id(storage, run_id) -> Optional[dg.DagsterRun]:
+def _get_run_by_id(storage, run_id) -> dg.DagsterRun | None:
     records = storage.get_run_records(dg.RunsFilter(run_ids=[run_id]))
     if not records:
         return None
@@ -97,7 +96,7 @@ class TestRunStorage:
             yield s
 
     @pytest.fixture(name="instance")
-    def instance(self, request) -> Optional[dg.DagsterInstance]:
+    def instance(self, request) -> dg.DagsterInstance | None:
         return None
 
     # Override for storages that are not allowed to delete runs

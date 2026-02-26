@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
@@ -18,7 +17,7 @@ from dagster.components.resolved.model import Model
 class DefinitionsComponent(Component, Model, Resolvable):
     """An arbitrary set of Dagster definitions."""
 
-    path: Optional[str]
+    path: str | None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component = PythonFileComponent(

@@ -2,7 +2,7 @@ import shutil
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
@@ -53,7 +53,7 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 
 @contextmanager
 def temp_sling_component_instance(
-    replication_specs: Optional[list[dict[str, Any]]] = None,
+    replication_specs: list[dict[str, Any]] | None = None,
 ) -> Iterator[tuple[SlingReplicationCollectionComponent, Definitions]]:
     """Sets up a temporary directory with a replication.yaml and defs.yaml file that reference
     the proper temp path.
@@ -176,7 +176,7 @@ def test_sling_subclass() -> None:
             context: AssetExecutionContext,
             sling: SlingResource,
             replication_spec_model: SlingReplicationSpecModel,
-        ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+        ) -> Iterator[AssetMaterialization | MaterializeResult]:
             return sling.replicate(context=context, debug=True)
 
     defs = build_component_defs_for_test(
@@ -197,7 +197,7 @@ class TestSlingTranslation(TestTranslation):
         self,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+        key_modifier: Callable[[AssetKey], AssetKey] | None,
     ) -> None:
         defs = build_component_defs_for_test(
             SlingReplicationCollectionComponent,

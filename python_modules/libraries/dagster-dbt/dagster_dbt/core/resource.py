@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from functools import cache, cached_property
 from pathlib import Path
 from subprocess import check_output
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import yaml
 from dagster import (
@@ -152,7 +152,7 @@ class DbtCliResource(ConfigurableResource):
             " https://docs.getdbt.com/reference/global-configs for a full list of configuration."
         ),
     )
-    profiles_dir: Optional[str] = Field(
+    profiles_dir: str | None = Field(
         default=None,
         description=(
             "The path to the directory containing your dbt `profiles.yml`. By default, the current"
@@ -161,7 +161,7 @@ class DbtCliResource(ConfigurableResource):
             " more information."
         ),
     )
-    profile: Optional[str] = Field(
+    profile: str | None = Field(
         default=None,
         description=(
             "The profile from your dbt `profiles.yml` to use for execution. See"
@@ -169,7 +169,7 @@ class DbtCliResource(ConfigurableResource):
             " information."
         ),
     )
-    target: Optional[str] = Field(
+    target: str | None = Field(
         default=None,
         description=(
             "The target from your dbt `profiles.yml` to use for execution. See"
@@ -181,7 +181,7 @@ class DbtCliResource(ConfigurableResource):
         default=DBT_EXECUTABLE,
         description="The path to the dbt executable. Defaults to `dbtf` if available, otherwise `dbt`.",
     )
-    state_path: Optional[str] = Field(
+    state_path: str | None = Field(
         default=None,
         description=(
             "The path, relative to the project directory, to a directory of dbt artifacts to be"
@@ -193,13 +193,13 @@ class DbtCliResource(ConfigurableResource):
 
     def __init__(
         self,
-        project_dir: Union[str, Path, DbtProject],
-        global_config_flags: Optional[list[str]] = None,
-        profiles_dir: Optional[Union[str, Path]] = None,
-        profile: Optional[str] = None,
-        target: Optional[str] = None,
-        dbt_executable: Union[str, Path] = DBT_EXECUTABLE,
-        state_path: Optional[Union[str, Path]] = None,
+        project_dir: str | Path | DbtProject,
+        global_config_flags: list[str] | None = None,
+        profiles_dir: str | Path | None = None,
+        profile: str | None = None,
+        target: str | None = None,
+        dbt_executable: str | Path = DBT_EXECUTABLE,
+        state_path: str | Path | None = None,
         **kwargs,  # allow custom subclasses to add fields
     ):
         if isinstance(project_dir, DbtProject):
@@ -238,7 +238,7 @@ class DbtCliResource(ConfigurableResource):
         )
 
     @classmethod
-    def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
+    def _validate_absolute_path_exists(cls, path: str | Path) -> Path:
         absolute_path = Path(path).absolute()
         try:
             resolved_path = absolute_path.resolve(strict=True)
@@ -283,7 +283,7 @@ class DbtCliResource(ConfigurableResource):
         return os.fspath(resolved_project_dir)
 
     @field_validator("profiles_dir")
-    def validate_profiles_dir(cls, profiles_dir: Optional[str]) -> Optional[str]:
+    def validate_profiles_dir(cls, profiles_dir: str | None) -> str | None:
         if profiles_dir is None:
             return None
 
@@ -327,14 +327,14 @@ class DbtCliResource(ConfigurableResource):
         return values
 
     @field_validator("state_path")
-    def validate_state_path(cls, state_path: Optional[str], info: ValidationInfo) -> Optional[str]:
+    def validate_state_path(cls, state_path: str | None, info: ValidationInfo) -> str | None:
         if state_path is None:
             return None
 
         return os.fspath(Path(state_path).absolute().resolve())
 
     def _get_unique_target_path(
-        self, *, context: Optional[Union[OpExecutionContext, AssetExecutionContext]]
+        self, *, context: OpExecutionContext | AssetExecutionContext | None
     ) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
@@ -487,10 +487,10 @@ class DbtCliResource(ConfigurableResource):
         args: Sequence[str],
         *,
         raise_on_error: bool = True,
-        manifest: Optional[DbtManifestParam] = None,
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
-        target_path: Optional[Path] = None,
+        manifest: DbtManifestParam | None = None,
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
+        context: OpExecutionContext | AssetExecutionContext | None = None,
+        target_path: Path | None = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -692,7 +692,7 @@ class DbtCliResource(ConfigurableResource):
             target_path = project_dir.joinpath(target_path)
 
         # run dbt --version to get the dbt core version
-        adapter: Optional[BaseAdapter] = None
+        adapter: BaseAdapter | None = None
         with pushd(str(project_dir)):
             # we do not need to initialize the adapter if we are using the fusion engine
             if self._cli_version.major < 2:

@@ -1,6 +1,6 @@
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import dagster._check as check
 import requests
@@ -11,7 +11,7 @@ from dagster._utils.merger import merge_dicts
 DEFAULT_EPHEMERAL_STORAGE = 20
 
 
-def _arns_match(arn1: Optional[str], arn2: Optional[str]):
+def _arns_match(arn1: str | None, arn2: str | None):
     arn1 = arn1 or ""
     arn2 = arn2 or ""
 
@@ -25,7 +25,7 @@ def _arns_match(arn1: Optional[str], arn2: Optional[str]):
     return arn1 == arn2
 
 
-def _ephemeral_storage_matches(storage1: Optional[int], storage2: Optional[int]):
+def _ephemeral_storage_matches(storage1: int | None, storage2: int | None):
     if (storage1 or DEFAULT_EPHEMERAL_STORAGE) == (storage2 or DEFAULT_EPHEMERAL_STORAGE):
         return True
     return False
@@ -38,23 +38,23 @@ class DagsterEcsTaskDefinitionConfig(
             ("family", str),
             ("image", str),
             ("container_name", str),
-            ("command", Optional[Sequence[str]]),
-            ("log_configuration", Optional[Mapping[str, Any]]),
+            ("command", Sequence[str] | None),
+            ("log_configuration", Mapping[str, Any] | None),
             ("secrets", Sequence[Mapping[str, str]]),
             ("environment", Sequence[Mapping[str, str]]),
-            ("execution_role_arn", Optional[str]),
-            ("task_role_arn", Optional[str]),
+            ("execution_role_arn", str | None),
+            ("task_role_arn", str | None),
             ("sidecars", Sequence[Mapping[str, Any]]),
             ("requires_compatibilities", Sequence[str]),
             ("cpu", str),
             ("memory", str),
-            ("ephemeral_storage", Optional[int]),
+            ("ephemeral_storage", int | None),
             ("runtime_platform", Mapping[str, Any]),
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
-            ("repository_credentials", Optional[str]),
-            ("linux_parameters", Optional[Mapping[str, Any]]),
-            ("health_check", Optional[Mapping[str, Any]]),
+            ("repository_credentials", str | None),
+            ("linux_parameters", Mapping[str, Any] | None),
+            ("health_check", Mapping[str, Any] | None),
         ],
     )
 ):
@@ -67,23 +67,23 @@ class DagsterEcsTaskDefinitionConfig(
         family: str,
         image: str,
         container_name: str,
-        command: Optional[Sequence[str]],
-        log_configuration: Optional[Mapping[str, Any]],
-        secrets: Optional[Sequence[Mapping[str, str]]],
-        environment: Optional[Sequence[Mapping[str, str]]],
-        execution_role_arn: Optional[str],
-        task_role_arn: Optional[str],
-        sidecars: Optional[Sequence[Mapping[str, Any]]],
-        requires_compatibilities: Optional[Sequence[str]],
-        cpu: Optional[str] = None,
-        memory: Optional[str] = None,
-        ephemeral_storage: Optional[int] = None,
-        runtime_platform: Optional[Mapping[str, Any]] = None,
-        mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
-        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
-        repository_credentials: Optional[str] = None,
-        linux_parameters: Optional[Mapping[str, Any]] = None,
-        health_check: Optional[Mapping[str, Any]] = None,
+        command: Sequence[str] | None,
+        log_configuration: Mapping[str, Any] | None,
+        secrets: Sequence[Mapping[str, str]] | None,
+        environment: Sequence[Mapping[str, str]] | None,
+        execution_role_arn: str | None,
+        task_role_arn: str | None,
+        sidecars: Sequence[Mapping[str, Any]] | None,
+        requires_compatibilities: Sequence[str] | None,
+        cpu: str | None = None,
+        memory: str | None = None,
+        ephemeral_storage: int | None = None,
+        runtime_platform: Mapping[str, Any] | None = None,
+        mount_points: Sequence[Mapping[str, Any]] | None = None,
+        volumes: Sequence[Mapping[str, Any]] | None = None,
+        repository_credentials: str | None = None,
+        linux_parameters: Mapping[str, Any] | None = None,
+        health_check: Mapping[str, Any] | None = None,
     ):
         return super().__new__(
             cls,

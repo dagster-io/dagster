@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from functools import partial
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster._annotations import beta_param, public
@@ -150,15 +150,15 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         name: str,
         *,
         target: CoercibleToAssetSelection,
-        tags: Optional[Mapping[str, str]] = None,
-        run_tags: Optional[Mapping[str, Any]] = None,
+        tags: Mapping[str, str] | None = None,
+        run_tags: Mapping[str, Any] | None = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        minimum_interval_seconds: Optional[int] = None,
-        description: Optional[str] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        minimum_interval_seconds: int | None = None,
+        description: str | None = None,
+        metadata: RawMetadataMapping | None = None,
         emit_backfills: bool = True,
         use_user_code_server: bool = False,
-        default_condition: Optional[AutomationCondition] = None,
+        default_condition: AutomationCondition | None = None,
     ):
         self._use_user_code_server = use_user_code_server
         check.bool_param(emit_backfills, "allow_backfills")
@@ -208,7 +208,7 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         return EMIT_BACKFILLS_METADATA_KEY in self.metadata
 
     @property
-    def default_condition(self) -> Optional[AutomationCondition]:
+    def default_condition(self) -> AutomationCondition | None:
         return self._default_condition
 
     @property
@@ -220,15 +220,15 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         *,
         name: str,
         target: CoercibleToAssetSelection,
-        tags: Optional[Mapping[str, str]],
-        run_tags: Optional[Mapping[str, Any]],
+        tags: Mapping[str, str] | None,
+        run_tags: Mapping[str, Any] | None,
         default_status: DefaultSensorStatus,
-        minimum_interval_seconds: Optional[int],
-        description: Optional[str],
-        metadata: Optional[RawMetadataMapping],
+        minimum_interval_seconds: int | None,
+        description: str | None,
+        metadata: RawMetadataMapping | None,
         emit_backfills: bool,
         use_user_code_server: bool,
-        default_condition: Optional[AutomationCondition],
+        default_condition: AutomationCondition | None,
     ) -> "AutomationConditionSensorDefinition":
         return AutomationConditionSensorDefinition(
             name=name,
@@ -247,8 +247,8 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
     def with_attributes(
         self,
         *,
-        jobs: Optional[Sequence[ExecutableDefinition]] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        jobs: Sequence[ExecutableDefinition] | None = None,
+        metadata: RawMetadataMapping | None = None,
     ) -> "AutomationConditionSensorDefinition":
         """Returns a copy of this sensor with the attributes replaced.
 

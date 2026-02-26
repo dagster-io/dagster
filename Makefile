@@ -1,5 +1,7 @@
 .PHONY: pyright
 
+export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
+
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
 # - Multi-command rules (like `ruff` below) by default terminate as soon as a command has a non-0
@@ -71,7 +73,7 @@ install_dev_python_modules_verbose_m1:
 	python scripts/install_dev_python_modules.py --include-prebuilt-grpcio-wheel
 
 graphql:
-	cd js_modules/dagster-ui/; make generate-graphql; make generate-perms
+	cd js_modules; make generate-graphql; make generate-perms
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
@@ -80,10 +82,11 @@ sanity_check:
 	@! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
-	cd js_modules/dagster-ui/; yarn install && yarn build
+	corepack enable
+	cd js_modules && yarn install && yarn workspace @dagster-io/app-oss build
 
 rebuild_ui_with_profiling: sanity_check
-	cd js_modules/dagster-ui/; yarn install && yarn build-with-profiling
+	cd js_modules; yarn install && yarn build-with-profiling
 
 dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_ui
 

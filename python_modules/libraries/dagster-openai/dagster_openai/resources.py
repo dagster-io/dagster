@@ -3,7 +3,6 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Optional, Union
 from weakref import WeakKeyDictionary
 
 from dagster import (
@@ -40,7 +39,7 @@ context_to_counters = WeakKeyDictionary()
 def _add_to_asset_metadata(
     context: AssetExecutionContext,
     usage_metadata: dict[str, int],
-    output_name: Optional[str],
+    output_name: str | None,
 ):
     if context not in context_to_counters:
         context_to_counters[context] = defaultdict(lambda: 0)
@@ -57,7 +56,7 @@ def _add_to_asset_metadata(
 
 @public
 def with_usage_metadata(
-    context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
+    context: AssetExecutionContext | OpExecutionContext, output_name: str | None, func
 ):
     """This wrapper can be used on any endpoint of the
     `openai library <https://github.com/openai/openai-python>`_
@@ -195,9 +194,9 @@ class OpenAIResource(ConfigurableResource):
     """
 
     api_key: str = Field(description=("OpenAI API key. See https://platform.openai.com/api-keys"))
-    organization: Optional[str] = Field(default=None)
-    project: Optional[str] = Field(default=None)
-    base_url: Optional[str] = Field(default=None)
+    organization: str | None = Field(default=None)
+    project: str | None = Field(default=None)
+    base_url: str | None = Field(default=None)
 
     _client: Client = PrivateAttr()
 
@@ -209,7 +208,7 @@ class OpenAIResource(ConfigurableResource):
         self,
         api_endpoint_class: ApiEndpointClassesEnum,
         context: AssetExecutionContext,
-        output_name: Optional[str],
+        output_name: str | None,
     ):
         for attribute_names in API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING[api_endpoint_class]:
             curr = self._client.__getattribute__(api_endpoint_class.value)
@@ -240,7 +239,7 @@ class OpenAIResource(ConfigurableResource):
     @public
     @contextmanager
     def get_client(
-        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext]
+        self, context: AssetExecutionContext | AssetCheckExecutionContext | OpExecutionContext
     ) -> Generator[Client, None, None]:
         """Yields an ``openai.Client`` for interacting with the OpenAI API.
 
@@ -376,8 +375,8 @@ class OpenAIResource(ConfigurableResource):
 
     def _get_client(
         self,
-        context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext],
-        asset_key: Optional[AssetKey] = None,
+        context: AssetExecutionContext | AssetCheckExecutionContext | OpExecutionContext,
+        asset_key: AssetKey | None = None,
     ) -> Generator[Client, None, None]:
         if isinstance(context, AssetExecutionContext):
             if asset_key is None:

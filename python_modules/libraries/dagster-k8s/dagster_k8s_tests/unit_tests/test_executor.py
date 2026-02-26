@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -247,7 +246,7 @@ def _step_handler_context(
     instance,
     executor,
     step: str = "foo",
-    known_state: Optional[KnownExecutionState] = None,
+    known_state: KnownExecutionState | None = None,
 ):
     execution_plan = create_execution_plan(job_def, known_state=known_state)
     log_manager = create_context_free_log_manager(instance, dagster_run)

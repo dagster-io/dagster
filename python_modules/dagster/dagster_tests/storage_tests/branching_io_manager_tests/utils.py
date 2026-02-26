@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Any
 
 import dagster as dg
 from dagster import AssetKey, DagsterInstance, Definitions, InputContext, OutputContext
@@ -24,16 +24,14 @@ class DefinitionsRunner:
         with DagsterInstance.ephemeral() as instance:
             yield DefinitionsRunner(defs, instance)
 
-    def materialize_all_assets(
-        self, partition_key: Optional[str] = None
-    ) -> dg.ExecuteInProcessResult:
+    def materialize_all_assets(self, partition_key: str | None = None) -> dg.ExecuteInProcessResult:
         all_keys = list(self.defs.get_repository_def().asset_graph.get_all_asset_keys())
         job_def = self.defs.resolve_implicit_job_def_def_for_assets(all_keys)
         assert job_def
         return job_def.execute_in_process(instance=self.instance, partition_key=partition_key)
 
     def materialize_assets(
-        self, asset_selection: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
+        self, asset_selection: Sequence[CoercibleToAssetKey], partition_key: str | None = None
     ) -> dg.ExecuteInProcessResult:
         asset_keys = [AssetKey.from_coercible(asset_key) for asset_key in asset_selection]
         job_def = self.defs.resolve_implicit_job_def_def_for_assets(asset_keys)
@@ -45,12 +43,12 @@ class DefinitionsRunner:
         )
 
     def materialize_asset(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+        self, asset_key: CoercibleToAssetKey, partition_key: str | None = None
     ) -> dg.ExecuteInProcessResult:
         return self.materialize_assets([asset_key], partition_key)
 
     def load_asset_value(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+        self, asset_key: CoercibleToAssetKey, partition_key: str | None = None
     ) -> object:
         return self.defs.load_asset_value(
             asset_key=asset_key, instance=self.instance, partition_key=partition_key
@@ -93,24 +91,22 @@ class AssetBasedInMemoryIOManager(dg.IOManager):
                 else self.values[keys[0]]
             )
 
-    def has_value(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
-    ) -> bool:
+    def has_value(self, asset_key: CoercibleToAssetKey, partition_key: str | None = None) -> bool:
         return self._get_key(AssetKey.from_coercible(asset_key), partition_key) in self.values
 
-    def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
+    def get_value(self, asset_key: CoercibleToAssetKey, partition_key: str | None = None) -> Any:
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _keys_from_context(
-        self, context: Union[dg.InputContext, dg.OutputContext]
-    ) -> Optional[Sequence[tuple[str, ...]]]:
+        self, context: dg.InputContext | dg.OutputContext
+    ) -> Sequence[tuple[str, ...]] | None:
         if not context.has_asset_key:
             return None
 
         partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
         return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
 
-    def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
+    def _get_key(self, asset_key: AssetKey, partition_key: str | None) -> tuple:
         return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])
 
 
@@ -151,22 +147,20 @@ class ConfigurableAssetBasedInMemoryIOManager(dg.ConfigurableIOManager):
                 else self._values[keys[0]]
             )
 
-    def has_value(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
-    ) -> bool:
+    def has_value(self, asset_key: CoercibleToAssetKey, partition_key: str | None = None) -> bool:
         return self._get_key(AssetKey.from_coercible(asset_key), partition_key) in self._values
 
-    def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
+    def get_value(self, asset_key: CoercibleToAssetKey, partition_key: str | None = None) -> Any:
         return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _keys_from_context(
-        self, context: Union[dg.InputContext, dg.OutputContext]
-    ) -> Optional[Sequence[tuple[str, ...]]]:
+        self, context: dg.InputContext | dg.OutputContext
+    ) -> Sequence[tuple[str, ...]] | None:
         if not context.has_asset_key:
             return None
 
         partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
         return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
 
-    def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
+    def _get_key(self, asset_key: AssetKey, partition_key: str | None) -> tuple:
         return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])

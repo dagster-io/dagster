@@ -7,11 +7,11 @@ on:
       - examples/docs_projects/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
-      - '!docs/README.md'
-      - '!docs/CONTRIBUTING.md'
-      - '!docs/content-templates/**'
+      - "!docs/README.md"
+      - "!docs/CONTRIBUTING.md"
+      - "!docs/content-templates/**"
       # Required for `yarn rebuild-kinds-tags`
-      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
+      - js_modules/ui-core/src/graph/OpTags.tsx
       # Required to rebuild docs on new version release
       - python_modules/dagster/dagster/version.py
       - CHANGES.md
@@ -113,7 +113,7 @@ jobs:
       - name: Publish Main Preview to Vercel
         uses: amondnet/vercel-action@v25
         if: |
-            github.event_name == 'push' && github.ref == 'refs/heads/master'
+          github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

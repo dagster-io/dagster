@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, ContextManager, Optional, cast  # noqa: UP035
+from typing import Any, ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -79,7 +79,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self,
         postgres_url: str,
         should_autocreate_tables: bool = True,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = check.str_param(postgres_url, "postgres_url")
@@ -91,7 +91,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
-        self._event_watcher: Optional[SqlPollingEventWatcher] = None
+        self._event_watcher: SqlPollingEventWatcher | None = None
 
         self._secondary_index_cache = {}
 
@@ -138,7 +138,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             run_alembic_upgrade(alembic_config, conn)
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -147,7 +147,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, Any]
+        cls, inst_data: ConfigurableClassData | None, config_value: Mapping[str, Any]
     ) -> "PostgresEventLogStorage":
         return PostgresEventLogStorage(
             inst_data=inst_data,
@@ -326,7 +326,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
 
-    def run_connection(self, run_id: Optional[str] = None) -> ContextManager[Connection]:
+    def run_connection(self, run_id: str | None = None) -> ContextManager[Connection]:
         return self._connect()
 
     def index_connection(self) -> ContextManager[Connection]:
@@ -359,7 +359,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def watch(
         self,
         run_id: str,
-        cursor: Optional[str],
+        cursor: str | None,
         callback: EventHandlerFn,
     ) -> None:
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():

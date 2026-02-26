@@ -5,7 +5,7 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional, TextIO
+from typing import TextIO
 
 import dagster as dg
 from dagster import AssetExecutionContext
@@ -38,7 +38,7 @@ class PipesFileLogReader(PipesChunkedLogReader):
 
 
 class PipesFileMessageReader(PipesThreadedMessageReader):
-    def __init__(self, *, log_readers, path: Optional[str] = None):
+    def __init__(self, *, log_readers, path: str | None = None):
         self.path = path
         self.file_position = 0
 
@@ -61,8 +61,8 @@ class PipesFileMessageReader(PipesThreadedMessageReader):
         yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDOUT}
 
     def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[tuple[int, str]]:
+        self, cursor: int | None, params: PipesParams
+    ) -> tuple[int, str] | None:
         if cursor is None:
             cursor = 0
 

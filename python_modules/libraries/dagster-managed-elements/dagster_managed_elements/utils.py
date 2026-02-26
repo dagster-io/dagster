@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dagster_managed_elements.types import ManagedElementDiff
 
@@ -7,9 +7,9 @@ UNSET = object()
 
 
 def diff_dicts(
-    config_dict: Optional[Mapping[str, Any]],
-    dst_dict: Optional[Mapping[str, Any]],
-    custom_compare_fn: Optional[Callable[[str, Any, Any], Optional[bool]]] = None,
+    config_dict: Mapping[str, Any] | None,
+    dst_dict: Mapping[str, Any] | None,
+    custom_compare_fn: Callable[[str, Any, Any], bool | None] | None = None,
 ) -> ManagedElementDiff:
     """Utility function which builds a ManagedElementDiff given two dictionaries.
 

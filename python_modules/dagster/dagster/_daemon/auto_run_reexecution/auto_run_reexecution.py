@@ -1,7 +1,7 @@
 import logging
 import sys
 from collections.abc import Iterator, Sequence
-from typing import Optional, cast
+from typing import cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -82,7 +82,7 @@ def filter_runs_to_should_retry(
 
 def get_automatically_retried_run_if_exists(
     instance: DagsterInstance, run: DagsterRun, run_group: Sequence[DagsterRun]
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     if run.tags.get(AUTO_RETRY_RUN_ID_TAG) is not None:
         return instance.get_run_by_id(run.tags[AUTO_RETRY_RUN_ID_TAG])
     child_run = next(
@@ -112,7 +112,7 @@ def run_was_successfully_retried(run: DagsterRun, instance: DagsterInstance) -> 
 
 def get_reexecution_strategy(
     run: DagsterRun, instance: DagsterInstance
-) -> Optional[ReexecutionStrategy]:
+) -> ReexecutionStrategy | None:
     raw_strategy_tag = run.tags.get(RETRY_STRATEGY_TAG)
     if raw_strategy_tag is None:
         return None

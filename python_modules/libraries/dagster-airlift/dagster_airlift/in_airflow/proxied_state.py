@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import yaml
 
@@ -40,7 +40,7 @@ class DagProxiedState(NamedTuple):
         proxying state has not been set at all).
     """
 
-    proxied: Optional[bool]
+    proxied: bool | None
     tasks: dict[str, TaskProxiedState]
 
     @staticmethod
@@ -59,7 +59,7 @@ class DagProxiedState(NamedTuple):
             for task_dict in task_list:
                 task_state = TaskProxiedState.from_dict(task_dict)
                 task_proxied_states[task_state.task_id] = task_state
-        dag_proxied_state: Optional[bool] = dag_dict.get("proxied")
+        dag_proxied_state: bool | None = dag_dict.get("proxied")
         if dag_proxied_state not in [True, False, None]:
             raise Exception("Expected 'proxied' key to be a boolean or None")
         return DagProxiedState(tasks=task_proxied_states, proxied=dag_proxied_state)
@@ -101,7 +101,7 @@ class AirflowProxiedState(NamedTuple):
 
     dags: dict[str, DagProxiedState]
 
-    def get_task_proxied_state(self, *, dag_id: str, task_id: str) -> Optional[bool]:
+    def get_task_proxied_state(self, *, dag_id: str, task_id: str) -> bool | None:
         if dag_id not in self.dags:
             return None
         if task_id not in self.dags[dag_id].tasks:
@@ -127,9 +127,7 @@ class AirflowProxiedState(NamedTuple):
         """
         return self.dags[dag_id].dag_proxies_at_dag_level
 
-    def get_proxied_dict_for_dag(
-        self, dag_id: str
-    ) -> Optional[dict[str, Sequence[dict[str, Any]]]]:
+    def get_proxied_dict_for_dag(self, dag_id: str) -> dict[str, Sequence[dict[str, Any]]] | None:
         if dag_id not in self.dags:
             return None
         return {

@@ -37,16 +37,7 @@ SPECIAL_KIND_ORDERS = [
 ALL_SPECIAL_KINDS = [kind for order in SPECIAL_KIND_ORDERS for kind in order]
 
 REPO_ROOT = Path(__file__).parent.parent.parent
-OP_TAGS_FILE = (
-    REPO_ROOT
-    / "js_modules"
-    / "dagster-ui"
-    / "packages"
-    / "ui-core"
-    / "src"
-    / "graph"
-    / "OpTags.tsx"
-)
+OP_TAGS_FILE = REPO_ROOT / "js_modules" / "ui-core" / "src" / "graph" / "OpTags.tsx"
 KIND_TAGS_DOCS_PARTIAL = REPO_ROOT / "docs" / "docs" / "partials" / "_KindsTags.md"
 DOCS_KIND_IMAGES_DEST = (
     REPO_ROOT

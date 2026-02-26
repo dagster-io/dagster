@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from dagster import InitResourceContext, resource
 from dagster._config.pythonic_config import Config, ConfigurableResource
@@ -17,15 +17,15 @@ from pydantic import Field
 
 class DatahubRESTEmitterResource(ConfigurableResource):
     connection: str = Field(description="Datahub GMS Server")
-    token: Optional[str] = Field(default=None, description="Personal Access Token")
-    connect_timeout_sec: Optional[float] = None
-    read_timeout_sec: Optional[float] = None
-    retry_status_codes: Optional[list[int]] = None
-    retry_methods: Optional[list[str]] = None
-    retry_max_times: Optional[int] = None
-    extra_headers: Optional[dict[str, str]] = None
-    ca_certificate_path: Optional[str] = None
-    server_telemetry_id: Optional[str] = None  # No-op - no longer accepted in DatahubRestEmitter
+    token: str | None = Field(default=None, description="Personal Access Token")
+    connect_timeout_sec: float | None = None
+    read_timeout_sec: float | None = None
+    retry_status_codes: list[int] | None = None
+    retry_methods: list[str] | None = None
+    retry_max_times: int | None = None
+    extra_headers: dict[str, str] | None = None
+    ca_certificate_path: str | None = None
+    server_telemetry_id: str | None = None  # No-op - no longer accepted in DatahubRestEmitter
     disable_ssl_verification: bool = False
 
     @classmethod

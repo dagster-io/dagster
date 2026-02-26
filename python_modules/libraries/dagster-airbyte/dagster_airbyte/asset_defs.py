@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial
 from itertools import chain
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, cast
 
 import yaml
 from dagster import (
@@ -62,18 +62,18 @@ def _build_airbyte_asset_defn_metadata(
     connection_id: str,
     destination_tables: Sequence[str],
     destination_raw_table_names_by_table: Mapping[str, str],
-    destination_database: Optional[str],
-    destination_schema: Optional[str],
+    destination_database: str | None,
+    destination_schema: str | None,
     table_to_asset_key_fn: Callable[[str], AssetKey],
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    normalization_tables: Optional[Mapping[str, set[str]]] = None,
-    normalization_raw_table_names_by_table: Optional[Mapping[str, str]] = None,
-    upstream_assets: Optional[Iterable[AssetKey]] = None,
-    group_name: Optional[str] = None,
-    io_manager_key: Optional[str] = None,
-    schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    asset_key_prefix: Sequence[str] | None = None,
+    normalization_tables: Mapping[str, set[str]] | None = None,
+    normalization_raw_table_names_by_table: Mapping[str, str] | None = None,
+    upstream_assets: Iterable[AssetKey] | None = None,
+    group_name: str | None = None,
+    io_manager_key: str | None = None,
+    schema_by_table_name: Mapping[str, TableSchema] | None = None,
+    legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
+    auto_materialize_policy: AutoMaterializePolicy | None = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
         check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
@@ -183,14 +183,14 @@ def _build_airbyte_asset_defn_metadata(
 
 def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    resource_defs: Mapping[str, ResourceDefinition] | None,
 ) -> AssetsDefinition:
     metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
     connection_id = cast("str", metadata["connection_id"])
-    group_name = cast("Optional[str]", metadata["group_name"])
+    group_name = cast("str | None", metadata["group_name"])
     destination_tables = cast("list[str]", metadata["destination_tables"])
     normalization_tables = cast("Mapping[str, list[str]]", metadata["normalization_tables"])
-    io_manager_key = cast("Optional[str]", metadata["io_manager_key"])
+    io_manager_key = cast("str | None", metadata["io_manager_key"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id.replace('-', '_')}",
@@ -262,15 +262,15 @@ def _build_airbyte_assets_from_metadata(
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],
-    destination_database: Optional[str] = None,
-    destination_schema: Optional[str] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    group_name: Optional[str] = None,
-    normalization_tables: Optional[Mapping[str, set[str]]] = None,
-    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
-    upstream_assets: Optional[set[AssetKey]] = None,
-    schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    stream_to_asset_map: Optional[Mapping[str, str]] = None,
+    destination_database: str | None = None,
+    destination_schema: str | None = None,
+    asset_key_prefix: Sequence[str] | None = None,
+    group_name: str | None = None,
+    normalization_tables: Mapping[str, set[str]] | None = None,
+    deps: Iterable[CoercibleToAssetKey | AssetsDefinition | SourceAsset] | None = None,
+    upstream_assets: set[AssetKey] | None = None,
+    schema_by_table_name: Mapping[str, TableSchema] | None = None,
+    stream_to_asset_map: Mapping[str, str] | None = None,
     **kwargs,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
@@ -598,16 +598,18 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
-        connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
-        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
-        connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
-        connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
-        ],
-        connection_to_auto_materialize_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
-        ] = None,
+        connection_meta_to_group_fn: Callable[[AirbyteConnectionMetadata], str | None] | None,
+        connection_to_io_manager_key_fn: Callable[[str], str | None] | None,
+        connection_filter: Callable[[AirbyteConnectionMetadata], bool] | None,
+        connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] | None,
+        connection_to_freshness_policy_fn: Callable[
+            [AirbyteConnectionMetadata], LegacyFreshnessPolicy | None
+        ]
+        | None,
+        connection_to_auto_materialize_policy_fn: Callable[
+            [AirbyteConnectionMetadata], AutoMaterializePolicy | None
+        ]
+        | None = None,
     ):
         self._key_prefix = key_prefix
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
@@ -697,7 +699,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _build_definitions_with_resources(
         self,
         data: Sequence[AssetsDefinitionCacheableData],
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
     ) -> Sequence[AssetsDefinition]:
         return [_build_airbyte_assets_from_metadata(meta, resource_defs) for meta in data]
 
@@ -710,20 +712,22 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
 class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: Union[ResourceDefinition, AirbyteResource],
-        workspace_id: Optional[str],
+        airbyte_resource_def: ResourceDefinition | AirbyteResource,
+        workspace_id: str | None,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
-        connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
-        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
-        connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
-        connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
-        ],
-        connection_to_auto_materialize_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
-        ] = None,
+        connection_meta_to_group_fn: Callable[[AirbyteConnectionMetadata], str | None] | None,
+        connection_to_io_manager_key_fn: Callable[[str], str | None] | None,
+        connection_filter: Callable[[AirbyteConnectionMetadata], bool] | None,
+        connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] | None,
+        connection_to_freshness_policy_fn: Callable[
+            [AirbyteConnectionMetadata], LegacyFreshnessPolicy | None
+        ]
+        | None,
+        connection_to_auto_materialize_policy_fn: Callable[
+            [AirbyteConnectionMetadata], AutoMaterializePolicy | None
+        ]
+        | None = None,
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -824,20 +828,22 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
     def __init__(
         self,
         project_dir: str,
-        workspace_id: Optional[str],
+        workspace_id: str | None,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
-        connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
-        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
-        connection_directories: Optional[Sequence[str]],
-        connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
-        connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
-        ],
-        connection_to_auto_materialize_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
-        ] = None,
+        connection_meta_to_group_fn: Callable[[AirbyteConnectionMetadata], str | None] | None,
+        connection_to_io_manager_key_fn: Callable[[str], str | None] | None,
+        connection_filter: Callable[[AirbyteConnectionMetadata], bool] | None,
+        connection_directories: Sequence[str] | None,
+        connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] | None,
+        connection_to_freshness_policy_fn: Callable[
+            [AirbyteConnectionMetadata], LegacyFreshnessPolicy | None
+        ]
+        | None,
+        connection_to_auto_materialize_policy_fn: Callable[
+            [AirbyteConnectionMetadata], AutoMaterializePolicy | None
+        ]
+        | None = None,
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -915,26 +921,24 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
     )
 )
 def load_assets_from_airbyte_instance(
-    airbyte: Union[AirbyteResource, ResourceDefinition],
-    workspace_id: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    airbyte: AirbyteResource | ResourceDefinition,
+    workspace_id: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
-    connection_meta_to_group_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[str]]
-    ] = None,
-    io_manager_key: Optional[str] = None,
-    connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
-    connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
-    connection_to_asset_key_fn: Optional[
-        Callable[[AirbyteConnectionMetadata, str], AssetKey]
-    ] = None,
-    connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
-    ] = None,
-    connection_to_auto_materialize_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
-    ] = None,
+    connection_to_group_fn: Callable[[str], str | None] | None = clean_name,
+    connection_meta_to_group_fn: Callable[[AirbyteConnectionMetadata], str | None] | None = None,
+    io_manager_key: str | None = None,
+    connection_to_io_manager_key_fn: Callable[[str], str | None] | None = None,
+    connection_filter: Callable[[AirbyteConnectionMetadata], bool] | None = None,
+    connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] | None = None,
+    connection_to_freshness_policy_fn: Callable[
+        [AirbyteConnectionMetadata], LegacyFreshnessPolicy | None
+    ]
+    | None = None,
+    connection_to_auto_materialize_policy_fn: Callable[
+        [AirbyteConnectionMetadata], AutoMaterializePolicy | None
+    ]
+    | None = None,
 ) -> CacheableAssetsDefinition:
     """Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
     about defined connections at initialization time, and will error on workspace load if the Airbyte
@@ -1053,9 +1057,9 @@ def load_assets_from_airbyte_instance(
 @beta
 def build_airbyte_assets_definitions(
     *,
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
-    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
-    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
+    workspace: AirbyteWorkspace | AirbyteCloudWorkspace,
+    dagster_airbyte_translator: DagsterAirbyteTranslator | None = None,
+    connection_selector_fn: Callable[[AirbyteConnection], bool] | None = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connections in the Airbyte workspace.
 

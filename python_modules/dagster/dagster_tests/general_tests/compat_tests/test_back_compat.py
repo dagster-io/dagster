@@ -8,7 +8,7 @@ import time
 from collections import namedtuple
 from enum import Enum
 from gzip import GzipFile
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 import dagster as dg
 import pytest
@@ -733,15 +733,15 @@ def test_legacy_event_log_load():
         NamedTuple(
             "_OldEventLogEntry",
             [
-                ("error_info", Optional[SerializableErrorInfo]),
+                ("error_info", SerializableErrorInfo | None),
                 ("message", str),
-                ("level", Union[str, int]),
+                ("level", str | int),
                 ("user_message", str),
                 ("run_id", str),
                 ("timestamp", float),
-                ("step_key", Optional[str]),
-                ("pipeline_name", Optional[str]),
-                ("dagster_event", Optional[dg.DagsterEvent]),
+                ("step_key", str | None),
+                ("pipeline_name", str | None),
+                ("dagster_event", dg.DagsterEvent | None),
             ],
         )
     ):
@@ -1562,7 +1562,7 @@ def test_add_run_tags_run_id_idx():
     [dg.AssetKey(["foo", "bar"]), None, "__missing__"],
     ids=("defined", "none", "missing"),
 )
-def test_load_old_materialization(asset_key: Optional[dg.AssetKey]):
+def test_load_old_materialization(asset_key: dg.AssetKey | None):
     packed_asset_key = pack_value(asset_key) if isinstance(asset_key, dg.AssetKey) else None
     delete_asset_key = asset_key == "__missing__"
     packed_old_materialization = {

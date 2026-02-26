@@ -1,7 +1,6 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
 
 import dagster_shared.check as check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
@@ -88,8 +87,8 @@ def build_defs_for_component(component: Component) -> Definitions:
 @suppress_dagster_warnings
 def load_from_defs_folder(
     *,
-    path_within_project: Optional[Path] = None,
-    project_root: Optional[Path] = None,
+    path_within_project: Path | None = None,
+    project_root: Path | None = None,
 ) -> Definitions:
     """Constructs a Definitions object by automatically discovering and loading all Dagster
     definitions from a project's defs folder structure.
@@ -147,7 +146,7 @@ def load_from_defs_folder(
 @suppress_dagster_warnings
 def load_defs(
     defs_root: ModuleType,
-    project_root: Optional[Path] = None,
+    project_root: Path | None = None,
     terminate_autoloading_on_keyword_files: bool = True,
 ) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
@@ -170,7 +169,7 @@ def load_defs(
     return tree.build_defs()
 
 
-def get_library_json_enriched_defs(tree: Optional[ComponentTree]) -> Definitions:
+def get_library_json_enriched_defs(tree: ComponentTree | None) -> Definitions:
     from dagster.components.core.package_entry import discover_entry_point_package_objects
     from dagster.components.core.snapshot import get_package_entry_snap
 

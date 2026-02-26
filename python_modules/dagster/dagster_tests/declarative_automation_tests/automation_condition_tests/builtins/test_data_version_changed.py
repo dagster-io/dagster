@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 import pytest
 from dagster import AutomationCondition, DagsterInstance
@@ -14,7 +12,7 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG
         dg.StaticPartitionsDefinition(["0", "1", "2"]),
     ],
 )
-def test_data_version_changed_condition(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+def test_data_version_changed_condition(partitions_def: dg.PartitionsDefinition | None) -> None:
     partition_key = partitions_def.get_last_partition_key() if partitions_def else None
 
     @dg.asset(automation_condition=AutomationCondition.data_version_changed())

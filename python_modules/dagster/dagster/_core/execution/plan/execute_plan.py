@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
-from typing import Optional, cast
+from typing import cast
 
 from dagster_shared.error import DagsterError
 
@@ -33,7 +33,7 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 def inner_plan_execution_iterator(
     job_context: PlanExecutionContext,
     execution_plan: ExecutionPlan,
-    instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+    instance_concurrency_context: InstanceConcurrencyContext | None = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(job_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
@@ -174,7 +174,7 @@ def _trigger_hook(
             yield DagsterEvent.hook_completed(step_context, hook_def)
 
 
-def _user_failure_data_for_exc(exc: Optional[BaseException]) -> Optional[UserFailureData]:
+def _user_failure_data_for_exc(exc: BaseException | None) -> UserFailureData | None:
     if isinstance(exc, Failure):
         return UserFailureData(
             label="intentional-failure",

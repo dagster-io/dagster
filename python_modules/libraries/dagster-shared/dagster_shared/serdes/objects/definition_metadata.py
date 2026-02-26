@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared.record import as_dict, record
 
@@ -9,33 +9,33 @@ class DgAssetMetadata:
     key: str
     deps: list[str]
     kinds: list[str]
-    group: Optional[str]
-    description: Optional[str]
-    automation_condition: Optional[str]
+    group: str | None
+    description: str | None
+    automation_condition: str | None
     tags: Sequence[str]
     is_executable: bool
-    source: Optional[str]
-    owners: Optional[Sequence[str]]
+    source: str | None
+    owners: Sequence[str] | None
 
 
 @record
 class DgSensorMetadata:
     name: str
-    source: Optional[str]
+    source: str | None
 
 
 @record
 class DgScheduleMetadata:
     name: str
     cron_schedule: str
-    source: Optional[str]
+    source: str | None
 
 
 @record
 class DgJobMetadata:
     name: str
-    description: Optional[str]
-    source: Optional[str]
+    description: str | None
+    source: str | None
 
 
 @record
@@ -50,8 +50,8 @@ class DgAssetCheckMetadata:
     asset_key: str
     name: str
     additional_deps: list[str]
-    description: Optional[str]
-    source: Optional[str]
+    description: str | None
+    source: str | None
 
 
 @record

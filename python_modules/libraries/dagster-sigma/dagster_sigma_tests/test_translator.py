@@ -1,5 +1,3 @@
-from typing import Union
-
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -103,7 +101,7 @@ def test_dataset_translation() -> None:
 def test_dataset_translation_custom_translator() -> None:
     class MyCustomTranslator(DagsterSigmaTranslator):
         def get_asset_spec(
-            self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+            self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
         ) -> AssetSpec:
             spec = super().get_asset_spec(data)
             if isinstance(data, SigmaDatasetTranslatorData):

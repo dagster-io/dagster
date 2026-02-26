@@ -2,7 +2,6 @@
 import argparse
 from collections.abc import Sequence
 from random import randint
-from typing import Union
 
 from dagster import asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -80,7 +79,7 @@ parser.add_argument(
 
 def get_stale_status_resolver(
     instance: DagsterInstance,
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[AssetsDefinition | SourceAsset],
 ) -> CachingStaleStatusResolver:
     asset_graph = AssetGraph.from_assets(assets)
     asset_graph_view = AssetGraphView(

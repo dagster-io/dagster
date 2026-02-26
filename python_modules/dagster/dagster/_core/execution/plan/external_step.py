@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Callable, Iterator, Sequence
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import dagster._check as check
 from dagster._config import Field, StringSource
@@ -106,7 +106,7 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
 
 def step_context_to_step_run_ref(
     step_context: StepExecutionContext,
-    package_dir: Optional[str] = None,
+    package_dir: str | None = None,
 ) -> StepRunRef:
     """Args:
         step_context (StepExecutionContext): The step context.
@@ -159,7 +159,7 @@ def step_context_to_step_run_ref(
 
 
 def external_instance_from_step_run_ref(
-    step_run_ref: StepRunRef, event_listener_fn: Optional[Callable[[EventLogEntry], object]] = None
+    step_run_ref: StepRunRef, event_listener_fn: Callable[[EventLogEntry], object] | None = None
 ) -> DagsterInstance:
     """Create an ephemeral DagsterInstance that is suitable for executing steps that are specified
     by a StepRunRef by pre-populating certain values.

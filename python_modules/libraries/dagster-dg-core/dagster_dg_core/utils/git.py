@@ -1,9 +1,8 @@
 import logging
 import subprocess
-from typing import Optional
 
 
-def get_local_branch_name(project_dir: str) -> Optional[str]:
+def get_local_branch_name(project_dir: str) -> str | None:
     try:
         return (
             subprocess.check_output(

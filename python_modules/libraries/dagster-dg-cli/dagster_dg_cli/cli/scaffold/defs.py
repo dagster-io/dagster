@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import click
 from click.core import ParameterSource
@@ -52,7 +52,7 @@ class ScaffoldDefsGroup(DgClickGroup):
         super().__init__(*args, **kwargs)
         self._commands_defined = False
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         if not self._commands_defined and cmd_name not in HARDCODED_COMMANDS:
             self._define_commands(ctx)
 
@@ -240,7 +240,7 @@ class ScaffoldDefsGroup(DgClickGroup):
         click.echo(f"Using defs scaffolder: {selected_cmd}")
         return check.not_none(super().get_command(ctx, selected_cmd))
 
-    def _try_load_input_as_registry_object(self, input_str: str) -> Optional[EnvRegistryObjectSnap]:
+    def _try_load_input_as_registry_object(self, input_str: str) -> EnvRegistryObjectSnap | None:
         from dagster.components.core.snapshot import get_package_entry_snap
 
         if not EnvRegistryKey.is_valid_typename(input_str):
@@ -333,7 +333,7 @@ def scaffold_defs_group(context: click.Context, help_: bool, **global_options: o
 def scaffold_defs_inline_component(
     path: str,
     typename: str,
-    superclass: Optional[str],
+    superclass: str | None,
 ) -> None:
     """Scaffold a new Dagster component."""
     # We need to pass the global options to the command, but we don't want to
@@ -360,7 +360,7 @@ def _core_scaffold(
     defs_path: str,
     key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
-    json_params: Optional[Mapping[str, Any]] = None,
+    json_params: Mapping[str, Any] | None = None,
 ) -> None:
     from dagster.components.core.package_entry import is_scaffoldable_object_key
     from pydantic import ValidationError

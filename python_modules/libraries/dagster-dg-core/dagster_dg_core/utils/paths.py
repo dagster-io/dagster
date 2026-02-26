@@ -1,7 +1,6 @@
 import hashlib
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 from dagster_shared.scaffold import DEFAULT_FILE_EXCLUDE_PATTERNS
 
@@ -10,7 +9,7 @@ from dagster_dg_core.utils import hash_directory_metadata, hash_file_metadata
 
 def hash_paths(
     paths: Sequence[Path],
-    includes: Optional[Sequence[str]] = None,
+    includes: Sequence[str] | None = None,
     excludes: Sequence[str] = DEFAULT_FILE_EXCLUDE_PATTERNS,
     error_on_missing: bool = True,
 ) -> str:

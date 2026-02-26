@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import kubernetes
 from dagster import __version__ as dagster_version
@@ -40,8 +40,8 @@ _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/nam
 
 
 def detect_current_namespace(
-    kubeconfig_file: Optional[str], namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
-) -> Optional[str]:
+    kubeconfig_file: str | None, namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
+) -> str | None:
     """Get the current in-cluster namespace when operating within the cluster.
 
     First attempt to read it from the `serviceaccount` secret or get it from the kubeconfig_file if it is possible.

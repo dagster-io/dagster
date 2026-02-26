@@ -1,13 +1,5 @@
 from collections.abc import Iterator, Mapping
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    TypeAlias,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, TypeAlias, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param, deprecated, deprecated_param, public
@@ -204,43 +196,43 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     key: PublicAttr[AssetKey]
     metadata: PublicAttr[MetadataMapping]
     raw_metadata: PublicAttr[ArbitraryMetadataMapping]
-    io_manager_key: PublicAttr[Optional[str]]
-    _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
-    description: PublicAttr[Optional[str]]
-    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
+    io_manager_key: PublicAttr[str | None]
+    _io_manager_def: PublicAttr[IOManagerDefinition | None]
+    description: PublicAttr[str | None]
+    partitions_def: PublicAttr[PartitionsDefinition | None]
     group_name: PublicAttr[str]
     resource_defs: PublicAttr[dict[str, ResourceDefinition]]
-    observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
-    op_tags: Optional[Mapping[str, Any]]
-    _node_def: Optional[OpDefinition]  # computed lazily
-    auto_observe_interval_minutes: Optional[float]
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
-    automation_condition: Optional[AutomationCondition]
+    observe_fn: PublicAttr[SourceAssetObserveFunction | None]
+    op_tags: Mapping[str, Any] | None
+    _node_def: OpDefinition | None  # computed lazily
+    auto_observe_interval_minutes: float | None
+    legacy_freshness_policy: LegacyFreshnessPolicy | None
+    automation_condition: AutomationCondition | None
     tags: Mapping[str, str]
 
     def __init__(
         self,
         key: CoercibleToAssetKey,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
-        io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[object] = None,
-        description: Optional[str] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, object]] = None,
-        observe_fn: Optional[SourceAssetObserveFunction] = None,
-        op_tags: Optional[Mapping[str, Any]] = None,
+        metadata: ArbitraryMetadataMapping | None = None,
+        io_manager_key: str | None = None,
+        io_manager_def: object | None = None,
+        description: str | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        group_name: str | None = None,
+        resource_defs: Mapping[str, object] | None = None,
+        observe_fn: SourceAssetObserveFunction | None = None,
+        op_tags: Mapping[str, Any] | None = None,
         *,
-        auto_observe_interval_minutes: Optional[float] = None,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
-        automation_condition: Optional[AutomationCondition] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        auto_observe_interval_minutes: float | None = None,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
+        automation_condition: AutomationCondition | None = None,
+        tags: Mapping[str, str] | None = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
         # asset. If we were to make this public, then we would have a canonical public
         # `required_resource_keys` used for observation that might end up conflicting with a set of
         # required resource keys for a different operation.
-        _required_resource_keys: Optional[AbstractSet[str]] = None,
+        _required_resource_keys: AbstractSet[str] | None = None,
         # Add additional fields to with_resources and with_group below
     ):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
@@ -295,20 +287,20 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def dagster_internal_init(
         *,
         key: CoercibleToAssetKey,
-        metadata: Optional[ArbitraryMetadataMapping],
-        io_manager_key: Optional[str],
-        io_manager_def: Optional[object],
-        description: Optional[str],
-        partitions_def: Optional[PartitionsDefinition],
-        group_name: Optional[str],
-        resource_defs: Optional[Mapping[str, object]],
-        observe_fn: Optional[SourceAssetObserveFunction],
-        op_tags: Optional[Mapping[str, Any]],
-        auto_observe_interval_minutes: Optional[float],
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
-        automation_condition: Optional[AutomationCondition],
-        tags: Optional[Mapping[str, str]],
-        _required_resource_keys: Optional[AbstractSet[str]],
+        metadata: ArbitraryMetadataMapping | None,
+        io_manager_key: str | None,
+        io_manager_def: object | None,
+        description: str | None,
+        partitions_def: PartitionsDefinition | None,
+        group_name: str | None,
+        resource_defs: Mapping[str, object] | None,
+        observe_fn: SourceAssetObserveFunction | None,
+        op_tags: Mapping[str, Any] | None,
+        auto_observe_interval_minutes: float | None,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None,
+        automation_condition: AutomationCondition | None,
+        tags: Mapping[str, str] | None,
+        _required_resource_keys: AbstractSet[str] | None,
     ) -> "SourceAsset":
         return SourceAsset(
             key=key,
@@ -332,10 +324,10 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
 
     @property
-    def io_manager_def(self) -> Optional[IOManagerDefinition]:
+    def io_manager_def(self) -> IOManagerDefinition | None:
         io_manager_key = self.get_io_manager_key()
         return cast(
-            "Optional[IOManagerDefinition]",
+            "IOManagerDefinition | None",
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
 
@@ -381,7 +373,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def node_def(self) -> Optional[OpDefinition]:
+    def node_def(self) -> OpDefinition | None:
         """Op that generates observation metadata for a source asset."""
         if self.observe_fn is None:
             return None
@@ -456,7 +448,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             )
 
     def with_attributes(
-        self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
+        self, group_name: str | None = None, key: AssetKey | None = None
     ) -> "SourceAsset":
         if (
             group_name is not None

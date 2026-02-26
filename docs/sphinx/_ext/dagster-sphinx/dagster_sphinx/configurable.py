@@ -1,7 +1,7 @@
 import inspect
 import json
 import textwrap
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
@@ -140,9 +140,7 @@ class ConfigurableDocumenter(DataDocumenter):
         else:
             obj = self.object
 
-        obj = cast(
-            "Union[ConfigurableDefinition, type[ConfigurableClass], ConfigurableResource]", obj
-        )
+        obj = cast("ConfigurableDefinition | type[ConfigurableClass] | ConfigurableResource", obj)
 
         config_field = None
         if isinstance(obj, ConfigurableDefinition):

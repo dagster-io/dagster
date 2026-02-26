@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from collections.abc import Mapping
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
@@ -60,11 +60,11 @@ class DagsterHook(BaseHook):
 
     def __init__(
         self,
-        dagster_conn_id: Optional[str] = "dagster_default",
-        organization_id: Optional[str] = None,
-        deployment_name: Optional[str] = None,
+        dagster_conn_id: str | None = "dagster_default",
+        organization_id: str | None = None,
+        deployment_name: str | None = None,
         url: str = "",
-        user_token: Optional[str] = None,
+        user_token: str | None = None,
     ) -> None:
         if is_airflow_2_loaded_in_environment():
             super().__init__()
@@ -115,7 +115,7 @@ class DagsterHook(BaseHook):
         repository_name: str = "my_dagster_project",
         repostitory_location_name: str = "example_location",
         job_name: str = "all_assets_job",
-        run_config: Optional[Mapping[str, Any]] = None,
+        run_config: Mapping[str, Any] | None = None,
     ) -> str:
         query = """
 mutation LaunchJobExecution($executionParams: ExecutionParams!) {

@@ -24,7 +24,7 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any
 
 from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
@@ -37,8 +37,8 @@ from dagster.components.core.defs_module import CompositeYamlComponent, get_comp
 def component_defs(
     *,
     component: Component,
-    resources: Optional[Mapping[str, Any]] = None,
-    context: Optional[ComponentLoadContext] = None,
+    resources: Mapping[str, Any] | None = None,
+    context: ComponentLoadContext | None = None,
 ) -> Definitions:
     """Builds a Definitions object from a Component.
 
@@ -98,7 +98,7 @@ def get_original_module_name(cls):
     return f"{module_name}.{class_name}"
 
 
-def get_underlying_component(context: ComponentLoadContext) -> Optional[Component]:
+def get_underlying_component(context: ComponentLoadContext) -> Component | None:
     """Loads a component from the given context, resolving the underlying component if
     it is a CompositeYamlComponent.
     """
@@ -195,10 +195,10 @@ class DefsFolderSandbox:
     def scaffold_component(
         self,
         component_cls: Any,
-        defs_path: Optional[Union[Path, str]] = None,
-        scaffold_params: Optional[dict[str, Any]] = None,
+        defs_path: Path | str | None = None,
+        scaffold_params: dict[str, Any] | None = None,
         scaffold_format: ScaffoldFormatOptions = "yaml",
-        defs_yaml_contents: Optional[dict[str, Any]] = None,
+        defs_yaml_contents: dict[str, Any] | None = None,
     ) -> Path:
         """Scaffolds a component into the defs folder.
 
@@ -234,7 +234,7 @@ class DefsFolderSandbox:
         return defs_path
 
     @contextmanager
-    def swap_defs_file(self, defs_path: Path, defs_yaml_contents: Optional[dict[str, Any]]):
+    def swap_defs_file(self, defs_path: Path, defs_yaml_contents: dict[str, Any] | None):
         check.invariant(
             defs_path.suffix == ".yaml",
             "Attributes are only supported for yaml components",
@@ -289,7 +289,7 @@ class DefsFolderSandbox:
 @contextmanager
 def create_defs_folder_sandbox(
     *,
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
 ) -> Iterator[DefsFolderSandbox]:
     """Create a lightweight sandbox to scaffold and instantiate components. Useful
     for those authoring custom components.

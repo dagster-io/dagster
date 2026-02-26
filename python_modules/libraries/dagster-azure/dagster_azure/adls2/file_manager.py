@@ -1,7 +1,7 @@
 import io
 import uuid
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._core.storage.file_manager import (
@@ -98,12 +98,12 @@ class ADLS2FileManager(FileManager):
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()
 
-    def write_data(self, data: bytes, ext: Optional[str] = None) -> ADLS2FileHandle:
+    def write_data(self, data: bytes, ext: str | None = None) -> ADLS2FileHandle:
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
     def write(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, file_obj: io.BytesIO, mode: str = "wb", ext: Optional[str] = None
+        self, file_obj: io.BytesIO, mode: str = "wb", ext: str | None = None
     ) -> ADLS2FileHandle:
         check_file_like_obj(file_obj)
         adls2_key = self.get_full_key(str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))

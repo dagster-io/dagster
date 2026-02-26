@@ -107,8 +107,8 @@ def get_remote_execution_plan_or_raise(
     graphql_context: BaseWorkspaceRequestContext,
     remote_job: RemoteJob,
     run_config: Mapping[str, object],
-    step_keys_to_execute: Optional[Sequence[str]],
-    known_state: Optional[KnownExecutionState],
+    step_keys_to_execute: Sequence[str] | None,
+    known_state: KnownExecutionState | None,
 ) -> RemoteExecutionPlan:
     return graphql_context.get_execution_plan(
         remote_job=remote_job,

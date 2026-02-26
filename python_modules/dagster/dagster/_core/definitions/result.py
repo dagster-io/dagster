@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from datetime import datetime  # noqa
 from os import PathLike  # noqa
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from dagster_shared.check.decorator import checked
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
@@ -22,11 +22,11 @@ from dagster._core.definitions.utils import NoValueSentinel
 
 @checked
 def coerce_asset_result_args(
-    asset_key: Optional[CoercibleToAssetKey],
-    metadata: Optional[RawMetadataMapping],
-    check_results: Optional[Sequence[AssetCheckResult]],
-    data_version: Optional[DataVersion],
-    tags: Optional[Mapping[str, Any]],
+    asset_key: CoercibleToAssetKey | None,
+    metadata: RawMetadataMapping | None,
+    check_results: Sequence[AssetCheckResult] | None,
+    data_version: DataVersion | None,
+    tags: Mapping[str, Any] | None,
 ) -> Mapping[str, Any]:
     from dagster._core.definitions.events import validate_asset_event_tags
 
@@ -42,11 +42,11 @@ def coerce_asset_result_args(
 class AssetResult:
     """Base class for MaterializeResult and ObserveResult."""
 
-    asset_key: PublicAttr[Optional[AssetKey]]
-    metadata: PublicAttr[Optional[RawMetadataMapping]]
+    asset_key: PublicAttr[AssetKey | None]
+    metadata: PublicAttr[RawMetadataMapping | None]
     check_results: PublicAttr[Sequence[AssetCheckResult]]
-    data_version: PublicAttr[Optional[DataVersion]]
-    tags: PublicAttr[Optional[Mapping[str, str]]]
+    data_version: PublicAttr[DataVersion | None]
+    tags: PublicAttr[Mapping[str, str] | None]
 
     def check_result_named(self, check_name: str) -> AssetCheckResult:
         for check_result in self.check_results:
@@ -77,20 +77,20 @@ class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin
         value (Optional[Any]): The output value of the asset that was materialized.
     """
 
-    asset_key: PublicAttr[Optional[AssetKey]]
-    metadata: PublicAttr[Optional[RawMetadataMapping]]
+    asset_key: PublicAttr[AssetKey | None]
+    metadata: PublicAttr[RawMetadataMapping | None]
     check_results: PublicAttr[Sequence[AssetCheckResult]]
-    data_version: PublicAttr[Optional[DataVersion]]
-    tags: PublicAttr[Optional[Mapping[str, str]]]
+    data_version: PublicAttr[DataVersion | None]
+    tags: PublicAttr[Mapping[str, str] | None]
     value: PublicAttr[T]
 
     def __new__(
         cls,
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        check_results: Optional[Sequence[AssetCheckResult]] = None,
-        data_version: Optional[DataVersion] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        asset_key: CoercibleToAssetKey | None = None,
+        metadata: RawMetadataMapping | None = None,
+        check_results: Sequence[AssetCheckResult] | None = None,
+        data_version: DataVersion | None = None,
+        tags: Mapping[str, str] | None = None,
         value: T = NoValueSentinel,
     ):
         return super().__new__(
@@ -123,19 +123,19 @@ class ObserveResult(AssetResult, IHaveNew, LegacyNamedTupleMixin):
             event.
     """
 
-    asset_key: PublicAttr[Optional[AssetKey]]
-    metadata: PublicAttr[Optional[RawMetadataMapping]]
+    asset_key: PublicAttr[AssetKey | None]
+    metadata: PublicAttr[RawMetadataMapping | None]
     check_results: PublicAttr[Sequence[AssetCheckResult]]
-    data_version: PublicAttr[Optional[DataVersion]]
-    tags: PublicAttr[Optional[Mapping[str, str]]]
+    data_version: PublicAttr[DataVersion | None]
+    tags: PublicAttr[Mapping[str, str] | None]
 
     def __new__(
         cls,
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        check_results: Optional[Sequence[AssetCheckResult]] = None,
-        data_version: Optional[DataVersion] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        asset_key: CoercibleToAssetKey | None = None,
+        metadata: RawMetadataMapping | None = None,
+        check_results: Sequence[AssetCheckResult] | None = None,
+        data_version: DataVersion | None = None,
+        tags: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,

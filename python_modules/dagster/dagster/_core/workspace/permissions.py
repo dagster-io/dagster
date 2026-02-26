@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from enum import Enum, unique
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 
 @unique
@@ -86,7 +86,7 @@ LOCATION_SCOPED_PERMISSIONS = {
 
 
 class PermissionResult(
-    NamedTuple("_PermissionResult", [("enabled", bool), ("disabled_reason", Optional[str])])
+    NamedTuple("_PermissionResult", [("enabled", bool), ("disabled_reason", str | None)])
 ):
     def __bool__(self):
         raise Exception(

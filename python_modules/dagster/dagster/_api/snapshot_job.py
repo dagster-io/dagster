@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, AbstractSet, Annotated, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Annotated  # noqa: UP035
 
 from dagster._check import checked
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -20,9 +20,9 @@ def sync_get_external_job_subset_grpc(
     api_client: Annotated["DagsterGrpcClient", ImportFrom("dagster._grpc.client")],
     job_origin: RemoteJobOrigin,
     include_parent_snapshot: bool,
-    op_selection: Optional[Sequence[str]] = None,
-    asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    op_selection: Sequence[str] | None = None,
+    asset_selection: AbstractSet[AssetKey] | None = None,
+    asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
 ) -> RemoteJobSubsetResult:
     result = deserialize_value(
         api_client.external_pipeline_subset(
@@ -48,9 +48,9 @@ async def gen_external_job_subset_grpc(
     api_client: Annotated["DagsterGrpcClient", ImportFrom("dagster._grpc.client")],
     job_origin: RemoteJobOrigin,
     include_parent_snapshot: bool,
-    op_selection: Optional[Sequence[str]] = None,
-    asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    op_selection: Sequence[str] | None = None,
+    asset_selection: AbstractSet[AssetKey] | None = None,
+    asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
 ) -> RemoteJobSubsetResult:
     result = deserialize_value(
         await api_client.gen_external_pipeline_subset(

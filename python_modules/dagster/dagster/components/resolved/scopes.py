@@ -2,7 +2,7 @@
 
 import os
 import warnings
-from typing import Any, Optional, Union
+from typing import Any
 
 from dagster.components.resolved.errors import ResolutionException
 
@@ -13,7 +13,7 @@ class EnvScope:
     Available via `{{ env.* }}` in component YAML files.
     """
 
-    def __call__(self, key: str, default: Optional[Union[str, Any]] = ...) -> Optional[str]:
+    def __call__(self, key: str, default: str | Any | None = ...) -> str | None:
         value = os.environ.get(key, default=default)
         if value is ...:
             raise ResolutionException(
@@ -22,7 +22,7 @@ class EnvScope:
             )
         return value
 
-    def __getattr__(self, key: str) -> Optional[str]:
+    def __getattr__(self, key: str) -> str | None:
         # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
         # for this access
         if key.startswith("jinja"):
@@ -30,7 +30,7 @@ class EnvScope:
 
         return os.environ.get(key)
 
-    def __getitem__(self, key: str) -> Optional[str]:
+    def __getitem__(self, key: str) -> str | None:
         raise ResolutionException(
             f"To access environment variables, use dot access or the `env` function, e.g. `env.{key}` or `env('{key}')`"
         )

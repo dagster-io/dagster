@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from dagster import (
     AssetExecutionContext,
@@ -63,12 +63,12 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     ]
 
     databricks_filter: Annotated[
-        Optional[ResolvedDatabricksFilter],
+        ResolvedDatabricksFilter | None,
         Resolver.default(description="Filter which Databricks jobs to include"),
     ] = None
 
     assets_by_task_key: Annotated[
-        Optional[dict[str, list[ResolvedAssetSpec]]],
+        dict[str, list[ResolvedAssetSpec]] | None,
         Resolver.default(
             description="Optional mapping of Databricks task keys to lists of Dagster AssetSpecs.",
         ),
@@ -90,7 +90,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         data = DatabricksWorkspaceData(jobs=jobs)
         state_path.write_text(serialize_value(data))
 
-    def build_defs_from_state(self, context: Any, state_path: Optional[Path]) -> Definitions:
+    def build_defs_from_state(self, context: Any, state_path: Path | None) -> Definitions:
         """Build Dagster Definitions from the cached state."""
         if not state_path or not state_path.exists():
             return Definitions()

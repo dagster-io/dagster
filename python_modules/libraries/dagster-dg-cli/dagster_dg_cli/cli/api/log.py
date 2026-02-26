@@ -99,13 +99,21 @@ def format_logs_json(events, run_id: str) -> str:
 @click.argument("run_id", type=str)
 @click.option(
     "--level",
-    "log_level",
-    help="Filter by log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    "levels",
+    multiple=True,
+    help="Filter by log level (DEBUG, INFO, WARNING, ERROR, CRITICAL). Repeatable.",
+)
+@click.option(
+    "--event-type",
+    "event_types",
+    multiple=True,
+    help="Filter by event type (e.g. STEP_FAILURE, RUN_START). Repeatable.",
 )
 @click.option(
     "--step",
-    "step_key",
-    help="Filter by step key (partial matching)",
+    "step_keys",
+    multiple=True,
+    help="Filter by step key (partial matching). Repeatable.",
 )
 @click.option(
     "--limit",
@@ -130,8 +138,9 @@ def format_logs_json(events, run_id: str) -> str:
 def get_logs_command(
     ctx: click.Context,
     run_id: str,
-    log_level: str,
-    step_key: str,
+    levels: tuple[str, ...],
+    event_types: tuple[str, ...],
+    step_keys: tuple[str, ...],
     limit: int,
     after_cursor: str,
     output_json: bool,
@@ -150,17 +159,11 @@ def get_logs_command(
     api = DgApiRunEventApi(client)
 
     try:
-        # Use log level as event type filter if provided
-        event_type = None
-        if log_level:
-            # Convert log level to event types that match that level
-            # For now, we'll pass the level directly and let the filtering happen
-            event_type = log_level.upper()
-
         logs = api.get_events(
             run_id=run_id,
-            event_type=event_type,
-            step_key=step_key,
+            event_types=event_types,
+            step_keys=step_keys,
+            levels=levels,
             limit=limit,
             after_cursor=after_cursor,
         )

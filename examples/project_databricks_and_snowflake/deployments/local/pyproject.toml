@@ -8,5 +8,5 @@ dependencies = [
     "dagster-dg-cli>=1.0.0",
 ]
 
-[tool.hatch.build.targets.wheel]
+[tool.hatch.build]
 only-include = []

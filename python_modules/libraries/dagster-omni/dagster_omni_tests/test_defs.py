@@ -82,6 +82,23 @@ def test_get_asset_spec_query(component: OmniComponent):
     assert spec
 
     assert spec.key == AssetKey(["users"])
+    # TableMetadataSet: clean table name (no "__" prefix) in dagster/table_name
+    assert "dagster/table_name" in spec.metadata
+    assert spec.metadata["dagster/table_name"] == "users"
+
+
+def test_get_asset_spec_query_table_metadata_extracted_name(component: OmniComponent):
+    """Test that OmniQuery AssetSpec metadata uses extracted table name (last part after '__')."""
+    query = create_sample_query(table="my_schema__my_table")
+    workspace_data = create_sample_workspace_data()
+    data = OmniTranslatorData(obj=query, workspace_data=workspace_data)
+
+    spec = component.get_asset_spec(context, data)
+    assert spec
+
+    assert spec.key == AssetKey(["my_schema__my_table"])
+    assert "dagster/table_name" in spec.metadata
+    assert spec.metadata["dagster/table_name"] == "my_table"
 
 
 def test_get_asset_spec_with_translation(component: OmniComponent):

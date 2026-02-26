@@ -1,5 +1,4 @@
 from collections.abc import Mapping, Sequence
-from typing import Optional
 
 import boto3.session
 import dagster._check as check
@@ -10,14 +9,14 @@ from dagster_aws.utils import construct_boto_client_retry_config
 
 def construct_secretsmanager_client(
     max_attempts: int,
-    region_name: Optional[str] = None,
-    profile_name: Optional[str] = None,
-    endpoint_url: Optional[str] = None,
+    region_name: str | None = None,
+    profile_name: str | None = None,
+    endpoint_url: str | None = None,
     use_ssl: bool = True,
-    aws_access_key_id: Optional[str] = None,
-    aws_secret_access_key: Optional[str] = None,
-    aws_session_token: Optional[str] = None,
-    verify: Optional[bool] = None,
+    aws_access_key_id: str | None = None,
+    aws_secret_access_key: str | None = None,
+    aws_session_token: str | None = None,
+    verify: bool | None = None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")

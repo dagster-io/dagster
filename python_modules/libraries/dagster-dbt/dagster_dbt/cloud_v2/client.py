@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import requests
 from dagster import Failure, get_dagster_logger
@@ -87,10 +87,10 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def _make_request(
         self,
         method: str,
-        endpoint: Optional[str],
+        endpoint: str | None,
         base_url: str,
-        data: Optional[Mapping[str, Any]] = None,
-        params: Optional[Mapping[str, Any]] = None,
+        data: Mapping[str, Any] | None = None,
+        params: Mapping[str, Any] | None = None,
         session_attr: str = "_get_session",
     ) -> requests.Response:
         url = f"{base_url}/{endpoint}" if endpoint else base_url
@@ -125,7 +125,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         project_id: int,
         environment_id: int,
         job_name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> Mapping[str, Any]:
         """Creates a dbt cloud job in a dbt Cloud workspace for a given project and environment.
 
@@ -217,7 +217,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         ).json()["data"]
 
     def trigger_job_run(
-        self, job_id: int, steps_override: Optional[Sequence[str]] = None
+        self, job_id: int, steps_override: Sequence[str] | None = None
     ) -> Mapping[str, Any]:
         """Triggers a run for a given dbt Cloud Job.
 
@@ -285,7 +285,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         return data, total_count
 
     def get_run_details(
-        self, run_id: int, include_related: Optional[Sequence[str]] = None
+        self, run_id: int, include_related: Sequence[str] | None = None
     ) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Run.
 
@@ -312,8 +312,8 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def poll_run(
         self,
         run_id: int,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
+        poll_interval: float | None = None,
+        poll_timeout: float | None = None,
     ) -> Mapping[str, Any]:
         """Given a dbt Cloud run, poll until the run completes.
 

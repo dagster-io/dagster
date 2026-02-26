@@ -2,7 +2,6 @@ import getpass
 import logging
 import os
 from io import StringIO
-from typing import Optional
 
 import paramiko
 from dagster import (
@@ -93,15 +92,15 @@ class SSHResource(ConfigurableResource):
     """
 
     remote_host: str = Field(description="Remote host to connect to")
-    remote_port: Optional[int] = Field(default=None, description="Port of remote host to connect")
-    username: Optional[str] = Field(default=None, description="Username to connect to remote host")
-    password: Optional[str] = Field(
+    remote_port: int | None = Field(default=None, description="Port of remote host to connect")
+    username: str | None = Field(default=None, description="Username to connect to remote host")
+    password: str | None = Field(
         default=None, description="Password of the username to connect to remote host"
     )
-    key_file: Optional[str] = Field(
+    key_file: str | None = Field(
         default=None, description="Key file to use to connect to remote host"
     )
-    key_string: Optional[str] = Field(
+    key_string: str | None = Field(
         default=None, description="Key string to use to connect to remote host"
     )
     timeout: int = Field(
@@ -123,9 +122,9 @@ class SSHResource(ConfigurableResource):
         description="If True, allow connecting to hosts whose host key has changed",
     )
 
-    _logger: Optional[logging.Logger] = PrivateAttr(default=None)
-    _host_proxy: Optional[paramiko.ProxyCommand] = PrivateAttr(default=None)
-    _key_obj: Optional[paramiko.RSAKey] = PrivateAttr(default=None)
+    _logger: logging.Logger | None = PrivateAttr(default=None)
+    _host_proxy: paramiko.ProxyCommand | None = PrivateAttr(default=None)
+    _key_obj: paramiko.RSAKey | None = PrivateAttr(default=None)
 
     def set_logger(self, logger: logging.Logger) -> None:
         self._logger = logger

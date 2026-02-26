@@ -2,7 +2,6 @@
 
 import subprocess
 from pathlib import Path
-from typing import Union
 
 
 def git_changed_files(root_path: Path) -> list[Path]:
@@ -108,7 +107,7 @@ def glob_files(root_path: Path, pattern: str) -> list[Path]:
 
 
 def recursive_python_files(
-    root_path: Path, exclude_patterns: Union[list[str], None] = None
+    root_path: Path, exclude_patterns: list[str] | None = None
 ) -> list[Path]:
     """Find all Python files recursively in a directory.
 

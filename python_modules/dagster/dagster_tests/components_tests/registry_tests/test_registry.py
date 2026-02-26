@@ -7,7 +7,6 @@ import textwrap
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -184,7 +183,7 @@ from dagster_foo.lib.sub import TestComponent2
 @contextmanager
 def isolated_venv_with_component_lib_dagster_foo(
     entry_point_group: str,
-    pre_install_hook: Optional[Callable[[], None]] = None,
+    pre_install_hook: Callable[[], None] | None = None,
 ):
     with tempfile.TemporaryDirectory() as tmpdir:
         with pushd(tmpdir):

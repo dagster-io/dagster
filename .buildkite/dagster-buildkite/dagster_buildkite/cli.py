@@ -8,8 +8,7 @@ logging.basicConfig(
     format="%(levelname)s: %(message)s",
 )
 
-from buildkite_shared.git import GitInfo
-from buildkite_shared.python_packages import PythonPackages
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.steps import prefix_commands
 from dagster_buildkite.pipelines.dagster_oss_main import build_dagster_oss_main_steps
 from dagster_buildkite.pipelines.dagster_oss_nightly_pipeline import build_dagster_oss_nightly_steps
@@ -45,8 +44,8 @@ def _ensure_oss_root() -> bool:
 
 def dagster() -> None:
     is_internal = _ensure_oss_root()
-    PythonPackages.load_from_git(GitInfo(directory=Path(".")))
-    steps = build_dagster_oss_main_steps()
+    ctx = BuildkiteContext.create(os.environ.copy())
+    steps = build_dagster_oss_main_steps(ctx)
     if is_internal:
         prefix_commands(steps, "cd dagster-oss")
     buildkite_yaml = buildkite_yaml_for_steps(steps)
@@ -55,8 +54,8 @@ def dagster() -> None:
 
 def dagster_nightly() -> None:
     is_internal = _ensure_oss_root()
-    PythonPackages.load_from_git(GitInfo(directory=Path(".")))
-    steps = build_dagster_oss_nightly_steps()
+    ctx = BuildkiteContext.create(os.environ.copy())
+    steps = build_dagster_oss_nightly_steps(ctx)
     if is_internal:
         prefix_commands(steps, "cd dagster-oss")
     buildkite_yaml = buildkite_yaml_for_steps(steps, custom_slack_channel="eng-buildkite-nightly")
@@ -65,7 +64,6 @@ def dagster_nightly() -> None:
 
 def prerelease_package() -> None:
     is_internal = _ensure_oss_root()
-    PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_prerelease_package_steps()
     if is_internal:
         prefix_commands(steps, "cd dagster-oss")

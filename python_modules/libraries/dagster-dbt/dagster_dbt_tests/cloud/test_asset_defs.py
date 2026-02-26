@@ -1,6 +1,5 @@
 import json
 from copy import deepcopy
-from typing import Optional
 
 import pytest
 import responses
@@ -47,7 +46,7 @@ with open(file_relative_path(__file__, "sample_run_results.json"), encoding="utf
 def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
     dbt_commands: list[str],
-    run_results_json: Optional[dict] = None,
+    run_results_json: dict | None = None,
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON
 

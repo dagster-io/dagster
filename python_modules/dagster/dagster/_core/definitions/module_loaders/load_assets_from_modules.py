@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Iterable, Iterator, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Optional, Union, cast, get_args
+from typing import TypeAlias, cast, get_args
 
 import dagster._check as check
 from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs
@@ -29,7 +29,7 @@ from dagster._core.definitions.utils import resolve_automation_condition
 
 def find_objects_in_module_of_types(
     module: ModuleType,
-    types: Union[type, tuple[type, ...]],
+    types: type | tuple[type, ...],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -42,7 +42,7 @@ def find_objects_in_module_of_types(
 
 def find_subclasses_in_module(
     module: ModuleType,
-    types: Union[type, tuple[type, ...]],
+    types: type | tuple[type, ...],
 ) -> Iterator[type]:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -51,7 +51,7 @@ def find_subclasses_in_module(
             yield value
 
 
-AssetLoaderTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]
+AssetLoaderTypes: TypeAlias = AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec
 
 
 @hidden_param(
@@ -64,12 +64,12 @@ AssetLoaderTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinitio
 )
 def load_assets_from_modules(
     modules: Iterable[ModuleType],
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    automation_condition: Optional[AutomationCondition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    automation_condition: AutomationCondition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
 ) -> Sequence[AssetLoaderTypes]:
@@ -141,15 +141,15 @@ def load_assets_from_modules(
     breaking_version="1.10.0",
 )
 def load_assets_from_current_module(
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    automation_condition: Optional[AutomationCondition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    automation_condition: AutomationCondition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
@@ -204,15 +204,15 @@ def load_assets_from_current_module(
 )
 def load_assets_from_package_module(
     package_module: ModuleType,
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    automation_condition: Optional[AutomationCondition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    automation_condition: AutomationCondition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:
     """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
@@ -263,14 +263,14 @@ def load_assets_from_package_module(
 )
 def load_assets_from_package_name(
     package_name: str,
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 

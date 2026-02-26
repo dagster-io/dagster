@@ -1,0 +1,83 @@
+/* Selection indicator container */
+.selectionSpansContainer {
+  position: relative;
+  width: 100%;
+  overflow-x: hidden;
+  height: 10px;
+}
+
+/* Individual selection span */
+.selectionSpan {
+  position: absolute;
+  top: 0;
+  height: 8px;
+  border: 2px solid var(--color-accent-blue);
+  border-bottom: 0;
+}
+
+/* Main partition bar container */
+.partitionSpansContainer {
+  position: relative;
+  width: 100%;
+  height: var(--height, 24px);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: col-resize;
+  background: var(--color-background-lighter);
+}
+
+/* Small variant */
+.partitionSpansContainerSmall {
+  height: 12px;
+}
+
+/* Colored partition segment */
+.colorSpan {
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* Partition separators */
+.separator {
+  width: 1px;
+  position: absolute;
+  z-index: 4;
+  background: var(--color-keyline-default);
+  top: 0;
+}
+
+/* Hover selection highlight */
+.selectionHoverHighlight {
+  min-width: 2px;
+  position: absolute;
+  z-index: 4;
+  background: var(--color-background-default);
+  opacity: 0.7;
+  height: var(--height, 24px);
+  top: 0;
+}
+
+/* Small variant */
+.selectionHoverHighlightSmall {
+  height: 14px;
+}
+
+/* Fade effect for selections */
+.selectionFade {
+  position: absolute;
+  z-index: 5;
+  background: var(--color-background-default);
+  opacity: 0.5;
+  top: 0;
+}
+
+/* Selection border */
+.selectionBorder {
+  min-width: 2px;
+  position: absolute;
+  z-index: 5;
+  border: 3px solid var(--color-border-default);
+  border-radius: 4px;
+  top: 0;
+}

@@ -1,5 +1,4 @@
 import re
-from typing import Union
 
 import dagster._check as check
 import docutils.nodes as nodes
@@ -15,7 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 
 def inject_object_flag(
     obj: object,
-    info: Union[SupersededInfo, DeprecatedInfo, PreviewInfo, BetaInfo],
+    info: SupersededInfo | DeprecatedInfo | PreviewInfo | BetaInfo,
     docstring: list[str],
 ) -> None:
     if isinstance(info, DeprecatedInfo):
@@ -49,7 +48,7 @@ def inject_object_flag(
 def inject_param_flag(
     lines: list[str],
     param: str,
-    info: Union[BetaInfo, DeprecatedInfo],
+    info: BetaInfo | DeprecatedInfo,
 ):
     if isinstance(info, DeprecatedInfo):
         flag = ":inline-flag:`deprecated`"

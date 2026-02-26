@@ -71,7 +71,7 @@ def process_agents_response(graphql_response: dict[str, Any]) -> "DgApiAgentList
 
 def list_agents_via_graphql(
     client: IGraphQLClient,
-    limit: Optional[int] = None,
+    limit: int | None = None,
 ) -> "DgApiAgentList":
     """Fetch agents using GraphQL.
     This is an implementation detail that can be replaced with REST calls later.

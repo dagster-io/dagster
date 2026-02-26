@@ -1,6 +1,5 @@
 import sys
 from collections.abc import Mapping
-from typing import Optional, Union
 
 import dagster._check as check
 import graphene
@@ -146,9 +145,9 @@ class GrapheneRunIds(graphene.ObjectType):
 
     def __init__(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         super().__init__()
 
@@ -209,8 +208,8 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 
 
 def parse_run_config_input(
-    run_config: Union[str, Mapping[str, object]], raise_on_error: bool
-) -> Union[str, Mapping[str, object]]:
+    run_config: str | Mapping[str, object], raise_on_error: bool
+) -> str | Mapping[str, object]:
     if run_config and isinstance(run_config, str):
         try:
             return load_run_config_yaml(run_config)

@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated
 
 import dagster as dg
 import pydantic
@@ -87,7 +87,7 @@ class BaseAirbyteWorkspaceModel(dg.Model, dg.Resolvable):
         ),
     ]
     poll_timeout: Annotated[
-        Optional[float],
+        float | None,
         pydantic.Field(
             default=None,
             description=(
@@ -155,22 +155,22 @@ class AirbyteWorkspaceModel(BaseAirbyteWorkspaceModel):
     ]
     workspace_id: Annotated[str, pydantic.Field(..., description="The Airbyte workspace ID.")]
     client_id: Annotated[
-        Optional[str],
+        str | None,
         pydantic.Field(None, description="Client ID used to authenticate to Airbyte."),
     ]
     client_secret: Annotated[
-        Optional[str],
+        str | None,
         pydantic.Field(None, description="Client secret used to authenticate to Airbyte."),
     ]
     username: Annotated[
-        Optional[str],
+        str | None,
         pydantic.Field(
             None,
             description="Username used to authenticate to Airbyte. Used for self-managed Airbyte with basic auth.",
         ),
     ]
     password: Annotated[
-        Optional[str],
+        str | None,
         pydantic.Field(
             None,
             description="Password used to authenticate to Airbyte. Used for self-managed Airbyte with basic auth.",
@@ -181,11 +181,11 @@ class AirbyteWorkspaceModel(BaseAirbyteWorkspaceModel):
 class AirbyteCloudWorkspaceModel(BaseAirbyteWorkspaceModel):
     workspace_id: Annotated[str, pydantic.Field(..., description="The Airbyte workspace ID.")]
     client_id: Annotated[
-        Optional[str],
+        str | None,
         pydantic.Field(..., description="Client ID used to authenticate to Airbyte."),
     ]
     client_secret: Annotated[
-        Optional[str],
+        str | None,
         pydantic.Field(..., description="Client secret used to authenticate to Airbyte."),
     ]
 
@@ -206,7 +206,7 @@ class AirbyteConnectionSelectorById(dg.Model):
 
 def resolve_connection_selector(
     context: dg.ResolutionContext, model
-) -> Optional[Callable[[AirbyteConnection], bool]]:
+) -> Callable[[AirbyteConnection], bool] | None:
     if isinstance(model, str):
         model = context.resolve_value(model)
 
@@ -255,28 +255,27 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """
 
     workspace: Annotated[
-        Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+        AirbyteWorkspace | AirbyteCloudWorkspace,
         dg.Resolver(
             resolve_airbyte_workspace_type,
-            model_field_type=Union[AirbyteWorkspaceModel, AirbyteCloudWorkspaceModel],
+            model_field_type=AirbyteWorkspaceModel | AirbyteCloudWorkspaceModel,
         ),
     ]
     connection_selector: Annotated[
-        Optional[Callable[[AirbyteConnection], bool]],
+        Callable[[AirbyteConnection], bool] | None,
         dg.Resolver(
             resolve_connection_selector,
-            model_field_type=Union[
-                str, AirbyteConnectionSelectorByName, AirbyteConnectionSelectorById
-            ],
+            model_field_type=str | AirbyteConnectionSelectorByName | AirbyteConnectionSelectorById,
             description="Function used to select Airbyte connections to pull into Dagster.",
         ),
     ] = None
-    translation: Optional[
+    translation: (
         Annotated[
             TranslationFn[AirbyteConnectionTableProps],
             TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"props": data}),
         ]
-    ] = pydantic.Field(
+        | None
+    ) = pydantic.Field(
         default=None,
         description="Function used to translate Airbyte connection table properties into Dagster asset specs.",
     )
@@ -334,7 +333,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     @public
     def execute(
         self, context: dg.AssetExecutionContext, airbyte: BaseAirbyteWorkspace
-    ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+    ) -> Iterable[dg.AssetMaterialization | dg.MaterializeResult]:
         """Executes an Airbyte sync for the selected connection.
 
         This method can be overridden in a subclass to customize the sync execution behavior,
@@ -391,7 +390,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         state_path.write_text(dg.serialize_value(state))
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

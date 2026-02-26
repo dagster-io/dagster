@@ -24,7 +24,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
     """Maintains the latest freshness state for the asset."""
 
     freshness_state: FreshnessState
-    updated_timestamp: Optional[float] = None
+    updated_timestamp: float | None = None
 
     @property
     def health_status(self) -> AssetHealthStatus:
@@ -70,7 +70,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
 @whitelist_for_serdes
 @record.record
 class AssetHealthFreshnessMetadata:
-    last_materialized_timestamp: Optional[float]
+    last_materialized_timestamp: float | None
 
 
 async def get_freshness_status_and_metadata(

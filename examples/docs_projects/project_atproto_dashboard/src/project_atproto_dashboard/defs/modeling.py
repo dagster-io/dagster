@@ -1,7 +1,7 @@
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
@@ -21,7 +21,7 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         self,
         manifest: Mapping[str, Any],
         unique_id: str,
-        project: Optional[DbtProject],
+        project: DbtProject | None,
     ) -> dg.AssetSpec:
         dbt_resource_props = get_node(manifest, unique_id)
         asset_path = dbt_resource_props["fqn"][1:-1]

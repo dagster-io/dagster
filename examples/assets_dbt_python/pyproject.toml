@@ -1,6 +1,28 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "assets_dbt_python"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "boto3",
+    "dagster-dbt",
+    "pandas",
+    "numpy",
+    "scipy",
+    "dbt-core",
+    "dbt-duckdb",
+    "dagster-duckdb",
+    "dagster-duckdb-pandas",
+    # packaging v22 has build compatibility issues with dbt as of 2022-12-07
+    "packaging<22.0",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "assets_dbt_python.definitions"

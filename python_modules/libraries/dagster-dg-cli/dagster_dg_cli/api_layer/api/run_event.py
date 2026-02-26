@@ -1,7 +1,7 @@
 """Run events API implementation."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.run_event import get_run_events_via_graphql
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
@@ -19,10 +19,11 @@ class DgApiRunEventApi:
     def get_events(
         self,
         run_id: str,
-        event_type: Optional[str] = None,
-        step_key: Optional[str] = None,
+        event_types: tuple[str, ...] = (),
+        step_keys: tuple[str, ...] = (),
+        levels: tuple[str, ...] = (),
         limit: int = 100,
-        after_cursor: Optional[str] = None,
+        after_cursor: str | None = None,
     ) -> "RunEventList":
         """Get run events with filtering options."""
         from dagster_dg_cli.api_layer.schemas.run_event import (
@@ -37,12 +38,13 @@ class DgApiRunEventApi:
             run_id=run_id,
             limit=limit,
             after_cursor=after_cursor,
-            event_type=event_type,
-            step_key=step_key,
+            event_types=event_types,
+            step_keys=step_keys,
+            levels=levels,
         )
 
         # Helper function to convert error data to DgApiErrorInfo recursively
-        def _convert_error_info(error_data: Optional[dict]) -> Optional[DgApiErrorInfo]:
+        def _convert_error_info(error_data: dict | None) -> DgApiErrorInfo | None:
             if not error_data:
                 return None
             return DgApiErrorInfo(

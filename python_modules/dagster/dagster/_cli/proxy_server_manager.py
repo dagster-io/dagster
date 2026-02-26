@@ -3,7 +3,7 @@ import os
 import threading
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import Self
 
@@ -46,7 +46,7 @@ class ProxyServerManager(AbstractContextManager):
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
         )
         self._origins = cast(
-            "Sequence[Union[GrpcServerCodeLocationOrigin, ManagedGrpcPythonEnvCodeLocationOrigin]]",
+            "Sequence[GrpcServerCodeLocationOrigin | ManagedGrpcPythonEnvCodeLocationOrigin]",
             self._workspace_load_target.create_origins(),
         )
 

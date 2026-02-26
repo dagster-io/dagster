@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import AbstractSet, Callable, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Callable, cast  # noqa: UP035
 
 from dagster_shared.error import DagsterError
 
@@ -236,7 +236,7 @@ class ExecutionResult(ABC):
                 count += 1
         return count
 
-    def failure_data_for_node(self, node_str: str) -> Optional[StepFailureData]:
+    def failure_data_for_node(self, node_str: str) -> StepFailureData | None:
         for event in self.events_for_node(node_str):
             if event.event_type == DagsterEventType.STEP_FAILURE:
                 return event.step_failure_data

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "azure-test-proj"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-azure",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]

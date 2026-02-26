@@ -1,6 +1,6 @@
 import textwrap
 from collections.abc import Sequence
-from typing import Literal, Optional, TypeAlias
+from typing import Literal, TypeAlias
 
 import click
 
@@ -21,7 +21,7 @@ DgWarningIdentifier: TypeAlias = Literal[
 def emit_warning(
     warning_id: DgWarningIdentifier,
     msg: str,
-    suppress_warnings: Optional[Sequence[DgWarningIdentifier]],
+    suppress_warnings: Sequence[DgWarningIdentifier] | None,
     include_suppression_instruction: bool = True,
 ) -> None:
     if warning_id not in (suppress_warnings or []):

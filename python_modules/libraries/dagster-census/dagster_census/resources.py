@@ -3,7 +3,7 @@ import json
 import logging
 import time
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import pydantic
 import requests
@@ -83,8 +83,8 @@ class CensusResource(ConfigurableResource):
         self,
         method: str,
         endpoint: str,
-        data: Optional[str] = None,
-        page_number: Optional[int] = None,
+        data: str | None = None,
+        page_number: int | None = None,
     ) -> Mapping[str, Any]:
         """Creates and sends a request to the desired Census API endpoint.
 
@@ -177,7 +177,7 @@ class CensusResource(ConfigurableResource):
         self,
         sync_run_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
+        poll_timeout: float | None = None,
     ) -> Mapping[str, Any]:
         """Given a Census sync run, poll until the run is complete.
 
@@ -256,7 +256,7 @@ class CensusResource(ConfigurableResource):
         sync_id: int,
         force_full_sync: bool = False,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
+        poll_timeout: float | None = None,
     ) -> CensusOutput:
         """Trigger a run for a specific sync and poll until it has completed.
 

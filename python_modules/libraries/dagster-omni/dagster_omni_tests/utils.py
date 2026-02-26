@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from dagster_omni.objects import (
     OmniDocument,
@@ -39,8 +39,8 @@ def create_sample_query(query_id: str = "query-789", table: str = "users") -> Om
 def create_sample_document(
     identifier: str = "doc-123",
     name: str = "User Analysis",
-    queries: Optional[list[OmniQuery]] = None,
-    folder: Optional[OmniFolder] = create_sample_folder(),
+    queries: list[OmniQuery] | None = None,
+    folder: OmniFolder | None = create_sample_folder(),
     has_dashboard: bool = True,
 ) -> OmniDocument:
     """Create a sample OmniDocument for testing."""
@@ -85,8 +85,8 @@ def create_sample_user(
 
 
 def create_sample_workspace_data(
-    documents: Optional[list[OmniDocument]] = None,
-    users: Optional[list[OmniUser]] = None,
+    documents: list[OmniDocument] | None = None,
+    users: list[OmniUser] | None = None,
 ) -> OmniWorkspaceData:
     """Create sample OmniWorkspaceData for testing."""
     if documents is None:
@@ -120,7 +120,7 @@ def get_sample_documents_api_response() -> dict[str, Any]:
                 },
                 "hasDashboard": True,
                 "identifier": "12db1a0a",
-                "labels": [{"name": "Marketing", "verified": False}],
+                "labels": ["Marketing"],
                 "name": "Blob Web Traffic",
                 "owner": {"id": "9e8719d9-276a-4964-9395-a493189a247c", "name": "Blobby"},
                 "scope": "public",

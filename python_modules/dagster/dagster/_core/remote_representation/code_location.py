@@ -113,9 +113,9 @@ class CodeLocation(AbstractContextManager):
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, object],
-        step_keys_to_execute: Optional[Sequence[str]],
-        known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        known_state: KnownExecutionState | None,
+        instance: DagsterInstance | None = None,
     ) -> RemoteExecutionPlan: ...
 
     @abstractmethod
@@ -123,9 +123,9 @@ class CodeLocation(AbstractContextManager):
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, object],
-        step_keys_to_execute: Optional[Sequence[str]],
-        known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        known_state: KnownExecutionState | None,
+        instance: DagsterInstance | None = None,
     ) -> RemoteExecutionPlan: ...
 
     def _get_remote_job_from_subset_result(
@@ -245,8 +245,8 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time: Optional[TimestampWithTimezone],
-        log_key: Optional[Sequence[str]],
+        scheduled_execution_time: TimestampWithTimezone | None,
+        log_key: Sequence[str] | None,
     ) -> "ScheduleExecutionData":
         pass
 
@@ -256,11 +256,11 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_tick_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
-        log_key: Optional[Sequence[str]],
-        last_sensor_start_time: Optional[float],
+        last_tick_completion_time: float | None,
+        last_run_key: str | None,
+        cursor: str | None,
+        log_key: Sequence[str] | None,
+        last_sensor_start_time: float | None,
     ) -> "SensorExecutionData":
         pass
 
@@ -295,26 +295,26 @@ class CodeLocation(AbstractContextManager):
 
     @property
     @abstractmethod
-    def executable_path(self) -> Optional[str]:
+    def executable_path(self) -> str | None:
         pass
 
     @property
     @abstractmethod
-    def container_image(self) -> Optional[str]:
+    def container_image(self) -> str | None:
         pass
 
     @cached_property
-    def container_context(self) -> Optional[Mapping[str, Any]]:
+    def container_context(self) -> Mapping[str, Any] | None:
         return None
 
     @property
     @abstractmethod
-    def entry_point(self) -> Optional[Sequence[str]]:
+    def entry_point(self) -> Sequence[str] | None:
         pass
 
     @property
     @abstractmethod
-    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer | None]:
         pass
 
     def get_repository_python_origin(
@@ -333,9 +333,9 @@ class CodeLocation(AbstractContextManager):
         )
 
     @abstractmethod
-    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]: ...
+    def get_dagster_library_versions(self) -> Mapping[str, str] | None: ...
 
-    def get_defs_state_info(self) -> Optional[DefsStateInfo]:
+    def get_defs_state_info(self) -> DefsStateInfo | None:
         all_infos = list(
             filter(
                 None,
@@ -396,23 +396,23 @@ class InProcessCodeLocation(CodeLocation):
         return self._origin
 
     @property
-    def executable_path(self) -> Optional[str]:
+    def executable_path(self) -> str | None:
         return self._origin.loadable_target_origin.executable_path
 
     @property
-    def container_image(self) -> Optional[str]:
+    def container_image(self) -> str | None:
         return self._origin.container_image
 
     @cached_property
-    def container_context(self) -> Optional[Mapping[str, Any]]:
+    def container_context(self) -> Mapping[str, Any] | None:
         return self._origin.container_context
 
     @property
-    def entry_point(self) -> Optional[Sequence[str]]:
+    def entry_point(self) -> Sequence[str] | None:
         return self._origin.entry_point
 
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer | None]:
         return self._repository_code_pointer_dict
 
     def _get_reconstructable_repository(self, repository_name: str) -> ReconstructableRepository:
@@ -464,9 +464,9 @@ class InProcessCodeLocation(CodeLocation):
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, object],
-        step_keys_to_execute: Optional[Sequence[str]],
-        known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        known_state: KnownExecutionState | None,
+        instance: DagsterInstance | None = None,
     ) -> RemoteExecutionPlan:
         return self.get_execution_plan(
             remote_job,
@@ -480,9 +480,9 @@ class InProcessCodeLocation(CodeLocation):
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, object],
-        step_keys_to_execute: Optional[Sequence[str]],
-        known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        known_state: KnownExecutionState | None,
+        instance: DagsterInstance | None = None,
     ) -> RemoteExecutionPlan:
         check.inst_param(remote_job, "remote_job", RemoteJob)
         check.mapping_param(run_config, "run_config")
@@ -564,8 +564,8 @@ class InProcessCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time: Optional[TimestampWithTimezone],
-        log_key: Optional[Sequence[str]],
+        scheduled_execution_time: TimestampWithTimezone | None,
+        log_key: Sequence[str] | None,
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -597,11 +597,11 @@ class InProcessCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_tick_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
-        log_key: Optional[Sequence[str]],
-        last_sensor_start_time: Optional[float],
+        last_tick_completion_time: float | None,
+        last_run_key: str | None,
+        cursor: str | None,
+        log_key: Sequence[str] | None,
+        last_sensor_start_time: float | None,
     ) -> "SensorExecutionData":
         result = get_external_sensor_execution(
             self._get_repo_def(repository_handle.repository_name),
@@ -650,13 +650,13 @@ class GrpcServerCodeLocation(CodeLocation):
         self,
         origin: CodeLocationOrigin,
         instance: DagsterInstance,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        socket: Optional[str] = None,
-        heartbeat: Optional[bool] = False,
-        watch_server: Optional[bool] = True,
-        grpc_server_registry: Optional[GrpcServerRegistry] = None,
-        grpc_metadata: Optional[Sequence[tuple[str, str]]] = None,
+        host: str | None = None,
+        port: int | None = None,
+        socket: str | None = None,
+        heartbeat: bool | None = False,
+        watch_server: bool | None = True,
+        grpc_server_registry: GrpcServerRegistry | None = None,
+        grpc_metadata: Sequence[tuple[str, str]] | None = None,
     ):
         from dagster._api.get_server_id import sync_get_server_id
         from dagster._api.list_repositories import sync_list_repositories_grpc
@@ -795,27 +795,27 @@ class GrpcServerCodeLocation(CodeLocation):
         return cast("str", self._container_image)
 
     @cached_property
-    def container_context(self) -> Optional[Mapping[str, Any]]:
+    def container_context(self) -> Mapping[str, Any] | None:
         return self._container_context
 
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
-        return cast("Mapping[str, Optional[CodePointer]]", self._repository_code_pointer_dict)
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer | None]:
+        return cast("Mapping[str, CodePointer | None]", self._repository_code_pointer_dict)
 
     @property
-    def executable_path(self) -> Optional[str]:
+    def executable_path(self) -> str | None:
         return self._executable_path
 
     @property
-    def entry_point(self) -> Optional[Sequence[str]]:
+    def entry_point(self) -> Sequence[str] | None:
         return self._entry_point
 
     @property
-    def port(self) -> Optional[int]:
+    def port(self) -> int | None:
         return self._port
 
     @property
-    def socket(self) -> Optional[str]:
+    def socket(self) -> str | None:
         return self._socket
 
     @property
@@ -826,7 +826,7 @@ class GrpcServerCodeLocation(CodeLocation):
     def use_ssl(self) -> bool:
         return self._use_ssl
 
-    def _reload_current_image(self) -> Optional[str]:
+    def _reload_current_image(self) -> str | None:
         return deserialize_value(
             self.client.get_current_image(),
             GetCurrentImageResult,
@@ -862,9 +862,9 @@ class GrpcServerCodeLocation(CodeLocation):
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, Any],
-        step_keys_to_execute: Optional[Sequence[str]],
-        known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        known_state: KnownExecutionState | None,
+        instance: DagsterInstance | None = None,
     ) -> RemoteExecutionPlan:
         from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 
@@ -907,9 +907,9 @@ class GrpcServerCodeLocation(CodeLocation):
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, Any],
-        step_keys_to_execute: Optional[Sequence[str]],
-        known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        step_keys_to_execute: Sequence[str] | None,
+        known_state: KnownExecutionState | None,
+        instance: DagsterInstance | None = None,
     ) -> RemoteExecutionPlan:
         from dagster._api.snapshot_execution_plan import gen_external_execution_plan_grpc
 
@@ -1051,8 +1051,8 @@ class GrpcServerCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time: Optional[TimestampWithTimezone],
-        log_key: Optional[Sequence[str]],
+        scheduled_execution_time: TimestampWithTimezone | None,
+        log_key: Sequence[str] | None,
     ) -> "ScheduleExecutionData":
         from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 
@@ -1078,11 +1078,11 @@ class GrpcServerCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_tick_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
-        log_key: Optional[Sequence[str]],
-        last_sensor_start_time: Optional[float],
+        last_tick_completion_time: float | None,
+        last_run_key: str | None,
+        cursor: str | None,
+        log_key: Sequence[str] | None,
+        last_sensor_start_time: float | None,
     ) -> "SensorExecutionData":
         from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 
@@ -1127,7 +1127,7 @@ class GrpcServerCodeLocation(CodeLocation):
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
 
-    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
+    def get_dagster_library_versions(self) -> Mapping[str, str] | None:
         return self._dagster_library_versions
 
 

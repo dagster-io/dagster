@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from subprocess import PIPE, Popen
-from typing import Optional, cast
+from typing import cast
 
 import boto3
 import botocore
@@ -19,7 +19,7 @@ class SimulatedTaskRun:
     log_stream: str
     created_at: datetime
     runtime_id: str
-    stopped_reason: Optional[str] = None
+    stopped_reason: str | None = None
     stopped: bool = False
     logs_uploaded: bool = False
 
@@ -189,7 +189,7 @@ class LocalECSMockClient:
 
         return response
 
-    def stop_task(self, cluster: str, task: str, reason: Optional[str] = None):
+    def stop_task(self, cluster: str, task: str, reason: str | None = None):
         if simulated_task := self._task_runs.get(task):
             simulated_task.popen.terminate()
             simulated_task.stopped = True

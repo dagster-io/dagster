@@ -87,22 +87,22 @@ class RunDomain:
         self,
         *,
         job_name: str,
-        run_id: Optional[str],
-        run_config: Optional[Mapping[str, object]],
-        status: Optional[DagsterRunStatus],
-        tags: Optional[Mapping[str, Any]],
-        root_run_id: Optional[str],
-        parent_run_id: Optional[str],
-        step_keys_to_execute: Optional[Sequence[str]],
+        run_id: str | None,
+        run_config: Mapping[str, object] | None,
+        status: DagsterRunStatus | None,
+        tags: Mapping[str, Any] | None,
+        root_run_id: str | None,
+        parent_run_id: str | None,
+        step_keys_to_execute: Sequence[str] | None,
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         job_snapshot: Optional["JobSnap"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]],
-        asset_check_selection: Optional[Set["AssetCheckKey"]],
-        resolved_op_selection: Optional[Set[str]],
-        op_selection: Optional[Sequence[str]],
+        asset_selection: Set[AssetKey] | None,
+        asset_check_selection: Set["AssetCheckKey"] | None,
+        resolved_op_selection: Set[str] | None,
+        op_selection: Sequence[str] | None,
         remote_job_origin: Optional["RemoteJobOrigin"],
-        job_code_origin: Optional[JobPythonOrigin],
+        job_code_origin: JobPythonOrigin | None,
         asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         """Create a run with the given parameters."""
@@ -266,21 +266,21 @@ class RunDomain:
         self,
         job_name: str,
         run_id: str,
-        run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
-        step_keys_to_execute: Optional[Sequence[str]],
-        status: Optional[DagsterRunStatus],
+        run_config: Mapping[str, object] | None,
+        resolved_op_selection: Set[str] | None,
+        step_keys_to_execute: Sequence[str] | None,
+        status: DagsterRunStatus | None,
         tags: Mapping[str, str],
-        root_run_id: Optional[str],
-        parent_run_id: Optional[str],
+        root_run_id: str | None,
+        parent_run_id: str | None,
         job_snapshot: Optional["JobSnap"],
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]] = None,
-        asset_check_selection: Optional[Set["AssetCheckKey"]] = None,
-        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Set[AssetKey] | None = None,
+        asset_check_selection: Set["AssetCheckKey"] | None = None,
+        op_selection: Sequence[str] | None = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
-        job_code_origin: Optional[JobPythonOrigin] = None,
+        job_code_origin: JobPythonOrigin | None = None,
         asset_graph: Optional["BaseAssetGraph[BaseAssetNode]"] = None,
     ) -> DagsterRun:
         """Heavy run construction logic moved from DagsterInstance."""
@@ -451,8 +451,8 @@ class RunDomain:
         code_location: "CodeLocation",
         remote_job: "RemoteJob",
         strategy: "ReexecutionStrategy",
-        extra_tags: Optional[Mapping[str, Any]] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
+        extra_tags: Mapping[str, Any] | None = None,
+        run_config: Mapping[str, Any] | None = None,
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
         """Reexecution logic moved from DagsterInstance."""
@@ -577,17 +577,17 @@ class RunDomain:
         self,
         job_name: str,
         run_id: str,
-        run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
-        step_keys_to_execute: Optional[Sequence[str]],
+        run_config: Mapping[str, object] | None,
+        resolved_op_selection: Set[str] | None,
+        step_keys_to_execute: Sequence[str] | None,
         tags: Mapping[str, str],
-        root_run_id: Optional[str],
-        parent_run_id: Optional[str],
+        root_run_id: str | None,
+        parent_run_id: str | None,
         job_snapshot: Optional["JobSnap"],
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnap"],
-        op_selection: Optional[Sequence[str]] = None,
-        job_code_origin: Optional[JobPythonOrigin] = None,
+        op_selection: Sequence[str] | None = None,
+        job_code_origin: JobPythonOrigin | None = None,
     ) -> DagsterRun:
         """Managed run registration moved from DagsterInstance."""
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
@@ -641,7 +641,7 @@ class RunDomain:
     def ensure_persisted_job_snapshot(
         self,
         job_snapshot: "JobSnap",
-        parent_job_snapshot: "Optional[JobSnap]",
+        parent_job_snapshot: "JobSnap | None",
     ) -> str:
         """Moved from DagsterInstance._ensure_persisted_job_snapshot."""
         from dagster._core.snap import JobSnap
@@ -671,7 +671,7 @@ class RunDomain:
         self,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
         job_snapshot_id: str,
-        step_keys_to_execute: Optional[Sequence[str]],
+        step_keys_to_execute: Sequence[str] | None,
     ) -> str:
         """Moved from DagsterInstance._ensure_persisted_execution_plan_snapshot."""
         from dagster._core.snap.execution_plan_snapshot import (
@@ -801,7 +801,7 @@ class RunDomain:
         # in all cases, return the BaseAssetNode for the supplied asset key if it exists.
         if isinstance(asset_graph, RemoteWorkspaceAssetGraph):
             return cast(
-                "Optional[BaseEntityNode]",
+                "BaseEntityNode | None",
                 asset_graph.get_repo_scoped_node(
                     key, check.not_none(remote_job_origin).repository_origin.get_selector()
                 ),
@@ -964,17 +964,17 @@ class RunDomain:
         self,
         job_def: "JobDefinition",
         execution_plan: Optional["ExecutionPlan"] = None,
-        run_id: Optional[str] = None,
-        run_config: Optional[Mapping[str, object]] = None,
-        resolved_op_selection: Optional[Set[str]] = None,
-        status: Optional[DagsterRunStatus] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        root_run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Set[AssetKey]] = None,
+        run_id: str | None = None,
+        run_config: Mapping[str, object] | None = None,
+        resolved_op_selection: Set[str] | None = None,
+        status: DagsterRunStatus | None = None,
+        tags: Mapping[str, str] | None = None,
+        root_run_id: str | None = None,
+        parent_run_id: str | None = None,
+        op_selection: Sequence[str] | None = None,
+        asset_selection: Set[AssetKey] | None = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
-        job_code_origin: Optional[JobPythonOrigin] = None,
+        job_code_origin: JobPythonOrigin | None = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
         """Create run for job - moved from DagsterInstance.create_run_for_job()."""

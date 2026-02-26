@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -19,7 +19,7 @@ class FivetranDestination:
         destination_type: str,
         region: str,
         destination_configuration: dict[str, Any],
-        time_zone_offset: Optional[int] = None,
+        time_zone_offset: int | None = None,
     ):
         self.name = check.str_param(name, "name")
         self.region = check.str_param(region, "region")
@@ -59,8 +59,8 @@ class FivetranConnector:
         schema_name: str,
         source_type: str,
         source_configuration: dict[str, Any],
-        destination: Optional[FivetranDestination],
-        auth_configuration: Optional[dict[str, Any]] = None,
+        destination: FivetranDestination | None,
+        auth_configuration: dict[str, Any] | None = None,
     ):
         self.schema_name = check.str_param(schema_name, "schema_name")
         self.source_type = check.str_param(source_type, "source_type")

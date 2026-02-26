@@ -1,7 +1,7 @@
 import datetime
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Mapping, Union, cast  # noqa: UP035
 
 import dagster_shared.seven as seven
 from dagster import (
@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
+def _normalize_asset_cursor_str(cursor_string: str | None) -> str | None:
     # the cursor for assets is derived from a json serialized string of the path.  Because there are
     # json serialization differences between JS and Python in its treatment of whitespace, we should
     # take extra precaution here and do a deserialization/serialization pass
@@ -69,9 +69,9 @@ def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
 
 def get_asset_records(
     graphene_info: "ResolveInfo",
-    prefix: Optional[Sequence[str]] = None,
-    cursor: Optional[str] = None,
-    limit: Optional[int] = None,
+    prefix: Sequence[str] | None = None,
+    cursor: str | None = None,
+    limit: int | None = None,
 ) -> "GrapheneAssetRecordConnection":
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetRecord
     from dagster_graphql.schema.roots.assets import GrapheneAssetRecordConnection
@@ -99,10 +99,10 @@ def get_asset_records(
 
 def get_assets(
     graphene_info: "ResolveInfo",
-    prefix: Optional[Sequence[str]] = None,
-    cursor: Optional[str] = None,
-    limit: Optional[int] = None,
-    asset_keys: Optional[Sequence[AssetKey]] = None,
+    prefix: Sequence[str] | None = None,
+    cursor: str | None = None,
+    limit: int | None = None,
+    asset_keys: Sequence[AssetKey] | None = None,
 ) -> "GrapheneAssetConnection":
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
     from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
@@ -216,12 +216,12 @@ def get_asset(asset_key: AssetKey) -> "GrapheneAsset":
 def get_asset_materialization_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-    partitions: Optional[Sequence[str]] = None,
-    limit: Optional[int] = None,
-    before_timestamp: Optional[float] = None,
-    after_timestamp: Optional[float] = None,
-    storage_ids: Optional[Sequence[int]] = None,
-    cursor: Optional[str] = None,
+    partitions: Sequence[str] | None = None,
+    limit: int | None = None,
+    before_timestamp: float | None = None,
+    after_timestamp: float | None = None,
+    storage_ids: Sequence[int] | None = None,
+    cursor: str | None = None,
 ) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -258,11 +258,11 @@ def get_asset_materialization_event_records(
 def get_asset_materializations(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-    partitions: Optional[Sequence[str]] = None,
-    limit: Optional[int] = None,
-    before_timestamp: Optional[float] = None,
-    after_timestamp: Optional[float] = None,
-    storage_ids: Optional[Sequence[int]] = None,
+    partitions: Sequence[str] | None = None,
+    limit: int | None = None,
+    before_timestamp: float | None = None,
+    after_timestamp: float | None = None,
+    storage_ids: Sequence[int] | None = None,
 ) -> Sequence[EventLogEntry]:
     return [
         event_record.event_log_entry
@@ -281,12 +281,12 @@ def get_asset_materializations(
 def get_asset_failed_to_materialize_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-    partitions: Optional[Sequence[str]] = None,
-    limit: Optional[int] = None,
-    before_timestamp: Optional[float] = None,
-    after_timestamp: Optional[float] = None,
-    storage_ids: Optional[Sequence[int]] = None,
-    cursor: Optional[str] = None,
+    partitions: Sequence[str] | None = None,
+    limit: int | None = None,
+    before_timestamp: float | None = None,
+    after_timestamp: float | None = None,
+    storage_ids: Sequence[int] | None = None,
+    cursor: str | None = None,
 ) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -321,11 +321,11 @@ def get_asset_failed_to_materialize_event_records(
 def get_asset_observation_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-    partitions: Optional[Sequence[str]] = None,
-    limit: Optional[int] = None,
-    before_timestamp: Optional[float] = None,
-    after_timestamp: Optional[float] = None,
-    cursor: Optional[str] = None,
+    partitions: Sequence[str] | None = None,
+    limit: int | None = None,
+    before_timestamp: float | None = None,
+    after_timestamp: float | None = None,
+    cursor: str | None = None,
 ) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -362,10 +362,10 @@ def get_asset_observation_event_records(
 def get_asset_observations(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-    partitions: Optional[Sequence[str]] = None,
-    limit: Optional[int] = None,
-    before_timestamp: Optional[float] = None,
-    after_timestamp: Optional[float] = None,
+    partitions: Sequence[str] | None = None,
+    limit: int | None = None,
+    before_timestamp: float | None = None,
+    after_timestamp: float | None = None,
 ) -> Sequence[EventLogEntry]:
     event_records = get_asset_observation_event_records(
         graphene_info,
@@ -415,8 +415,8 @@ def get_assets_for_run(graphene_info: "ResolveInfo", run: DagsterRun) -> Sequenc
 
 def get_unique_asset_id(
     asset_key: AssetKey,
-    repository_location_name: Optional[str] = None,
-    repository_name: Optional[str] = None,
+    repository_location_name: str | None = None,
+    repository_name: str | None = None,
 ) -> str:
     repository_identifier = (
         f"{repository_location_name}.{repository_name}"
@@ -432,10 +432,10 @@ def get_unique_asset_id(
 
 def build_partition_statuses(
     dynamic_partitions_store: DynamicPartitionsStore,
-    materialized_partitions_subset: Optional[PartitionsSubset],
-    failed_partitions_subset: Optional[PartitionsSubset],
-    in_progress_partitions_subset: Optional[PartitionsSubset],
-    partitions_def: Optional[PartitionsDefinition],
+    materialized_partitions_subset: PartitionsSubset | None,
+    failed_partitions_subset: PartitionsSubset | None,
+    in_progress_partitions_subset: PartitionsSubset | None,
+    partitions_def: PartitionsDefinition | None,
 ) -> Union[
     "GrapheneTimePartitionStatuses",
     "GrapheneDefaultPartitionStatuses",

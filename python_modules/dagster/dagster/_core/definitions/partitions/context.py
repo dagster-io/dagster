@@ -32,9 +32,9 @@ class PartitionLoadingContext:
     """
 
     temporal_context: TemporalContext
-    dynamic_partitions_store: Optional[
-        Annotated["DynamicPartitionsStore", ImportFrom("dagster._core.instance")]
-    ]
+    dynamic_partitions_store: (
+        Annotated["DynamicPartitionsStore", ImportFrom("dagster._core.instance")] | None
+    )
 
     @property
     def effective_dt(self) -> datetime.datetime:
@@ -42,7 +42,7 @@ class PartitionLoadingContext:
 
     def updated(
         self,
-        effective_dt: Optional[datetime.datetime],
+        effective_dt: datetime.datetime | None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"],
     ) -> "PartitionLoadingContext":
         """Returns a new PartitionLoadingContext with the updated effective_dt and dynamic_partitions_store.
@@ -64,7 +64,7 @@ class PartitionLoadingContext:
         )
 
 
-_current_ctx: ContextVar[Optional[PartitionLoadingContext]] = ContextVar(
+_current_ctx: ContextVar[PartitionLoadingContext | None] = ContextVar(
     "current_partition_loading_context", default=None
 )
 
@@ -87,10 +87,10 @@ def require_full_partition_loading_context(func: Callable[P, T_Return]) -> Calla
 @public
 @contextmanager
 def partition_loading_context(
-    effective_dt: Optional[datetime.datetime] = None,
+    effective_dt: datetime.datetime | None = None,
     dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     *,
-    new_ctx: Optional[PartitionLoadingContext] = None,
+    new_ctx: PartitionLoadingContext | None = None,
 ) -> Iterator[PartitionLoadingContext]:
     """Context manager for setting the current PartitionLoadingContext, which controls how PartitionsDefinitions,
     PartitionMappings, and PartitionSubsets are loaded. This contextmanager is additive, meaning if effective_dt

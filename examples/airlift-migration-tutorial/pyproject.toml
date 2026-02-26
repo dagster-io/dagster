@@ -1,6 +1,23 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["tutorial_example"]
+
+[project]
+name = "tutorial-example"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-airlift[core,in-airflow]",
+    "dbt-duckdb",
+    "pandas",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
 
 [tool.dagster]
 module_name = "tutorial_example.definitions"

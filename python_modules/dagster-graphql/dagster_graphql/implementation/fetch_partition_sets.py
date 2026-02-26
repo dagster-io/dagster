@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -110,7 +110,7 @@ def get_partition_config(
     repository_handle: RepositoryHandle,
     job_name: str,
     partition_name: str,
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    selected_asset_keys: AbstractSet[AssetKey] | None,
 ) -> "GraphenePartitionRunConfig":
     from dagster_graphql.schema.partition_sets import GraphenePartitionRunConfig
 
@@ -133,7 +133,7 @@ def get_partition_tags(
     repository_selector: RepositorySelector,
     job_name: str,
     partition_name: str,
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    selected_asset_keys: AbstractSet[AssetKey] | None,
 ) -> "GraphenePartitionTags":
     from dagster_graphql.schema.partition_sets import GraphenePartitionTags
     from dagster_graphql.schema.tags import GraphenePipelineTag
@@ -166,8 +166,8 @@ def get_partitions(
     repository_handle: RepositoryHandle,
     partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
-    cursor: Optional[str] = None,
-    limit: Optional[int] = None,
+    cursor: str | None = None,
+    limit: int | None = None,
     reverse: bool = False,
 ) -> "GraphenePartitions":
     from dagster_graphql.schema.partition_sets import GraphenePartition, GraphenePartitions
@@ -216,10 +216,10 @@ def get_partition_set_partition_statuses(
 
 
 def partition_statuses_from_run_partition_data(
-    partition_set_name: Optional[str],
+    partition_set_name: str | None,
     run_partition_data: Sequence[RunPartitionData],
     partition_names: Sequence[str],
-    backfill_id: Optional[str] = None,
+    backfill_id: str | None = None,
 ) -> Sequence["GraphenePartitionStatus"]:
     from dagster_graphql.schema.partition_sets import (
         GraphenePartitionStatus,

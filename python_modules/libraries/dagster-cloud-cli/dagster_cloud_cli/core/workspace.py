@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared import check
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, copy, record, record_custom
@@ -13,8 +13,8 @@ from dagster_cloud_cli.core.agent_queue import AgentQueue
 @whitelist_for_serdes
 @record(kw_only=False)
 class GitMetadata:
-    commit_hash: Optional[str] = None
-    url: Optional[str] = None
+    commit_hash: str | None = None
+    url: str | None = None
 
 
 @whitelist_for_serdes
@@ -25,7 +25,7 @@ class PexMetadata:
     pex_tag: str
     # python_version determines which pex base docker image to use
     # only one of PexMetadata.python_version or CodeLocationDeployData.image should be specified
-    python_version: Optional[str] = None
+    python_version: str | None = None
 
 
 # History of CodeLocationDeployData
@@ -34,37 +34,37 @@ class PexMetadata:
 @whitelist_for_serdes(storage_name="CodeDeploymentMetadata")
 @record_custom
 class CodeLocationDeployData(IHaveNew, LegacyNamedTupleMixin):
-    image: Optional[str]
-    python_file: Optional[str]
-    package_name: Optional[str]
-    module_name: Optional[str]
-    working_directory: Optional[str]
-    executable_path: Optional[str]
-    attribute: Optional[str]
-    git_metadata: Optional[GitMetadata]
+    image: str | None
+    python_file: str | None
+    package_name: str | None
+    module_name: str | None
+    working_directory: str | None
+    executable_path: str | None
+    attribute: str | None
+    git_metadata: GitMetadata | None
     container_context: Mapping[str, Any]
     cloud_context_env: Mapping[str, Any]
-    pex_metadata: Optional[PexMetadata]
-    agent_queue: Optional[AgentQueue]
-    autoload_defs_module_name: Optional[str]
-    defs_state_info: Optional[DefsStateInfo]
+    pex_metadata: PexMetadata | None
+    agent_queue: AgentQueue | None
+    autoload_defs_module_name: str | None
+    defs_state_info: DefsStateInfo | None
 
     def __new__(
         cls,
-        image: Optional[str] = None,
-        python_file: Optional[str] = None,
-        package_name: Optional[str] = None,
-        module_name: Optional[str] = None,
-        working_directory: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        attribute: Optional[str] = None,
-        git_metadata: Optional[GitMetadata] = None,
-        container_context: Optional[Mapping[str, Any]] = None,
-        cloud_context_env: Optional[Mapping[str, Any]] = None,
-        pex_metadata: Optional[PexMetadata] = None,
-        agent_queue: Optional[AgentQueue] = None,
-        autoload_defs_module_name: Optional[str] = None,
-        defs_state_info: Optional[DefsStateInfo] = None,
+        image: str | None = None,
+        python_file: str | None = None,
+        package_name: str | None = None,
+        module_name: str | None = None,
+        working_directory: str | None = None,
+        executable_path: str | None = None,
+        attribute: str | None = None,
+        git_metadata: GitMetadata | None = None,
+        container_context: Mapping[str, Any] | None = None,
+        cloud_context_env: Mapping[str, Any] | None = None,
+        pex_metadata: PexMetadata | None = None,
+        agent_queue: AgentQueue | None = None,
+        autoload_defs_module_name: str | None = None,
+        defs_state_info: DefsStateInfo | None = None,
     ):
         check.invariant(
             len(
@@ -109,8 +109,8 @@ class CodeLocationDeployData(IHaveNew, LegacyNamedTupleMixin):
 
     def get_multipex_server_command(
         self,
-        port: Optional[int],
-        socket: Optional[str] = None,
+        port: int | None,
+        socket: str | None = None,
         metrics_enabled: bool = False,
     ) -> list[str]:
         return (

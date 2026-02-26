@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from typing import Union
 
 import duckdb
 import pandas as pd
@@ -22,7 +21,7 @@ def calculate_customer_count() -> None:
 
     con = duckdb.connect(str(DUCKDB_PATH))
 
-    result: Union[tuple, None] = con.execute(
+    result: tuple | None = con.execute(
         f"SELECT COUNT(*) FROM {CUSTOMERS_DB_NAME}.{CUSTOMERS_SCHEMA}.{CUSTOMERS_TABLE_NAME}"
     ).fetchone()
     if not result:

@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import pydantic
 import pytest
@@ -22,8 +22,8 @@ def test_invalid_tag_set() -> None:
 
 def test_basic_tag_set_validation() -> None:
     class MyValidTagSet(NamespacedTagSet):
-        foo: Optional[str] = None
-        bar: Optional[str] = None
+        foo: str | None = None
+        bar: str | None = None
 
         @classmethod
         def namespace(cls) -> str:
@@ -38,8 +38,8 @@ def test_basic_tag_set_validation() -> None:
 
 def test_tag_set_with_literal() -> None:
     class MyValidTagSet(NamespacedTagSet):
-        foo: Optional[Literal["apple", "banana"]] = None
-        bar: Optional[str] = None
+        foo: Literal["apple", "banana"] | None = None
+        bar: str | None = None
 
         @classmethod
         def namespace(cls) -> str:
@@ -53,8 +53,8 @@ def test_tag_set_with_literal() -> None:
 
 def test_basic_tag_set_functionality() -> None:
     class MyValidTagSet(NamespacedTagSet):
-        foo: Optional[str] = None
-        bar: Optional[str] = None
+        foo: str | None = None
+        bar: str | None = None
 
         @classmethod
         def namespace(cls) -> str:

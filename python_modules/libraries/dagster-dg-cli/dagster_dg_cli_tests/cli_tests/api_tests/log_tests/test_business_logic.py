@@ -4,6 +4,14 @@ These tests focus on testing pure functions that process data without requiring
 GraphQL client mocking or external dependencies.
 """
 
+from unittest.mock import MagicMock
+
+from dagster_dg_cli.api_layer.graphql_adapter.run_event import (
+    _filter_events_by_level,
+    _filter_events_by_step,
+    _filter_events_by_type,
+    get_run_events_via_graphql,
+)
 from dagster_dg_cli.api_layer.schemas.run_event import (
     DgApiErrorInfo,
     DgApiRunEvent,
@@ -451,3 +459,160 @@ class TestLogDataProcessing:
             result = format_logs_table(log_list, "timestamp-test")
 
         snapshot.assert_match(result)
+
+
+SAMPLE_EVENTS = [
+    {"eventType": "RUN_START", "level": "INFO", "stepKey": None, "message": "run started"},
+    {"eventType": "STEP_START", "level": "DEBUG", "stepKey": "my_step", "message": "step started"},
+    {"eventType": "STEP_OUTPUT", "level": "DEBUG", "stepKey": "my_step", "message": "output"},
+    {"eventType": "STEP_FAILURE", "level": "ERROR", "stepKey": "my_step", "message": "step failed"},
+    {"eventType": "RUN_FAILURE", "level": "ERROR", "stepKey": None, "message": "run failed"},
+    {
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "stepKey": "other_step",
+        "message": "other started",
+    },
+    {
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "stepKey": "other_step",
+        "message": "other done",
+    },
+]
+
+
+class TestFilterEventsByLevel:
+    def test_empty_levels_returns_all(self):
+        assert _filter_events_by_level(SAMPLE_EVENTS, ()) == SAMPLE_EVENTS
+
+    def test_single_level(self):
+        result = _filter_events_by_level(SAMPLE_EVENTS, ("ERROR",))
+        assert len(result) == 2
+        assert all(e["level"] == "ERROR" for e in result)
+
+    def test_multiple_levels(self):
+        result = _filter_events_by_level(SAMPLE_EVENTS, ("ERROR", "INFO"))
+        assert len(result) == 3
+        assert {e["level"] for e in result} == {"ERROR", "INFO"}
+
+    def test_case_insensitive(self):
+        result = _filter_events_by_level(SAMPLE_EVENTS, ("error",))
+        assert len(result) == 2
+
+
+class TestFilterEventsByType:
+    def test_empty_types_returns_all(self):
+        assert _filter_events_by_type(SAMPLE_EVENTS, ()) == SAMPLE_EVENTS
+
+    def test_single_type(self):
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("STEP_FAILURE",))
+        assert len(result) == 1
+        assert result[0]["eventType"] == "STEP_FAILURE"
+
+    def test_multiple_types(self):
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("STEP_START", "STEP_SUCCESS"))
+        assert len(result) == 3
+
+    def test_case_insensitive(self):
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("step_failure",))
+        assert len(result) == 1
+
+
+class TestFilterEventsByStep:
+    def test_empty_keys_returns_all(self):
+        assert _filter_events_by_step(SAMPLE_EVENTS, ()) == SAMPLE_EVENTS
+
+    def test_single_key_partial_match(self):
+        result = _filter_events_by_step(SAMPLE_EVENTS, ("my_step",))
+        assert len(result) == 3
+        assert all(e["stepKey"] == "my_step" for e in result)
+
+    def test_multiple_keys(self):
+        result = _filter_events_by_step(SAMPLE_EVENTS, ("my_step", "other_step"))
+        assert len(result) == 5
+
+    def test_partial_match(self):
+        result = _filter_events_by_step(SAMPLE_EVENTS, ("other",))
+        assert len(result) == 2
+
+
+def _make_page(events, cursor, has_more):
+    return {
+        "logsForRun": {
+            "__typename": "EventConnection",
+            "events": events,
+            "cursor": cursor,
+            "hasMore": has_more,
+        }
+    }
+
+
+class TestAutoPagination:
+    def test_no_filters_single_page(self):
+        """Without filters, only one page is fetched."""
+        client = MagicMock()
+        client.execute.return_value = _make_page(SAMPLE_EVENTS[:3], "c1", True)
+
+        result = get_run_events_via_graphql(client, run_id="r1", limit=100)
+        assert len(result["events"]) == 3
+        assert result["hasMore"] is True
+        assert client.execute.call_count == 1
+
+    def test_filter_triggers_pagination(self):
+        """With filters, pages are fetched until limit is reached."""
+        client = MagicMock()
+        # Page 1: no ERROR events
+        page1_events = [
+            {"eventType": "STEP_START", "level": "DEBUG", "stepKey": "s1", "message": "a"},
+            {"eventType": "STEP_OUTPUT", "level": "DEBUG", "stepKey": "s1", "message": "b"},
+        ]
+        # Page 2: has ERROR events
+        page2_events = [
+            {"eventType": "STEP_FAILURE", "level": "ERROR", "stepKey": "s1", "message": "fail"},
+        ]
+        client.execute.side_effect = [
+            _make_page(page1_events, "c1", True),
+            _make_page(page2_events, "c2", False),
+        ]
+
+        result = get_run_events_via_graphql(client, run_id="r1", limit=100, levels=("ERROR",))
+        assert len(result["events"]) == 1
+        assert result["events"][0]["level"] == "ERROR"
+        assert result["hasMore"] is False
+        assert client.execute.call_count == 2
+
+    def test_pagination_respects_limit(self):
+        """Auto-pagination stops once limit matching events are collected."""
+        client = MagicMock()
+        error_event = {
+            "eventType": "STEP_FAILURE",
+            "level": "ERROR",
+            "stepKey": "s1",
+            "message": "err",
+        }
+        # Each page returns 1 matching event, server always has more
+        client.execute.side_effect = [_make_page([error_event], f"c{i}", True) for i in range(5)]
+
+        result = get_run_events_via_graphql(client, run_id="r1", limit=3, levels=("ERROR",))
+        assert len(result["events"]) == 3
+        assert result["hasMore"] is True
+        assert client.execute.call_count == 3
+
+    def test_pagination_max_pages_cap(self):
+        """Auto-pagination stops at _MAX_PAGES even if limit not reached."""
+        from dagster_dg_cli.api_layer.graphql_adapter import run_event as mod
+
+        client = MagicMock()
+        # Every page returns no matching events but has more
+        no_match = [{"eventType": "RUN_START", "level": "INFO", "stepKey": None, "message": "x"}]
+        client.execute.return_value = _make_page(no_match, "cursor", True)
+
+        original = mod._MAX_PAGES  # noqa: SLF001
+        mod._MAX_PAGES = 5  # lower cap for test speed  # noqa: SLF001
+        try:
+            result = get_run_events_via_graphql(client, run_id="r1", limit=100, levels=("ERROR",))
+            assert len(result["events"]) == 0
+            assert client.execute.call_count == 5
+        finally:
+            mod._MAX_PAGES = original  # noqa: SLF001

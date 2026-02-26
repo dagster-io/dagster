@@ -1,15 +1,5 @@
 import sys
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    get_origin,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeVar, Union, cast, get_origin
 
 from pydantic import Field
 from typing_extensions import Self, dataclass_transform
@@ -160,10 +150,8 @@ class BaseResourceMeta(BaseConfigMeta):
                     # configured resource.
                     base = annotations[field]
                     annotations[field] = Annotated[
-                        Union[
-                            base,
-                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
-                        ],
+                        base
+                        | LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
                         "resource_dependency",
                     ]
                     # Pydantic 2.5.0 changed the default union mode to "smart", which causes
@@ -230,6 +218,6 @@ class TypecheckAllowPartialResourceInitParams:
     # analyze code it was previously skipping. The annotation should be
     # reverted when the bug is fixed or another solution that surface as type
     # errors for mypy users is found.
-    def __set__(self, obj: Optional[object], value: Union[Any, "PartialResource[Any]"]) -> None:
+    def __set__(self, obj: object | None, value: Union[Any, "PartialResource[Any]"]) -> None:
         # no-op implementation (only used to affect type signature)
         setattr(obj, self._assigned_name, value)

@@ -1,7 +1,0 @@
-include LICENSE
-graft dagster_postgres/alembic
-global-exclude __pycache__
-global-exclude *.py[co]
-include dagster_postgres/py.typed
-exclude conftest.py
-include dagster_postgres/test_fixtures/docker-compose.yml

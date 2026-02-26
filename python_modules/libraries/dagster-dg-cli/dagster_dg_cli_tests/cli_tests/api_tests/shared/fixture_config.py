@@ -1,7 +1,6 @@
 """Configuration for API fixture recording scenarios."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -10,4 +9,4 @@ class FixtureScenario:
 
     command: str
     has_recording: bool
-    depends_on: Optional[list[str]] = None  # Dependencies (run IDs, etc.)
+    depends_on: list[str] | None = None  # Dependencies (run IDs, etc.)

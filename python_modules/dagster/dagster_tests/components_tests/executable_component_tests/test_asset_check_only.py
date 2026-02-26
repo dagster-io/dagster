@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
@@ -87,7 +87,7 @@ def test_execute_asset_with_check() -> None:
 
 
 def asset_check_job(
-    asset_checks_def: AssetChecksDefinition, resources: Optional[Mapping[str, Any]] = None
+    asset_checks_def: AssetChecksDefinition, resources: Mapping[str, Any] | None = None
 ) -> dg.JobDefinition:
     job = dg.define_asset_job("job_name", selection=AssetSelection.checks(asset_checks_def))
     return check.inst(

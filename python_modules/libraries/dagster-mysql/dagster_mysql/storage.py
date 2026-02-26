@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.base_storage import DagsterStorage
@@ -33,7 +31,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, mysql_url, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, mysql_url, inst_data: ConfigurableClassData | None = None):
         self.mysql_url = mysql_url
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._run_storage = MySQLRunStorage(mysql_url)
@@ -42,7 +40,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -51,7 +49,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: MySqlStorageConfig
     ) -> "DagsterMySQLStorage":
         return DagsterMySQLStorage(
             inst_data=inst_data,
@@ -71,7 +69,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
         return self._schedule_storage
 
     @property
-    def event_storage_data(self) -> Optional[ConfigurableClassData]:
+    def event_storage_data(self) -> ConfigurableClassData | None:
         return (
             ConfigurableClassData(
                 "dagster_mysql",
@@ -83,7 +81,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
         )
 
     @property
-    def run_storage_data(self) -> Optional[ConfigurableClassData]:
+    def run_storage_data(self) -> ConfigurableClassData | None:
         return (
             ConfigurableClassData(
                 "dagster_mysql",
@@ -95,7 +93,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
         )
 
     @property
-    def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
+    def schedule_storage_data(self) -> ConfigurableClassData | None:
         return (
             ConfigurableClassData(
                 "dagster_mysql",

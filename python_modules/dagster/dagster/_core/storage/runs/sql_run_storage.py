@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, ContextManager, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import Any, Callable, ContextManager, NamedTuple, cast  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -103,7 +103,7 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             return db_fetch_mappings(conn, query)
 
-    def fetchone(self, query: SqlAlchemyQuery) -> Optional[Any]:
+    def fetchone(self, query: SqlAlchemyQuery) -> Any | None:
         with self.connect() as conn:
             if db.__version__.startswith("2."):
                 return conn.execute(query).mappings().first()
@@ -111,7 +111,7 @@ class SqlRunStorage(RunStorage):
                 return conn.execute(query).fetchone()
 
     def _get_run_insertion_values(
-        self, dagster_run: DagsterRun, run_creation_time: Optional[datetime] = None
+        self, dagster_run: DagsterRun, run_creation_time: datetime | None = None
     ) -> dict[str, Any]:
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
@@ -170,7 +170,7 @@ class SqlRunStorage(RunStorage):
         return dagster_run
 
     def handle_run_event(
-        self, run_id: str, event: DagsterEvent, update_timestamp: Optional[datetime] = None
+        self, run_id: str, event: DagsterEvent, update_timestamp: datetime | None = None
     ) -> None:
         from dagster._core.events import JobFailureData
 
@@ -240,10 +240,10 @@ class SqlRunStorage(RunStorage):
     def _add_cursor_limit_to_query(
         self,
         query: SqlAlchemyQuery,
-        cursor: Optional[str],
-        limit: Optional[int],
-        order_by: Optional[str],
-        ascending: Optional[bool],
+        cursor: str | None,
+        limit: int | None,
+        order_by: str | None,
+        ascending: bool | None,
     ) -> SqlAlchemyQuery:
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
@@ -318,13 +318,13 @@ class SqlRunStorage(RunStorage):
 
     def _runs_query(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        columns: Optional[Sequence[str]] = None,
-        order_by: Optional[str] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        columns: Sequence[str] | None = None,
+        order_by: str | None = None,
         ascending: bool = False,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: JobBucket | TagBucket | None = None,
     ) -> SqlAlchemyQuery:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_str_param(cursor, "cursor")
@@ -344,7 +344,7 @@ class SqlRunStorage(RunStorage):
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
     def _apply_tags_table_filters(
-        self, table: db.Table, tags: Mapping[str, Union[str, Sequence[str]]]
+        self, table: db.Table, tags: Mapping[str, str | Sequence[str]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
         for i, (key, value) in enumerate(tags.items()):
@@ -365,10 +365,10 @@ class SqlRunStorage(RunStorage):
 
     def get_runs(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        bucket_by: JobBucket | TagBucket | None = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by, ascending=ascending)
@@ -377,22 +377,22 @@ class SqlRunStorage(RunStorage):
 
     def get_run_ids(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[str]:
         query = self._runs_query(filters=filters, cursor=cursor, limit=limit, columns=["run_id"])
         rows = self.fetchall(query)
         return [row["run_id"] for row in rows]
 
-    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
+    def get_runs_count(self, filters: RunsFilter | None = None) -> int:
         subquery = db_subquery(self._runs_query(filters=filters))
         query = db_select([db.func.count().label("count")]).select_from(subquery)
         row = self.fetchone(query)
         count = row["count"] if row else 0
         return count
 
-    def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+    def _get_run_by_id(self, run_id: str) -> DagsterRun | None:
         check.str_param(run_id, "run_id")
 
         query = db_select([RunsTable.c.run_body, RunsTable.c.status]).where(
@@ -403,12 +403,12 @@ class SqlRunStorage(RunStorage):
 
     def get_run_records(
         self,
-        filters: Optional[RunsFilter] = None,
-        limit: Optional[int] = None,
-        order_by: Optional[str] = None,
+        filters: RunsFilter | None = None,
+        limit: int | None = None,
+        order_by: str | None = None,
         ascending: bool = False,
-        cursor: Optional[str] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        cursor: str | None = None,
+        bucket_by: JobBucket | TagBucket | None = None,
     ) -> Sequence[RunRecord]:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_int_param(limit, "limit")
@@ -450,8 +450,8 @@ class SqlRunStorage(RunStorage):
     def get_run_tags(
         self,
         tag_keys: Sequence[str],
-        value_prefix: Optional[str] = None,
-        limit: Optional[int] = None,
+        value_prefix: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[tuple[str, set[str]]]:
         result = defaultdict(set)
         query = (
@@ -653,7 +653,7 @@ class SqlRunStorage(RunStorage):
 
         return bool(row)
 
-    def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnap]:
+    def _get_snapshot(self, snapshot_id: str) -> JobSnap | None:
         query = db_select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
@@ -737,7 +737,7 @@ class SqlRunStorage(RunStorage):
     def _execute_data_migrations(
         self,
         migrations: Mapping[str, Callable[[], MigrationFn]],
-        print_fn: Optional[PrintFn] = None,
+        print_fn: PrintFn | None = None,
         force_rebuild_all: bool = False,
     ) -> None:
         for migration_name, migration_fn in migrations.items():
@@ -753,10 +753,10 @@ class SqlRunStorage(RunStorage):
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def optimize(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
@@ -863,7 +863,7 @@ class SqlRunStorage(RunStorage):
             conn.execute(DaemonHeartbeatsTable.delete())
 
     def _add_backfill_filters_to_table(
-        self, table: db.Table, filters: Optional[BulkActionsFilter]
+        self, table: db.Table, filters: BulkActionsFilter | None
     ) -> db.Table:
         if filters and filters.tags and self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
             for i, (key, value) in enumerate(filters.tags.items()):
@@ -882,7 +882,7 @@ class SqlRunStorage(RunStorage):
             return table
         return table
 
-    def _backfills_query(self, filters: Optional[BulkActionsFilter] = None):
+    def _backfills_query(self, filters: BulkActionsFilter | None = None):
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
         if filters and filters.tags:
             if not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
@@ -945,7 +945,7 @@ class SqlRunStorage(RunStorage):
         return query
 
     def _add_cursor_limit_to_backfills_query(
-        self, query, cursor: Optional[str] = None, limit: Optional[int] = None
+        self, query, cursor: str | None = None, limit: int | None = None
     ):
         if limit:
             query = query.limit(limit)
@@ -958,13 +958,13 @@ class SqlRunStorage(RunStorage):
         return query
 
     def _apply_backfill_tags_filter_to_results(
-        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, Union[str, Sequence[str]]]
+        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, str | Sequence[str]]
     ) -> Sequence[PartitionBackfill]:
         if not tags:
             return backfills
 
         def _matches_backfill(
-            backfill: PartitionBackfill, tags: Mapping[str, Union[str, Sequence[str]]]
+            backfill: PartitionBackfill, tags: Mapping[str, str | Sequence[str]]
         ) -> bool:
             for key, value in tags.items():
                 if isinstance(value, str):
@@ -978,10 +978,10 @@ class SqlRunStorage(RunStorage):
 
     def get_backfills(
         self,
-        filters: Optional[BulkActionsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        status: Optional[BulkActionStatus] = None,
+        filters: BulkActionsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        status: BulkActionStatus | None = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
@@ -1010,7 +1010,7 @@ class SqlRunStorage(RunStorage):
             )
         return backfill_candidates
 
-    def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+    def get_backfills_count(self, filters: BulkActionsFilter | None = None) -> int:
         check.opt_inst_param(filters, "filters", BulkActionsFilter)
         if filters and filters.tags:
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
@@ -1031,7 +1031,7 @@ class SqlRunStorage(RunStorage):
         count = row["count"] if row else 0
         return count
 
-    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
+    def get_backfill(self, backfill_id: str) -> PartitionBackfill | None:
         check.str_param(backfill_id, "backfill_id")
         query = db_select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
         row = self.fetchone(query)
@@ -1139,7 +1139,7 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 def defensively_unpack_execution_plan_snapshot_query(
     logger: logging.Logger, row: Sequence[Any]
-) -> Optional[Union[ExecutionPlanSnapshot, JobSnap]]:
+) -> ExecutionPlanSnapshot | JobSnap | None:
     # minimal checking here because sqlalchemy returns a different type based on what version of
     # SqlAlchemy you are using
 

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TypedDict, Union, cast
+from typing import TypedDict, cast
 
 from dagster._annotations import beta
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -22,8 +22,8 @@ class TaskHandleDict(TypedDict):
 
 @beta
 def assets_with_multiple_task_mappings(
-    assets: Sequence[Union[AssetSpec, AssetsDefinition]], task_handles: list[TaskHandleDict]
-) -> Sequence[Union[AssetSpec, AssetsDefinition]]:
+    assets: Sequence[AssetSpec | AssetsDefinition], task_handles: list[TaskHandleDict]
+) -> Sequence[AssetSpec | AssetsDefinition]:
     """Given an asset or assets definition, return a new asset or assets definition with metadata
     that indicates that it is targeted by multiple airflow tasks. An example of this would
     be a separate weekly and daily dag that contains a task that targets a single asset.
@@ -83,7 +83,7 @@ def targeted_by_multiple_tasks(
     return replace_assets_in_defs(
         defs,
         assets_with_multiple_task_mappings(
-            cast("Sequence[Union[AssetSpec, AssetsDefinition]]", defs.assets),
+            cast("Sequence[AssetSpec | AssetsDefinition]", defs.assets),
             task_handles=task_handles,
         ),
     )

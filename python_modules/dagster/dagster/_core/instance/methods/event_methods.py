@@ -75,9 +75,9 @@ class EventMethods:
     def logs_after(
         self,
         run_id: str,
-        cursor: Optional[int] = None,
+        cursor: int | None = None,
         of_type: Optional["DagsterEventType"] = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Sequence["EventLogEntry"]:
         """Get logs after cursor."""
         return self._event_storage_impl.get_logs_for_run(
@@ -90,7 +90,7 @@ class EventMethods:
     def all_logs(
         self,
         run_id: str,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
     ) -> Sequence["EventLogEntry"]:
         """Get all logs for run."""
         return self._event_storage_impl.get_logs_for_run(run_id, of_type=of_type)
@@ -98,9 +98,9 @@ class EventMethods:
     def get_records_for_run(
         self,
         run_id: str,
-        cursor: Optional[str] = None,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+        limit: int | None = None,
         ascending: bool = True,
     ) -> "EventLogConnection":
         """Get event records for run."""
@@ -108,7 +108,7 @@ class EventMethods:
             run_id, cursor, of_type, limit, ascending
         )
 
-    def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
+    def watch_event_logs(self, run_id: str, cursor: str | None, cb: "EventHandlerFn") -> None:
         """Watch event logs."""
         return self._event_storage_impl.watch(run_id, cursor, cb)
 
@@ -120,7 +120,7 @@ class EventMethods:
     def get_event_records(
         self,
         event_records_filter: "EventRecordsFilter",
-        limit: Optional[int] = None,
+        limit: int | None = None,
         ascending: bool = False,
     ) -> Sequence["EventLogRecord"]:
         """Return a list of event records stored in the event log storage.
@@ -301,10 +301,10 @@ class EventMethods:
         message: str,
         dagster_run: Optional["DagsterRun"] = None,
         engine_event_data: Optional["EngineEventData"] = None,
-        cls: Optional[type[object]] = None,
-        step_key: Optional[str] = None,
-        job_name: Optional[str] = None,
-        run_id: Optional[str] = None,
+        cls: type[object] | None = None,
+        step_key: str | None = None,
+        job_name: str | None = None,
+        run_id: str | None = None,
     ) -> "DagsterEvent":
         """Report a EngineEvent that occurred outside of a job execution context."""
         from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -352,9 +352,9 @@ class EventMethods:
         self,
         dagster_event: "DagsterEvent",
         run_id: str,
-        log_level: Union[str, int] = logging.INFO,
+        log_level: str | int = logging.INFO,
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
-        timestamp: Optional[float] = None,
+        timestamp: float | None = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
@@ -371,7 +371,7 @@ class EventMethods:
         )
         self.handle_new_event(event_record, batch_metadata=batch_metadata)
 
-    def report_run_canceling(self, run: "DagsterRun", message: Optional[str] = None) -> None:
+    def report_run_canceling(self, run: "DagsterRun", message: str | None = None) -> None:
         """Report run canceling event."""
         from dagster._core.events import DagsterEvent, DagsterEventType
         from dagster._core.storage.dagster_run import DagsterRun
@@ -392,7 +392,7 @@ class EventMethods:
     def report_run_canceled(
         self,
         dagster_run: "DagsterRun",
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> "DagsterEvent":
         """Report run canceled event."""
         from dagster._core.events import DagsterEvent, DagsterEventType
@@ -417,7 +417,7 @@ class EventMethods:
     def report_run_failed(
         self,
         dagster_run: "DagsterRun",
-        message: Optional[str] = None,
+        message: str | None = None,
         job_failure_data: Optional["JobFailureData"] = None,
     ) -> "DagsterEvent":
         """Report run failed event."""

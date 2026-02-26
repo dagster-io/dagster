@@ -2,7 +2,7 @@ import importlib
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolvable, Resolver
@@ -58,14 +58,15 @@ class DltLoadSpecModel(Resolvable):
             model_field_type=str,
         ),
     ]
-    translation: Optional[
+    translation: (
         Annotated[
             TranslationFn[DltResourceTranslatorData],
             TranslationFnResolver[DltResourceTranslatorData](
                 lambda data: {"resource": data.resource, "pipeline": data.pipeline}
             ),
         ]
-    ] = None
+        | None
+    ) = None
 
 
 @public

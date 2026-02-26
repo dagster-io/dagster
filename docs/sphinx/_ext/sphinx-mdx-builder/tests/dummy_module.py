@@ -4,7 +4,7 @@ This module contains various Python constructs to test the MDX generation.
 """
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class LoggerDefinition:
@@ -177,7 +177,7 @@ def find_cars_by_color(cars: list[Car], color: Color) -> list[Car]:
     return [car for car in cars if car.color == color]
 
 
-def get_car_summary(car: Optional[Car] = None) -> str:
+def get_car_summary(car: Car | None = None) -> str:
     """Get a summary of a car.
 
     Args:

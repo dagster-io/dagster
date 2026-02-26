@@ -1,6 +1,27 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "assets_modern_data_stack"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "boto3",
+    "dagster-airbyte",
+    "dagster-dbt",
+    "dagster-postgres",
+    "pandas",
+    "numpy",
+    "scipy",
+    "dbt-core",
+    "dbt-postgres",
+    "packaging<22.0",  # match dbt-core's requirement to workaround a resolution issue
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "assets_modern_data_stack.definitions"

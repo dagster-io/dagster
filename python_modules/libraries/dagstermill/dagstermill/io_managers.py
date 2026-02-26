@@ -1,7 +1,7 @@
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster import (
@@ -23,7 +23,7 @@ from dagstermill.factory import _clean_path_for_windows
 
 
 class OutputNotebookIOManager(IOManager):
-    def __init__(self, asset_key_prefix: Optional[Sequence[str]] = None):
+    def __init__(self, asset_key_prefix: Sequence[str] | None = None):
         self.asset_key_prefix = asset_key_prefix if asset_key_prefix else []
 
     def handle_output(self, context: OutputContext, obj: bytes):
@@ -34,7 +34,7 @@ class OutputNotebookIOManager(IOManager):
 
 
 class LocalOutputNotebookIOManager(OutputNotebookIOManager):
-    def __init__(self, base_dir: str, asset_key_prefix: Optional[Sequence[str]] = None):
+    def __init__(self, base_dir: str, asset_key_prefix: Sequence[str] | None = None):
         super().__init__(asset_key_prefix=asset_key_prefix)
         self.base_dir = base_dir
         self.write_mode = "wb"
@@ -88,7 +88,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
 class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
     """Built-in IO Manager for handling output notebook."""
 
-    base_dir: Optional[str] = Field(
+    base_dir: str | None = Field(
         default=None,
         description=(
             "Base directory to use for output notebooks. Defaults to the Dagster instance storage"

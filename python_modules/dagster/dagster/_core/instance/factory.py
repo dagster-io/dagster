@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 
 
 def create_ephemeral_instance(
-    tempdir: Optional[str] = None,
-    preload: Optional[Sequence["DebugRunPayload"]] = None,
-    settings: Optional[dict] = None,
+    tempdir: str | None = None,
+    preload: Sequence["DebugRunPayload"] | None = None,
+    settings: dict | None = None,
 ) -> "DagsterInstance":
     """Create a `DagsterInstance` suitable for ephemeral execution, useful in test contexts. An
     ephemeral instance uses mostly in-memory components. Use `local_temp` to create a test
@@ -99,7 +99,7 @@ def create_instance_from_dagster_home() -> "DagsterInstance":
 
 
 def create_local_temp_instance(
-    tempdir: Optional[str] = None,
+    tempdir: str | None = None,
     overrides: Optional["DagsterInstanceOverrides"] = None,
 ) -> "DagsterInstance":
     """Create a DagsterInstance that uses a temporary directory for local storage. This is a

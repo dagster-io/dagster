@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster import DagsterEventType
@@ -109,7 +109,7 @@ def _create_cursor_key(event_type: DagsterEventType) -> str:
 
 def _fetch_persisted_cursors(
     instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger: logging.Logger
-) -> dict[DagsterEventType, Optional[int]]:
+) -> dict[DagsterEventType, int | None]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
 
@@ -118,7 +118,7 @@ def _fetch_persisted_cursors(
         {_create_cursor_key(event_type) for event_type in event_types}
     )
 
-    fetched_cursors: dict[DagsterEventType, Optional[int]] = {}
+    fetched_cursors: dict[DagsterEventType, int | None] = {}
     for event_type in event_types:
         raw_cursor_value = persisted_cursors.get(_create_cursor_key(event_type))
 
@@ -151,7 +151,7 @@ def _persist_cursors(instance: DagsterInstance, cursors: Mapping[DagsterEventTyp
 
 def get_new_cursor(
     persisted_cursor: int,
-    overall_max_event_id: Optional[int],
+    overall_max_event_id: int | None,
     fetch_limit: int,
     new_event_ids: Sequence[int],
 ) -> int:

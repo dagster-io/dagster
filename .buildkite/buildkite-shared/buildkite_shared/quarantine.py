@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 import requests
-from buildkite_shared import environment
+from buildkite_shared.context import BuildkiteContext
 
 
 @dataclass(frozen=True)
@@ -61,11 +61,11 @@ def get_buildkite_quarantined_objects(
 
 
 def filter_and_print_steps_by_quarantined(
-    all_steps, skip_quarantined_steps, mute_quarantined_steps
+    ctx: BuildkiteContext, all_steps, skip_quarantined_steps, mute_quarantined_steps
 ):
-    if (skip_quarantined_steps or mute_quarantined_steps) and not environment.run_all_tests():
+    if (skip_quarantined_steps or mute_quarantined_steps) and not ctx.config.no_skip:
         filtered_steps, skipped_steps, muted_steps = filter_steps_by_quarantined(
-            all_steps, skip_quarantined_steps, mute_quarantined_steps
+            ctx, all_steps, skip_quarantined_steps, mute_quarantined_steps
         )
         if skipped_steps:
             for step in skipped_steps:
@@ -78,8 +78,10 @@ def filter_and_print_steps_by_quarantined(
     return all_steps
 
 
-def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_steps):
-    if (not skip_quarantined_steps and not mute_quarantined_steps) or environment.run_all_tests():
+def filter_steps_by_quarantined(
+    ctx: BuildkiteContext, steps, skip_quarantined_steps, mute_quarantined_steps
+):
+    if (not skip_quarantined_steps and not mute_quarantined_steps) or ctx.config.no_skip:
         return steps, [], []
 
     filtered_steps = []

@@ -1,15 +1,17 @@
-#! /bin/bash
+#!/bin/bash
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-# Support both standalone OSS repo and monorepo
 if [ -d "${GIT_ROOT}/dagster-oss" ]; then
     ROOT="${GIT_ROOT}/dagster-oss"
 else
     ROOT="${GIT_ROOT}"
 fi
 
-pushd "$ROOT/js_modules/dagster-ui"
+pushd "$ROOT/js_modules"
 set -eux
 
+corepack enable
 yarn install
-yarn build
+yarn workspace @dagster-io/app-oss build

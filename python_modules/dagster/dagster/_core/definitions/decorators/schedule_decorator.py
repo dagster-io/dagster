@@ -1,7 +1,7 @@
 import copy
 from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Union, cast
 
 import dagster._check as check
 from dagster._annotations import beta_param, public
@@ -40,29 +40,28 @@ if TYPE_CHECKING:
 @beta_param(param="owners")
 @public
 def schedule(
-    cron_schedule: Union[str, Sequence[str]],
+    cron_schedule: str | Sequence[str],
     *,
-    job_name: Optional[str] = None,
-    name: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    tags_fn: Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
-    should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
-    environment_vars: Optional[Mapping[str, str]] = None,
-    execution_timezone: Optional[str] = None,
-    description: Optional[str] = None,
-    job: Optional[ExecutableDefinition] = None,
+    job_name: str | None = None,
+    name: str | None = None,
+    tags: Mapping[str, str] | None = None,
+    tags_fn: Callable[[ScheduleEvaluationContext], Mapping[str, str] | None] | None = None,
+    metadata: RawMetadataMapping | None = None,
+    should_execute: Callable[[ScheduleEvaluationContext], bool] | None = None,
+    environment_vars: Mapping[str, str] | None = None,
+    execution_timezone: str | None = None,
+    description: str | None = None,
+    job: ExecutableDefinition | None = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-    required_resource_keys: Optional[set[str]] = None,
-    target: Optional[
-        Union[
-            "CoercibleToAssetSelection",
-            "AssetsDefinition",
-            "JobDefinition",
-            "UnresolvedAssetJobDefinition",
-        ]
-    ] = None,
-    owners: Optional[Sequence[str]] = None,
+    required_resource_keys: set[str] | None = None,
+    target: Union[
+        "CoercibleToAssetSelection",
+        "AssetsDefinition",
+        "JobDefinition",
+        "UnresolvedAssetJobDefinition",
+    ]
+    | None = None,
+    owners: Sequence[str] | None = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 

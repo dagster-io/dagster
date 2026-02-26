@@ -18,6 +18,10 @@ MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 MASK_PKG_RESOURCES = (r"\n.*import pkg_resources\n", "")
+MASK_REQUESTS_WARNING = (
+    r"[^\n]*RequestsDependencyWarning[^\n]*\n\s*warnings\.warn\(\n",
+    "",
+)
 
 
 SNIPPETS_DIR = (
@@ -156,5 +160,9 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                 cmd="dg list defs",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-list-defs-after-all.txt",
-                snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+                snippet_replace_regex=[
+                    MASK_VENV,
+                    MASK_USING_LOG_MESSAGE,
+                    MASK_REQUESTS_WARNING,
+                ],
             )

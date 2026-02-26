@@ -1,6 +1,5 @@
 import enum
 from collections.abc import Sequence
-from typing import Optional
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -110,10 +109,10 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             ],
         )
 
-    def resolve_numTrue(self, graphene_info: ResolveInfo) -> Optional[int]:
+    def resolve_numTrue(self, graphene_info: ResolveInfo) -> int | None:
         return self._evaluation.true_subset.size
 
-    def resolve_numCandidates(self, graphene_info: ResolveInfo) -> Optional[int]:
+    def resolve_numCandidates(self, graphene_info: ResolveInfo) -> int | None:
         return (
             self._evaluation.candidate_subset.size
             if isinstance(self._evaluation.candidate_subset, SerializableEntitySubset)
@@ -199,7 +198,7 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
     def __init__(
         self,
         root_evaluation: AutomationConditionEvaluation,
-        partition_key: Optional[str] = None,
+        partition_key: str | None = None,
     ):
         all_evaluations = _flatten_evaluation(root_evaluation)
         if root_evaluation.true_subset.is_partitioned:
@@ -281,10 +280,10 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             operatorType=evaluation.condition_snapshot.operator_type,
         )
 
-    def resolve_numTrue(self, graphene_info: ResolveInfo) -> Optional[int]:
+    def resolve_numTrue(self, graphene_info: ResolveInfo) -> int | None:
         return self._evaluation.true_subset.size
 
-    def resolve_numCandidates(self, graphene_info: ResolveInfo) -> Optional[int]:
+    def resolve_numCandidates(self, graphene_info: ResolveInfo) -> int | None:
         return (
             self._evaluation.candidate_subset.size
             if isinstance(self._evaluation.candidate_subset, SerializableEntitySubset)
@@ -293,7 +292,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
 
     def resolve_sinceMetadata(
         self, graphene_info: ResolveInfo
-    ) -> Optional[GrapheneSinceConditionMetadata]:
+    ) -> GrapheneSinceConditionMetadata | None:
         if self._evaluation.condition_snapshot.class_name != "SinceCondition":
             return None
 
@@ -362,7 +361,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
             ],
         )
 
-    def resolve_numRequested(self, graphene_info: ResolveInfo) -> Optional[int]:
+    def resolve_numRequested(self, graphene_info: ResolveInfo) -> int | None:
         return self._root_evaluation.true_subset.size
 
 
