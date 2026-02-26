@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.12.16 (core) / 0.28.16 (libraries)
+
+### Bugfixes
+
+- [ui] Fixed redirect to login when the user's session expires.
+- [ui] Fixed console error noise during asset lineage navigation.
+
+### Dagster Plus
+
+- [ui] Improved loading states and autoscroll behavior in the AI chat UI.
+- [ui] Fixed the icon selector in the saved selection creation flow.
+
 ## 1.12.15 (core) / 0.28.15 (libraries)
 
 ### New
