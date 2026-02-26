@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-ge"
-version = "0.28.16rc1"
+version = "0.28.17rc0"
 description = "Package for GE-specific Dagster framework op and resource components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,8 +18,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.16rc1",
-    "dagster-pandas==0.28.16rc1",
+    "dagster==1.12.17rc0",
+    "dagster-pandas==0.28.17rc0",
     "pandas<3.0.0",
     "great_expectations>=0.17.15,<1.0.0",
 ]

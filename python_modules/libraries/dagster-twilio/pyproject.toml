@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-twilio"
-version = "0.28.16rc1"
+version = "0.28.17rc0"
 description = "A Dagster integration for twilio"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.16rc1",
+    "dagster==1.12.17rc0",
     "twilio",
 ]
 
