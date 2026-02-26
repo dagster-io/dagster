@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "create-dagster"
-version = "1.12.16rc0"
+version = "1.12.16rc1"
 description = "CLI for creating a new dg project or workspace."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -21,7 +21,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-dg-core==1.12.16rc0",
+    "dagster-dg-core==1.12.16rc1",
 ]
 
 [project.urls]

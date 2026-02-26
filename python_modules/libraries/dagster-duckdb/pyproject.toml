@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-duckdb"
-version = "0.28.16rc0"
+version = "0.28.16rc1"
 description = "Package for DuckDB-specific Dagster framework op and resource components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "duckdb",
-    "dagster==1.12.16rc0",
+    "dagster==1.12.16rc1",
 ]
 
 [project.urls]

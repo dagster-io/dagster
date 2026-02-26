@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-duckdb-polars"
-version = "0.28.16rc0"
+version = "0.28.16rc1"
 description = "Package for storing Polars DataFrames in DuckDB."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,8 +19,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.16rc0",
-    "dagster-duckdb==0.28.16rc0",
+    "dagster==1.12.16rc1",
+    "dagster-duckdb==0.28.16rc1",
     "polars[pyarrow]",
 ]
 

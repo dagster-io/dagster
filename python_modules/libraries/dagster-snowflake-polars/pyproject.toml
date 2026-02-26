@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-snowflake-polars"
-version = "0.28.16rc0"
+version = "0.28.16rc1"
 description = "Package for integrating Snowflake and Polars with Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -20,8 +20,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.16rc0",
-    "dagster-snowflake==0.28.16rc0",
+    "dagster==1.12.16rc1",
+    "dagster-snowflake==0.28.16rc1",
     "polars>=1.0.0",
     "requests",
     "adbc-driver-snowflake>=1.6.0",

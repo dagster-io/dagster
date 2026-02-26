@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster_polytomic"
-version = "0.28.16rc0"
+version = "0.28.16rc1"
 description = "Package for integrating Polytomic with Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.16rc0",
+    "dagster==1.12.16rc1",
     "polytomic>=1.11.3",
 ]
 
