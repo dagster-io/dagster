@@ -25,8 +25,6 @@ from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
-    re_ignore_after,
-    re_ignore_before,
 )
 
 COMPONENTS_SNIPPETS_DIR = (
@@ -361,8 +359,7 @@ def test_components_docs_index(
             )
 
             # Run dbt, check works
-            if not update_snippets:
-                _run_command("dg launch --assets '*'")
+            _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",

@@ -1,8 +1,4 @@
-import itertools
-import json
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from pathlib import Path
@@ -23,26 +19,24 @@ from dagster.components.utils.translation import (
     TranslationFnResolver,
     create_component_translator_cls,
 )
-from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 from dagster_dbt.asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
-    DAGSTER_DBT_SELECT_METADATA_KEY,
-    DAGSTER_DBT_SELECTOR_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
     get_node,
 )
+from dagster_dbt.components.dbt_component_utils import (
+    DagsterDbtComponentTranslatorSettings,
+    _set_resolution_context,
+    build_op_spec,
+    resolve_cli_args,
+)
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import (
-    DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
-    validate_translator,
-)
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
@@ -53,13 +47,6 @@ from dagster_dbt.dbt_project_manager import (
     RemoteGitDbtProjectManager,
 )
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES
-
-
-@dataclass(frozen=True)
-class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
-    """Subclass of DagsterDbtTranslatorSettings that enables code references by default."""
-
-    enable_code_references: bool = True
 
 
 @dataclass
@@ -90,17 +77,6 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
 
 
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
-
-_resolution_context: ContextVar[ResolutionContext] = ContextVar("resolution_context")
-
-
-@contextmanager
-def _set_resolution_context(context: ResolutionContext):
-    token = _resolution_context.set(context)
-    try:
-        yield
-    finally:
-        _resolution_context.reset(token)
 
 
 @public
@@ -251,17 +227,12 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return self.op_config_schema
 
     def _get_op_spec(self, project: DbtProject) -> OpSpec:
-        default = self.op or OpSpec(name=project.name)
-        # always inject required tags
-        return default.model_copy(
-            update=dict(
-                tags={
-                    **(default.tags or {}),
-                    **({DAGSTER_DBT_SELECT_METADATA_KEY: self.select} if self.select else {}),
-                    **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: self.exclude} if self.exclude else {}),
-                    **({DAGSTER_DBT_SELECTOR_METADATA_KEY: self.selector} if self.selector else {}),
-                }
-            )
+        return build_op_spec(
+            op=self.op,
+            select=self.select,
+            exclude=self.exclude,
+            selector=self.selector,
+            op_name=project.name,
         )
 
     @cached_property
@@ -403,47 +374,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return dg.Definitions(assets=[_fn])
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
-        # create a resolution scope that includes the partition key and range, if available
-        partition_key = context.partition_key if context.has_partition_key else None
-        partition_key_range = (
-            context.partition_key_range if context.has_partition_key_range else None
-        )
-        try:
-            partition_time_window = context.partition_time_window
-        except Exception:
-            partition_time_window = None
-
-        # resolve the cli args with additional partition-related scope
-        resolved_args = (
-            _resolution_context.get()
-            .with_scope(
-                partition_key=partition_key,
-                partition_key_range=partition_key_range,
-                partition_time_window=partition_time_window,
-            )
-            .resolve_value(self.cli_args, as_type=list[str])
-        )
-
-        def _normalize_arg(arg: str | dict[str, Any]) -> list[str]:
-            if isinstance(arg, str):
-                return [arg]
-
-            check.invariant(
-                len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
-            )
-            key = next(iter(arg.keys()))
-            value = arg[key]
-            if isinstance(value, dict):
-                normalized_value = json.dumps(value)
-            else:
-                normalized_value = str(value)
-
-            return [key, normalized_value]
-
-        normalized_args = list(
-            itertools.chain(*[list(_normalize_arg(arg)) for arg in resolved_args])
-        )
-        return normalized_args
+        return resolve_cli_args(self.cli_args, context)
 
     def _get_dbt_event_iterator(
         self, context: dg.AssetExecutionContext, dbt: DbtCliResource
