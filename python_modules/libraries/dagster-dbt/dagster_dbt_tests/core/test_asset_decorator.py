@@ -842,6 +842,39 @@ def test_with_varying_partitions_defs(test_jaffle_shop_manifest: dict[str, Any])
             assert partitions_def is None, spec.key
 
 
+def test_with_mixed_distinct_partitions_defs_raises(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    """Two distinct non-None partitions defs in the same @dbt_assets must raise a clear error.
+
+    dbt's execution model uses a single op context with a single partition_key and cannot
+    simultaneously satisfy incompatible partition key formats (issue #33441).
+    """
+    daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+    static_partitions = StaticPartitionsDefinition(partition_keys=["a", "b"])
+    keys_with_daily = {AssetKey("customers"), AssetKey("orders")}
+    keys_with_static = {AssetKey("stg_orders")}
+
+    class MixedPartitionsTranslator(DagsterDbtTranslator):
+        def get_partitions_def(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> PartitionsDefinition | None:
+            asset_key = super().get_asset_key(dbt_resource_props)
+            if asset_key in keys_with_daily:
+                return daily_partitions
+            if asset_key in keys_with_static:
+                return static_partitions
+            return None
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            dagster_dbt_translator=MixedPartitionsTranslator(),
+        )
+        def my_dbt_assets(): ...
+
+
 def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: dict[str, Any]) -> None:
     expected_auto_materialize_policy = AutoMaterializePolicy.eager()
     expected_specs_by_key = {
