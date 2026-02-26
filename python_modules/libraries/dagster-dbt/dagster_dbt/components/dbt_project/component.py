@@ -185,7 +185,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     "retry_policy": {
                         "max_retries": 3,
                         "delay": 30,
-                        "jitter": "LINEAR",
+                        "jitter": "FULL",
                         "backoff": "EXPONENTIAL",
                     },
                 },
