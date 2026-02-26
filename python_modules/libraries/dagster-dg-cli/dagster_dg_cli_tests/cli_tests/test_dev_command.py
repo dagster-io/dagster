@@ -3,6 +3,7 @@ import signal
 import tempfile
 import textwrap
 from pathlib import Path
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 from dagster_dg_core.context import DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR
@@ -20,6 +21,8 @@ from dagster_test.dg_utils.utils import (
     isolated_example_workspace,
     launch_dev_command,
 )
+
+from dagster_dg_cli.cli.utils import _workspace_entry_for_project
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
@@ -310,3 +313,96 @@ def test_dev_uses_active_venv_when_flag_set():
                 assert "Using active Python environment:" in combined_output, (
                     f"Expected log message about using active Python environment, but got:\n{combined_output}"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Tests for missing .venv executable validation (Bug #32923)
+# ---------------------------------------------------------------------------
+
+
+def _make_mock_dg_context(
+    project_python_executable: Path,
+    project_name: str = "my-project",
+) -> MagicMock:
+    """Create a mock DgContext with the required attributes for _workspace_entry_for_project."""
+    mock_ctx = MagicMock()
+    mock_ctx.config.project = True  # truthy to pass the guard
+    mock_ctx.code_location_target_module_name = f"{project_name}.definitions"
+    mock_ctx.root_module_name = project_name.replace("-", "_")
+    mock_ctx.code_location_name = project_name
+    mock_ctx.get_path_for_local_module.return_value = Path(f"/workspace/{project_name}/src")
+
+    # project_python_executable is a cached_property on the real DgContext, act as a property
+    type(mock_ctx).project_python_executable = PropertyMock(
+        return_value=project_python_executable
+    )
+    type(mock_ctx).project_name = PropertyMock(return_value=project_name)
+    return mock_ctx
+
+
+def test_workspace_entry_exits_with_error_when_venv_executable_missing(tmp_path):
+    """Bug #32923: When a project's .venv executable does not exist,
+    _workspace_entry_for_project should exit with a clear error message
+    instead of letting subprocess.Popen raise FileNotFoundError."""
+    non_existent_exe = tmp_path / ".venv" / "Scripts" / "python.exe"
+    mock_ctx = _make_mock_dg_context(
+        project_python_executable=non_existent_exe,
+        project_name="my-project",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        _workspace_entry_for_project(mock_ctx, use_executable_path=True)
+
+    assert exc_info.value.code == 1
+
+
+def test_workspace_entry_error_message_contains_actionable_guidance(tmp_path, capsys):
+    """The error message should guide users to create the .venv or use --use-active-venv."""
+    non_existent_exe = tmp_path / ".venv" / "Scripts" / "python.exe"
+    mock_ctx = _make_mock_dg_context(
+        project_python_executable=non_existent_exe,
+        project_name="test-project",
+    )
+
+    with pytest.raises(SystemExit):
+        _workspace_entry_for_project(mock_ctx, use_executable_path=True)
+
+    captured = capsys.readouterr()
+    err_output = captured.err
+    assert "test-project" in err_output
+    assert "python -m venv .venv" in err_output
+    assert "dg dev --use-active-venv" in err_output
+
+
+def test_workspace_entry_succeeds_with_valid_executable(tmp_path):
+    """When the executable exists, _workspace_entry_for_project should return
+    the entry dict without error."""
+    exe_path = tmp_path / ".venv" / "Scripts" / "python.exe"
+    exe_path.parent.mkdir(parents=True, exist_ok=True)
+    exe_path.write_text("")  # create a dummy file
+
+    mock_ctx = _make_mock_dg_context(
+        project_python_executable=exe_path,
+        project_name="good-project",
+    )
+
+    result = _workspace_entry_for_project(mock_ctx, use_executable_path=True)
+    assert "python_module" in result
+    entry = result["python_module"]
+    assert entry["executable_path"] == str(exe_path.resolve())
+    assert entry["location_name"] == "good-project"
+
+
+def test_workspace_entry_skips_validation_when_use_executable_path_is_false(tmp_path):
+    """When use_executable_path is False, the executable path is not checked
+    and no error should occur even if the .venv doesn't exist."""
+    non_existent_exe = tmp_path / ".venv" / "Scripts" / "python.exe"
+    mock_ctx = _make_mock_dg_context(
+        project_python_executable=non_existent_exe,
+        project_name="no-venv-project",
+    )
+
+    # Should succeed without checking the executable
+    result = _workspace_entry_for_project(mock_ctx, use_executable_path=False)
+    assert "python_module" in result
+    assert "executable_path" not in result["python_module"]
