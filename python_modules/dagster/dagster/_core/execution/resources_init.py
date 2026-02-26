@@ -383,9 +383,7 @@ def get_resource_origins_mapping(
 
         # Check op compute resource requirements
         for resource_key in node_def.required_resource_keys:  # type: ignore[attr-defined]
-            if resource_key not in resource_origins:
-                resource_origins[resource_key] = set()
-            resource_origins[resource_key].add(f"op '{node_name}'")
+            resource_origins.setdefault(resource_key, set()).add(f"op '{node_name}'")
 
         # Check hook resource requirements
         hook_defs = job_def.get_all_hooks_for_handle(step.node_handle)
