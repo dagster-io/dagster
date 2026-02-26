@@ -455,6 +455,9 @@ dagster-user-deployments:
       # Override the default K8s scheduler
       # schedulerName: ~
 
+      # Override the default serviceAccount. Create additional service accounts in extraManifests
+      # serviceAccountName: ~
+
       # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
       readinessProbe:
