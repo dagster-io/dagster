@@ -380,7 +380,7 @@ class AssetDaemonScenarioState(ScenarioState):
             for arr, err in zip(sorted_actual_run_requests, sorted_expected_run_requests):
                 assert set(arr.asset_selection or []) == set(err.asset_selection or [])
                 assert arr.partition_key == err.partition_key
-        except:
+        except Exception:
             self._log_assertion_error(sorted_expected_run_requests, sorted_actual_run_requests)
             raise
 
@@ -504,7 +504,7 @@ class AssetDaemonScenarioState(ScenarioState):
             try:
                 assert len(expected_evaluation_specs) == 0
                 assert num_requested is None
-            except:
+            except Exception:
                 self.logger.error(
                     "\nAll Evaluations: \n\n" + "\n\n".join("\t" + str(e) for e in self.evaluations)
                 )
@@ -559,7 +559,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 if expected_sm.metadata:
                     assert actual_sm.metadata == expected_sm.metadata
 
-        except:
+        except Exception:
             self._log_assertion_error(
                 sorted(expected_subsets_with_metadata, key=lambda x: str(dg.serialize_value(x))),
                 sorted(actual_subsets_with_metadata, key=lambda x: str(dg.serialize_value(x))),

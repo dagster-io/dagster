@@ -117,7 +117,7 @@ def _discover_packages(repo_path: Path) -> list[PythonPackage]:
         if (path_dir / "setup.py").exists() or (path_dir / "pyproject.toml").exists():
             try:
                 packages.append(PythonPackage(path_dir))
-            except:
+            except Exception:
                 logging.exception(f"Failed processing python package at {path_dir}")
                 raise
 

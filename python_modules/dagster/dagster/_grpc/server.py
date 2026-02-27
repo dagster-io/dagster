@@ -1063,7 +1063,7 @@ class DagsterApiServer(DagsterApiServicer):
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
-        except:
+        except Exception:
             self._logger.exception("Failed to shut down server")
             return dagster_api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
@@ -1093,7 +1093,7 @@ class DagsterApiServer(DagsterApiServicer):
                     self._termination_times[cancel_execution_request.run_id] = time.time()
                     success = True
 
-        except:
+        except Exception:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
         return dagster_api_pb2.CancelExecutionReply(
@@ -1154,7 +1154,7 @@ class DagsterApiServer(DagsterApiServicer):
                 execute_external_job_args.job_origin.job_name
             )
 
-        except:
+        except Exception:
             return dagster_api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
@@ -1524,7 +1524,7 @@ def open_server_process(
             timeout=startup_timeout,
             additional_timeout_msg=additional_timeout_msg,
         )
-    except:
+    except Exception:
         if server_process.poll() is None:
             server_process.terminate()
         raise

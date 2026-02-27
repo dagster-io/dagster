@@ -116,7 +116,7 @@ class tzres(object):
         name_splt = tzname_str.split(',-')
         try:
             offset = int(name_splt[1])
-        except:
+        except Exception:
             raise ValueError("Malformed timezone string.")
 
         return self.load_name(offset)

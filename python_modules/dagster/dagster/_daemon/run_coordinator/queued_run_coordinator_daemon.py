@@ -290,7 +290,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         slot_count_offset=run_queue_config.op_concurrency_slot_buffer,
                         pool_granularity=concurrency_config.pool_config.pool_granularity,
                     )
-                except:
+                except Exception:
                     self._logger.exception("Failed to initialize op concurrency counter")
                     # when we cannot initialize the global concurrency counter, we should fall back
                     # to not blocking any runs based on op concurrency limits

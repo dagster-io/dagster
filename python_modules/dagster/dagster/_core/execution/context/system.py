@@ -80,7 +80,7 @@ if TYPE_CHECKING:
 def is_iterable(obj: Any) -> bool:
     try:
         iter(obj)
-    except:
+    except Exception:
         return False
     return True
 

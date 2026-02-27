@@ -20,7 +20,7 @@ def test_str_regex() -> None:
         class AStringConfig(dg.Config):  # type: ignore
             a_str: str = Field(regex=r"^(foo)+$")  # type: ignore
 
-    except:
+    except Exception:
 
         class AStringConfig(dg.Config):
             a_str: str = Field(pattern=r"^(foo)+$")
@@ -136,7 +136,7 @@ def test_with_conlist() -> None:
         class AListConfig(dg.Config):  # type: ignore
             a_list: conlist(int, min_length=2, max_length=10)  # type: ignore
 
-    except:
+    except Exception:
 
         class AListConfig(dg.Config):
             a_list: conlist(int, min_items=2, max_items=10)  # type: ignore

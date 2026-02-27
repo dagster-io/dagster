@@ -303,7 +303,7 @@ class SensorLaunchContext(AbstractContextManager):
                         f"Unable to reach the user code server for sensor {self._remote_sensor.name}."
                         " Sensor will resume execution once the server is available."
                     ) from exception_value
-                except:
+                except Exception:
                     error_data = DaemonErrorCapture.process_exception(
                         sys.exc_info(),
                         logger=self.logger,

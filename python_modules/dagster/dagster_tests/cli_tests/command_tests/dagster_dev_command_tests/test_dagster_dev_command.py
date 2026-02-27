@@ -262,7 +262,7 @@ def _wait_for_webserver_running(dagit_port: int) -> None:
             server_info = requests.get(f"http://localhost:{dagit_port}/server_info").json()
             if server_info:
                 return
-        except:
+        except Exception:
             print("Waiting for webserver to be ready..")  # noqa: T201
 
         if time.time() - start_time > 30:

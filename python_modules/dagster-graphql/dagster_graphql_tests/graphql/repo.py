@@ -549,7 +549,7 @@ def naughty_programmer_job():
             try:
                 try:
                     raise Exception("The inner sanctum")
-                except:
+                except Exception:
                     raise Exception("bad programmer, bad")
             except Exception as e:
                 raise Exception("Outer exception") from e

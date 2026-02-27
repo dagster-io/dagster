@@ -10,7 +10,7 @@ from dagster._vendored.dateutil import parser
 try:
     # zoneinfo is python >= 3.9
     from zoneinfo import ZoneInfo as _timezone_from_string
-except:
+except Exception:
     from dagster._vendored.dateutil.tz import gettz as _timezone_from_string
 
 

@@ -335,7 +335,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 )
 
                 return (check.not_none(lookml_explore.id), lookml_explore)
-            except:
+            except Exception:
                 logger.warning(
                     f"Failed to fetch LookML explore '{explore_name}' for model '{model_name}'."
                 )

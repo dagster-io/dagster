@@ -197,7 +197,7 @@ class PipesFileMessageReader(PipesMessageReader):
             for line in tail_file(self._path, is_resource_complete.is_set):
                 message = json.loads(line)
                 handler.handle_message(message)
-        except:
+        except Exception:
             handler.report_pipes_framework_exception(
                 f"{self.__class__.__name__} reader thread",
                 sys.exc_info(),
@@ -440,7 +440,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
                             self._log_unstartable_warning(handler, params)
                         return
 
-        except:
+        except Exception:
             handler.report_pipes_framework_exception(
                 f"{self.__class__.__name__} messages thread",
                 sys.exc_info(),

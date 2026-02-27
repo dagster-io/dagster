@@ -153,7 +153,7 @@ def local_port_forward_postgres(namespace):
                 )
                 conn.close()
                 break
-            except:
+            except Exception:
                 time.sleep(1)
                 continue
 

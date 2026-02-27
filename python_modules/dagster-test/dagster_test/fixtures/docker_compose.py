@@ -27,7 +27,7 @@ def docker_compose_cm(
             docker_compose_up(
                 docker_compose_yml, docker_context, service, env_file, no_build=no_build
             )
-        except:
+        except Exception:
             dump_docker_compose_logs(docker_context, docker_compose_yml)
             raise
 

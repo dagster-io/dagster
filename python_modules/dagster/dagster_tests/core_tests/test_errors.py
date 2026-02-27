@@ -34,7 +34,7 @@ def test_from_none():
     def _wrap(from_none):
         try:
             _raise()
-        except:
+        except Exception:
             if from_none:
                 raise Exception("wrapped") from None
             else:
@@ -42,7 +42,7 @@ def test_from_none():
 
     try:
         _wrap(from_none=False)
-    except:
+    except Exception:
         err = serializable_error_info_from_exc_info(sys.exc_info())
 
     assert err  # pyright: ignore[reportPossiblyUnboundVariable]
@@ -50,7 +50,7 @@ def test_from_none():
 
     try:
         _wrap(from_none=True)
-    except:
+    except Exception:
         err = serializable_error_info_from_exc_info(sys.exc_info())
 
     assert err

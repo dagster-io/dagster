@@ -619,7 +619,7 @@ def _has_out_of_range_cron_interval_str(cron_string: str):
                     low, high, step = map(int, [low, high, step])
                     if step > high:
                         return True
-    except:
+    except Exception:
         pass
     return False
 

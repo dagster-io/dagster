@@ -698,7 +698,7 @@ class DbtCliResource(ConfigurableResource):
             if self._cli_version.major < 2:
                 try:
                     adapter = self._initialize_dbt_core_adapter(args)
-                except:
+                except Exception:
                     logger.warning(
                         "An error was encountered when creating a handle to the dbt adapter in Dagster.",
                         exc_info=True,

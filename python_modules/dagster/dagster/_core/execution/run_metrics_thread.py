@@ -220,7 +220,7 @@ def _capture_metrics(
                     run_tags=run_tags,
                 )
 
-        except:
+        except Exception:
             if logger:
                 logger.warning(
                     "Exception caught during capture of metrics, will cease capturing",

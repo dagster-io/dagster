@@ -129,7 +129,7 @@ def build_freshness_checks_from_dbt_assets(
             try:
                 lower_bound_delta_seconds_str = freshness_check_config["lower_bound_delta_seconds"]
                 lower_bound_seconds = int(lower_bound_delta_seconds_str)
-            except:
+            except Exception:
                 raise DagsterInvariantViolationError(
                     "lower_bound_delta_seconds must be provided, and parseable as an integer "
                     "in the freshness_check config for a non-time-partitioned asset."

@@ -529,7 +529,7 @@ class AssetSelection(ABC):
 
         try:
             return AntlrAssetSelectionParser(string, include_sources).asset_selection
-        except:
+        except Exception:
             pass
         if string == "*":
             return cls.all()

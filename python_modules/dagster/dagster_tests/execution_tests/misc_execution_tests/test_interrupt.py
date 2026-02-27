@@ -186,7 +186,7 @@ def test_capture_interrupt():
     with capture_interrupts():
         try:
             _send_interrupt_to_self()
-        except:
+        except Exception:
             inner_interrupt = True
 
     assert not inner_interrupt
@@ -208,9 +208,9 @@ def test_capture_interrupt():
         with capture_interrupts():
             try:
                 time.sleep(5)
-            except:
+            except Exception:
                 inner_interrupt = True
-    except:
+    except Exception:
         outer_interrupt = True
 
     assert not outer_interrupt
@@ -242,7 +242,7 @@ def test_interrupt_inside_nested_delay_and_raise():
                 except dg.DagsterExecutionInterruptedError:
                     interrupt_inside_nested_raise = True
 
-    except:
+    except Exception:
         interrupt_after_delay = True
 
     assert interrupt_inside_nested_raise
@@ -259,11 +259,11 @@ def test_no_interrupt_after_nested_delay_and_raise():
             with dg.raise_execution_interrupts():
                 try:
                     time.sleep(5)
-                except:
+                except Exception:
                     interrupt_inside_nested_raise = True
             _send_interrupt_to_self()
 
-    except:
+    except Exception:
         interrupt_after_delay = True
 
     assert not interrupt_inside_nested_raise
@@ -282,7 +282,7 @@ def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts(
                     pass
             except dg.DagsterExecutionInterruptedError:
                 interrupt_from_raise_execution_interrupts = True
-    except:
+    except Exception:
         interrupt_after_delay = True
 
     assert interrupt_from_raise_execution_interrupts

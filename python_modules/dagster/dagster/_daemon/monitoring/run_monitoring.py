@@ -263,7 +263,7 @@ def check_run_timeout(
                 instance.report_run_failed(
                     run_record.dagster_run, f"Exceeded maximum runtime of {int(max_time)} seconds."
                 )
-        except:
+        except Exception:
             instance.report_engine_event(
                 "Exception while attempting to terminate run. Run will still be marked as failed.",
                 job_name=run_record.dagster_run.job_name,

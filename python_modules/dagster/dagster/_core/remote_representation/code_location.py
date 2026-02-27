@@ -761,7 +761,7 @@ class GrpcServerCodeLocation(CodeLocation):
                     self._job_snaps_by_name[repo_name][job_snap.name] = job_snap
                     self._job_snaps_by_snapshot_id[job_snap.snapshot_id] = job_snap
 
-        except:
+        except Exception:
             self.cleanup()
             raise
 

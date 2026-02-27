@@ -259,7 +259,7 @@ def dev_command_impl(
 
             except KeyboardInterrupt:
                 logger.info("KeyboardInterrupt received")
-            except:
+            except Exception:
                 logger.exception("An unexpected exception has occurred")
             finally:
                 logger.info("Shutting down Dagster services...")

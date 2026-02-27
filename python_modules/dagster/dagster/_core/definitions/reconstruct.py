@@ -421,7 +421,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
             and getattr(inspect.getmodule(target), "__name__", None) != "__main__"
         ):
             return ReconstructableJob.for_module(target.__module__, target.__name__)
-    except:
+    except Exception:
         pass
 
     python_file = get_python_file_from_target(target)

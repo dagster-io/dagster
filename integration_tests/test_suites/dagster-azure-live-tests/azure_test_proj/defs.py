@@ -8,5 +8,5 @@ def my_asset(context: AssetExecutionContext) -> None:
         context.log.info(f"Logging using context {i}")
     try:
         raise Exception("This is an exception")
-    except:
+    except Exception:
         return

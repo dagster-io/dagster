@@ -293,7 +293,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # waiting for the  execution to complete, so that we can terminate slow or hanging steps
             with raise_execution_interrupts():
                 yield from self.step_events_iterator(step_context, step_key, databricks_run_id)
-        except:
+        except Exception:
             # if execution is interrupted before the step is completed, cancel the run
             self.databricks_runner.client.workspace_client.jobs.cancel_run(databricks_run_id)
             raise
@@ -441,7 +441,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         f"run_info {run_info} doesn't contain cluster_id"
                     )
                 break
-            except:
+            except Exception:
                 log.warning(
                     f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id}. "
                     f"Retrying {i} of {request_retries} times."

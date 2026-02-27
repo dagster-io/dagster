@@ -288,7 +288,7 @@ def _execute_summary_stats(type_name, value, metadata_fn):
     user_metadata = metadata_fn(value)
     try:
         return normalize_metadata(user_metadata)
-    except:
+    except Exception:
         raise DagsterInvariantViolationError(
             "The return value of the user-defined summary_statistics function for pandas "
             f"data frame type {type_name} returned {value}. This function must return "

@@ -31,7 +31,7 @@ def _dagster_is_ready(port: int) -> bool:
     try:
         response = requests.get(f"http://localhost:{port}")
         return response.status_code == 200
-    except:
+    except Exception:
         return False
 
 

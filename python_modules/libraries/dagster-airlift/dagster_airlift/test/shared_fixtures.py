@@ -36,7 +36,7 @@ def _airflow_is_ready(*, port: int, expected_num_dags: int) -> bool:
             name="test",
         )
         return len(af_instance.list_dags()) >= expected_num_dags
-    except:
+    except Exception:
         return False
 
 
@@ -125,7 +125,7 @@ def _dagster_is_ready(port: int) -> bool:
     try:
         response = requests.get(f"http://localhost:{port}")
         return response.status_code == 200
-    except:
+    except Exception:
         return False
 
 

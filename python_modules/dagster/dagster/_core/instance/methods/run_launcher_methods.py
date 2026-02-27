@@ -78,7 +78,7 @@ class RunLauncherMethods:
             submitted_run = self.run_coordinator.submit_run(
                 SubmitRunContext(run, workspace=workspace)
             )
-        except:
+        except Exception:
             from dagster._core.events import EngineEventData
 
             error = serializable_error_info_from_exc_info(sys.exc_info())
@@ -128,7 +128,7 @@ class RunLauncherMethods:
         assert run is not None
         try:
             self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
-        except:
+        except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(  # type: ignore[attr-defined]  # type: ignore[attr-defined]
                 error.message,
@@ -181,7 +181,7 @@ class RunLauncherMethods:
                     resume_attempt_number=attempt_number,
                 )
             )
-        except:
+        except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(  # type: ignore[attr-defined]  # type: ignore[attr-defined]
                 error.message,

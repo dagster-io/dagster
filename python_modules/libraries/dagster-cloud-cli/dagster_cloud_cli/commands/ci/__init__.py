@@ -798,7 +798,7 @@ def build_impl(
                     "Built and uploaded python executable"
                     f" {location_state.build_output.pex_tag} for location {name}"
                 )
-        except:
+        except Exception:
             location_state.add_status_change(state.LocationStatus.failed, "build failed")
             state_store.save(location_state)
             raise
@@ -1016,7 +1016,7 @@ def deploy_impl(
             location_load_timeout=location_load_timeout,
             agent_heartbeat_timeout=agent_heartbeat_timeout,
         )
-    except:
+    except Exception:
         # unfortunately we do not know if only a subset of locations failed to deploy
         for location_state in built_locations:
             location_state.add_status_change(state.LocationStatus.failed, "deploy failed")
@@ -1154,7 +1154,7 @@ def manage_state_command(
 ):
     try:
         from dagster_dbt import DbtProject
-    except:
+    except Exception:
         ui.print(
             "Unable to import dagster_dbt. To use `manage-state`, dagster_dbt must be installed."
         )
@@ -1162,7 +1162,7 @@ def manage_state_command(
     try:
         from dagster._core.code_pointer import load_python_file
         from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
-    except:
+    except Exception:
         ui.print("Unable to import dagster. To use `manage-state`, dagster must be installed.")
         return
 

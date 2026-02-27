@@ -188,7 +188,7 @@ def _execute_run_command_body(
             write_stream_fn(event)
             if event.event_type == DagsterEventType.PIPELINE_FAILURE:
                 run_worker_failed = True
-    except:
+    except Exception:
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
@@ -322,7 +322,7 @@ def _resume_run_command_body(
             if event.event_type == DagsterEventType.PIPELINE_FAILURE:
                 run_worker_failed = True
 
-    except:
+    except Exception:
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:

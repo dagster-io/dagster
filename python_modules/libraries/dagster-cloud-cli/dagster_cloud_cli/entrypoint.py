@@ -168,7 +168,7 @@ def logtest() -> None:
     logging.warning("this is a warning message")
     try:
         pass
-    except:
+    except Exception:
         logging.exception("this is inside an exception")
     logger = logging.getLogger("cloud-events")
     logger.info(

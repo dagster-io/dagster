@@ -106,7 +106,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         """
         try:
             return cls.from_coercible_value(key, value, partitions_def)
-        except:
+        except Exception:
             return None
 
     @property

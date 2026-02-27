@@ -700,7 +700,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                             f"Unable to reach the user code server for schedule {schedule_name}."
                             " Schedule will resume execution once the server is available."
                         ) from e
-                    except:
+                    except Exception:
                         error_data = DaemonErrorCapture.process_exception(
                             sys.exc_info(),
                             logger=logger,

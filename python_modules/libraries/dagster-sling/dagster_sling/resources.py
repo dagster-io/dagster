@@ -298,7 +298,7 @@ class SlingResource(ConfigurableResource):
         tmp = self._clean_line(line)
         try:
             text = tmp.split("  ")[1]
-        except:
+        except Exception:
             text = tmp
         return text
 

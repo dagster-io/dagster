@@ -212,7 +212,7 @@ def _run_in_subprocess(
 
         pid = os.getpid()
 
-    except:
+    except Exception:
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
         event = IPCErrorMessage(
             serializable_error_info=serializable_error_info,
@@ -245,7 +245,7 @@ def _run_in_subprocess(
     except GeneratorExit:
         closed = True
         raise
-    except:
+    except Exception:
         # Relies on core_execute_run logging all exceptions to the event log before raising
         pass
     finally:

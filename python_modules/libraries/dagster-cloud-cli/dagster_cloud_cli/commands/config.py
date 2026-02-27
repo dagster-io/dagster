@@ -203,7 +203,7 @@ def _setup(organization: str, deployment: str, api_token: str):
             with gql.graphql_client_from_url(gql.url_from_config(new_org), new_api_token) as client:
                 deployments = gql.fetch_full_deployments(client)
             deployment_names = [deployment["deploymentName"] for deployment in deployments]
-        except:
+        except Exception:
             ui.warn(
                 "Could not fetch deployment names from server - organization or user token may be"
                 " set incorrectly."

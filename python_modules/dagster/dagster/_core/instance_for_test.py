@@ -89,7 +89,7 @@ def instance_for_test(
         with DagsterInstance.from_config(temp_dir) as instance:
             try:
                 yield instance
-            except:
+            except Exception:
                 sys.stderr.write(
                     "Test raised an exception, attempting to clean up instance:"
                     + serializable_error_info_from_exc_info(sys.exc_info()).to_string()

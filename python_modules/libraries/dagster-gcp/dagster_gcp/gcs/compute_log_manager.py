@@ -190,7 +190,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
             return self._bucket.blob(gcs_key).generate_signed_url(
                 expiration=datetime.timedelta(minutes=60)
             )
-        except:
+        except Exception:
             # fallback to the local download url if the current credentials are insufficient to create
             # signed urls
             return self.local_manager.get_captured_log_download_url(log_key, io_type)

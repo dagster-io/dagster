@@ -436,7 +436,7 @@ class DbtCliInvocation:
                             self._error_messages.append(raw_event["info"]["msg"])
 
                         yield raw_event
-                    except:
+                    except Exception:
                         yield raw_event_str
 
         except DagsterExecutionInterruptedError:

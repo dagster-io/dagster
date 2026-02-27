@@ -49,7 +49,7 @@ class DagsterDltResource(ConfigurableResource):
             from zoneinfo import ZoneInfo
 
             casted_instance_types = (datetime, timezone, ZoneInfo)
-        except:
+        except Exception:
             from dateutil.tz import tzfile
 
             casted_instance_types = (datetime, timezone, tzfile)

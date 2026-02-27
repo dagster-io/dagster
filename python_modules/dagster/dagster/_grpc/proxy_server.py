@@ -346,7 +346,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
-        except:
+        except Exception:
             return dagster_api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
@@ -372,7 +372,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 raise Exception(f"Could not find a server for run {run_id}")
 
             return client._get_response("CancelExecution", request)  # noqa
-        except:
+        except Exception:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
             return dagster_api_pb2.CancelExecutionReply(

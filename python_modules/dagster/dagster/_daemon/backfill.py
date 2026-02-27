@@ -210,7 +210,7 @@ def execute_backfill_iteration_with_instigation_logger(
                         raise DagsterUserCodeUnreachableError(
                             "Unable to reach the code server. Backfill will resume once the code server is available."
                         ) from e
-                    except:
+                    except Exception:
                         error_info = DaemonErrorCapture.process_exception(
                             sys.exc_info(),
                             logger=backfill_logger,
