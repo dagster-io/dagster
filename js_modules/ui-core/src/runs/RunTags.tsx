@@ -6,7 +6,7 @@ import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
-import {__ASSET_JOB_PREFIX, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {TagAction} from '../ui/TagActions';
 
 // Sort these tags to the start of the list.

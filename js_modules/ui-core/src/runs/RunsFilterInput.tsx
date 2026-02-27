@@ -20,7 +20,7 @@ import {
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
 import {COMMON_COLLATOR} from '../app/Util';
-import {__ASSET_JOB_PREFIX, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useFilters} from '../ui/BaseFilters';
