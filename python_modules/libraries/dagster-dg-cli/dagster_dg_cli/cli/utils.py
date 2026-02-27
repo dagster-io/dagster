@@ -288,8 +288,8 @@ def _workspace_entry_for_project(
         "location_name": dg_context.code_location_name,
     }
     if use_executable_path:
-        # dg_context.project_python_executable is already a Path, but we'll ensure it
-        exe_path = Path(dg_context.project_python_executable)
+        # Normalize path (important on Windows)
+        exe_path = dg_context.project_python_executable.resolve()
 
         # Normalize path (important on Windows)
         exe_path = exe_path.resolve()
