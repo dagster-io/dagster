@@ -1492,6 +1492,41 @@ def test_service_account_name(template: HelmTemplate):
     assert dagster_user_deployment.spec.template.spec.service_account_name == "myserviceaccount"
 
 
+def test_service_account_name_container_context(template: HelmTemplate):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+        serviceAccountName="myserviceaccount",
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    assert json.loads(container_context.value) == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "myserviceaccount",
+            "run_k8s_config": {
+                "pod_spec_config": {
+                    "automount_service_account_token": True,
+                    "service_account_name": "myserviceaccount",
+                }
+            },
+        }
+    }
+
+
 def test_automount_svc_acct_token(template: HelmTemplate):
     helm_values = UserDeployment.construct()
 
