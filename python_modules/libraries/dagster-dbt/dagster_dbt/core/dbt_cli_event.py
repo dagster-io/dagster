@@ -605,7 +605,7 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
         return self.raw_event["info"]["name"] == "NodeFinished"
 
     def _get_check_passed(self) -> bool:
-        return self._get_node_status() == NodeStatus.Success
+        return self._get_node_status() in (NodeStatus.Success, TestStatus.Pass)
 
     def _get_check_severity(self) -> AssetCheckSeverity:
         node_status = self._get_node_status()
