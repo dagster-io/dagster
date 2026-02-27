@@ -235,7 +235,7 @@ def execute_backfill_iteration_with_instigation_logger(
                         error_info = DaemonErrorCapture.process_exception(
                             sys.exc_info(),
                             logger=backfill_logger,
-                            log_message=f"Backfill hit persistent DagsterRunAlreadyExists for {backfill.backfill_id} and will retry.",
+                            log_message=f"Backfill hit persistent DagsterRunAlreadyExists for {backfill.backfill_id} and will consume retry budget.",
                         )
                         instance.update_backfill(
                             backfill.with_error(error_info).with_failure_count(
