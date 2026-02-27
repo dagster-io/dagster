@@ -42,6 +42,12 @@ from dagster._utils.merger import merge_dicts
 # Name for auto-created job that's used to materialize assets
 IMPLICIT_ASSET_JOB_NAME = "__ASSET_JOB"
 
+# Context-specific job names for runs (these are display names on DagsterRun, not actual job definitions)
+MANUAL_MATERIALIZATION_JOB_NAME = "__MANUAL_MATERIALIZATION"
+BACKFILL_JOB_NAME = "__BACKFILL"
+SENSOR_JOB_NAME_PREFIX = "__SENSOR_"
+SCHEDULE_JOB_NAME_PREFIX = "__SCHEDULE_"
+
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
     from dagster._core.definitions.run_config import RunConfig
@@ -50,7 +56,14 @@ if TYPE_CHECKING:
 def is_reserved_asset_job_name(name: str) -> bool:
     from dagster._core.definitions.target import ANONYMOUS_ASSET_JOB_PREFIX
 
-    return name == IMPLICIT_ASSET_JOB_NAME or name.startswith(ANONYMOUS_ASSET_JOB_PREFIX)
+    return (
+        name == IMPLICIT_ASSET_JOB_NAME
+        or name.startswith(ANONYMOUS_ASSET_JOB_PREFIX)
+        or name == MANUAL_MATERIALIZATION_JOB_NAME
+        or name == BACKFILL_JOB_NAME
+        or name.startswith(SENSOR_JOB_NAME_PREFIX)
+        or name.startswith(SCHEDULE_JOB_NAME_PREFIX)
+    )
 
 
 def get_base_asset_job_lambda(
