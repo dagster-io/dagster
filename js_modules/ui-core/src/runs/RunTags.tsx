@@ -6,7 +6,7 @@ import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
-import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {__ASSET_JOB_PREFIX, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {TagAction} from '../ui/TagActions';
 
 // Sort these tags to the start of the list.
@@ -93,7 +93,7 @@ export const RunTags = memo((props: Props) => {
       }
 
       if (
-        tag.value.startsWith(__ASSET_JOB_PREFIX) &&
+        isHiddenAssetGroupJob(tag.value) &&
         (key === DagsterTag.PartitionSet || key === DagsterTag.StepSelection)
       ) {
         continue;

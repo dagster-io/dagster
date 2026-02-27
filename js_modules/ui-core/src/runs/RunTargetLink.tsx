@@ -4,7 +4,7 @@ import * as React from 'react';
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {assetKeysForRun} from './RunUtils';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {getAssetJobDisplayName, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineTag} from '../pipelines/PipelineReference';
 import {RepoAddress} from '../workspace/types';
 
@@ -24,9 +24,12 @@ export const RunTargetLink = ({
     return isHiddenAssetGroupJob(run.pipelineName) ? assetKeysForRun(run) : null;
   }, [run]);
 
+  const displayName = getAssetJobDisplayName(run.pipelineName);
+
   if (assetKeys) {
     return (
       <Box flex={{direction: 'column', gap: 4}}>
+        {displayName ? <Box style={{fontWeight: 500, fontSize: 12}}>{displayName}</Box> : null}
         <AssetKeyTagCollection
           assetKeys={assetKeys}
           useTags

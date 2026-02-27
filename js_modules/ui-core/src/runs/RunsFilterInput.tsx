@@ -20,7 +20,7 @@ import {
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
 import {COMMON_COLLATOR} from '../app/Util';
-import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {__ASSET_JOB_PREFIX, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useFilters} from '../ui/BaseFilters';
@@ -289,7 +289,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       const {repository} = option;
       for (const pipeline of repository.pipelines) {
         if (pipeline.isJob) {
-          if (!pipeline.name.startsWith(__ASSET_JOB_PREFIX)) {
+          if (!isHiddenAssetGroupJob(pipeline.name)) {
             jobNames.push(pipeline.name);
           }
         } else {

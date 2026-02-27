@@ -43,9 +43,45 @@ type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 export const __ANONYMOUS_ASSET_JOB_PREFIX = '__anonymous_asset_job';
+export const __MANUAL_MATERIALIZATION = '__MANUAL_MATERIALIZATION';
+export const __BACKFILL = '__BACKFILL';
+export const __SENSOR_PREFIX = '__SENSOR_';
+export const __SCHEDULE_PREFIX = '__SCHEDULE_';
 
 export function isHiddenAssetGroupJob(jobName: string) {
-  return jobName.startsWith(__ASSET_JOB_PREFIX) || jobName.startsWith(__ANONYMOUS_ASSET_JOB_PREFIX);
+  return (
+    jobName.startsWith(__ASSET_JOB_PREFIX) ||
+    jobName.startsWith(__ANONYMOUS_ASSET_JOB_PREFIX) ||
+    jobName === __MANUAL_MATERIALIZATION ||
+    jobName === __BACKFILL ||
+    jobName.startsWith(__SENSOR_PREFIX) ||
+    jobName.startsWith(__SCHEDULE_PREFIX)
+  );
+}
+
+/**
+ * Returns a user-friendly display name for hidden asset job names.
+ * For non-hidden jobs, returns null (caller should use the job name directly).
+ */
+export function getAssetJobDisplayName(jobName: string): string | null {
+  if (jobName === __MANUAL_MATERIALIZATION) {
+    return 'Manual materialization';
+  }
+  if (jobName === __BACKFILL) {
+    return 'Backfill';
+  }
+  if (jobName.startsWith(__SENSOR_PREFIX)) {
+    const sensorName = jobName.slice(__SENSOR_PREFIX.length);
+    return `Sensor: ${sensorName}`;
+  }
+  if (jobName.startsWith(__SCHEDULE_PREFIX)) {
+    const scheduleName = jobName.slice(__SCHEDULE_PREFIX.length);
+    return `Schedule: ${scheduleName}`;
+  }
+  if (jobName.startsWith(__ASSET_JOB_PREFIX) || jobName.startsWith(__ANONYMOUS_ASSET_JOB_PREFIX)) {
+    return 'Ad hoc materialization';
+  }
+  return null;
 }
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
