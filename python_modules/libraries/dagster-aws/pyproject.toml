@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-aws"
-version = "0.28.17rc0"
+version = "0.28.17"
 description = "Package for AWS-specific Dagster framework solid and resource components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "boto3",
-    "dagster==1.12.17rc0",
+    "dagster==1.12.17",
     "packaging",
     "requests",
 ]
@@ -39,7 +39,7 @@ redshift = [
     "psycopg2-binary",
 ]
 pyspark = [
-    "dagster-pyspark==0.28.17rc0",
+    "dagster-pyspark==0.28.17",
 ]
 stubs = [
     "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr,emr-containers]",

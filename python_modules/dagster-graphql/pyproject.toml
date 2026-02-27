@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-graphql"
-version = "1.12.17rc0"
+version = "1.12.17"
 description = "The GraphQL API for Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.17rc0",
+    "dagster==1.12.17",
     "graphene>=3,<4",
     "gql[requests]>=3,<5",
     "requests",

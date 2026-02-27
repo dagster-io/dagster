@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-pandas"
-version = "0.28.17rc0"
+version = "0.28.17"
 description = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -23,7 +23,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.17rc0",
+    "dagster==1.12.17",
     "pandas<3.0.0",
 ]
 

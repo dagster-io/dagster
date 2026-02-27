@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-spark"
-version = "0.28.17rc0"
+version = "0.28.17"
 description = "Package for Spark Dagster framework components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.17rc0",
+    "dagster==1.12.17",
 ]
 
 [project.urls]

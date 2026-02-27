@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-wandb"
-version = "0.28.17rc0"
+version = "0.28.17"
 description = "Package for wandb Dagster components."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,7 +19,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.12.17rc0",
+    "dagster==1.12.17",
     "wandb>=0.15.11,<1.0",
 ]
 
