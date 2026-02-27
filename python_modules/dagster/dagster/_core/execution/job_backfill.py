@@ -5,7 +5,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
-from dagster._core.definitions.assets.job.asset_job import BACKFILL_JOB_NAME, is_reserved_asset_job_name
+from dagster._core.definitions.assets.job.asset_job import (
+    BACKFILL_JOB_NAME,
+    is_reserved_asset_job_name,
+)
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector

@@ -17,7 +17,10 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.assets.job.asset_job import SENSOR_JOB_NAME_PREFIX, is_reserved_asset_job_name
+from dagster._core.definitions.assets.job.asset_job import (
+    SENSOR_JOB_NAME_PREFIX,
+    is_reserved_asset_job_name,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,

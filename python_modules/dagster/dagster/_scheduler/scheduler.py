@@ -13,7 +13,10 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.definitions.assets.job.asset_job import SCHEDULE_JOB_NAME_PREFIX, is_reserved_asset_job_name
+from dagster._core.definitions.assets.job.asset_job import (
+    SCHEDULE_JOB_NAME_PREFIX,
+    is_reserved_asset_job_name,
+)
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
