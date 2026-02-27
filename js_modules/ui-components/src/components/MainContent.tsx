@@ -1,7 +1,10 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import {forwardRef} from 'react';
 
-export const MainContent = styled.div`
-  overflow-y: auto;
-  width: 100%;
-  height: 100%;
-`;
+import styles from './css/MainContent.module.css';
+
+export const MainContent = forwardRef<HTMLDivElement, React.ComponentPropsWithRef<'div'>>(
+  ({className, ...props}, ref) => {
+    return <div {...props} className={clsx(styles.mainContent, className)} ref={ref} />;
+  },
+);

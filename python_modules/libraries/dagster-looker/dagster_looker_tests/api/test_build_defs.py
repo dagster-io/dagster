@@ -134,11 +134,29 @@ def test_load_asset_specs(
     expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
+    lookml_view_asset = asset_specs_by_key.get(expected_lookml_view_asset_dep_key)
+    if lookml_view_asset is not None:
+        table_dep = next(
+            (d for d in lookml_view_asset.deps if d.asset_key == AssetKey(["my_table"])),
+            None,
+        )
+        assert table_dep is not None
+        assert table_dep.metadata.get("dagster/table_name") == "my_table"
+
     lookml_explore_asset = asset_specs_by_key[expected_lookml_explore_asset_key]
-    assert [dep.asset_key for dep in lookml_explore_asset.deps] == [
-        expected_lookml_view_asset_dep_key
+    assert expected_lookml_view_asset_dep_key in [
+        dep.asset_key for dep in lookml_explore_asset.deps
     ]
-    assert lookml_explore_asset.tags == {"dagster/kind/looker": "", "dagster/kind/explore": ""}
+    table_dep = next(
+        (d for d in lookml_explore_asset.deps if d.asset_key == AssetKey(["my_table"])),
+        None,
+    )
+    assert table_dep is not None
+    assert table_dep.metadata.get("dagster/table_name") == "my_table"
+    assert lookml_explore_asset.tags == {
+        "dagster/kind/looker": "",
+        "dagster/kind/explore": "",
+    }
     assert lookml_explore_asset.metadata.get("dagster-looker/web_url") == MetadataValue.url(
         "https://your.cloud.looker.com/explore/my_model/my_explore"
     )
@@ -169,7 +187,8 @@ def test_build_defs_with_pdts(
         resources={resource_key: looker_resource},
     )
 
-    assert len(defs.resolve_all_asset_specs()) == 5
+    # 5 user-defined specs + 1 auto-created stub for underlying table my_table
+    assert len(defs.resolve_all_asset_specs()) == 6
 
     sdk = looker_resource.get_sdk()
 
@@ -218,7 +237,10 @@ def test_custom_asset_specs(
             assert metadata["custom"] == "metadata"
         assert all(key.path[0] == "my_prefix" for key in asset.keys)
         for deps in asset.asset_deps.values():
-            assert all(key.path[0] == "my_prefix" for key in deps), str(deps)
+            # Table deps (e.g. my_table) are not prefixed; view/explore deps are
+            assert all(
+                key.path[0] == "my_prefix" or key == AssetKey(["my_table"]) for key in deps
+            ), str(deps)
 
 
 @responses.activate
@@ -255,4 +277,7 @@ def test_custom_asset_specs_legacy(
             assert metadata["custom"] == "metadata"
         assert all(key.path[0] == "my_prefix" for key in asset.keys)
         for deps in asset.asset_deps.values():
-            assert all(key.path[0] == "my_prefix" for key in deps), str(deps)
+            # Table deps (e.g. my_table) are not prefixed; view/explore deps are
+            assert all(
+                key.path[0] == "my_prefix" or key == AssetKey(["my_table"]) for key in deps
+            ), str(deps)

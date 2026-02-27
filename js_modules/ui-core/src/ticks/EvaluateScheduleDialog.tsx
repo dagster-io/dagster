@@ -109,9 +109,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
   // mutation to launch all runs
   const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
 
-  const {
-    timezone: [userTimezone],
-  } = useContext(TimeContext);
+  const {resolvedTimezone: userTimezone} = useContext(TimeContext);
   const [isTickSelectionOpen, setIsTickSelectionOpen] = useState<boolean>(false);
   const selectedTimestampRef = useRef<{ts: number; label: string} | null>(null);
   const {viewport, containerProps} = useViewport();
@@ -486,9 +484,7 @@ const EvaluateScheduleResult = ({
   scheduleExecutionData: ScheduleDryRunInstigationTick | null;
   scheduleExecutionError: PythonErrorFragment | null;
 }) => {
-  const {
-    timezone: [userTimezone],
-  } = useContext(TimeContext);
+  const {resolvedTimezone: userTimezone} = useContext(TimeContext);
 
   const evaluationResult = scheduleExecutionData?.evaluationResult;
 

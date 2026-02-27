@@ -206,7 +206,7 @@ The `node` object available in the `translation` key includes properties from th
 First, create a template variable that extracts the group name from the `fqn`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/group-template-vars.py"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/group-template-vars.py"
   title="my_project/defs/dbt_ingest/template_vars.py"
   language="python"
 />
@@ -214,7 +214,7 @@ First, create a template variable that extracts the group name from the `fqn`:
 #### 2. Reference the template variable in defs.yaml
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/group-defs.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/group-defs.yaml"
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
@@ -230,7 +230,7 @@ If your dbt models depend on data produced by other Dagster assets (e.g., data i
 In your dbt project, create a `sources.yml` file that maps dbt sources to Dagster asset keys using the `meta.dagster.asset_key` configuration:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/upstream-source.yml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/upstream-source.yml"
   title="dbt/models/sources.yml"
   language="yaml"
 />
@@ -240,7 +240,7 @@ In your dbt project, create a `sources.yml` file that maps dbt sources to Dagste
 Next, create Dagster assets that produce the source data. The asset key must match the `asset_key` defined in your dbt sources (see step 7.1):
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/upstream-asset.py"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/upstream-asset.py"
   title="my_project/defs/ingest/assets.py"
   language="python"
 />

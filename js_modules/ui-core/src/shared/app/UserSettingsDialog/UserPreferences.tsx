@@ -7,14 +7,16 @@ import {HourCycleSelect} from '../../../app/time/HourCycleSelect';
 import {ThemeSelect} from '../../../app/time/ThemeSelect';
 import {TimeContext} from '../../../app/time/TimeContext';
 import {TimezoneSelect} from '../../../app/time/TimezoneSelect';
-import {automaticLabel} from '../../../app/time/browserTimezone';
+import {localTimezoneLabel, orgTimezoneLabel} from '../../../app/time/browserTimezone';
 import {useThemeState} from '../../../app/useThemeState';
 import {useStateWithStorage} from '../../../hooks/useStateWithStorage';
 
 export const UserPreferences = ({
   onChangeRequiresReload,
+  orgTimezone,
 }: {
   onChangeRequiresReload: (requiresReload: boolean) => void;
+  orgTimezone?: string | null;
 }) => {
   const [shortcutsEnabled, setShortcutsEnabled] = useStateWithStorage(
     SHORTCUTS_STORAGE_KEY,
@@ -38,16 +40,29 @@ export const UserPreferences = ({
   const {
     timezone: [timezone, setTimezone],
   } = useContext(TimeContext);
+
+  const triggerLabel = React.useMemo(() => {
+    if (timezone === 'ORG_TIMEZONE' && orgTimezone) {
+      return orgTimezoneLabel(orgTimezone);
+    }
+
+    if (timezone === 'LOCAL_TIMEZONE' || timezone === 'Automatic') {
+      return localTimezoneLabel();
+    }
+
+    return timezone;
+  }, [timezone, orgTimezone]);
+
   const trigger = React.useCallback(
-    (timezone: string) => (
+    (_timezone: string) => (
       <Button
         rightIcon={<Icon name="arrow_drop_down" />}
         style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
       >
-        {timezone === 'Automatic' ? automaticLabel() : timezone}
+        {triggerLabel}
       </Button>
     ),
-    [],
+    [triggerLabel],
   );
 
   const toggleKeyboardShortcuts = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +85,7 @@ export const UserPreferences = ({
         <TimezoneSelect
           timezone={timezone}
           setTimezone={setTimezone}
-          includeAutomatic
+          orgTimezone={orgTimezone}
           trigger={trigger}
           popoverProps={{position: 'bottom-right'}}
         />

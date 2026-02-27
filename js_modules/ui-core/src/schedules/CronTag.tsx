@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import {hourOffsetFromUTC} from './hourOffsetFromUTC';
 import {humanCronString} from './humanCronString';
 import {TimeContext} from '../app/time/TimeContext';
-import {browserTimezone} from '../app/time/browserTimezone';
 
 interface Props {
   cronSchedule: string;
@@ -41,9 +40,7 @@ export const useCronInformation = (
   cronSchedule: string | null,
   executionTimezone: string | null,
 ) => {
-  const {
-    timezone: [storedTimezone],
-  } = useContext(TimeContext);
+  const {resolvedTimezone} = useContext(TimeContext);
 
   if (!cronSchedule) {
     return {
@@ -54,7 +51,7 @@ export const useCronInformation = (
 
   const longTimezoneName = executionTimezone || 'UTC';
   const humanStringWithExecutionTimezone = humanCronString(cronSchedule, {longTimezoneName});
-  const userTimezone = storedTimezone === 'Automatic' ? browserTimezone() : storedTimezone;
+  const userTimezone = resolvedTimezone;
 
   const userTimezoneOffset = hourOffsetFromUTC(userTimezone);
   const executionTimezoneOffset = hourOffsetFromUTC(longTimezoneName);

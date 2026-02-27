@@ -1,9 +1,8 @@
-import styled from 'styled-components';
-
 import {Box} from './Box';
 import {Colors} from './Color';
 import {Icon} from './Icon';
 import {Tooltip} from './Tooltip';
+import styles from './css/RefreshableCountdown.module.css';
 import {secondsToCountdownTime} from './secondsToCountdownTime';
 
 interface Props {
@@ -31,30 +30,10 @@ export const RefreshableCountdown = (props: Props) => {
             : secondsToCountdownTime(seconds)}
       </span>
       <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="top">
-        <RefreshButton onClick={onRefresh}>
+        <button className={styles.refreshButton} onClick={onRefresh}>
           <Icon name="refresh" color={Colors.accentGray()} />
-        </RefreshButton>
+        </button>
       </Tooltip>
     </Box>
   );
 };
-
-export const RefreshButton = styled.button`
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  margin: -8px;
-  outline: none;
-  background-color: transparent;
-  position: relative;
-  top: 1px;
-
-  & .iconGlobal {
-    display: block;
-    transition: color 100ms linear;
-
-    &:hover {
-      color: ${Colors.accentGrayHover()};
-    }
-  }
-`;

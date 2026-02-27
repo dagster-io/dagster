@@ -1,7 +1,6 @@
 import {useCallback, useContext} from 'react';
 
 import {TimeContext} from '../app/time/TimeContext';
-import {browserTimezone} from '../app/time/browserTimezone';
 
 /**
  * Return a date/time formatter function that takes the user's stored timezone into
@@ -11,11 +10,10 @@ import {browserTimezone} from '../app/time/browserTimezone';
  */
 export const useFormatDateTime = () => {
   const {
-    timezone: [storedTimezone],
+    resolvedTimezone: timeZone,
     hourCycle: [storedHourCycle],
   } = useContext(TimeContext);
 
-  const timeZone = storedTimezone === 'Automatic' ? browserTimezone() : storedTimezone;
   const hourCycle = storedHourCycle === 'Automatic' ? undefined : storedHourCycle;
 
   return useCallback(

@@ -25,7 +25,7 @@ dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots
 Configure the regular models component to exclude snapshots:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/snapshot/models.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/models.yaml"
   title="my_project/defs/dbt_models/defs.yaml"
   language="yaml"
 />
@@ -33,7 +33,7 @@ Configure the regular models component to exclude snapshots:
 Configure the snapshots component with concurrency control:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/snapshot/snapshot.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/snapshot.yaml"
   title="my_project/defs/dbt_snapshots/defs.yaml"
   language="yaml"
 />
@@ -43,7 +43,7 @@ Configure the snapshots component with concurrency control:
 Configure your Dagster instance to create pools with maximum concurrency of 1. Add this configuration to your `dagster.yaml` (for Dagster Open Source) or deployment settings (for Dagster+):
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/snapshot/dagster.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/dagster.yaml"
   title="dagster.yaml"
   language="yaml"
 />
@@ -70,7 +70,7 @@ dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots_inventory
 Sales snapshots component:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/snapshot/snapshot_sales.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/snapshot_sales.yaml"
   title="my_project/defs/dbt_snapshots_sales/defs.yaml"
   language="yaml"
 />
@@ -78,7 +78,7 @@ Sales snapshots component:
 Inventory snapshots component:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/snapshot/snapshot_inventory.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/snapshot_inventory.yaml"
   title="my_project/defs/dbt_snapshots_inventory/defs.yaml"
   language="yaml"
 />

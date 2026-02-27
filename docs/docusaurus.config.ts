@@ -118,7 +118,7 @@ const config: Config = {
         {
           label: 'Integrations',
           type: 'doc',
-          docId: 'integrations/libraries/index',
+          docId: 'integrations/index',
           position: 'left',
         },
         {

@@ -12,7 +12,7 @@ interface Props {
 export const Timestamp = (props: Props) => {
   const {timestamp, timeFormat} = props;
   const {
-    timezone: [timezone],
+    resolvedTimezone: timezone,
     hourCycle: [hourCycle],
   } = useContext(TimeContext);
   const locale = navigator.language;

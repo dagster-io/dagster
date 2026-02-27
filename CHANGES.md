@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.12.17 (core) / 0.28.17 (libraries)
+
+### Bugfixes
+
+- Fix bug with inclusion of built webapp in `dagster-webserver` that caused the Dagster UI to fail to load.
+
+## 1.12.16 (core) / 0.28.16 (libraries) (YANKED)
+
+This version of Dagster inadvertently did not include the webapp code in the published `dagster-webserver` package.
+
+### Bugfixes
+
+- [ui] Fixed redirect to login when the user's session expires.
+- [ui] Fixed console error noise during asset lineage navigation.
+
+### Dagster Plus
+
+- [ui] Improved loading states and autoscroll behavior in the AI chat UI.
+- [ui] Fixed the icon selector in the saved selection creation flow.
+
 ## 1.12.15 (core) / 0.28.15 (libraries)
 
 ### New

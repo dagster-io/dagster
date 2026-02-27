@@ -220,12 +220,9 @@ export const useInvalidateConfigsForRepo = () => {
           const key = makeKey(basePath, repoAddress, pipelineName);
           const data: IStorageData | undefined = getJSONForKey(key);
           if (data) {
-            const withBase = Object.keys(data.sessions).filter(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              (sessionKey) => data.sessions[sessionKey]!.base !== null,
-            );
-            if (withBase.length) {
-              const withUpdates = withBase.reduce(
+            const allSessionKeys = Object.keys(data.sessions);
+            if (allSessionKeys.length) {
+              const withUpdates = allSessionKeys.reduce(
                 (accum, sessionKey) =>
                   applyChangesToSession(accum, sessionKey, {needsRefresh: true}),
                 data,

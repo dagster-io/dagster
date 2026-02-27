@@ -33,6 +33,9 @@ Homepage = "https://github.com/dagster-io/dagster"
 dagster-webserver = "dagster_webserver.cli:main"
 dagster-webserver-debug = "dagster_webserver.debug:main"
 
+[tool.hatch.build]
+artifacts = ["dagster_webserver/webapp/build/"]
+
 [project.optional-dependencies]
 notebook = ["nbconvert"]  # notebooks support
 test = ["starlette[full]"]  # TestClient deps in full

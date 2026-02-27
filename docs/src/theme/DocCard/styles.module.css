@@ -16,16 +16,24 @@
 }
 
 .examplesCard {
-  --examples-pill-border: #c8cef7;
-  --examples-pill-text: #3642a3;
-  --examples-footer-text: #505fba;
-  --examples-footer-border: rgba(128, 142, 226, 0.24);
+  --examples-card-border: var(--theme-color-keyline);
+  --examples-card-border-hover: var(--theme-color-border-hover);
+  --examples-card-background: var(--ifm-card-background-color);
+  --examples-card-background-hover: var(--theme-color-background-light);
+  --examples-card-shadow: 0 14px 26px var(--dagster-blue-translucent-15);
+  --examples-pill-border: var(--theme-color-accent-lavendar);
+  --examples-pill-text: var(--theme-color-text-blue);
+  --examples-pill-background: var(--theme-color-background-default);
+  --examples-footer-text: var(--theme-color-text-blue);
+  --examples-footer-border: var(--theme-color-keyline);
+  --examples-logo-background: var(--theme-color-background-default);
+  --examples-logo-border: var(--theme-color-keyline);
   --examples-card-inset-x: 0.85rem;
   --examples-card-inset-bottom: 0.7rem;
   position: relative;
   overflow: hidden;
-  border-color: #c7cdf4 !important;
-  background: #ffffff;
+  border-color: var(--examples-card-border) !important;
+  background: var(--examples-card-background);
   flex-direction: column;
   align-items: stretch;
   gap: 0.65rem;
@@ -34,10 +42,22 @@
 }
 
 .examplesCard:hover {
-  border-color: #aeb8f0 !important;
-  background: #f6f8ff;
-  box-shadow: 0 14px 26px rgba(89, 101, 187, 0.14);
+  border-color: var(--examples-card-border-hover) !important;
+  background: var(--examples-card-background-hover);
+  box-shadow: var(--examples-card-shadow);
   transform: translateY(-4px);
+}
+
+[data-theme='dark'] .examplesCard {
+  --examples-card-border: var(--theme-color-border-default);
+  --examples-card-border-hover: var(--theme-color-border-hover);
+  --examples-card-background: var(--theme-color-background-light);
+  --examples-card-background-hover: var(--theme-color-background-lighter);
+  --examples-card-shadow: 0 14px 26px rgba(0, 0, 0, 0.35);
+  --examples-pill-border: var(--theme-color-accent-blue);
+  --examples-pill-background: var(--theme-color-background-lighter);
+  --examples-logo-background: var(--theme-color-background-lighter);
+  --examples-logo-border: var(--theme-color-border-default);
 }
 
 .examplesMetaRow {
@@ -57,7 +77,7 @@
   font-weight: 600;
   text-transform: uppercase;
   color: var(--examples-pill-text);
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--examples-pill-background);
 }
 
 .examplesBody {
@@ -70,10 +90,10 @@
 .examplesBody .cardLogo {
   width: 3rem;
   height: 3rem;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--examples-logo-background);
   padding: 0.3rem;
   border-radius: 10px !important;
-  border: 1px solid rgba(136, 149, 221, 0.3);
+  border: 1px solid var(--examples-logo-border);
   backdrop-filter: blur(4px);
 }
 

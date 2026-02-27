@@ -24,7 +24,7 @@
     },
     {
       "source": "/guides/dagster-pipes/:path*",
-      "destination": "/guides/build/external-pipelines"
+      "destination": "/integrations/external-pipelines"
     },
     {
       "source": "/_apidocs/libraries/dagster-pipes",
@@ -1238,80 +1238,88 @@
     },
     {
       "source": "/concepts/dagster-pipes/subprocess",
-      "destination": "/guides/build/external-pipelines/using-dagster-pipes"
+      "destination": "/integrations/external-pipelines/using-dagster-pipes"
     },
     {
       "source": "/concepts/dagster-pipes/subprocess/create-subprocess-asset",
-      "destination": "/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset"
+      "destination": "/integrations/external-pipelines/using-dagster-pipes/create-subprocess-asset"
     },
     {
       "source": "/concepts/dagster-pipes/subprocess/modify-external-code",
-      "destination": "/guides/build/external-pipelines/using-dagster-pipes/modify-external-code"
+      "destination": "/integrations/external-pipelines/using-dagster-pipes/modify-external-code"
     },
     {
       "source": "/concepts/dagster-pipes/subprocess/reference",
-      "destination": "/guides/build/external-pipelines/using-dagster-pipes/reference"
+      "destination": "/integrations/external-pipelines/using-dagster-pipes/reference"
     },
     {
       "source": "/concepts/dagster-pipes/aws-ecs",
-      "destination": "/guides/build/external-pipelines/aws/aws-ecs-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-ecs-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/aws-glue",
-      "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-glue-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr-containers",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-emr-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline"
     },
 
     {
       "source": "/guides/build/external-pipelines/aws-emr-containers-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr-serverless",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-serverless-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-emr-serverless-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/aws-lambda",
-      "destination": "/guides/build/external-pipelines/aws/aws-lambda-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-lambda-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-ecs-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-ecs-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-ecs-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-glue-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-glue-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-serverless-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-emr-serverless-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-lambda-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-lambda-pipeline"
+      "destination": "/integrations/external-pipelines/aws/aws-lambda-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/kubernetes",
-      "destination": "/guides/build/external-pipelines/kubernetes-pipeline"
+      "destination": "/integrations/external-pipelines/kubernetes-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/dagster-pipes-details-and-customization",
-      "destination": "/guides/build/external-pipelines/dagster-pipes-details-and-customization"
+      "destination": "/integrations/external-pipelines/dagster-pipes-details-and-customization"
     },
     {
       "source": "/guides/migrations/from-step-launchers-to-pipes",
-      "destination": "/guides/build/external-pipelines/migrating-from-step-launchers-to-pipes"
+      "destination": "/integrations/external-pipelines/migrating-from-step-launchers-to-pipes"
+    },
+    {
+      "source": "/guides/build/external-pipelines/:path*",
+      "destination": "/integrations/external-pipelines/:path*"
+    },
+    {
+      "source": "/guides/build/external-pipelines",
+      "destination": "/integrations/external-pipelines"
     },
     {
       "source": "/concepts/io-management/io-managers-legacy",
@@ -1872,7 +1880,7 @@
     },
     {
       "source": "/concepts/dagster-pipes/databricks",
-      "destination": "/guides/build/external-pipelines/databricks-pipeline"
+      "destination": "/integrations/external-pipelines/databricks-pipeline"
     },
     {
       "source": "/integrations/dbt",
@@ -2075,11 +2083,11 @@
     },
     {
       "source": "/concepts/dagster-pipes",
-      "destination": "/guides/build/external-pipelines"
+      "destination": "/integrations/external-pipelines"
     },
     {
       "source": "/dagster-pipes/pyspark",
-      "destination": "/guides/build/external-pipelines/pyspark-pipeline"
+      "destination": "/integrations/external-pipelines/pyspark-pipeline"
     },
     {
       "source": "/community",
@@ -3448,7 +3456,7 @@
     },
     {
       "source": "/concepts/dagster-pipes/pyspark",
-      "destination": "/guides/build/external-pipelines/pyspark-pipeline"
+      "destination": "/integrations/external-pipelines/pyspark-pipeline"
     },
     {
       "source": "/concepts/dagit/graphql-client",

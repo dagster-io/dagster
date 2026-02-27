@@ -32,6 +32,7 @@ Use these guides to get started using webhooks with these common services:
 
 - [Jira](/guides/labs/webhook-alerts/webhooks-jira)
 - [Discord](/guides/labs/webhook-alerts/webhooks-discord)
+- [incident.io](/guides/labs/webhook-alerts/webhooks-incidentio)
 
 ---
 

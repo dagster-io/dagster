@@ -1,0 +1,4 @@
+dg scaffold defs dagster_databricks.DatabricksAssetBundleComponent my_databricks_bundle \
+  --databricks-config-path /path/to/databricks.yml \
+  --databricks-workspace-host https://your-workspace.cloud.databricks.com \
+  --databricks-workspace-token "{{ env.DATABRICKS_TOKEN }}"

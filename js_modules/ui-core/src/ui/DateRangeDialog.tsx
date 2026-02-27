@@ -14,7 +14,6 @@ import memoize from 'lodash/memoize';
 import {useContext, useEffect, useMemo, useState} from 'react';
 
 import {TimeContext} from '../app/time/TimeContext';
-import {browserTimezone} from '../app/time/browserTimezone';
 import {lazy} from '../util/lazy';
 
 const DayPickerWrapper = lazy(() => import('./DayPickerWrapperForLazyImport'));
@@ -37,10 +36,7 @@ const buildFormatter = memoize(
 );
 
 export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps) {
-  const {
-    timezone: [_timezone],
-  } = useContext(TimeContext);
-  const targetTimezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
+  const {resolvedTimezone: targetTimezone} = useContext(TimeContext);
 
   const [selected, setSelected] = useState<DateRange>(() => ({from: undefined, to: undefined}));
 

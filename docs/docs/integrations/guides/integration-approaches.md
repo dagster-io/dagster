@@ -126,4 +126,4 @@ Example implementations of this approach include:
 
 ### Guide
 
-- [Dagster Pipes details and customization](/guides/build/external-pipelines/dagster-pipes-details-and-customization)
+- [Dagster Pipes details and customization](/integrations/external-pipelines/dagster-pipes-details-and-customization)

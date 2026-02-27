@@ -1,0 +1,15 @@
+# my_project/defs/my_databricks_bundle/defs.yml
+
+type: dagster_databricks.DatabricksAssetBundleComponent
+
+attributes:
+  databricks_config_path: '{{ project_root }}/../../../../../path/to/databricks.yml'
+  workspace:
+    host: https://your-workspace.cloud.databricks.com
+    token: '{{ env.DATABRICKS_TOKEN }}'
+  assets_by_task_key:
+    my_etl_task:
+      - key: raw/customers
+        description: "Raw customer data extracted from source"
+      - key: raw/orders
+        description: "Raw order data extracted from source"

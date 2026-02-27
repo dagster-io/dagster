@@ -1,7 +1,11 @@
-import {Menu, MenuDivider, MenuItem, Select} from '@dagster-io/ui-components';
+import {Box, Menu, MenuDivider, MenuItem, Select} from '@dagster-io/ui-components';
 import {ComponentProps, useMemo} from 'react';
 
-import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';
+import {
+  browserTimezone,
+  browserTimezoneAbbreviation,
+  timezoneAbbreviation,
+} from './browserTimezone';
 
 /**
  * Render the target date as a string in en-US with the timezone supplied, and use
@@ -46,7 +50,13 @@ interface TimezoneSelectProps {
   timezone: string;
   setTimezone: (timezone: string) => void;
   trigger: (timezone: string) => React.ReactNode;
-  includeAutomatic: boolean;
+  orgTimezone?: string | null;
+  /**
+   * When `true`, only show IANA timezone values — hide the "Org timezone"
+   * and "Local timezone" options. Use this when the user must choose a
+   * specific timezone. Defaults to `false`.
+   */
+  ianaOnly?: boolean;
   popoverProps?: ComponentProps<typeof Select>['popoverProps'];
 }
 
@@ -54,8 +64,9 @@ interface TimezoneSelectProps {
  * Show a list of timezones that the user can choose from. The selected timezone
  * is tracked in localStorage. Show sections of timezones, in this order:
  *
- * - Automatic timezone: whatever the user's browser/locale thinks they're in.
- * - Popular timezones: the four US timezones.
+ * - Organization timezone: the org's default timezone (if configured).
+ * - Local timezone: whatever the user's browser/locale thinks they're in.
+ * - UTC and popular US timezones.
  * - Locale timezones: other timezones for the user's locale, if possible.
  * - Everything else
  */
@@ -63,13 +74,14 @@ export const TimezoneSelect = ({
   timezone,
   setTimezone,
   trigger,
-  includeAutomatic,
+  orgTimezone,
+  ianaOnly = false,
   popoverProps,
 }: TimezoneSelectProps) => {
   const allTimezoneItems = useMemo(() => {
     const date = new Date();
 
-    let allTimezoneItems: {offsetLabel: string; offset: number; key: string}[] = [];
+    let allTimezoneItems: {offsetLabel: string; offset: number; key: string; text?: string}[] = [];
     let explicitlyAddUTC = true;
     try {
       allTimezoneItems = Intl.supportedValuesOf('timeZone')
@@ -83,12 +95,18 @@ export const TimezoneSelect = ({
       explicitlyAddUTC = !allTimezoneItems.some((tz) => tz.key === 'UTC');
     } catch {
       // `Intl.supportedValuesOf` is unavailable in this browser. Only
-      // support the Automatic timezone and UTC.
+      // support the Local timezone and UTC.
     }
 
-    const automaticOffsetLabel = () => {
+    const localOffsetLabel = () => {
       const abbreviation = browserTimezoneAbbreviation();
       const {label} = extractOffset(date, browserTimezone());
+      return `${abbreviation} ${label}`;
+    };
+
+    const orgOffsetLabel = (tz: string) => {
+      const abbreviation = timezoneAbbreviation(tz);
+      const {label} = extractOffset(date, tz);
       return `${abbreviation} ${label}`;
     };
 
@@ -101,21 +119,34 @@ export const TimezoneSelect = ({
       (tz) => timezonesForLocaleSet.has(tz.key) && !POPULAR_TIMEZONES.has(tz.key),
     );
 
+    const shortcutItems = !ianaOnly
+      ? [
+          ...(orgTimezone
+            ? [
+                {
+                  key: 'ORG_TIMEZONE',
+                  text: 'Org timezone',
+                  offsetLabel: orgOffsetLabel(orgTimezone),
+                  offset: 0,
+                },
+              ]
+            : []),
+          {
+            key: 'LOCAL_TIMEZONE',
+            text: 'Local timezone',
+            offsetLabel: localOffsetLabel(),
+            offset: 0,
+          },
+          {
+            key: 'divider-1',
+            offsetLabel: '',
+            offset: 0,
+          },
+        ]
+      : [];
+
     return [
-      ...(includeAutomatic
-        ? [
-            {
-              key: 'Automatic',
-              offsetLabel: automaticOffsetLabel(),
-              offset: 0,
-            },
-            {
-              key: 'divider-1',
-              offsetLabel: '',
-              offset: 0,
-            },
-          ]
-        : []),
+      ...shortcutItems,
       ...(explicitlyAddUTC
         ? [
             {
@@ -145,7 +176,7 @@ export const TimezoneSelect = ({
         (tz) => !POPULAR_TIMEZONES.has(tz.key) && !timezonesForLocaleSet.has(tz.key),
       ),
     ];
-  }, [includeAutomatic]);
+  }, [orgTimezone, ianaOnly]);
 
   return (
     <Select<(typeof allTimezoneItems)[0]>
@@ -157,7 +188,7 @@ export const TimezoneSelect = ({
       activeItem={allTimezoneItems.find((tz) => tz.key === timezone)}
       inputProps={{style: {width: '300px'}}}
       items={allTimezoneItems}
-      itemPredicate={(query, tz) => tz.key.toLowerCase().includes(query.toLowerCase())}
+      itemPredicate={(query, tz) => (tz.text ?? tz.key).toLowerCase().includes(query.toLowerCase())}
       itemRenderer={(tz, props) =>
         tz.key.startsWith('divider') ? (
           <MenuDivider key={tz.key} />
@@ -167,13 +198,17 @@ export const TimezoneSelect = ({
             onClick={props.handleClick}
             right={tz.offsetLabel}
             key={tz.key}
-            text={tz.key}
+            text={tz.text ?? tz.key}
           />
         )
       }
       itemListRenderer={({renderItem, filteredItems}) => {
         const renderedItems = filteredItems.map(renderItem).filter(Boolean);
-        return <Menu>{renderedItems}</Menu>;
+        return (
+          <Menu style={{maxHeight: '300px', overflowY: 'auto'}}>
+            <Box padding={{vertical: 4}}>{renderedItems}</Box>
+          </Menu>
+        );
       }}
       noResults={<MenuItem disabled text="No results." />}
       onItemSelect={(tz) => setTimezone(tz.key)}

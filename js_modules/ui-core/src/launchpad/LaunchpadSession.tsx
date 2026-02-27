@@ -590,6 +590,11 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     return null;
   }, [currentSession]);
 
+  const showRefreshWarning = !!(
+    refreshableSessionBase ||
+    (currentSession.needsRefresh && !currentSession.base)
+  );
+
   let launchButtonTitle: string | undefined;
   if (launchpadType === 'asset') {
     launchButtonTitle = 'Materialize';
@@ -807,7 +812,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 />
               </Box>
             ) : null}
-            {refreshableSessionBase ? (
+            {showRefreshWarning ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
                 border={{side: 'bottom', color: Colors.borderDefault()}}
@@ -820,7 +825,13 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                   </div>
                   <Button
                     intent="primary"
-                    onClick={() => onRefreshConfig(refreshableSessionBase)}
+                    onClick={() => {
+                      if (refreshableSessionBase) {
+                        onRefreshConfig(refreshableSessionBase);
+                      } else {
+                        onSaveSession({runConfigYaml: rootDefaultYaml || '', needsRefresh: false});
+                      }
+                    }}
                     disabled={state.configLoading}
                   >
                     Refresh config

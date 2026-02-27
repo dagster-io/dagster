@@ -58,7 +58,6 @@ export * from './components/useDelayedState';
 export * from './components/useSuggestionsForString';
 export * from './components/useViewport';
 export * from './components/VirtualizedTable';
-export * from './components/Warning';
 export * from './components/styles';
 
 export * from './theme/GlobalThemeStyle';

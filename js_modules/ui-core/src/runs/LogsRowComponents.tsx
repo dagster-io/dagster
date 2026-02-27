@@ -10,7 +10,7 @@ import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
-import {browserHourCycle, browserTimezone} from '../app/time/browserTimezone';
+import {browserHourCycle} from '../app/time/browserTimezone';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 const bgcolorForLevel = (level: LogLevel) =>
@@ -126,7 +126,7 @@ const timestampFormat = memoize(
       second: '2-digit',
       fractionalSecondDigits: 3,
       hourCycle: evaluatedHourCycle,
-      timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+      timeZone: timezone,
     });
   },
   (timezone, hourCycle) => `${timezone}-${hourCycle}`,
@@ -145,7 +145,7 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
   const location = useLocation();
   const widths = React.useContext(ColumnWidthsContext);
   const {
-    timezone: [timezone],
+    resolvedTimezone: timezone,
     hourCycle: [hourCycle],
   } = React.useContext(TimeContext);
   const canShowTooltip = typeof time === 'string' && typeof runStartTime === 'number';

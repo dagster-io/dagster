@@ -3,32 +3,11 @@ import CodeMirror from 'codemirror';
 import 'codemirror/addon/edit/matchbrackets';
 import 'codemirror/mode/javascript/javascript';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {DagsterCodeMirrorStyle} from './DagsterCodeMirrorStyle';
 import {RawCodeMirror} from './RawCodeMirror';
-import * as Colors from '../palettes/Color';
 import {createSmartBracketKeyMap} from './configeditor/codemirror-json/codeMirrorJson';
-
-const EditorContainer = styled.div`
-  border: 1px solid ${Colors.keylineDefault()};
-  border-radius: 4px;
-  overflow: hidden;
-
-  .CodeMirror {
-    &:focus-visible {
-      outline: none;
-    }
-
-    &:focus {
-      outline: none;
-    }
-
-    .cm-property {
-      color: ${Colors.textBlue()};
-    }
-  }
-`;
+import styles from './css/StyledJSONEditor.module.css';
 
 export interface StyledJSONEditorProps {
   value: string;
@@ -62,7 +41,7 @@ export const StyledJSONEditor = (props: StyledJSONEditorProps) => {
     } as CodeMirror.EditorConfiguration;
   }, [options, theme]);
   return (
-    <EditorContainer className={className} style={style}>
+    <div className={clsx(styles.editorContainer, className)} style={style}>
       <DagsterCodeMirrorStyle />
       <RawCodeMirror
         value={value}
@@ -73,6 +52,6 @@ export const StyledJSONEditor = (props: StyledJSONEditorProps) => {
         }}
         options={finalOptions}
       />
-    </EditorContainer>
+    </div>
   );
 };

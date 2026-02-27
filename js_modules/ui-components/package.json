@@ -96,7 +96,7 @@
     "react-docgen-typescript-plugin": "^1.0.8",
     "react-dom": "^18.3.1",
     "regenerator-runtime": "^0.13.9",
-    "rollup": "^2.79.2",
+    "rollup": "^2.80.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
     "storybook": "^10.2.10",

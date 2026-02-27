@@ -5,13 +5,11 @@ from pathlib import Path
 import pytest
 from dagster_dg_core.utils import activate_venv
 
-from docs_snippets_tests.snippet_checks.guides.components.test_components_docs import (
-    DgTestPackageManager,
-)
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     MASK_PLUGIN_CACHE_REBUILD,
+    DgTestPackageManager,
     format_multiline,
     get_editable_install_cmd_for_dg,
     get_editable_install_cmd_for_project,

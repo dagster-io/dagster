@@ -1,0 +1,12 @@
+.editorContainer {
+  overflow: hidden;
+}
+
+.editorContainer :global(.CodeMirror):focus,
+.editorContainer :global(.CodeMirror):focus-visible {
+  outline: none;
+}
+
+.editorContainer :global(.CodeMirror) :global(.cm-property) {
+  color: var(--color-text-blue);
+}

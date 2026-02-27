@@ -83,7 +83,7 @@ class BuildkiteContext(Generic[T_Config]):
         env_commit = self.getx_env("BUILDKITE_COMMIT")
         return (
             env_commit
-            if len(env_commit) != 40
+            if len(env_commit) == 40
             # not a full commit hash, likely a symbolic ref like HEAD
             else subprocess.check_output(["git", "rev-parse", env_commit]).decode().strip()
         )
