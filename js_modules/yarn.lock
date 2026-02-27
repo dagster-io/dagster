@@ -2010,7 +2010,7 @@ __metadata:
     react-docgen-typescript-plugin: "npm:^1.0.8"
     react-dom: "npm:^18.3.1"
     regenerator-runtime: "npm:^0.13.9"
-    rollup: "npm:^2.79.2"
+    rollup: "npm:^2.80.0"
     rollup-plugin-polyfill-node: "npm:^0.8.0"
     rollup-plugin-styles: "npm:^4.0.0"
     sonner: "npm:^2.0.1"
@@ -17012,7 +17012,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup@npm:^2.79.2":
+"rollup@npm:^2.80.0":
   version: 2.80.0
   resolution: "rollup@npm:2.80.0"
   dependencies:
