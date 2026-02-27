@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
@@ -41,6 +42,16 @@ if TYPE_CHECKING:
 class CeleryRunLauncher(RunLauncher, ConfigurableClass):
     """Dagster [Run Launcher](https://docs.dagster.io/guides/deploy/execution/run-launchers) which
     starts runs as Celery tasks.
+
+    Supports run worker crash detection and automatic resume. When ``run_monitoring``
+    is enabled in ``dagster.yaml``, the daemon periodically calls
+    ``check_run_worker_health`` which pings the Celery worker via the
+    ``inspect`` API. If the worker is unreachable the run is marked as
+    failed and, when ``max_resume_run_attempts > 0``, resumed on a
+    healthy worker.
+
+    Requires a persistent result backend (e.g. Redis) so that task state
+    survives worker restarts.
     """
 
     _instance: DagsterInstance  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -68,6 +79,14 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         self.celery = make_app(
             app_args=self.app_args(),
         )
+
+        if backend and backend.startswith("rpc://"):
+            logging.getLogger(__name__).warning(
+                "CeleryRunLauncher is configured with the 'rpc://' result backend. "
+                "Crash detection via worker ping requires a persistent result backend "
+                "(e.g. Redis). With 'rpc://', task state is lost when a worker crashes "
+                "and monitoring falls back to the PENDING/UNKNOWN detection path."
+            )
 
         super().__init__()
 
@@ -129,9 +148,9 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
             set_exit_code_on_failure=True,
         )
 
-        task = create_resume_job_task(args)
+        task = create_resume_job_task(self.celery)
         task_signature = task.si(
-            execute_job_args_packed=pack_value(args),
+            resume_job_args_packed=pack_value(args),
         )
 
         self._launch_celery_task_run(
@@ -184,6 +203,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: DagsterRun) -> CheckRunHealthResult:
+        """Check whether the Celery worker running this task is alive."""
         task_id = run.tags[DAGSTER_CELERY_TASK_ID_TAG]
 
         result: AsyncResult = self.celery.AsyncResult(task_id)
@@ -194,9 +214,61 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         if task_status == "FAILURE":
             return CheckRunHealthResult(WorkerStatus.FAILED, "Celery task failed.")
         if task_status == "STARTED":
-            return CheckRunHealthResult(WorkerStatus.RUNNING)
+            return self._check_started_task_worker_health(result)
         # Handles the PENDING and RETRYING states.
         return CheckRunHealthResult(WorkerStatus.UNKNOWN, f"Unknown task status: {task_status}")
+
+    def _check_started_task_worker_health(self, result: "AsyncResult") -> CheckRunHealthResult:
+        """When a task reports STARTED, verify the worker is still alive via inspect ping.
+
+        With persistent result backends (e.g. Redis), the task state stays STARTED
+        even after the worker crashes. We use Celery's inspect API to ping the specific
+        worker and verify it's still responsive.
+        """
+        worker_hostname = self._get_worker_hostname(result)
+        if not worker_hostname:
+            # Cannot determine worker — fall back to trusting Celery state
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+
+        try:
+            inspector = self.celery.control.inspect(
+                destination=[worker_hostname],
+                timeout=2.0,
+            )
+            ping_response = inspector.ping()
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to ping Celery worker {worker_hostname}: {e}. "
+                "Falling back to trusting task state."
+            )
+            # If we can't reach the broker to inspect, fall back to trusting state
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+        if ping_response and isinstance(ping_response, dict) and worker_hostname in ping_response:
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+
+        return CheckRunHealthResult(
+            WorkerStatus.FAILED,
+            f"Celery worker {worker_hostname} is not responding to ping.",
+        )
+
+    @staticmethod
+    def _get_worker_hostname(result: "AsyncResult") -> "str | None":
+        """Extract the worker hostname from an AsyncResult.
+
+        The hostname is available via result.info when the task has been started,
+        or via result.worker on some backends.
+        """
+        # Try result.info dict (standard approach)
+        info = result.info
+        if isinstance(info, dict) and "hostname" in info:
+            return info["hostname"]
+
+        # Try result.worker attribute (available on some backends)
+        worker = getattr(result, "worker", None)
+        if isinstance(worker, str) and worker:
+            return worker
+
+        return None
 
     @override
     def get_run_worker_debug_info(
@@ -237,7 +309,13 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
                 Noneable(StringSource),
                 is_required=False,
                 default_value="rpc://",
-                description="The URL of the Celery results backend. Default: 'rpc://'.",
+                description=(
+                    "The URL of the Celery results backend. Default: 'rpc://'. "
+                    "Note: crash detection via worker ping requires a persistent "
+                    "backend such as Redis (e.g. 'redis://localhost:6379/0'). "
+                    "The default 'rpc://' backend loses task state on worker "
+                    "crash, falling back to the PENDING/UNKNOWN detection path."
+                ),
             ),
             "include": Field(
                 [str],
