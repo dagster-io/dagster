@@ -4038,10 +4038,11 @@ def test_run_retry_not_part_of_completed_backfill(
 
     # simulate a retry of a run
     run_to_retry = instance.get_runs()[0]
+    origin = check.not_none(run_to_retry.remote_job_origin)
     selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=remote_repo.name,
-        job_name=run_to_retry.job_name,
+        job_name=origin.job_name,
         asset_selection=run_to_retry.asset_selection,
         op_selection=None,
     )
