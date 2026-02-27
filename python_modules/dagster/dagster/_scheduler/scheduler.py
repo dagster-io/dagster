@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.assets.job.asset_job import SCHEDULE_JOB_NAME_PREFIX, is_reserved_asset_job_name
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -1037,8 +1038,13 @@ def _create_scheduler_run(
         },
     )
 
+    # Use context-specific job name for schedule-triggered runs on implicit asset jobs
+    job_name = remote_schedule.job_name
+    if is_reserved_asset_job_name(job_name):
+        job_name = f"{SCHEDULE_JOB_NAME_PREFIX}{remote_schedule.name}"
+
     return instance.create_run(
-        job_name=remote_schedule.job_name,
+        job_name=job_name,
         run_id=None,
         run_config=run_config,
         resolved_op_selection=remote_job.resolved_op_selection,

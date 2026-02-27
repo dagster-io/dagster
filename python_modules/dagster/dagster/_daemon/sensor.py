@@ -17,6 +17,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.job.asset_job import SENSOR_JOB_NAME_PREFIX, is_reserved_asset_job_name
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
@@ -1410,8 +1411,13 @@ def _create_sensor_run(
         },
     )
 
+    # Use context-specific job name for sensor-triggered runs on implicit asset jobs
+    job_name = target_data.job_name
+    if is_reserved_asset_job_name(job_name):
+        job_name = f"{SENSOR_JOB_NAME_PREFIX}{remote_sensor.name}"
+
     return instance.create_run(
-        job_name=target_data.job_name,
+        job_name=job_name,
         run_id=run_id,
         run_config=run_request.run_config,
         resolved_op_selection=remote_job.resolved_op_selection,

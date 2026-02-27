@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
+from dagster._core.definitions.assets.job.asset_job import BACKFILL_JOB_NAME, is_reserved_asset_job_name
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -543,11 +544,16 @@ def create_backfill_run(
         instance=instance,
     )
 
+    # Use context-specific job name for backfill-triggered runs on implicit asset jobs
+    job_name = remote_job.name
+    if is_reserved_asset_job_name(job_name):
+        job_name = BACKFILL_JOB_NAME
+
     return instance.create_run(
         job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=remote_job.parent_job_snapshot,
-        job_name=remote_job.name,
+        job_name=job_name,
         run_id=make_new_run_id(),
         resolved_op_selection=resolved_op_selection,
         run_config=run_config,
