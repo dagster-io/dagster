@@ -291,8 +291,6 @@ def _workspace_entry_for_project(
         # Normalize path (important on Windows)
         exe_path = dg_context.project_python_executable.resolve()
 
-        # Normalize path (important on Windows)
-        exe_path = exe_path.resolve()
 
         if not exe_path.exists() or not exe_path.is_file():
             exit_with_error(
