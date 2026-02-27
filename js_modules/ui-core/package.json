@@ -175,13 +175,13 @@
     "react-router-dom": "^5.3.4",
     "react-router-dom-v5-compat": "^6.30.3",
     "resize-observer-polyfill": "^1.5.1",
-    "storybook": "^10.2.10",
+    "storybook": "^10.2.13",
     "styled-components": "^5.3.3",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
     "typescript": "5.9.2",
     "vite": "^7.0.0",
-    "webpack": "^5.94.0"
+    "webpack": "^5.105.3"
   },
   "babelMacros": {},
   "browserslist": [

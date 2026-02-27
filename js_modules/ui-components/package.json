@@ -96,13 +96,13 @@
     "react-docgen-typescript-plugin": "^1.0.8",
     "react-dom": "^18.3.1",
     "regenerator-runtime": "^0.13.9",
-    "rollup": "^2.80.0",
+    "rollup": "^4.59.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
-    "storybook": "^10.2.10",
+    "storybook": "^10.2.13",
     "typescript": "5.9.2",
     "vite": "^7.0.0",
-    "webpack": "^5.94.0"
+    "webpack": "^5.105.3"
   },
   "browserslist": {
     "production": [
