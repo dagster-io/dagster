@@ -37,6 +37,8 @@ RUN mkdir -p $DAGSTER_HOME
 
 COPY dagster.yaml workspace.yaml $DAGSTER_HOME
 
+VOLUME ["/opt/dagster/dagster_home"]
+
 WORKDIR $DAGSTER_HOME
 ```
 
@@ -58,6 +60,11 @@ RUN pip install \
     dagster \
     dagster-postgres \
     dagster-docker
+
+# Set $DAGSTER_HOME for run storage compatibility
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+
+VOLUME ["/opt/dagster/dagster_home"]
 
 # Add code location code
 WORKDIR /opt/dagster/app
