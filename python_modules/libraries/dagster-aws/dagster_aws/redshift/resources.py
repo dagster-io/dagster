@@ -71,7 +71,7 @@ class RedshiftClient(BaseRedshiftClient):
         with self._get_conn() as conn:
             with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
                 try:
-                    self.log.info(f"Executing query '{query}'")
+                    self.log.debug(f"Executing query '{query}'")
                     cursor.execute(query)
 
                     if fetch_results and cursor.rowcount > 0:
@@ -133,7 +133,7 @@ class RedshiftClient(BaseRedshiftClient):
             with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
                 for query in queries:
                     try:
-                        self.log.info(f"Executing query '{query}'")
+                        self.log.debug(f"Executing query '{query}'")
                         cursor.execute(query)
 
                         if fetch_results and cursor.rowcount > 0:
