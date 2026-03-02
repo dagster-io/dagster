@@ -6,10 +6,6 @@ canonicalUrl: "/guides/build/components/state-backed-components"
 slug: "/guides/build/components/state-backed-components"
 ---
 
-import Beta from '@site/docs/partials/_Beta.md';
-
-<Beta />
-
 :::note Prerequisites
 
 Before working with state-backed components, you should be familiar with the basic [Components](/guides/build/components) APIs.
