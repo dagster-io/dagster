@@ -1,5 +1,5 @@
 import {Tooltip} from '@dagster-io/ui-components';
-import {MatcherFn} from '@shared/app/AppTopNav/activePathMatchers';
+import {MatcherFn} from '@shared/app/activePathMatchers';
 import clsx from 'clsx';
 import {ReactNode, useContext} from 'react';
 import {NavLink} from 'react-router-dom';

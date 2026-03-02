@@ -6,7 +6,7 @@ import {
   deploymentPathMatcher,
   jobsPathMatcher,
   lineagePathMatcher,
-} from '@shared/app/AppTopNav/activePathMatchers';
+} from '@shared/app/activePathMatchers';
 import {useVisibleFeatureFlagRows} from '@shared/app/useVisibleFeatureFlagRows';
 import {useContext, useState} from 'react';
 
