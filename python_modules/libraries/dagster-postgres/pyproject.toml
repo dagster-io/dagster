@@ -19,6 +19,10 @@ classifiers = [
 ]
 dependencies = [
     "dagster==1!0+dev",
+]
+
+[project.optional-dependencies]
+test = [
     "psycopg2-binary",
 ]
 
