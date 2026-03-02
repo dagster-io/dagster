@@ -27,6 +27,7 @@ import {batchRunsForTimeline} from '../runs/batchRunsForTimeline';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 const INNER_TICK_WIDTH = 4;
+const RIGHT_PADDING_PX = 12;
 
 type AssetEventType = ReturnType<typeof useRecentAssetEvents>['events'][0];
 type Props = {
@@ -105,7 +106,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
       runs: eventsAsRuns,
       start: startTimestamp,
       end: endTimestamp,
-      width: viewport.width,
+      width: viewport.width - RIGHT_PADDING_PX,
       minChunkWidth: 1, // INNER_TICK_WIDTH
       minMultipleWidth: 10,
     });
@@ -420,19 +421,16 @@ const TickLines = styled.div`
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
 function getTimelineBounds(sortedMaterializations: {timestamp: string}[]): [number, number] {
-  if (!sortedMaterializations.length) {
+  const firstSorted = sortedMaterializations[0];
+  const lastSorted = sortedMaterializations[sortedMaterializations.length - 1];
+
+  if (!firstSorted || !lastSorted) {
     const nowUnix = Math.floor(Date.now());
     return [nowUnix - 7 * ONE_DAY, nowUnix];
   }
 
-  const endTimestamp = parseInt(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    sortedMaterializations[sortedMaterializations.length - 1]!.timestamp,
-  );
-  const startTimestamp = Math.min(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    parseInt(sortedMaterializations[0]!.timestamp),
-    endTimestamp - 100,
-  );
+  const endTimestamp = parseInt(lastSorted.timestamp);
+  const startTimestamp = parseInt(firstSorted.timestamp);
+
   return [startTimestamp, endTimestamp];
 }
