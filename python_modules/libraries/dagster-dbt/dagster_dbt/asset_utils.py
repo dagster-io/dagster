@@ -1028,6 +1028,27 @@ def get_asset_check_key_for_test(
     if not attached_node_unique_id:
         return None
 
+    # Handle disabled attached nodes (e.g., when a package model is overridden).
+    # When dbt models are overridden in a project, the package model is disabled and
+    # `attached_node` still references the disabled model. We need to find the active
+    # override with the same model name.
+    # This primarily affects relationship tests and other generic tests with multiple dependencies.
+
+    if attached_node_unique_id not in manifest.get("nodes", {}):
+        model_name = attached_node_unique_id.split(".")[-1]
+
+        # Find an active model with the same name
+        for unique_id, node in manifest["nodes"].items():
+            if (
+                node.get("resource_type") in ASSET_RESOURCE_TYPES
+                and node["name"] == model_name
+            ):
+                attached_node_unique_id = unique_id
+                break
+        else:
+            # No active model found with this name
+            return None
+
     return AssetCheckKey(
         name=test_resource_props["name"],
         asset_key=dagster_dbt_translator.get_asset_spec(
