@@ -126,6 +126,7 @@ RemoteDefinition: TypeAlias = (
     RemoteAssetNode | RemoteAssetCheckNode | RemoteJob | RemoteSchedule | RemoteSensor
 )
 
+
 class BaseWorkspaceRequestContext(LoadingContext):
     """This class is a request-scoped object that stores (1) a reference to all repository locations
     that exist on the `IWorkspaceProcessContext` at the start of the request and (2) a snapshot of the
@@ -975,7 +976,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
         self._current_workspace: CurrentWorkspace = CurrentWorkspace(code_location_entries={})
         self._retry_cv = threading.Condition()
-        self._retry_state: dict[str, dict[str, Union[float, int]]] = {}
+        self._retry_state: dict[str, dict[str, float | int]] = {}
         self._retry_shutdown = False
         self._retry_thread = threading.Thread(
             target=self._retry_loop,
@@ -1249,15 +1250,11 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             if entry.code_location:
                 entry.code_location.cleanup()
 
-<<<<<<< HEAD
-    def create_request_context(self, source: object | None = None) -> WorkspaceRequestContext:
-=======
         # Schedule/unschedule retries based on the new workspace state
         for name, entry in new_locations.items():
             self._reconcile_retry_for_entry(name, entry)
 
-    def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
->>>>>>> 7db0e74b2f (Fix code location auto-retry recovery and add regression test)
+    def create_request_context(self, source: object | None = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
             current_workspace=self.get_current_workspace(),
