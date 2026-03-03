@@ -143,9 +143,11 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     ) -> Sequence[str]:
         # backcompat for previous cursors where the allow/ignore selection was ignored
         return [
+
             non_secure_md5_hash_str(
-                f"{parent_unique_id}{index}{self.base_name}{target_key or ''}".encode()
+                f"{parent_unique_id}{index}{self.base_name}".encode()
             )
+
         ]
 
     @public
