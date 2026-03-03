@@ -11,6 +11,7 @@ from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
+from dagster_dg_cli.cli.api.utils import dg_api_response_schema
 
 
 def format_run_table(run) -> str:
@@ -121,6 +122,7 @@ def format_logs_json(events, run_id: str) -> str:
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRun")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -198,6 +200,7 @@ def get_run_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.run_event", cls="RunEventList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context

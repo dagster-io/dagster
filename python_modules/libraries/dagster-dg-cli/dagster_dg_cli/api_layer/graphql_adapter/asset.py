@@ -14,6 +14,9 @@ from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAssetStatus,
     DgApiAutomationCondition,
     DgApiBackfillPolicy,
+    DgApiEvaluationNode,
+    DgApiEvaluationRecord,
+    DgApiEvaluationRecordList,
     DgApiPartitionDefinition,
     DgApiPartitionMapping,
 )
@@ -548,7 +551,7 @@ def _build_asset_events_query(event_type: str | None) -> str:
     """Build the GraphQL query for asset events based on requested event type.
 
     Args:
-        event_type: "materialization", "observation", or None for both.
+        event_type: "ASSET_MATERIALIZATION", "ASSET_OBSERVATION", or None for both.
     """
     event_fields = f"""
                     timestamp
@@ -565,9 +568,9 @@ def _build_asset_events_query(event_type: str | None) -> str:
                 assetObservations(limit: $limit, beforeTimestampMillis: $beforeTimestampMillis, partitions: $partitions) {{{event_fields}
                 }}"""
 
-    if event_type == "materialization":
+    if event_type == "ASSET_MATERIALIZATION":
         event_fragments = materializations_fragment
-    elif event_type == "observation":
+    elif event_type == "ASSET_OBSERVATION":
         event_fragments = observations_fragment
     else:
         event_fragments = materializations_fragment + observations_fragment
@@ -621,7 +624,7 @@ def get_asset_events_via_graphql(
     events: list[DgApiAssetEvent] = []
 
     # Process materializations
-    if event_type in ("materialization", None):
+    if event_type in ("ASSET_MATERIALIZATION", None):
         for mat in node.get("assetMaterializations", []):
             events.append(
                 DgApiAssetEvent(
@@ -635,7 +638,7 @@ def get_asset_events_via_graphql(
             )
 
     # Process observations
-    if event_type in ("observation", None):
+    if event_type in ("ASSET_OBSERVATION", None):
         for obs in node.get("assetObservations", []):
             events.append(
                 DgApiAssetEvent(
@@ -654,3 +657,98 @@ def get_asset_events_via_graphql(
         events = events[:limit]
 
     return DgApiAssetEventList(items=events)
+
+
+ASSET_CONDITION_EVALUATIONS_QUERY = """
+query AssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+        __typename
+        ... on AssetConditionEvaluationRecords {
+            records {
+                evaluationId
+                timestamp
+                numRequested
+                runIds
+                startTimestamp
+                endTimestamp
+                rootUniqueId
+                evaluationNodes {
+                    uniqueId
+                    userLabel
+                    expandedLabel
+                    startTimestamp
+                    endTimestamp
+                    numTrue
+                    numCandidates
+                    isPartitioned
+                    childUniqueIds
+                    operatorType
+                }
+            }
+        }
+        ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
+            message
+        }
+    }
+}
+"""
+
+
+def get_asset_evaluations_via_graphql(
+    client: IGraphQLClient,
+    asset_key: str,
+    limit: int = 50,
+    cursor: str | None = None,
+    include_nodes: bool = False,
+) -> DgApiEvaluationRecordList:
+    """Fetch automation condition evaluation records for an asset."""
+    asset_key_parts = asset_key.split("/")
+    variables: dict = {
+        "assetKey": {"path": asset_key_parts},
+        "limit": limit,
+    }
+    if cursor:
+        variables["cursor"] = cursor
+
+    result = client.execute(ASSET_CONDITION_EVALUATIONS_QUERY, variables=variables)
+    records_or_error = result.get("assetConditionEvaluationRecordsOrError", {})
+
+    if records_or_error.get("__typename") == "AutoMaterializeAssetEvaluationNeedsMigrationError":
+        raise Exception(f"Migration required: {records_or_error.get('message', 'Unknown error')}")
+
+    raw_records = records_or_error.get("records", [])
+    evaluations: list[DgApiEvaluationRecord] = []
+
+    for raw in raw_records:
+        nodes: list[DgApiEvaluationNode] | None = None
+        if include_nodes:
+            nodes = [
+                DgApiEvaluationNode(
+                    unique_id=n["uniqueId"],
+                    user_label=n.get("userLabel"),
+                    expanded_label=n.get("expandedLabel", []),
+                    start_timestamp=n.get("startTimestamp"),
+                    end_timestamp=n.get("endTimestamp"),
+                    num_true=n.get("numTrue"),
+                    num_candidates=n.get("numCandidates"),
+                    is_partitioned=n["isPartitioned"],
+                    child_unique_ids=n.get("childUniqueIds", []),
+                    operator_type=n["operatorType"],
+                )
+                for n in raw.get("evaluationNodes", [])
+            ]
+
+        evaluations.append(
+            DgApiEvaluationRecord(
+                evaluation_id=int(raw["evaluationId"]),
+                timestamp=raw["timestamp"],
+                num_requested=raw.get("numRequested"),
+                run_ids=raw.get("runIds", []),
+                start_timestamp=raw.get("startTimestamp"),
+                end_timestamp=raw.get("endTimestamp"),
+                root_unique_id=raw["rootUniqueId"],
+                evaluation_nodes=nodes,
+            )
+        )
+
+    return DgApiEvaluationRecordList(items=evaluations)

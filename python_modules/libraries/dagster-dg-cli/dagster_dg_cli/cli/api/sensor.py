@@ -11,6 +11,7 @@ from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import _format_timestamp
+from dagster_dg_cli.cli.api.utils import dg_api_response_schema
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
@@ -78,6 +79,7 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.sensor", cls="DgApiSensorList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -131,6 +133,7 @@ def list_sensors_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.sensor", cls="DgApiSensor")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context

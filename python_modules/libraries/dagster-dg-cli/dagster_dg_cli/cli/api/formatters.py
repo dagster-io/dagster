@@ -10,6 +10,7 @@ if TYPE_CHECKING:
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
+        DgApiEvaluationRecordList,
     )
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
     from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
@@ -212,6 +213,39 @@ def format_asset_events(event_list: "DgApiAssetEventList", as_json: bool) -> str
         lines.append(row)
 
     lines.extend(["", f"Total events: {len(event_list.items)}"])
+    return "\n".join(lines)
+
+
+def format_asset_evaluations(evaluations: "DgApiEvaluationRecordList", as_json: bool) -> str:
+    """Format asset evaluation records for output."""
+    if as_json:
+        return evaluations.model_dump_json(indent=2)
+
+    if not evaluations.items:
+        return "No evaluation records found."
+
+    # Table header
+    header = f"{'EVAL_ID':<12} {'TIMESTAMP':<24} {'NUM_REQUESTED':<16} {'RUN_IDS'}"
+    separator = "-" * 100
+    lines = [header, separator]
+
+    for record in evaluations.items:
+        timestamp = _format_timestamp(record.timestamp, "seconds")
+        num_requested = str(record.num_requested) if record.num_requested is not None else "-"
+        run_ids = ", ".join(record.run_ids) if record.run_ids else "-"
+
+        row = f"{record.evaluation_id:<12} {timestamp:<24} {num_requested:<16} {run_ids}"
+        lines.append(row)
+
+        # Append node summary if nodes are present
+        if record.evaluation_nodes:
+            for node in record.evaluation_nodes:
+                label = node.user_label or " > ".join(node.expanded_label) or node.unique_id
+                true_str = str(node.num_true) if node.num_true is not None else "-"
+                cand_str = str(node.num_candidates) if node.num_candidates is not None else "-"
+                lines.append(f"    {label} (true={true_str}, candidates={cand_str})")
+
+    lines.extend(["", f"Total evaluations: {len(evaluations.items)}"])
     return "\n".join(lines)
 
 

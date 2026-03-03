@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-DgApiEventType = Literal["materialization", "observation"]
+DgApiEventType = Literal["ASSET_MATERIALIZATION", "ASSET_OBSERVATION"]
 
 
 class DgApiAssetHealthMetadata(BaseModel):
@@ -143,3 +143,37 @@ class DgApiAssetEventList(BaseModel):
     """GET /api/assets/{key}/events response."""
 
     items: list[DgApiAssetEvent]
+
+
+class DgApiEvaluationNode(BaseModel):
+    """A node in the automation condition evaluation tree."""
+
+    unique_id: str
+    user_label: str | None
+    expanded_label: list[str]
+    start_timestamp: float | None
+    end_timestamp: float | None
+    num_true: int | None
+    num_candidates: int | None
+    is_partitioned: bool
+    child_unique_ids: list[str]
+    operator_type: str
+
+
+class DgApiEvaluationRecord(BaseModel):
+    """An automation condition evaluation record for an asset."""
+
+    evaluation_id: int
+    timestamp: float
+    num_requested: int | None
+    run_ids: list[str]
+    start_timestamp: float | None
+    end_timestamp: float | None
+    root_unique_id: str
+    evaluation_nodes: list[DgApiEvaluationNode] | None = None
+
+
+class DgApiEvaluationRecordList(BaseModel):
+    """GET /api/assets/{key}/evaluations response."""
+
+    items: list[DgApiEvaluationRecord]

@@ -14,10 +14,18 @@ from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAssetList,
     DgApiAutomationCondition,
     DgApiBackfillPolicy,
+    DgApiEvaluationNode,
+    DgApiEvaluationRecord,
+    DgApiEvaluationRecordList,
     DgApiPartitionDefinition,
     DgApiPartitionMapping,
 )
-from dagster_dg_cli.cli.api.formatters import format_asset, format_asset_events, format_assets
+from dagster_dg_cli.cli.api.formatters import (
+    format_asset,
+    format_asset_evaluations,
+    format_asset_events,
+    format_assets,
+)
 
 
 class TestFormatAssets:
@@ -382,3 +390,220 @@ class TestFormatAssetEvents:
         result = format_asset_events(event_list, as_json=True)
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
+
+
+class TestFormatAssetEvaluations:
+    """Test the asset evaluation formatting functions."""
+
+    def _create_sample_evaluations(self) -> DgApiEvaluationRecordList:
+        """Create sample evaluation records without nodes."""
+        return DgApiEvaluationRecordList(
+            items=[
+                DgApiEvaluationRecord(
+                    evaluation_id=100,
+                    timestamp=1706745600.0,  # 2024-01-31T16:00:00 UTC
+                    num_requested=3,
+                    run_ids=["run-abc-123", "run-def-456"],
+                    start_timestamp=1706745600.0,
+                    end_timestamp=1706745610.0,
+                    root_unique_id="root_1",
+                ),
+                DgApiEvaluationRecord(
+                    evaluation_id=99,
+                    timestamp=1706659200.0,  # 2024-01-30T16:00:00 UTC
+                    num_requested=0,
+                    run_ids=[],
+                    start_timestamp=1706659200.0,
+                    end_timestamp=1706659205.0,
+                    root_unique_id="root_1",
+                ),
+            ]
+        )
+
+    def _create_evaluations_with_nodes(self) -> DgApiEvaluationRecordList:
+        """Create evaluation records with node trees."""
+        return DgApiEvaluationRecordList(
+            items=[
+                DgApiEvaluationRecord(
+                    evaluation_id=100,
+                    timestamp=1706745600.0,
+                    num_requested=2,
+                    run_ids=["run-abc-123"],
+                    start_timestamp=1706745600.0,
+                    end_timestamp=1706745610.0,
+                    root_unique_id="node_root",
+                    evaluation_nodes=[
+                        DgApiEvaluationNode(
+                            unique_id="node_root",
+                            user_label="eager",
+                            expanded_label=["Any", "deps", "updated"],
+                            start_timestamp=1706745600.0,
+                            end_timestamp=1706745610.0,
+                            num_true=5,
+                            num_candidates=10,
+                            is_partitioned=True,
+                            child_unique_ids=["node_child_1", "node_child_2"],
+                            operator_type="AND",
+                        ),
+                        DgApiEvaluationNode(
+                            unique_id="node_child_1",
+                            user_label=None,
+                            expanded_label=["Any", "deps", "updated"],
+                            start_timestamp=None,
+                            end_timestamp=None,
+                            num_true=5,
+                            num_candidates=10,
+                            is_partitioned=True,
+                            child_unique_ids=[],
+                            operator_type="LEAF",
+                        ),
+                        DgApiEvaluationNode(
+                            unique_id="node_child_2",
+                            user_label=None,
+                            expanded_label=[],
+                            start_timestamp=None,
+                            end_timestamp=None,
+                            num_true=None,
+                            num_candidates=None,
+                            is_partitioned=False,
+                            child_unique_ids=[],
+                            operator_type="NOT",
+                        ),
+                    ],
+                ),
+            ]
+        )
+
+    def test_format_evaluations_text_output(self, snapshot):
+        """Test formatting evaluations as text table."""
+        evaluations = self._create_sample_evaluations()
+        result = format_asset_evaluations(evaluations, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_evaluations_json_output(self, snapshot):
+        """Test formatting evaluations as JSON."""
+        evaluations = self._create_sample_evaluations()
+        result = format_asset_evaluations(evaluations, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_evaluations_with_nodes_text_output(self, snapshot):
+        """Test formatting evaluations with node trees as text."""
+        evaluations = self._create_evaluations_with_nodes()
+        result = format_asset_evaluations(evaluations, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_evaluations_with_nodes_json_output(self, snapshot):
+        """Test formatting evaluations with node trees as JSON."""
+        evaluations = self._create_evaluations_with_nodes()
+        result = format_asset_evaluations(evaluations, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_empty_evaluations_text_output(self, snapshot):
+        """Test formatting empty evaluation list."""
+        result = format_asset_evaluations(DgApiEvaluationRecordList(items=[]), as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_empty_evaluations_json_output(self, snapshot):
+        """Test formatting empty evaluation list as JSON."""
+        result = format_asset_evaluations(DgApiEvaluationRecordList(items=[]), as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+
+class TestEvaluationDataModels:
+    """Test evaluation data model creation and serialization."""
+
+    def test_evaluation_record_creation(self):
+        """Test creating an evaluation record with all fields."""
+        record = DgApiEvaluationRecord(
+            evaluation_id=42,
+            timestamp=1706745600.0,
+            num_requested=5,
+            run_ids=["run-1", "run-2"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            root_unique_id="root_node",
+        )
+        assert record.evaluation_id == 42
+        assert record.num_requested == 5
+        assert len(record.run_ids) == 2
+        assert record.evaluation_nodes is None
+
+    def test_evaluation_record_with_nodes(self):
+        """Test creating an evaluation record with node tree."""
+        node = DgApiEvaluationNode(
+            unique_id="node_1",
+            user_label="eager",
+            expanded_label=["Any", "deps", "updated"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            num_true=3,
+            num_candidates=5,
+            is_partitioned=False,
+            child_unique_ids=["child_1"],
+            operator_type="AND",
+        )
+        record = DgApiEvaluationRecord(
+            evaluation_id=1,
+            timestamp=1706745600.0,
+            num_requested=1,
+            run_ids=["run-1"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            root_unique_id="node_1",
+            evaluation_nodes=[node],
+        )
+        assert record.evaluation_nodes is not None
+        assert len(record.evaluation_nodes) == 1
+        assert record.evaluation_nodes[0].user_label == "eager"
+        assert record.evaluation_nodes[0].operator_type == "AND"
+
+    def test_evaluation_record_json_round_trip(self, snapshot):
+        """Test JSON serialization of evaluation record."""
+        record = DgApiEvaluationRecord(
+            evaluation_id=42,
+            timestamp=1706745600.0,
+            num_requested=5,
+            run_ids=["run-1", "run-2"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            root_unique_id="root_node",
+            evaluation_nodes=[
+                DgApiEvaluationNode(
+                    unique_id="root_node",
+                    user_label="eager",
+                    expanded_label=["Any", "deps", "updated"],
+                    start_timestamp=1706745600.0,
+                    end_timestamp=1706745610.0,
+                    num_true=3,
+                    num_candidates=5,
+                    is_partitioned=True,
+                    child_unique_ids=[],
+                    operator_type="AND",
+                ),
+            ],
+        )
+        result = record.model_dump_json(indent=2)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_evaluation_node_with_null_optional_fields(self):
+        """Test node creation with null optional fields."""
+        node = DgApiEvaluationNode(
+            unique_id="leaf_node",
+            user_label=None,
+            expanded_label=[],
+            start_timestamp=None,
+            end_timestamp=None,
+            num_true=None,
+            num_candidates=None,
+            is_partitioned=False,
+            child_unique_ids=[],
+            operator_type="LEAF",
+        )
+        assert node.user_label is None
+        assert node.num_true is None
+        assert node.num_candidates is None
+        assert node.start_timestamp is None

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.asset import (
+    get_asset_evaluations_via_graphql,
     get_asset_events_via_graphql,
     get_dg_plus_api_asset_via_graphql,
     list_dg_plus_api_assets_via_graphql,
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
+        DgApiEvaluationRecordList,
     )
 
 
@@ -59,7 +61,7 @@ class DgApiAssetApi:
 
         Args:
             asset_key: Slash-separated asset key (e.g., 'foo/bar').
-            event_type: "materialization", "observation", or None for both.
+            event_type: "ASSET_MATERIALIZATION", "ASSET_OBSERVATION", or None for both.
             limit: Maximum number of events to return (max 1000).
             before: ISO timestamp string for filtering events before this time.
             partitions: List of partition keys to filter by.
@@ -82,4 +84,33 @@ class DgApiAssetApi:
             limit=limit or 50,
             before_timestamp_millis=before_timestamp_millis,
             partitions=partitions,
+        )
+
+    def get_evaluations(
+        self,
+        asset_key: str,
+        limit: int | None = None,
+        cursor: str | None = None,
+        include_nodes: bool | None = None,
+    ) -> "DgApiEvaluationRecordList":
+        """Get automation condition evaluation records for an asset.
+
+        Args:
+            asset_key: Slash-separated asset key (e.g., 'foo/bar').
+            limit: Maximum number of evaluations to return (max 1000).
+            cursor: Cursor for pagination (evaluation ID).
+            include_nodes: Include the condition evaluation node tree.
+        """
+        from dagster_dg_cli.cli.api.asset import DG_API_MAX_EVENT_LIMIT
+
+        effective_limit = limit if limit is not None else 50
+        if effective_limit > DG_API_MAX_EVENT_LIMIT:
+            raise ValueError(f"Limit cannot exceed {DG_API_MAX_EVENT_LIMIT}")
+
+        return get_asset_evaluations_via_graphql(
+            self.client,
+            asset_key,
+            limit=effective_limit,
+            cursor=cursor,
+            include_nodes=bool(include_nodes),
         )
