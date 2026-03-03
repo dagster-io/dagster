@@ -5,6 +5,7 @@ import {FeatureFlag} from '@shared/FeatureFlags';
  */
 export const DEFAULT_FEATURE_FLAG_VALUES: Partial<Record<FeatureFlag, boolean>> = {
   [FeatureFlag.flagAssetCatalogSidebar]: true,
+  [FeatureFlag.flagSkipOptionalResourceDefaultsInRunConfig]: true,
 
   // Flags for tests
   [FeatureFlag.__TestFlagDefaultTrue]: true,
