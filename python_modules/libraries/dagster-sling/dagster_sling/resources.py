@@ -5,12 +5,12 @@ import re
 import subprocess
 import tempfile
 import time
+import types
 import uuid
 from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
 from typing import IO, Any, AnyStr
 
-import sling
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -39,6 +39,23 @@ from dagster_sling.sling_replication import SlingReplicationParam, validate_repl
 logger = get_dagster_logger()
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+# Cache for lazy-loaded sling module to avoid repeated imports
+_sling_module_cache: dict[str, types.ModuleType] = {}
+
+
+def _get_sling() -> types.ModuleType:
+    """Lazily import the sling module.
+
+    We defer the import of sling because it has expensive side effects on import,
+    including potentially downloading binaries from the internet. Users should not
+    pay this cost unless they're actually running code that requires sling.
+    """
+    if "sling" not in _sling_module_cache:
+        import sling
+
+        _sling_module_cache["sling"] = sling
+    return _sling_module_cache["sling"]
 
 
 @public
@@ -361,7 +378,7 @@ class SlingResource(ConfigurableResource):
             str: The output from the Sling CLI.
         """
         with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
-            return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
+            return subprocess.check_output(args=[_get_sling().SLING_BIN, *args], text=True)
 
     def replicate(
         self,
@@ -463,21 +480,22 @@ class SlingResource(ConfigurableResource):
         temp_dir = tempfile.gettempdir()
         temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
 
+        sling_mod = _get_sling()
         with open(temp_file, "w") as file:
-            json.dump(replication_config, file, cls=sling.JsonEncoder)
+            json.dump(replication_config, file, cls=sling_mod.JsonEncoder)
 
         logger.debug(f"Replication config: {replication_config}")
 
         debug_str = "-d" if debug else ""
 
-        cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+        cmd = f"{sling_mod.SLING_BIN} run {debug_str} -r {temp_file}"
 
         logger.debug(f"Running Sling replication with command: {cmd}")
 
         # Get start time from wall clock
         start_time = time.time()
 
-        results = sling._run(  # noqa
+        results = sling_mod._run(  # noqa
             cmd=cmd,
             temp_file=temp_file,
             return_output=True,
@@ -537,21 +555,22 @@ class SlingResource(ConfigurableResource):
         temp_dir = tempfile.gettempdir()
         temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
 
+        sling_mod = _get_sling()
         with open(temp_file, "w") as file:
-            json.dump(replication_config, file, cls=sling.JsonEncoder)
+            json.dump(replication_config, file, cls=sling_mod.JsonEncoder)
 
         logger.debug(f"Replication config: {replication_config}")
 
         debug_str = "-d" if debug else ""
 
-        cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+        cmd = f"{sling_mod.SLING_BIN} run {debug_str} -r {temp_file}"
 
         logger.debug(f"Running Sling replication with command: {cmd}")
 
         # Get start time from wall clock
         start_time = time.time()
 
-        for line in sling._exec_cmd(cmd, env=env):  # noqa
+        for line in sling_mod._exec_cmd(cmd, env=env):  # noqa
             if line == "":  # if empty line -- skipped
                 continue
             text = self._clean_timestamp_log(line)  # else clean timestamp
